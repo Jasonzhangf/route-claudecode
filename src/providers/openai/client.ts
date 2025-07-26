@@ -1,0 +1,313 @@
+/**
+ * Generic OpenAI-Compatible Client
+ * Works with any OpenAI-compatible API (Shuaihong, etc.)
+ */
+
+import axios, { AxiosInstance } from 'axios';
+import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
+import { logger } from '@/utils/logger';
+
+export class OpenAICompatibleClient implements Provider {
+  public readonly name: string;
+  public readonly type = 'openai';
+  
+  private httpClient: AxiosInstance;
+  private endpoint: string;
+  private apiKey: string;
+
+  constructor(public config: ProviderConfig, providerId: string) {
+    this.name = providerId;
+    this.endpoint = config.endpoint;
+    this.apiKey = config.authentication.credentials.apiKey || config.authentication.credentials.api_key;
+    
+    if (!this.endpoint) {
+      throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
+    }
+
+    this.httpClient = axios.create({
+      baseURL: this.endpoint,
+      timeout: 60000,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'claude-code-router/2.0.0'
+      }
+    });
+
+    // Add request interceptor for authentication
+    this.httpClient.interceptors.request.use((config) => {
+      if (this.apiKey) {
+        config.headers['Authorization'] = `Bearer ${this.apiKey}`;
+      }
+      return config;
+    });
+  }
+
+  /**
+   * Check if provider is healthy
+   */
+  async isHealthy(): Promise<boolean> {
+    try {
+      // Try to make a simple request to test connectivity
+      const response = await this.httpClient.get('/models', { timeout: 5000 });
+      return response.status === 200;
+    } catch (error) {
+      logger.debug(`Health check failed for ${this.name}`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Send request to OpenAI-compatible API
+   */
+  async sendRequest(request: BaseRequest): Promise<BaseResponse> {
+    const requestId = request.metadata?.requestId || 'unknown';
+    
+    try {
+      logger.trace(requestId, 'provider', `Sending request to ${this.name}`, {
+        model: request.model,
+        stream: request.stream
+      });
+
+      // Convert to OpenAI format
+      const openaiRequest = this.convertToOpenAI(request);
+      
+      // Send request
+      const response = await this.httpClient.post('/v1/chat/completions', openaiRequest);
+      
+      if (response.status !== 200) {
+        throw new ProviderError(
+          `${this.name} API returned status ${response.status}`,
+          this.name,
+          response.status,
+          response.data
+        );
+      }
+
+      // Convert response back to BaseResponse format
+      const baseResponse = this.convertFromOpenAI(response.data, request);
+
+      logger.trace(requestId, 'provider', `Request completed successfully for ${this.name}`, {
+        usage: baseResponse.usage
+      });
+
+      return baseResponse;
+    } catch (error) {
+      logger.error(`${this.name} request failed`, error, requestId, 'provider');
+      
+      if (error instanceof ProviderError) {
+        throw error;
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ProviderError(
+        `${this.name} request failed: ${errorMessage}`,
+        this.name,
+        500,
+        error
+      );
+    }
+  }
+
+  /**
+   * Send streaming request
+   */
+  async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
+    const requestId = request.metadata?.requestId || 'unknown';
+    
+    try {
+      logger.trace(requestId, 'provider', `Sending streaming request to ${this.name}`, {
+        model: request.model
+      });
+
+      // Convert to OpenAI format with streaming
+      const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
+      
+      // Send streaming request
+      const response = await this.httpClient.post('/v1/chat/completions', openaiRequest, {
+        responseType: 'stream'
+      });
+
+      if (response.status !== 200) {
+        throw new ProviderError(
+          `${this.name} API returned status ${response.status}`,
+          this.name,
+          response.status
+        );
+      }
+
+      // Parse streaming response
+      let buffer = '';
+      for await (const chunk of response.data) {
+        buffer += chunk.toString();
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            
+            if (data === '[DONE]') {
+              return;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              const anthropicEvent = this.convertStreamChunkToAnthropic(parsed);
+              if (anthropicEvent) {
+                yield anthropicEvent;
+              }
+            } catch (parseError) {
+              logger.debug('Failed to parse streaming chunk', parseError, requestId);
+            }
+          }
+        }
+      }
+
+      logger.trace(requestId, 'provider', `Streaming request completed for ${this.name}`);
+      
+    } catch (error) {
+      logger.error(`${this.name} streaming request failed`, error, requestId, 'provider');
+      
+      if (error instanceof ProviderError) {
+        throw error;
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ProviderError(
+        `${this.name} streaming request failed: ${errorMessage}`,
+        this.name,
+        500,
+        error
+      );
+    }
+  }
+
+  /**
+   * Convert BaseRequest to OpenAI format
+   */
+  private convertToOpenAI(request: BaseRequest): any {
+    const openaiRequest: any = {
+      model: request.model,
+      messages: this.convertMessages(request.messages),
+      max_tokens: request.max_tokens || 4096,
+      temperature: request.temperature,
+      stream: false
+    };
+
+    // Add system message if present
+    if (request.metadata?.system && Array.isArray(request.metadata.system)) {
+      const systemContent = request.metadata.system.map((s: any) => s.text || s).join('\n');
+      openaiRequest.messages.unshift({
+        role: 'system',
+        content: systemContent
+      });
+    }
+
+    // Add tools if present
+    if (request.metadata?.tools && Array.isArray(request.metadata.tools)) {
+      openaiRequest.tools = request.metadata.tools.map((tool: any) => ({
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.input_schema
+        }
+      }));
+    }
+
+    return openaiRequest;
+  }
+
+  /**
+   * Convert messages to OpenAI format
+   */
+  private convertMessages(messages: Array<{ role: string; content: any }>): any[] {
+    return messages.map(msg => ({
+      role: msg.role,
+      content: this.convertContent(msg.content)
+    }));
+  }
+
+  /**
+   * Convert content to OpenAI format
+   */
+  private convertContent(content: any): string {
+    if (typeof content === 'string') {
+      return content;
+    }
+
+    if (Array.isArray(content)) {
+      return content.map(block => {
+        if (block.type === 'text') {
+          return block.text;
+        } else if (block.type === 'tool_result') {
+          return typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
+        }
+        return JSON.stringify(block);
+      }).join('\n');
+    }
+
+    return JSON.stringify(content);
+  }
+
+  /**
+   * Convert OpenAI response to BaseResponse
+   */
+  private convertFromOpenAI(response: any, originalRequest: BaseRequest): BaseResponse {
+    const choice = response.choices?.[0];
+    if (!choice) {
+      throw new Error('No choices in OpenAI response');
+    }
+
+    return {
+      id: response.id,
+      model: originalRequest.model,
+      role: 'assistant',
+      content: [{ type: 'text', text: choice.message.content }],
+      stop_reason: this.mapFinishReason(choice.finish_reason),
+      usage: {
+        input_tokens: response.usage?.prompt_tokens || 0,
+        output_tokens: response.usage?.completion_tokens || 0
+      }
+    };
+  }
+
+  /**
+   * Convert OpenAI streaming chunk to Anthropic format
+   */
+  private convertStreamChunkToAnthropic(chunk: any): any {
+    const choice = chunk.choices?.[0];
+    if (!choice) return null;
+
+    if (choice.delta?.content) {
+      return {
+        event: 'content_block_delta',
+        data: {
+          type: 'content_block_delta',
+          index: 0,
+          delta: {
+            type: 'text_delta',
+            text: choice.delta.content
+          }
+        }
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Map OpenAI finish reason to Anthropic stop reason
+   */
+  private mapFinishReason(finishReason: string): string {
+    const mapping: Record<string, string> = {
+      'stop': 'end_turn',
+      'length': 'max_tokens',
+      'function_call': 'tool_use',
+      'tool_calls': 'tool_use',
+      'content_filter': 'stop_sequence'
+    };
+
+    return mapping[finishReason] || 'end_turn';
+  }
+}

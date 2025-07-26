@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-07-26T04:36:54.714Z",
+  "binaryEventCount": 2,
+  "sseEventCount": 2,
+  "anthropicEventCount": 2,
+  "fullMessage": "API working correctly!",
+  "binaryEvents": [
+    {
+      "headers": {
+        ":event-type": "assistantResponseEvent",
+        ":content-type": "application/json",
+        ":message-type": "event"
+      },
+      "payload": "{\"content\":\"API\"}",
+      "payloadJSON": {
+        "content": "API"
+      }
+    },
+    {
+      "headers": {
+        ":event-type": "assistantResponseEvent",
+        ":content-type": "application/json",
+        ":message-type": "event"
+      },
+      "payload": "{\"content\":\" working correctly!\"}",
+      "payloadJSON": {
+        "content": " working correctly!"
+      }
+    }
+  ],
+  "sseEvents": [
+    {
+      "Event": "assistantResponseEvent",
+      "Data": {
+        "content": "API"
+      }
+    },
+    {
+      "Event": "assistantResponseEvent",
+      "Data": {
+        "content": " working correctly!"
+      }
+    }
+  ],
+  "anthropicEvents": [
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "API"
+        }
+      }
+    },
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " working correctly!"
+        }
+      }
+    }
+  ]
+}

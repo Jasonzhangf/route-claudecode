@@ -1,0 +1,19 @@
+{
+  "conversationState": {
+    "chatTriggerType": "MANUAL",
+    "conversationId": "test-1753504121663",
+    "currentMessage": {
+      "userInputMessage": {
+        "content": "Hello, please respond with a simple greeting",
+        "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+        "origin": "AI_EDITOR",
+        "userInputMessageContext": {
+          "toolResults": [],
+          "tools": []
+        }
+      }
+    },
+    "history": []
+  },
+  "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+}

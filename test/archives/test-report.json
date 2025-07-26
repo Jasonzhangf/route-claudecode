@@ -1,0 +1,80 @@
+{
+  "timestamp": "2025-07-26T03:48:06.500Z",
+  "totalStages": 5,
+  "successful": 5,
+  "failed": 0,
+  "results": [
+    {
+      "stage": "Stage 1: 输入处理",
+      "success": true,
+      "duration": 23,
+      "script": "test-stage1-input-processing.js"
+    },
+    {
+      "stage": "Stage 2: 路由处理",
+      "success": true,
+      "duration": 22,
+      "script": "test-stage2-routing.js"
+    },
+    {
+      "stage": "Stage 3: CodeWhisperer转换",
+      "success": true,
+      "duration": 24,
+      "script": "test-stage3-codewhisperer-conversion.js"
+    },
+    {
+      "stage": "Stage 4: 响应模拟",
+      "success": true,
+      "duration": 23,
+      "script": "test-stage4-response-simulation.js"
+    },
+    {
+      "stage": "Stage 5: 服务器集成",
+      "success": true,
+      "duration": 23,
+      "script": "test-stage5-server-integration.js"
+    }
+  ],
+  "outputFiles": [
+    {
+      "name": "stage1-base-request.json",
+      "exists": true,
+      "size": 15917
+    },
+    {
+      "name": "stage2-routing-result.json",
+      "exists": true,
+      "size": 17113
+    },
+    {
+      "name": "stage3-codewhisperer-request.json",
+      "exists": true,
+      "size": 32706
+    },
+    {
+      "name": "stage4-response-simulation.json",
+      "exists": true,
+      "size": 37965
+    },
+    {
+      "name": "stage4-mock-binary-response.bin",
+      "exists": true,
+      "size": 958
+    },
+    {
+      "name": "stage5-server-integration.json",
+      "exists": true,
+      "size": 35840
+    },
+    {
+      "name": "stage5-sse-output.txt",
+      "exists": true,
+      "size": 1890
+    },
+    {
+      "name": "stage5-final-response.json",
+      "exists": true,
+      "size": 349
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "name": "CodeWhisperer Test Configuration",
+  "description": "Isolated test configuration for CodeWhisperer provider testing",
+  
+  "server": {
+    "port": 3457,
+    "host": "127.0.0.1"
+  },
+  
+  "routing": {
+    "strategy": "test-mode",
+    "defaultProvider": "test-codewhisperer",
+    "rules": {
+      "default": {
+        "provider": "test-codewhisperer",
+        "model": "claude-sonnet-4-20250514",
+        "priority": 1
+      },
+      "code-generation": {
+        "provider": "test-codewhisperer", 
+        "model": "claude-sonnet-4-20250514",
+        "priority": 1
+      },
+      "background": {
+        "provider": "test-codewhisperer",
+        "model": "claude-sonnet-4-20250514",
+        "priority": 1
+      },
+      "thinking": {
+        "provider": "test-codewhisperer",
+        "model": "claude-sonnet-4-20250514",
+        "priority": 1
+      },
+      "longcontext": {
+        "provider": "test-codewhisperer",
+        "model": "claude-sonnet-4-20250514",
+        "priority": 1
+      },
+      "search": {
+        "provider": "test-codewhisperer",
+        "model": "claude-sonnet-4-20250514",
+        "priority": 1
+      }
+    },
+    
+    "providers": {
+      "test-codewhisperer": {
+        "type": "codewhisperer",
+        "name": "Test CodeWhisperer Provider",
+        "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+        "authentication": {
+          "type": "bearer",
+          "credentials": {
+            "apiKey": "dummy-key-for-testing",
+            "tokenPath": "~/.aws/sso/cache/kiro-auth-token.json",
+            "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/test-profile"
+          }
+        },
+        "settings": {
+          "maxConcurrentRequests": 5,
+          "timeoutMs": 30000,
+          "retryAttempts": 2,
+          "models": [
+            "claude-sonnet-4-20250514",
+            "CLAUDE_SONNET_4_20250514_V1_0"
+          ],
+          "specialties": ["all"],
+          "enableSSEParsing": true,
+          "validateResponses": true
+        }
+      }
+    }
+  },
+  
+  "input": {
+    "format": "anthropic",
+    "defaultInstance": true,
+    "validation": {
+      "enabled": true,
+      "strictMode": true
+    },
+    "testMode": {
+      "enabled": true,
+      "mockRequests": false,
+      "validateSchema": true
+    }
+  },
+  
+  "output": {
+    "anthropic": {
+      "enabled": true,
+      "preserveMetadata": true,
+      "validateSchema": true
+    }
+  },
+  
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "/tmp/ccr-test-logs",
+    "hooks": {
+      "onRequest": "console.log('TEST REQUEST:', JSON.stringify(data, null, 2))",
+      "onRouting": "console.log('TEST ROUTING:', data.provider, data.model)",
+      "onProviderCall": "console.log('TEST PROVIDER CALL:', data.provider, data.endpoint)",
+      "onResponse": "console.log('TEST RESPONSE:', data.statusCode, data.duration + 'ms')",
+      "onError": "console.error('TEST ERROR:', data.error, data.stage)"
+    }
+  },
+  
+  "testing": {
+    "enabled": true,
+    "mockMode": false,
+    "validateChain": true,
+    "saveTestLogs": true,
+    "testRequests": [
+      {
+        "name": "simple-greeting",
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": 50,
+        "messages": [
+          {"role": "user", "content": "Hello, how are you?"}
+        ]
+      },
+      {
+        "name": "code-generation",
+        "model": "claude-sonnet-4-20250514", 
+        "max_tokens": 200,
+        "messages": [
+          {"role": "user", "content": "Write a simple Python function to add two numbers"}
+        ]
+      },
+      {
+        "name": "streaming-test",
+        "model": "claude-sonnet-4-20250514",
+        "max_tokens": 100,
+        "stream": true,
+        "messages": [
+          {"role": "user", "content": "Count from 1 to 5"}
+        ]
+      }
+    ]
+  },
+  
+  "health": {
+    "checkIntervalMs": 10000,
+    "timeoutMs": 5000,
+    "failureThreshold": 2,
+    "testEndpoints": true
+  }
+}
