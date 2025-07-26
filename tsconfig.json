@@ -25,6 +25,7 @@
       "@/routing/*": ["routing/*"],
       "@/output/*": ["output/*"],
       "@/providers/*": ["providers/*"],
+      "@/transformers/*": ["transformers/*"],
       "@/utils/*": ["utils/*"]
     }
   },

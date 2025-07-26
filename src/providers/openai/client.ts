@@ -74,7 +74,7 @@ export class OpenAICompatibleClient implements Provider {
       // Send request
       const response = await this.httpClient.post('/v1/chat/completions', openaiRequest);
       
-      if (response.status !== 200) {
+      if (response.status < 200 || response.status >= 300) {
         throw new ProviderError(
           `${this.name} API returned status ${response.status}`,
           this.name,
@@ -127,7 +127,7 @@ export class OpenAICompatibleClient implements Provider {
         responseType: 'stream'
       });
 
-      if (response.status !== 200) {
+      if (response.status < 200 || response.status >= 300) {
         throw new ProviderError(
           `${this.name} API returned status ${response.status}`,
           this.name,
@@ -152,9 +152,14 @@ export class OpenAICompatibleClient implements Provider {
 
             try {
               const parsed = JSON.parse(data);
+              logger.trace(requestId, 'provider', `Raw streaming chunk`, { chunk: parsed });
+              
               const anthropicEvent = this.convertStreamChunkToAnthropic(parsed);
               if (anthropicEvent) {
+                logger.trace(requestId, 'provider', `Yielding anthropic event`, { event: anthropicEvent });
                 yield anthropicEvent;
+              } else {
+                logger.trace(requestId, 'provider', `No anthropic event generated for chunk`, { parsed });
               }
             } catch (parseError) {
               logger.debug('Failed to parse streaming chunk', parseError, requestId);
@@ -279,6 +284,7 @@ export class OpenAICompatibleClient implements Provider {
     const choice = chunk.choices?.[0];
     if (!choice) return null;
 
+    // Handle content deltas
     if (choice.delta?.content) {
       return {
         event: 'content_block_delta',
@@ -291,6 +297,12 @@ export class OpenAICompatibleClient implements Provider {
           }
         }
       };
+    }
+
+    // Handle tool calls if present
+    if (choice.delta?.tool_calls) {
+      // Handle tool call streaming if needed
+      // For now, we'll skip this and let the server handle it
     }
 
     return null;

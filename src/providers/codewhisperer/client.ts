@@ -112,8 +112,10 @@ export class CodeWhispererClient implements Provider {
       // Convert request to CodeWhisperer format
       const cwRequest = this.converter.convertRequest(request, requestId);
       
-      // Send request
-      const response = await this.httpClient.post('/generateAssistantResponse', cwRequest);
+      // Send request with binary response type for CodeWhisperer
+      const response = await this.httpClient.post('/generateAssistantResponse', cwRequest, {
+        responseType: 'arraybuffer'
+      });
       
       if (response.status !== 200) {
         throw new ProviderError(
@@ -124,8 +126,8 @@ export class CodeWhispererClient implements Provider {
         );
       }
 
-      // Parse response
-      const contexts = parseNonStreamingResponse(Buffer.from(JSON.stringify(response.data)), requestId);
+      // Parse response - response.data is already ArrayBuffer from CodeWhisperer
+      const contexts = parseNonStreamingResponse(Buffer.from(response.data), requestId);
       
       // Convert to BaseResponse format
       const baseResponse: BaseResponse = {

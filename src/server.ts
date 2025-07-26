@@ -8,7 +8,7 @@ import { AnthropicInputProcessor } from './input/anthropic';
 import { RoutingEngine } from './routing';
 import { AnthropicOutputProcessor } from './output/anthropic';
 import { CodeWhispererClient } from './providers/codewhisperer';
-import { OpenAICompatibleClient } from './providers/openai';
+import { EnhancedOpenAIClient } from './providers/openai';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider } from './types';
 import { logger } from './utils/logger';
 import { sessionManager } from './session/manager';
@@ -62,7 +62,7 @@ export class RouterServer {
           client = new CodeWhispererClient(providerConfig);
         } else if (providerConfig.type === 'openai') {
           // Generic OpenAI-compatible client (works for Shuaihong, etc.)
-          client = new OpenAICompatibleClient(providerConfig, providerId);
+          client = new EnhancedOpenAIClient(providerConfig, providerId);
         } else {
           logger.warn(`Unsupported provider type: ${providerConfig.type}`, { providerId });
           continue;
@@ -352,11 +352,18 @@ export class RouterServer {
 
       // Stream from provider
       let outputTokens = 0;
+      let stopReason = 'end_turn'; // default
+      
       for await (const chunk of provider.sendStreamRequest(request)) {
         this.sendSSEEvent(reply, chunk.event, chunk.data);
         
         if (chunk.event === 'content_block_delta' && chunk.data?.delta?.text) {
           outputTokens += Math.ceil(chunk.data.delta.text.length / 4);
+        }
+        
+        // Capture stop reason from stream completion events
+        if (chunk.event === 'stream_complete' && chunk.data?.stop_reason) {
+          stopReason = chunk.data.stop_reason;
         }
       }
 
@@ -366,11 +373,11 @@ export class RouterServer {
         index: 0
       });
 
-      // Send message delta with final usage
+      // Send message delta with final usage and actual stop reason
       this.sendSSEEvent(reply, 'message_delta', {
         type: 'message_delta',
         delta: {
-          stop_reason: 'end_turn',
+          stop_reason: stopReason,
           stop_sequence: null
         },
         usage: {

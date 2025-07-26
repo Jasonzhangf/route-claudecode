@@ -125,12 +125,110 @@
 3. **禁止重复**: 如已有相似功能测试脚本，必须修改现有脚本，不允许创建新脚本
 4. **记录进展**: 使用`test-[问题关键字]-[YYYYMMDD]-[HHMM].md`格式记录调试发现
 
+## 🔄 标准流程基础测试 (STD-6-STEP-PIPELINE)
+**适用场景**: 在正确获得响应之前，这是标准的测试流程，必须按顺序执行
+
+### 📋 六步测试流程
+
+#### Step 1: `test-step1-input-processing.js`
+- **目标**: 测试完整的API请求链路通畅性
+- **输入**: 原始Anthropic API请求 (model, messages, max_tokens)
+- **输出**: 完整API响应数据 → 保存到 `step1-output.json`
+- **验证点**: 
+  - 请求是否成功发送
+  - 是否收到响应
+  - 响应格式是否正确
+- **失败指示**: API链路中断、服务器错误、网络问题
+
+#### Step 2: `test-step2-routing.js`
+- **目标**: 验证模型路由逻辑正确性
+- **输入**: `step1-output.json` 的请求和响应数据
+- **输出**: 路由分析结果 → 保存到 `step2-output.json`
+- **验证点**:
+  - 输入模型是否正确识别类别 (default/background/thinking/longcontext/search)
+  - 是否路由到正确的provider (codewhisperer-primary/shuaihong-openai)
+  - 是否映射到正确的目标模型 (gpt-4o/gemini-2.5-flash/etc)
+- **失败指示**: 路由规则错误、模型映射失败、provider选择错误
+
+#### Step 3: `test-step3-transformation.js`
+- **目标**: 单独验证transformer转换逻辑
+- **输入**: `step2-output.json` 的路由数据
+- **输出**: 转换测试结果 → 保存到 `step3-output.json`
+- **验证点**:
+  - Anthropic请求 → OpenAI请求转换是否正确
+  - 模拟OpenAI响应 → Anthropic响应转换是否正确
+  - content字段是否正确生成
+  - tools/tool_calls转换是否正确
+- **失败指示**: Transformer逻辑错误、格式转换失效、内容丢失
+
+#### Step 4: `test-step4-raw-api-response.js`
+- **目标**: 直接测试真实的第三方API响应
+- **输入**: Step2的路由结果 (确定调用哪个真实API)
+- **输出**: 原始第三方API响应 → 保存到 `step4-output.json`
+- **验证点**:
+  - 第三方API是否可达
+  - 是否返回有效响应
+  - 响应格式是否符合OpenAI标准
+  - content字段是否有实际内容
+- **失败指示**: API服务不可用、认证失败、响应格式错误、空内容
+
+#### Step 5: `test-step5-transformer-input.js`
+- **目标**: 验证transformer接收到的真实数据
+- **输入**: `step4-output.json` 的真实API响应
+- **输出**: Transformer实际接收数据 → 保存到 `step5-output.json`
+- **验证点**:
+  - 数据是否正确传递到transformer
+  - 数据结构是否完整
+  - 关键字段 (choices, message, content) 是否存在
+- **失败指示**: 数据传递中断、结构损坏、字段缺失
+
+#### Step 6: `test-step6-transformer-output.js`
+- **目标**: 测试transformer的实际转换输出
+- **输入**: `step5-output.json` 的transformer输入数据
+- **输出**: Transformer转换结果 → 保存到 `step6-output.json`
+- **验证点**:
+  - 转换逻辑是否正确执行
+  - content数组是否正确构建
+  - text内容是否正确提取
+  - usage信息是否正确计算
+- **失败指示**: 转换逻辑错误、内容丢失、格式错误
+
+#### Step 7: `test-step7-final-response.js`
+- **目标**: 验证最终响应构建过程
+- **输入**: `step6-output.json` 的转换结果
+- **输出**: 最终API响应格式 → 保存到 `step7-output.json`
+- **验证点**:
+  - BaseResponse格式是否正确
+  - 所有必需字段是否完整
+  - 响应是否符合Anthropic API规范
+- **失败指示**: 响应构建错误、字段映射失败、格式不符合规范
+
+### 🎯 数据流验证链条
+```
+请求端: Step1 → Step2 → Step3 (请求处理验证)
+         ↓
+API调用: Step4 (第三方API验证)
+         ↓  
+响应端: Step5 → Step6 → Step7 (响应处理验证)
+```
+
+### 📊 问题定位策略
+- **Step1失败**: 基础服务问题 (端口、路由、服务器)
+- **Step2失败**: 路由配置问题 (规则、映射、provider配置)
+- **Step3失败**: Transformer设计问题 (逻辑、接口、格式定义)
+- **Step4失败**: 第三方API问题 (服务、认证、网络)
+- **Step5失败**: 数据传递问题 (接口、序列化、结构)
+- **Step6失败**: Transformer实现问题 (代码、算法、边界情况)
+- **Step7失败**: 响应构建问题 (映射、格式、规范)
+
+### 🚀 执行规范
+1. **顺序执行**: 必须按Step1→Step7顺序执行，每步依赖前一步的输出
+2. **数据保存**: 每步都必须保存输出到JSON文件供下一步使用
+3. **失败终止**: 任何一步失败必须先修复再继续下一步
+4. **完整记录**: 所有步骤的输入输出必须记录到调试日志中
+
 ## 分离式调试原则
-1. **流水线分段**: 对于长流水线问题，建立不同阶段的独立测试脚本
-   - `test-step1-输入格式解析.js` - 测试Anthropic输入格式处理
-   - `test-step2-路由决策.js` - 测试模型路由逻辑
-   - `test-step3-输出格式转换.js` - 测试格式转换
-   - `test-step4-供应商调用.js` - 测试CodeWhisperer/OpenAI调用
+1. **流水线分段**: 对于长流水线问题，使用STD-6-STEP-PIPELINE标准测试流程
 2. **问题定位**: 明确每个测试脚本的作用范围和预期结果
 3. **阶段验证**: 确定问题出现在哪个具体阶段
 4. **脚本映射**: 明确应该使用哪个测试脚本来验证特定问题

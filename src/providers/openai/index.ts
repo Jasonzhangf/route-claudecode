@@ -4,3 +4,4 @@
  */
 
 export { OpenAICompatibleClient } from './client';
+export { EnhancedOpenAIClient } from './enhanced-client';

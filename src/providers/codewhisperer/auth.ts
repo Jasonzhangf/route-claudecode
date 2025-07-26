@@ -17,15 +17,19 @@ export interface TokenData {
 
 export class CodeWhispererAuth {
   private tokenPath: string;
+  private lastRefreshFilePath: string;
   private cachedToken: TokenData | null = null;
   private refreshTimer: NodeJS.Timeout | null = null;
   private lastRefreshTime: Date | null = null;
   private readonly REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
+  private readonly MIN_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes minimum between refreshes
   private isRefreshing: boolean = false;
   private refreshPromise: Promise<TokenData> | null = null;
 
   constructor() {
     this.tokenPath = this.getTokenFilePath();
+    this.lastRefreshFilePath = this.getLastRefreshFilePath();
+    this.loadLastRefreshTime();
     this.startPeriodicRefresh();
   }
 
@@ -35,6 +39,67 @@ export class CodeWhispererAuth {
   private getTokenFilePath(): string {
     const homeDir = homedir();
     return join(homeDir, '.aws', 'sso', 'cache', 'kiro-auth-token.json');
+  }
+
+  /**
+   * Get the path for storing last refresh time
+   */
+  private getLastRefreshFilePath(): string {
+    const homeDir = homedir();
+    return join(homeDir, '.claude-code-router', 'last-token-refresh.json');
+  }
+
+  /**
+   * Load last refresh time from persistent storage
+   */
+  private loadLastRefreshTime(): void {
+    try {
+      if (existsSync(this.lastRefreshFilePath)) {
+        const data = readFileSync(this.lastRefreshFilePath, 'utf8');
+        const parsed = JSON.parse(data);
+        if (parsed.lastRefreshTime) {
+          this.lastRefreshTime = new Date(parsed.lastRefreshTime);
+          logger.debug(`Loaded last refresh time: ${this.lastRefreshTime.toISOString()}`);
+        }
+      }
+    } catch (error) {
+      logger.debug('Failed to load last refresh time, starting fresh', error);
+      this.lastRefreshTime = null;
+    }
+  }
+
+  /**
+   * Save last refresh time to persistent storage
+   */
+  private saveLastRefreshTime(): void {
+    try {
+      const data = {
+        lastRefreshTime: this.lastRefreshTime?.toISOString()
+      };
+      writeFileSync(this.lastRefreshFilePath, JSON.stringify(data, null, 2), { mode: 0o600 });
+      logger.debug(`Saved last refresh time: ${this.lastRefreshTime?.toISOString()}`);
+    } catch (error) {
+      logger.error('Failed to save last refresh time', error);
+    }
+  }
+
+  /**
+   * Check if enough time has passed since last refresh (30-minute minimum)
+   */
+  private canRefreshToken(): boolean {
+    if (!this.lastRefreshTime) {
+      return true;
+    }
+    
+    const timeSinceLastRefresh = Date.now() - this.lastRefreshTime.getTime();
+    const canRefresh = timeSinceLastRefresh >= this.MIN_REFRESH_INTERVAL;
+    
+    if (!canRefresh) {
+      const remainingTime = Math.ceil((this.MIN_REFRESH_INTERVAL - timeSinceLastRefresh) / (60 * 1000));
+      logger.debug(`Token refresh blocked - ${remainingTime} minutes remaining until next allowed refresh`);
+    }
+    
+    return canRefresh;
   }
 
   /**
@@ -232,6 +297,12 @@ export class CodeWhispererAuth {
       return;
     }
     
+    // Check if we can refresh (30-minute minimum interval)
+    if (!this.canRefreshToken()) {
+      logger.debug('Background refresh skipped - 30-minute minimum interval not met');
+      return;
+    }
+    
     // Run refresh in background without blocking
     setImmediate(async () => {
       try {
@@ -252,6 +323,11 @@ export class CodeWhispererAuth {
       return this.refreshPromise;
     }
     
+    // Double-check 30-minute interval before actual refresh
+    if (!this.canRefreshToken()) {
+      throw new Error('Token refresh blocked - 30-minute minimum interval not met');
+    }
+    
     this.isRefreshing = true;
     this.refreshPromise = this.refreshToken(currentToken);
     
@@ -259,6 +335,7 @@ export class CodeWhispererAuth {
       const refreshedToken = await this.refreshPromise;
       this.cachedToken = refreshedToken;
       this.lastRefreshTime = new Date();
+      this.saveLastRefreshTime(); // Persist the refresh time
       logger.debug('Token refresh completed successfully');
       return refreshedToken;
     } finally {
@@ -296,13 +373,23 @@ export class CodeWhispererAuth {
   async getTokenInfo(): Promise<any> {
     try {
       const tokenData = this.readTokenFromFile();
+      const timeSinceLastRefresh = this.lastRefreshTime ? Date.now() - this.lastRefreshTime.getTime() : null;
+      const canRefresh = this.canRefreshToken();
+      const minutesUntilNextRefresh = this.lastRefreshTime && !canRefresh 
+        ? Math.ceil((this.MIN_REFRESH_INTERVAL - (Date.now() - this.lastRefreshTime.getTime())) / (60 * 1000))
+        : 0;
+      
       return {
         hasAccessToken: !!tokenData.accessToken,
         hasRefreshToken: !!tokenData.refreshToken,
         expiresAt: tokenData.expiresAt,
         isValid: this.isTokenValid(tokenData),
         lastRefreshTime: this.lastRefreshTime?.toISOString(),
-        periodicRefreshActive: !!this.refreshTimer
+        timeSinceLastRefresh: timeSinceLastRefresh ? `${Math.floor(timeSinceLastRefresh / (60 * 1000))} minutes` : null,
+        canRefreshNow: canRefresh,
+        minutesUntilNextRefresh: minutesUntilNextRefresh,
+        periodicRefreshActive: !!this.refreshTimer,
+        minRefreshInterval: `${this.MIN_REFRESH_INTERVAL / (60 * 1000)} minutes`
       };
     } catch (error) {
       return {

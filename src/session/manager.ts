@@ -27,6 +27,7 @@ export interface ConversationMessage {
 
 export class SessionManager {
   private sessions: Map<string, ConversationSession> = new Map();
+  private clientFingerprintSessions: Map<string, string> = new Map(); // fingerprint -> sessionId
   private readonly maxSessions = 1000;
   private readonly sessionTimeout = 2 * 60 * 60 * 1000; // 2 hours
 
@@ -49,9 +50,36 @@ export class SessionManager {
       return sessionId;
     }
 
-    // Generate new session ID
+    // For Claude Code clients without session headers, try to identify by client fingerprint
+    const clientFingerprint = this.generateClientFingerprint(headers);
+    const existingSessionByFingerprint = this.clientFingerprintSessions.get(clientFingerprint);
+    
+    logger.debug('Client fingerprint analysis', {
+      fingerprint: clientFingerprint,
+      existingSession: existingSessionByFingerprint,
+      hasExistingSession: !!existingSessionByFingerprint,
+      sessionExists: existingSessionByFingerprint ? this.sessions.has(existingSessionByFingerprint) : false,
+      totalFingerprintMappings: this.clientFingerprintSessions.size,
+      totalSessions: this.sessions.size
+    });
+    
+    if (existingSessionByFingerprint && this.sessions.has(existingSessionByFingerprint)) {
+      logger.debug('Found existing session by client fingerprint', { 
+        sessionId: existingSessionByFingerprint,
+        fingerprint: clientFingerprint 
+      });
+      return existingSessionByFingerprint;
+    }
+
+    // Generate new session ID and associate with fingerprint
     const newSessionId = this.generateSessionId();
-    logger.debug('Generated new session ID', { sessionId: newSessionId });
+    this.clientFingerprintSessions.set(clientFingerprint, newSessionId);
+    
+    logger.debug('Generated new session ID with client fingerprint', { 
+      sessionId: newSessionId,
+      fingerprint: clientFingerprint,
+      fingerprintDataForDebug: this.generateFingerprintDataForDebug(headers)
+    });
     return newSessionId;
   }
 
@@ -252,6 +280,69 @@ export class SessionManager {
   }
 
   /**
+   * Generate client fingerprint based on request headers
+   * This helps identify the same Claude Code client instance across requests
+   */
+  private generateClientFingerprint(headers: Record<string, string>): string {
+    // Use stable client characteristics for fingerprinting
+    const userAgent = headers['user-agent'] || '';
+    const authorization = headers['authorization'] || '';
+    const xApp = headers['x-app'] || '';
+    const packageVersion = headers['x-stainless-package-version'] || '';
+    const runtime = headers['x-stainless-runtime'] || '';
+    const runtimeVersion = headers['x-stainless-runtime-version'] || '';
+    const os = headers['x-stainless-os'] || '';
+    const arch = headers['x-stainless-arch'] || '';
+    
+    // Create a stable hash from these characteristics
+    const fingerprintData = [
+      userAgent,
+      authorization, // Claude Code uses consistent auth tokens
+      xApp,
+      packageVersion,
+      runtime,
+      runtimeVersion,
+      os,
+      arch
+    ].join('|');
+    
+    // Simple hash function (for production, consider using crypto.createHash)
+    let hash = 0;
+    for (let i = 0; i < fingerprintData.length; i++) {
+      const char = fingerprintData.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    return `fp_${Math.abs(hash).toString(36)}`;
+  }
+
+  /**
+   * Generate fingerprint data for debugging (not hashed)
+   */
+  private generateFingerprintDataForDebug(headers: Record<string, string>): string {
+    const userAgent = headers['user-agent'] || '';
+    const authorization = headers['authorization'] || '';
+    const xApp = headers['x-app'] || '';
+    const packageVersion = headers['x-stainless-package-version'] || '';
+    const runtime = headers['x-stainless-runtime'] || '';
+    const runtimeVersion = headers['x-stainless-runtime-version'] || '';
+    const os = headers['x-stainless-os'] || '';
+    const arch = headers['x-stainless-arch'] || '';
+    
+    return [
+      `userAgent: ${userAgent}`,
+      `auth: ${authorization.substring(0, 20)}...`,
+      `xApp: ${xApp}`,
+      `pkgVer: ${packageVersion}`,
+      `runtime: ${runtime}`,
+      `runtimeVer: ${runtimeVersion}`,
+      `os: ${os}`,
+      `arch: ${arch}`
+    ].join(' | ');
+  }
+
+  /**
    * Generate unique conversation ID
    */
   private generateConversationId(): string {
@@ -272,9 +363,17 @@ export class SessionManager {
       }
     }
 
-    // Remove expired sessions
+    // Remove expired sessions and their fingerprint mappings
     for (const sessionId of expiredSessions) {
       this.sessions.delete(sessionId);
+      
+      // Remove fingerprint mapping for this session
+      for (const [fingerprint, mappedSessionId] of this.clientFingerprintSessions.entries()) {
+        if (mappedSessionId === sessionId) {
+          this.clientFingerprintSessions.delete(fingerprint);
+          break;
+        }
+      }
     }
 
     if (expiredSessions.length > 0) {
