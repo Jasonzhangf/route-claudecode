@@ -1,0 +1,33 @@
+{
+  "timestamp": "2025-07-26T13:22:09.281Z",
+  "step": "step4-raw-api-response",
+  "input": {
+    "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+    "model": "CLAUDE_3_5_HAIKU_20241022_V1_0",
+    "request": {
+      "model": "CLAUDE_3_5_HAIKU_20241022_V1_0",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello, this is a direct API test."
+        }
+      ],
+      "max_tokens": 262144,
+      "temperature": 0.7,
+      "stream": false
+    }
+  },
+  "output": null,
+  "error": {
+    "error": {
+      "message": "分组 level3 下模型 CLAUDE_3_5_HAIKU_20241022_V1_0 无可用渠道（distributor） (request id: 2025072621220956810082kVqdcxSB)",
+      "type": "new_api_error"
+    }
+  },
+  "analysis": {
+    "hasValidStructure": false,
+    "hasContent": false,
+    "contentLength": 0
+  },
+  "success": false
+}

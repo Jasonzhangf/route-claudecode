@@ -1,0 +1,105 @@
+{
+  "timestamp": "2025-07-26T12:33:42.808Z",
+  "step": "step5-transformer-input",
+  "input": {
+    "rawApiResponse": {
+      "id": "chatcmpl-20250726203326525973985fpc3r4Bw",
+      "model": "gemini-2.5-flash",
+      "object": "chat.completion",
+      "created": 1753533210,
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Hello! Message received. This is a successful response to your API test."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 541,
+        "total_tokens": 551,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "text_tokens": 10,
+          "audio_tokens": 0,
+          "image_tokens": 0
+        },
+        "completion_tokens_details": {
+          "text_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 526
+        },
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "input_tokens_details": null
+      }
+    }
+  },
+  "analysis": {
+    "dataStructure": {
+      "hasId": true,
+      "hasObject": true,
+      "hasModel": true,
+      "hasChoices": true,
+      "hasUsage": true,
+      "choicesCount": 1
+    },
+    "choice": {
+      "hasIndex": true,
+      "hasMessage": true,
+      "hasFinishReason": true,
+      "messageRole": "assistant",
+      "messageContent": "Hello! Message received. This is a successful response to your API test.",
+      "messageContentLength": 72,
+      "hasToolCalls": false
+    },
+    "usage": {
+      "hasPromptTokens": true,
+      "hasCompletionTokens": true,
+      "hasTotalTokens": true,
+      "promptTokens": 10,
+      "completionTokens": 541,
+      "totalTokens": 551
+    },
+    "isTransformerReady": true
+  },
+  "transformerInput": {
+    "id": "chatcmpl-20250726203326525973985fpc3r4Bw",
+    "model": "gemini-2.5-flash",
+    "object": "chat.completion",
+    "created": 1753533210,
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Hello! Message received. This is a successful response to your API test."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 10,
+      "completion_tokens": 541,
+      "total_tokens": 551,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "text_tokens": 10,
+        "audio_tokens": 0,
+        "image_tokens": 0
+      },
+      "completion_tokens_details": {
+        "text_tokens": 0,
+        "audio_tokens": 0,
+        "reasoning_tokens": 526
+      },
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "input_tokens_details": null
+    }
+  },
+  "success": true
+}

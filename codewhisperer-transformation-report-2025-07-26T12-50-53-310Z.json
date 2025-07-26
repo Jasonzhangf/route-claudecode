@@ -1,0 +1,739 @@
+{
+  "timestamp": "2025-07-26T12:50:53.310Z",
+  "testType": "CodeWhisperer数据转换测试",
+  "summary": {
+    "total": 3,
+    "successful": 3,
+    "failed": 0,
+    "successRate": 100,
+    "transformationDifferences": 0
+  },
+  "transformationResults": [
+    {
+      "name": "simple-text-generation",
+      "description": "简单文本生成 - 基础转换测试",
+      "timestamp": "2025-07-26T12:50:43.114Z",
+      "shuaihongResult": {
+        "success": true,
+        "duration": 2576,
+        "expectedProvider": "shuaihong",
+        "actualProvider": "shuaihong-openai",
+        "request": {
+          "model": "claude-3-5-haiku-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Say hello in a friendly way"
+            }
+          ],
+          "max_tokens": 50,
+          "temperature": 0.7,
+          "stream": false
+        },
+        "response": {
+          "id": "chatcmpl-20250726205044844757399KQemmvJ5",
+          "type": "message",
+          "role": "assistant",
+          "model": "gemini-2.5-flash",
+          "content": [
+            {
+              "type": "text",
+              "text": "Hello there!"
+            }
+          ],
+          "stop_reason": "end_turn",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 7,
+            "output_tokens": 31
+          }
+        },
+        "analysis": {
+          "hasId": true,
+          "hasType": true,
+          "hasRole": true,
+          "hasModel": true,
+          "hasContent": true,
+          "hasUsage": true,
+          "contentTypes": [
+            "text"
+          ],
+          "modelUsed": "gemini-2.5-flash",
+          "idFormat": "openai-style",
+          "totalTokens": 38
+        },
+        "transformationQuality": {
+          "score": 100,
+          "aspects": {
+            "structureCompliance": true,
+            "hasValidContent": true,
+            "preservesModel": true,
+            "correctUsage": true
+          }
+        }
+      },
+      "codewhispererResult": {
+        "success": true,
+        "duration": 1355,
+        "expectedProvider": "codewhisperer",
+        "actualProvider": "shuaihong-openai",
+        "request": {
+          "model": "claude-3-5-sonnet-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Say hello in a friendly way"
+            }
+          ],
+          "max_tokens": 50,
+          "temperature": 0.7,
+          "stream": false
+        },
+        "response": {
+          "id": "chatcmpl-202507262050458296080028ozWrnfO",
+          "type": "message",
+          "role": "assistant",
+          "model": "gemini-2.5-flash",
+          "content": [
+            {
+              "type": "text",
+              "text": "Hello there! 👋"
+            }
+          ],
+          "stop_reason": "end_turn",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 7,
+            "output_tokens": 22
+          }
+        },
+        "analysis": {
+          "hasId": true,
+          "hasType": true,
+          "hasRole": true,
+          "hasModel": true,
+          "hasContent": true,
+          "hasUsage": true,
+          "contentTypes": [
+            "text"
+          ],
+          "modelUsed": "gemini-2.5-flash",
+          "idFormat": "openai-style",
+          "totalTokens": 29
+        },
+        "transformationQuality": {
+          "score": 100,
+          "aspects": {
+            "structureCompliance": true,
+            "hasValidContent": true,
+            "preservesModel": true,
+            "correctUsage": true
+          }
+        }
+      },
+      "comparison": {
+        "bothSuccessful": true,
+        "providerMatch": true,
+        "differences": {
+          "responseFormat": {
+            "shuaihong": {
+              "hasId": true,
+              "hasType": true,
+              "hasRole": true,
+              "hasModel": true,
+              "hasContent": true,
+              "hasUsage": true,
+              "contentTypes": [
+                "text"
+              ],
+              "modelUsed": "gemini-2.5-flash",
+              "idFormat": "openai-style",
+              "totalTokens": 38
+            },
+            "codewhisperer": {
+              "hasId": true,
+              "hasType": true,
+              "hasRole": true,
+              "hasModel": true,
+              "hasContent": true,
+              "hasUsage": true,
+              "contentTypes": [
+                "text"
+              ],
+              "modelUsed": "gemini-2.5-flash",
+              "idFormat": "openai-style",
+              "totalTokens": 29
+            }
+          },
+          "modelUsed": {
+            "shuaihong": "gemini-2.5-flash",
+            "codewhisperer": "gemini-2.5-flash"
+          },
+          "idFormat": {
+            "shuaihong": "openai-style",
+            "codewhisperer": "openai-style"
+          },
+          "transformationQuality": {
+            "shuaihong": 100,
+            "codewhisperer": 100
+          }
+        },
+        "similarities": {
+          "bothHaveContent": true,
+          "bothHaveUsage": true,
+          "sameStructure": false
+        }
+      },
+      "success": true
+    },
+    {
+      "name": "structured-code-request",
+      "description": "结构化代码请求 - 复杂转换测试",
+      "timestamp": "2025-07-26T12:50:47.046Z",
+      "shuaihongResult": {
+        "success": true,
+        "duration": 1893,
+        "expectedProvider": "shuaihong",
+        "actualProvider": "shuaihong-openai",
+        "request": {
+          "model": "claude-3-5-haiku-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a Python function that takes a list of numbers and returns the sum"
+            }
+          ],
+          "max_tokens": 200,
+          "temperature": 0.1,
+          "stream": false
+        },
+        "response": {
+          "id": "chatcmpl-20250726205047184211512nHt6npCq",
+          "type": "message",
+          "role": "assistant",
+          "model": "gemini-2.5-flash",
+          "content": [],
+          "stop_reason": "max_tokens",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 15,
+            "output_tokens": 199
+          }
+        },
+        "analysis": {
+          "hasId": true,
+          "hasType": true,
+          "hasRole": true,
+          "hasModel": true,
+          "hasContent": false,
+          "hasUsage": true,
+          "contentTypes": [],
+          "modelUsed": "gemini-2.5-flash",
+          "idFormat": "openai-style",
+          "totalTokens": 214
+        },
+        "transformationQuality": {
+          "score": 80,
+          "aspects": {
+            "structureCompliance": true,
+            "hasValidContent": false,
+            "preservesModel": true,
+            "correctUsage": true
+          }
+        }
+      },
+      "codewhispererResult": {
+        "success": true,
+        "duration": 1823,
+        "expectedProvider": "codewhisperer",
+        "actualProvider": "shuaihong-openai",
+        "request": {
+          "model": "claude-3-5-sonnet-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a Python function that takes a list of numbers and returns the sum"
+            }
+          ],
+          "max_tokens": 200,
+          "temperature": 0.1,
+          "stream": false
+        },
+        "response": {
+          "id": "chatcmpl-2025072620504974801187pNkLPBxy",
+          "type": "message",
+          "role": "assistant",
+          "model": "gemini-2.5-flash",
+          "content": [],
+          "stop_reason": "max_tokens",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 15,
+            "output_tokens": 199
+          }
+        },
+        "analysis": {
+          "hasId": true,
+          "hasType": true,
+          "hasRole": true,
+          "hasModel": true,
+          "hasContent": false,
+          "hasUsage": true,
+          "contentTypes": [],
+          "modelUsed": "gemini-2.5-flash",
+          "idFormat": "openai-style",
+          "totalTokens": 214
+        },
+        "transformationQuality": {
+          "score": 80,
+          "aspects": {
+            "structureCompliance": true,
+            "hasValidContent": false,
+            "preservesModel": true,
+            "correctUsage": true
+          }
+        }
+      },
+      "comparison": {
+        "bothSuccessful": true,
+        "providerMatch": true,
+        "differences": {
+          "responseFormat": {
+            "shuaihong": {
+              "hasId": true,
+              "hasType": true,
+              "hasRole": true,
+              "hasModel": true,
+              "hasContent": false,
+              "hasUsage": true,
+              "contentTypes": [],
+              "modelUsed": "gemini-2.5-flash",
+              "idFormat": "openai-style",
+              "totalTokens": 214
+            },
+            "codewhisperer": {
+              "hasId": true,
+              "hasType": true,
+              "hasRole": true,
+              "hasModel": true,
+              "hasContent": false,
+              "hasUsage": true,
+              "contentTypes": [],
+              "modelUsed": "gemini-2.5-flash",
+              "idFormat": "openai-style",
+              "totalTokens": 214
+            }
+          },
+          "modelUsed": {
+            "shuaihong": "gemini-2.5-flash",
+            "codewhisperer": "gemini-2.5-flash"
+          },
+          "idFormat": {
+            "shuaihong": "openai-style",
+            "codewhisperer": "openai-style"
+          },
+          "transformationQuality": {
+            "shuaihong": 80,
+            "codewhisperer": 80
+          }
+        },
+        "similarities": {
+          "bothHaveContent": false,
+          "bothHaveUsage": true,
+          "sameStructure": true
+        }
+      },
+      "success": true
+    },
+    {
+      "name": "streaming-response",
+      "description": "流式响应转换测试",
+      "timestamp": "2025-07-26T12:50:50.763Z",
+      "shuaihongResult": {
+        "success": true,
+        "duration": 1132,
+        "expectedProvider": "shuaihong",
+        "actualProvider": "shuaihong-openai",
+        "request": {
+          "model": "claude-3-5-haiku-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Count slowly from 1 to 3, one number per line"
+            }
+          ],
+          "max_tokens": 100,
+          "stream": true
+        },
+        "streamData": {
+          "chunks": [
+            "event: message_start\n",
+            "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534250764\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\n",
+            "event: ping\n",
+            "data: {\"type\":\"ping\"}\n\n",
+            "event: content_block_start\n",
+            "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+            "event: message_start\n",
+            "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534251894\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\n",
+            "event: ping\n",
+            "data: {\"type\":\"ping\"}\n\n",
+            "event: content_block_start\n",
+            "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+            "event: content_block_delta\n",
+            "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"1\\n2\\n3\"}}\n\n",
+            "event: content_block_stop\n",
+            "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+            "event: message_delta\n",
+            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\n",
+            "event: message_stop\n",
+            "data: {\"type\":\"message_stop\"}\n\n",
+            "event: content_block_stop\n",
+            "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+            "event: message_delta\n",
+            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\n",
+            "event: message_stop\n",
+            "data: {\"type\":\"message_stop\"}\n\n"
+          ],
+          "events": [
+            "message_start",
+            "ping",
+            "content_block_start",
+            "message_start",
+            "ping",
+            "content_block_start",
+            "content_block_delta",
+            "content_block_stop",
+            "message_delta",
+            "message_stop",
+            "content_block_stop",
+            "message_delta",
+            "message_stop"
+          ],
+          "totalData": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534250764\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\nevent: ping\ndata: {\"type\":\"ping\"}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534251894\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\nevent: ping\ndata: {\"type\":\"ping\"}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"1\\n2\\n3\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
+        },
+        "analysis": {
+          "totalChunks": 26,
+          "totalDataLength": 1450,
+          "uniqueEvents": [
+            "message_start",
+            "ping",
+            "content_block_start",
+            "content_block_delta",
+            "content_block_stop",
+            "message_delta",
+            "message_stop"
+          ],
+          "hasMessageStart": true,
+          "hasContentBlockStart": true,
+          "hasContentBlockDelta": true,
+          "hasMessageStop": true,
+          "eventSequence": [
+            "message_start",
+            "ping",
+            "content_block_start",
+            "message_start",
+            "ping",
+            "content_block_start",
+            "content_block_delta",
+            "content_block_stop",
+            "message_delta",
+            "message_stop",
+            "content_block_stop",
+            "message_delta",
+            "message_stop"
+          ]
+        },
+        "transformationQuality": {
+          "score": 100,
+          "aspects": {
+            "completeEventSequence": true,
+            "hasContent": true,
+            "properSSEFormat": true
+          }
+        }
+      },
+      "codewhispererResult": {
+        "success": true,
+        "duration": 1415,
+        "expectedProvider": "codewhisperer",
+        "actualProvider": "shuaihong-openai",
+        "request": {
+          "model": "claude-3-5-sonnet-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Count slowly from 1 to 3, one number per line"
+            }
+          ],
+          "max_tokens": 100,
+          "stream": true
+        },
+        "streamData": {
+          "chunks": [
+            "event: message_start\n",
+            "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534251897\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\n",
+            "event: ping\n",
+            "data: {\"type\":\"ping\"}\n\n",
+            "event: content_block_start\n",
+            "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+            "event: message_start\n",
+            "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534253309\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\n",
+            "event: ping\n",
+            "data: {\"type\":\"ping\"}\n\n",
+            "event: content_block_start\n",
+            "data: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\n",
+            "event: content_block_delta\n",
+            "data: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"1\\n2\\n3\"}}\n\n",
+            "event: content_block_stop\n",
+            "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+            "event: message_delta\n",
+            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\n",
+            "event: message_stop\n",
+            "data: {\"type\":\"message_stop\"}\n\n",
+            "event: content_block_stop\n",
+            "data: {\"type\":\"content_block_stop\",\"index\":0}\n\n",
+            "event: message_delta\n",
+            "data: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\n",
+            "event: message_stop\n",
+            "data: {\"type\":\"message_stop\"}\n\n"
+          ],
+          "events": [
+            "message_start",
+            "ping",
+            "content_block_start",
+            "message_start",
+            "ping",
+            "content_block_start",
+            "content_block_delta",
+            "content_block_stop",
+            "message_delta",
+            "message_stop",
+            "content_block_stop",
+            "message_delta",
+            "message_stop"
+          ],
+          "totalData": "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534251897\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\nevent: ping\ndata: {\"type\":\"ping\"}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1753534253309\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"model\":\"gemini-2.5-flash\",\"stop_reason\":null,\"stop_sequence\":null,\"usage\":{\"input_tokens\":0,\"output_tokens\":0}}}\n\nevent: ping\ndata: {\"type\":\"ping\"}\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"text\",\"text\":\"\"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":0,\"delta\":{\"type\":\"text_delta\",\"text\":\"1\\n2\\n3\"}}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0}\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null},\"usage\":{\"output_tokens\":2}}\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"}\n\n"
+        },
+        "analysis": {
+          "totalChunks": 26,
+          "totalDataLength": 1450,
+          "uniqueEvents": [
+            "message_start",
+            "ping",
+            "content_block_start",
+            "content_block_delta",
+            "content_block_stop",
+            "message_delta",
+            "message_stop"
+          ],
+          "hasMessageStart": true,
+          "hasContentBlockStart": true,
+          "hasContentBlockDelta": true,
+          "hasMessageStop": true,
+          "eventSequence": [
+            "message_start",
+            "ping",
+            "content_block_start",
+            "message_start",
+            "ping",
+            "content_block_start",
+            "content_block_delta",
+            "content_block_stop",
+            "message_delta",
+            "message_stop",
+            "content_block_stop",
+            "message_delta",
+            "message_stop"
+          ]
+        },
+        "transformationQuality": {
+          "score": 100,
+          "aspects": {
+            "completeEventSequence": true,
+            "hasContent": true,
+            "properSSEFormat": true
+          }
+        }
+      },
+      "comparison": {
+        "bothSuccessful": true,
+        "providerMatch": true,
+        "differences": {
+          "responseFormat": {
+            "shuaihong": {
+              "totalChunks": 26,
+              "totalDataLength": 1450,
+              "uniqueEvents": [
+                "message_start",
+                "ping",
+                "content_block_start",
+                "content_block_delta",
+                "content_block_stop",
+                "message_delta",
+                "message_stop"
+              ],
+              "hasMessageStart": true,
+              "hasContentBlockStart": true,
+              "hasContentBlockDelta": true,
+              "hasMessageStop": true,
+              "eventSequence": [
+                "message_start",
+                "ping",
+                "content_block_start",
+                "message_start",
+                "ping",
+                "content_block_start",
+                "content_block_delta",
+                "content_block_stop",
+                "message_delta",
+                "message_stop",
+                "content_block_stop",
+                "message_delta",
+                "message_stop"
+              ]
+            },
+            "codewhisperer": {
+              "totalChunks": 26,
+              "totalDataLength": 1450,
+              "uniqueEvents": [
+                "message_start",
+                "ping",
+                "content_block_start",
+                "content_block_delta",
+                "content_block_stop",
+                "message_delta",
+                "message_stop"
+              ],
+              "hasMessageStart": true,
+              "hasContentBlockStart": true,
+              "hasContentBlockDelta": true,
+              "hasMessageStop": true,
+              "eventSequence": [
+                "message_start",
+                "ping",
+                "content_block_start",
+                "message_start",
+                "ping",
+                "content_block_start",
+                "content_block_delta",
+                "content_block_stop",
+                "message_delta",
+                "message_stop",
+                "content_block_stop",
+                "message_delta",
+                "message_stop"
+              ]
+            }
+          },
+          "modelUsed": {},
+          "idFormat": {},
+          "transformationQuality": {
+            "shuaihong": 100,
+            "codewhisperer": 100
+          }
+        },
+        "similarities": {
+          "sameStructure": true
+        }
+      },
+      "success": true
+    }
+  ],
+  "configuration": {
+    "server": "http://127.0.0.1:3456",
+    "testCases": [
+      {
+        "name": "simple-text-generation",
+        "description": "简单文本生成 - 基础转换测试",
+        "anthropicInput": {
+          "model": "claude-3-5-haiku-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Say hello in a friendly way"
+            }
+          ],
+          "max_tokens": 50,
+          "temperature": 0.7,
+          "stream": false
+        },
+        "codewhispererInput": {
+          "model": "claude-3-5-sonnet-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Say hello in a friendly way"
+            }
+          ],
+          "max_tokens": 50,
+          "temperature": 0.7,
+          "stream": false
+        }
+      },
+      {
+        "name": "structured-code-request",
+        "description": "结构化代码请求 - 复杂转换测试",
+        "anthropicInput": {
+          "model": "claude-3-5-haiku-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a Python function that takes a list of numbers and returns the sum"
+            }
+          ],
+          "max_tokens": 200,
+          "temperature": 0.1,
+          "stream": false
+        },
+        "codewhispererInput": {
+          "model": "claude-3-5-sonnet-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Write a Python function that takes a list of numbers and returns the sum"
+            }
+          ],
+          "max_tokens": 200,
+          "temperature": 0.1,
+          "stream": false
+        }
+      },
+      {
+        "name": "streaming-response",
+        "description": "流式响应转换测试",
+        "anthropicInput": {
+          "model": "claude-3-5-haiku-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Count slowly from 1 to 3, one number per line"
+            }
+          ],
+          "max_tokens": 100,
+          "stream": true
+        },
+        "codewhispererInput": {
+          "model": "claude-3-5-sonnet-20241022",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Count slowly from 1 to 3, one number per line"
+            }
+          ],
+          "max_tokens": 100,
+          "stream": true
+        }
+      }
+    ]
+  },
+  "analysis": {
+    "providerRouting": {
+      "shuaihong-openai_vs_shuaihong-openai": 3
+    },
+    "responseFormats": {
+      "openai-style": 4
+    },
+    "transformationQuality": {}
+  },
+  "recommendations": []
+}

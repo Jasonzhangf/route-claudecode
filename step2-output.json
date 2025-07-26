@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-07-26T13:39:07.999Z",
+  "step": "step2-routing",
+  "input": {
+    "model": "claude-3-5-haiku-20241022",
+    "messages": [
+      {
+        "role": "user",
+        "content": "hello test"
+      }
+    ],
+    "stream": false
+  },
+  "routingAnalysis": {
+    "inputModel": "claude-3-5-haiku-20241022",
+    "expectedCategory": "background",
+    "expectedProvider": "shuaihong-openai",
+    "expectedTargetModel": "g❌ Step 2 failed
+ },
+  "actualModel": "CLAUDE_3_5_HAIKU_20241022_V1_0",
+  "success": false
+}

@@ -66,17 +66,18 @@ export class AnthropicOutputProcessor implements OutputProcessor {
    * Validate and normalize existing Anthropic format response
    */
   private validateAndNormalize(response: any, originalRequest: BaseRequest, requestId: string): AnthropicResponse {
+    const content = this.normalizeContent(response.content);
     const normalized: AnthropicResponse = {
+      content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
-      type: 'message',
-      role: 'assistant',
       model: originalRequest.model,
-      content: this.normalizeContent(response.content),
+      role: 'assistant',
       stop_reason: response.stop_reason || 'end_turn',
       stop_sequence: response.stop_sequence || null,
+      type: 'message',
       usage: {
         input_tokens: response.usage?.input_tokens || this.estimateInputTokens(originalRequest),
-        output_tokens: response.usage?.output_tokens || this.estimateOutputTokens(response.content)
+        output_tokens: response.usage?.output_tokens || this.estimateOutputTokens(content)
       }
     };
 
@@ -132,13 +133,13 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     const content = this.convertOpenAIMessageToContent(choice.message);
 
     return {
-      id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
-      type: 'message',
-      role: 'assistant',
-      model: originalRequest.model,
       content: content,
+      id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
+      model: originalRequest.model,
+      role: 'assistant',
       stop_reason: this.mapOpenAIFinishReason(choice.finish_reason),
       stop_sequence: undefined,
+      type: 'message',
       usage: {
         input_tokens: response.usage?.prompt_tokens || this.estimateInputTokens(originalRequest),
         output_tokens: response.usage?.completion_tokens || this.estimateOutputTokens(content)

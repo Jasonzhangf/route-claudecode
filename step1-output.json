@@ -1,0 +1,52 @@
+{
+  "request": {
+    "model": "claude-3-5-haiku-20241022",
+    "max_tokens": 100,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Could you help me read the file /tmp/test-single.json and tell me what's in it?"
+      }
+    ],
+    "tools": [
+      {
+        "name": "Read",
+        "description": "Reads a file from the local filesystem",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "file_path": {
+              "description": "The absolute path to the file to read",
+              "type": "string"
+            }
+          },
+          "required": [
+            "file_path"
+          ]
+        }
+      }
+    ]
+  },
+  "response": {
+    "id": "cw_1753538911884",
+    "type": "message",
+    "role": "assistant",
+    "model": "CLAUDE_3_5_HAIKU_20241022_V1_0",
+    "content": [],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 20,
+      "output_tokens": 0
+    }
+  },
+  "status": 200,
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "content-length": "207",
+    "date": "Sat, 26 Jul 2025 14:08:31 GMT",
+    "connection": "keep-alive",
+    "keep-alive": "timeout=72"
+  },
+  "timestamp": "2025-07-26T14:08:31.886Z"
+}

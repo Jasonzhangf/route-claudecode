@@ -1,0 +1,46 @@
+{
+  "timestamp": "2025-07-26T13:33:06.096Z",
+  "anthropicRequest": {
+    "model": "claude-3-5-haiku-20241022",
+    "messages": [
+      {
+        "role": "user",
+        "content": "hello test"
+      }
+    ],
+    "stream": false
+  },
+  "codewhispererRequest": {
+    "conversationState": {
+      "chatTriggerType": "MANUAL",
+      "conversationId": "conv_1753536783291_router_test",
+      "currentMessage": {
+        "userInputMessage": {
+          "content": "hello test",
+          "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+          "origin": "AI_EDITOR",
+          "userInputMessageContext": {}
+        }
+      },
+      "history": []
+    },
+    "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "date": "Sat, 26 Jul 2025 13:33:05 GMT",
+      "content-type": "application/json",
+      "transfer-encoding": "chunked",
+      "connection": "keep-alive",
+      "x-amzn-requestid": "9ccdedd7-cd16-4cad-b687-5bc948067ab5",
+      "x-amzn-codewhisperer-conversation-id": "",
+      "x-xss-protection": "1; mode=block",
+      "strict-transport-security": "max-age=47304000; includeSubDomains",
+      "x-frame-options": "DENY",
+      "cache-control": "no-cache",
+      "x-content-type-options": "nosniff"
+    },
+    "dataLength": 1587
+  }
+}

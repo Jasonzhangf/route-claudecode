@@ -137,6 +137,8 @@ export class OpenAICompatibleClient implements Provider {
 
       // Parse streaming response
       let buffer = '';
+      let lastFinishReason = 'end_turn'; // default
+      
       for await (const chunk of response.data) {
         buffer += chunk.toString();
         const lines = buffer.split('\n');
@@ -147,12 +149,25 @@ export class OpenAICompatibleClient implements Provider {
             const data = line.slice(6).trim();
             
             if (data === '[DONE]') {
+              // Send completion event with stop reason before returning
+              yield {
+                event: 'stream_complete',
+                data: {
+                  stop_reason: lastFinishReason
+                }
+              };
               return;
             }
 
             try {
               const parsed = JSON.parse(data);
               logger.trace(requestId, 'provider', `Raw streaming chunk`, { chunk: parsed });
+              
+              // Capture finish reason for final event
+              const choice = parsed.choices?.[0];
+              if (choice?.finish_reason) {
+                lastFinishReason = this.mapFinishReason(choice.finish_reason);
+              }
               
               const anthropicEvent = this.convertStreamChunkToAnthropic(parsed);
               if (anthropicEvent) {
@@ -167,6 +182,14 @@ export class OpenAICompatibleClient implements Provider {
           }
         }
       }
+      
+      // Send completion event if we didn't see [DONE]
+      yield {
+        event: 'stream_complete',
+        data: {
+          stop_reason: lastFinishReason
+        }
+      };
 
       logger.trace(requestId, 'provider', `Streaming request completed for ${this.name}`);
       
@@ -194,7 +217,7 @@ export class OpenAICompatibleClient implements Provider {
     const openaiRequest: any = {
       model: request.model,
       messages: this.convertMessages(request.messages),
-      max_tokens: request.max_tokens || 4096,
+      max_tokens: request.max_tokens || 131072, // 128K tokens default
       temperature: request.temperature,
       stream: false
     };

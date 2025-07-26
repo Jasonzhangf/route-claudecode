@@ -1,0 +1,72 @@
+{
+  "timestamp": "2025-07-26T13:22:06.712Z",
+  "step": "step3-transformation",
+  "input": {
+    "anthropicRequest": {
+      "model": "claude-3-5-haiku-20241022",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello test"
+        }
+      ],
+      "stream": false
+    },
+    "mockOpenAIResponse": {
+      "id": "chatcmpl-test123",
+      "object": "chat.completion",
+      "created": 1753536126711,
+      "model": "CLAUDE_3_5_HAIKU_20241022_V1_0",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Hello! This is a test response."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 8,
+        "total_tokens": 18
+      }
+    }
+  },
+  "output": {
+    "openaiRequest": {
+      "model": "claude-3-5-haiku-20241022",
+      "messages": [
+        {
+          "role": "user",
+          "content": "hello test"
+        }
+      ],
+      "max_tokens": 4096,
+      "stream": false
+    },
+    "anthropicResponse": {
+      "id": "chatcmpl-test123",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! This is a test response."
+        }
+      ],
+      "stop_reason": "end_turn",
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 8
+      }
+    }
+  },
+  "verification": {
+    "hasContent": true,
+    "hasTextContent": "Hello! This is a test response.",
+    "contentLength": 31
+  },
+  "success": "Hello! This is a test response."
+}

@@ -1,0 +1,242 @@
+{
+  "testCase": "with_system_message",
+  "description": "带系统消息的测试",
+  "type": "streaming",
+  "timestamp": "2025-07-26T14:40:44.719Z",
+  "duration": 4206,
+  "request": {
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 1000,
+    "system": [
+      {
+        "type": "text",
+        "text": "You are a helpful assistant that always responds in a friendly manner."
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me a joke."
+      }
+    ],
+    "stream": true
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sat, 26 Jul 2025 14:40:42 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "events": [
+      {
+        "event": "message_start",
+        "data": {
+          "message": {
+            "content": [],
+            "id": "msg_20250726224040",
+            "model": "claude-sonnet-4-20250514",
+            "role": "assistant",
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "input_tokens": 15,
+              "output_tokens": 1
+            }
+          },
+          "type": "message_start"
+        }
+      },
+      {
+        "event": "ping",
+        "data": {
+          "type": "ping"
+        }
+      },
+      {
+        "event": "content_block_start",
+        "data": {
+          "content_block": {
+            "text": "",
+            "type": "text"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": "Here's a fun",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " joke",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " for you:\n\nWhy don't scientists",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " trust atoms?\n\nBecause they make up",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " everything!",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " ",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": "😄\n\nI",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " hope that brought",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " a smile to your face! Do",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " you have a favorite type",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " of joke,",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " or would you like to hear another",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " one?",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_stop",
+        "data": {
+          "index": 0,
+          "type": "content_block_stop"
+        }
+      },
+      {
+        "event": "message_delta",
+        "data": {
+          "delta": {
+            "stop_reason": "end_turn",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "output_tokens": 24
+          }
+        }
+      },
+      {
+        "event": "message_stop",
+        "data": {
+          "type": "message_stop"
+        }
+      }
+    ]
+  }
+}

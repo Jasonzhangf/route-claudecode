@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-07-26T13:22:09.328Z",
+  "step": "step6-transformer-output",
+  "input": {
+    "transformerInput": {
+      "id": "chatcmpl-20250726203326525973985fpc3r4Bw",
+      "model": "gemini-2.5-flash",
+      "object": "chat.completion",
+      "created": 1753533210,
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Hello! Message received. This is a successful response to your API test."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 541,
+        "total_tokens": 551,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "text_tokens": 10,
+          "audio_tokens": 0,
+          "image_tokens": 0
+        },
+        "completion_tokens_details": {
+          "text_tokens": 0,
+          "audio_tokens": 0,
+          "reasoning_tokens": 526
+        },
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "input_tokens_details": null
+      }
+    }
+  },
+  "output": {
+    "transformedResponse": {
+      "id": "chatcmpl-20250726203326525973985fpc3r4Bw",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! Message received. This is a successful response to your API test."
+        }
+      ],
+      "stop_reason": "end_turn",
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 541
+      }
+    },
+    "usingMockTransformer": true
+  },
+  "analysis": {
+    "output": {
+      "hasId": true,
+      "hasType": true,
+      "hasRole": true,
+      "hasContent": true,
+      "hasStopReason": true,
+      "hasUsage": true,
+      "contentCount": 1
+    },
+    "content": [
+      {
+        "index": 0,
+        "type": "text",
+        "hasText": true,
+        "textLength": 72,
+        "hasToolUse": false,
+        "toolName": null
+      }
+    ],
+    "transformationSuccess": true
+  },
+  "success": true
+}

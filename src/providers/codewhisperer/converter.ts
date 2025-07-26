@@ -81,15 +81,14 @@ export class CodeWhispererConverter {
         messageCount: request.messages.length
       });
 
-      // Get provider-specific conversation ID from session manager
+      // Generate new conversation ID each time (like demo2 - more reliable for history handling)
+      const providerConversationId = uuidv4();
       const sessionId = request.metadata?.sessionId;
-      const providerConversationId = sessionId 
-        ? sessionManager.getProviderConversationId(sessionId, 'codewhisperer')
-        : uuidv4();
 
-      logger.debug('Using conversation ID for CodeWhisperer', {
+      logger.debug('Generated new conversation ID for CodeWhisperer (demo2 style)', {
         sessionId,
-        providerConversationId
+        providerConversationId,
+        reason: 'Each request gets fresh conversation ID with history in request body'
       }, requestId);
 
       const cwRequest: CodeWhispererRequest = {
@@ -149,7 +148,10 @@ export class CodeWhispererConverter {
    */
   private extractMessageContent(content: any): string {
     if (typeof content === 'string') {
-      return content || 'answer for user question';
+      if (content.length === 0) {
+        return 'answer for user qeustion';  // 完全模仿demo2的拼写错误
+      }
+      return content;
     }
 
     if (Array.isArray(content)) {
@@ -166,19 +168,29 @@ export class CodeWhispererConverter {
                 texts.push(typeof block.content === 'string' ? block.content : JSON.stringify(block.content));
               }
               break;
+            case 'tool_use':
+              // 处理工具调用 - 将其转换为文本描述
+              if (block.name) {
+                const toolCall = `Tool call: ${block.name}`;
+                if (block.input) {
+                  texts.push(`${toolCall}(${JSON.stringify(block.input)})`);
+                } else {
+                  texts.push(toolCall);
+                }
+              }
+              break;
           }
         }
       });
 
-      return texts.length > 0 ? texts.join('\n') : 'answer for user question';
+      if (texts.length === 0) {
+        return 'answer for user qeustion';  // 完全模仿demo2的拼写错误
+      }
+      return texts.join('\n');
     }
 
-    // Fallback for unknown content format
-    try {
-      return JSON.stringify(content);
-    } catch {
-      return 'answer for user question';
-    }
+    // Fallback for unknown content format - 完全模仿demo2
+    return 'answer for user qeustion';  // 完全模仿demo2的拼写错误
   }
 
   /**
@@ -197,15 +209,26 @@ export class CodeWhispererConverter {
   }
 
   /**
-   * Build conversation history for CodeWhisperer
+   * Build conversation history for CodeWhisperer (following demo2 logic exactly)
    */
   private buildHistory(cwRequest: CodeWhispererRequest, request: BaseRequest, requestId: string): void {
-    const history: any[] = [];
     const modelId = cwRequest.conversationState.currentMessage.userInputMessage.modelId;
-    const sessionId = request.metadata?.sessionId;
+    const hasSystemMessages = request.metadata?.system && Array.isArray(request.metadata.system) && request.metadata.system.length > 0;
+    const hasMultipleMessages = request.messages.length > 1;
 
-    // Add system messages as history
-    if (request.metadata?.system && Array.isArray(request.metadata.system)) {
+    logger.debug('History building analysis (demo2 style)', {
+      totalMessages: request.messages.length,
+      hasSystemMessages,
+      systemMessageCount: hasSystemMessages ? request.metadata?.system?.length : 0,
+      hasMultipleMessages,
+      shouldBuildHistory: hasSystemMessages || hasMultipleMessages
+    }, requestId);
+
+    // Following demo2 logic: only build history if there are system messages OR multiple regular messages
+    if (hasSystemMessages || hasMultipleMessages) {
+      const history: any[] = [];
+      
+      // First add system messages as history (like demo2)
       const assistantDefaultMsg: HistoryAssistantMessage = {
         assistantResponseMessage: {
           content: 'I will follow these instructions',
@@ -213,98 +236,96 @@ export class CodeWhispererConverter {
         }
       };
 
-      request.metadata.system.forEach((sysMsg: any) => {
-        const userMsg: HistoryUserMessage = {
-          userInputMessage: {
-            content: sysMsg.text || sysMsg,
-            modelId,
-            origin: 'AI_EDITOR'
-          }
-        };
-        history.push(userMsg);
-        history.push(assistantDefaultMsg);
-      });
-    }
-
-    // Get conversation history from session manager if available
-    if (sessionId) {
-      const sessionHistory = sessionManager.getConversationHistory(sessionId, 20); // Limit to last 20 messages
-      
-      logger.debug('Retrieved session history', {
-        sessionId,
-        sessionHistoryLength: sessionHistory.length
-      }, requestId);
-
-      // Convert session history to CodeWhisperer format (exclude the current message which is being processed)
-      for (let i = 0; i < sessionHistory.length - 1; i++) {
-        const historyMessage = sessionHistory[i];
+      if (hasSystemMessages) {
+        logger.debug('Processing system messages', {
+          systemMessageCount: request.metadata?.system?.length
+        }, requestId);
         
-        if (historyMessage.role === 'user') {
+        request.metadata!.system!.forEach((sysMsg: any, index: number) => {
+          const content = sysMsg.text || sysMsg;
           const userMsg: HistoryUserMessage = {
             userInputMessage: {
-              content: typeof historyMessage.content === 'string' 
-                ? historyMessage.content 
-                : this.extractMessageContent(historyMessage.content),
+              content,
               modelId,
               origin: 'AI_EDITOR'
             }
           };
           history.push(userMsg);
+          history.push(assistantDefaultMsg);
+          
+          logger.debug(`Added system message ${index}`, {
+            content: typeof content === 'string' ? content.substring(0, 50) : 'complex',
+            historyLength: history.length
+          }, requestId);
+        });
+      }
 
-          // Check if next message is assistant response
-          if (i + 1 < sessionHistory.length - 1 && sessionHistory[i + 1].role === 'assistant') {
-            const assistantMsg: HistoryAssistantMessage = {
-              assistantResponseMessage: {
-                content: typeof sessionHistory[i + 1].content === 'string'
-                  ? sessionHistory[i + 1].content as string
-                  : this.extractMessageContent(sessionHistory[i + 1].content),
-                toolUses: []
+      // Then process regular message history (like demo2)
+      if (hasMultipleMessages) {
+        logger.debug('Building history from request messages (demo2 style)', {
+          totalMessages: request.messages.length,
+          historyMessages: request.messages.length - 1
+        }, requestId);
+
+        for (let i = 0; i < request.messages.length - 1; i++) {
+          const message = request.messages[i];
+          
+          logger.debug(`Processing history message ${i}`, {
+            role: message.role,
+            contentPreview: typeof message.content === 'string' 
+              ? message.content.substring(0, 50) 
+              : 'complex_content'
+          }, requestId);
+          
+          if (message.role === 'user') {
+            const content = this.extractMessageContent(message.content);
+            const userMsg: HistoryUserMessage = {
+              userInputMessage: {
+                content,
+                modelId,
+                origin: 'AI_EDITOR'
               }
             };
-            history.push(assistantMsg);
-            i++; // Skip the processed assistant message
+            history.push(userMsg);
+            
+            logger.debug(`Added user history message ${i}`, {
+              contentLength: content.length,
+              historyLength: history.length
+            }, requestId);
+
+            // Check if next message is assistant response (like demo2)
+            if (i + 1 < request.messages.length - 1 && request.messages[i + 1].role === 'assistant') {
+              const assistantContent = this.extractMessageContent(request.messages[i + 1].content);
+              const assistantMsg: HistoryAssistantMessage = {
+                assistantResponseMessage: {
+                  content: assistantContent,
+                  toolUses: []
+                }
+              };
+              history.push(assistantMsg);
+              i++; // Skip the processed assistant message
+              
+              logger.debug(`Added assistant history message ${i}`, {
+                contentLength: assistantContent.length,
+                historyLength: history.length
+              }, requestId);
+            }
           }
         }
       }
+
+      cwRequest.conversationState.history = history;
+      
+      logger.debug('Built conversation history', { 
+        historyLength: history.length,
+        systemMessages: hasSystemMessages ? request.metadata?.system?.length : 0,
+        regularMessages: hasMultipleMessages ? request.messages.length - 1 : 0
+      }, requestId, 'converter');
     } else {
-      // Fallback: use current request messages (legacy behavior)
-      logger.debug('No session ID, using request messages for history', {}, requestId);
-      
-      for (let i = 0; i < request.messages.length - 1; i++) {
-        const message = request.messages[i];
-        
-        if (message.role === 'user') {
-          const userMsg: HistoryUserMessage = {
-            userInputMessage: {
-              content: this.extractMessageContent(message.content),
-              modelId,
-              origin: 'AI_EDITOR'
-            }
-          };
-          history.push(userMsg);
-
-          // Check if next message is assistant response
-          if (i + 1 < request.messages.length - 1 && request.messages[i + 1].role === 'assistant') {
-            const assistantMsg: HistoryAssistantMessage = {
-              assistantResponseMessage: {
-                content: this.extractMessageContent(request.messages[i + 1].content),
-                toolUses: []
-              }
-            };
-            history.push(assistantMsg);
-            i++; // Skip the processed assistant message
-          }
-        }
-      }
+      // No history needed for single message without system messages (like demo2)
+      cwRequest.conversationState.history = [];
+      logger.debug('No history needed - single message without system messages (demo2 style)', {}, requestId);
     }
-
-    cwRequest.conversationState.history = history;
-    
-    logger.debug('Built conversation history', { 
-      historyLength: history.length,
-      systemMessages: request.metadata?.system?.length || 0,
-      regularMessages: request.messages.length - 1
-    }, requestId, 'converter');
   }
 
   /**

@@ -1,0 +1,244 @@
+{
+  "testCase": "with_tools",
+  "description": "带工具的测试",
+  "type": "streaming",
+  "timestamp": "2025-07-26T14:40:50.184Z",
+  "duration": 3014,
+  "request": {
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 1000,
+    "tools": [
+      {
+        "name": "get_weather",
+        "description": "Get the current weather for a location",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city and state, e.g. San Francisco, CA"
+            }
+          },
+          "required": [
+            "location"
+          ]
+        }
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "What's the weather like in San Francisco?"
+      }
+    ],
+    "stream": true
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "access-control-allow-origin": "*",
+      "cache-control": "no-cache",
+      "connection": "keep-alive",
+      "content-type": "text/event-stream",
+      "date": "Sat, 26 Jul 2025 14:40:48 GMT",
+      "transfer-encoding": "chunked"
+    },
+    "events": [
+      {
+        "event": "message_start",
+        "data": {
+          "message": {
+            "content": [],
+            "id": "msg_20250726224047",
+            "model": "claude-sonnet-4-20250514",
+            "role": "assistant",
+            "stop_reason": null,
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "input_tokens": 41,
+              "output_tokens": 1
+            }
+          },
+          "type": "message_start"
+        }
+      },
+      {
+        "event": "ping",
+        "data": {
+          "type": "ping"
+        }
+      },
+      {
+        "event": "content_block_start",
+        "data": {
+          "content_block": {
+            "text": "",
+            "type": "text"
+          },
+          "index": 0,
+          "type": "content_block_start"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": "I'll check the current weather in San",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "text": " Francisco for you.",
+            "type": "text_delta"
+          },
+          "index": 0,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_start",
+        "data": {
+          "content_block": {
+            "id": "tooluse_Pn1xk2Y2S4mrGC8tH72BIA",
+            "input": {},
+            "name": "get_weather",
+            "type": "tool_use"
+          },
+          "index": 1,
+          "type": "content_block_start"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "id": "tooluse_Pn1xk2Y2S4mrGC8tH72BIA",
+            "name": "get_weather",
+            "partial_json": "{\"",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "id": "tooluse_Pn1xk2Y2S4mrGC8tH72BIA",
+            "name": "get_weather",
+            "partial_json": "locati",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "id": "tooluse_Pn1xk2Y2S4mrGC8tH72BIA",
+            "name": "get_weather",
+            "partial_json": "on\": \"S",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "id": "tooluse_Pn1xk2Y2S4mrGC8tH72BIA",
+            "name": "get_weather",
+            "partial_json": "an ",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "id": "tooluse_Pn1xk2Y2S4mrGC8tH72BIA",
+            "name": "get_weather",
+            "partial_json": "Franc",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_delta",
+        "data": {
+          "delta": {
+            "id": "tooluse_Pn1xk2Y2S4mrGC8tH72BIA",
+            "name": "get_weather",
+            "partial_json": "isco, CA\"}",
+            "type": "input_json_delta"
+          },
+          "index": 1,
+          "type": "content_block_delta"
+        }
+      },
+      {
+        "event": "content_block_stop",
+        "data": {
+          "index": 1,
+          "type": "content_block_stop"
+        }
+      },
+      {
+        "event": "message_delta",
+        "data": {
+          "delta": {
+            "stop_reason": "tool_use",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "output_tokens": 0
+          }
+        }
+      },
+      {
+        "event": "content_block_stop",
+        "data": {
+          "index": 0,
+          "type": "content_block_stop"
+        }
+      },
+      {
+        "event": "message_delta",
+        "data": {
+          "delta": {
+            "stop_reason": "end_turn",
+            "stop_sequence": null
+          },
+          "type": "message_delta",
+          "usage": {
+            "output_tokens": 24
+          }
+        }
+      },
+      {
+        "event": "message_stop",
+        "data": {
+          "type": "message_stop"
+        }
+      }
+    ]
+  }
+}

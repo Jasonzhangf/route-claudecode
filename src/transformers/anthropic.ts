@@ -24,7 +24,7 @@ export class AnthropicTransformer implements MessageTransformer {
     const unified: UnifiedRequest = {
       messages: this.convertMessagesToUnified(request.messages || []),
       model: request.model,
-      max_tokens: request.max_tokens || 4096,
+      max_tokens: request.max_tokens || 131072, // 128K tokens default
       temperature: request.temperature,
       stream: request.stream || false
     };
@@ -72,7 +72,7 @@ export class AnthropicTransformer implements MessageTransformer {
     const anthropicRequest: any = {
       model: request.model,
       messages: this.convertMessagesFromUnified(request.messages),
-      max_tokens: request.max_tokens || 4096,
+      max_tokens: request.max_tokens || 131072, // 128K tokens default
       temperature: request.temperature,
       stream: request.stream || false
     };

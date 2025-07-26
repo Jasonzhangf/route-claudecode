@@ -257,6 +257,9 @@ function convertSingleEvent(event: SSEEvent, requestId: string): ParsedEvent | n
       case 'assistantResponseEvent':
         return convertAssistantResponseEvent(Data, requestId);
       
+      case 'toolUseEvent':
+        return convertToolUseEvent(Data, requestId);
+      
       case 'codeGenerationEvent':
         return convertCodeGenerationEvent(Data, requestId);
       
@@ -324,6 +327,89 @@ function convertSingleEvent(event: SSEEvent, requestId: string): ParsedEvent | n
     }
   } catch (error) {
     logger.error('Failed to convert single event', error, requestId);
+    return null;
+  }
+}
+
+/**
+ * Convert tool use event (based on CodeWhisperer's toolUseEvent format)
+ */
+function convertToolUseEvent(data: any, requestId: string): ParsedEvent | null {
+  try {
+    logger.debug('Converting tool use event', {
+      dataType: typeof data,
+      dataKeys: data ? Object.keys(data) : [],
+      hasToolUseId: !!(data && data.toolUseId),
+      hasName: !!(data && data.name),
+      hasInput: !!(data && data.input),
+      hasStop: !!(data && data.stop)
+    }, requestId);
+
+    // Handle tool use events (similar to demo2's assistantResponseEvent with toolUseId)
+    if (data && data.toolUseId && data.name) {
+      // Tool use completion (stop: true)
+      if (data.stop) {
+        logger.debug('Tool use completion event', {
+          toolUseId: data.toolUseId,
+          name: data.name
+        }, requestId);
+        
+        return {
+          event: 'content_block_stop',
+          data: {
+            type: 'content_block_stop',
+            index: 1
+          }
+        };
+      }
+      
+      // Tool input streaming (partial JSON)
+      if (data.input && !data.stop) {
+        logger.debug('Tool input streaming event', {
+          toolUseId: data.toolUseId,
+          name: data.name,
+          inputLength: data.input.length
+        }, requestId);
+        
+        return {
+          event: 'content_block_delta',
+          data: {
+            type: 'content_block_delta',
+            index: 1,
+            delta: {
+              type: 'input_json_delta',
+              partial_json: data.input
+            }
+          }
+        };
+      }
+      
+      // Tool use start event (no input yet and no stop)
+      if (!data.input && !data.stop) {
+        logger.debug('Tool use start event', {
+          toolUseId: data.toolUseId,
+          name: data.name
+        }, requestId);
+        
+        return {
+          event: 'content_block_start',
+          data: {
+            type: 'content_block_start',
+            index: 1,
+            content_block: {
+              type: 'tool_use',
+              id: data.toolUseId,
+              name: data.name,
+              input: {}
+            }
+          }
+        };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    logger.debug('Failed to convert tool use event', error, requestId);
     return null;
   }
 }
@@ -536,18 +622,53 @@ export function parseNonStreamingResponse(rawResponse: Buffer, requestId: string
     const events = parseEvents(rawResponse);
     const contexts: any[] = [];
     
+    logger.debug('parseNonStreamingResponse: parsed events', {
+      eventCount: events.length,
+      eventTypes: events.map(e => e.Event)
+    }, requestId);
+    
+    // Convert SSE events to Anthropic format first
+    const anthropicEvents = convertEventsToAnthropic(events, requestId);
+    
+    logger.debug('parseNonStreamingResponse: converted to Anthropic format', {
+      anthropicEventCount: anthropicEvents.length,
+      eventTypes: anthropicEvents.map(e => e.event)
+    }, requestId);
+    
     let currentContext = '';
     let toolName = '';
     let toolUseId = '';
     let partialJsonStr = '';
+    let hasTextContent = false;
+    let hasToolContent = false;
     
-    for (const event of events) {
-      if (event.Data && typeof event.Data === 'object') {
-        const dataMap = event.Data;
+    for (const event of anthropicEvents) {
+      if (event.data && typeof event.data === 'object') {
+        const dataMap = event.data;
+        
+        logger.debug('Processing event in parseNonStreamingResponse', {
+          eventType: event.event,
+          dataType: dataMap.type,
+          dataKeys: Object.keys(dataMap),
+          eventIndex: anthropicEvents.indexOf(event)
+        }, requestId);
         
         switch (dataMap.type) {
           case 'content_block_start':
             currentContext = '';
+            // For tool use blocks, capture the tool information
+            if (dataMap.content_block && dataMap.content_block.type === 'tool_use') {
+              toolUseId = dataMap.content_block.id || '';
+              toolName = dataMap.content_block.name || '';
+              partialJsonStr = ''; // Reset partial JSON for new tool
+              hasToolContent = true;
+              
+              logger.debug('Captured tool info from content_block_start', {
+                toolUseId,
+                toolName,
+                contentBlock: dataMap.content_block
+              }, 'parseNonStreamingResponse');
+            }
             break;
           
           case 'content_block_delta':
@@ -556,6 +677,7 @@ export function parseNonStreamingResponse(rawResponse: Buffer, requestId: string
                 case 'text_delta':
                   if (dataMap.delta.text) {
                     currentContext += dataMap.delta.text;
+                    hasTextContent = true;
                   }
                   break;
                 
@@ -564,6 +686,7 @@ export function parseNonStreamingResponse(rawResponse: Buffer, requestId: string
                   toolName = dataMap.delta.name || toolName;
                   if (dataMap.delta.partial_json) {
                     partialJsonStr += dataMap.delta.partial_json;
+                    hasToolContent = true;
                   }
                   break;
               }
@@ -588,16 +711,50 @@ export function parseNonStreamingResponse(rawResponse: Buffer, requestId: string
                 name: toolName,
                 input: toolInput
               });
+              hasToolContent = false; // Reset flag
             } else if (index === 0) {
               // Text block
               contexts.push({
                 type: 'text',
                 text: currentContext
               });
+              hasTextContent = false; // Reset flag
             }
             break;
         }
       }
+    }
+    
+    // 修复：如果有文本内容但没有content_block_stop事件，直接添加文本内容
+    if (hasTextContent && currentContext.trim()) {
+      contexts.push({
+        type: 'text',
+        text: currentContext
+      });
+      logger.debug('Added text content without content_block_stop event', {
+        textLength: currentContext.length
+      }, requestId);
+    }
+    
+    // 修复：如果有工具内容但没有content_block_stop事件，直接添加工具内容
+    if (hasToolContent && toolUseId && toolName) {
+      let toolInput: any = {};
+      try {
+        toolInput = JSON.parse(partialJsonStr);
+      } catch (error) {
+        logger.warn('Failed to parse tool input JSON without content_block_stop', error, requestId);
+      }
+      
+      contexts.push({
+        type: 'tool_use',
+        id: toolUseId,
+        name: toolName,
+        input: toolInput
+      });
+      logger.debug('Added tool content without content_block_stop event', {
+        toolName,
+        toolUseId
+      }, requestId);
     }
     
     return contexts;

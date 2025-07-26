@@ -1,0 +1,30 @@
+{
+  "conversationState": {
+    "chatTriggerType": "MANUAL",
+    "conversationId": "test-conversation-1753542270892",
+    "currentMessage": {
+      "userInputMessage": {
+        "content": "What about Germany?",
+        "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+        "origin": "AI_EDITOR",
+        "userInputMessageContext": {}
+      }
+    },
+    "history": [
+      {
+        "userInputMessage": {
+          "content": "Hello, what's the capital of France?",
+          "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+          "origin": "AI_EDITOR"
+        }
+      },
+      {
+        "assistantResponseMessage": {
+          "content": "The capital of France is Paris.",
+          "toolUses": []
+        }
+      }
+    ]
+  },
+  "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+}

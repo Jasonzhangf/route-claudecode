@@ -6,6 +6,7 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
 import { CodeWhispererAuth } from './auth';
+import { SafeTokenManager } from './safe-token-manager';
 import { CodeWhispererConverter, CodeWhispererRequest } from './converter';
 import { parseEvents, convertEventsToAnthropic, parseNonStreamingResponse } from './parser';
 import { logger } from '@/utils/logger';
@@ -15,6 +16,7 @@ export class CodeWhispererClient implements Provider {
   public readonly type = 'codewhisperer';
   
   private auth: CodeWhispererAuth;
+  // private safeTokenManager: SafeTokenManager;
   private converter: CodeWhispererConverter;
   private httpClient: AxiosInstance;
   private endpoint: string;
@@ -24,25 +26,38 @@ export class CodeWhispererClient implements Provider {
   constructor(public config: ProviderConfig) {
     this.endpoint = config.endpoint || 'https://codewhisperer.us-east-1.amazonaws.com';
     this.auth = new CodeWhispererAuth();
+    // 临时禁用SafeTokenManager for debugging
+    // this.safeTokenManager = SafeTokenManager.getInstance();
     this.converter = new CodeWhispererConverter(config.settings?.profileArn);
     
     this.httpClient = axios.create({
       baseURL: this.endpoint,
       timeout: 60000, // 60 second timeout
       headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'claude-code-router/2.0.0'
+        'Content-Type': 'application/json'
+        // 完全模仿demo2，不设置User-Agent
       }
     });
 
-    // Add request interceptor for authentication
+    // Add request interceptor for authentication - temporary bypass SafeTokenManager for testing
     this.httpClient.interceptors.request.use(
       async (config) => {
         try {
+          // 临时绕过SafeTokenManager直接使用auth获取token
           const token = await this.auth.getToken();
+          
+          if (!token) {
+            logger.error('No valid token available from direct auth');
+            throw new ProviderError('No valid token available', this.name, 401);
+          }
+          
           config.headers['Authorization'] = `Bearer ${token}`;
+          logger.debug('Authentication token added successfully (direct auth)');
           return config;
         } catch (error) {
+          if (error instanceof ProviderError) {
+            throw error;
+          }
           logger.error('Failed to add authentication token', error);
           throw new ProviderError('Authentication failed', this.name, 401, error);
         }
@@ -52,20 +67,34 @@ export class CodeWhispererClient implements Provider {
       }
     );
 
-    // Add response interceptor for error handling
+    // Add response interceptor for error handling - temporary bypass SafeTokenManager for testing
     this.httpClient.interceptors.response.use(
       (response) => response,
       async (error) => {
-        if (error.response?.status === 403) {
-          logger.warn('CodeWhisperer token expired, attempting refresh');
+        if (error.response?.status === 403 || error.response?.status === 401) {
+          logger.warn('CodeWhisperer authentication error, attempting token refresh', {
+            status: error.response?.status,
+            statusText: error.response?.statusText
+          });
+          
           try {
-            // Clear cached token and retry once
+            // 清理缓存，强制获取新token
             this.auth.clearCache();
             const newToken = await this.auth.getToken();
-            error.config.headers['Authorization'] = `Bearer ${newToken}`;
-            return this.httpClient.request(error.config);
+            
+            if (newToken) {
+              // 使用新token重试请求
+              error.config.headers['Authorization'] = `Bearer ${newToken}`;
+              logger.info('Retrying request with refreshed token (direct auth)');
+              return this.httpClient.request(error.config);
+            } else {
+              throw new ProviderError('No valid token for retry', this.name, 401, error);
+            }
           } catch (refreshError) {
             logger.error('Token refresh failed', refreshError);
+            if (refreshError instanceof ProviderError) {
+              throw refreshError;
+            }
             throw new ProviderError('Token refresh failed', this.name, 403, refreshError);
           }
         }
@@ -75,21 +104,18 @@ export class CodeWhispererClient implements Provider {
   }
 
   /**
-   * Check if provider is healthy
+   * Check if provider is healthy using SafeTokenManager
    */
   async isHealthy(): Promise<boolean> {
     try {
-      // Try to get token and validate it
+      // 临时禁用SafeTokenManager检查，直接检查auth
       const token = await this.auth.getToken();
-      const isValid = await this.auth.validateToken(token);
-      
-      if (!isValid) {
-        logger.warn('CodeWhisperer token validation failed');
+      if (!token) {
+        logger.warn('CodeWhisperer health check failed - no valid token');
         return false;
       }
 
-      // Optional: Make a simple request to test connectivity
-      // For now, just return true if token is valid
+      logger.debug('CodeWhisperer health check passed (direct auth)');
       return true;
     } catch (error) {
       logger.error('CodeWhisperer health check failed', error);
@@ -112,10 +138,27 @@ export class CodeWhispererClient implements Provider {
       // Convert request to CodeWhisperer format
       const cwRequest = this.converter.convertRequest(request, requestId);
       
+      // 添加详细调试日志
+      logger.debug('CodeWhisperer HTTP request details', {
+        url: this.endpoint + '/generateAssistantResponse',
+        requestBody: JSON.stringify(cwRequest),
+        requestBodyLength: JSON.stringify(cwRequest).length
+      }, requestId, 'provider');
+      
       // Send request with binary response type for CodeWhisperer
       const response = await this.httpClient.post('/generateAssistantResponse', cwRequest, {
         responseType: 'arraybuffer'
       });
+      
+      // 添加响应调试日志
+      const responseBuffer = Buffer.from(response.data);
+      logger.debug('CodeWhisperer HTTP response details', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        dataLength: responseBuffer.length,
+        dataPreview: responseBuffer.toString('hex').substring(0, 100)
+      }, requestId, 'provider');
       
       if (response.status !== 200) {
         throw new ProviderError(

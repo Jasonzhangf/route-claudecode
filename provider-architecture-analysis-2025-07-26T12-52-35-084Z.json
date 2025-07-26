@@ -1,0 +1,369 @@
+{
+  "timestamp": "2025-07-26T12:52:35.084Z",
+  "reportType": "Provider架构差异分析",
+  "summary": {
+    "totalProviders": 2,
+    "architecturalDiversity": "high",
+    "complexityDistribution": {
+      "high": 2
+    },
+    "authenticationMethods": [
+      "api-key",
+      "aws-sso"
+    ],
+    "streamingSupportLevel": "mixed"
+  },
+  "providerAnalysis": {
+    "shuaihong-openai": {
+      "name": "shuaihong-openai",
+      "type": "openai",
+      "description": "OpenAI格式兼容的第三方提供商",
+      "architecture": {
+        "authentication": {
+          "type": "api-key",
+          "methods": [
+            "bearer-token",
+            "authorization-header",
+            "api-key"
+          ],
+          "complexity": "high"
+        },
+        "requestFormat": {
+          "nativeFormat": "openai",
+          "requiresTransformation": true,
+          "transformationComplexity": "medium"
+        },
+        "responseFormat": {
+          "nativeFormat": "json",
+          "requiresParsing": false,
+          "outputFormat": "anthropic"
+        },
+        "streamingSupport": {
+          "supported": true,
+          "complexity": 11,
+          "sseHandling": true,
+          "asyncIterable": true
+        },
+        "errorHandling": {
+          "patterns": [
+            "try-catch",
+            "custom-provider-error",
+            "explicit-error-throwing"
+          ],
+          "robustness": "high",
+          "customErrors": true
+        },
+        "performanceCharacteristics": {
+          "codeSize": 341,
+          "complexity": "high",
+          "dependencies": 3,
+          "estimatedLatency": "medium"
+        },
+        "configurationRequirements": {
+          "optionsCount": 0,
+          "complexity": "low",
+          "setupDifficulty": "medium"
+        }
+      },
+      "codeAnalysis": {
+        "linesOfCode": 341,
+        "classesFound": [
+          "EnhancedOpenAIClient"
+        ],
+        "methodsFound": [
+          "constructor",
+          "if",
+          "if",
+          "isHealthy",
+          "sendRequest",
+          "if",
+          "catch",
+          "if",
+          "sendStreamRequest",
+          "if",
+          "ReadableStream",
+          "await",
+          "for",
+          "if",
+          "catch",
+          "await",
+          "if",
+          "if",
+          "catch",
+          "if",
+          "catch",
+          "if",
+          "convertToOpenAI",
+          "convertFromOpenAI",
+          "determineEventType",
+          "switch",
+          "createEnhancedOpenAIClient"
+        ],
+        "importsFound": [
+          "axios",
+          "@/types",
+          "@/utils/logger"
+        ],
+        "errorHandlingPatterns": [
+          "try-catch",
+          "custom-provider-error",
+          "explicit-error-throwing"
+        ],
+        "streamingSupport": {
+          "hasStreamMethod": true,
+          "hasSSEHandling": true,
+          "hasAsyncIterable": true,
+          "streamingComplexity": 11
+        },
+        "authenticationMethods": [
+          "bearer-token",
+          "authorization-header",
+          "api-key"
+        ],
+        "configurationOptions": []
+      },
+      "timestamp": "2025-07-26T12:52:35.082Z"
+    },
+    "codewhisperer-primary": {
+      "name": "codewhisperer-primary",
+      "type": "codewhisperer",
+      "description": "AWS CodeWhisperer官方提供商",
+      "architecture": {
+        "authentication": {
+          "type": "aws-sso",
+          "methods": [
+            "bearer-token",
+            "authorization-header",
+            "aws-profile-arn"
+          ],
+          "complexity": "high"
+        },
+        "requestFormat": {
+          "nativeFormat": "anthropic",
+          "requiresTransformation": true,
+          "transformationComplexity": "high"
+        },
+        "responseFormat": {
+          "nativeFormat": "binary-stream",
+          "requiresParsing": true,
+          "outputFormat": "anthropic"
+        },
+        "streamingSupport": {
+          "supported": true,
+          "complexity": 5,
+          "sseHandling": true,
+          "asyncIterable": true
+        },
+        "errorHandling": {
+          "patterns": [
+            "try-catch",
+            "custom-provider-error",
+            "explicit-error-throwing"
+          ],
+          "robustness": "high",
+          "customErrors": true
+        },
+        "performanceCharacteristics": {
+          "codeSize": 393,
+          "complexity": "high",
+          "dependencies": 6,
+          "estimatedLatency": "high"
+        },
+        "configurationRequirements": {
+          "optionsCount": 0,
+          "complexity": "high",
+          "setupDifficulty": "high"
+        }
+      },
+      "codeAnalysis": {
+        "linesOfCode": 393,
+        "classesFound": [
+          "CodeWhispererClient"
+        ],
+        "methodsFound": [
+          "constructor",
+          "catch",
+          "if",
+          "catch",
+          "isHealthy",
+          "if",
+          "catch",
+          "sendRequest",
+          "if",
+          "catch",
+          "if",
+          "sendStreamRequest",
+          "if",
+          "await",
+          "for",
+          "catch",
+          "if",
+          "estimateInputTokens",
+          "estimateOutputTokens",
+          "forEach",
+          "if",
+          "updateConfig",
+          "if",
+          "getRequestSummary",
+          "isRetryableError",
+          "if",
+          "if",
+          "waitForRetry",
+          "for",
+          "if",
+          "catch"
+        ],
+        "importsFound": [
+          "axios",
+          "@/types",
+          "./auth",
+          "./converter",
+          "./parser",
+          "@/utils/logger"
+        ],
+        "errorHandlingPatterns": [
+          "try-catch",
+          "custom-provider-error",
+          "explicit-error-throwing"
+        ],
+        "streamingSupport": {
+          "hasStreamMethod": true,
+          "hasSSEHandling": true,
+          "hasAsyncIterable": true,
+          "streamingComplexity": 5
+        },
+        "authenticationMethods": [
+          "bearer-token",
+          "authorization-header",
+          "aws-profile-arn"
+        ],
+        "configurationOptions": []
+      },
+      "timestamp": "2025-07-26T12:52:35.083Z"
+    }
+  },
+  "architectureComparison": {
+    "timestamp": "2025-07-26T12:52:35.083Z",
+    "providers": [
+      "shuaihong-openai",
+      "codewhisperer-primary"
+    ],
+    "differences": {
+      "authentication": {
+        "shuaihong-openai": {
+          "type": "api-key",
+          "methods": [
+            "bearer-token",
+            "authorization-header",
+            "api-key"
+          ],
+          "complexity": "high"
+        },
+        "codewhisperer-primary": {
+          "type": "aws-sso",
+          "methods": [
+            "bearer-token",
+            "authorization-header",
+            "aws-profile-arn"
+          ],
+          "complexity": "high"
+        },
+        "significant": true
+      },
+      "requestFormat": {
+        "shuaihong-openai": {
+          "nativeFormat": "openai",
+          "requiresTransformation": true,
+          "transformationComplexity": "medium"
+        },
+        "codewhisperer-primary": {
+          "nativeFormat": "anthropic",
+          "requiresTransformation": true,
+          "transformationComplexity": "high"
+        },
+        "significant": true
+      },
+      "streamingSupport": {
+        "shuaihong-openai": {
+          "supported": true,
+          "complexity": 11,
+          "sseHandling": true,
+          "asyncIterable": true
+        },
+        "codewhisperer-primary": {
+          "supported": true,
+          "complexity": 5,
+          "sseHandling": true,
+          "asyncIterable": true
+        },
+        "significant": true
+      },
+      "performanceCharacteristics": {
+        "shuaihong-openai": {
+          "codeSize": 341,
+          "complexity": "high",
+          "dependencies": 3,
+          "estimatedLatency": "medium"
+        },
+        "codewhisperer-primary": {
+          "codeSize": 393,
+          "complexity": "high",
+          "dependencies": 6,
+          "estimatedLatency": "high"
+        },
+        "significant": false
+      }
+    },
+    "similarities": {
+      "outputFormat": true,
+      "errorHandling": true
+    },
+    "recommendations": [
+      {
+        "category": "authentication",
+        "priority": "high",
+        "description": "两个provider使用不同的认证机制",
+        "suggestion": "考虑统一认证接口，简化配置管理",
+        "impact": "reduces configuration complexity"
+      },
+      {
+        "category": "streaming",
+        "priority": "medium",
+        "description": "流式处理复杂度差异显著",
+        "suggestion": "优化流式处理管道，统一SSE格式输出",
+        "impact": "improves streaming consistency"
+      }
+    ]
+  },
+  "overallRecommendations": [
+    {
+      "category": "architecture-unification",
+      "priority": "high",
+      "description": "统一provider接口设计",
+      "details": [
+        "标准化认证流程",
+        "统一错误处理机制",
+        "一致的配置格式",
+        "标准化的响应转换"
+      ],
+      "expectedBenefit": "降低维护成本，提高系统一致性"
+    },
+    {
+      "category": "performance-optimization",
+      "priority": "medium",
+      "description": "优化性能瓶颈",
+      "details": [
+        "实施连接池管理",
+        "优化流式处理管道",
+        "改进错误恢复机制",
+        "添加性能监控"
+      ],
+      "expectedBenefit": "提高响应速度，降低资源消耗"
+    }
+  ],
+  "metadata": {
+    "analyzedProviders": 2,
+    "analysisAspects": 8,
+    "generatedAt": "2025-07-26T12:52:35.084Z"
+  }
+}

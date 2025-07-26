@@ -1,0 +1,64 @@
+{
+  "testCase": "with_tools",
+  "description": "带工具的测试",
+  "type": "non-streaming",
+  "timestamp": "2025-07-26T14:40:47.169Z",
+  "duration": 1446,
+  "request": {
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 1000,
+    "tools": [
+      {
+        "name": "get_weather",
+        "description": "Get the current weather for a location",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city and state, e.g. San Francisco, CA"
+            }
+          },
+          "required": [
+            "location"
+          ]
+        }
+      }
+    ],
+    "messages": [
+      {
+        "role": "user",
+        "content": "What's the weather like in San Francisco?"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "date": "Sat, 26 Jul 2025 14:40:47 GMT",
+      "content-length": "297"
+    },
+    "data": {
+      "content": [
+        {
+          "id": "tooluse_PfuPKVgMQ_awL-JH-tLlgg",
+          "input": {
+            "location": "San Francisco, CA"
+          },
+          "name": "get_weather",
+          "type": "tool_use"
+        }
+      ],
+      "model": "claude-sonnet-4-20250514",
+      "role": "assistant",
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+        "input_tokens": 41,
+        "output_tokens": 0
+      }
+    }
+  }
+}

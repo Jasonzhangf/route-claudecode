@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-07-26T06:03:50.094Z",
+  "testType": "client-fingerprint-session",
+  "clientType": "claude-code-cli-simulation",
+  "totalTurns": 3,
+  "contextPreservation": false,
+  "functionalityWorking": false,
+  "turns": [
+    {
+      "turn": 1,
+      "message": "Hello, I'm testing multi-turn conversation without session headers. Please remember that my name is Alice.",
+      "response": "",
+      "responseLength": 0,
+      "expectedBehavior": "应该创建新会话并记住Alice这个名字"
+    },
+    {
+      "turn": 2,
+      "message": "What is my name that I just told you?",
+      "response": "",
+      "responseLength": 0,
+      "expectedBehavior": "应该能够识别同一会话并回答Alice"
+    },
+    {
+      "turn": 3,
+      "message": "Can you create a simple greeting for me using my name?",
+      "response": "",
+      "responseLength": 0,
+      "expectedBehavior": "应该继续使用之前会话中的Alice这个名字"
+    }
+  ],
+  "analysis": {
+    "mentionsAliceInTurn2": false,
+    "mentionsAliceInTurn3": false,
+    "hasGreetingInTurn3": false
+  }
+}

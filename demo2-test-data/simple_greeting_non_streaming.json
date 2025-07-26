@@ -1,0 +1,37 @@
+{
+  "testCase": "simple_greeting",
+  "description": "简单问候测试",
+  "type": "non-streaming",
+  "timestamp": "2025-07-26T14:40:31.436Z",
+  "duration": 2040,
+  "request": {
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 1000,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, can you help me with a simple task?"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "date": "Sat, 26 Jul 2025 14:40:31 GMT",
+      "content-length": "179"
+    },
+    "data": {
+      "content": [],
+      "model": "claude-sonnet-4-20250514",
+      "role": "assistant",
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+        "input_tokens": 42,
+        "output_tokens": 85
+      }
+    }
+  }
+}
