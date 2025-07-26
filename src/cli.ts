@@ -507,10 +507,30 @@ program
         console.error(chalk.red('💥 Uncaught exception:'), error.message);
         shutdown('uncaughtException').catch(() => process.exit(1));
       });
-      
-      process.on('unhandledRejection', (reason) => {
-        console.error(chalk.red('💥 Unhandled rejection:'), reason);
+
+      // Handle unhandled promise rejections
+      process.on('unhandledRejection', (reason, promise) => {
+        console.error(chalk.red('💥 Unhandled promise rejection:'), reason);
         shutdown('unhandledRejection').catch(() => process.exit(1));
+      });
+
+      // Handle stdin errors more gracefully
+      process.stdin.on('error', (error) => {
+        console.error(chalk.red('💥 Stdin error:'), error.message);
+        // Don't crash on stdin errors, just log them
+      });
+
+      // Properly handle stdio when claude process terminates
+      claude.stdout?.on('error', (error: Error) => {
+        console.error(chalk.red('Claude stdout error:'), error.message);
+      });
+
+      claude.stderr?.on('error', (error: Error) => {
+        console.error(chalk.red('Claude stderr error:'), error.message);
+      });
+
+      claude.stdin?.on('error', (error: Error) => {
+        console.error(chalk.red('Claude stdin error:'), error.message);
       });
 
     } catch (error) {

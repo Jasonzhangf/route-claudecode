@@ -9,7 +9,12 @@ export interface BaseRequest {
   stream?: boolean;
   max_tokens?: number;
   temperature?: number;
-  metadata?: Record<string, any>;
+  metadata?: {
+    requestId: string;
+    sessionId?: string;
+    conversationId?: string;
+    [key: string]: any;
+  };
 }
 
 export interface AnthropicRequest extends BaseRequest {

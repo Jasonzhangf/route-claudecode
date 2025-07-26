@@ -51,6 +51,7 @@ export class AnthropicInputProcessor implements InputProcessor {
         max_tokens: anthropicRequest.max_tokens || 4096,
         temperature: anthropicRequest.temperature,
         metadata: {
+          requestId: '',  // Will be set by server
           ...anthropicRequest.metadata,
           originalFormat: 'anthropic',
           system: anthropicRequest.system,

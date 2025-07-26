@@ -11,6 +11,7 @@ import { CodeWhispererClient } from './providers/codewhisperer';
 import { OpenAICompatibleClient } from './providers/openai';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider } from './types';
 import { logger } from './utils/logger';
+import { sessionManager } from './session/manager';
 import { v4 as uuidv4 } from 'uuid';
 
 export class RouterServer {
@@ -157,6 +158,16 @@ export class RouterServer {
     try {
       logger.info('Processing messages request', {}, requestId, 'server');
 
+      // Step 0: Session Management
+      const sessionId = sessionManager.extractSessionId(request.headers as Record<string, string>);
+      const session = sessionManager.getOrCreateSession(sessionId);
+      
+      logger.debug('Session information', { 
+        sessionId, 
+        conversationId: session.conversationId,
+        messageHistory: session.messageHistory.length 
+      }, requestId, 'server');
+
       // Step 1: Process input
       if (!this.inputProcessor.canProcess(request.body)) {
         return reply.code(400).send({
@@ -168,7 +179,67 @@ export class RouterServer {
       }
 
       const baseRequest = await this.inputProcessor.process(request.body);
-      baseRequest.metadata = { ...baseRequest.metadata, requestId };
+      
+      // Add session context to request metadata
+      baseRequest.metadata = { 
+        ...baseRequest.metadata, 
+        requestId,
+        sessionId,
+        conversationId: session.conversationId
+      };
+
+      // 处理工具和系统消息的持久化
+      if (baseRequest.metadata?.tools && Array.isArray(baseRequest.metadata.tools)) {
+        sessionManager.updateSessionTools(sessionId, baseRequest.metadata.tools);
+        logger.debug('Updated session tools', { 
+          sessionId, 
+          toolCount: baseRequest.metadata.tools.length 
+        }, requestId);
+      } else {
+        // 如果当前请求没有工具但会话中有工具，恢复工具定义
+        const sessionTools = sessionManager.getSessionTools(sessionId);
+        if (sessionTools.length > 0) {
+          baseRequest.metadata = { 
+            ...baseRequest.metadata, 
+            tools: sessionTools 
+          };
+          logger.debug('Restored session tools', { 
+            sessionId, 
+            toolCount: sessionTools.length 
+          }, requestId);
+        }
+      }
+
+      if (baseRequest.metadata?.system && Array.isArray(baseRequest.metadata.system)) {
+        sessionManager.updateSessionSystem(sessionId, baseRequest.metadata.system);
+        logger.debug('Updated session system', { 
+          sessionId, 
+          systemCount: baseRequest.metadata.system.length 
+        }, requestId);
+      } else {
+        // 如果当前请求没有系统消息但会话中有，恢复系统消息
+        const sessionSystem = sessionManager.getSessionSystem(sessionId);
+        if (sessionSystem.length > 0) {
+          baseRequest.metadata = { 
+            ...baseRequest.metadata, 
+            system: sessionSystem 
+          };
+          logger.debug('Restored session system', { 
+            sessionId, 
+            systemCount: sessionSystem.length 
+          }, requestId);
+        }
+      }
+
+      // Store user message in session
+      const currentMessage = baseRequest.messages[baseRequest.messages.length - 1];
+      if (currentMessage && currentMessage.role === 'user') {
+        sessionManager.addMessage(sessionId, {
+          role: 'user',
+          content: currentMessage.content,
+          timestamp: new Date()
+        });
+      }
 
       // Step 2: Route request
       const providerId = await this.routingEngine.route(baseRequest, requestId);
@@ -189,9 +260,27 @@ export class RouterServer {
       // Step 4: Process output
       const finalResponse = await this.outputProcessor.process(providerResponse, baseRequest);
 
+      // Store assistant response in session
+      if (finalResponse && finalResponse.content) {
+        const assistantContent = Array.isArray(finalResponse.content) 
+          ? finalResponse.content.map(c => c.text || c).join('')
+          : finalResponse.content;
+        
+        sessionManager.addMessage(sessionId, {
+          role: 'assistant',
+          content: assistantContent,
+          timestamp: new Date(),
+          metadata: {
+            provider: providerId,
+            model: baseRequest.model
+          }
+        });
+      }
+
       logger.info('Request processed successfully', {
         provider: providerId,
-        responseType: finalResponse.type || 'message'
+        responseType: finalResponse.type || 'message',
+        sessionId
       }, requestId, 'server');
 
       return finalResponse;

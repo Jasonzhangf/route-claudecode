@@ -5,6 +5,7 @@
 
 import { BaseRequest, BaseResponse } from '@/types';
 import { logger } from '@/utils/logger';
+import { sessionManager } from '@/session/manager';
 import { v4 as uuidv4 } from 'uuid';
 
 // CodeWhisperer API types (from demo2)
@@ -80,10 +81,21 @@ export class CodeWhispererConverter {
         messageCount: request.messages.length
       });
 
+      // Get provider-specific conversation ID from session manager
+      const sessionId = request.metadata?.sessionId;
+      const providerConversationId = sessionId 
+        ? sessionManager.getProviderConversationId(sessionId, 'codewhisperer')
+        : uuidv4();
+
+      logger.debug('Using conversation ID for CodeWhisperer', {
+        sessionId,
+        providerConversationId
+      }, requestId);
+
       const cwRequest: CodeWhispererRequest = {
         conversationState: {
           chatTriggerType: 'MANUAL',
-          conversationId: uuidv4(),
+          conversationId: providerConversationId,
           currentMessage: {
             userInputMessage: {
               content: this.extractMessageContent(request.messages[request.messages.length - 1].content),
@@ -190,6 +202,7 @@ export class CodeWhispererConverter {
   private buildHistory(cwRequest: CodeWhispererRequest, request: BaseRequest, requestId: string): void {
     const history: any[] = [];
     const modelId = cwRequest.conversationState.currentMessage.userInputMessage.modelId;
+    const sessionId = request.metadata?.sessionId;
 
     // Add system messages as history
     if (request.metadata?.system && Array.isArray(request.metadata.system)) {
@@ -213,30 +226,74 @@ export class CodeWhispererConverter {
       });
     }
 
-    // Add regular message history (exclude the last message as it's the current message)
-    for (let i = 0; i < request.messages.length - 1; i++) {
-      const message = request.messages[i];
+    // Get conversation history from session manager if available
+    if (sessionId) {
+      const sessionHistory = sessionManager.getConversationHistory(sessionId, 20); // Limit to last 20 messages
       
-      if (message.role === 'user') {
-        const userMsg: HistoryUserMessage = {
-          userInputMessage: {
-            content: this.extractMessageContent(message.content),
-            modelId,
-            origin: 'AI_EDITOR'
-          }
-        };
-        history.push(userMsg);
+      logger.debug('Retrieved session history', {
+        sessionId,
+        sessionHistoryLength: sessionHistory.length
+      }, requestId);
 
-        // Check if next message is assistant response
-        if (i + 1 < request.messages.length - 1 && request.messages[i + 1].role === 'assistant') {
-          const assistantMsg: HistoryAssistantMessage = {
-            assistantResponseMessage: {
-              content: this.extractMessageContent(request.messages[i + 1].content),
-              toolUses: []
+      // Convert session history to CodeWhisperer format (exclude the current message which is being processed)
+      for (let i = 0; i < sessionHistory.length - 1; i++) {
+        const historyMessage = sessionHistory[i];
+        
+        if (historyMessage.role === 'user') {
+          const userMsg: HistoryUserMessage = {
+            userInputMessage: {
+              content: typeof historyMessage.content === 'string' 
+                ? historyMessage.content 
+                : this.extractMessageContent(historyMessage.content),
+              modelId,
+              origin: 'AI_EDITOR'
             }
           };
-          history.push(assistantMsg);
-          i++; // Skip the processed assistant message
+          history.push(userMsg);
+
+          // Check if next message is assistant response
+          if (i + 1 < sessionHistory.length - 1 && sessionHistory[i + 1].role === 'assistant') {
+            const assistantMsg: HistoryAssistantMessage = {
+              assistantResponseMessage: {
+                content: typeof sessionHistory[i + 1].content === 'string'
+                  ? sessionHistory[i + 1].content as string
+                  : this.extractMessageContent(sessionHistory[i + 1].content),
+                toolUses: []
+              }
+            };
+            history.push(assistantMsg);
+            i++; // Skip the processed assistant message
+          }
+        }
+      }
+    } else {
+      // Fallback: use current request messages (legacy behavior)
+      logger.debug('No session ID, using request messages for history', {}, requestId);
+      
+      for (let i = 0; i < request.messages.length - 1; i++) {
+        const message = request.messages[i];
+        
+        if (message.role === 'user') {
+          const userMsg: HistoryUserMessage = {
+            userInputMessage: {
+              content: this.extractMessageContent(message.content),
+              modelId,
+              origin: 'AI_EDITOR'
+            }
+          };
+          history.push(userMsg);
+
+          // Check if next message is assistant response
+          if (i + 1 < request.messages.length - 1 && request.messages[i + 1].role === 'assistant') {
+            const assistantMsg: HistoryAssistantMessage = {
+              assistantResponseMessage: {
+                content: this.extractMessageContent(request.messages[i + 1].content),
+                toolUses: []
+              }
+            };
+            history.push(assistantMsg);
+            i++; // Skip the processed assistant message
+          }
         }
       }
     }
