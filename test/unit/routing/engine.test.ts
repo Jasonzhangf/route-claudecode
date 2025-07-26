@@ -56,6 +56,7 @@ describe('RoutingEngine', () => {
           { role: 'user', content: 'Hello' }
         ],
         metadata: {
+          requestId: 'test-request-id',
           thinking: true
         }
       };

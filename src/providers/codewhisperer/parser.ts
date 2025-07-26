@@ -329,7 +329,7 @@ function convertSingleEvent(event: SSEEvent, requestId: string): ParsedEvent | n
 }
 
 /**
- * Convert assistant response event
+ * Convert assistant response event (based on demo2 implementation)
  */
 function convertAssistantResponseEvent(data: any, requestId: string): ParsedEvent | null {
   try {
@@ -337,10 +337,84 @@ function convertAssistantResponseEvent(data: any, requestId: string): ParsedEven
       dataType: typeof data,
       dataKeys: data ? Object.keys(data) : [],
       hasContent: !!(data && data.content),
-      hasAssistantResponseEvent: !!(data && data.assistantResponseEvent)
+      hasToolUseId: !!(data && data.toolUseId),
+      hasName: !!(data && data.name),
+      hasInput: !!(data && data.input),
+      stop: !!(data && data.stop)
     }, requestId);
     
-    // Handle new AWS binary format with direct content field
+    // Handle tool use events (from demo2)
+    if (data && data.toolUseId && data.name) {
+      // Tool use start event
+      if (data.input === null || data.input === undefined) {
+        logger.debug('Tool use start event', {
+          toolUseId: data.toolUseId,
+          name: data.name
+        }, requestId);
+        
+        return {
+          event: 'content_block_start',
+          data: {
+            type: 'content_block_start',
+            index: 1,
+            content_block: {
+              type: 'tool_use',
+              id: data.toolUseId,
+              name: data.name,
+              input: {}
+            }
+          }
+        };
+      }
+      
+      // Tool input streaming (partial JSON)
+      if (data.input && !data.stop) {
+        logger.debug('Tool input streaming event', {
+          toolUseId: data.toolUseId,
+          name: data.name,
+          inputLength: data.input.length
+        }, requestId);
+        
+        return {
+          event: 'content_block_delta',
+          data: {
+            type: 'content_block_delta',
+            index: 1,
+            delta: {
+              type: 'input_json_delta',
+              id: data.toolUseId,
+              name: data.name,
+              partial_json: data.input
+            }
+          }
+        };
+      }
+      
+      // Tool use completion
+      if (data.stop) {
+        logger.debug('Tool use completion event', {
+          toolUseId: data.toolUseId,
+          name: data.name
+        }, requestId);
+        
+        // For tool completion, we need to return message_delta with tool_use stop reason
+        return {
+          event: 'message_delta',
+          data: {
+            type: 'message_delta',
+            delta: {
+              stop_reason: 'tool_use',
+              stop_sequence: null
+            },
+            usage: {
+              output_tokens: 0
+            }
+          }
+        };
+      }
+    }
+    
+    // Handle text content (new AWS binary format)
     if (data && data.content) {
       return {
         event: 'content_block_delta',

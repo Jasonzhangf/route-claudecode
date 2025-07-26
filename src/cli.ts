@@ -427,7 +427,11 @@ program
 
         claude.on('error', (error: Error) => {
           console.error(chalk.red('❌ Failed to launch Claude Code:'), error.message);
-          console.log(chalk.yellow('💡 Make sure @anthropic-ai/claude-code is installed: npm install -g @anthropic-ai/claude-code'));
+          if (error.message.includes('EIO') || error.message.includes('TTY')) {
+            console.log(chalk.yellow('⚠️  TTY read error - this is usually safe to ignore'));
+          } else {
+            console.log(chalk.yellow('💡 Make sure @anthropic-ai/claude-code is installed: npm install -g @anthropic-ai/claude-code'));
+          }
           server.stop().then(() => process.exit(1)).catch(() => process.exit(1));
         });
 
@@ -460,7 +464,11 @@ program
 
         claude.on('error', (error: Error) => {
           console.error(chalk.red('❌ Failed to launch Claude Code:'), error.message);
-          console.log(chalk.yellow('💡 Make sure @anthropic-ai/claude-code is installed: npm install -g @anthropic-ai/claude-code'));
+          if (error.message.includes('EIO') || error.message.includes('TTY')) {
+            console.log(chalk.yellow('⚠️  TTY read error - this is usually safe to ignore'));
+          } else {
+            console.log(chalk.yellow('💡 Make sure @anthropic-ai/claude-code is installed: npm install -g @anthropic-ai/claude-code'));
+          }
           server.stop().then(() => process.exit(1)).catch(() => process.exit(1));
         });
 
@@ -504,6 +512,13 @@ program
       
       // Handle uncaught exceptions to prevent crashes
       process.on('uncaughtException', (error) => {
+        // Handle TTY read errors gracefully
+        if (error.message.includes('EIO') && error.message.includes('read')) {
+          console.log(chalk.yellow('⚠️  TTY read error occurred - session terminated'));
+          shutdown('TTY_ERROR').catch(() => process.exit(0));
+          return;
+        }
+        
         console.error(chalk.red('💥 Uncaught exception:'), error.message);
         shutdown('uncaughtException').catch(() => process.exit(1));
       });

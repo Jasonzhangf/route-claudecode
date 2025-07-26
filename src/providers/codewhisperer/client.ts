@@ -18,6 +18,8 @@ export class CodeWhispererClient implements Provider {
   private converter: CodeWhispererConverter;
   private httpClient: AxiosInstance;
   private endpoint: string;
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000; // 1 second
 
   constructor(public config: ProviderConfig) {
     this.endpoint = config.endpoint || 'https://codewhisperer.us-east-1.amazonaws.com';
@@ -233,7 +235,23 @@ export class CodeWhispererClient implements Provider {
       });
       
     } catch (error) {
-      logger.error('CodeWhisperer streaming request failed', error, requestId, 'provider');
+      // Log detailed error information
+      const errorDetails = {
+        message: error instanceof Error ? error.message : String(error),
+        name: error instanceof Error ? error.name : 'Unknown',
+        code: (error as any)?.code,
+        status: (error as any)?.response?.status,
+        statusText: (error as any)?.response?.statusText,
+        url: this.endpoint + '/generateAssistantResponse',
+        requestSummary: {
+          model: request.model,
+          messageCount: request.messages?.length || 0,
+          hasTools: !!(request.metadata?.tools?.length),
+          sessionId: request.metadata?.sessionId
+        }
+      };
+      
+      logger.error('CodeWhisperer streaming request failed', errorDetails, requestId, 'provider');
       
       if (error instanceof ProviderError) {
         throw error;
@@ -292,5 +310,82 @@ export class CodeWhispererClient implements Provider {
       endpoint: config.endpoint,
       profileArn: config.settings?.profileArn 
     });
+  }
+
+  /**
+   * Get request summary for error logging
+   */
+  private getRequestSummary(request: any): any {
+    return {
+      url: request?.url,
+      method: request?.method,
+      hasHeaders: !!request?.headers,
+      hasAuth: !!(request?.headers?.Authorization || request?.headers?.authorization),
+      bodySize: request?.data ? JSON.stringify(request.data).length : 0,
+      conversationId: request?.data?.conversationState?.conversationId,
+      modelId: request?.data?.conversationState?.currentMessage?.userInputMessage?.modelId
+    };
+  }
+
+  /**
+   * Check if error is retryable
+   */
+  private isRetryableError(error: any): boolean {
+    // Network errors
+    if (error.code === 'ECONNRESET' || error.code === 'ETIMEDOUT' || error.code === 'ENOTFOUND') {
+      return true;
+    }
+    
+    // HTTP status codes that are retryable
+    if (error.response?.status) {
+      const status = error.response.status;
+      return status === 429 || status === 502 || status === 503 || status === 504;
+    }
+    
+    return false;
+  }
+
+  /**
+   * Wait for retry delay
+   */
+  private async waitForRetry(attempt: number): Promise<void> {
+    const delay = this.retryDelay * Math.pow(2, attempt); // Exponential backoff
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  /**
+   * Execute request with retry logic
+   */
+  private async executeWithRetry<T>(
+    requestFn: () => Promise<T>,
+    requestId: string,
+    operation: string
+  ): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          logger.info(`Retrying ${operation} (attempt ${attempt}/${this.maxRetries})`, {}, requestId, 'provider');
+          await this.waitForRetry(attempt - 1);
+        }
+        
+        return await requestFn();
+      } catch (error) {
+        lastError = error;
+        
+        if (attempt === this.maxRetries || !this.isRetryableError(error)) {
+          break;
+        }
+        
+        logger.warn(`${operation} failed, will retry`, {
+          attempt: attempt + 1,
+          maxRetries: this.maxRetries,
+          error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'provider');
+      }
+    }
+    
+    throw lastError;
   }
 }
