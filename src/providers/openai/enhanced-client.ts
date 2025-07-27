@@ -6,6 +6,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
 import { logger } from '@/utils/logger';
+import { fixResponse } from '@/utils/response-fixer';
 import { 
   transformationManager, 
   transformAnthropicToOpenAI, 
@@ -292,16 +293,30 @@ export class EnhancedOpenAIClient implements Provider {
       contentLength: anthropicResponse?.content?.[0]?.text?.length || 0
     }, originalRequest.metadata?.requestId, 'provider');
 
+    // 应用全面修复机制
+    const fixedResponse = fixResponse({ 
+      content: anthropicResponse.content || [{ type: 'text', text: '' }],
+      usage: anthropicResponse.usage
+    }, originalRequest.metadata?.requestId || 'unknown');
+    
+    if (fixedResponse.fixes_applied.length > 0) {
+      logger.info('Applied response fixes to OpenAI response', {
+        fixesApplied: fixedResponse.fixes_applied,
+        originalBlocks: anthropicResponse.content?.length || 0,
+        fixedBlocks: fixedResponse.content.length
+      }, originalRequest.metadata?.requestId, 'provider');
+    }
+
     // Convert to BaseResponse format
     return {
       id: anthropicResponse.id,
       model: originalRequest.model,
       role: 'assistant',
-      content: anthropicResponse.content || [{ type: 'text', text: '' }],
-      stop_reason: anthropicResponse.stop_reason || 'end_turn',
+      content: fixedResponse.content,
+      stop_reason: anthropicResponse.stop_reason, // 移除默认停止原因
       usage: {
-        input_tokens: anthropicResponse.usage?.input_tokens || 0,
-        output_tokens: anthropicResponse.usage?.output_tokens || 0
+        input_tokens: fixedResponse.usage?.input_tokens || anthropicResponse.usage?.input_tokens || 0,
+        output_tokens: fixedResponse.usage?.output_tokens || anthropicResponse.usage?.output_tokens || 0
       }
     };
   }

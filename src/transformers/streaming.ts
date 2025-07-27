@@ -40,7 +40,7 @@ export class StreamingTransformer {
     const decoder = new TextDecoder();
     let buffer = '';
     let outputTokens = 0;
-    let stopReason = 'end_turn';
+    let stopReason = undefined; // 移除默认停止原因
 
     try {
       // Send message start event
@@ -415,7 +415,7 @@ export class StreamingTransformer {
       'tool_calls': 'tool_use',
       'function_call': 'tool_use'
     };
-    return mapping[finishReason] || 'end_turn';
+    return mapping[finishReason]; // 移除默认停止原因fallback
   }
 
   /**

@@ -343,6 +343,6 @@ export class OpenAICompatibleClient implements Provider {
       'content_filter': 'stop_sequence'
     };
 
-    return mapping[finishReason] || 'end_turn';
+    return mapping[finishReason]; // 移除默认停止原因fallback
   }
 }

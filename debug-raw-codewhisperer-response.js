@@ -9,7 +9,7 @@ const axios = require('axios');
 // 测试请求
 const testRequest = {
   model: "anthropic.claude-3-5-sonnet-20241022-v2:0",
-  max_tokens: 1000,
+  max_tokens: 131072,
   messages: [
     {
       role: "user",

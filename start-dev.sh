@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Default values
 PORT=3456
 DEBUG=false
-LOG_FILE="/tmp/ccr-dev.log"
+LOG_FILE="/Users/fanzhang/.claude-code-router/logs/ccr-dev-$(date +%Y%m%d-%H%M%S).log"
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -38,7 +38,7 @@ while [[ $# -gt 0 ]]; do
       echo "Options:"
       echo "  -p, --port PORT    Server port (default: 3456)"
       echo "  -d, --debug        Enable debug mode"
-      echo "  -l, --log FILE     Log file path (default: /tmp/ccr-dev.log)"
+      echo "  -l, --log FILE     Log file path (default: ~/.claude-code-router/logs/ccr-dev-TIMESTAMP.log)"
       echo "  -h, --help         Show this help message"
       exit 0
       ;;

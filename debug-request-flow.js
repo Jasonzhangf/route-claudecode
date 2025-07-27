@@ -7,7 +7,7 @@
 // 模拟多轮对话请求（Claude Code发送的）
 const multiTurnRequest = {
   model: "claude-sonnet-4-20250514",
-  max_tokens: 1000,
+  max_tokens: 131072,
   messages: [
     {
       role: "user",

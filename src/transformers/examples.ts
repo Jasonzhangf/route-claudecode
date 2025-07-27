@@ -24,7 +24,7 @@ export function exampleBasicTransformation() {
       { role: 'assistant', content: 'I am doing well, thank you!' },
       { role: 'user', content: 'What can you help me with?' }
     ],
-    max_tokens: 1000,
+    max_tokens: 131072,
     temperature: 0.7
   };
 

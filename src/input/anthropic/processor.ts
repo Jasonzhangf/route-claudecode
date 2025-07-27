@@ -48,7 +48,7 @@ export class AnthropicInputProcessor implements InputProcessor {
         model: anthropicRequest.model,
         messages: this.normalizeMessages(anthropicRequest.messages),
         stream: anthropicRequest.stream || false,
-        max_tokens: anthropicRequest.max_tokens || 4096,
+        max_tokens: anthropicRequest.max_tokens || 131072,
         temperature: anthropicRequest.temperature,
         metadata: {
           requestId: '',  // Will be set by server

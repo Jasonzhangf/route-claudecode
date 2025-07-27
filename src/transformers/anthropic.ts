@@ -457,7 +457,7 @@ export class AnthropicTransformer implements MessageTransformer {
       'tool_calls': 'tool_use',
       'function_call': 'tool_use'
     };
-    return mapping[finishReason] || 'end_turn';
+    return mapping[finishReason]; // 移除默认停止原因fallback
   }
 }
 

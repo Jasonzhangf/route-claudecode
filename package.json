@@ -3,8 +3,10 @@
   "version": "2.1.0",
   "description": "Advanced routing and transformation system for Claude Code outputs to multiple AI providers",
   "bin": {
-    "ccr": "./dist/cli.js"
+    "ccr": "./dist/cli.js",
+    "claude-code-router": "./dist/cli.js"
   },
+  "main": "./dist/cli.js",
   "scripts": {
     "build": "tsc && esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --external:tiktoken --external:@anthropic-ai/sdk --banner:js='#!/usr/bin/env node'",
     "dev": "tsx src/cli.ts",
@@ -49,14 +51,19 @@
     "tsx": "^4.19.2",
     "typescript": "^5.8.2"
   },
-  "publishConfig": {
-    "ignore": [
-      "!dist/",
-      "src/",
-      "test/",
-      "*.test.js",
-      "*.test.ts"
-    ]
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE",
+    "config.sample.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fanzhang16/claude-code-router.git"
+  },
+  "homepage": "https://github.com/fanzhang16/claude-code-router#readme",
+  "bugs": {
+    "url": "https://github.com/fanzhang16/claude-code-router/issues"
   },
   "engines": {
     "node": ">=16.0.0"

@@ -259,6 +259,12 @@ export class RouterServer {
 
       // Step 4: Process output
       const finalResponse = await this.outputProcessor.process(providerResponse, baseRequest);
+      
+      // 修复：强制移除stop_reason，确保工具调用后会话可以继续
+      if (finalResponse && 'stop_reason' in finalResponse) {
+        delete (finalResponse as any).stop_reason;
+        logger.debug('Removed stop_reason from final response to allow conversation continuation', {}, requestId, 'server');
+      }
 
       // Store assistant response in session
       if (finalResponse && finalResponse.content) {
@@ -283,7 +289,11 @@ export class RouterServer {
         sessionId
       }, requestId, 'server');
 
-      return finalResponse;
+      // 最后一次确保移除stop_reason
+      const cleanResponse = { ...finalResponse };
+      delete (cleanResponse as any).stop_reason;
+      
+      return cleanResponse;
 
     } catch (error) {
       logger.error('Request processing failed', error, requestId, 'server');
@@ -352,44 +362,84 @@ export class RouterServer {
 
       // Stream from provider
       let outputTokens = 0;
-      let stopReason = 'end_turn'; // default
+      let chunkCount = 0;
+      // 修改：永远不设置停止原因，保持对话持续
+      // let stopReason = 'end_turn'; // 注释掉默认停止原因
       
       for await (const chunk of provider.sendStreamRequest(request)) {
-        this.sendSSEEvent(reply, chunk.event, chunk.data);
+        chunkCount++;
+        logger.debug(`[PIPELINE-NODE] Raw chunk ${chunkCount} from provider`, { event: chunk.event, dataType: typeof chunk.data, hasData: !!chunk.data }, requestId, 'server');
+        // Token计算调试已完成，移除调试代码
         
-        if (chunk.event === 'content_block_delta' && chunk.data?.delta?.text) {
-          outputTokens += Math.ceil(chunk.data.delta.text.length / 4);
+        // 过滤掉可能包含停止信号的事件，但保留工具调用相关的事件
+        if (chunk.event === 'message_delta' && chunk.data?.delta?.stop_reason) {
+          // 移除 message_delta 中的停止原因，但保留其他数据
+          const filteredData = { ...chunk.data };
+          if (filteredData.delta) {
+            filteredData.delta = { ...filteredData.delta };
+            delete filteredData.delta.stop_reason;
+            delete filteredData.delta.stop_sequence;
+          }
+          this.sendSSEEvent(reply, chunk.event, filteredData);
+        } else if (chunk.event === 'message_stop') {
+          // 跳过 message_stop 事件，避免会话终止
+          logger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
+        } else {
+          // 正常转发其他事件（包括工具调用相关事件）
+          this.sendSSEEvent(reply, chunk.event, chunk.data);
         }
         
-        // Capture stop reason from stream completion events
-        if (chunk.event === 'stream_complete' && chunk.data?.stop_reason) {
-          stopReason = chunk.data.stop_reason;
+        // 计算输出tokens - 包括文本和工具调用内容
+        if (chunk.event === 'content_block_delta') {
+          if (chunk.data?.delta?.text) {
+            // 文本内容
+            const textLength = chunk.data.delta.text.length;
+            outputTokens += Math.ceil(textLength / 4);
+            logger.debug(`Token calculation - text: "${chunk.data.delta.text}" (${textLength} chars = ${Math.ceil(textLength / 4)} tokens)`, {}, requestId, 'server');
+          } else if (chunk.data?.delta?.type === 'input_json_delta' && chunk.data?.delta?.partial_json) {
+            // 工具调用的JSON输入内容
+            const jsonLength = chunk.data.delta.partial_json.length;
+            outputTokens += Math.ceil(jsonLength / 4);
+            logger.debug(`Token calculation - tool JSON: "${chunk.data.delta.partial_json}" (${jsonLength} chars = ${Math.ceil(jsonLength / 4)} tokens)`, {}, requestId, 'server');
+          }
+        } else if (chunk.event === 'content_block_start' && chunk.data?.content_block?.type === 'tool_use') {
+          // 工具调用开始 - 计算工具名称的token
+          const toolName = chunk.data.content_block.name || '';
+          const nameLength = toolName.length;
+          outputTokens += Math.ceil(nameLength / 4);
+          logger.debug(`Token calculation - tool name: "${toolName}" (${nameLength} chars = ${Math.ceil(nameLength / 4)} tokens)`, {}, requestId, 'server');
         }
+        
+        // 修改：忽略所有停止原因，不捕获停止信号
+        // if (chunk.event === 'stream_complete' && chunk.data?.stop_reason) {
+        //   stopReason = chunk.data.stop_reason;
+        // }
       }
 
-      // Send content block stop
+      // 保留content_block_stop事件，这对工具调用完整性是必需的
       this.sendSSEEvent(reply, 'content_block_stop', {
         type: 'content_block_stop',
         index: 0
       });
 
-      // Send message delta with final usage and actual stop reason
+      // 修改：只发送使用量信息，不包含停止原因
       this.sendSSEEvent(reply, 'message_delta', {
         type: 'message_delta',
         delta: {
-          stop_reason: stopReason,
-          stop_sequence: null
+          // stop_reason: stopReason, // 移除停止原因，但保持HTTP连接正常结束
+          // stop_sequence: null      // 移除停止序列  
         },
         usage: {
           output_tokens: outputTokens
         }
       });
 
-      // Send message stop
-      this.sendSSEEvent(reply, 'message_stop', {
-        type: 'message_stop'
-      });
+      // 修改：不发送message_stop，避免消息结束信号
+      // this.sendSSEEvent(reply, 'message_stop', {
+      //   type: 'message_stop'
+      // });
 
+      // 保持HTTP连接正常结束，避免连接悬挂
       reply.raw.end();
 
       logger.info('Streaming request completed', {

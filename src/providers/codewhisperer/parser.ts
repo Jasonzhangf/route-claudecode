@@ -200,36 +200,64 @@ function convertBinaryEventToSSE(binaryEvent: AWSBinaryEvent): SSEEvent | null {
 
 
 /**
- * Convert CodeWhisperer events to Anthropic format
+ * Text buffer for accumulating fragmented content
+ */
+interface TextBuffer {
+  content: string;
+  isToolCall: boolean;
+  toolName?: string;
+  toolId?: string;
+}
+
+/**
+ * Convert CodeWhisperer events to Anthropic format with text accumulation
  */
 export function convertEventsToAnthropic(events: SSEEvent[], requestId: string): ParsedEvent[] {
   const anthropicEvents: ParsedEvent[] = [];
+  const textBuffer: TextBuffer = { content: '', isToolCall: false };
   
   try {
-    logger.debug('Converting events to Anthropic format', {
+    logger.debug('Converting events to Anthropic format with text accumulation', {
       inputEventCount: events.length,
       inputEventTypes: events.map(e => e.Event)
     }, requestId);
     
-    for (const event of events) {
-      const converted = convertSingleEvent(event, requestId);
+    // 第一步：累积所有文本内容
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      accumulateTextContent(event, textBuffer, requestId);
+    }
+    
+    // 第二步：如果累积的文本包含工具调用，处理工具调用
+    if (textBuffer.isToolCall && textBuffer.content.trim()) {
+      const toolEvent = processAccumulatedToolCall(textBuffer, requestId);
+      if (toolEvent) {
+        anthropicEvents.push(toolEvent);
+        logger.info('Successfully processed accumulated tool call', {
+          toolName: textBuffer.toolName,
+          contentLength: textBuffer.content.length
+        }, requestId);
+      }
+    }
+    
+    // 第三步：处理非文本事件和非工具调用的文本事件
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      const converted = convertSingleEvent(event, requestId, textBuffer.isToolCall);
       if (converted) {
         anthropicEvents.push(converted);
         logger.debug('Event converted successfully', {
           originalEvent: event.Event,
           convertedEvent: converted.event
         }, requestId);
-      } else {
-        logger.debug('Event conversion returned null', {
-          originalEvent: event.Event,
-          eventData: event.Data
-        }, requestId);
       }
     }
     
-    logger.debug('Event conversion completed', {
+    logger.debug('Event conversion completed with accumulation', {
       outputEventCount: anthropicEvents.length,
-      outputEventTypes: anthropicEvents.map(e => e.event)
+      outputEventTypes: anthropicEvents.map(e => e.event),
+      hadToolCall: textBuffer.isToolCall,
+      bufferContent: textBuffer.content.substring(0, 100)
     }, requestId);
     
     return anthropicEvents;
@@ -240,9 +268,117 @@ export function convertEventsToAnthropic(events: SSEEvent[], requestId: string):
 }
 
 /**
- * Convert single CodeWhisperer event to Anthropic format
+ * Accumulate text content from events to handle fragmented tool calls
  */
-function convertSingleEvent(event: SSEEvent, requestId: string): ParsedEvent | null {
+function accumulateTextContent(event: SSEEvent, buffer: TextBuffer, requestId: string): void {
+  try {
+    const { Event, Data } = event;
+    
+    // 累积来自不同事件类型的文本内容
+    let textContent = '';
+    
+    if (Event === 'contentBlockDelta' && Data?.delta?.type === 'text_delta') {
+      textContent = Data.delta.text || '';
+    } else if (Data && typeof Data === 'object' && Data.text) {
+      textContent = Data.text;
+    } else if (Data && typeof Data === 'object' && Data.content) {
+      textContent = Data.content;
+    }
+    
+    if (textContent) {
+      buffer.content += textContent;
+      
+      // 检测是否包含工具调用
+      if (textContent.includes('Tool call:') || buffer.content.includes('Tool call:')) {
+        buffer.isToolCall = true;
+        
+        // 尝试提取工具名称
+        const toolNameMatch = buffer.content.match(/Tool call:\s*(\w+)/);
+        if (toolNameMatch) {
+          buffer.toolName = toolNameMatch[1];
+          buffer.toolId = `accumulated_tool_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+          logger.debug('Accumulated tool call detected', {
+            toolName: buffer.toolName,
+            contentLength: buffer.content.length,
+            contentPreview: buffer.content.substring(0, 150)
+          }, requestId);
+        }
+      }
+    }
+  } catch (error) {
+    logger.error('Failed to accumulate text content', error, requestId);
+  }
+}
+
+/**
+ * Process accumulated tool call text and convert to proper tool_use event
+ */
+function processAccumulatedToolCall(buffer: TextBuffer, requestId: string): ParsedEvent | null {
+  try {
+    if (!buffer.isToolCall || !buffer.content.trim()) {
+      return null;
+    }
+    
+    logger.debug('Processing accumulated tool call', {
+      contentLength: buffer.content.length,
+      toolName: buffer.toolName,
+      content: buffer.content
+    }, requestId);
+    
+    // 尝试解析完整的工具调用: "Tool call: ToolName({...})"
+    const toolCallMatch = buffer.content.match(/Tool call:\s*(\w+)\s*\((.+?)\)(?:\s*$|\n|$)/s);
+    if (toolCallMatch) {
+      const toolName = toolCallMatch[1];
+      const toolArgsStr = toolCallMatch[2];
+      
+      logger.info('Successfully parsed complete tool call from accumulated text', {
+        toolName,
+        argsString: toolArgsStr.substring(0, 200)
+      }, requestId);
+      
+      // 解析工具参数
+      let toolInput = {};
+      try {
+        const cleanArgsStr = toolArgsStr.trim().replace(/^["']|["']$/g, '');
+        toolInput = JSON.parse(cleanArgsStr);
+      } catch (parseError: any) {
+        logger.warn('Failed to parse accumulated tool arguments, using empty input', {
+          error: parseError?.message || String(parseError),
+          argsString: toolArgsStr.substring(0, 200)
+        }, requestId);
+      }
+      
+      // 返回正确的工具调用开始事件
+      return {
+        event: 'content_block_start',
+        data: {
+          type: 'content_block_start',
+          index: 1, // 工具调用通常是第二个内容块
+          content_block: {
+            type: 'tool_use',
+            id: buffer.toolId || `accumulated_tool_${Date.now()}`,
+            name: toolName,
+            input: toolInput
+          }
+        }
+      };
+    } else {
+      logger.warn('Could not parse complete tool call from accumulated text', {
+        content: buffer.content.substring(0, 200)
+      }, requestId);
+    }
+    
+    return null;
+  } catch (error) {
+    logger.error('Failed to process accumulated tool call', error, requestId);
+    return null;
+  }
+}
+
+/**
+ * Convert single CodeWhisperer event to Anthropic format (with skip logic for accumulated tool calls)
+ */
+function convertSingleEvent(event: SSEEvent, requestId: string, skipTextForToolCall: boolean = false): ParsedEvent | null {
   try {
     const { Event, Data } = event;
     
@@ -276,7 +412,7 @@ function convertSingleEvent(event: SSEEvent, requestId: string): ParsedEvent | n
         };
       
       case 'contentBlockDelta':
-        return convertContentBlockDelta(Data, requestId);
+        return convertContentBlockDelta(Data, requestId, skipTextForToolCall);
       
       case 'contentBlockStop':
         return {
@@ -291,10 +427,20 @@ function convertSingleEvent(event: SSEEvent, requestId: string): ParsedEvent | n
         };
       
       default:
-        logger.debug('Unknown event type, treating as text content', { eventType: Event, data: Data }, requestId);
+        logger.debug('Unknown event type, analyzing content', { eventType: Event, data: Data }, requestId);
         
         // Handle AWS binary events that have direct text content
         if (Data && typeof Data === 'object' && Data.text) {
+          // 如果已经在累积阶段处理了工具调用，跳过这些文本事件
+          if (skipTextForToolCall && Data.text.includes('Tool call:')) {
+            logger.debug('Skipping text event as it was processed during accumulation', { 
+              text: Data.text.substring(0, 100) 
+            }, requestId);
+            return null;
+          }
+          
+          // 如果不是工具调用或没有被累积处理，继续作为普通文本处理
+          logger.debug('Treating as regular text content', { text: Data.text.substring(0, 100) }, requestId);
           return {
             event: 'content_block_delta',
             data: {
@@ -363,8 +509,8 @@ function convertToolUseEvent(data: any, requestId: string): ParsedEvent | null {
         };
       }
       
-      // Tool input streaming (partial JSON)
-      if (data.input && !data.stop) {
+      // Tool input streaming (partial JSON) - Demo2兼容性：检查input不为null/undefined
+      if (data.input !== null && data.input !== undefined && data.input !== '' && !data.stop) {
         logger.debug('Tool input streaming event', {
           toolUseId: data.toolUseId,
           name: data.name,
@@ -378,14 +524,16 @@ function convertToolUseEvent(data: any, requestId: string): ParsedEvent | null {
             index: 1,
             delta: {
               type: 'input_json_delta',
+              id: data.toolUseId,
+              name: data.name,
               partial_json: data.input
             }
           }
         };
       }
       
-      // Tool use start event (no input yet and no stop)
-      if (!data.input && !data.stop) {
+      // Tool use start event (no input yet and no stop) - Demo2兼容性：检查input为null/undefined/empty
+      if ((data.input === null || data.input === undefined || data.input === '') && !data.stop) {
         logger.debug('Tool use start event', {
           toolUseId: data.toolUseId,
           name: data.name
@@ -483,18 +631,13 @@ function convertAssistantResponseEvent(data: any, requestId: string): ParsedEven
           name: data.name
         }, requestId);
         
-        // For tool completion, we need to return message_delta with tool_use stop reason
+        // 修复：工具完成时只发送content_block_stop，不发送会话终止信号
+        // 这样可以让用户在工具调用后继续对话
         return {
-          event: 'message_delta',
+          event: 'content_block_stop',
           data: {
-            type: 'message_delta',
-            delta: {
-              stop_reason: 'tool_use',
-              stop_sequence: null
-            },
-            usage: {
-              output_tokens: 0
-            }
+            type: 'content_block_stop',
+            index: 1
           }
         };
       }
@@ -565,12 +708,22 @@ function convertCodeGenerationEvent(data: any, requestId: string): ParsedEvent |
 /**
  * Convert content block delta event
  */
-function convertContentBlockDelta(data: any, requestId: string): ParsedEvent | null {
+function convertContentBlockDelta(data: any, requestId: string, skipTextForToolCall: boolean = false): ParsedEvent | null {
   try {
     // Handle different delta types
     if (data.delta) {
       switch (data.delta.type) {
         case 'text_delta':
+          const textContent = data.delta.text || '';
+          
+          // 如果已经在累积阶段处理了工具调用，跳过包含工具调用的文本delta
+          if (skipTextForToolCall && textContent.includes('Tool call:')) {
+            logger.debug('Skipping text_delta as tool call was processed during accumulation', { 
+              text: textContent.substring(0, 100) 
+            }, requestId);
+            return null;
+          }
+          
           return {
             event: 'content_block_delta',
             data: {
@@ -578,7 +731,7 @@ function convertContentBlockDelta(data: any, requestId: string): ParsedEvent | n
               index: data.index || 0,
               delta: {
                 type: 'text_delta',
-                text: data.delta.text || ''
+                text: textContent
               }
             }
           };

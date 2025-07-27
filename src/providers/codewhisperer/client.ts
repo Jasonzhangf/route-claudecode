@@ -9,7 +9,9 @@ import { CodeWhispererAuth } from './auth';
 import { SafeTokenManager } from './safe-token-manager';
 import { CodeWhispererConverter, CodeWhispererRequest } from './converter';
 import { parseEvents, convertEventsToAnthropic, parseNonStreamingResponse } from './parser';
+import { processBufferedResponse } from './parser-buffered';
 import { logger } from '@/utils/logger';
+import { fixResponse } from '@/utils/response-fixer';
 
 export class CodeWhispererClient implements Provider {
   public readonly name = 'codewhisperer';
@@ -169,21 +171,127 @@ export class CodeWhispererClient implements Provider {
         );
       }
 
-      // Parse response - response.data is already ArrayBuffer from CodeWhisperer
-      const contexts = parseNonStreamingResponse(Buffer.from(response.data), requestId);
+      // 使用完全缓冲式处理解析非流式响应
+      logger.debug('Using buffered processing for non-streaming response', {
+        responseLength: responseBuffer.length
+      }, requestId, 'provider');
       
-      // Convert to BaseResponse format
+      logger.info('Starting processBufferedResponse', {
+        bufferLength: responseBuffer.length,
+        bufferPreview: responseBuffer.toString('hex').slice(0, 100)
+      }, requestId, 'provider');
+      
+      const anthropicEvents = processBufferedResponse(responseBuffer, requestId);
+      
+      // 从事件中提取内容 - 支持完整的工具调用处理
+      const contexts: any[] = [];
+      const toolInputs: { [key: string]: string } = {}; // 累积工具输入
+      
+      for (const event of anthropicEvents) {
+        logger.debug('Processing event for context extraction', {
+          eventType: event.event,
+          hasData: !!event.data,
+          dataKeys: event.data ? Object.keys(event.data) : []
+        }, requestId, 'provider');
+        
+        if (event.event === 'content_block_start' && event.data?.content_block) {
+          const block = event.data.content_block;
+          if (block.type === 'text') {
+            contexts.push({ type: 'text', text: block.text || '' });
+          } else if (block.type === 'tool_use') {
+            contexts.push({
+              type: 'tool_use',
+              id: block.id,
+              name: block.name,
+              input: block.input || {} // 先使用初始输入
+            });
+          }
+        } else if (event.event === 'content_block_delta' && event.data?.delta) {
+          const delta = event.data.delta;
+          const blockIndex = event.data.index;
+          
+          if (delta.type === 'input_json_delta' && contexts[blockIndex] && contexts[blockIndex].type === 'tool_use') {
+            // 累积工具输入JSON
+            const toolId = contexts[blockIndex].id;
+            if (!toolInputs[toolId]) {
+              toolInputs[toolId] = '';
+            }
+            toolInputs[toolId] += delta.partial_json;
+            
+            logger.debug('Accumulated tool input JSON', {
+              toolId,
+              addedJson: delta.partial_json,
+              totalJson: toolInputs[toolId]
+            }, requestId, 'provider');
+          } else if (delta.type === 'text_delta' && contexts[blockIndex] && contexts[blockIndex].type === 'text') {
+            // 累积文本内容
+            contexts[blockIndex].text += delta.text || '';
+          }
+        }
+      }
+      
+      // 解析累积的工具输入JSON
+      for (const context of contexts) {
+        if (context.type === 'tool_use' && toolInputs[context.id]) {
+          try {
+            context.input = JSON.parse(toolInputs[context.id]);
+            logger.info('Successfully parsed final tool input', {
+              toolId: context.id,
+              toolName: context.name,
+              inputJson: toolInputs[context.id],
+              parsedInput: JSON.stringify(context.input)
+            }, requestId, 'provider');
+          } catch (error) {
+            logger.error('Failed to parse final tool input JSON', {
+              toolId: context.id,
+              inputJson: toolInputs[context.id],
+              error: error instanceof Error ? error.message : String(error)
+            }, requestId, 'provider');
+            context.input = {};
+          }
+        }
+      }
+      
+      logger.debug('Final extracted contexts from buffered events', {
+        contextCount: contexts.length,
+        contextTypes: contexts.map(c => c.type),
+        toolContexts: contexts.filter(c => c.type === 'tool_use').map(c => ({
+          name: c.name,
+          hasInput: Object.keys(c.input).length > 0,
+          inputKeys: Object.keys(c.input)
+        }))
+      }, requestId, 'provider');
+      
+      // 应用全面修复机制
+      const fixedResponse = fixResponse({ content: contexts }, requestId);
+      const finalContexts = fixedResponse.content;
+      
+      if (fixedResponse.fixes_applied.length > 0) {
+        logger.info('Applied response fixes', {
+          fixesApplied: fixedResponse.fixes_applied,
+          originalBlocks: contexts.length,
+          fixedBlocks: finalContexts.length
+        }, requestId, 'provider');
+      }
+      
+      // Convert to BaseResponse format - 完全不包含stop_reason字段
       const baseResponse: BaseResponse = {
         id: `cw_${Date.now()}`,
         model: request.model,
         role: 'assistant',
-        content: contexts,
-        stop_reason: 'end_turn',
+        content: finalContexts,
+        // 完全不设置stop_reason字段，让会话可以继续
         usage: {
           input_tokens: this.estimateInputTokens(cwRequest),
-          output_tokens: this.estimateOutputTokens(contexts)
+          output_tokens: this.estimateOutputTokens(finalContexts)
         }
       };
+
+      logger.debug('CodeWhisperer BaseResponse created', {
+        hasStopReason: 'stop_reason' in baseResponse,
+        stopReasonValue: baseResponse.stop_reason,
+        responseKeys: Object.keys(baseResponse)
+      }, requestId, 'provider');
 
       logger.trace(requestId, 'provider', 'Request completed successfully', {
         responseLength: contexts.length,
@@ -252,15 +360,13 @@ export class CodeWhispererClient implements Provider {
         responseStart: fullResponse.toString('utf-8', 0, Math.min(500, fullResponse.length))
       }, requestId, 'provider');
       
-      // Parse events
-      const events = parseEvents(fullResponse);
-      logger.debug('Parsed events from CodeWhisperer', {
-        eventCount: events.length,
-        events: events.map(e => ({ event: e.Event, dataType: typeof e.Data }))
+      // 使用完全缓冲式处理：非流式 -> 流式转换
+      logger.debug('Using full buffered processing strategy', {
+        responseLength: fullResponse.length
       }, requestId, 'provider');
       
-      const anthropicEvents = convertEventsToAnthropic(events, requestId);
-      logger.debug('Converted to Anthropic events', {
+      const anthropicEvents = processBufferedResponse(fullResponse, requestId);
+      logger.debug('Completed buffered processing', {
         anthropicEventCount: anthropicEvents.length,
         events: anthropicEvents.map(e => ({ event: e.event, hasData: !!e.data }))
       }, requestId, 'provider');

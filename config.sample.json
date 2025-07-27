@@ -1,0 +1,126 @@
+{
+  "server": {
+    "port": 3456,
+    "host": "127.0.0.1"
+  },
+  "routing": {
+    "rules": {
+      "default": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "background": {
+        "provider": "codewhisperer-primary", 
+        "model": "CLAUDE_3_5_HAIKU_20241022_V1_0"
+      },
+      "thinking": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "longcontext": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "search": {
+        "provider": "openai-compatible",
+        "model": "gemini-2.5-flash"
+      }
+    },
+    "defaultProvider": "codewhisperer-primary",
+    "providers": {
+      "codewhisperer-primary": {
+        "type": "codewhisperer",
+        "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+        "authentication": {
+          "type": "bearer",
+          "credentials": {
+            "tokenPath": "~/.aws/sso/cache/your-auth-token.json"
+          }
+        },
+        "settings": {
+          "profileArn": "arn:aws:codewhisperer:us-east-1:YOUR_ACCOUNT_ID:profile/YOUR_PROFILE_ID",
+          "categoryMappings": {
+            "default": true,
+            "background": true,
+            "thinking": true,
+            "longcontext": true,
+            "search": true
+          },
+          "models": [
+            "CLAUDE_SONNET_4_20250514_V1_0",
+            "CLAUDE_3_5_HAIKU_20241022_V1_0",
+            "CLAUDE_3_7_SONNET_20250219_V1_0"
+          ],
+          "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0"
+        }
+      },
+      "openai-compatible": {
+        "type": "openai",
+        "endpoint": "https://api.openai.com/v1/chat/completions",
+        "authentication": {
+          "type": "bearer",
+          "credentials": {
+            "apiKey": "sk-your-openai-api-key-here"
+          }
+        },
+        "settings": {
+          "categoryMappings": {
+            "default": false,
+            "background": false,
+            "thinking": false,
+            "longcontext": false,
+            "search": true
+          },
+          "models": ["gpt-4", "gpt-3.5-turbo", "gpt-4-turbo"],
+          "defaultModel": "gpt-4"
+        }
+      },
+      "gemini-provider": {
+        "type": "openai",
+        "endpoint": "https://generativelanguage.googleapis.com/v1beta/chat/completions",
+        "authentication": {
+          "type": "bearer",
+          "credentials": {
+            "apiKey": "your-gemini-api-key"
+          }
+        },
+        "settings": {
+          "categoryMappings": {
+            "search": true
+          },
+          "models": ["gemini-2.5-flash", "gemini-pro"],
+          "defaultModel": "gemini-2.5-flash"
+        }
+      },
+      "third-party-openai": {
+        "type": "openai",
+        "endpoint": "https://your-third-party-api.com/v1/chat/completions",
+        "authentication": {
+          "type": "bearer",
+          "credentials": {
+            "apiKey": "your-third-party-api-key"
+          }
+        },
+        "settings": {
+          "categoryMappings": {
+            "default": false,
+            "background": true,
+            "thinking": false,
+            "longcontext": false,
+            "search": false
+          },
+          "models": ["gemini-2.5-flash", "qwen3-coder"],
+          "defaultModel": "gemini-2.5-flash"
+        }
+      }
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "~/.claude-code-router/logs"
+  },
+  "hooks": []
+}
