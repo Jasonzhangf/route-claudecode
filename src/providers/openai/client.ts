@@ -377,6 +377,10 @@ export class OpenAICompatibleClient implements Provider {
       'content_filter': 'stop_sequence'
     };
 
-    return mapping[finishReason]; // 移除默认停止原因fallback
+    const result = mapping[finishReason];
+    if (!result) {
+      throw new Error(`Unknown finish reason '${finishReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
+    }
+    return result;
   }
 }

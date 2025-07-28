@@ -444,7 +444,11 @@ export class AnthropicTransformer implements MessageTransformer {
       'tool_use': 'tool_calls',
       'stop_sequence': 'stop'
     };
-    return mapping[stopReason] || 'stop';
+    const result = mapping[stopReason];
+    if (!result) {
+      throw new Error(`Unknown stop reason '${stopReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
+    }
+    return result;
   }
 
   /**
@@ -457,7 +461,11 @@ export class AnthropicTransformer implements MessageTransformer {
       'tool_calls': 'tool_use',
       'function_call': 'tool_use'
     };
-    return mapping[finishReason]; // 移除默认停止原因fallback
+    const result = mapping[finishReason];
+    if (!result) {
+      throw new Error(`Unknown finish reason '${finishReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
+    }
+    return result;
   }
 }
 

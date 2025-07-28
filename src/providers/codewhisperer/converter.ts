@@ -166,12 +166,7 @@ export class CodeWhispererConverter {
     // Map from Anthropic model names to CodeWhisperer format
     const mapped = MODEL_MAP[modelToMap];
     if (!mapped) {
-      logger.warn(`Unknown model '${modelToMap}', using default CodeWhisperer model`, { 
-        originalModel,
-        targetModel,
-        modelToMap
-      });
-      return MODEL_MAP['claude-sonnet-4-20250514'];
+      throw new Error(`Unknown model '${modelToMap}' - no mapping found and fallback disabled. Available models: ${Object.keys(MODEL_MAP).join(', ')}`);
     }
     
     logger.debug(`Model mapped to CodeWhisperer format: ${modelToMap} -> ${mapped}`, {

@@ -182,10 +182,9 @@ function fixTextBlock(block: TextBlock, requestId: string): {
         .replace(/\r/g, '\\r')      // Escape carriage returns  
         .replace(/\t/g, '\\t')      // Escape tabs
         .replace(/\f/g, '\\f')      // Escape form feeds
-        .replace(/\b/g, '\\b')      // Escape backspaces
+        .replace(/\x08/g, '\\b')    // Escape backspaces (correct pattern)
         .replace(/\v/g, '\\v')      // Escape vertical tabs
         .replace(/\0/g, '\\0')      // Escape null characters
-        .replace(/\x08/g, '\\b')    // Escape backspace (alternative)
         .replace(/[\x00-\x1F\x7F-\x9F]/g, (match) => {
           // Escape any remaining control characters
           return '\\u' + ('0000' + match.charCodeAt(0).toString(16)).slice(-4);
