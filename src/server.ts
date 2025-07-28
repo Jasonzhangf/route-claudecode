@@ -9,7 +9,7 @@ import { RoutingEngine } from './routing';
 import { AnthropicOutputProcessor } from './output/anthropic';
 import { CodeWhispererClient } from './providers/codewhisperer';
 import { EnhancedOpenAIClient } from './providers/openai';
-import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting } from './types';
+import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from './types';
 import { logger } from './utils/logger';
 import { sessionManager } from './session/manager';
 import { v4 as uuidv4 } from 'uuid';
@@ -104,6 +104,38 @@ export class RouterServer {
         routing: this.routingEngine.getStats(),
         debug: this.config.debug.enabled
       });
+    });
+
+    // Shutdown endpoint for graceful server stop
+    this.fastify.post('/shutdown', async (request, reply) => {
+      try {
+        logger.info('Shutdown request received via API', {}, 'server');
+        
+        reply.send({
+          message: 'Server shutdown initiated',
+          timestamp: new Date().toISOString()
+        });
+        
+        // Give the response time to be sent before shutting down
+        setTimeout(() => {
+          this.stop().then(() => {
+            logger.info('Server shutdown completed via API', {}, 'server');
+            process.exit(0);
+          }).catch((error) => {
+            logger.error('Error during API shutdown', error, 'server');
+            process.exit(1);
+          });
+        }, 100);
+        
+      } catch (error) {
+        logger.error('Error handling shutdown request', error, 'server');
+        reply.code(500).send({
+          error: {
+            type: 'shutdown_error',
+            message: 'Failed to initiate shutdown'
+          }
+        });
+      }
     });
 
     // Main messages endpoint (Anthropic API compatible)
@@ -299,6 +331,16 @@ export class RouterServer {
 
     } catch (error) {
       logger.error('Request processing failed', error, requestId, 'server');
+      
+      // For ProviderError, preserve the original status code (especially 429)
+      if (error instanceof ProviderError) {
+        return reply.code(error.statusCode).send({
+          error: {
+            type: 'api_error',
+            message: error.message
+          }
+        });
+      }
       
       const errorMessage = error instanceof Error ? error.message : 'Internal server error';
       return reply.code(500).send({

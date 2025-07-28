@@ -175,7 +175,32 @@ function fixTextBlock(block: TextBlock, requestId: string): {
     const toolArgsStr = match[2];
     
     try {
-      const toolInput = JSON.parse(toolArgsStr);
+      // CRITICAL FIX: Properly escape control characters in JSON string before parsing
+      // Handle common control characters that break JSON parsing
+      let sanitizedArgsStr = toolArgsStr
+        .replace(/\n/g, '\\n')      // Escape newlines
+        .replace(/\r/g, '\\r')      // Escape carriage returns  
+        .replace(/\t/g, '\\t')      // Escape tabs
+        .replace(/\f/g, '\\f')      // Escape form feeds
+        .replace(/\b/g, '\\b')      // Escape backspaces
+        .replace(/\v/g, '\\v')      // Escape vertical tabs
+        .replace(/\0/g, '\\0')      // Escape null characters
+        .replace(/\x08/g, '\\b')    // Escape backspace (alternative)
+        .replace(/[\x00-\x1F\x7F-\x9F]/g, (match) => {
+          // Escape any remaining control characters
+          return '\\u' + ('0000' + match.charCodeAt(0).toString(16)).slice(-4);
+        });
+      
+      logger.debug('Sanitized tool arguments for JSON parsing', {
+        toolName,
+        originalLength: toolArgsStr.length,
+        sanitizedLength: sanitizedArgsStr.length,
+        hasControlChars: toolArgsStr !== sanitizedArgsStr,
+        originalPreview: toolArgsStr.slice(0, 100),
+        sanitizedPreview: sanitizedArgsStr.slice(0, 100)
+      }, requestId);
+      
+      const toolInput = JSON.parse(sanitizedArgsStr);
       const extractedTool: ToolCallBlock = {
         type: 'tool_use',
         id: `extracted_${Date.now()}_${Math.random().toString(36).slice(2)}`,

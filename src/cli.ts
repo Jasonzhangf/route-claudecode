@@ -8,6 +8,9 @@ import { readFileSync, existsSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import { RouterServer } from './server';
 import { RouterConfig, ProviderConfig } from './types';
 import { logger } from './utils/logger';
@@ -293,6 +296,142 @@ program
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(chalk.red('❌ Config operation failed:'), errorMessage);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Stop command
+ */
+program
+  .command('stop')
+  .description('Stop the Claude Code Router server')
+  .option('-p, --port <number>', 'Server port to stop', parseInt)
+  .option('-h, --host <string>', 'Server host', '127.0.0.1')
+  .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
+  .option('-f, --force', 'Force stop using kill signal if graceful shutdown fails')
+  .action(async (options) => {
+    try {
+      // Load configuration to get default port if not specified
+      let config;
+      try {
+        const configPath = resolve(options.config);
+        config = loadConfig(configPath);
+      } catch (error) {
+        // If config loading fails, use defaults
+        config = { server: { port: 3456, host: '127.0.0.1' } };
+      }
+      
+      const port = options.port || config.server.port;
+      const host = options.host || config.server.host;
+      
+      console.log(chalk.blue(`🛑 Stopping Claude Code Router on ${host}:${port}...`));
+      
+      // First try to stop gracefully via API
+      try {
+        const axios = require('axios');
+        const shutdownUrl = `http://${host}:${port}/shutdown`;
+        
+        await axios.post(shutdownUrl, {}, { timeout: 5000 });
+        console.log(chalk.green('✅ Server stopped gracefully via API'));
+        return;
+        
+      } catch (apiError) {
+        console.log(chalk.yellow('⚠️  API shutdown failed, trying process-based shutdown...'));
+      }
+      
+      // Fallback: Find process by port and stop it
+      try {
+        // Use lsof to find process using the port
+        const { spawn } = require('child_process');
+        const lsofProcess = spawn('lsof', ['-t', `-i:${port}`], { stdio: ['ignore', 'pipe', 'ignore'] });
+        
+        let pids = '';
+        lsofProcess.stdout.on('data', (data: Buffer) => {
+          pids += data.toString();
+        });
+        
+        await new Promise((resolve, reject) => {
+          lsofProcess.on('close', (code: number) => {
+            if (code === 0 && pids.trim()) {
+              resolve(pids.trim());
+            } else {
+              reject(new Error(`No process found on port ${port}`));
+            }
+          });
+          
+          lsofProcess.on('error', reject);
+        });
+        
+        const pidList = pids.trim().split('\\n').filter(pid => pid.trim());
+        
+        if (pidList.length === 0) {
+          console.log(chalk.yellow(`⚠️  No process found running on port ${port}`));
+          return;
+        }
+        
+        // Stop each process
+        for (const pidStr of pidList) {
+          const pid = parseInt(pidStr.trim());
+          if (isNaN(pid)) continue;
+          
+          try {
+            // Check if process exists and is running
+            process.kill(pid, 0);
+            console.log(chalk.blue(`📤 Sending SIGTERM to process ${pid}...`));
+            
+            // Try graceful shutdown first
+            process.kill(pid, 'SIGTERM');
+            
+            // Wait for graceful shutdown
+            let attempts = 0;
+            const maxAttempts = 50; // 5 seconds
+            
+            while (attempts < maxAttempts) {
+              try {
+                process.kill(pid, 0);
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+              } catch {
+                // Process has stopped
+                break;
+              }
+            }
+            
+            // Check if process still exists
+            try {
+              process.kill(pid, 0);
+              
+              if (options.force) {
+                console.log(chalk.yellow(`⚠️  Process ${pid} did not stop gracefully, forcing...`));
+                process.kill(pid, 'SIGKILL');
+                console.log(chalk.green(`✅ Process ${pid} forcefully stopped`));
+              } else {
+                console.log(chalk.yellow(`⚠️  Process ${pid} did not stop gracefully`));
+                console.log(chalk.gray('   Use --force to forcefully stop remaining processes'));
+              }
+            } catch {
+              console.log(chalk.green(`✅ Process ${pid} stopped gracefully`));
+            }
+            
+          } catch (killError) {
+            console.log(chalk.yellow(`⚠️  Process ${pid} not found or already stopped`));
+          }
+        }
+        
+      } catch (processError) {
+        if (process.platform === 'win32') {
+          console.log(chalk.yellow('⚠️  Process-based shutdown not available on Windows'));
+          console.log(chalk.gray('   Please stop the server manually or add shutdown API support'));
+        } else {
+          console.log(chalk.yellow(`⚠️  Could not find process on port ${port}`));
+          console.log(chalk.gray(`   Server may already be stopped or running on a different port`));
+        }
+      }
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red('❌ Stop command failed:'), errorMessage);
       process.exit(1);
     }
   });

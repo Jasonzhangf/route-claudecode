@@ -21,6 +21,8 @@ export class EnhancedOpenAIClient implements Provider {
   private httpClient: AxiosInstance;
   private endpoint: string;
   private apiKey: string;
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000;
 
   constructor(public config: ProviderConfig, providerId: string) {
     this.name = providerId;
@@ -61,31 +63,120 @@ export class EnhancedOpenAIClient implements Provider {
   }
 
   /**
+   * Check if error is retryable (429, 502, 503, 504)
+   */
+  private isRetryableError(error: any): boolean {
+    if (error.response?.status) {
+      const status = error.response.status;
+      return status === 429 || status === 502 || status === 503 || status === 504;
+    }
+    return false;
+  }
+
+  /**
+   * Wait for retry delay - 429 specific: 3 retries with 60s wait on 3rd retry
+   */
+  private async waitForRetry(attempt: number, isRateLimited: boolean = false): Promise<void> {
+    let delay: number;
+    
+    if (isRateLimited) {
+      // For 429 errors: 1s, 5s, 60s delays
+      if (attempt === 0) delay = 1000;      // 1st retry: 1s
+      else if (attempt === 1) delay = 5000;  // 2nd retry: 5s  
+      else delay = 60000;                    // 3rd retry: 60s
+    } else {
+      // For other retryable errors: exponential backoff
+      delay = this.retryDelay * Math.pow(2, attempt);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  /**
+   * Execute request with retry logic
+   */
+  private async executeWithRetry<T>(
+    requestFn: () => Promise<T>,
+    operation: string,
+    requestId: string
+  ): Promise<T> {
+    let lastError: any;
+    
+    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await requestFn();
+      } catch (error) {
+        lastError = error;
+        
+        if (attempt === this.maxRetries || !this.isRetryableError(error)) {
+          break;
+        }
+        
+        const isRateLimited = (error as any)?.response?.status === 429;
+        const delayInfo = isRateLimited ? 
+          (attempt === 0 ? '1s' : attempt === 1 ? '5s' : '60s') : 
+          `${this.retryDelay * Math.pow(2, attempt)}ms`;
+        
+        logger.warn(`${operation} failed, will retry`, {
+          attempt: attempt + 1,
+          maxRetries: this.maxRetries,
+          error: error instanceof Error ? error.message : String(error),
+          status: (error as any)?.response?.status,
+          nextRetryDelay: delayInfo,
+          isRateLimited
+        }, requestId, 'provider');
+        
+        await this.waitForRetry(attempt, isRateLimited);
+      }
+    }
+    
+    // Ensure proper error handling after retry exhaustion
+    if ((lastError as any)?.response?.status === 429) {
+      throw new ProviderError(
+        `${this.name} rate limit exceeded after ${this.maxRetries} retries`,
+        this.name,
+        429,
+        (lastError as any)?.response?.data
+      );
+    }
+    
+    throw lastError;
+  }
+
+  /**
    * Send request to OpenAI-compatible API
    */
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     const requestId = request.metadata?.requestId || 'unknown';
     
-    try {
-      logger.trace(requestId, 'provider', `Sending request to ${this.name}`, {
-        model: request.model,
-        stream: request.stream
-      });
+    logger.trace(requestId, 'provider', `Sending request to ${this.name}`, {
+      model: request.model,
+      stream: request.stream
+    });
 
+    try {
       // Transform Anthropic format to OpenAI format using new transformer
       const openaiRequest = this.convertToOpenAI(request);
       
-      // Send request - use empty path since baseURL includes full endpoint
-      const response = await this.httpClient.post('', openaiRequest);
-      
-      if (response.status < 200 || response.status >= 300) {
-        throw new ProviderError(
-          `${this.name} API returned status ${response.status}`,
-          this.name,
-          response.status,
-          response.data
-        );
-      }
+      // Execute with retry logic
+      const response = await this.executeWithRetry(
+        async () => {
+          const resp = await this.httpClient.post('', openaiRequest);
+          
+          if (resp.status < 200 || resp.status >= 300) {
+            throw new ProviderError(
+              `${this.name} API returned status ${resp.status}`,
+              this.name,
+              resp.status,
+              resp.data
+            );
+          }
+          
+          return resp;
+        },
+        `${this.name} sendRequest`,
+        requestId
+      );
 
       // Transform OpenAI response back to Anthropic format using new transformer
       const baseResponse = this.convertFromOpenAI(response.data, request);
@@ -96,10 +187,20 @@ export class EnhancedOpenAIClient implements Provider {
 
       return baseResponse;
     } catch (error) {
-      logger.error(`${this.name} request failed`, error, requestId, 'provider');
+      logger.error(`${this.name} request failed after retries`, error, requestId, 'provider');
       
       if (error instanceof ProviderError) {
         throw error;
+      }
+      
+      // For 429 errors, preserve the status code
+      if ((error as any)?.response?.status === 429) {
+        throw new ProviderError(
+          `${this.name} rate limit exceeded`,
+          this.name,
+          429,
+          (error as any)?.response?.data
+        );
       }
       
       const errorMessage = error instanceof Error ? error.message : String(error);
