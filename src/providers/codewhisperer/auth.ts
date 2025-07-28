@@ -197,7 +197,7 @@ export class CodeWhispererAuth {
       };
 
       const response = await axios.post(
-        'https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken',
+        process.env.CODEWHISPERER_AUTH_ENDPOINT || 'https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken',
         refreshRequest,
         {
           headers: {
@@ -248,7 +248,7 @@ export class CodeWhispererAuth {
     try {
       // Make a simple request to CodeWhisperer to validate token
       const response = await axios.get(
-        'https://codewhisperer.us-east-1.amazonaws.com/health', // Assuming health endpoint exists
+        process.env.CODEWHISPERER_HEALTH_ENDPOINT || 'https://codewhisperer.us-east-1.amazonaws.com/health', // Health endpoint
         {
           headers: {
             'Authorization': `Bearer ${token}`,

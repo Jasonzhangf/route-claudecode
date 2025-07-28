@@ -26,7 +26,10 @@ export class CodeWhispererClient implements Provider {
   private readonly retryDelay = 1000; // 1 second
 
   constructor(public config: ProviderConfig) {
-    this.endpoint = config.endpoint || 'https://codewhisperer.us-east-1.amazonaws.com';
+    if (!config.endpoint) {
+      throw new Error('CodeWhisperer endpoint is required but not provided in configuration');
+    }
+    this.endpoint = config.endpoint;
     this.auth = new CodeWhispererAuth();
     // 临时禁用SafeTokenManager for debugging
     // this.safeTokenManager = SafeTokenManager.getInstance();

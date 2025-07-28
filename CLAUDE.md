@@ -1,3 +1,26 @@
+# 🚨 **最高优先级编码规则 (HIGHEST PRIORITY CODING RULES)**
+
+## 🔥 **核心禁令 - 绝对不允许**
+1. **🚫 禁止硬编码 (NO HARDCODING)**
+   - 任何模型名称、API端点、配置值都不允许硬编码
+   - 所有常量必须通过配置文件、环境变量或参数传递
+   - 违例示例：`model: 'claude-3-sonnet-20240229'` ❌
+   - 正确示例：`model: modelName` ✅
+
+2. **🚫 禁止Fallback机制 (NO FALLBACK)**
+   - 不允许使用任何形式的fallback逻辑或默认值降级
+   - 所有失败必须明确处理，不能自动降级到备用方案
+   - 违例示例：`const model = request.model || 'default-model'` ❌
+   - 正确示例：明确的错误处理和失败报告 ✅
+
+## 🎯 **架构原则优先级**
+1. **最高优先级**: 零硬编码 + 零Fallback
+2. **高优先级**: 模块化、自包含、可测试
+3. **中优先级**: 性能优化、用户体验
+4. **低优先级**: 代码风格、注释完整性
+
+---
+
 ### 🔄 Claude Code Output Router - 项目架构指南
 
 #### 🏗️ 项目概述

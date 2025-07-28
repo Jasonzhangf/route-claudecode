@@ -8,7 +8,7 @@
 const { RoutingEngine } = require('../../dist/routing/engine.js');
 const fs = require('fs');
 
-// 测试配置 - 与config-router.json一致
+// 测试配置 - 与config.json一致
 const testConfig = {
   default: {
     provider: 'codewhisperer-primary',

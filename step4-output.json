@@ -1,8 +1,0 @@
-{
-  "test": "codewhisperer-api-direct",
-  "timestamp": "2025-07-27T23:56:39.437Z",
-  "error": {
-    "message": "response.data.substring is not a function",
-    "response": null
-  }
-}

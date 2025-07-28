@@ -68,7 +68,10 @@ export class CodeWhispererConverter {
   private profileArn: string;
 
   constructor(profileArn?: string) {
-    this.profileArn = profileArn || 'arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK';
+    if (!profileArn) {
+      throw new Error('CodeWhisperer profileArn is required but not provided');
+    }
+    this.profileArn = profileArn;
   }
 
   /**

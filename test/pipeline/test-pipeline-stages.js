@@ -71,7 +71,7 @@ async function testRouting(baseRequest) {
     const { RoutingEngine } = require(path.join(BUILD_DIR, 'routing/engine'));
     
     // 加载配置
-    const configPath = path.join(process.env.HOME, '.claude-code-router', 'config-router.json');
+    const configPath = path.join(process.env.HOME, '.claude-code-router', 'config.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     
     const routingEngine = new RoutingEngine(config.routing);

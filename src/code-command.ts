@@ -21,10 +21,7 @@ function loadConfig(configPath: string): RouterConfig {
     const configData = readFileSync(configPath, 'utf8');
     const config = JSON.parse(configData) as RouterConfig;
     
-    // Set defaults
-    if (!config.server) config.server = { host: '127.0.0.1', port: 3456 };
-    if (!config.debug) config.debug = { enabled: false, traceRequests: false, saveRequests: false, logLevel: 'info', logDir: join(require('os').homedir(), '.claude-code-router', 'logs') };
-    
+    // No defaults - user must provide complete configuration
     return config;
   } catch (error) {
     console.error(chalk.red('❌ Failed to load configuration:'), error instanceof Error ? error.message : error);

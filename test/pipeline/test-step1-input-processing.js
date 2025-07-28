@@ -1,71 +1,95 @@
 #!/usr/bin/env node
+
 /**
- * 测试用例: 第一步输入处理验证
- * 测试目标: 验证API请求链路通畅性，确保请求成功发送并收到响应
- * Step 1: 测试输入处理模块 - 验证原始请求如何被处理和路由
- * 项目所有者: Jason Zhang
+ * Step 1: Test complete API request chain accessibility
+ * Goal: Test complete API request chain and tool definitions
+ * Input: Raw Anthropic API request (model, messages, max_tokens, tools)
+ * Output: Complete API response data → save to step1-output.json
  */
 
-const axios = require('axios');
 const fs = require('fs');
+const axios = require('axios');
+
+const BASE_URL = 'http://127.0.0.1:3456';
+
+const testRequest = {
+  model: "claude-3-5-haiku-20241022",
+  max_tokens: 100,
+  messages: [
+    {
+      role: "user",
+      content: "Could you help me read the file /tmp/test-single.json and tell me what's in it?"
+    }
+  ],
+  tools: [
+    {
+      name: "Read",
+      description: "Reads a file from the local filesystem",
+      input_schema: {
+        type: "object",
+        properties: {
+          file_path: {
+            description: "The absolute path to the file to read",
+            type: "string"
+          }
+        },
+        required: ["file_path"]
+      }
+    }
+  ]
+};
 
 async function testStep1() {
-  console.log('🔍 Step 1: Testing Input Processing');
-  
-  const testRequest = {
-    model: "claude-3-5-haiku-20241022",
-    messages: [{ role: "user", content: "hello test" }],
-    stream: false
-  };
-  
-  console.log('📥 Input Request:', JSON.stringify(testRequest, null, 2));
-  
+  console.log('🔍 Step 1: Testing complete API request chain with tools');
+  console.log('Request details:', {
+    model: testRequest.model,
+    messageCount: testRequest.messages.length,
+    toolCount: testRequest.tools.length,
+    toolNames: testRequest.tools.map(t => t.name)
+  });
+
   try {
-    const response = await axios.post('http://127.0.0.1:3456/v1/messages', testRequest, {
+    console.log('📤 Sending request to router...');
+    const response = await axios.post(`${BASE_URL}/v1/messages`, testRequest, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer test',
-        'anthropic-version': '2023-06-01'
+        'Authorization': 'Bearer test'
       }
     });
-    
-    console.log('📤 Raw Response:', JSON.stringify(response.data, null, 2));
-    
-    // Save outputs for next step
-    const outputs = {
-      timestamp: new Date().toISOString(),
-      step: 'step1-input-processing',
-      input: testRequest,
-      output: response.data,
-      success: true
+
+    const output = {
+      request: testRequest,
+      response: response.data,
+      status: response.status,
+      headers: response.headers,
+      timestamp: new Date().toISOString()
     };
+
+    // Save output for step 2
+    fs.writeFileSync('step1-output.json', JSON.stringify(output, null, 2));
     
-    fs.writeFileSync('step1-output.json', JSON.stringify(outputs, null, 2));
-    console.log('✅ Step 1 completed - output saved to step1-output.json');
-    
-    return outputs;
-    
+    console.log('✅ Step 1 Success:');
+    console.log('  - Request sent successfully');
+    console.log('  - Response received:', response.status);
+    console.log('  - Response type:', typeof response.data);
+    console.log('  - Has content:', !!response.data.content);
+    console.log('  - Content length:', response.data.content?.length || 0);
+    console.log('  - Tool usage:', response.data.usage?.input_tokens, 'input tokens');
+    console.log('  - Output saved to step1-output.json');
+
+    return true;
   } catch (error) {
-    console.error('❌ Step 1 failed:', error.response?.data || error.message);
-    
-    const outputs = {
-      timestamp: new Date().toISOString(),
-      step: 'step1-input-processing',
-      input: testRequest,
-      output: null,
-      error: error.response?.data || error.message,
-      success: false
-    };
-    
-    fs.writeFileSync('step1-output.json', JSON.stringify(outputs, null, 2));
-    return outputs;
+    console.error('❌ Step 1 Failed:');
+    console.error('  - Error:', error.message);
+    console.error('  - Status:', error.response?.status);
+    console.error('  - Data:', error.response?.data);
+    return false;
   }
 }
 
-// 运行测试
 if (require.main === module) {
-  testStep1().then(result => {
-    process.exit(result.success ? 0 : 1);
+  testStep1().then(success => {
+    process.exit(success ? 0 : 1);
   });
 }
 

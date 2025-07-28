@@ -13,7 +13,7 @@ async function debugCodeWhispererAPI() {
 
   try {
     // 1. 读取实际CodeWhisperer配置
-    const configPath = path.join(process.env.HOME, '.claude-code-router', 'config-router.json');
+    const configPath = path.join(process.env.HOME, '.claude-code-router', 'config.json');
     if (!fs.existsSync(configPath)) {
       throw new Error('配置文件不存在: ' + configPath);
     }

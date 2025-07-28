@@ -181,7 +181,7 @@ export class SafeTokenManager {
   private async validateTokenSafely(accessToken: string): Promise<boolean> {
     try {
       // 使用轻量级的健康检查端点，避免频繁调用实际API
-      const response = await axios.get('https://codewhisperer.us-east-1.amazonaws.com/health', {
+      const response = await axios.get(process.env.CODEWHISPERER_HEALTH_ENDPOINT || 'https://codewhisperer.us-east-1.amazonaws.com/health', {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'

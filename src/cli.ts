@@ -19,71 +19,12 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
 const VERSION = packageJson.version;
 
 const program = new Command();
-const DEFAULT_CONFIG_PATH = join(homedir(), '.claude-code-router', 'config-router.json');
+const DEFAULT_CONFIG_PATH = join(homedir(), '.claude-code-router', 'config.json');
 
 /**
  * Default configuration
  */
-const DEFAULT_CONFIG: RouterConfig = {
-  server: {
-    port: 3456,
-    host: '127.0.0.1'
-  },
-  providers: {
-    'codewhisperer-primary': {
-      type: 'codewhisperer',
-      endpoint: 'https://codewhisperer.us-east-1.amazonaws.com',
-      authentication: {
-        type: 'bearer',
-        credentials: {}
-      },
-      settings: {
-        profileArn: 'arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK'
-      }
-    },
-    'shuaihong-openai': {
-      type: 'openai',
-      endpoint: 'https://api.shuaihong.ai',
-      authentication: {
-        type: 'bearer',
-        credentials: {
-          apiKey: 'your-shuaihong-api-key'
-        }
-      },
-      settings: {}
-    }
-  },
-  routing: {
-    default: {
-      provider: 'codewhisperer-primary',
-      model: 'CLAUDE_SONNET_4_20250514_V1_0'
-    },
-    background: {
-      provider: 'shuaihong-openai',
-      model: 'gemini-2.5-flash'
-    },
-    thinking: {
-      provider: 'codewhisperer-primary',
-      model: 'CLAUDE_SONNET_4_20250514_V1_0'
-    },
-    longcontext: {
-      provider: 'shuaihong-openai',
-      model: 'gemini-2.5-pro'
-    },
-    search: {
-      provider: 'shuaihong-openai',
-      model: 'gemini-2.5-flash'
-    }
-  },
-  debug: {
-    enabled: false,
-    logLevel: 'info',
-    traceRequests: false,
-    saveRequests: false,
-    logDir: join(homedir(), '.claude-code-router', 'logs')
-  },
-  hooks: []
-};
+// No default configuration - user must provide complete config.json
 
 /**
  * Load configuration from file
@@ -91,41 +32,22 @@ const DEFAULT_CONFIG: RouterConfig = {
 function loadConfig(configPath: string): RouterConfig {
   try {
     if (!existsSync(configPath)) {
-      console.log(chalk.yellow(`⚠️  Config file not found at ${configPath}`));
-      console.log(chalk.blue(`📝 Creating default configuration...`));
-      
-      // Create default config
-      ensureConfigDir();
-      writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
-      console.log(chalk.green(`✅ Default configuration created at ${configPath}`));
-      
-      return DEFAULT_CONFIG;
+      console.error(chalk.red(`❌ Config file not found at ${configPath}`));
+      console.error(chalk.red(`❌ Please create a valid configuration file.`));
+      console.error(chalk.blue(`📝 No default configuration will be used.`));
+      process.exit(1);
     }
 
     const configData = readFileSync(configPath, 'utf8');
     const config = JSON.parse(configData) as RouterConfig;
     
-    // Merge with defaults
-    const mergedConfig: RouterConfig = {
-      ...DEFAULT_CONFIG,
-      ...config,
-      server: { ...DEFAULT_CONFIG.server, ...config.server },
-      debug: { ...DEFAULT_CONFIG.debug, ...config.debug },
-      providers: { ...DEFAULT_CONFIG.providers, ...config.providers },
-      routing: {
-        ...DEFAULT_CONFIG.routing,
-        ...config.routing
-      }
-    };
-
-    // New routing configuration is object-based, no rules array needed
-
-    return mergedConfig;
+    // Direct configuration usage - no defaults, no fallbacks
+    return config;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error(chalk.red(`❌ Failed to load config from ${configPath}:`), errorMessage);
-    console.log(chalk.blue(`📝 Using default configuration...`));
-    return DEFAULT_CONFIG;
+    console.error(chalk.red(`❌ Please fix your configuration file.`));
+    process.exit(1);
   }
 }
 
@@ -237,11 +159,15 @@ program
 program
   .command('status')
   .description('Check router status')
-  .option('-p, --port <number>', 'Server port', '3456')
-  .option('-h, --host <string>', 'Server host', '127.0.0.1')
+  .option('-p, --port <number>', 'Server port (overrides config)')
+  .option('-h, --host <string>', 'Server host (overrides config)')
   .action(async (options) => {
+    const config = loadConfig(options.config);
+    const host = options.host || config.server?.host || 'localhost';
+    const port = options.port || config.server?.port || 3000;
+    
     try {
-      const response = await fetch(`http://${options.host}:${options.port}/status`);
+      const response = await fetch(`http://${host}:${port}/status`);
       
       if (response.ok) {
         const status = await response.json() as any;
@@ -258,7 +184,7 @@ program
       }
     } catch (error) {
       console.log(chalk.red('❌ Router is not running'));
-      console.log(chalk.gray(`   Make sure the server is started on ${options.host}:${options.port}`));
+      console.log(chalk.gray(`   Make sure the server is started on ${host}:${port}`));
       process.exit(1);
     }
   });
@@ -269,11 +195,14 @@ program
 program
   .command('health')
   .description('Check router and provider health')
-  .option('-p, --port <number>', 'Server port', '3456')
-  .option('-h, --host <string>', 'Server host', '127.0.0.1')
+  .option('-p, --port <number>', 'Server port (overrides config)')
+  .option('-h, --host <string>', 'Server host (overrides config)')
   .action(async (options) => {
     try {
-      const response = await fetch(`http://${options.host}:${options.port}/health`);
+      const config = loadConfig(options.config);
+      const host = options.host || config.server?.host || 'localhost';
+      const port = options.port || config.server?.port || 3000;
+      const response = await fetch(`http://${host}:${port}/health`);
       const health = await response.json() as any;
       
       if (health.overall === 'healthy') {
@@ -345,7 +274,10 @@ program
       } else if (options.edit) {
         ensureConfigDir();
         if (!existsSync(configPath)) {
-          writeFileSync(configPath, JSON.stringify(DEFAULT_CONFIG, null, 2));
+          console.error(chalk.red(`❌ Config file not found at ${configPath}`));
+          console.error(chalk.red(`❌ Please create a configuration file first.`));
+          console.error(chalk.blue(`📝 No default template available - you must create your own config.json`));
+          process.exit(1);
         }
         
         const { spawn } = require('child_process');

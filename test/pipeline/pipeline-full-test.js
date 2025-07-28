@@ -154,7 +154,7 @@ async function testRouting(baseRequest) {
   
   try {
     // Load router config
-    const configPath = path.join(process.env.HOME, '.claude-code-router', 'config-router.json');
+    const configPath = path.join(process.env.HOME, '.claude-code-router', 'config.json');
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     
     const routingEngine = new RoutingEngine(config.routing);

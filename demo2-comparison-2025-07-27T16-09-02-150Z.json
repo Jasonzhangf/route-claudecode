@@ -1,0 +1,330 @@
+{
+  "testName": "Demo2 Six-Step Process Comparison",
+  "timestamp": "2025-07-27T16:09:06.388Z",
+  "testConfig": {
+    "model": "claude-sonnet-4-20250514",
+    "expectedCodeWhispererModel": "CLAUDE_SONNET_4_20250514_V1_0",
+    "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK",
+    "testMessage": "Hello, how are you today?"
+  },
+  "summary": {
+    "step1_inputProcessing": true,
+    "step2_routingLogic": true,
+    "step3_requestTransformation": true,
+    "step4_rawApiResponse": true,
+    "step5_parserInput": true,
+    "step6_finalOutput": true,
+    "overallSuccess": true
+  },
+  "detailedResults": {
+    "step1": {
+      "step": 1,
+      "timestamp": "2025-07-27T16:09:04.229Z",
+      "data": {
+        "success": true,
+        "request": {
+          "model": "claude-sonnet-4-20250514",
+          "max_tokens": 4096,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Hello, how are you today?"
+            }
+          ],
+          "stream": false
+        },
+        "response": {
+          "status": 200,
+          "statusText": "OK",
+          "headers": {
+            "content-type": "application/json; charset=utf-8",
+            "content-length": "350",
+            "date": "Sun, 27 Jul 2025 16:09:04 GMT",
+            "connection": "keep-alive",
+            "keep-alive": "timeout=72"
+          },
+          "data": {
+            "content": [
+              {
+                "type": "text",
+                "text": "Hello! I'm doing well, thank you for asking. I'm here and ready to help with whatever you'd like to discuss or work on. How are you doing today?"
+              }
+            ],
+            "id": "cw_1753632544222",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0",
+            "role": "assistant",
+            "stop_sequence": null,
+            "type": "message",
+            "usage": {
+              "input_tokens": 7,
+              "output_tokens": 36
+            }
+          }
+        },
+        "error": null
+      }
+    },
+    "step2": {
+      "step": 2,
+      "timestamp": "2025-07-27T16:09:04.229Z",
+      "data": {
+        "success": true,
+        "inputRequest": {
+          "model": "claude-sonnet-4-20250514",
+          "max_tokens": 4096,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Hello, how are you today?"
+            }
+          ],
+          "stream": false
+        },
+        "routingAnalysis": {
+          "inputModel": "claude-sonnet-4-20250514",
+          "expectedRoute": {
+            "category": "default",
+            "provider": "codewhisperer-primary",
+            "reason": "Default routing for claude-sonnet-4 model"
+          },
+          "demo2Mapping": {
+            "originalModel": "claude-sonnet-4-20250514",
+            "mappedModel": "CLAUDE_SONNET_4_20250514_V1_0",
+            "matches": true
+          }
+        },
+        "step1Success": true,
+        "timestamp": "2025-07-27T16:09:04.229Z"
+      }
+    },
+    "step3": {
+      "step": 3,
+      "timestamp": "2025-07-27T16:09:04.231Z",
+      "data": {
+        "success": true,
+        "transformationAnalysis": {
+          "demo2Request": {
+            "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK",
+            "conversationState": {
+              "chatTriggerType": "MANUAL",
+              "conversationId": "660738a5-7e37-4add-9c17-517f09283586",
+              "currentMessage": {
+                "userInputMessage": {
+                  "content": "Hello, how are you today?",
+                  "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+                  "origin": "AI_EDITOR",
+                  "userInputMessageContext": {
+                    "toolResults": []
+                  }
+                }
+              },
+              "history": []
+            }
+          },
+          "comparison": {
+            "profileArn": {
+              "demo2": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK",
+              "expected": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK",
+              "matches": true
+            },
+            "conversationId": {
+              "demo2": "660738a5-7e37-4add-9c17-517f09283586",
+              "isUUID": true
+            },
+            "modelMapping": {
+              "original": "claude-sonnet-4-20250514",
+              "demo2Mapped": "CLAUDE_SONNET_4_20250514_V1_0",
+              "expected": "CLAUDE_SONNET_4_20250514_V1_0",
+              "matches": true
+            },
+            "content": {
+              "original": "Hello, how are you today?",
+              "demo2": "Hello, how are you today?",
+              "matches": true
+            },
+            "structure": {
+              "hasProfileArn": true,
+              "hasConversationState": true,
+              "hasCurrentMessage": true,
+              "hasUserInputMessage": true,
+              "hasHistory": true,
+              "historyLength": 0
+            }
+          }
+        },
+        "demo2RequestSize": 386,
+        "timestamp": "2025-07-27T16:09:04.230Z"
+      }
+    },
+    "step4": {
+      "step": 4,
+      "timestamp": "2025-07-27T16:09:06.385Z",
+      "data": {
+        "success": true,
+        "demo2Request": {
+          "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK",
+          "conversationState": {
+            "chatTriggerType": "MANUAL",
+            "conversationId": "660738a5-7e37-4add-9c17-517f09283586",
+            "currentMessage": {
+              "userInputMessage": {
+                "content": "Hello, how are you today?",
+                "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+                "origin": "AI_EDITOR",
+                "userInputMessageContext": {
+                  "toolResults": []
+                }
+              }
+            },
+            "history": []
+          }
+        },
+        "rawResponse": {
+          "status": 200,
+          "statusText": "OK",
+          "headers": {
+            "date": "Sun, 27 Jul 2025 16:09:05 GMT",
+            "content-type": "application/json",
+            "transfer-encoding": "chunked",
+            "connection": "keep-alive",
+            "x-amzn-requestid": "95321dd4-18b6-4619-b2b9-3a98e1b9a359",
+            "x-amzn-codewhisperer-conversation-id": "",
+            "x-xss-protection": "1; mode=block",
+            "strict-transport-security": "max-age=47304000; includeSubDomains",
+            "x-frame-options": "DENY",
+            "cache-control": "no-cache",
+            "x-content-type-options": "nosniff"
+          },
+          "dataLength": 1242,
+          "dataHex": "000000960000005c59b910060b3a6576656e742d74797065070016617373697374616e74526573706f6e73654576656e740d3a636f6e74656e742d747970650700106170706c69636174696f6e2f6a736f6e0d3a6d6573736167652d7479706507000565",
+          "dataPreview": "\u0000\u0000\u0000�\u0000\u0000\u0000\\Y�\u0010\u0006\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\"Hello! I'm doing well, thank\"}��d\u0002\u0000\u0000\u0000�\u0000\u0000\u0000\\Y�\u0010\u0006\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\" you for asking. I'm here an\"}\rtB^\u0000\u0000\u0000�\u0000\u0000\u0000\\\u0013\t\b�\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\"d ready to help with whatever you'\"}��\u0005�\u0000\u0000\u0000�\u0000\u0000\u0000\\\t)�E\u000b:event-type\u0007\u0000\u0016assistantResponse"
+        },
+        "timestamp": "2025-07-27T16:09:06.383Z",
+        "rawResponseFile": "/Users/fanzhang/Documents/github/claude-code-router/step4-raw-response-2025-07-27T16-09-02-150Z.bin"
+      }
+    },
+    "step5": {
+      "step": 5,
+      "timestamp": "2025-07-27T16:09:06.386Z",
+      "data": {
+        "success": true,
+        "parserInput": {
+          "bufferLength": 1242,
+          "hexPreview": "000000960000005c59b910060b3a6576656e742d74797065070016617373697374616e74526573706f6e73654576656e740d3a636f6e74656e742d747970650700106170706c69636174696f6e2f6a736f6e0d3a6d6573736167652d7479706507000565",
+          "utf8Preview": "\u0000\u0000\u0000�\u0000\u0000\u0000\\Y�\u0010\u0006\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\"Hello! I'm doing well, thank\"}��d\u0002\u0000\u0000\u0000�\u0000\u0000\u0000\\Y�\u0010\u0006\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\" you for asking. I'm here an\"}\rtB^\u0000\u0000\u0000�\u0000\u0000\u0000\\\u0013\t\b�\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\"d ready to help with whatever you'\"}��\u0005�\u0000\u0000\u0000�\u0000\u0000\u0000\\\t)�E\u000b:event-type\u0007\u0000\u0016assistantResponse",
+          "binaryStructure": {
+            "hasAwsHeader": true,
+            "firstBytes": "000000960000005c59b910060b3a6576",
+            "possibleFrames": 0,
+            "firstFrameTotalLen": 150,
+            "firstFrameHeaderLen": 92
+          },
+          "frameAnalysis": {
+            "frameCount": 2,
+            "frames": [
+              {
+                "offset": 0,
+                "totalLen": 150,
+                "headerLen": 92,
+                "payloadLen": 46,
+                "nextOffset": 154
+              },
+              {
+                "offset": 154,
+                "totalLen": 92,
+                "headerLen": 1505300486,
+                "payloadLen": -1505300406,
+                "nextOffset": 250
+              }
+            ],
+            "firstFrameSize": 150,
+            "totalAnalyzed": 250
+          }
+        },
+        "rawResponseFile": "/Users/fanzhang/Documents/github/claude-code-router/step4-raw-response-2025-07-27T16-09-02-150Z.bin",
+        "timestamp": "2025-07-27T16:09:06.386Z"
+      }
+    },
+    "step6": {
+      "step": 6,
+      "timestamp": "2025-07-27T16:09:06.387Z",
+      "data": {
+        "success": true,
+        "comparison": {
+          "step1Success": true,
+          "step4Success": true,
+          "step5Success": true,
+          "pipeline": {
+            "inputProcessingWorked": true,
+            "directCodeWhispererWorked": true,
+            "parsingWorked": true,
+            "fullPipelineWorked": true
+          },
+          "ourSystemResponse": {
+            "hasContent": true,
+            "contentLength": 1,
+            "hasUsage": true,
+            "model": "CLAUDE_SONNET_4_20250514_V1_0",
+            "role": "assistant",
+            "responseStructure": [
+              "content",
+              "id",
+              "model",
+              "role",
+              "stop_sequence",
+              "type",
+              "usage"
+            ]
+          }
+        },
+        "recommendations": [
+          "Both systems work - compare response formats for consistency",
+          "Verify response parsing and format conversion is correct",
+          "Test with more complex requests (tools, multi-turn conversations)"
+        ],
+        "timestamp": "2025-07-27T16:09:06.387Z"
+      }
+    }
+  },
+  "finalAnalysis": {
+    "step1Success": true,
+    "step4Success": true,
+    "step5Success": true,
+    "pipeline": {
+      "inputProcessingWorked": true,
+      "directCodeWhispererWorked": true,
+      "parsingWorked": true,
+      "fullPipelineWorked": true
+    },
+    "ourSystemResponse": {
+      "hasContent": true,
+      "contentLength": 1,
+      "hasUsage": true,
+      "model": "CLAUDE_SONNET_4_20250514_V1_0",
+      "role": "assistant",
+      "responseStructure": [
+        "content",
+        "id",
+        "model",
+        "role",
+        "stop_sequence",
+        "type",
+        "usage"
+      ]
+    }
+  },
+  "recommendations": [
+    "Both systems work - compare response formats for consistency",
+    "Verify response parsing and format conversion is correct",
+    "Test with more complex requests (tools, multi-turn conversations)"
+  ],
+  "outputFiles": {
+    "step1": "/Users/fanzhang/Documents/github/claude-code-router/step1-output.json",
+    "step2": "/Users/fanzhang/Documents/github/claude-code-router/step2-output.json",
+    "step3": "/Users/fanzhang/Documents/github/claude-code-router/step3-output.json",
+    "step4": "/Users/fanzhang/Documents/github/claude-code-router/step4-output.json",
+    "step5": "/Users/fanzhang/Documents/github/claude-code-router/step5-output.json",
+    "step6": "/Users/fanzhang/Documents/github/claude-code-router/step6-output.json",
+    "comparison": "/Users/fanzhang/Documents/github/claude-code-router/demo2-comparison-2025-07-27T16-09-02-150Z.json"
+  }
+}
