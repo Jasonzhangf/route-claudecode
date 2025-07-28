@@ -205,7 +205,8 @@ export class CodeWhispererAuth {
       
       const refreshedToken = await this.performRefresh(tokenData);
       logger.info('Token refresh completed successfully');
-      this.resetFailureCount(); // Reset on successful refresh
+      // NOTE: Don't reset failure count here - only reset on successful API call
+      // this.resetFailureCount(); // Reset on successful refresh
       return refreshedToken.accessToken;
       
     } catch (error) {
@@ -288,12 +289,17 @@ export class CodeWhispererAuth {
         throw new Error(`Token refresh failed with status ${response.status}`);
       }
 
+      // Calculate expiresAt from expiresIn (API returns seconds, we need ISO timestamp)
+      const expiresAt = response.data.expiresAt || 
+        (response.data.expiresIn ? new Date(Date.now() + response.data.expiresIn * 1000).toISOString() : null);
+
       // Preserve all original fields and only update the refreshed ones
       const newTokenData: TokenData = {
         ...currentToken, // Keep all original fields
         accessToken: response.data.accessToken,
         refreshToken: response.data.refreshToken,
-        expiresAt: response.data.expiresAt,
+        expiresAt: expiresAt,
+        profileArn: response.data.profileArn || currentToken.profileArn,
         // Mark when and by whom this token was refreshed
         lastRefreshedBy: 'claude-code-router',
         lastRefreshTime: new Date().toISOString()
@@ -383,7 +389,7 @@ export class CodeWhispererAuth {
   /**
    * Reset failure count (called on successful authentication)
    */
-  private resetFailureCount(): void {
+  resetFailureCount(): void {
     if (this.consecutiveFailures > 0) {
       logger.debug(`Resetting failure count (was ${this.consecutiveFailures})`);
       this.consecutiveFailures = 0;

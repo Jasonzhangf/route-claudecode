@@ -26,7 +26,7 @@ export class OpenAICompatibleClient implements Provider {
 
     this.httpClient = axios.create({
       baseURL: this.endpoint,
-      timeout: 60000,
+      timeout: 0, // No timeout
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'claude-code-router/2.0.0'
@@ -48,7 +48,7 @@ export class OpenAICompatibleClient implements Provider {
   async isHealthy(): Promise<boolean> {
     try {
       // Try to make a simple request to test connectivity
-      const response = await this.httpClient.get('/models', { timeout: 5000 });
+      const response = await this.httpClient.get('/models', { timeout: 0 });
       return response.status === 200;
     } catch (error) {
       logger.debug(`Health check failed for ${this.name}`, error);

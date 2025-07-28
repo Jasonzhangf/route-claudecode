@@ -92,7 +92,7 @@ export interface RoutingRule {
 
 // Provider types
 export interface ProviderConfig {
-  type: 'codewhisperer' | 'shuaihong' | 'openai';
+  type: 'codewhisperer' | 'shuaihong' | 'openai' | 'anthropic' | 'gemini';
   endpoint: string;
   authentication: {
     type: 'bearer' | 'api_key';

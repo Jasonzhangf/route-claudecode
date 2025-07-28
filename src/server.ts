@@ -9,6 +9,8 @@ import { RoutingEngine } from './routing';
 import { AnthropicOutputProcessor } from './output/anthropic';
 import { CodeWhispererClient } from './providers/codewhisperer';
 import { EnhancedOpenAIClient } from './providers/openai';
+import { AnthropicProvider } from './providers/anthropic';
+import { GeminiProvider } from './providers/gemini';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from './types';
 import { logger } from './utils/logger';
 import { sessionManager } from './session/manager';
@@ -63,6 +65,12 @@ export class RouterServer {
         } else if (providerConfig.type === 'openai') {
           // Generic OpenAI-compatible client (works for Shuaihong, etc.)
           client = new EnhancedOpenAIClient(providerConfig, providerId);
+        } else if (providerConfig.type === 'anthropic') {
+          // Direct Anthropic API client
+          client = new AnthropicProvider(providerConfig);
+        } else if (providerConfig.type === 'gemini') {
+          // Google Gemini API client
+          client = new GeminiProvider(providerConfig);
         } else {
           logger.warn(`Unsupported provider type: ${providerConfig.type}`, { providerId });
           continue;

@@ -78,13 +78,29 @@ export class CodeWhispererClient implements Provider {
 
     // Add response interceptor for monitoring-based error handling
     this.httpClient.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        // Reset failure count on successful response
+        this.auth.resetFailureCount();
+        return response;
+      },
       async (error) => {
         if (error.response?.status === 403 || error.response?.status === 401) {
           logger.warn('CodeWhisperer authentication error - reporting failure to auth monitoring', {
             status: error.response?.status,
             statusText: error.response?.statusText
           });
+          
+          // Check if this request has already been retried (prevent infinite loops)
+          const retryCount = error.config._retryCount || 0;
+          if (retryCount >= 1) {
+            logger.error('Request already retried once - no further retries');
+            throw new ProviderError(
+              'Authentication failed after retry. Token may be invalid.',
+              this.name,
+              403,
+              error
+            );
+          }
           
           // Report authentication failure to monitoring system
           this.auth.reportAuthFailure();
@@ -106,6 +122,8 @@ export class CodeWhispererClient implements Provider {
             const newToken = await this.auth.getToken();
             
             if (newToken) {
+              // Mark this request as retried to prevent infinite loops
+              error.config._retryCount = retryCount + 1;
               // Use new token for retry
               error.config.headers['Authorization'] = `Bearer ${newToken}`;
               logger.info('Retrying request with refreshed token');

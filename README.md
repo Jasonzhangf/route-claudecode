@@ -7,7 +7,7 @@
 
 ## ✨ Features
 
-- 🔄 **Multi-Provider Support**: AWS CodeWhisperer, OpenAI-compatible APIs, and more
+- 🔄 **Multi-Provider Support**: AWS CodeWhisperer, Anthropic Direct, Google Gemini, OpenAI-compatible APIs
 - 🎯 **Smart Routing**: Route different types of requests to optimal providers
 - 🛠️ **Perfect Tool Call Support**: Advanced tool call parsing and buffered processing
 - 🔧 **Format Transformation**: Seamless conversion between API formats
@@ -15,6 +15,7 @@
 - 🔍 **Comprehensive Logging**: Full debugging and monitoring capabilities
 - ⚡ **High Performance**: Optimized for speed and reliability
 - 🔐 **Secure Authentication**: Multiple authentication methods supported
+- 🌍 **Four Platform Types**: CodeWhisperer, Anthropic, Gemini, and OpenAI-compatible providers
 
 ## 📋 Prerequisites
 
@@ -324,6 +325,55 @@ The router uses a JSON configuration file located at `~/.claude-code-router/conf
 }
 ```
 
+#### Anthropic Direct Provider
+```json
+{
+  "type": "anthropic",
+  "endpoint": "https://api.anthropic.com",
+  "authentication": {
+    "type": "bearer",
+    "credentials": {
+      "apiKey": "sk-ant-your-anthropic-api-key-here"
+    }
+  },
+  "models": [
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022", 
+    "claude-3-opus-20240229"
+  ]
+}
+```
+
+**Setup Anthropic Direct:**
+1. Sign up for Anthropic API: https://console.anthropic.com/
+2. Generate an API key from your console
+3. Add the key to your configuration
+
+#### Google Gemini Provider
+```json
+{
+  "type": "gemini",
+  "endpoint": "https://generativelanguage.googleapis.com",
+  "authentication": {
+    "type": "bearer",  
+    "credentials": {
+      "apiKey": "your-gemini-api-key-here"
+    }
+  },
+  "models": [
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+    "gemini-1.5-pro",
+    "gemini-1.5-flash"
+  ]
+}
+```
+
+**Setup Google Gemini:**
+1. Visit Google AI Studio: https://makersuite.google.com/app/apikey
+2. Create a new API key for your project
+3. Add the key to your configuration
+
 ### Routing Categories
 
 The router supports five routing categories:
@@ -455,7 +505,7 @@ The router will automatically:
 }
 ```
 
-#### Example 2: Mixed Providers
+#### Example 2: Mixed Providers (All Platform Types)
 ```json
 {
   "providers": {
@@ -464,17 +514,27 @@ The router will automatically:
       "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
       "authentication": {"type": "bearer", "credentials": {"tokenPath": "~/.aws/sso/cache/token.json"}}
     },
+    "anthropic": {
+      "type": "anthropic",
+      "endpoint": "https://api.anthropic.com",
+      "authentication": {"type": "bearer", "credentials": {"apiKey": "sk-ant-your-key"}}
+    },
     "openai": {
       "type": "openai",  
       "endpoint": "https://api.openai.com/v1/chat/completions",
       "authentication": {"type": "bearer", "credentials": {"apiKey": "sk-your-key"}}
+    },
+    "gemini": {
+      "type": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "authentication": {"type": "bearer", "credentials": {"apiKey": "your-gemini-key"}}
     }
   },
   "routing": {
     "default": {"provider": "codewhisperer", "model": "CLAUDE_SONNET_4_20250514_V1_0"},
-    "background": {"provider": "codewhisperer", "model": "CLAUDE_SONNET_4_20250514_V1_0"}, 
-    "thinking": {"provider": "openai", "model": "gpt-4o"},
-    "longcontext": {"provider": "openai", "model": "claude-3-5-sonnet"},
+    "background": {"provider": "gemini", "model": "gemini-2.5-flash"}, 
+    "thinking": {"provider": "anthropic", "model": "claude-3-5-sonnet-20241022"},
+    "longcontext": {"provider": "gemini", "model": "gemini-2.5-pro"},
     "search": {"provider": "openai", "model": "gpt-4o-mini"}
   }
 }

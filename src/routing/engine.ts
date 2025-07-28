@@ -56,6 +56,11 @@ export class RoutingEngine {
    * Determine the routing category based on request characteristics
    */
   private determineCategory(request: BaseRequest): RoutingCategory {
+    // Check for background models (haiku models for lightweight tasks)
+    if (request.model.includes('haiku')) {
+      return 'background';
+    }
+
     // Check for explicit thinking mode
     if (request.metadata?.thinking) {
       return 'thinking';
