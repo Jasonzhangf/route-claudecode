@@ -24,10 +24,12 @@ class Logger {
   private logDir: string;
   private traceRequests: boolean = false;
   private quietMode: boolean = false;
+  private sessionLogFile: string | null = null;
 
   constructor() {
     this.logDir = join(homedir(), '.claude-code-router', 'logs');
     this.ensureLogDir();
+    this.initSessionLogFile();
   }
 
   setConfig(options: {
@@ -37,6 +39,8 @@ class Logger {
     traceRequests?: boolean;
     quietMode?: boolean;
   }) {
+    const logDirChanged = options.logDir && options.logDir !== this.logDir;
+    
     if (options.logLevel) this.logLevel = options.logLevel;
     if (options.debugMode !== undefined) this.debugMode = options.debugMode;
     if (options.logDir) this.logDir = options.logDir;
@@ -44,11 +48,44 @@ class Logger {
     if (options.quietMode !== undefined) this.quietMode = options.quietMode;
     
     this.ensureLogDir();
+    
+    // Re-initialize session log file if log directory changed
+    if (logDirChanged) {
+      this.initSessionLogFile();
+    }
   }
 
   private ensureLogDir() {
     if (!existsSync(this.logDir)) {
       mkdirSync(this.logDir, { recursive: true });
+    }
+  }
+
+  private initSessionLogFile() {
+    // Create one log file per server session
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
+    this.sessionLogFile = join(this.logDir, `ccr-session-${timestamp}.log`);
+    
+    // Write session start marker
+    if (this.sessionLogFile) {
+      const sessionStartEntry = {
+        timestamp: new Date().toISOString(),
+        level: 'info' as LogLevel,
+        message: '🚀 Claude Code Router session started',
+        data: {
+          sessionId: timestamp,
+          pid: process.pid,
+          nodeVersion: process.version,
+          platform: process.platform
+        }
+      };
+      
+      try {
+        writeFileSync(this.sessionLogFile, JSON.stringify(sessionStartEntry) + '\n', { flag: 'w' });
+      } catch (error) {
+        console.error('Failed to initialize session log file:', error);
+        this.sessionLogFile = null;
+      }
     }
   }
 
@@ -76,47 +113,49 @@ class Logger {
 
   private writeToFile(entry: LogEntry) {
     if (!this.debugMode && !this.traceRequests) return;
+    if (!this.sessionLogFile) return;
 
     try {
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
-      const logFile = join(this.logDir, `ccr-${timestamp}.log`);
       const logLine = JSON.stringify(entry) + '\n';
-      writeFileSync(logFile, logLine, { flag: 'a' });
+      writeFileSync(this.sessionLogFile, logLine, { flag: 'a' });
     } catch (error) {
       console.error('Failed to write to log file:', error);
     }
   }
 
   private outputToConsole(entry: LogEntry) {
-    // In quiet mode, only show critical errors
-    if (this.quietMode && entry.level !== 'error') {
+    // In quiet mode, only show critical errors and important info
+    if (this.quietMode && !['error', 'warn'].includes(entry.level)) {
       return;
     }
     
     const { timestamp, level, message, data, requestId, stage } = entry;
     
-    let output = `[${timestamp}] ${level.toUpperCase()}: ${message}`;
-    
-    if (requestId) output += ` [${requestId}]`;
-    if (stage) output += ` [${stage}]`;
+    // Only show essential info in console, detailed logs go to file
+    let output: string;
+    if (requestId && stage) {
+      // Compact format for traced requests - only show in debug mode
+      if (!this.debugMode) return;
+      output = `[${level.toUpperCase()}] ${message}`;
+    } else {
+      // Standard format for important logs
+      const timeShort = timestamp.slice(11, 19); // Just HH:MM:SS
+      output = `[${timeShort}] ${level.toUpperCase()}: ${message}`;
+    }
     
     switch (level) {
       case 'error':
         console.error(output);
-        if (data && this.debugMode) console.error('Data:', JSON.stringify(data, null, 2));
         break;
       case 'warn':
         console.warn(output);
-        if (data && this.debugMode) console.warn('Data:', JSON.stringify(data, null, 2));
         break;
       case 'info':
         console.log(output);
-        if (data && this.debugMode) console.log('Data:', JSON.stringify(data, null, 2));
         break;
       case 'debug':
         if (this.debugMode) {
           console.log(output);
-          if (data) console.log('Data:', JSON.stringify(data, null, 2));
         }
         break;
     }
