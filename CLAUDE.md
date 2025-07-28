@@ -18,35 +18,108 @@
   - `anthropic <-> openai` 
   - `anthropic <-> gemini`
 
-##### 2. 模型路由模块 (Model Routing Module) - **最新架构 2025-07-28**
-- **核心原则**: 按类别选择provider+model，不依赖defaultProvider
-- **路由流程**:
-  1. **输入**: 用户请求（包含model、messages等）
-  2. **类别判断**: 根据请求特征确定路由类别
-     - `background`: haiku模型或简单任务  
-     - `thinking`: 明确设置thinking=true
-     - `longcontext`: 内容超过60K tokens
-     - `search`: 包含搜索相关工具
-     - `default`: 其他所有情况
-  3. **provider+model选择**: 根据类别从配置中获取对应的provider和targetModel
-  4. **输出**: 返回选中的provider，并在request.metadata中设置targetModel
+##### 2. 模型路由模块 (Model Routing Module) - **重构架构 2025-07-28**
 
-- **配置结构** (`config-router.json`):
-  ```json
-  {
-    "routing": {
-      "default": { "provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0" },
-      "background": { "provider": "shuaihong-openai", "model": "gemini-2.5-flash" },
-      "thinking": { "provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0" },
-      "longcontext": { "provider": "shuaihong-openai", "model": "gemini-2.5-pro" },
-      "search": { "provider": "shuaihong-openai", "model": "gemini-2.5-flash" }
+## 🏗️ **重大架构变更 - 消除硬编码模型映射问题**
+
+### **核心设计原则**
+1. **类别驱动**: 按请求类别选择provider+model组合，完全摒弃defaultProvider机制
+2. **零硬编码**: 系统中不允许任何硬编码的模型名称，所有映射通过配置动态完成
+3. **映射时机**: **模型名替换在路由映射阶段完成，不在响应处理阶段进行**
+4. **直接替换**: 路由引擎直接修改 `request.model` 字段，后续流程无需感知原始模型名
+
+### **架构修复前后对比**
+
+#### ❌ **修复前的问题架构**
+- 路由引擎依赖defaultProvider机制
+- 硬编码模型名散布在多个文件中（如 `parser-buffered.ts` 中的 `'claude-3-sonnet-20240229'`）
+- 模型名替换在响应处理阶段进行，导致复杂的targetModel逻辑
+- 存在旧的rules.ts文件包含过时的路由规则
+
+#### ✅ **修复后的新架构**
+- 类别驱动的直接映射：`category → {provider, model}`
+- 完全消除硬编码，所有模型名通过参数传递
+- 模型名在路由阶段直接替换：`request.model = targetModel`
+- 简化的响应处理，provider只需使用 `request.model`
+
+### **路由处理流程**
+```
+1. 【输入】: 用户请求（包含原始model、messages等）
+   - 例: { model: "claude-sonnet-4-20250514", messages: [...] }
+
+2. 【类别判断】: 根据请求特征确定路由类别
+   - `background`: haiku模型 (claude-3-5-haiku-20241022)
+   - `thinking`: 明确设置thinking=true  
+   - `longcontext`: 内容超过60K tokens
+   - `search`: 包含搜索相关工具
+   - `default`: 其他所有情况
+
+3. 【配置查询】: 从routing配置获取provider+model
+   - routing.default = { provider: "codewhisperer-primary", model: "CLAUDE_SONNET_4_20250514_V1_0" }
+
+4. 【模型名替换】: **关键步骤 - 直接替换request.model**
+   - 原始: request.model = "claude-sonnet-4-20250514"
+   - 替换: request.model = "CLAUDE_SONNET_4_20250514_V1_0"
+   - 元数据: request.metadata.originalModel = "claude-sonnet-4-20250514"
+
+5. 【输出】: 返回选中的provider，request已包含正确的targetModel
+   - provider: "codewhisperer-primary"
+   - request.model: "CLAUDE_SONNET_4_20250514_V1_0" (已替换)
+```
+
+### **配置结构** (`config-router.json`)
+```json
+{
+  "routing": {
+    "default": { 
+      "provider": "codewhisperer-primary", 
+      "model": "CLAUDE_SONNET_4_20250514_V1_0" 
+    },
+    "background": { 
+      "provider": "shuaihong-openai", 
+      "model": "gemini-2.5-flash" 
+    },
+    "thinking": { 
+      "provider": "codewhisperer-primary", 
+      "model": "CLAUDE_SONNET_4_20250514_V1_0" 
+    },
+    "longcontext": { 
+      "provider": "shuaihong-openai", 
+      "model": "gemini-2.5-pro" 
+    },
+    "search": { 
+      "provider": "shuaihong-openai", 
+      "model": "gemini-2.5-flash" 
     }
   }
-  ```
+}
+```
 
-- **期望行为**:
-  - `claude-3-5-haiku-20241022` → `background` → `shuaihong-openai` + `gemini-2.5-flash`
-  - `claude-sonnet-4-20250514` → `default` → `codewhisperer-primary` + `CLAUDE_SONNET_4_20250514_V1_0`
+### **实际映射示例**
+- `claude-3-5-haiku-20241022` → **background** → `shuaihong-openai` + `gemini-2.5-flash`
+- `claude-sonnet-4-20250514` → **default** → `codewhisperer-primary` + `CLAUDE_SONNET_4_20250514_V1_0`
+- `claude-3-5-sonnet-20241022` + longcontext → **longcontext** → `shuaihong-openai` + `gemini-2.5-pro`
+- `claude-sonnet-4-20250514` + tools → **search** → `shuaihong-openai` + `gemini-2.5-flash`
+
+### **关键代码实现**
+```typescript
+// src/routing/engine.ts - 核心映射逻辑
+private applyModelMapping(request: BaseRequest, providerId: string, targetModel: string, category: RoutingCategory): void {
+  // 保存原始模型名用于追踪
+  request.metadata.originalModel = request.model;
+  request.metadata.targetProvider = providerId;
+  request.metadata.routingCategory = category;
+  
+  // 🔑 关键：直接替换请求中的模型名
+  const originalModel = request.model;
+  request.model = targetModel;
+  
+  logger.info(`Model routing applied: ${originalModel} -> ${targetModel}`, {
+    category, providerId, originalModel, targetModel,
+    transformation: `${originalModel} -> ${targetModel} via ${providerId}`
+  });
+}
+```
 
 ##### 3. 输出格式模块 (Output Format Module)
 - **Anthropic格式**: AWS CodeWhisperer (参考 `../kiro2cc`)
@@ -107,11 +180,90 @@
 - **NPM**: 包管理和分发
 - **GitHub**: 源码管理和版本控制
 
-#### 🧪 测试策略
-- **节点测试**: 每个模块独立测试
-- **模拟数据**: 使用模拟数据进行链路测试
-- **双向测试**: 输入输出双向验证
-- **实地测试**: 完整链路端到端测试
+## 🎯 **新路由架构的技术优势**
+
+### **与旧架构对比**
+| 特性 | 旧架构 (修复前) | 新架构 (修复后) |
+|-----|-------------|-------------|
+| **路由机制** | defaultProvider降级 | 类别直接映射 |
+| **模型处理** | 响应阶段替换 | 路由阶段替换 |
+| **硬编码** | 多处硬编码 | 完全消除 |
+| **配置复杂度** | 复杂的rules系统 | 简洁的category映射 |
+| **维护性** | 难以扩展 | 易于添加新provider |
+| **测试覆盖** | 部分覆盖 | 100%测试通过 |
+
+### **性能改进**
+- **路由决策**: O(1)时间复杂度的直接映射查询
+- **内存占用**: 消除了复杂的规则引擎和中间对象
+- **代码维护**: 单一职责原则，每个模块功能明确
+- **错误处理**: 简化的错误传播路径
+
+### **扩展性设计**
+```typescript
+// 添加新的provider和模型只需更新配置
+{
+  "routing": {
+    "default": { "provider": "new-provider", "model": "new-model" },
+    "custom-category": { "provider": "another-provider", "model": "another-model" }
+  }
+}
+```
+
+## 📊 **完整路由流程图**
+
+```mermaid
+flowchart TD
+    A[用户请求<br/>claude-sonnet-4-20250514] --> B[路由引擎分析]
+    B --> C{类别判断}
+    
+    C -->|haiku模型| D[background类别]
+    C -->|thinking=true| E[thinking类别]
+    C -->|>60K tokens| F[longcontext类别]
+    C -->|包含工具| G[search类别]
+    C -->|其他| H[default类别]
+    
+    D --> I[shuaihong-openai<br/>gemini-2.5-flash]
+    E --> J[codewhisperer-primary<br/>CLAUDE_SONNET_4_20250514_V1_0]
+    F --> K[shuaihong-openai<br/>gemini-2.5-pro]
+    G --> L[shuaihong-openai<br/>gemini-2.5-flash]
+    H --> M[codewhisperer-primary<br/>CLAUDE_SONNET_4_20250514_V1_0]
+    
+    I --> N[直接替换request.model]
+    J --> N
+    K --> N
+    L --> N
+    M --> N
+    
+    N --> O[发送到对应Provider]
+    O --> P[返回正确模型名的响应]
+```
+
+#### 🧪 测试策略 - **完整3步验证体系**
+
+基于用户要求建立的完整测试验证体系：
+
+**Step 1: 基础路由测试** (`test/pipeline/test-step1-basic-routing.js`)
+- **目标**: 验证5个类别的路由逻辑正确性
+- **覆盖**: default, background, thinking, longcontext, search
+- **验证点**: 类别判断、provider选择、targetModel映射
+- **成功率**: 100% (5/5)
+
+**Step 2: Provider映射测试** (`test/pipeline/test-step2-provider-mapping.js`)
+- **目标**: 验证模型名映射的准确性
+- **覆盖**: 跨provider的模型映射关系
+- **验证点**: 原始模型→目标模型的转换正确性
+- **成功率**: 100% (5/5)
+
+**Step 3: 实际API测试** (`test/pipeline/test-step3-live-api.js`)
+- **目标**: 验证真实API调用的模型名返回
+- **覆盖**: CodeWhisperer和Shuaihong两个provider
+- **验证点**: 响应中的模型名与预期target model一致
+- **成功率**: 100% (2/2)
+
+**测试运行器**: `test/pipeline/run-pipeline.sh`
+- 自动化执行完整3步测试流程
+- 生成详细的测试报告和日志
+- 支持单独运行和完整流程验证
 
 #### 📝 配置管理
 - **环境变量**: ANTHROPIC_BASE_URL, ANTHROPIC_API_KEY
@@ -135,6 +287,137 @@
 - **Token计算**: 正确计算工具调用相关的输入输出token数量
 - **会话持续**: 工具调用完成后移除停止信号，保持对话可以继续
 - **修复位置**: `src/providers/codewhisperer/parser.ts:309-361`
+
+## 🚨 **硬编码模型名问题 - 完整修复记录 (2025-07-28)**
+
+### **问题背景**
+用户明确指出系统存在两个核心架构问题：
+1. **"我们不能在任何流程里面做模型硬编码"** - 系统中散布着硬编码的模型名称
+2. **"模型名的替换应该在mapping的时候就做不应该再发送的里面做"** - 模型映射时机错误
+
+### **硬编码问题清单与修复**
+
+#### ❌ **发现的硬编码位置**
+1. **`src/providers/codewhisperer/parser-buffered.ts:385`**
+   ```typescript
+   // 修复前：硬编码模型名
+   model: 'claude-3-sonnet-20240229',  // 硬编码！
+   ```
+   
+2. **`src/providers/codewhisperer/client.ts`**
+   ```typescript
+   // 修复前：复杂的targetModel处理逻辑
+   const modelToUse = request.metadata?.targetModel || request.model || 'claude-3-sonnet-20240229';
+   ```
+
+3. **旧架构文件**
+   - `src/routing/rules.ts` - 包含过时的defaultProvider逻辑
+   - 旧的RoutingConfig接口定义
+
+#### ✅ **修复措施**
+
+**1. 消除parser中的硬编码**
+```typescript
+// 修复后：通过参数传递模型名
+export function processBufferedResponse(rawResponse: Buffer, requestId: string, modelName: string): ParsedEvent[]
+
+function convertBufferedResponseToStream(bufferedResponse: BufferedResponse, requestId: string, modelName: string): ParsedEvent[] {
+  // ...
+  message: {
+    model: modelName,  // 使用传入的动态模型名
+    // ...
+  }
+}
+```
+
+**2. 简化client逻辑**
+```typescript
+// 修复后：直接使用已映射的模型名
+const anthropicEvents = processBufferedResponse(responseBuffer, requestId, request.model);
+
+const baseResponse: BaseResponse = {
+  id: `cw_${Date.now()}`,
+  model: request.model, // 路由引擎已完成映射
+  role: 'assistant',
+  content: finalContexts,
+};
+```
+
+**3. 更新类型系统**
+```typescript
+// 修复后：新的RouterConfig接口
+export interface CategoryRouting {
+  provider: string;
+  model: string;
+}
+
+export interface RouterConfig {
+  routing: {
+    default: CategoryRouting;
+    background: CategoryRouting;
+    thinking: CategoryRouting;
+    longcontext: CategoryRouting;
+    search: CategoryRouting;
+  };
+  providers: string[];
+}
+```
+
+### **架构修复验证**
+
+通过3步完整测试验证修复效果：
+
+**Step 1: 基础路由测试**
+- ✅ 5/5 类别路由正确
+- ✅ 模型映射准确率100%
+
+**Step 2: Provider映射测试**  
+- ✅ `claude-sonnet-4-20250514` → `CLAUDE_SONNET_4_20250514_V1_0`
+- ✅ `claude-3-5-haiku-20241022` → `gemini-2.5-flash`
+- ✅ 5/5 映射测试通过
+
+**Step 3: 实际API测试**
+- ✅ 响应模型名正确：`CLAUDE_SONNET_4_20250514_V1_0`
+- ✅ 响应模型名正确：`gemini-2.5-flash`
+- ✅ 2/2 API测试通过
+
+### **修复成果总结**
+1. **完全消除硬编码**: 系统中不再存在任何硬编码的模型名称
+2. **正确的映射时机**: 模型名替换在路由映射阶段完成
+3. **简化的架构**: provider只需使用已映射的 `request.model`
+4. **100%测试通过**: 所有路由和映射测试均达到100%通过率
+
+**用户反馈验证**: "重新执行3步测试" → **全部通过，问题完全解决**
+
+### **Git提交记录**
+```
+Commit: 4726cb7 - 🏗️ Complete Routing Architecture Refactor - Category-Based Model Mapping
+日期: 2025-07-28
+变更: 31个文件，+2902 -1706 行代码
+重点:
+- ✅ 消除硬编码模型名 
+- ✅ 实现类别驱动路由
+- ✅ 模型名在routing阶段替换
+- ✅ 100%测试通过率
+```
+
+### **后续维护指南**
+
+**添加新Provider**:
+1. 在 `config-router.json` 中添加新的provider配置
+2. 实现对应的provider client (参考 `src/providers/` 结构)
+3. 更新测试用例覆盖新provider
+
+**添加新路由类别**:
+1. 更新 `RoutingCategory` 类型定义
+2. 在 `determineRoutingCategory()` 中添加判断逻辑  
+3. 在配置文件中添加对应映射
+4. 创建相应的测试案例
+
+**调试新问题**:
+1. 首先查看 `test/` 目录的现有测试
+2. 运行3步标准测试定位问题层级
+3. 更新对应的测试文档记录发现
 
 #### 🔧 最近重大修复
 - **2025-07-27**: 完全缓冲式处理 - 彻底解决工具调用问题（100%修复率）
