@@ -49,8 +49,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-echo -e "${BLUE}🚀 Claude Code Router - Development Mode${NC}"
-echo -e "${BLUE}===========================================${NC}"
+echo -e "${BLUE}🚀 Route Claude Code - Development Mode${NC}"
+echo -e "${BLUE}========================================${NC}"
 
 # Check if port is in use and kill if necessary
 if lsof -i :$PORT > /dev/null 2>&1; then
@@ -64,7 +64,7 @@ echo -e "${BLUE}🔨 Building project...${NC}"
 npm run build
 
 # Start the server
-echo -e "${GREEN}🌟 Starting Claude Code Router on port $PORT${NC}"
+echo -e "${GREEN}🌟 Starting Route Claude Code on port $PORT${NC}"
 echo -e "${GREEN}📋 Log file: $LOG_FILE${NC}"
 
 # Prepare start command

@@ -446,8 +446,8 @@ program
  * Setup program
  */
 program
-  .name('ccr')
-  .description('Claude Code Router - Route Claude Code requests to multiple AI providers')
+  .name('rcc')
+  .description('Route Claude Code - Route Claude Code requests to multiple AI providers')
   .configureOutput({
     outputError: (str, write) => write(chalk.red(str))
   });

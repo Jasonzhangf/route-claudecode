@@ -1,10 +1,10 @@
 {
-  "name": "claude-code-router",
+  "name": "route-claudecode",
   "version": "2.1.0",
   "description": "Advanced routing and transformation system for Claude Code outputs to multiple AI providers",
   "bin": {
-    "ccr": "./dist/cli.js",
-    "claude-code-router": "./dist/cli.js"
+    "rcc": "./dist/cli.js",
+    "route-claudecode": "./dist/cli.js"
   },
   "main": "./dist/cli.js",
   "scripts": {
