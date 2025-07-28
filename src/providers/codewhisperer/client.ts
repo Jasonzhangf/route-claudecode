@@ -19,7 +19,7 @@ export class CodeWhispererClient implements Provider {
   
   private auth: CodeWhispererAuth;
   // private safeTokenManager: SafeTokenManager;
-  private converter: CodeWhispererConverter;
+  private converter!: CodeWhispererConverter;
   private httpClient: AxiosInstance;
   private endpoint: string;
   private readonly maxRetries = 3;
@@ -35,7 +35,9 @@ export class CodeWhispererClient implements Provider {
     this.auth = new CodeWhispererAuth(tokenPath);
     // 临时禁用SafeTokenManager for debugging
     // this.safeTokenManager = SafeTokenManager.getInstance();
-    this.converter = new CodeWhispererConverter(config.settings?.profileArn);
+    
+    // Initialize converter with profileArn from token
+    this.initializeConverter();
     
     this.httpClient = axios.create({
       baseURL: this.endpoint,
@@ -74,40 +76,76 @@ export class CodeWhispererClient implements Provider {
       }
     );
 
-    // Add response interceptor for error handling - temporary bypass SafeTokenManager for testing
+    // Add response interceptor for monitoring-based error handling
     this.httpClient.interceptors.response.use(
       (response) => response,
       async (error) => {
         if (error.response?.status === 403 || error.response?.status === 401) {
-          logger.warn('CodeWhisperer authentication error, attempting token refresh', {
+          logger.warn('CodeWhisperer authentication error - reporting failure to auth monitoring', {
             status: error.response?.status,
             statusText: error.response?.statusText
           });
           
+          // Report authentication failure to monitoring system
+          this.auth.reportAuthFailure();
+          
+          // Check if token is now blocked due to consecutive failures
+          if (this.auth.isTokenBlocked()) {
+            logger.error('Token blocked due to consecutive failures - no retry attempt');
+            throw new ProviderError(
+              'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
+              this.name,
+              500,
+              error
+            );
+          }
+          
           try {
-            // 清理缓存，强制获取新token
+            // Clear cache and attempt one refresh if token is not blocked
             this.auth.clearCache();
             const newToken = await this.auth.getToken();
             
             if (newToken) {
-              // 使用新token重试请求
+              // Use new token for retry
               error.config.headers['Authorization'] = `Bearer ${newToken}`;
-              logger.info('Retrying request with refreshed token (direct auth)');
+              logger.info('Retrying request with refreshed token');
               return this.httpClient.request(error.config);
             } else {
-              throw new ProviderError('No valid token for retry', this.name, 401, error);
+              throw new ProviderError('No valid token for retry', this.name, 500, error);
             }
           } catch (refreshError) {
             logger.error('Token refresh failed', refreshError);
+            // Report this failure as well
+            this.auth.reportAuthFailure();
+            
             if (refreshError instanceof ProviderError) {
               throw refreshError;
             }
-            throw new ProviderError('Token refresh failed', this.name, 403, refreshError);
+            throw new ProviderError('Token refresh failed', this.name, 500, refreshError);
           }
         }
         return Promise.reject(error);
       }
     );
+  }
+
+  /**
+   * Initialize converter with profileArn from token
+   */
+  private initializeConverter(): void {
+    try {
+      const tokenData = this.auth.readTokenFromFile();
+      if (!tokenData.profileArn) {
+        throw new Error('CodeWhisperer profileArn not found in token file');
+      }
+      this.converter = new CodeWhispererConverter(tokenData.profileArn);
+      logger.debug('Initialized CodeWhisperer converter with profileArn from token', {
+        profileArn: tokenData.profileArn
+      });
+    } catch (error) {
+      logger.error('Failed to initialize CodeWhisperer converter', error);
+      throw new Error(`Failed to initialize CodeWhisperer converter: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   /**
@@ -135,6 +173,16 @@ export class CodeWhispererClient implements Provider {
    */
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     const requestId = request.metadata?.requestId || 'unknown';
+    
+    // Check if token is blocked before sending request
+    if (this.auth.isTokenBlocked()) {
+      logger.error('Request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
+      throw new ProviderError(
+        'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
+        this.name,
+        500
+      );
+    }
     
     try {
       logger.trace(requestId, 'provider', 'Sending request to CodeWhisperer', {
@@ -328,6 +376,16 @@ export class CodeWhispererClient implements Provider {
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
     
+    // Check if token is blocked before sending streaming request
+    if (this.auth.isTokenBlocked()) {
+      logger.error('Streaming request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
+      throw new ProviderError(
+        'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
+        this.name,
+        500
+      );
+    }
+    
     try {
       logger.trace(requestId, 'provider', 'Sending streaming request to CodeWhisperer', {
         model: request.model
@@ -459,13 +517,11 @@ export class CodeWhispererClient implements Provider {
   updateConfig(config: ProviderConfig): void {
     this.config = config;
     
-    if (config.settings?.profileArn) {
-      this.converter.updateProfileArn(config.settings.profileArn);
-    }
+    // Re-initialize converter with current token profileArn
+    this.initializeConverter();
     
     logger.info('CodeWhisperer client configuration updated', { 
-      endpoint: config.endpoint,
-      profileArn: config.settings?.profileArn 
+      endpoint: config.endpoint
     });
   }
 

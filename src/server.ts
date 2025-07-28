@@ -74,7 +74,13 @@ export class RouterServer {
           endpoint: providerConfig.endpoint 
         });
       } catch (error) {
-        logger.error(`Failed to initialize provider: ${providerId}`, error);
+        logger.error(`Failed to initialize provider: ${providerId}`, {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          providerId,
+          providerType: providerConfig.type,
+          endpoint: providerConfig.endpoint
+        });
       }
     }
   }

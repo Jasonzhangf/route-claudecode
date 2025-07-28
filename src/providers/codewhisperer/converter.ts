@@ -3,7 +3,7 @@
  * Based on demo2 implementation with format conversion between Anthropic and CodeWhisperer
  */
 
-import { BaseRequest, BaseResponse } from '@/types';
+import { BaseRequest, BaseResponse, AnthropicRequest } from '@/types';
 import { logger } from '@/utils/logger';
 import { sessionManager } from '@/session/manager';
 import { v4 as uuidv4 } from 'uuid';
@@ -106,10 +106,12 @@ export class CodeWhispererConverter {
         profileArn: this.profileArn
       };
 
+      const anthropicReq = request as AnthropicRequest;
+
       // Add tools if present
-      if (request.metadata?.tools && Array.isArray(request.metadata.tools)) {
+      if (anthropicReq.tools && Array.isArray(anthropicReq.tools)) {
         cwRequest.conversationState.currentMessage.userInputMessage.userInputMessageContext.tools = 
-          this.convertTools(request.metadata.tools);
+          this.convertTools(anthropicReq.tools);
       }
 
       // Build conversation history
@@ -134,10 +136,18 @@ export class CodeWhispererConverter {
    */
   private extractMessageContent(content: any): string {
     if (typeof content === 'string') {
-      if (content.length === 0) {
+      const reminderEndTag = '</system-reminder>';
+      const lastIndex = content.lastIndexOf(reminderEndTag);
+      let userMessage = content;
+
+      if (lastIndex !== -1) {
+        userMessage = content.substring(lastIndex + reminderEndTag.length).trim();
+      }
+
+      if (userMessage.length === 0) {
         return 'answer for user qeustion';  // 完全模仿demo2的拼写错误
       }
-      return content;
+      return userMessage;
     }
 
     if (Array.isArray(content)) {
@@ -198,8 +208,9 @@ export class CodeWhispererConverter {
    * Build conversation history for CodeWhisperer (following demo2 logic exactly)
    */
   private buildHistory(cwRequest: CodeWhispererRequest, request: BaseRequest, requestId: string): void {
+    const anthropicReq = request as AnthropicRequest;
     const modelId = cwRequest.conversationState.currentMessage.userInputMessage.modelId;
-    const hasSystemMessages = request.metadata?.system && Array.isArray(request.metadata.system) && request.metadata.system.length > 0;
+    const hasSystemMessages = anthropicReq.system && Array.isArray(anthropicReq.system) && anthropicReq.system.length > 0;
     const hasMultipleMessages = request.messages.length > 1;
 
     logger.debug('History building analysis (demo2 style)', {
@@ -224,15 +235,15 @@ export class CodeWhispererConverter {
 
       if (hasSystemMessages) {
         logger.debug('Processing system messages', {
-          systemMessageCount: request.metadata?.system?.length
+          systemMessageCount: anthropicReq.system?.length
         }, requestId);
         
-        request.metadata!.system!.forEach((sysMsg: any, index: number) => {
-          const content = sysMsg.text || sysMsg;
+        anthropicReq.system!.forEach((sysMsg: any, index: number) => {
+          const content = this.extractMessageContent(sysMsg.text || sysMsg);
           const userMsg: HistoryUserMessage = {
             userInputMessage: {
               content,
-              modelId,
+              modelId: cwRequest.conversationState.currentMessage.userInputMessage.modelId, // Use the mapped modelId
               origin: 'AI_EDITOR'
             }
           };
@@ -268,7 +279,7 @@ export class CodeWhispererConverter {
             const userMsg: HistoryUserMessage = {
               userInputMessage: {
                 content,
-                modelId,
+                modelId: cwRequest.conversationState.currentMessage.userInputMessage.modelId, // Use the mapped modelId
                 origin: 'AI_EDITOR'
               }
             };
@@ -281,11 +292,14 @@ export class CodeWhispererConverter {
 
             // Check if next message is assistant response (like demo2)
             if (i + 1 < request.messages.length - 1 && request.messages[i + 1].role === 'assistant') {
+              const assistantContentBlocks = Array.isArray(request.messages[i + 1].content) ? request.messages[i + 1].content : [{ type: 'text', text: request.messages[i + 1].content }];
+              const toolUses = assistantContentBlocks.filter((b: any) => b.type === 'tool_use').map((b: any) => ({ name: b.name, input: JSON.stringify(b.input) }));
               const assistantContent = this.extractMessageContent(request.messages[i + 1].content);
+
               const assistantMsg: HistoryAssistantMessage = {
                 assistantResponseMessage: {
                   content: assistantContent,
-                  toolUses: []
+                  toolUses: toolUses
                 }
               };
               history.push(assistantMsg);
