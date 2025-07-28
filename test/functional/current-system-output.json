@@ -1,0 +1,53 @@
+{
+  "conversationState": {
+    "chatTriggerType": "MANUAL",
+    "conversationId": "f372e235-030d-4700-995a-70bef04b347e",
+    "currentMessage": {
+      "userInputMessage": {
+        "content": "What is the difference in the CodeWhisperer pipeline between the current build and the one from yesterday around noon?",
+        "modelId": "claude-sonnet-4-20250514",
+        "origin": "AI_EDITOR",
+        "userInputMessageContext": {
+          "tools": [
+            {
+              "toolSpecification": {
+                "name": "WebSearch",
+                "description": "Searches the web for information.",
+                "inputSchema": {
+                  "json": {
+                    "type": "object",
+                    "properties": {
+                      "query": {
+                        "type": "string",
+                        "description": "The search query."
+                      }
+                    },
+                    "required": [
+                      "query"
+                    ]
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "history": [
+      {
+        "userInputMessage": {
+          "content": "answer for user qeustion",
+          "modelId": "claude-sonnet-4-20250514",
+          "origin": "AI_EDITOR"
+        }
+      },
+      {
+        "assistantResponseMessage": {
+          "content": "I will follow these instructions",
+          "toolUses": []
+        }
+      }
+    ]
+  },
+  "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+}
