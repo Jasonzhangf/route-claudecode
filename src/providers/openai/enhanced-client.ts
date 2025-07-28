@@ -113,7 +113,7 @@ export class EnhancedOpenAIClient implements Provider {
   }
 
   /**
-   * Send streaming request
+   * Send streaming request - Full buffering approach to handle tool calls correctly
    */
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
@@ -123,7 +123,7 @@ export class EnhancedOpenAIClient implements Provider {
         model: request.model
       });
 
-      // Transform to OpenAI format
+      // Transform to OpenAI format  
       const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
       
       // Send streaming request - use empty path since baseURL includes full endpoint
@@ -139,30 +139,59 @@ export class EnhancedOpenAIClient implements Provider {
         );
       }
 
-      // For streaming, we need to use the proper streaming transformation
-      // Convert Node.js stream to Web ReadableStream first
+      // CRITICAL FIX: Full buffering approach for tool calls
+      // Step 1: Collect ALL chunks first (like CodeWhisperer buffered approach)
+      let fullResponseBuffer = '';
+      
+      logger.debug('Starting full response buffering for tool call safety', {
+        provider: this.name
+      }, requestId, 'provider');
+      
+      for await (const chunk of response.data) {
+        fullResponseBuffer += chunk.toString();
+      }
+      
+      logger.debug('Completed response buffering', {
+        bufferLength: fullResponseBuffer.length,
+        bufferPreview: fullResponseBuffer.slice(0, 200)
+      }, requestId, 'provider');
+      
+      // Step 2: Parse complete response to extract all OpenAI streaming events
+      const allOpenAIEvents: any[] = [];
+      const lines = fullResponseBuffer.split('\n');
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') {
+            break;
+          }
+          
+          try {
+            const parsed = JSON.parse(data);
+            allOpenAIEvents.push(parsed);
+          } catch (error) {
+            logger.debug('Failed to parse OpenAI event', { line, error }, requestId, 'provider');
+          }
+        }
+      }
+      
+      logger.debug('Parsed complete OpenAI events', {
+        eventCount: allOpenAIEvents.length,
+        hasToolCalls: allOpenAIEvents.some(e => e.choices?.[0]?.delta?.tool_calls)
+      }, requestId, 'provider');
+      
+      // Step 3: Process all events through streaming transformer 
       const webStream = new ReadableStream({
         start(controller) {
           (async () => {
-            let buffer = '';
             try {
-              for await (const chunk of response.data) {
-                buffer += chunk.toString();
-                const lines = buffer.split('\n');
-                buffer = lines.pop() || '';
-
-                for (const line of lines) {
-                  if (line.startsWith('data: ')) {
-                    const data = line.slice(6).trim();
-                    if (data === '[DONE]') {
-                      controller.close();
-                      return;
-                    }
-                    // Enqueue the raw OpenAI chunk for streaming transformer
-                    controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
-                  }
-                }
+              for (const event of allOpenAIEvents) {
+                const sseData = `data: ${JSON.stringify(event)}\n\n`;
+                controller.enqueue(new TextEncoder().encode(sseData));
               }
+              // Send [DONE] signal
+              controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
               controller.close();
             } catch (error) {
               controller.error(error);
@@ -171,10 +200,10 @@ export class EnhancedOpenAIClient implements Provider {
         }
       });
 
-      // Use proper streaming transformer
+      // Use proper streaming transformer on the buffered and processed events
       const streamOptions: StreamTransformOptions = {
         sourceFormat: 'openai',
-        targetFormat: 'anthropic',
+        targetFormat: 'anthropic', 
         model: request.model,
         requestId
       };
@@ -202,8 +231,8 @@ export class EnhancedOpenAIClient implements Provider {
           continue;
         }
         
-        logger.debug(`[HOOK] Streaming chunk after transform`, { 
-          chunk: transformedChunk,
+        logger.debug(`[BUFFERED] Streaming chunk after full buffering`, { 
+          chunk: transformedChunk.slice(0, 200),
           length: transformedChunk.length
         }, requestId, 'provider');
         
@@ -218,24 +247,33 @@ export class EnhancedOpenAIClient implements Provider {
           try {
             data = JSON.parse(dataMatch[1].trim());
           } catch (error) {
-            logger.debug('Failed to parse SSE data as JSON', error, requestId, 'provider');
+            logger.debug('Failed to parse buffered SSE data as JSON', error, requestId, 'provider');
             continue;
           }
           
           // Yield in {event, data} format expected by server.ts
           yield { event, data };
           
-          // Count output tokens roughly
-          if (event === 'content_block_delta' && data?.delta?.text) {
-            outputTokens += Math.ceil(data.delta.text.length / 4);
+          // Count output tokens for all content types
+          if (event === 'content_block_delta') {
+            if (data?.delta?.text) {
+              outputTokens += Math.ceil(data.delta.text.length / 4);
+            } else if (data?.delta?.partial_json) {
+              outputTokens += Math.ceil(data.delta.partial_json.length / 4);
+            }
+          } else if (event === 'content_block_start' && data?.content_block?.name) {
+            outputTokens += Math.ceil(data.content_block.name.length / 4);
           }
         }
       }
 
-      logger.trace(requestId, 'provider', `Streaming request completed for ${this.name}`);
+      logger.info('Buffered streaming request completed', {
+        totalEvents: allOpenAIEvents.length,
+        outputTokens
+      }, requestId, 'provider');
       
     } catch (error) {
-      logger.error(`${this.name} streaming request failed`, error, requestId, 'provider');
+      logger.error(`${this.name} buffered streaming request failed`, error, requestId, 'provider');
       
       if (error instanceof ProviderError) {
         throw error;
