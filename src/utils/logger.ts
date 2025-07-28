@@ -78,7 +78,8 @@ class Logger {
     if (!this.debugMode && !this.traceRequests) return;
 
     try {
-      const logFile = join(this.logDir, `ccr-${new Date().toISOString().split('T')[0]}.log`);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
+      const logFile = join(this.logDir, `ccr-${timestamp}.log`);
       const logLine = JSON.stringify(entry) + '\n';
       writeFileSync(logFile, logLine, { flag: 'a' });
     } catch (error) {

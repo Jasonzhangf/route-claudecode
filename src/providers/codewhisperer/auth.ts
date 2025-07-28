@@ -13,6 +13,11 @@ export interface TokenData {
   accessToken: string;
   refreshToken: string;
   expiresAt?: string;
+  profileArn?: string;
+  authMethod?: string;
+  provider?: string;
+  // Allow any additional fields to preserve original token structure
+  [key: string]: any;
 }
 
 export class CodeWhispererAuth {
@@ -26,8 +31,8 @@ export class CodeWhispererAuth {
   private isRefreshing: boolean = false;
   private refreshPromise: Promise<TokenData> | null = null;
 
-  constructor() {
-    this.tokenPath = this.getTokenFilePath();
+  constructor(customTokenPath?: string) {
+    this.tokenPath = customTokenPath || this.getTokenFilePath();
     this.lastRefreshFilePath = this.getLastRefreshFilePath();
     this.loadLastRefreshTime();
     this.startPeriodicRefresh();
@@ -211,7 +216,9 @@ export class CodeWhispererAuth {
         throw new Error(`Token refresh failed with status ${response.status}`);
       }
 
+      // Preserve all original fields and only update the refreshed ones
       const newTokenData: TokenData = {
+        ...currentToken, // Keep all original fields
         accessToken: response.data.accessToken,
         refreshToken: response.data.refreshToken,
         expiresAt: response.data.expiresAt
@@ -220,7 +227,10 @@ export class CodeWhispererAuth {
       // Save new token to file
       this.saveTokenToFile(newTokenData);
       
-      logger.debug('Token refreshed successfully');
+      logger.debug('Token refreshed successfully', {
+        preservedFields: Object.keys(currentToken),
+        updatedFields: ['accessToken', 'refreshToken', 'expiresAt']
+      });
       return newTokenData;
     } catch (error) {
       logger.error('Failed to refresh token', error);

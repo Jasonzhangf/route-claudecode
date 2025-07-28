@@ -56,13 +56,8 @@ export interface HistoryAssistantMessage {
   };
 }
 
-// Model mapping from demo2
-const MODEL_MAP: Record<string, string> = {
-  'claude-sonnet-4-20250514': 'CLAUDE_SONNET_4_20250514_V1_0',
-  'claude-3-5-haiku-20241022': 'CLAUDE_3_7_SONNET_20250219_V1_0',
-  'claude-3-5-sonnet-20241022': 'CLAUDE_3_7_SONNET_20250219_V1_0',
-  'claude-3-opus-20240229': 'CLAUDE_3_7_SONNET_20250219_V1_0'
-};
+// No model mapping needed - routing engine handles model selection
+// CodeWhisperer converter should use the model name provided by routing engine directly
 
 export class CodeWhispererConverter {
   private profileArn: string;
@@ -101,7 +96,7 @@ export class CodeWhispererConverter {
           currentMessage: {
             userInputMessage: {
               content: this.extractMessageContent(request.messages[request.messages.length - 1].content),
-              modelId: this.mapModel(request.model, request.metadata?.targetModel),
+              modelId: request.model, // Use model name directly from routing engine
               origin: 'AI_EDITOR',
               userInputMessageContext: {}
             }
@@ -132,51 +127,6 @@ export class CodeWhispererConverter {
       logger.error('Failed to convert request', error, requestId, 'converter');
       throw error;
     }
-  }
-
-  /**
-   * Map model names to CodeWhisperer internal format
-   * NOTE: targetModel from routing contains the final API model name, 
-   * but CodeWhisperer needs its internal model format
-   */
-  private mapModel(originalModel: string, targetModel?: string): string {
-    // Determine which model to use for mapping
-    const modelToMap = targetModel || originalModel;
-    
-    // If targetModel is provided (from routing), we need to map it to CodeWhisperer format
-    if (targetModel) {
-      // For CodeWhisperer provider, targetModel should be a CodeWhisperer model ID
-      // Check if it's already in CodeWhisperer format
-      if (targetModel.startsWith('CLAUDE_')) {
-        logger.debug(`Target model is already in CodeWhisperer format: ${targetModel}`, {
-          originalModel,
-          targetModel
-        });
-        return targetModel;
-      }
-      
-      // If targetModel is not in CodeWhisperer format, treat it as original model name
-      logger.debug(`Target model '${targetModel}' not in CodeWhisperer format, mapping from original model`, {
-        originalModel,
-        targetModel,
-        note: 'This case indicates routing config may have wrong model format for CodeWhisperer'
-      });
-    }
-    
-    // Map from Anthropic model names to CodeWhisperer format
-    const mapped = MODEL_MAP[modelToMap];
-    if (!mapped) {
-      throw new Error(`Unknown model '${modelToMap}' - no mapping found and fallback disabled. Available models: ${Object.keys(MODEL_MAP).join(', ')}`);
-    }
-    
-    logger.debug(`Model mapped to CodeWhisperer format: ${modelToMap} -> ${mapped}`, {
-      originalModel,
-      targetModel,
-      modelToMap,
-      mapped
-    });
-    
-    return mapped;
   }
 
   /**

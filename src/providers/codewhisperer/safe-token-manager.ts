@@ -15,6 +15,11 @@ interface TokenData {
   accessToken: string;
   refreshToken: string;
   expiresAt?: string;
+  profileArn?: string;
+  authMethod?: string;
+  provider?: string;
+  // Allow any additional fields to preserve original token structure
+  [key: string]: any;
 }
 
 interface TokenStatus {
@@ -43,8 +48,8 @@ export class SafeTokenManager {
   private readonly MONITOR_INTERVAL = 5 * 60 * 1000; // 5分钟监控间隔
   private readonly VALIDATION_COOLDOWN = 2 * 60 * 1000; // 2分钟验证冷却
 
-  private constructor() {
-    this.tokenPath = join(homedir(), '.aws', 'sso', 'cache', 'kiro-auth-token.json');
+  private constructor(customTokenPath?: string) {
+    this.tokenPath = customTokenPath || join(homedir(), '.aws', 'sso', 'cache', 'kiro-auth-token.json');
     this.statusPath = join(homedir(), '.claude-code-router', 'token-status.json');
     
     // 确保状态文件目录存在
@@ -57,9 +62,9 @@ export class SafeTokenManager {
   /**
    * 获取单例实例
    */
-  static getInstance(): SafeTokenManager {
+  static getInstance(customTokenPath?: string): SafeTokenManager {
     if (!SafeTokenManager.instance) {
-      SafeTokenManager.instance = new SafeTokenManager();
+      SafeTokenManager.instance = new SafeTokenManager(customTokenPath);
     }
     return SafeTokenManager.instance;
   }

@@ -30,7 +30,9 @@ export class CodeWhispererClient implements Provider {
       throw new Error('CodeWhisperer endpoint is required but not provided in configuration');
     }
     this.endpoint = config.endpoint;
-    this.auth = new CodeWhispererAuth();
+    // Use custom token path if provided in config
+    const tokenPath = config.authentication?.credentials?.tokenPath;
+    this.auth = new CodeWhispererAuth(tokenPath);
     // 临时禁用SafeTokenManager for debugging
     // this.safeTokenManager = SafeTokenManager.getInstance();
     this.converter = new CodeWhispererConverter(config.settings?.profileArn);

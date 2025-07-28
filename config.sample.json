@@ -22,8 +22,8 @@
         "model": "CLAUDE_SONNET_4_20250514_V1_0"
       },
       "search": {
-        "provider": "openai-compatible",
-        "model": "gemini-2.5-flash"
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
       }
     },
     "defaultProvider": "codewhisperer-primary",

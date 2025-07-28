@@ -168,7 +168,8 @@ function fixTextBlock(block: TextBlock, requestId: string): {
   let fixedText = block.text || '';
 
   // 修复1: 提取嵌入的工具调用
-  const toolCallMatches = fixedText.matchAll(/Tool call:\s*(\w+)\s*\((\{.*?\})\)/gs);
+  // 使用更复杂的匹配来处理嵌套的JSON对象
+  const toolCallMatches = extractToolCallsWithBalancedBraces(fixedText);
   
   for (const match of toolCallMatches) {
     const toolName = match[1];
@@ -292,6 +293,80 @@ function validateFixedResponse(content: ContentBlock[], requestId: string): {
   }
 
   return { issues, fixes };
+}
+
+/**
+ * 使用平衡括号匹配提取工具调用
+ * 正确处理嵌套的JSON对象
+ */
+function extractToolCallsWithBalancedBraces(text: string): Array<[string, string, string]> {
+  const matches: Array<[string, string, string]> = [];
+  const toolCallRegex = /Tool call:\s*(\w+)\s*\(/g;
+  
+  let match;
+  while ((match = toolCallRegex.exec(text)) !== null) {
+    const toolName = match[1];
+    const startPos = match.index;
+    const openParenPos = match.index + match[0].length - 1; // Position of the opening '('
+    
+    // Find the matching closing parenthesis using bracket counting
+    let braceCount = 0;
+    let currentPos = openParenPos + 1; // Start after the opening '('
+    let jsonStart = -1;
+    let jsonEnd = -1;
+    
+    // Skip whitespace to find the opening brace
+    while (currentPos < text.length && /\s/.test(text[currentPos])) {
+      currentPos++;
+    }
+    
+    if (currentPos >= text.length || text[currentPos] !== '{') {
+      continue; // No JSON object found
+    }
+    
+    jsonStart = currentPos;
+    braceCount = 1; // We found the opening brace
+    currentPos++;
+    
+    // Find the matching closing brace
+    while (currentPos < text.length && braceCount > 0) {
+      const char = text[currentPos];
+      
+      if (char === '{') {
+        braceCount++;
+      } else if (char === '}') {
+        braceCount--;
+      } else if (char === '"') {
+        // Skip string content to avoid counting braces inside strings
+        currentPos++; // Move past the opening quote
+        while (currentPos < text.length) {
+          if (text[currentPos] === '"' && text[currentPos - 1] !== '\\') {
+            break; // Found closing quote (not escaped)
+          }
+          currentPos++;
+        }
+      }
+      currentPos++;
+    }
+    
+    if (braceCount === 0) {
+      jsonEnd = currentPos - 1; // Position of the closing brace
+      
+      // Find the closing parenthesis
+      let parenPos = jsonEnd + 1;
+      while (parenPos < text.length && /\s/.test(text[parenPos])) {
+        parenPos++;
+      }
+      
+      if (parenPos < text.length && text[parenPos] === ')') {
+        const fullMatch = text.substring(startPos, parenPos + 1);
+        const jsonString = text.substring(jsonStart, jsonEnd + 1);
+        matches.push([fullMatch, toolName, jsonString]);
+      }
+    }
+  }
+  
+  return matches;
 }
 
 /**

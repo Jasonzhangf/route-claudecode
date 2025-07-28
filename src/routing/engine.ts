@@ -61,11 +61,6 @@ export class RoutingEngine {
       return 'thinking';
     }
 
-    // Check model name for background category (haiku models)
-    if (request.model.toLowerCase().includes('haiku')) {
-      return 'background';
-    }
-
     // Check for long context based on token count
     const tokenCount = this.calculateRequestTokens(request);
     if (tokenCount > 60000) {

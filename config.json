@@ -1,0 +1,64 @@
+{
+  "server": {
+    "port": 3456,
+    "host": "127.0.0.1"
+  },
+  "routing": {
+    "default": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "background": {
+      "provider": "codewhisperer-primary", 
+      "model": "CLAUDE_3_5_HAIKU_20241022_V1_0"
+    },
+    "thinking": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "longcontext": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "search": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    }
+  },
+  "providers": {
+    "codewhisperer-primary": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/kiro-auth-token.json"
+        }
+      },
+      "settings": {
+        "profileArn": "arn:aws:codewhisperer:us-east-1:590183714731:profile/1f4f1f25-1d17-4b8c-9d36-dbb3b7e0dcde",
+        "categoryMappings": {
+          "default": true,
+          "background": true,
+          "thinking": true,
+          "longcontext": true,
+          "search": true
+        },
+        "models": [
+          "CLAUDE_SONNET_4_20250514_V1_0",
+          "CLAUDE_3_5_HAIKU_20241022_V1_0",
+          "CLAUDE_3_7_SONNET_20250219_V1_0"
+        ],
+        "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      }
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "~/.claude-code-router/logs"
+  },
+  "hooks": []
+}
