@@ -25,7 +25,7 @@ export interface BufferedResponse {
  * 完全缓冲式处理：模拟非流式响应，然后转换回流式格式
  * 这种方法能彻底避免分段工具调用的问题
  */
-export function processBufferedResponse(rawResponse: Buffer, requestId: string): ParsedEvent[] {
+export function processBufferedResponse(rawResponse: Buffer, requestId: string, modelName: string): ParsedEvent[] {
   try {
     logger.info('Starting full buffered response processing', {
       responseLength: rawResponse.length,
@@ -52,7 +52,7 @@ export function processBufferedResponse(rawResponse: Buffer, requestId: string):
     }, requestId);
 
     // 第三步：将缓冲响应重新转换为流式事件
-    const streamEvents = convertBufferedResponseToStream(bufferedResponse, requestId);
+    const streamEvents = convertBufferedResponseToStream(bufferedResponse, requestId, modelName);
     logger.debug('Converted buffered response back to stream events', {
       streamEventCount: streamEvents.length,
       streamEventTypes: streamEvents.map(e => e.event)
@@ -364,7 +364,7 @@ function extractToolCallFromText(text: string, requestId: string): { type: 'tool
 /**
  * 将缓冲响应转换回流式事件格式
  */
-function convertBufferedResponseToStream(bufferedResponse: BufferedResponse, requestId: string): ParsedEvent[] {
+function convertBufferedResponseToStream(bufferedResponse: BufferedResponse, requestId: string, modelName: string): ParsedEvent[] {
   const streamEvents: ParsedEvent[] = [];
 
   logger.debug('Converting buffered response to stream events', {
@@ -381,7 +381,7 @@ function convertBufferedResponseToStream(bufferedResponse: BufferedResponse, req
         type: 'message',
         role: 'assistant',
         content: [],
-        model: 'claude-3-sonnet-20240229',
+        model: modelName,
         stop_reason: null,
         stop_sequence: null,
         usage: bufferedResponse.usage

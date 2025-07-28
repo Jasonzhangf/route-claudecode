@@ -18,11 +18,35 @@
   - `anthropic <-> openai` 
   - `anthropic <-> gemini`
 
-##### 2. 模型路由模块 (Model Routing Module)
-- **路由依据**: 输入模型的细分类别
-- **支持类别**: default, background, thinking, longcontext, search
-- **输入模型**: Claude 4, Claude 3.7
-- **配置参考**: `../claude-code-router`配置
+##### 2. 模型路由模块 (Model Routing Module) - **最新架构 2025-07-28**
+- **核心原则**: 按类别选择provider+model，不依赖defaultProvider
+- **路由流程**:
+  1. **输入**: 用户请求（包含model、messages等）
+  2. **类别判断**: 根据请求特征确定路由类别
+     - `background`: haiku模型或简单任务  
+     - `thinking`: 明确设置thinking=true
+     - `longcontext`: 内容超过60K tokens
+     - `search`: 包含搜索相关工具
+     - `default`: 其他所有情况
+  3. **provider+model选择**: 根据类别从配置中获取对应的provider和targetModel
+  4. **输出**: 返回选中的provider，并在request.metadata中设置targetModel
+
+- **配置结构** (`config-router.json`):
+  ```json
+  {
+    "routing": {
+      "default": { "provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0" },
+      "background": { "provider": "shuaihong-openai", "model": "gemini-2.5-flash" },
+      "thinking": { "provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0" },
+      "longcontext": { "provider": "shuaihong-openai", "model": "gemini-2.5-pro" },
+      "search": { "provider": "shuaihong-openai", "model": "gemini-2.5-flash" }
+    }
+  }
+  ```
+
+- **期望行为**:
+  - `claude-3-5-haiku-20241022` → `background` → `shuaihong-openai` + `gemini-2.5-flash`
+  - `claude-sonnet-4-20250514` → `default` → `codewhisperer-primary` + `CLAUDE_SONNET_4_20250514_V1_0`
 
 ##### 3. 输出格式模块 (Output Format Module)
 - **Anthropic格式**: AWS CodeWhisperer (参考 `../kiro2cc`)

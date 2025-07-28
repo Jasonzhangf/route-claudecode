@@ -3,12 +3,16 @@
  * Routes requests to appropriate providers based on model, content, and configuration
  */
 
-import { BaseRequest, RoutingCategory, RoutingConfig, RoutingRule } from '@/types';
+import { BaseRequest, RoutingCategory, CategoryRouting } from '@/types';
 import { logger } from '@/utils/logger';
 import { calculateTokenCount } from '@/utils/tokenizer';
 
 export class RoutingEngine {
-  constructor(private config: RoutingConfig) {}
+  constructor(private routingConfig: Record<RoutingCategory, CategoryRouting>) {
+    logger.info('Routing engine initialized with category-based configuration', {
+      categories: Object.keys(routingConfig)
+    });
+  }
 
   /**
    * Route a request to the appropriate provider
@@ -20,47 +24,31 @@ export class RoutingEngine {
         messageCount: request.messages.length
       });
 
-      // Determine routing category
+      // Step 1: Determine routing category based on request characteristics
       const category = this.determineCategory(request);
       logger.debug(`Determined routing category: ${category}`, { requestId }, requestId, 'routing');
 
-      // Try category-based routing first (for object-based config)
-      const categoryProvider = this.routeByCategory(request, category);
-      if (categoryProvider) {
-        logger.info(`Routing by category to provider: ${categoryProvider}`, { category }, requestId, 'routing');
-        
-        // Apply model mapping for the selected provider
-        this.applyModelMapping(request, categoryProvider, category);
-        
-        return categoryProvider;
+      // Step 2: Get provider and model from category configuration
+      const categoryRule = this.routingConfig[category];
+      if (!categoryRule) {
+        throw new Error(`No routing configuration found for category: ${category}`);
       }
 
-      // Find matching rule (for array-based config)
-      const rule = this.findMatchingRule(request, category);
-      if (rule) {
-        logger.info(`Routing via rule to provider: ${rule.provider}`, { 
-          category: rule.category, 
-          priority: rule.priority 
-        }, requestId, 'routing');
-        
-        // Apply model mapping for the selected provider
-        this.applyModelMapping(request, rule.provider, category);
-        
-        return rule.provider;
-      }
+      // Step 3: Apply model mapping and return provider
+      this.applyModelMapping(request, categoryRule.provider, categoryRule.model, category);
+      
+      logger.info(`Routing ${category} to ${categoryRule.provider}`, {
+        category,
+        provider: categoryRule.provider,
+        targetModel: categoryRule.model,
+        originalModel: request.model
+      }, requestId, 'routing');
 
-      // Final fallback to default provider
-      const defaultProvider = this.config.defaultProvider;
-      logger.info(`Using default provider: ${defaultProvider}`, { category }, requestId, 'routing');
-      
-      // Apply model mapping for the selected provider
-      this.applyModelMapping(request, defaultProvider, category);
-      
-      return defaultProvider;
+      return categoryRule.provider;
 
     } catch (error) {
-      logger.error('Error during routing, falling back to default provider', error, requestId, 'routing');
-      return this.config.defaultProvider;
+      logger.error('Error during routing', error, requestId, 'routing');
+      throw error;
     }
   }
 
@@ -73,79 +61,62 @@ export class RoutingEngine {
       return 'thinking';
     }
 
+    // Check model name for background category (haiku models)
+    if (request.model.toLowerCase().includes('haiku')) {
+      return 'background';
+    }
+
     // Check for long context based on token count
     const tokenCount = this.calculateRequestTokens(request);
     if (tokenCount > 60000) {
       return 'longcontext';
     }
 
-    // Check for background processing (typically haiku models)
-    if (request.model.includes('haiku')) {
-      return 'background';
-    }
-
-    // Check for search/web tools
-    if (request.metadata?.tools) {
-      const tools = request.metadata.tools;
-      if (Array.isArray(tools) && tools.some((tool: any) => 
-        tool.name && (
-          tool.name.includes('search') || 
-          tool.name.includes('web') ||
-          tool.name.includes('browse')
+    // Check for search tools
+    if (request.metadata?.tools && Array.isArray(request.metadata.tools)) {
+      const hasSearchTools = request.metadata.tools.some((tool: any) => 
+        typeof tool === 'object' && tool.name && (
+          tool.name.toLowerCase().includes('search') ||
+          tool.name.toLowerCase().includes('web') ||
+          tool.name === 'WebSearch'
         )
-      )) {
+      );
+      
+      if (hasSearchTools) {
         return 'search';
       }
     }
 
-    // Default category
+    // Default category for all other cases
     return 'default';
   }
 
   /**
-   * Find the highest priority matching rule
+   * Apply model mapping based on routing configuration
    */
-  private findMatchingRule(request: BaseRequest, category: RoutingCategory): RoutingRule | null {
-    const matchingRules = this.config.rules
-      .filter(rule => {
-        try {
-          // Check category match
-          if (rule.category !== category) return false;
-          
-          // Check custom condition
-          return rule.condition(request);
-        } catch (error) {
-          logger.warn('Error evaluating routing rule condition', error);
-          return false;
-        }
-      })
-      .sort((a, b) => b.priority - a.priority); // Sort by priority descending
-
-    return matchingRules[0] || null;
-  }
-
-  /**
-   * Route based on category using provider configuration
-   */
-  private routeByCategory(request: BaseRequest, category: RoutingCategory): string | null {
-    // First, check if we have object-based routing rules
-    const configRules = (this.config as any).routing?.rules || (this.config as any).rules;
-    if (configRules && typeof configRules === 'object' && !Array.isArray(configRules)) {
-      const categoryRule = configRules[category];
-      if (categoryRule && categoryRule.provider) {
-        return categoryRule.provider;
-      }
+  private applyModelMapping(request: BaseRequest, providerId: string, targetModel: string, category: RoutingCategory): void {
+    // Initialize metadata if not present
+    if (!request.metadata) {
+      request.metadata = { requestId: 'routing-generated' };
     }
-
-    // Fallback: Look for providers that support this category
-    for (const [providerId, providerConfig] of Object.entries(this.config.providers)) {
-      const categoryMappings = providerConfig.settings?.categoryMappings;
-      if (categoryMappings && categoryMappings[category]) {
-        return providerId;
-      }
-    }
-
-    return null;
+    
+    // Store original model for reference
+    request.metadata.originalModel = request.model;
+    request.metadata.targetProvider = providerId;
+    request.metadata.routingCategory = category;
+    
+    // CRITICAL: Replace the model name directly in the request
+    // This ensures all downstream processing uses the correct target model
+    const originalModel = request.model;
+    request.model = targetModel;
+    
+    logger.info(`Model routing applied: ${originalModel} -> ${targetModel}`, {
+      category,
+      providerId,
+      originalModel,
+      targetModel: targetModel,
+      transformation: `${originalModel} -> ${targetModel} via ${providerId}`
+    });
   }
 
   /**
@@ -181,59 +152,39 @@ export class RoutingEngine {
   /**
    * Update routing configuration
    */
-  updateConfig(config: RoutingConfig) {
-    this.config = config;
+  updateConfig(routingConfig: Record<RoutingCategory, CategoryRouting>) {
+    this.routingConfig = routingConfig;
     logger.info('Routing configuration updated', {
-      rulesCount: config.rules.length,
-      providersCount: Object.keys(config.providers).length,
-      defaultProvider: config.defaultProvider
+      categories: Object.keys(routingConfig)
     });
   }
 
   /**
-   * Apply model mapping based on routing configuration
+   * Get current routing configuration summary
    */
-  private applyModelMapping(request: BaseRequest, providerId: string, category: RoutingCategory): void {
-    // Check if we have object-based routing rules with model specification
-    const configRules = (this.config as any).routing?.rules || (this.config as any).rules;
-    if (configRules && typeof configRules === 'object' && !Array.isArray(configRules)) {
-      const categoryRule = configRules[category];
-      if (categoryRule && categoryRule.model) {
-        const originalModel = request.model;
-        request.model = categoryRule.model;
-        logger.debug(`Model mapped from ${originalModel} to ${request.model} for ${providerId}`, {
-          category,
-          providerId,
-          originalModel,
-          newModel: request.model
-        });
-        return;
-      }
+  getConfigSummary() {
+    const summary: Record<string, any> = {};
+    
+    for (const [category, config] of Object.entries(this.routingConfig)) {
+      summary[category] = {
+        provider: config.provider,
+        model: config.model
+      };
     }
-
-    // Fallback: Check provider configuration for default model mapping
-    const providerConfig = this.config.providers[providerId];
-    if (providerConfig?.settings?.models && providerConfig.settings.models.length > 0) {
-      const originalModel = request.model;
-      request.model = providerConfig.settings.models[0]; // Use first available model
-      logger.debug(`Model mapped to provider default: ${originalModel} -> ${request.model}`, {
-        category,
-        providerId,
-        originalModel,
-        newModel: request.model
-      });
-    }
+    
+    return {
+      categories: Object.keys(this.routingConfig),
+      routing: summary
+    };
   }
 
   /**
-   * Get routing statistics for monitoring
+   * Get routing engine statistics (for compatibility)
    */
-  getStats(): Record<string, any> {
+  getStats() {
     return {
-      rulesCount: this.config.rules.length,
-      providersCount: Object.keys(this.config.providers).length,
-      defaultProvider: this.config.defaultProvider,
-      categories: ['default', 'background', 'thinking', 'longcontext', 'search']
+      categories: Object.keys(this.routingConfig),
+      routing: this.routingConfig
     };
   }
 }

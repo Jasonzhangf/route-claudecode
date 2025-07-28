@@ -75,17 +75,19 @@ export interface OpenAIResponse extends BaseResponse {
 // Routing types
 export type RoutingCategory = 'default' | 'background' | 'thinking' | 'longcontext' | 'search';
 
+export interface CategoryRouting {
+  provider: string;
+  model: string;
+}
+
+// Routing configuration is part of RouterConfig
+
+// Legacy support - will be removed
 export interface RoutingRule {
   category: RoutingCategory;
   condition: (request: BaseRequest) => boolean;
   provider: string;
   priority: number;
-}
-
-export interface RoutingConfig {
-  rules: RoutingRule[];
-  defaultProvider: string;
-  providers: Record<string, ProviderConfig>;
 }
 
 // Provider types
@@ -156,7 +158,13 @@ export interface RouterConfig {
     port: number;
     host: string;
   };
-  routing: RoutingConfig;
+  providers: Record<string, ProviderConfig>;
+  routing: {
+    [category: string]: {
+      provider: string;
+      model: string;
+    };
+  };
   debug: {
     enabled: boolean;
     logLevel: 'error' | 'warn' | 'info' | 'debug';

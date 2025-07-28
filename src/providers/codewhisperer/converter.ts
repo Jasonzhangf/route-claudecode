@@ -98,7 +98,7 @@ export class CodeWhispererConverter {
           currentMessage: {
             userInputMessage: {
               content: this.extractMessageContent(request.messages[request.messages.length - 1].content),
-              modelId: this.mapModel(request.model),
+              modelId: this.mapModel(request.model, request.metadata?.targetModel),
               origin: 'AI_EDITOR',
               userInputMessageContext: {}
             }
@@ -132,14 +132,52 @@ export class CodeWhispererConverter {
   }
 
   /**
-   * Map model names from Anthropic to CodeWhisperer format
+   * Map model names to CodeWhisperer internal format
+   * NOTE: targetModel from routing contains the final API model name, 
+   * but CodeWhisperer needs its internal model format
    */
-  private mapModel(model: string): string {
-    const mapped = MODEL_MAP[model];
+  private mapModel(originalModel: string, targetModel?: string): string {
+    // Determine which model to use for mapping
+    const modelToMap = targetModel || originalModel;
+    
+    // If targetModel is provided (from routing), we need to map it to CodeWhisperer format
+    if (targetModel) {
+      // For CodeWhisperer provider, targetModel should be a CodeWhisperer model ID
+      // Check if it's already in CodeWhisperer format
+      if (targetModel.startsWith('CLAUDE_')) {
+        logger.debug(`Target model is already in CodeWhisperer format: ${targetModel}`, {
+          originalModel,
+          targetModel
+        });
+        return targetModel;
+      }
+      
+      // If targetModel is not in CodeWhisperer format, treat it as original model name
+      logger.debug(`Target model '${targetModel}' not in CodeWhisperer format, mapping from original model`, {
+        originalModel,
+        targetModel,
+        note: 'This case indicates routing config may have wrong model format for CodeWhisperer'
+      });
+    }
+    
+    // Map from Anthropic model names to CodeWhisperer format
+    const mapped = MODEL_MAP[modelToMap];
     if (!mapped) {
-      logger.warn(`Unknown model ${model}, using default`, { model });
+      logger.warn(`Unknown model '${modelToMap}', using default CodeWhisperer model`, { 
+        originalModel,
+        targetModel,
+        modelToMap
+      });
       return MODEL_MAP['claude-sonnet-4-20250514'];
     }
+    
+    logger.debug(`Model mapped to CodeWhisperer format: ${modelToMap} -> ${mapped}`, {
+      originalModel,
+      targetModel,
+      modelToMap,
+      mapped
+    });
+    
     return mapped;
   }
 

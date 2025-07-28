@@ -181,7 +181,7 @@ export class CodeWhispererClient implements Provider {
         bufferPreview: responseBuffer.toString('hex').slice(0, 100)
       }, requestId, 'provider');
       
-      const anthropicEvents = processBufferedResponse(responseBuffer, requestId);
+      const anthropicEvents = processBufferedResponse(responseBuffer, requestId, request.model);
       
       // 从事件中提取内容 - 支持完整的工具调用处理
       const contexts: any[] = [];
@@ -274,13 +274,14 @@ export class CodeWhispererClient implements Provider {
         }, requestId, 'provider');
       }
       
-      // Convert to BaseResponse format - 完全不包含stop_reason字段
+      // Convert to BaseResponse format
+      // Model name has already been replaced by routing engine
       const baseResponse: BaseResponse = {
         id: `cw_${Date.now()}`,
-        model: request.model,
+        model: request.model, // Already mapped by routing engine
         role: 'assistant',
         content: finalContexts,
-        // 完全不设置stop_reason字段，让会话可以继续
+        // No stop_reason to allow conversation continuation
         usage: {
           input_tokens: this.estimateInputTokens(cwRequest),
           output_tokens: this.estimateOutputTokens(finalContexts)
@@ -365,7 +366,7 @@ export class CodeWhispererClient implements Provider {
         responseLength: fullResponse.length
       }, requestId, 'provider');
       
-      const anthropicEvents = processBufferedResponse(fullResponse, requestId);
+      const anthropicEvents = processBufferedResponse(fullResponse, requestId, request.model);
       logger.debug('Completed buffered processing', {
         anthropicEventCount: anthropicEvents.length,
         events: anthropicEvents.map(e => ({ event: e.event, hasData: !!e.data }))

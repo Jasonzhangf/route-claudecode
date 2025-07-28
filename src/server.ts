@@ -9,7 +9,7 @@ import { RoutingEngine } from './routing';
 import { AnthropicOutputProcessor } from './output/anthropic';
 import { CodeWhispererClient } from './providers/codewhisperer';
 import { EnhancedOpenAIClient } from './providers/openai';
-import { RouterConfig, BaseRequest, ProviderConfig, Provider } from './types';
+import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting } from './types';
 import { logger } from './utils/logger';
 import { sessionManager } from './session/manager';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,7 +32,7 @@ export class RouterServer {
 
     // Initialize components
     this.inputProcessor = new AnthropicInputProcessor();
-    this.routingEngine = new RoutingEngine(config.routing);
+    this.routingEngine = new RoutingEngine(config.routing as Record<RoutingCategory, CategoryRouting>);
     this.outputProcessor = new AnthropicOutputProcessor();
 
     // Initialize providers
@@ -54,7 +54,7 @@ export class RouterServer {
     // Clear existing providers
     this.providers.clear();
     
-    for (const [providerId, providerConfig] of Object.entries(this.config.routing.providers)) {
+    for (const [providerId, providerConfig] of Object.entries(this.config.providers)) {
       try {
         let client: Provider;
         
@@ -278,7 +278,9 @@ export class RouterServer {
           timestamp: new Date(),
           metadata: {
             provider: providerId,
-            model: baseRequest.model
+            model: baseRequest.metadata?.targetModel || baseRequest.model, // Use target model from routing
+            originalModel: baseRequest.model,
+            routingApplied: !!baseRequest.metadata?.targetModel
           }
         });
       }
@@ -330,6 +332,16 @@ export class RouterServer {
       const messageId = `msg_${Date.now()}`;
 
       // Send message start event
+      // CRITICAL: Use targetModel from routing if available
+      const modelForStreaming = request.metadata?.targetModel || request.model;
+      
+      logger.debug('Streaming message start model', {
+        originalModel: request.model,
+        targetModel: request.metadata?.targetModel,
+        modelForStreaming,
+        hasTargetModel: !!request.metadata?.targetModel
+      }, requestId, 'streaming');
+      
       this.sendSSEEvent(reply, 'message_start', {
         type: 'message_start',
         message: {
@@ -337,7 +349,7 @@ export class RouterServer {
           type: 'message',
           role: 'assistant',
           content: [],
-          model: request.model,
+          model: modelForStreaming, // Use target model from routing
           stop_reason: null,
           stop_sequence: null,
           usage: {
@@ -553,7 +565,7 @@ export class RouterServer {
    */
   updateConfig(config: RouterConfig): void {
     this.config = config;
-    this.routingEngine.updateConfig(config.routing);
+    this.routingEngine.updateConfig(config.routing as Record<RoutingCategory, CategoryRouting>);
     
     // Reinitialize providers if needed
     this.initializeProviders();

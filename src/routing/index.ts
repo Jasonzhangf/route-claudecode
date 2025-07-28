@@ -4,4 +4,3 @@
  */
 
 export { RoutingEngine } from './engine';
-export { defaultRoutingRules, createRoutingRules, validateRoutingRules } from './rules';

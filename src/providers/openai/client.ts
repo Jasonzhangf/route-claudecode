@@ -122,6 +122,12 @@ export class OpenAICompatibleClient implements Provider {
       // Convert to OpenAI format with streaming
       const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
       
+      logger.debug('OpenAI streaming request model', {
+        requestModel: openaiRequest.model,
+        originalModel: request.model,
+        targetModel: request.metadata?.targetModel
+      }, requestId, 'provider');
+      
       // Send streaming request
       const response = await this.httpClient.post('/v1/chat/completions', openaiRequest, {
         responseType: 'stream'
@@ -212,10 +218,23 @@ export class OpenAICompatibleClient implements Provider {
 
   /**
    * Convert BaseRequest to OpenAI format
+   * Uses targetModel from routing if available for the actual API call
    */
   private convertToOpenAI(request: BaseRequest): any {
+    // CRITICAL: Use targetModel from routing for the actual API call
+    const modelToUse = request.metadata?.targetModel || request.model;
+    const requestId = request.metadata?.requestId || 'unknown';
+    
+    logger.debug('OpenAI request model determination', {
+      originalModel: request.model,
+      targetModel: request.metadata?.targetModel,
+      finalModelForAPI: modelToUse,
+      hasTargetModel: !!request.metadata?.targetModel,
+      routingApplied: !!request.metadata?.targetModel
+    }, requestId, 'provider');
+    
     const openaiRequest: any = {
-      model: request.model,
+      model: modelToUse, // Use the target model from routing
       messages: this.convertMessages(request.messages),
       max_tokens: request.max_tokens || 131072, // 128K tokens default
       temperature: request.temperature,
@@ -280,6 +299,7 @@ export class OpenAICompatibleClient implements Provider {
 
   /**
    * Convert OpenAI response to BaseResponse
+   * Returns the targetModel from routing to maintain consistency
    */
   private convertFromOpenAI(response: any, originalRequest: BaseRequest): BaseResponse {
     const choice = response.choices?.[0];
@@ -287,9 +307,23 @@ export class OpenAICompatibleClient implements Provider {
       throw new Error('No choices in OpenAI response');
     }
 
+    // CRITICAL: Always return the targetModel from routing if available
+    // This ensures the client sees the model that was intended by routing config
+    const modelToReturn = originalRequest.metadata?.targetModel || originalRequest.model;
+    const requestId = originalRequest.metadata?.requestId || 'unknown';
+    
+    logger.debug('OpenAI response model determination', {
+      originalModel: originalRequest.model,
+      targetModel: originalRequest.metadata?.targetModel,
+      finalModelInResponse: modelToReturn,
+      apiResponseModel: response.model,
+      hasTargetModel: !!originalRequest.metadata?.targetModel,
+      routingApplied: !!originalRequest.metadata?.targetModel
+    }, requestId, 'provider');
+
     return {
       id: response.id,
-      model: originalRequest.model,
+      model: modelToReturn, // Use the target model from routing
       role: 'assistant',
       content: [{ type: 'text', text: choice.message.content }],
       stop_reason: this.mapFinishReason(choice.finish_reason),

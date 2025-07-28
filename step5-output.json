@@ -1,105 +1,42 @@
 {
-  "timestamp": "2025-07-26T12:33:42.808Z",
-  "step": "step5-transformer-input",
-  "input": {
-    "rawApiResponse": {
-      "id": "chatcmpl-20250726203326525973985fpc3r4Bw",
-      "model": "gemini-2.5-flash",
-      "object": "chat.completion",
-      "created": 1753533210,
-      "choices": [
-        {
-          "index": 0,
-          "message": {
-            "role": "assistant",
-            "content": "Hello! Message received. This is a successful response to your API test."
+  "step": 5,
+  "timestamp": "2025-07-27T16:09:06.386Z",
+  "data": {
+    "success": true,
+    "parserInput": {
+      "bufferLength": 1242,
+      "hexPreview": "000000960000005c59b910060b3a6576656e742d74797065070016617373697374616e74526573706f6e73654576656e740d3a636f6e74656e742d747970650700106170706c69636174696f6e2f6a736f6e0d3a6d6573736167652d7479706507000565",
+      "utf8Preview": "\u0000\u0000\u0000�\u0000\u0000\u0000\\Y�\u0010\u0006\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\"Hello! I'm doing well, thank\"}��d\u0002\u0000\u0000\u0000�\u0000\u0000\u0000\\Y�\u0010\u0006\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\" you for asking. I'm here an\"}\rtB^\u0000\u0000\u0000�\u0000\u0000\u0000\\\u0013\t\b�\u000b:event-type\u0007\u0000\u0016assistantResponseEvent\r:content-type\u0007\u0000\u0010application/json\r:message-type\u0007\u0000\u0005event{\"content\":\"d ready to help with whatever you'\"}��\u0005�\u0000\u0000\u0000�\u0000\u0000\u0000\\\t)�E\u000b:event-type\u0007\u0000\u0016assistantResponse",
+      "binaryStructure": {
+        "hasAwsHeader": true,
+        "firstBytes": "000000960000005c59b910060b3a6576",
+        "possibleFrames": 0,
+        "firstFrameTotalLen": 150,
+        "firstFrameHeaderLen": 92
+      },
+      "frameAnalysis": {
+        "frameCount": 2,
+        "frames": [
+          {
+            "offset": 0,
+            "totalLen": 150,
+            "headerLen": 92,
+            "payloadLen": 46,
+            "nextOffset": 154
           },
-          "finish_reason": "stop"
-        }
-      ],
-      "usage": {
-        "prompt_tokens": 10,
-        "completion_tokens": 541,
-        "total_tokens": 551,
-        "prompt_tokens_details": {
-          "cached_tokens": 0,
-          "text_tokens": 10,
-          "audio_tokens": 0,
-          "image_tokens": 0
-        },
-        "completion_tokens_details": {
-          "text_tokens": 0,
-          "audio_tokens": 0,
-          "reasoning_tokens": 526
-        },
-        "input_tokens": 0,
-        "output_tokens": 0,
-        "input_tokens_details": null
+          {
+            "offset": 154,
+            "totalLen": 92,
+            "headerLen": 1505300486,
+            "payloadLen": -1505300406,
+            "nextOffset": 250
+          }
+        ],
+        "firstFrameSize": 150,
+        "totalAnalyzed": 250
       }
-    }
-  },
-  "analysis": {
-    "dataStructure": {
-      "hasId": true,
-      "hasObject": true,
-      "hasModel": true,
-      "hasChoices": true,
-      "hasUsage": true,
-      "choicesCount": 1
     },
-    "choice": {
-      "hasIndex": true,
-      "hasMessage": true,
-      "hasFinishReason": true,
-      "messageRole": "assistant",
-      "messageContent": "Hello! Message received. This is a successful response to your API test.",
-      "messageContentLength": 72,
-      "hasToolCalls": false
-    },
-    "usage": {
-      "hasPromptTokens": true,
-      "hasCompletionTokens": true,
-      "hasTotalTokens": true,
-      "promptTokens": 10,
-      "completionTokens": 541,
-      "totalTokens": 551
-    },
-    "isTransformerReady": true
-  },
-  "transformerInput": {
-    "id": "chatcmpl-20250726203326525973985fpc3r4Bw",
-    "model": "gemini-2.5-flash",
-    "object": "chat.completion",
-    "created": 1753533210,
-    "choices": [
-      {
-        "index": 0,
-        "message": {
-          "role": "assistant",
-          "content": "Hello! Message received. This is a successful response to your API test."
-        },
-        "finish_reason": "stop"
-      }
-    ],
-    "usage": {
-      "prompt_tokens": 10,
-      "completion_tokens": 541,
-      "total_tokens": 551,
-      "prompt_tokens_details": {
-        "cached_tokens": 0,
-        "text_tokens": 10,
-        "audio_tokens": 0,
-        "image_tokens": 0
-      },
-      "completion_tokens_details": {
-        "text_tokens": 0,
-        "audio_tokens": 0,
-        "reasoning_tokens": 526
-      },
-      "input_tokens": 0,
-      "output_tokens": 0,
-      "input_tokens_details": null
-    }
-  },
-  "success": true
+    "rawResponseFile": "/Users/fanzhang/Documents/github/claude-code-router/step4-raw-response-2025-07-27T16-09-02-150Z.bin",
+    "timestamp": "2025-07-27T16:09:06.386Z"
+  }
 }

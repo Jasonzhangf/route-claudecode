@@ -9,10 +9,14 @@ import { join, resolve } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
 import { RouterServer } from './server';
-import { RouterConfig, RoutingConfig, ProviderConfig } from './types';
+import { RouterConfig, ProviderConfig } from './types';
 import { logger } from './utils/logger';
-import { createRoutingRules } from './routing';
 import { executeCodeCommand } from './code-command';
+
+// Read version from package.json
+const packageJsonPath = join(__dirname, '..', 'package.json');
+const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+const VERSION = packageJson.version;
 
 const program = new Command();
 const DEFAULT_CONFIG_PATH = join(homedir(), '.claude-code-router', 'config-router.json');
@@ -25,47 +29,50 @@ const DEFAULT_CONFIG: RouterConfig = {
     port: 3456,
     host: '127.0.0.1'
   },
-  routing: {
-    rules: [],
-    defaultProvider: 'codewhisperer-primary',
-    providers: {
-      'codewhisperer-primary': {
-        type: 'codewhisperer',
-        endpoint: 'https://codewhisperer.us-east-1.amazonaws.com',
-        authentication: {
-          type: 'bearer',
-          credentials: {}
-        },
-        settings: {
-          profileArn: 'arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK',
-          categoryMappings: {
-            default: true,
-            background: true,
-            thinking: true,
-            longcontext: true,
-            search: true
-          }
+  providers: {
+    'codewhisperer-primary': {
+      type: 'codewhisperer',
+      endpoint: 'https://codewhisperer.us-east-1.amazonaws.com',
+      authentication: {
+        type: 'bearer',
+        credentials: {}
+      },
+      settings: {
+        profileArn: 'arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK'
+      }
+    },
+    'shuaihong-openai': {
+      type: 'openai',
+      endpoint: 'https://api.shuaihong.ai',
+      authentication: {
+        type: 'bearer',
+        credentials: {
+          apiKey: 'your-shuaihong-api-key'
         }
       },
-      'shuaihong-openai': {
-        type: 'openai',
-        endpoint: 'https://api.shuaihong.ai',
-        authentication: {
-          type: 'bearer',
-          credentials: {
-            apiKey: 'your-shuaihong-api-key'
-          }
-        },
-        settings: {
-          categoryMappings: {
-            default: false,
-            background: false,
-            thinking: false,
-            longcontext: false,
-            search: true
-          }
-        }
-      }
+      settings: {}
+    }
+  },
+  routing: {
+    default: {
+      provider: 'codewhisperer-primary',
+      model: 'CLAUDE_SONNET_4_20250514_V1_0'
+    },
+    background: {
+      provider: 'shuaihong-openai',
+      model: 'gemini-2.5-flash'
+    },
+    thinking: {
+      provider: 'codewhisperer-primary',
+      model: 'CLAUDE_SONNET_4_20250514_V1_0'
+    },
+    longcontext: {
+      provider: 'shuaihong-openai',
+      model: 'gemini-2.5-pro'
+    },
+    search: {
+      provider: 'shuaihong-openai',
+      model: 'gemini-2.5-flash'
     }
   },
   debug: {
@@ -104,17 +111,14 @@ function loadConfig(configPath: string): RouterConfig {
       ...config,
       server: { ...DEFAULT_CONFIG.server, ...config.server },
       debug: { ...DEFAULT_CONFIG.debug, ...config.debug },
+      providers: { ...DEFAULT_CONFIG.providers, ...config.providers },
       routing: {
         ...DEFAULT_CONFIG.routing,
-        ...config.routing,
-        providers: { ...DEFAULT_CONFIG.routing.providers, ...config.routing?.providers }
+        ...config.routing
       }
     };
 
-    // Initialize routing rules (skip for object-based config)
-    if (Array.isArray(config.routing?.rules)) {
-      mergedConfig.routing.rules = createRoutingRules(config);
-    }
+    // New routing configuration is object-based, no rules array needed
 
     return mergedConfig;
   } catch (error) {
@@ -365,7 +369,7 @@ program
  * Version command
  */
 program
-  .version('2.0.0', '-v, --version', 'Display version number');
+  .version(VERSION, '-v, --version', 'Display version number');
 
 /**
  * Setup program

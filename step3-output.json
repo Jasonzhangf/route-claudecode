@@ -1,72 +1,60 @@
 {
-  "timestamp": "2025-07-26T13:22:06.712Z",
-  "step": "step3-transformation",
-  "input": {
-    "anthropicRequest": {
-      "model": "claude-3-5-haiku-20241022",
-      "messages": [
-        {
-          "role": "user",
-          "content": "hello test"
-        }
-      ],
-      "stream": false
+  "timestamp": "2025-07-28T01:21:15.755Z",
+  "test": "step3-live-api",
+  "prerequisites": {
+    "step1PassRate": 100,
+    "step2MappingPassRate": 100,
+    "step2EndToEndPassRate": 100
+  },
+  "apiTests": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "passRate": 100
+  },
+  "modelMapping": {
+    "total": 2,
+    "correct": 2,
+    "incorrect": 0,
+    "accuracy": 100
+  },
+  "results": [
+    {
+      "name": "Background Category API Test",
+      "expected": {
+        "category": "background",
+        "provider": "shuaihong-openai",
+        "responseModel": "gemini-2.5-flash",
+        "status": 200
+      },
+      "actual": {
+        "status": 200,
+        "duration": 2535,
+        "responseModel": "gemini-2.5-flash",
+        "hasContent": false,
+        "success": true,
+        "modelMappingCorrect": true
+      }
     },
-    "mockOpenAIResponse": {
-      "id": "chatcmpl-test123",
-      "object": "chat.completion",
-      "created": 1753536126711,
-      "model": "CLAUDE_3_5_HAIKU_20241022_V1_0",
-      "choices": [
-        {
-          "index": 0,
-          "message": {
-            "role": "assistant",
-            "content": "Hello! This is a test response."
-          },
-          "finish_reason": "stop"
-        }
-      ],
-      "usage": {
-        "prompt_tokens": 10,
-        "completion_tokens": 8,
-        "total_tokens": 18
+    {
+      "name": "Default Category API Test",
+      "expected": {
+        "category": "default",
+        "provider": "codewhisperer-primary",
+        "responseModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "status": [
+          200,
+          500
+        ]
+      },
+      "actual": {
+        "status": 200,
+        "duration": 13545,
+        "responseModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "hasContent": true,
+        "success": true,
+        "modelMappingCorrect": true
       }
     }
-  },
-  "output": {
-    "openaiRequest": {
-      "model": "claude-3-5-haiku-20241022",
-      "messages": [
-        {
-          "role": "user",
-          "content": "hello test"
-        }
-      ],
-      "max_tokens": 4096,
-      "stream": false
-    },
-    "anthropicResponse": {
-      "id": "chatcmpl-test123",
-      "type": "message",
-      "role": "assistant",
-      "content": [
-        {
-          "type": "text",
-          "text": "Hello! This is a test response."
-        }
-      ],
-      "stop_reason": "end_turn",
-      "usage": {
-        "input_tokens": 10,
-        "output_tokens": 8
-      }
-    }
-  },
-  "verification": {
-    "hasContent": true,
-    "hasTextContent": "Hello! This is a test response.",
-    "contentLength": 31
-  },
-  "success": "Hello! This is a test response."
+  ]
 }

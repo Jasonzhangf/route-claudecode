@@ -28,8 +28,16 @@ export class StreamingTransformer {
     private options: StreamTransformOptions
   ) {
     this.messageId = `msg_${Date.now()}`;
+    // Use the model from options (should be the targetModel from routing)
     this.model = options.model || 'unknown';
     this.requestId = options.requestId || 'unknown';
+    
+    logger.debug('StreamingTransformer initialized', {
+      model: this.model,
+      sourceFormat: options.sourceFormat,
+      targetFormat: options.targetFormat,
+      requestId: this.requestId
+    });
   }
 
   /**

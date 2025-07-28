@@ -10,7 +10,7 @@ export { RouterServer } from './server';
 export { AnthropicInputProcessor } from './input/anthropic';
 
 // Routing engine
-export { RoutingEngine, defaultRoutingRules, createRoutingRules } from './routing';
+export { RoutingEngine } from './routing';
 
 // Output processors
 export { AnthropicOutputProcessor } from './output/anthropic';
