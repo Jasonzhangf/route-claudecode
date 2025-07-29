@@ -16,6 +16,9 @@ npm ci
 echo "🔨 Building TypeScript..."
 npm run build
 
+echo "📁 Copying static files..."
+cp -r public/ dist/public/
+
 echo "🧪 Running tests..."
 # Skip tests for now due to missing modules
 # npm test

@@ -1,0 +1,171 @@
+{
+  "server": {
+    "port": 8888,
+    "host": "127.0.0.1",
+    "ports": {
+      "development": 3456,
+      "release": 3457
+    }
+  },
+  "providers": {
+    "kiro-zcam": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/kiro-auth-token_zcam.json"
+        }
+      },
+      "models": ["CLAUDE_SONNET_4_20250514_V1_0"],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
+      "maxTokens": {
+        "CLAUDE_SONNET_4_20250514_V1_0": 131072
+      }
+    },
+    "kiro-gmail": {
+      "type": "codewhisperer", 
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/kiro-auth-token.json"
+        }
+      },
+      "models": ["CLAUDE_SONNET_4_20250514_V1_0"],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
+      "maxTokens": {
+        "CLAUDE_SONNET_4_20250514_V1_0": 131072
+      }
+    },
+    "shuaihong-openai": {
+      "type": "openai",
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "sk-example-key"
+        }
+      },
+      "models": ["gemini-2.5-pro", "gemini-2.5-flash"],
+      "defaultModel": "gemini-2.5-pro",
+      "maxTokens": {
+        "gemini-2.5-pro": 131072,
+        "gemini-2.5-flash": 131072
+      }
+    },
+    "backup-provider": {
+      "type": "openai",
+      "endpoint": "https://backup.example.com/v1/chat/completions", 
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "sk-backup-key"
+        }
+      },
+      "models": ["gpt-4o", "gemini-2.5-flash"],
+      "defaultModel": "gpt-4o"
+    }
+  },
+  "routing": {
+    "default": {
+      "providers": [
+        {
+          "provider": "kiro-zcam",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 70
+        },
+        {
+          "provider": "kiro-gmail", 
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 30
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted",
+        "healthCheckInterval": 30000
+      },
+      "backup": [
+        {
+          "provider": "backup-provider",
+          "model": "gpt-4o",
+          "weight": 1
+        }
+      ]
+    },
+    "background": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-flash", 
+          "weight": 80
+        },
+        {
+          "provider": "backup-provider",
+          "model": "gemini-2.5-flash",
+          "weight": 20
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "round_robin"
+      }
+    },
+    "thinking": {
+      "providers": [
+        {
+          "provider": "kiro-zcam",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 60
+        },
+        {
+          "provider": "kiro-gmail",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0", 
+          "weight": 40
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "health_based"
+      }
+    },
+    "longcontext": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-pro",
+          "weight": 100
+        }
+      ],
+      "loadBalancing": {
+        "enabled": false
+      }
+    },
+    "search": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai", 
+          "model": "gemini-2.5-pro",
+          "weight": 70
+        },
+        {
+          "provider": "backup-provider",
+          "model": "gpt-4o", 
+          "weight": 30
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted"
+      }
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "/Users/fanzhang/.route-claude-code/logs"
+  }
+}

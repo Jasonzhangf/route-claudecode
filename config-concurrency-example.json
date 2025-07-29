@@ -1,0 +1,112 @@
+{
+  "routing": {
+    "default": {
+      "providers": [
+        {
+          "provider": "kiro-zcam",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 70
+        },
+        {
+          "provider": "kiro-gmail", 
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 30
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted"
+      },
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 3
+          },
+          {
+            "type": "http_error",
+            "httpCodes": [500, 502, 503, 504],
+            "threshold": 2,
+            "timeWindow": 300
+          }
+        ],
+        "cooldown": 60
+      }
+    },
+    "background": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-flash",
+          "weight": 80
+        },
+        {
+          "provider": "backup-provider",
+          "model": "gpt-4o-mini",
+          "weight": 20
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "round_robin"
+      }
+    },
+    "thinking": {
+      "providers": [
+        {
+          "provider": "kiro-zcam",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 100
+        }
+      ],
+      "loadBalancing": {
+        "enabled": false
+      }
+    },
+    "longcontext": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-pro",
+          "weight": 60
+        },
+        {
+          "provider": "anthropic-direct",
+          "model": "claude-3-5-sonnet-20241022",
+          "weight": 40
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "health_based"
+      }
+    },
+    "search": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-flash",
+          "weight": 85
+        },
+        {
+          "provider": "openai-direct",
+          "model": "gpt-4o",
+          "weight": 15
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted"
+      }
+    }
+  },
+  "concurrency": {
+    "enabled": true,
+    "maxConcurrencyPerProvider": 3,
+    "lockTimeoutMs": 300000,
+    "queueTimeoutMs": 60000,
+    "enableWaitingQueue": true,
+    "preferIdleProviders": true
+  }
+}

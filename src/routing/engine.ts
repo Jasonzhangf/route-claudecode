@@ -4,14 +4,29 @@
  */
 
 import { BaseRequest, RoutingCategory, CategoryRouting, ProviderHealth, FailoverTrigger, ProviderEntry, LoadBalancingConfig, FailoverConfig } from '@/types';
+import { ConcurrentLoadBalancingConfig } from '@/types/concurrency';
 import { logger } from '@/utils/logger';
 import { calculateTokenCount } from '@/utils/tokenizer';
+import { responseStatsManager } from '@/utils/response-stats';
+import { ConcurrencyManager } from './concurrency-manager';
 
 export class RoutingEngine {
   private providerHealth: Map<string, ProviderHealth> = new Map();
   private roundRobinIndex: Map<string, number> = new Map();
+  private concurrencyManager: ConcurrencyManager;
   
   constructor(private routingConfig: Record<RoutingCategory, CategoryRouting>) {
+    // 初始化并发管理器
+    const concurrencyConfig: ConcurrentLoadBalancingConfig = {
+      enabled: true,
+      maxConcurrencyPerProvider: 3, // 每个provider最多3个并发
+      lockTimeoutMs: 300000, // 5分钟超时
+      queueTimeoutMs: 60000, // 队列等待1分钟
+      enableWaitingQueue: true,
+      preferIdleProviders: true
+    };
+    this.concurrencyManager = new ConcurrencyManager(concurrencyConfig);
+
     logger.info('Routing engine initialized with category-based configuration', {
       categories: Object.keys(routingConfig),
       hasBackup: Object.values(routingConfig).some(config => config.backup && config.backup.length > 0),
@@ -82,7 +97,7 @@ export class RoutingEngine {
   }
 
   /**
-   * Select from multi-provider configuration with load balancing
+   * Select from multi-provider configuration with concurrent load balancing
    */
   private async selectFromMultiProvider(
     categoryRule: CategoryRouting,
@@ -122,6 +137,16 @@ export class RoutingEngine {
         provider: providers[0].provider,
         model: providers[0].model
       };
+    }
+
+    // 🚀 NEW: 使用并发感知的负载均衡
+    if (loadBalancingConfig.enabled) {
+      return this.selectWithConcurrencyControl(
+        healthyProviders, 
+        loadBalancingConfig, 
+        category, 
+        requestId
+      );
     }
 
     // Apply load balancing strategy
@@ -245,46 +270,85 @@ export class RoutingEngine {
   }
 
   /**
-   * Weighted selection based on provider weights
+   * Weighted selection based on provider weights (真正的权重随机选择)
    */
   private selectWeighted(providers: ProviderEntry[], requestId: string): ProviderEntry {
-    // Sort by weight (lower weight = higher priority)
-    const sortedProviders = [...providers].sort((a, b) => (a.weight || 1) - (b.weight || 1));
+    // 计算总权重
+    const totalWeight = providers.reduce((sum, provider) => sum + (provider.weight || 1), 0);
     
-    // For now, select the highest priority (lowest weight)
-    // TODO: Implement true weighted random selection
-    const selectedProvider = sortedProviders[0];
+    // 生成随机数 [0, totalWeight)
+    const random = Math.random() * totalWeight;
     
-    logger.debug(`Weighted selection: ${selectedProvider.provider}`, {
-      weight: selectedProvider.weight || 1,
-      totalProviders: providers.length
+    // 按权重累积选择
+    let currentWeight = 0;
+    for (const provider of providers) {
+      currentWeight += (provider.weight || 1);
+      if (random < currentWeight) {
+        logger.debug(`Weighted selection: ${provider.provider}`, {
+          weight: provider.weight || 1,
+          totalWeight,
+          randomValue: random.toFixed(3),
+          selectionProbability: `${(((provider.weight || 1) / totalWeight) * 100).toFixed(1)}%`
+        }, requestId, 'routing');
+        
+        return provider;
+      }
+    }
+    
+    // 降级：如果由于浮点精度问题没选中，返回最后一个
+    const fallbackProvider = providers[providers.length - 1];
+    logger.warn(`Weighted selection fallback: ${fallbackProvider.provider}`, {
+      reason: 'floating_point_precision_issue',
+      totalWeight,
+      randomValue: random
     }, requestId, 'routing');
     
-    return selectedProvider;
+    return fallbackProvider;
   }
 
   /**
    * Health-based selection (best performing provider)
    */
   private selectHealthBased(providers: ProviderEntry[], requestId: string): ProviderEntry {
-    // Select provider with best success rate
-    let bestProvider = providers[0];
-    let bestSuccessRate = this.getProviderSuccessRate(bestProvider.provider);
-    
-    for (const provider of providers.slice(1)) {
-      const successRate = this.getProviderSuccessRate(provider.provider);
-      if (successRate > bestSuccessRate) {
-        bestProvider = provider;
-        bestSuccessRate = successRate;
+    // 计算每个provider的健康分数
+    const scoredProviders = providers.map(provider => {
+      const health = this.providerHealth.get(provider.provider);
+      let score = 1.0; // 默认健康分数
+      
+      if (health) {
+        // 基于成功率计算分数
+        const successRate = health.totalRequests > 0 
+          ? health.successCount / health.totalRequests 
+          : 1.0;
+        
+        // 考虑连续错误数的影响 
+        const errorPenalty = Math.max(0, health.consecutiveErrors) * 0.1;
+        
+        // 考虑冷却状态
+        const cooldownPenalty = health.inCooldown ? 0.5 : 0;
+        
+        score = successRate - errorPenalty - cooldownPenalty;
       }
-    }
+      
+      return {
+        provider,
+        score: Math.max(0.1, score) // 确保分数不为负
+      };
+    });
     
-    logger.debug(`Health-based selection: ${bestProvider.provider}`, {
-      successRate: bestSuccessRate,
-      totalProviders: providers.length
+    // 按健康分数排序，分数高的优先
+    const sortedByHealth = scoredProviders.sort((a, b) => b.score - a.score);
+    const selectedProvider = sortedByHealth[0].provider;
+    
+    logger.debug(`Health-based selection: ${selectedProvider.provider}`, {
+      score: sortedByHealth[0].score.toFixed(3),
+      allScores: scoredProviders.map(sp => ({
+        provider: sp.provider.provider,
+        score: sp.score.toFixed(3)
+      }))
     }, requestId, 'routing');
     
-    return bestProvider;
+    return selectedProvider;
   }
 
   /**
@@ -360,9 +424,9 @@ export class RoutingEngine {
   }
 
   /**
-   * Record provider request result for health tracking
+   * Record provider request result for health tracking and statistics
    */
-  public recordProviderResult(providerId: string, success: boolean, error?: string, httpCode?: number): void {
+  public recordProviderResult(providerId: string, success: boolean, error?: string, httpCode?: number, model?: string, responseTimeMs?: number): void {
     let health = this.providerHealth.get(providerId);
     if (!health) {
       // Initialize if not exists
@@ -388,14 +452,26 @@ export class RoutingEngine {
       health.lastSuccessTime = new Date();
       health.inCooldown = false;
       
+      // 记录成功响应统计
+      if (model) {
+        responseStatsManager.recordSuccess(providerId, model, responseTimeMs || 0);
+      }
+      
       logger.debug(`Provider ${providerId} request succeeded`, {
         totalRequests: health.totalRequests,
-        successRate: health.successCount / health.totalRequests
+        successRate: health.successCount / health.totalRequests,
+        model: model || 'unknown',
+        responseTime: responseTimeMs ? `${responseTimeMs}ms` : 'unknown'
       });
     } else {
       health.failureCount++;
       health.consecutiveErrors++;
       health.lastFailureTime = new Date();
+      
+      // 记录失败响应统计
+      if (model) {
+        responseStatsManager.recordFailure(providerId, model, error || 'unknown');
+      }
       
       // Add to error history
       health.errorHistory.push({
@@ -782,5 +858,256 @@ export class RoutingEngine {
       
       logger.info('All provider health reset');
     }
+  }
+
+  // ==================== 并发控制方法 ====================
+
+  /**
+   * 并发感知的负载均衡选择
+   */
+  private async selectWithConcurrencyControl(
+    providers: ProviderEntry[],
+    loadBalancingConfig: LoadBalancingConfig,
+    category: string,
+    requestId: string
+  ): Promise<{ provider: string; model: string }> {
+    
+    // 提取sessionId用于并发控制
+    const sessionId = requestId; // 简化实现，实际应该从request中提取
+
+    // 初始化所有providers
+    providers.forEach(p => this.concurrencyManager.initializeProvider(p.provider, 3));
+
+    // 根据负载均衡策略选择
+    switch (loadBalancingConfig.strategy) {
+      case 'weighted':
+        return this.selectWithConcurrentWeighted(providers, sessionId, requestId);
+      case 'round_robin':
+        return this.selectWithConcurrentRoundRobin(providers, category, sessionId, requestId);
+      case 'health_based':
+        return this.selectWithConcurrentHealthBased(providers, sessionId, requestId);
+      default:
+        return this.selectWithConcurrentWeighted(providers, sessionId, requestId);
+    }
+  }
+
+  /**
+   * 并发感知的权重选择
+   */
+  private async selectWithConcurrentWeighted(
+    providers: ProviderEntry[],
+    sessionId: string,
+    requestId: string
+  ): Promise<{ provider: string; model: string }> {
+    
+    // 构建权重映射
+    const weights = new Map<string, number>();
+    providers.forEach(p => weights.set(p.provider, p.weight || 1));
+
+    // 尝试获取可用provider
+    const lockResult = await this.concurrencyManager.acquireAvailableProvider(
+      sessionId,
+      requestId,
+      providers.map(p => p.provider),
+      weights
+    );
+
+    if (lockResult.success) {
+      const selectedProvider = providers.find(p => p.provider === lockResult.providerId)!;
+      
+      logger.info(`Concurrent weighted selection: ${lockResult.providerId}`, {
+        sessionId,
+        weight: selectedProvider.weight || 1,
+        concurrencyMetrics: this.concurrencyManager.getProviderMetrics(lockResult.providerId)
+      }, requestId, 'routing');
+
+      return {
+        provider: selectedProvider.provider,
+        model: selectedProvider.model
+      };
+    }
+
+    // 降级：使用传统权重选择
+    logger.warn('Concurrent provider selection failed, falling back to traditional weighted', {
+      sessionId, requestId
+    }, requestId, 'routing');
+    
+    const traditionalSelection = this.selectWeighted(providers, requestId);
+    return {
+      provider: traditionalSelection.provider,
+      model: traditionalSelection.model
+    };
+  }
+
+  /**
+   * 并发感知的轮询选择
+   */
+  private async selectWithConcurrentRoundRobin(
+    providers: ProviderEntry[],
+    category: string,
+    sessionId: string,
+    requestId: string
+  ): Promise<{ provider: string; model: string }> {
+    
+    // 按轮询顺序排序
+    const currentIndex = this.roundRobinIndex.get(category) || 0;
+    const orderedProviders = [
+      ...providers.slice(currentIndex),
+      ...providers.slice(0, currentIndex)
+    ];
+
+    // 尝试按顺序获取可用provider
+    for (let i = 0; i < orderedProviders.length; i++) {
+      const provider = orderedProviders[i];
+      
+      const lockResult = await this.concurrencyManager.acquireProviderLock({
+        sessionId,
+        requestId,
+        providerId: provider.provider,
+        priority: 'normal'
+      });
+
+      if (lockResult.success) {
+        // 更新轮询索引
+        const nextIndex = (currentIndex + i + 1) % providers.length;
+        this.roundRobinIndex.set(category, nextIndex);
+
+        logger.info(`Concurrent round-robin selection: ${provider.provider}`, {
+          sessionId,
+          roundRobinIndex: nextIndex,
+          concurrencyMetrics: this.concurrencyManager.getProviderMetrics(provider.provider)
+        }, requestId, 'routing');
+
+        return {
+          provider: provider.provider,
+          model: provider.model
+        };
+      }
+    }
+
+    // 所有provider都被占用，返回第一个
+    logger.warn('All providers occupied in round-robin, using first provider', {
+      sessionId, requestId, 
+      providerCount: providers.length
+    }, requestId, 'routing');
+
+    return {
+      provider: providers[0].provider,
+      model: providers[0].model
+    };
+  }
+
+  /**
+   * 并发感知的健康状态选择
+   */
+  private async selectWithConcurrentHealthBased(
+    providers: ProviderEntry[],
+    sessionId: string,
+    requestId: string
+  ): Promise<{ provider: string; model: string }> {
+    
+    // 按健康分数和并发利用率综合排序
+    const scoredProviders = providers.map(provider => {
+      const health = this.providerHealth.get(provider.provider);
+      const concurrencyMetrics = this.concurrencyManager.getProviderMetrics(provider.provider);
+      
+      let healthScore = 1.0;
+      if (health) {
+        const successRate = health.totalRequests > 0 ? health.successCount / health.totalRequests : 1.0;
+        const errorPenalty = Math.max(0, health.consecutiveErrors) * 0.1;
+        const cooldownPenalty = health.inCooldown ? 0.5 : 0;
+        healthScore = successRate - errorPenalty - cooldownPenalty;
+      }
+      
+      // 考虑并发负载
+      const concurrencyScore = concurrencyMetrics ? (1 - concurrencyMetrics.utilizationRate) : 1.0;
+      
+      // 综合分数
+      const finalScore = (healthScore * 0.7) + (concurrencyScore * 0.3);
+      
+      return {
+        provider,
+        score: Math.max(0.1, finalScore),
+        healthScore,
+        concurrencyScore
+      };
+    }).sort((a, b) => b.score - a.score);
+
+    // 按分数顺序尝试获取锁
+    for (const scoredProvider of scoredProviders) {
+      const lockResult = await this.concurrencyManager.acquireProviderLock({
+        sessionId,
+        requestId,
+        providerId: scoredProvider.provider.provider,
+        priority: 'normal'
+      });
+
+      if (lockResult.success) {
+        logger.info(`Concurrent health-based selection: ${scoredProvider.provider.provider}`, {
+          sessionId,
+          finalScore: scoredProvider.score.toFixed(3),
+          healthScore: scoredProvider.healthScore.toFixed(3),
+          concurrencyScore: scoredProvider.concurrencyScore.toFixed(3),
+          concurrencyMetrics: this.concurrencyManager.getProviderMetrics(scoredProvider.provider.provider)
+        }, requestId, 'routing');
+
+        return {
+          provider: scoredProvider.provider.provider,
+          model: scoredProvider.provider.model
+        };
+      }
+    }
+
+    // 降级处理
+    logger.warn('Health-based concurrent selection failed, using first provider', {
+      sessionId, requestId
+    }, requestId, 'routing');
+
+    return {
+      provider: providers[0].provider,
+      model: providers[0].model
+    };
+  }
+
+  /**
+   * 释放provider锁 (供外部调用)
+   */
+  public releaseProviderLock(sessionId: string, requestId?: string): boolean {
+    return this.concurrencyManager.releaseProviderLock(sessionId, requestId);
+  }
+
+  /**
+   * 获取并发状态快照
+   */
+  public getConcurrencySnapshot(): Record<string, any> {
+    return this.concurrencyManager.getOccupancySnapshot();
+  }
+
+  /**
+   * 获取响应统计数据
+   */
+  public getResponseStats(): any {
+    return responseStatsManager.getAllStats();
+  }
+
+  /**
+   * 获取统计汇总
+   */
+  public getStatsSummary(): any {
+    return responseStatsManager.getSummaryStats();
+  }
+
+  /**
+   * 强制输出统计日志
+   */
+  public logCurrentStats(): void {
+    responseStatsManager.logSummaryStats();
+  }
+
+  /**
+   * 重置统计数据
+   */
+  public resetStats(): void {
+    responseStatsManager.reset();
   }
 }

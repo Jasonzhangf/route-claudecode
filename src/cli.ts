@@ -17,6 +17,7 @@ import { logger } from './utils/logger';
 import { executeCodeCommand } from './code-command';
 import { getConfigPaths, needsMigration } from './utils/config-paths';
 import { migrateConfiguration } from './utils/migration';
+import { setupAutoStart } from './utils/autostart';
 
 // Read version from package.json
 const packageJsonPath = join(__dirname, '..', 'package.json');
@@ -109,6 +110,7 @@ program
   .option('-h, --host <string>', 'Server host')
   .option('-d, --debug', 'Enable debug mode')
   .option('--log-level <level>', 'Log level (error, warn, info, debug)', 'info')
+  .option('--autostart', 'Enable automatic startup on system boot')
   .action(async (options) => {
     try {
       // Check for migration before starting
@@ -168,6 +170,32 @@ program
       process.on('SIGTERM', shutdown);
 
       await server.start();
+      
+      // Handle autostart setup if requested
+      if (options.autostart) {
+        console.log(chalk.blue('\n🔧 Setting up automatic startup...'));
+        try {
+          const autostartResult = await setupAutoStart({
+            configPath: configPath,
+            port: config.server.port,
+            host: config.server.host,
+            debug: config.debug.enabled,
+            logLevel: config.debug.logLevel
+          });
+          
+          if (autostartResult.success) {
+            console.log(chalk.green('✅ Automatic startup configured!'));
+            console.log(chalk.gray(`   Service: ${autostartResult.serviceName}`));
+            console.log(chalk.gray(`   Status: ${autostartResult.message}`));
+          } else {
+            console.log(chalk.yellow('⚠️  Automatic startup setup failed:'));
+            console.log(chalk.red(`   ${autostartResult.error}`));
+          }
+        } catch (error) {
+          console.log(chalk.yellow('⚠️  Could not setup automatic startup:'));
+          console.log(chalk.red(`   ${error instanceof Error ? error.message : String(error)}`));
+        }
+      }
       
       printEnvironmentSetup(config.server.port, config.server.host);
 

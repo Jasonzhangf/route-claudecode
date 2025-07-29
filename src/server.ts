@@ -13,6 +13,7 @@ import { AnthropicProvider } from './providers/anthropic';
 import { GeminiProvider } from './providers/gemini';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from './types';
 import { logger } from './utils/logger';
+import { failureLogger } from './utils/failure-logger';
 import { sessionManager } from './session/manager';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -120,6 +121,124 @@ export class RouterServer {
       });
     });
 
+    // Statistics API endpoint
+    this.fastify.get('/api/stats', async (request, reply) => {
+      try {
+        const summary = this.routingEngine.getStatsSummary();
+        const responseStats = this.routingEngine.getResponseStats();
+        const concurrency = this.routingEngine.getConcurrencySnapshot();
+
+        // 处理provider分布数据
+        const providers: { [key: string]: number } = {};
+        const models: { [key: string]: number } = {};
+        const distribution: { [key: string]: number } = {};
+
+        for (const [providerId, providerData] of Object.entries(responseStats)) {
+          let providerTotal = 0;
+          for (const [modelName, stat] of Object.entries(providerData as any)) {
+            const statData = stat as any;
+            providerTotal += statData.totalResponses || 0;
+            models[modelName] = (models[modelName] || 0) + (statData.totalResponses || 0);
+            distribution[`${providerId}/${modelName}`] = statData.totalResponses || 0;
+          }
+          if (providerTotal > 0) {
+            providers[providerId] = providerTotal;
+          }
+        }
+
+        // 计算性能指标
+        let totalResponseTime = 0;
+        let totalResponses = 0;
+        for (const [, providerData] of Object.entries(responseStats)) {
+          for (const [, stat] of Object.entries(providerData as any)) {
+            const statData = stat as any;
+            totalResponseTime += statData.totalResponseTime || 0;
+            totalResponses += statData.totalResponses || 0;
+          }
+        }
+
+        const performance = {
+          avgResponseTime: totalResponses > 0 ? Math.round(totalResponseTime / totalResponses) : 0,
+          requestsPerMinute: Math.round(totalResponses / (process.uptime() / 60))
+        };
+
+        // 获取失败统计
+        const failureStats = await failureLogger.getFailureStats(24);
+        const failureTrends = await failureLogger.getFailureTrends(7);
+
+        reply.send({
+          summary,
+          providers,
+          models,
+          distribution,
+          performance,
+          concurrency,
+          failures: {
+            stats: failureStats,
+            trends: failureTrends
+          },
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        logger.error('Failed to get statistics', error);
+        reply.status(500).send({
+          error: 'Failed to get statistics',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
+    // Statistics dashboard endpoint
+    this.fastify.get('/stats', async (request, reply) => {
+      reply.type('text/html');
+      try {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const htmlPath = path.join(__dirname, '../public/stats.html');
+        const html = await fs.readFile(htmlPath, 'utf-8');
+        reply.send(html);
+      } catch (error) {
+        reply.status(404).send(`
+          <html>
+            <body>
+              <h1>Statistics Dashboard</h1>
+              <p>Dashboard file not found. Please ensure public/stats.html exists.</p>
+              <p>Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
+            </body>
+          </html>
+        `);
+      }
+    });
+
+    // Failure analysis API endpoint
+    this.fastify.get('/api/failures', async (request, reply) => {
+      try {
+        const hours = parseInt((request.query as any)?.hours || '24');
+        const days = parseInt((request.query as any)?.days || '7');
+        
+        const [stats, trends] = await Promise.all([
+          failureLogger.getFailureStats(hours),
+          failureLogger.getFailureTrends(days)
+        ]);
+
+        reply.send({
+          stats,
+          trends,
+          meta: {
+            hoursAnalyzed: hours,
+            daysAnalyzed: days,
+            timestamp: new Date().toISOString()
+          }
+        });
+      } catch (error) {
+        logger.error('Failed to get failure analysis', error);
+        reply.status(500).send({
+          error: 'Failed to get failure analysis',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
     // Shutdown endpoint for graceful server stop
     this.fastify.post('/shutdown', async (request, reply) => {
       try {
@@ -200,6 +319,10 @@ export class RouterServer {
    */
   private async handleMessagesRequest(request: FastifyRequest, reply: FastifyReply): Promise<any> {
     const requestId = (request as any).requestId || uuidv4();
+    const startTime = Date.now();
+    let providerId: string | undefined;
+    let targetModel: string | undefined;
+    let baseRequest: BaseRequest | undefined;
     
     try {
       logger.info('Processing messages request', {}, requestId, 'server');
@@ -224,7 +347,7 @@ export class RouterServer {
         });
       }
 
-      const baseRequest = await this.inputProcessor.process(request.body);
+      baseRequest = await this.inputProcessor.process(request.body);
       
       // Add session context to request metadata
       baseRequest.metadata = { 
@@ -288,7 +411,8 @@ export class RouterServer {
       }
 
       // Step 2: Route request
-      const providerId = await this.routingEngine.route(baseRequest, requestId);
+      providerId = await this.routingEngine.route(baseRequest, requestId);
+      targetModel = baseRequest.metadata?.targetModel || baseRequest.model;
       const provider = this.providers.get(providerId);
 
       if (!provider) {
@@ -337,6 +461,17 @@ export class RouterServer {
         sessionId
       }, requestId, 'server');
 
+      // 记录成功的统计信息
+      const responseTimeMs = Date.now() - startTime;
+      this.routingEngine.recordProviderResult(
+        providerId, 
+        true, 
+        undefined, 
+        undefined, 
+        targetModel, 
+        responseTimeMs
+      );
+
       // 最后一次确保移除stop_reason
       const cleanResponse = { ...finalResponse };
       delete (cleanResponse as any).stop_reason;
@@ -345,6 +480,35 @@ export class RouterServer {
 
     } catch (error) {
       logger.error('Request processing failed', error, requestId, 'server');
+      
+      // 记录失败的统计信息
+      if (providerId && targetModel) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const httpCode = error instanceof ProviderError ? error.statusCode : 500;
+        this.routingEngine.recordProviderResult(
+          providerId, 
+          false, 
+          errorMessage, 
+          httpCode, 
+          targetModel
+        );
+
+        // 记录详细的失败日志
+        await failureLogger.logFailure({
+          timestamp: new Date().toISOString(),
+          requestId,
+          providerId,
+          model: targetModel,
+          originalModel: baseRequest?.model || 'unknown',
+          error: errorMessage,
+          httpCode,
+          errorType: this.categorizeError(errorMessage, httpCode),
+          requestDuration: Date.now() - startTime,
+          routingCategory: baseRequest?.metadata?.routingCategory,
+          sessionId: sessionManager.extractSessionId(request.headers as Record<string, string>),
+          userAgent: (request.headers as any)['user-agent']
+        });
+      }
       
       // For ProviderError, preserve the original status code (especially 429)
       if (error instanceof ProviderError) {
@@ -592,6 +756,9 @@ export class RouterServer {
       console.log(`   POST /v1/messages  - Anthropic API proxy`);
       console.log(`   GET  /health       - Health check`);
       console.log(`   GET  /status       - Server status`);
+      console.log(`   GET  /stats        - Statistics dashboard`);
+      console.log(`   GET  /api/stats    - Statistics API (JSON)`);
+      console.log(`   GET  /api/failures - Failure analysis API`);
       
       if (this.config.debug.enabled) {
         console.log(`🔍 Debug mode enabled - logs saved to ${this.config.debug.logDir}`);
@@ -627,5 +794,27 @@ export class RouterServer {
     this.initializeProviders();
     
     logger.info('Server configuration updated');
+  }
+
+  /**
+   * 对错误进行分类，用于失败日志
+   */
+  private categorizeError(error: string, httpCode?: number): string {
+    const errorLower = error.toLowerCase();
+
+    if (httpCode) {
+      if (httpCode >= 500) return 'Server Error';
+      if (httpCode === 429) return 'Rate Limited';
+      if (httpCode === 401 || httpCode === 403) return 'Authentication';
+      if (httpCode >= 400) return 'Client Error';
+    }
+
+    if (errorLower.includes('timeout')) return 'Timeout';
+    if (errorLower.includes('network') || errorLower.includes('connection')) return 'Network';
+    if (errorLower.includes('auth') || errorLower.includes('token')) return 'Authentication';
+    if (errorLower.includes('rate') || errorLower.includes('limit')) return 'Rate Limited';
+    if (errorLower.includes('quota') || errorLower.includes('billing')) return 'Quota/Billing';
+
+    return 'Unknown Error';
   }
 }

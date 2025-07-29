@@ -1,709 +1,536 @@
-# Route Claude Code
+# RCC (Route Claude Code)
 
-🚀 **A high-performance, multi-provider routing system for Claude Code that supports seamless switching between AWS CodeWhisperer, OpenAI-compatible APIs, and other providers.**
+🚀 **A high-performance, enterprise-grade routing system for Claude Code that supports intelligent multi-provider routing, advanced load balancing, concurrent request management, and comprehensive monitoring.**
 
-[![npm version](https://badge.fury.io/js/route-claudecode.svg)](https://badge.fury.io/js/route-claudecode)
+[![npm version](https://badge.fury.io/js/rcc.svg)](https://badge.fury.io/js/rcc)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## ✨ Features
+## ✨ Key Features
 
-- 🔄 **Multi-Provider Support**: AWS CodeWhisperer, Anthropic Direct, Google Gemini, OpenAI-compatible APIs
-- 🎯 **Smart Routing**: Route different types of requests to optimal providers
-- 🛠️ **Perfect Tool Call Support**: Advanced tool call parsing and buffered processing
-- 🔧 **Format Transformation**: Seamless conversion between API formats
-- 📊 **Load Balancing**: Multiple provider instances with automatic load balancing
-- 🔍 **Comprehensive Logging**: Full debugging and monitoring capabilities
-- ⚡ **High Performance**: Optimized for speed and reliability
-- 🔐 **Secure Authentication**: Multiple authentication methods supported
-- 🌍 **Four Platform Types**: CodeWhisperer, Anthropic, Gemini, and OpenAI-compatible providers
+### 🎯 Core Capabilities
+- 🔄 **Multi-Provider Support**: AWS CodeWhisperer, Anthropic Direct, Google Gemini, OpenAI-compatible APIs, ModelScope
+- 🧠 **Intelligent Routing**: Category-based routing with `default`, `background`, `thinking`, `longcontext`, and `search` categories
+- 🛠️ **Perfect Tool Call Support**: Advanced tool call parsing with buffered processing for 100% accuracy
+- 🔧 **Format Transformation**: Seamless conversion between Anthropic, OpenAI, and provider-specific formats
+- ⚡ **Zero Hardcoding**: Completely configurable with no hardcoded model names or endpoints
+
+### 🚀 Advanced Features (v2.1.0+)
+- ⚖️ **Advanced Load Balancing**: Weighted, round-robin, and health-based strategies with automatic failover
+- 🔀 **Concurrent Request Management**: Provider-level concurrency control with intelligent queue management  
+- 📊 **Real-time Monitoring Dashboard**: Beautiful web interface with live statistics and analytics
+- 🔄 **Auto-Start Support**: System-level service management for macOS and Linux
+- 🎛️ **Unified Control Scripts**: Single-command deployment for development and production environments
+- 📈 **Performance Analytics**: Detailed metrics, failure analysis, and trend monitoring
+- 🔐 **Enhanced Security**: Advanced authentication methods and secure configuration management
+
+### 🏗️ Architecture Highlights
+- **Category-Based Routing**: Requests automatically routed based on content analysis and model requirements
+- **Provider Health Monitoring**: Continuous health checks with automatic failover and recovery
+- **Buffered Processing**: Complete response buffering for perfect tool call handling
+- **Multi-Instance Support**: Deploy multiple router instances with session persistence
+- **Comprehensive Logging**: Full request/response tracing with configurable log levels
 
 ## 📋 Prerequisites
 
-Before installing Route Claude Code, ensure you have:
+Before installing RCC, ensure you have:
 
-- **Node.js 18+** (required by Claude Code CLI)
+- **Node.js 16+** (18+ recommended)
 - **Operating System**: macOS 10.15+, Ubuntu 20.04+/Debian 10+, or Windows 10+ (with WSL or Git for Windows)
-- **Hardware**: 4GB+ RAM
+- **Hardware**: 4GB+ RAM (8GB+ recommended for concurrent processing)
 - **Claude Code CLI** installed
-- **Provider credentials** (AWS CodeWhisperer or OpenAI-compatible API keys)
+- **Provider credentials** (AWS CodeWhisperer, OpenAI-compatible API keys, or Anthropic keys)
 
-## 🚀 Installation Guide
+## 🚀 Quick Start
 
-### Step 1: Install Claude Code CLI
-
-Install the official Claude Code CLI using npm:
-
+### Step 1: Install RCC
 ```bash
-# Standard installation (all platforms)
-npm install -g @anthropic-ai/claude-code
+npm install -g rcc
 ```
 
-**Important Notes:**
-- **Do NOT use** `sudo npm install -g` on macOS/Linux
-- **Windows users**: Use WSL or Git Bash for best experience
-- After installation, run `claude doctor` to verify your installation
-
-**Platform-specific setup:**
-
-**Windows:**
-```cmd
-# Option 1: Use WSL (recommended)
-wsl
-npm install -g @anthropic-ai/claude-code
-
-# Option 2: Use Git Bash
-# Install Git for Windows, then use Git Bash terminal
-npm install -g @anthropic-ai/claude-code
-```
-
-**macOS/Linux:**
-```bash
-# Direct installation
-npm install -g @anthropic-ai/claude-code
-
-# Verify installation
-claude doctor
-```
-
-### Step 2: Install Route Claude Code
-
-#### Option A: NPM Installation (Recommended)
-```bash
-npm install -g route-claudecode
-```
-
-#### Option B: Manual Installation from Source
-```bash
-# Clone the repository
-git clone https://github.com/Jasonzhangf/route-claudecode.git
-cd route-claudecode
-
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
-
-# Install globally
-npm link
-```
-
-### Step 3: Create Configuration File
-
-Create a configuration directory and file:
-
-**macOS/Linux:**
+### Step 2: Basic Setup
 ```bash
 # Create configuration directory
-mkdir -p ~/.claude-code-router
+mkdir -p ~/.route-claude-code
 
-# Copy sample configuration
-cp config.sample.json ~/.claude-code-router/config.json
+# Start with interactive setup
+rcc start --autostart
 
-# Edit the configuration file
-nano ~/.claude-code-router/config.json
-```
-
-**Windows (PowerShell):**
-```powershell
-# Create configuration directory
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude-code-router"
-
-# Copy sample configuration
-Copy-Item config.sample.json "$env:USERPROFILE\.claude-code-router\config.json"
-
-# Edit the configuration file
-notepad "$env:USERPROFILE\.claude-code-router\config.json"
-```
-
-**Windows (Command Prompt):**
-```cmd
-# Create configuration directory
-mkdir "%USERPROFILE%\.claude-code-router"
-
-# Copy sample configuration
-copy config.sample.json "%USERPROFILE%\.claude-code-router\config.json"
-
-# Edit the configuration file
-notepad "%USERPROFILE%\.claude-code-router\config.json"
-```
-
-### Step 4: Configure Your Providers
-
-Edit `~/.claude-code-router/config.json` with your provider settings. See [Configuration](#-configuration) section below for details.
-
-### Step 5: Start the Router
-
-```bash
-# Start with default settings
-rcc start
-
-# Or start with debug mode
-rcc start --debug
-
-# Or use the integrated command
-rcc code
-```
-
-### Step 6: Configure Claude Code to Use Router
-
-Set environment variables to redirect Claude Code requests:
-
-**macOS/Linux (Bash/Zsh):**
-```bash
-# Temporary (current session only)
+# Configure environment variables
 export ANTHROPIC_BASE_URL="http://127.0.0.1:3456"
-export ANTHROPIC_API_KEY="any-string-is-ok"
-
-# Permanent (add to ~/.bashrc, ~/.zshrc, etc.)
-echo 'export ANTHROPIC_BASE_URL="http://127.0.0.1:3456"' >> ~/.bashrc
-echo 'export ANTHROPIC_API_KEY="any-string-is-ok"' >> ~/.bashrc
-source ~/.bashrc
+export ANTHROPIC_API_KEY="rcc-router-key"
 ```
 
-**Windows (PowerShell):**
-```powershell
-# Temporary (current session only)
-$env:ANTHROPIC_BASE_URL="http://127.0.0.1:3456"
-$env:ANTHROPIC_API_KEY="any-string-is-ok"
-
-# Permanent (PowerShell profile)
-Add-Content $PROFILE '`$env:ANTHROPIC_BASE_URL="http://127.0.0.1:3456"'
-Add-Content $PROFILE '`$env:ANTHROPIC_API_KEY="any-string-is-ok"'
-
-# Or use system environment variables (requires restart)
-[Environment]::SetEnvironmentVariable("ANTHROPIC_BASE_URL", "http://127.0.0.1:3456", "User")
-[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "any-string-is-ok", "User")
-```
-
-**Windows (Command Prompt):**
-```cmd
-# Temporary (current session only)
-set ANTHROPIC_BASE_URL=http://127.0.0.1:3456
-set ANTHROPIC_API_KEY=any-string-is-ok
-
-# Permanent (system environment variables)
-setx ANTHROPIC_BASE_URL "http://127.0.0.1:3456"
-setx ANTHROPIC_API_KEY "any-string-is-ok"
-
-# Note: Restart your terminal after using setx
-```
-
-### Step 7: Test the Setup
-
+### Step 3: Test the Setup
 ```bash
-# Test the router status
+# Check status
 rcc status
 
 # Test with Claude Code
-claude "Hello, test the routing system"
+claude "Hello from RCC!"
 
-# Check logs
-rcc config --show
+# View monitoring dashboard
+open http://localhost:3456/stats
 ```
 
-## 📋 Configuration
+## 📊 Monitoring Dashboard
 
-### Configuration File Structure
+RCC includes a comprehensive web-based monitoring dashboard accessible at `http://localhost:{port}/stats`:
 
-The router uses a JSON configuration file located at `~/.claude-code-router/config.json`. Here's the complete structure:
+### Dashboard Features
+- **Real-time Statistics**: Live request counts, success rates, and performance metrics
+- **Provider Health**: Visual status indicators for all configured providers
+- **Load Balancing Analytics**: Weight distribution and routing effectiveness analysis
+- **Concurrent Request Monitoring**: Active connections and queue status per provider
+- **Failure Analysis**: Detailed error categorization and trend analysis
+- **Performance Metrics**: Response times, throughput, and optimization recommendations
+
+### Dashboard Navigation
+- **System Overview**: Total requests, active providers, models in use, overall success rate
+- **Real-time Status**: Current provider availability and concurrent connection utilization
+- **Provider Distribution**: Request distribution across configured providers
+- **Model Usage**: Most used models and their request frequencies
+- **Weight Effect Analysis**: Effectiveness of load balancing configuration
+- **Performance Indicators**: Average response times and requests per minute
+- **Failure Analysis**: Error categorization, trends, and recommendations
+- **Historical Data**: Daily trends and usage patterns
+
+## ⚙️ Advanced Configuration
+
+### Load Balancing Configuration
+
+RCC supports multiple load balancing strategies:
 
 ```json
 {
-  "server": {
-    "port": 3456,
-    "host": "127.0.0.1"
-  },
-  "providers": {
-    "codewhisperer-primary": {
-      "type": "codewhisperer",
-      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
-      "authentication": {
-        "type": "bearer",
-        "credentials": {
-          "tokenPath": "~/.aws/sso/cache/your-auth-token.json"
-        }
-      },
-      "models": [
-        "CLAUDE_SONNET_4_20250514_V1_0",
-        "CLAUDE_3_7_SONNET_20250219_V1_0"
-      ],
-      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
-      "maxTokens": {
-        "CLAUDE_SONNET_4_20250514_V1_0": 131072,
-        "CLAUDE_3_7_SONNET_20250219_V1_0": 131072
-      }
-    },
-    "openai-compatible": {
-      "type": "openai",
-      "endpoint": "https://api.openai.com/v1/chat/completions",
-      "authentication": {
-        "type": "bearer",
-        "credentials": {
-          "apiKey": "sk-your-openai-api-key-here"
-        }
-      },
-      "models": ["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet"],
-      "defaultModel": "gpt-4o",
-      "maxTokens": {
-        "gpt-4o": 128000,
-        "gpt-4o-mini": 128000,
-        "claude-3-5-sonnet": 200000
-      }
-    }
-  },
   "routing": {
     "default": {
-      "provider": "codewhisperer-primary",
-      "model": "CLAUDE_SONNET_4_20250514_V1_0"
-    },
-    "background": {
-      "provider": "codewhisperer-primary",
-      "model": "CLAUDE_SONNET_4_20250514_V1_0"
-    },
-    "thinking": {
-      "provider": "openai-compatible",
-      "model": "gpt-4o"
-    },
-    "longcontext": {
-      "provider": "openai-compatible",
-      "model": "claude-3-5-sonnet"
-    },
-    "search": {
-      "provider": "openai-compatible",
-      "model": "gpt-4o-mini"
-    }
-  },
-  "debug": {
-    "enabled": false,
-    "logLevel": "info",
-    "traceRequests": false,
-    "saveRequests": false,
-    "logDir": "~/.claude-code-router/logs"
-  },
-  "hooks": []
-}
-```
-
-### Provider Configuration Options
-
-#### AWS CodeWhisperer Provider
-```json
-{
-  "type": "codewhisperer",
-  "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
-  "authentication": {
-    "type": "bearer",
-    "credentials": {
-      "tokenPath": "~/.aws/sso/cache/your-token-file.json"
-    }
-  },
-  "models": [
-    "CLAUDE_SONNET_4_20250514_V1_0",
-    "CLAUDE_3_7_SONNET_20250219_V1_0"
-  ]
-}
-```
-
-**Setup AWS CodeWhisperer:**
-1. Install AWS CLI: `curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg" && sudo installer -pkg AWSCLIV2.pkg -target /`
-2. Configure SSO: `aws configure sso`
-3. Find your token file in `~/.aws/sso/cache/`
-
-#### OpenAI-Compatible Provider
-```json
-{
-  "type": "openai",
-  "endpoint": "https://api.openai.com/v1/chat/completions",
-  "authentication": {
-    "type": "bearer",
-    "credentials": {
-      "apiKey": "sk-your-api-key-here"
-    }
-  },
-  "models": ["gpt-4o", "gpt-4o-mini"]
-}
-```
-
-#### Anthropic Direct Provider
-```json
-{
-  "type": "anthropic",
-  "endpoint": "https://api.anthropic.com",
-  "authentication": {
-    "type": "bearer",
-    "credentials": {
-      "apiKey": "sk-ant-your-anthropic-api-key-here"
-    }
-  },
-  "models": [
-    "claude-3-5-sonnet-20241022",
-    "claude-3-5-haiku-20241022", 
-    "claude-3-opus-20240229"
-  ]
-}
-```
-
-**Setup Anthropic Direct:**
-1. Sign up for Anthropic API: https://console.anthropic.com/
-2. Generate an API key from your console
-3. Add the key to your configuration
-
-#### Google Gemini Provider
-```json
-{
-  "type": "gemini",
-  "endpoint": "https://generativelanguage.googleapis.com",
-  "authentication": {
-    "type": "bearer",  
-    "credentials": {
-      "apiKey": "your-gemini-api-key-here"
-    }
-  },
-  "models": [
-    "gemini-2.5-pro",
-    "gemini-2.5-flash",
-    "gemini-1.5-pro",
-    "gemini-1.5-flash"
-  ]
-}
-```
-
-**Setup Google Gemini:**
-1. Visit Google AI Studio: https://makersuite.google.com/app/apikey
-2. Create a new API key for your project
-3. Add the key to your configuration
-
-### Routing Categories
-
-The router supports five routing categories:
-
-- **`default`**: General requests, most common usage
-- **`background`**: Background tasks, lower priority
-- **`thinking`**: Complex reasoning tasks
-- **`longcontext`**: Large documents, extensive context
-- **`search`**: Tool-heavy requests, search operations
-
-## 🎯 Usage Examples
-
-### Basic Commands
-
-```bash
-# Start the router
-rcc start
-
-# Start with debug mode
-rcc start --debug
-
-# Check router status
-rcc status
-
-# Check provider health
-rcc health
-
-# Stop the router
-rcc stop
-
-# View configuration
-rcc config --show
-
-# Edit configuration
-rcc config --edit
-```
-
-### Integrated Usage
-
-```bash
-# Start router and launch Claude Code automatically
-rcc code
-
-# Pass arguments to Claude Code
-rcc code --help
-rcc code "Write a Python function to sort a list"
-```
-
-### Advanced Usage
-
-```bash
-# Start on custom port
-rcc start --port 8080
-
-# Start with specific host
-rcc start --host 0.0.0.0 --port 3456
-
-# Enable debug with custom log level
-rcc start --debug --log-level debug
-
-# Stop router forcefully
-rcc stop --force
-```
-
-### Environment Configuration
-
-**macOS/Linux:**
-```bash
-# Set environment variables for permanent usage
-export ANTHROPIC_BASE_URL="http://127.0.0.1:3456"
-export ANTHROPIC_API_KEY="any-string-is-ok"
-
-# Test with Claude Code
-claude "Hello from the router!"
-```
-
-**Windows (PowerShell):**
-```powershell
-# Set environment variables
-$env:ANTHROPIC_BASE_URL="http://127.0.0.1:3456"
-$env:ANTHROPIC_API_KEY="any-string-is-ok"
-
-# Test with Claude Code
-claude "Hello from the router!"
-```
-
-**Windows (Command Prompt):**
-```cmd
-# Set environment variables
-set ANTHROPIC_BASE_URL=http://127.0.0.1:3456
-set ANTHROPIC_API_KEY=any-string-is-ok
-
-# Test with Claude Code
-claude "Hello from the router!"
-```
-
-**How it works:**
-The router will automatically:
-1. Receive the request from Claude Code
-2. Determine the appropriate routing category
-3. Route to the configured provider
-4. Transform the response back to Anthropic format
-5. Return the response to Claude Code
-
-### Configuration Examples
-
-#### Example 1: CodeWhisperer Only
-```json
-{
-  "providers": {
-    "codewhisperer-primary": {
-      "type": "codewhisperer",
-      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
-      "authentication": {
-        "type": "bearer",
-        "credentials": {
-          "tokenPath": "~/.aws/sso/cache/your-token.json"
+      "providers": [
+        {
+          "provider": "codewhisperer-primary",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 70
+        },
+        {
+          "provider": "codewhisperer-backup",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 30
         }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted"
+      },
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 3
+          },
+          {
+            "type": "http_error",
+            "httpCodes": [500, 502, 503],
+            "threshold": 3,
+            "timeWindow": 300
+          }
+        ],
+        "cooldown": 60
       }
     }
-  },
-  "routing": {
-    "default": {"provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0"},
-    "background": {"provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0"},
-    "thinking": {"provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0"},
-    "longcontext": {"provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0"},
-    "search": {"provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0"}
   }
 }
 ```
 
-#### Example 2: Mixed Providers (All Platform Types)
+### Concurrency Management
+
+Control concurrent requests per provider:
+
 ```json
 {
-  "providers": {
-    "codewhisperer": {
-      "type": "codewhisperer",
-      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
-      "authentication": {"type": "bearer", "credentials": {"tokenPath": "~/.aws/sso/cache/token.json"}}
-    },
-    "anthropic": {
-      "type": "anthropic",
-      "endpoint": "https://api.anthropic.com",
-      "authentication": {"type": "bearer", "credentials": {"apiKey": "sk-ant-your-key"}}
-    },
-    "openai": {
-      "type": "openai",  
-      "endpoint": "https://api.openai.com/v1/chat/completions",
-      "authentication": {"type": "bearer", "credentials": {"apiKey": "sk-your-key"}}
-    },
-    "gemini": {
-      "type": "gemini",
-      "endpoint": "https://generativelanguage.googleapis.com",
-      "authentication": {"type": "bearer", "credentials": {"apiKey": "your-gemini-key"}}
-    }
-  },
-  "routing": {
-    "default": {"provider": "codewhisperer", "model": "CLAUDE_SONNET_4_20250514_V1_0"},
-    "background": {"provider": "gemini", "model": "gemini-2.5-flash"}, 
-    "thinking": {"provider": "anthropic", "model": "claude-3-5-sonnet-20241022"},
-    "longcontext": {"provider": "gemini", "model": "gemini-2.5-pro"},
-    "search": {"provider": "openai", "model": "gpt-4o-mini"}
+  "concurrency": {
+    "enabled": true,
+    "maxConcurrencyPerProvider": 3,
+    "lockTimeoutMs": 300000,
+    "queueTimeoutMs": 60000,
+    "enableWaitingQueue": true,
+    "preferIdleProviders": true
   }
 }
+```
+
+### Category-Based Routing
+
+Configure intelligent routing based on request characteristics:
+
+```json
+{
+  "routing": {
+    "default": {
+      "providers": [
+        {"provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0", "weight": 70},
+        {"provider": "modelscope-openai", "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct", "weight": 30}
+      ],
+      "loadBalancing": {"enabled": true, "strategy": "weighted"}
+    },
+    "background": {
+      "providers": [
+        {"provider": "shuaihong-openai", "model": "gemini-2.5-flash", "weight": 80},
+        {"provider": "codewhisperer-backup", "model": "CLAUDE_SONNET_4_20250514_V1_0", "weight": 20}
+      ],
+      "loadBalancing": {"enabled": true, "strategy": "round_robin"}
+    },
+    "thinking": {
+      "providers": [
+        {"provider": "codewhisperer-primary", "model": "CLAUDE_SONNET_4_20250514_V1_0", "weight": 70},
+        {"provider": "shuaihong-openai", "model": "gemini-2.5-pro", "weight": 30}
+      ],
+      "loadBalancing": {"enabled": true, "strategy": "weighted"}
+    },
+    "longcontext": {
+      "providers": [
+        {"provider": "shuaihong-openai", "model": "gemini-2.5-pro", "weight": 60},
+        {"provider": "modelscope-openai", "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct", "weight": 40}
+      ],
+      "loadBalancing": {"enabled": true, "strategy": "health_based"}
+    },
+    "search": {
+      "providers": [
+        {"provider": "shuaihong-openai", "model": "gemini-2.5-flash", "weight": 70},
+        {"provider": "modelscope-openai", "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct", "weight": 30}
+      ],
+      "loadBalancing": {"enabled": true, "strategy": "weighted"}
+    }
+  }
+}
+```
+
+### Provider Configuration Examples
+
+#### AWS CodeWhisperer (Enterprise-Grade)
+```json
+{
+  "codewhisperer-primary": {
+    "type": "codewhisperer",
+    "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+    "authentication": {
+      "type": "bearer",
+      "credentials": {
+        "tokenPath": "~/.aws/sso/cache/your-auth-token.json"
+      }
+    },
+    "models": [
+      "CLAUDE_SONNET_4_20250514_V1_0",
+      "CLAUDE_3_7_SONNET_20250219_V1_0"
+    ],
+    "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
+    "maxTokens": {
+      "CLAUDE_SONNET_4_20250514_V1_0": 131072,
+      "CLAUDE_3_7_SONNET_20250219_V1_0": 131072
+    }
+  }
+}
+```
+
+#### OpenAI-Compatible Provider (Including ModelScope)
+```json
+{
+  "modelscope-openai": {
+    "type": "openai",
+    "endpoint": "https://api-inference.modelscope.cn/v1/chat/completions",
+    "authentication": {
+      "type": "bearer",
+      "credentials": {
+        "apiKey": "ms-your-api-key-here"
+      }
+    },
+    "models": [
+      "Qwen/Qwen3-Coder-480B-A35B-Instruct"
+    ],
+    "defaultModel": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "maxTokens": {
+      "Qwen/Qwen3-Coder-480B-A35B-Instruct": 262144
+    },
+    "timeout": 120000,
+    "description": "ModelScope CN API with OpenAI-compatible interface for Qwen3-Coder-480B"
+  }
+}
+```
+
+#### Third-Party OpenAI Provider
+```json
+{
+  "shuaihong-openai": {
+    "type": "openai",
+    "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+    "authentication": {
+      "type": "bearer",
+      "credentials": {
+        "apiKey": "sk-your-api-key-here"
+      }
+    },
+    "models": [
+      "gemini-2.5-pro",
+      "gemini-2.5-flash"
+    ],
+    "defaultModel": "gemini-2.5-pro",
+    "maxTokens": {
+      "gemini-2.5-pro": 131072,
+      "gemini-2.5-flash": 131072
+    }
+  }
+}
+```
+
+## 🎛️ Unified Control System
+
+RCC includes unified startup scripts for different environments:
+
+### Development Environment
+```bash
+# Start development server (port 3456)
+./start-unified.sh -e development --debug
+
+# With autostart capability
+./start-unified.sh -e development --autostart
+```
+
+### Production Environment
+```bash
+# Start production server (port 8888)
+./start-unified.sh -e release
+
+# Stop services
+./start-unified.sh --stop
+
+# Check status
+./start-unified.sh --status
+```
+
+### Script Options
+```bash
+./start-unified.sh [OPTIONS]
+
+Options:
+  -e, --env ENV          Environment: development, release
+  -p, --port PORT        Custom port number
+  -h, --host HOST        Custom host address
+  -c, --config PATH      Custom config file path
+  -d, --debug            Enable debug mode
+  -a, --autostart        Setup automatic startup
+  --stop                 Stop all RCC services
+  --status               Show service status
+  --restart              Restart services
+  --help                 Show help message
 ```
 
 ## 🔧 CLI Reference
 
-### `rcc start`
-Start the router server.
+### Core Commands
+
+#### `rcc start`
+Start the router server with advanced options.
 
 **Options:**
-- `-c, --config <path>`: Configuration file path (default: `~/.claude-code-router/config.json`)
+- `-c, --config <path>`: Configuration file path
 - `-p, --port <number>`: Server port
 - `-h, --host <string>`: Server host
 - `-d, --debug`: Enable debug mode
 - `--log-level <level>`: Log level (error, warn, info, debug)
+- `--autostart`: Enable automatic startup on system boot
 
-### `rcc stop`
-Stop the router server.
+#### `rcc status`
+Check comprehensive router status including provider health and performance.
+
+#### `rcc stop`
+Stop the router server with graceful shutdown.
 
 **Options:**
-- `-p, --port <number>`: Server port to stop
-- `-h, --host <string>`: Server host
-- `-c, --config <path>`: Configuration file path
 - `-f, --force`: Force stop using kill signal
+- `-p, --port <number>`: Server port to stop
 
-### `rcc status`
-Check router status.
+### Advanced Commands
 
-**Options:**
-- `-p, --port <number>`: Server port
-- `-h, --host <string>`: Server host
+#### `rcc health`
+Perform deep health check of all providers and routing configuration.
 
-### `rcc health`
-Check router and provider health.
-
-**Options:**
-- `-p, --port <number>`: Server port
-- `-h, --host <string>`: Server host
-
-### `rcc code`
-Start router and launch Claude Code with routing.
+#### `rcc config`
+Configuration management with validation.
 
 **Options:**
-- All options from `rcc start`
-- `[...args]`: Arguments to pass to Claude Code
-
-### `rcc config`
-Show or edit configuration.
-
-**Options:**
-- `-c, --config <path>`: Configuration file path
-- `--show`: Show current configuration
+- `--show`: Display current configuration
 - `--edit`: Open configuration in default editor
+- `--validate`: Validate configuration syntax
+- `--migrate`: Migrate from older configuration formats
+
+## 🎯 Routing Intelligence
+
+### Category Determination Logic
+
+RCC automatically determines the routing category based on request characteristics:
+
+- **`default`**: General requests, most common usage
+- **`background`**: Haiku models (`claude-3-5-haiku-*`) for background tasks
+- **`thinking`**: Requests with `thinking: true` parameter for complex reasoning
+- **`longcontext`**: Content over 60K tokens for extensive context processing
+- **`search`**: Requests containing tool definitions for search operations
+
+### Model Mapping Examples
+
+```
+Input: claude-3-5-haiku-20241022
+→ Category: background
+→ Provider: shuaihong-openai
+→ Target Model: gemini-2.5-flash
+
+Input: claude-sonnet-4-20250514 + thinking=true
+→ Category: thinking  
+→ Provider: codewhisperer-primary
+→ Target Model: CLAUDE_SONNET_4_20250514_V1_0
+
+Input: claude-3-5-sonnet-20241022 + 70K tokens
+→ Category: longcontext
+→ Provider: shuaihong-openai
+→ Target Model: gemini-2.5-pro
+
+Input: claude-sonnet-4-20250514 + tools
+→ Category: search
+→ Provider: shuaihong-openai  
+→ Target Model: gemini-2.5-flash
+```
+
+## 📈 Performance Monitoring
+
+### Metrics Available
+- **Request Metrics**: Total requests, success rate, average response time
+- **Provider Metrics**: Health status, concurrent connections, error rates
+- **Model Metrics**: Usage distribution, performance per model
+- **Load Balancing Metrics**: Weight effectiveness, distribution analysis
+- **Failure Metrics**: Error categorization, trend analysis, recovery recommendations
+
+### Log Analysis
+RCC provides comprehensive logging with structured data:
+
+```bash
+# View real-time logs
+tail -f ~/.route-claude-code/logs/router.log
+
+# Analyze performance logs
+grep "Performance" ~/.route-claude-code/logs/*.log
+
+# Check error patterns  
+grep "ERROR" ~/.route-claude-code/logs/*.log | head -20
+```
 
 ## 🚨 Troubleshooting
 
 ### Common Issues
 
-#### Router Won't Start
-
-**macOS/Linux:**
+#### Configuration Validation
 ```bash
-# Check if something is using the port
-lsof -i :3456
+# Validate configuration
+rcc config --validate
 
-# Kill existing processes
-rcc stop --force
+# Check provider health
+rcc health
 
-# Start with debug mode
-rcc start --debug
+# Test specific provider
+curl -X POST http://localhost:3456/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{"model": "claude-sonnet-4-20250514", "messages": [{"role": "user", "content": "test"}], "max_tokens": 100}'
 ```
 
-**Windows:**
-```cmd
-# Check if something is using the port
-netstat -ano | findstr :3456
-
-# Kill existing processes
-rcc stop --force
-
-# Start with debug mode
-rcc start --debug
-```
-
-#### Claude Code Not Using Router
-
-**macOS/Linux:**
+#### Performance Issues
 ```bash
-# Verify environment variables
-echo $ANTHROPIC_BASE_URL
-echo $ANTHROPIC_API_KEY
+# Check concurrent load
+curl http://localhost:3456/api/stats | jq '.concurrency'
 
-# Test router connectivity
-curl http://127.0.0.1:3456/status
+# Monitor provider utilization
+watch -n 1 'curl -s http://localhost:3456/api/stats | jq ".providers"'
+
+# Analyze failure patterns
+curl http://localhost:3456/api/stats | jq '.failures'
 ```
 
-**Windows (PowerShell):**
-```powershell
-# Verify environment variables
-echo $env:ANTHROPIC_BASE_URL
-echo $env:ANTHROPIC_API_KEY
-
-# Test router connectivity
-Invoke-WebRequest http://127.0.0.1:3456/status
-```
-
-**Windows (Command Prompt):**
-```cmd
-# Verify environment variables
-echo %ANTHROPIC_BASE_URL%
-echo %ANTHROPIC_API_KEY%
-
-# Test router connectivity
-curl http://127.0.0.1:3456/status
-```
-
-#### Provider Authentication Issues
-
-**CodeWhisperer (all platforms):**
+#### Debug Mode Analysis
 ```bash
-# Check AWS SSO
-aws sso login
-
-# Check token file exists (macOS/Linux)
-ls ~/.aws/sso/cache/
-
-# Check token file exists (Windows)
-dir "%USERPROFILE%\.aws\sso\cache\"
-```
-
-**OpenAI Provider:**
-```bash
-# Verify API key (macOS/Linux)
-curl -H "Authorization: Bearer YOUR_KEY" https://api.openai.com/v1/models
-
-# Verify API key (Windows PowerShell)
-Invoke-WebRequest -Headers @{"Authorization"="Bearer YOUR_KEY"} https://api.openai.com/v1/models
-```
-
-### Debug Mode
-
-Enable debug mode for detailed logging:
-
-```bash
+# Start with comprehensive debugging
 rcc start --debug --log-level debug
-```
 
-This will create detailed logs in `~/.claude-code-router/logs/`
+# Follow debug logs
+tail -f ~/.route-claude-code/logs/debug.log
+
+# Check request/response tracing
+grep "REQUEST\|RESPONSE" ~/.route-claude-code/logs/debug.log
+```
 
 ## 🧪 Testing
 
-After installation, test the router:
+### Comprehensive Test Suite
+
+RCC includes a complete testing framework:
 
 ```bash
-# 1. Start the router
+# Run basic functionality tests
+node test-router-with-modelscope.js
+
+# Test load balancing
+node test-load-balancing.js
+
+# Test concurrent access
+node test-concurrency-load-balancing.js
+
+# Test specific providers
+node test-modelscope-openai.js
+node test-shuaihong-provider.js
+```
+
+### Manual Testing Procedures
+
+```bash
+# 1. Start router with monitoring
 rcc start --debug
 
-# 2. In another terminal, set environment variables
+# 2. Configure environment
 export ANTHROPIC_BASE_URL="http://127.0.0.1:3456"
-export ANTHROPIC_API_KEY="any-string-is-ok"
+export ANTHROPIC_API_KEY="rcc-router-key"
 
-# 3. Test with Claude Code
-claude "Hello, test routing!"
+# 3. Test different request types
+claude "Simple test request"                    # → default category
+claude "This is a very long request..." # → longcontext category
 
-# 4. Check logs and status
+# 4. Monitor dashboard
+open http://localhost:3456/stats
+
+# 5. Check logs and metrics
 rcc status
-tail -f ~/.claude-code-router/logs/*.log
+curl http://localhost:3456/api/stats
 ```
+
+## 🔄 Version 2.1.0 Changelog
+
+### Major New Features
+- ✅ **Advanced Load Balancing**: Multi-provider routing with weighted, round-robin, and health-based strategies
+- ✅ **Concurrent Request Management**: Provider-level concurrency control with intelligent queuing
+- ✅ **Real-time Monitoring Dashboard**: Beautiful web interface with comprehensive analytics
+- ✅ **Auto-Start System Service**: macOS launchd and Linux systemd integration
+- ✅ **Unified Control Scripts**: Single-command deployment for multiple environments
+- ✅ **Zero Hardcoding Architecture**: Complete elimination of hardcoded model names and endpoints
+- ✅ **Enhanced Provider Support**: Added ModelScope and other OpenAI-compatible providers
+- ✅ **Buffered Tool Call Processing**: 100% accurate tool call handling with complete response buffering
+
+### Architecture Improvements
+- **Category-Based Routing**: Intelligent request classification and routing
+- **Provider Health Monitoring**: Continuous health checks with automatic failover
+- **Session Management**: Persistent session handling across provider instances
+- **Advanced Configuration**: Hierarchical configuration with validation and migration support
+- **Performance Analytics**: Detailed metrics collection and trend analysis
+
+### Bug Fixes
+- Fixed tool call parsing issues with streaming responses
+- Resolved hardcoded model name problems in routing engine
+- Corrected response format inconsistencies across providers
+- Enhanced error handling and recovery mechanisms
+- Improved memory management for concurrent requests
 
 ## 📄 License
 
@@ -711,17 +538,21 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- AWS CodeWhisperer team for the excellent API
-- OpenAI for the standardized API format  
-- Anthropic for Claude and Claude Code
-- All contributors and users of this project
+- AWS CodeWhisperer team for the excellent enterprise API
+- OpenAI for the standardized API format
+- Anthropic for Claude and Claude Code  
+- ModelScope for the powerful Chinese AI models
+- All contributors and users who helped test and improve RCC
 
 ## 📞 Support
 
-- 📖 **Documentation**: [GitHub Repository](https://github.com/Jasonzhangf/route-claudecode)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/Jasonzhangf/route-claudecode/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/Jasonzhangf/route-claudecode/discussions)
+- 📖 **Documentation**: [GitHub Repository](https://github.com/fanzhang16/claude-code-router)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/fanzhang16/claude-code-router/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/fanzhang16/claude-code-router/discussions)
+- 📊 **Monitoring**: Access real-time dashboard at `http://localhost:3456/stats`
 
 ---
 
 **Made with ❤️ for the Claude Code community**
+
+*RCC v2.1.0 - Enterprise-grade routing with intelligent load balancing and comprehensive monitoring*

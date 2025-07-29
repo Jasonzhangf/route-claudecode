@@ -151,7 +151,7 @@ export class AnthropicClient {
   private convertToAnthropicFormat(request: BaseRequest): any {
     const anthropicRequest: any = {
       model: request.model,
-      messages: request.messages,
+      messages: this.filterMessages(request.messages),
       max_tokens: request.max_tokens || 4096
     };
 
@@ -161,19 +161,71 @@ export class AnthropicClient {
     }
 
     // Handle system messages - extract from messages array if present
-    const systemMessages = request.messages.filter(msg => msg.role === 'system');
+    const systemMessages = request.messages.filter((msg: any) => msg.role === 'system');
     if (systemMessages.length > 0) {
-      anthropicRequest.system = systemMessages.map(msg => msg.content).join('\n');
-      anthropicRequest.messages = request.messages.filter(msg => msg.role !== 'system');
+      anthropicRequest.system = systemMessages.map((msg: any) => msg.content).join('\n');
+      anthropicRequest.messages = anthropicRequest.messages.filter((msg: any) => msg.role !== 'system');
     }
 
-    // Handle tools if present
+    // Handle tools if present - but only for compatible APIs
     const anthropicRequest_typed = request as any;
-    if (anthropicRequest_typed.tools) {
+    if (anthropicRequest_typed.tools && this.supportsTools()) {
       anthropicRequest.tools = anthropicRequest_typed.tools;
     }
 
     return anthropicRequest;
+  }
+
+  private filterMessages(messages: any[]): any[] {
+    // Filter out tool_result messages for APIs that don't support them
+    if (!this.supportsToolResults()) {
+      return messages.map((msg: any) => {
+        if (msg.role === 'user' && Array.isArray(msg.content)) {
+          // Filter out tool_result content blocks
+          const filteredContent = msg.content.filter((block: any) => block.type !== 'tool_result');
+          if (filteredContent.length === 0) {
+            // If all content was tool_result, replace with summarized text
+            const toolResults = msg.content.filter((block: any) => block.type === 'tool_result');
+            const summary = this.summarizeToolResults(toolResults);
+            return { ...msg, content: summary };
+          }
+          return { ...msg, content: filteredContent };
+        }
+        return msg;
+      }).filter((msg: any) => msg !== null);
+    }
+    return messages;
+  }
+
+  private supportsTools(): boolean {
+    // Check if this API endpoint supports tools
+    return !this.baseUrl.includes('modelscope.cn');
+  }
+
+  private supportsToolResults(): boolean {
+    // Check if this API endpoint supports tool_result messages
+    return !this.baseUrl.includes('modelscope.cn');
+  }
+
+  private summarizeToolResults(toolResults: any[]): string {
+    if (toolResults.length === 0) {
+      return "Previous tool execution completed.";
+    }
+
+    // Create a summary of tool results that maintains context
+    const summaries = toolResults.map((result: any) => {
+      const toolName = result.tool_use_id || 'tool';
+      const content = result.content || '';
+      
+      // Truncate very long content but preserve key information
+      if (typeof content === 'string' && content.length > 200) {
+        return `Tool ${toolName} executed successfully. Result: ${content.substring(0, 200)}...`;
+      }
+      
+      return `Tool ${toolName} executed successfully. Result: ${content}`;
+    });
+
+    return summaries.join('\n');
   }
 
   private convertFromAnthropicFormat(anthropicResponse: any, originalRequest: BaseRequest): BaseResponse {

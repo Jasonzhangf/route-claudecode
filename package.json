@@ -1,10 +1,9 @@
 {
-  "name": "route-claudecode",
+  "name": "rcc",
   "version": "2.1.0",
   "description": "Advanced routing and transformation system for Claude Code outputs to multiple AI providers",
   "bin": {
-    "rcc": "./dist/cli.js",
-    "route-claudecode": "./dist/cli.js"
+    "rcc": "./dist/cli.js"
   },
   "main": "./dist/cli.js",
   "scripts": {
@@ -55,6 +54,7 @@
   },
   "files": [
     "dist/",
+    "public/",
     "README.md",
     "LICENSE",
     "config.sample.json"
