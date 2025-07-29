@@ -6,6 +6,7 @@
 
 import { BaseRequest, BaseResponse, ProviderConfig } from '../../types';
 import { logger } from '../../utils/logger';
+import { processGeminiResponse } from './universal-gemini-parser';
 
 export class GeminiClient {
   private apiKey: string;
@@ -73,14 +74,16 @@ export class GeminiClient {
   }
 
   async* streamCompletion(request: BaseRequest): AsyncIterable<any> {
+    const requestId = request.metadata?.requestId || 'unknown';
     const geminiRequest = {
       ...this.convertToGeminiFormat(request)
     };
     const modelName = this.extractModelName(request.model);
 
-    logger.debug('Starting streaming request to Gemini API', {
+    logger.info('Starting optimized Gemini streaming request', {
       model: modelName,
-      messageCount: geminiRequest.contents?.length || 0
+      messageCount: geminiRequest.contents?.length || 0,
+      strategy: 'universal-auto-detect'
     });
 
     const url = `${this.baseUrl}/v1/models/${modelName}:streamGenerateContent?key=${this.apiKey}`;
@@ -101,36 +104,45 @@ export class GeminiClient {
       throw new Error('No response body for streaming request');
     }
 
+    // 🚀 使用完全缓冲策略 + 优化解析器
+    logger.info('Collecting full Gemini response for optimization', {
+      responseStatus: response.status
+    }, requestId, 'gemini-provider');
+
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let fullResponseContent = '';
 
     try {
+      // 收集完整响应
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.trim());
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data === '[DONE]') {
-              return;
-            }
-
-            try {
-              const event = JSON.parse(data);
-              yield this.convertStreamEvent(event);
-            } catch (error) {
-              logger.warn('Failed to parse Gemini stream event', {
-                line,
-                error: error instanceof Error ? error.message : String(error)
-              });
-            }
-          }
-        }
+        fullResponseContent += decoder.decode(value, { stream: true });
       }
+
+      logger.info('Gemini response collection completed', {
+        responseLength: fullResponseContent.length,
+        responsePreview: fullResponseContent.slice(0, 200)
+      }, requestId, 'gemini-provider');
+
+      // 🚀 使用通用优化解析器处理
+      const optimizedEvents = await processGeminiResponse(
+        fullResponseContent, 
+        requestId, 
+        { modelName, originalRequest: request }
+      );
+
+      logger.info('Gemini optimization completed', {
+        eventCount: optimizedEvents.length,
+        processingStrategy: 'universal-optimized'
+      }, requestId, 'gemini-provider');
+
+      // 转换并输出优化后的事件
+      for (const event of optimizedEvents) {
+        yield this.convertStreamEvent(event);
+      }
+
     } finally {
       reader.releaseLock();
     }

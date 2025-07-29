@@ -10,7 +10,8 @@ import { SafeTokenManager } from './safe-token-manager';
 import { CodeWhispererConverter, CodeWhispererRequest } from './converter';
 import { parseEvents, convertEventsToAnthropic, parseNonStreamingResponse } from './parser';
 import { processBufferedResponse } from './parser-buffered';
-// Removed smart-stream-parser import due to performance issues
+import { processCodeWhispererResponse } from './universal-codewhisperer-parser';
+import { NonStreamingStrategy, createNonStreamingStrategy, StreamingPerformanceComparator, createPerformanceComparator } from './non-streaming-strategy';
 import { logger } from '@/utils/logger';
 import { fixResponse } from '@/utils/response-fixer';
 
@@ -25,6 +26,8 @@ export class CodeWhispererClient implements Provider {
   private endpoint: string;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000; // 1 second
+  private nonStreamingStrategy: NonStreamingStrategy;
+  private performanceComparator: StreamingPerformanceComparator;
 
   constructor(public config: ProviderConfig) {
     if (!config.endpoint) {
@@ -39,6 +42,10 @@ export class CodeWhispererClient implements Provider {
     
     // Initialize converter with profileArn from token
     this.initializeConverter();
+    
+    // Initialize performance testing tools
+    this.nonStreamingStrategy = createNonStreamingStrategy();
+    this.performanceComparator = createPerformanceComparator();
     
     this.httpClient = axios.create({
       baseURL: this.endpoint,
@@ -212,61 +219,62 @@ export class CodeWhispererClient implements Provider {
       // Convert request to CodeWhisperer format
       const cwRequest = this.converter.convertRequest(request, requestId);
       
-      // 添加详细调试日志
-      logger.debug('CodeWhisperer HTTP request details', {
+      // 🚀 Intelligent strategy selection: non-streaming vs streaming
+      const shouldUseNonStreaming = this.nonStreamingStrategy.shouldUseNonStreaming(request);
+      
+      logger.info(`🎯 CodeWhisperer strategy decision: ${shouldUseNonStreaming ? 'non-streaming' : 'streaming'}`, {
         url: this.endpoint + '/generateAssistantResponse',
-        requestBody: JSON.stringify(cwRequest),
-        requestBodyLength: JSON.stringify(cwRequest).length
+        requestBodyLength: JSON.stringify(cwRequest).length,
+        strategy: shouldUseNonStreaming ? 'non-streaming-conversion' : 'universal-streaming',
+        reason: shouldUseNonStreaming ? 'Expected performance benefit' : 'Streaming preferred'
       }, requestId, 'provider');
-      
-      // Send request with binary response type for CodeWhisperer
-      const response = await this.httpClient.post('/generateAssistantResponse', cwRequest, {
-        responseType: 'arraybuffer'
-      });
-      
-      // 添加响应调试日志
-      const responseBuffer = Buffer.from(response.data);
-      logger.debug('CodeWhisperer HTTP response details', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-        dataLength: responseBuffer.length,
-        dataPreview: responseBuffer.toString('hex').substring(0, 100)
-      }, requestId, 'provider');
-      
-      if (response.status !== 200) {
-        // 🔍 ENHANCED 400 ERROR REPORTING - show model name for debugging
-        let errorMessage = `CodeWhisperer API returned status ${response.status}`;
-        
-        if (response.status === 400) {
-          const modelName = cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId || request.model || 'unknown';
-          errorMessage += ` | Sent model: "${modelName}"`;
-          
-          logger.error(`🚨 CodeWhisperer 400 Error - Model Configuration Issue`, {
-            httpStatus: 400,
-            requestedModel: request.model,
-            sentModelId: cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId,
-            endpoint: this.endpoint,
-            possibleCause: 'Model name may not be supported by CodeWhisperer',
-            troubleshooting: 'Check if model name matches CodeWhisperer supported models'
-          }, requestId, 'provider');
-        }
-        
-        throw new ProviderError(
-          errorMessage,
-          this.name,
-          response.status,
-          response.data
-        );
-      }
 
-      // 🚀 使用完全缓冲处理 - 避免智能流式解析器的性能问题
-      logger.info('Starting full buffered response processing', {
-        responseLength: responseBuffer.length,
-        rawPreview: responseBuffer.toString('hex').substring(0, 100)
-      }, requestId);
+      let response;
+      let anthropicEvents;
+      const strategyStartTime = Date.now();
       
-      const anthropicEvents = processBufferedResponse(responseBuffer, requestId, request.model);
+      if (shouldUseNonStreaming) {
+        // 🚀 Use non-streaming strategy
+        const result = await this.nonStreamingStrategy.executeNonStreamingRequest(
+          this.httpClient, cwRequest, requestId, request.model
+        );
+        
+        anthropicEvents = result.events;
+        
+        logger.info('✅ Non-streaming strategy completed', {
+          totalTime: Date.now() - strategyStartTime,
+          eventCount: anthropicEvents.length,
+          metrics: result.metrics
+        }, requestId, 'provider');
+        
+      } else {
+        // 🔄 Use traditional streaming approach with universal optimization
+        response = await this.httpClient.post('/generateAssistantResponse', cwRequest, {
+          responseType: 'arraybuffer'
+        });
+        
+        if (response.status !== 200) {
+          let errorMessage = `CodeWhisperer API returned status ${response.status}`;
+          if (response.status === 400) {
+            const modelName = cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId || request.model || 'unknown';
+            errorMessage += ` | Sent model: "${modelName}"`;
+          }
+          throw new ProviderError(errorMessage, this.name, response.status, response.data);
+        }
+
+        const responseBuffer = Buffer.from(response.data);
+        const streamingStartTime = Date.now();
+        
+        anthropicEvents = await processCodeWhispererResponse(responseBuffer, requestId, request.model);
+        
+        const streamingTime = Date.now() - streamingStartTime;
+        
+        logger.info('✅ Universal streaming completed', {
+          processingTime: streamingTime,
+          eventCount: anthropicEvents.length,
+          responseSize: responseBuffer.length
+        }, requestId, 'provider');
+      }
       
       // 从事件中提取内容 - 支持完整的工具调用处理
       const contexts: any[] = [];
