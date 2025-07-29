@@ -75,9 +75,66 @@ export interface OpenAIResponse extends BaseResponse {
 // Routing types
 export type RoutingCategory = 'default' | 'background' | 'thinking' | 'longcontext' | 'search';
 
-export interface CategoryRouting {
+export interface BackupProvider {
   provider: string;
   model: string;
+  weight?: number;
+}
+
+export interface ProviderEntry {
+  provider: string;
+  model: string;
+  weight?: number;
+}
+
+export interface LoadBalancingConfig {
+  enabled: boolean;
+  strategy: 'round_robin' | 'weighted' | 'health_based';
+  healthCheckInterval?: number;
+}
+
+export interface FailoverTrigger {
+  type: 'consecutive_errors' | 'http_error' | 'network_timeout' | 'auth_failed';
+  threshold: number;
+  timeWindow?: number;
+  httpCodes?: number[];
+}
+
+export interface FailoverConfig {
+  enabled: boolean;
+  triggers: FailoverTrigger[];
+  cooldown: number; // seconds
+}
+
+export interface ProviderHealth {
+  providerId: string;
+  isHealthy: boolean;
+  consecutiveErrors: number;
+  errorHistory: Array<{
+    timestamp: Date;
+    errorType: string;
+    errorMessage: string;
+    httpCode?: number;
+  }>;
+  lastSuccessTime?: Date;
+  lastFailureTime?: Date;
+  totalRequests: number;
+  successCount: number;
+  failureCount: number;
+  inCooldown: boolean;
+  cooldownUntil?: Date;
+}
+
+export interface CategoryRouting {
+  // 新的多provider配置格式
+  providers?: ProviderEntry[];
+  loadBalancing?: LoadBalancingConfig;
+  failover?: FailoverConfig;
+  
+  // 向后兼容的单provider配置
+  provider?: string;
+  model?: string;
+  backup?: BackupProvider[];
 }
 
 // Routing configuration is part of RouterConfig

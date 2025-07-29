@@ -1,0 +1,263 @@
+{
+  "server": {
+    "port": 8888,
+    "host": "127.0.0.1",
+    "ports": {
+      "development": 3456,
+      "release": 3457
+    }
+  },
+  "providers": {
+    "kiro-zcam": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/kiro-auth-token_zcam.json"
+        }
+      },
+      "models": [
+        "CLAUDE_SONNET_4_20250514_V1_0",
+        "CLAUDE_3_7_SONNET_20250219_V1_0"
+      ],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
+      "maxTokens": {
+        "CLAUDE_SONNET_4_20250514_V1_0": 131072,
+        "CLAUDE_3_7_SONNET_20250219_V1_0": 131072
+      }
+    },
+    "kiro-gmail": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/kiro-auth-token.json"
+        }
+      },
+      "models": [
+        "CLAUDE_SONNET_4_20250514_V1_0",
+        "CLAUDE_3_7_SONNET_20250219_V1_0"
+      ],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
+      "maxTokens": {
+        "CLAUDE_SONNET_4_20250514_V1_0": 131072,
+        "CLAUDE_3_7_SONNET_20250219_V1_0": 131072
+      }
+    },
+    "kiro-backup1": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/kiro-backup1-token.json"
+        }
+      },
+      "models": [
+        "CLAUDE_SONNET_4_20250514_V1_0"
+      ],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
+      "maxTokens": {
+        "CLAUDE_SONNET_4_20250514_V1_0": 131072
+      }
+    },
+    "shuaihong-openai": {
+      "type": "openai",
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl"
+        }
+      },
+      "models": [
+        "gemini-2.5-pro",
+        "gemini-2.5-flash"
+      ],
+      "defaultModel": "gemini-2.5-pro",
+      "maxTokens": {
+        "gemini-2.5-pro": 131072,
+        "gemini-2.5-flash": 131072
+      }
+    },
+    "modelscope-anthropic": {
+      "type": "anthropic",
+      "endpoint": "https://api-inference.modelscope.cn",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "ms-cc2f461b-8228-427f-99aa-1d44fab73e67"
+        }
+      },
+      "models": [
+        "Qwen/Qwen3-Coder-480B-A35B-Instruct"
+      ],
+      "defaultModel": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+      "maxTokens": {
+        "Qwen/Qwen3-Coder-480B-A35B-Instruct": 262144
+      },
+      "timeout": 120000,
+      "description": "ModelScope CN API with Anthropic-compatible interface for Qwen3-Coder-480B"
+    }
+  },
+  "routing": {
+    "default": {
+      "comment": "Multi-provider configuration with load balancing and failover",
+      "providers": [
+        {
+          "provider": "kiro-zcam",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 1
+        },
+        {
+          "provider": "kiro-gmail",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 1
+        },
+        {
+          "provider": "kiro-backup1",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 3
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "round_robin",
+        "healthCheckInterval": 60
+      },
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 3
+          },
+          {
+            "type": "auth_failed",
+            "threshold": 2,
+            "timeWindow": 300,
+            "httpCodes": [401, 403]
+          },
+          {
+            "type": "network_timeout",
+            "threshold": 2,
+            "timeWindow": 600
+          }
+        ],
+        "cooldown": 120
+      }
+    },
+    "background": {
+      "comment": "Legacy backup configuration - still supported",
+      "provider": "shuaihong-openai",
+      "model": "gemini-2.5-flash",
+      "backup": [
+        {
+          "provider": "kiro-gmail",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 1
+        }
+      ]
+    },
+    "thinking": {
+      "comment": "Weighted multi-provider with health-based selection",
+      "providers": [
+        {
+          "provider": "kiro-zcam",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 1
+        },
+        {
+          "provider": "kiro-gmail",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 2
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "health_based",
+        "healthCheckInterval": 30
+      },
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 5
+          }
+        ],
+        "cooldown": 60
+      }
+    },
+    "longcontext": {
+      "comment": "Mixed provider types with advanced failover",
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-pro",
+          "weight": 1
+        },
+        {
+          "provider": "modelscope-anthropic",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "weight": 2
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted",
+        "healthCheckInterval": 90
+      },
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "http_error",
+            "threshold": 3,
+            "timeWindow": 300,
+            "httpCodes": [500, 502, 503, 504]
+          },
+          {
+            "type": "consecutive_errors",
+            "threshold": 4
+          }
+        ],
+        "cooldown": 180
+      }
+    },
+    "search": {
+      "comment": "Simple multi-provider without advanced features",
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-flash",
+          "weight": 1
+        },
+        {
+          "provider": "modelscope-anthropic",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "weight": 2
+        }
+      ],
+      "loadBalancing": {
+        "enabled": false,
+        "strategy": "round_robin"
+      },
+      "failover": {
+        "enabled": false,
+        "triggers": [],
+        "cooldown": 60
+      }
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "/Users/fanzhang/.route-claude-code/logs"
+  },
+  "hooks": []
+}

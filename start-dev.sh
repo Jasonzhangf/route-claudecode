@@ -83,6 +83,13 @@ npm run build
 # Start the server
 echo -e "${GREEN}🌟 Starting Route Claude Code on port $PORT${NC}"
 echo -e "${GREEN}📋 Log file: $LOG_FILE${NC}"
+echo ""
+echo -e "${GREEN}🎯 Multi-Provider Routing Features:${NC}"
+echo -e "${GREEN}   ✅ Primary/backup routing${NC}"
+echo -e "${GREEN}   ✅ Multi-provider load balancing${NC}" 
+echo -e "${GREEN}   ✅ Error priority fallback${NC}"
+echo -e "${GREEN}   ✅ Provider health monitoring${NC}"
+echo ""
 
 # Prepare start command
 START_CMD="node dist/cli.js start --port $PORT"
