@@ -53,8 +53,8 @@ export class ResponseStatsManager {
     this.statsFilePath = resolve(configPaths.configDir, 'response-stats.json');
     this.loadStats();
 
-    // 每5分钟输出一次统计日志
-    this.startPeriodicLogging();
+    // 每5分钟输出一次统计日志 - 已禁用定期输出避免干扰
+    // this.startPeriodicLogging();
     // Save stats on exit
     process.on('beforeExit', () => this.saveStats());
     logger.info('ResponseStatsManager initialized');

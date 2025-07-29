@@ -114,12 +114,23 @@ export class RouterServer {
 
     // Status endpoint
     this.fastify.get('/status', async (request, reply) => {
+      const routingStats = this.routingEngine.getStats();
+      
+      // 添加临时禁用状态到每个provider health
+      if (routingStats.providerHealth) {
+        Object.keys(routingStats.providerHealth).forEach(providerId => {
+          routingStats.providerHealth[providerId].isTemporarilyDisabledByUser = 
+            this.routingEngine.isProviderTemporarilyDisabled(providerId);
+        });
+      }
+      
       reply.send({
         server: 'claude-code-router',
         version: '2.0.0',
         uptime: process.uptime(),
         providers: Array.from(this.providers.keys()),
-        routing: this.routingEngine.getStats(),
+        routing: routingStats,
+        temporarilyDisabledProviders: this.routingEngine.getTemporarilyDisabledProviders(),
         debug: this.config.debug.enabled
       });
     });
@@ -211,6 +222,28 @@ export class RouterServer {
       }
     });
 
+    // Dual server monitoring dashboard endpoint
+    this.fastify.get('/dual-stats', async (request, reply) => {
+      reply.type('text/html');
+      try {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const htmlPath = path.join(__dirname, '../public/dual-stats.html');
+        const html = await fs.readFile(htmlPath, 'utf-8');
+        reply.send(html);
+      } catch (error) {
+        reply.status(404).send(`
+          <html>
+            <body>
+              <h1>Dual Server Monitoring Dashboard</h1>
+              <p>Dashboard file not found. Please ensure public/dual-stats.html exists.</p>
+              <p>Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
+            </body>
+          </html>
+        `);
+      }
+    });
+
     // Failure analysis API endpoint
     this.fastify.get('/api/failures', async (request, reply) => {
       try {
@@ -235,6 +268,80 @@ export class RouterServer {
         logger.error('Failed to get failure analysis', error);
         reply.status(500).send({
           error: 'Failed to get failure analysis',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
+    // Temporary provider control endpoints
+    this.fastify.post('/api/providers/:providerId/disable', async (request, reply) => {
+      try {
+        const { providerId } = request.params as { providerId: string };
+        const success = this.routingEngine.temporarilyDisableProvider(providerId);
+        
+        if (success) {
+          reply.send({
+            success: true,
+            message: `Provider ${providerId} temporarily disabled`,
+            providerId,
+            action: 'disable',
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          reply.status(404).send({
+            success: false,
+            error: 'Provider not found',
+            providerId
+          });
+        }
+      } catch (error) {
+        logger.error('Failed to disable provider', error);
+        reply.status(500).send({
+          success: false,
+          error: 'Failed to disable provider',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
+    this.fastify.post('/api/providers/:providerId/enable', async (request, reply) => {
+      try {
+        const { providerId } = request.params as { providerId: string };
+        const success = this.routingEngine.temporarilyEnableProvider(providerId);
+        
+        reply.send({
+          success: true,
+          message: success ? 
+            `Provider ${providerId} temporarily enabled` : 
+            `Provider ${providerId} was not disabled`,
+          providerId,
+          action: 'enable',
+          wasDisabled: success,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        logger.error('Failed to enable provider', error);
+        reply.status(500).send({
+          success: false,
+          error: 'Failed to enable provider',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
+    this.fastify.get('/api/providers/temporary-disabled', async (request, reply) => {
+      try {
+        const disabledProviders = this.routingEngine.getTemporarilyDisabledProviders();
+        
+        reply.send({
+          disabledProviders,
+          count: disabledProviders.length,
+          timestamp: new Date().toISOString()
+        });
+      } catch (error) {
+        logger.error('Failed to get disabled providers', error);
+        reply.status(500).send({
+          error: 'Failed to get disabled providers',
           message: error instanceof Error ? error.message : 'Unknown error'
         });
       }

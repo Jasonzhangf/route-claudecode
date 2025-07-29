@@ -34,6 +34,119 @@ const DEFAULT_CONFIG_PATH = configPaths.configFile;
 // No default configuration - user must provide complete config.json
 
 /**
+ * Start dual configuration servers (development + release)
+ */
+async function startDualConfigServers(options: any): Promise<void> {
+  console.log(chalk.cyan('🔄 Starting dual configuration servers...\n'));
+  
+  const baseConfigDir = join(homedir(), '.route-claude-code');
+  const devConfigPath = join(baseConfigDir, 'config.json');
+  const releaseConfigPath = join(baseConfigDir, 'config.release.json');
+  
+  // Check if both config files exist
+  if (!existsSync(devConfigPath)) {
+    console.error(chalk.red(`❌ Development config not found: ${devConfigPath}`));
+    process.exit(1);
+  }
+  
+  if (!existsSync(releaseConfigPath)) {
+    console.error(chalk.red(`❌ Release config not found: ${releaseConfigPath}`));
+    process.exit(1);
+  }
+  
+  // Load both configurations
+  const devConfig = loadConfig(devConfigPath);
+  const releaseConfig = loadConfig(releaseConfigPath);
+  
+  console.log(chalk.green(`✅ Development config loaded: ${devConfigPath}`));
+  console.log(chalk.green(`✅ Release config loaded: ${releaseConfigPath}\n`));
+  
+  // Apply CLI overrides to both configs
+  const applyOptions = (config: RouterConfig, suffix: string = '') => {
+    if (options.host) config.server.host = options.host;
+    if (options.debug) {
+      config.debug.enabled = true;
+      config.debug.traceRequests = true;
+    }
+    if (options.logLevel) config.debug.logLevel = options.logLevel;
+    
+    // Ensure different ports for dual mode
+    if (!suffix) {
+      // Development server uses configured port or default
+      config.server.port = (config.server as any).ports?.development || config.server.port || 3456;
+    } else {
+      // Release server uses release port or default port from config
+      config.server.port = (config.server as any).ports?.release || config.server.port || 8888;
+    }
+    
+    return config;
+  };
+  
+  const finalDevConfig = applyOptions(devConfig);
+  const finalReleaseConfig = applyOptions(releaseConfig, 'release');
+  
+  console.log(chalk.blue(`🚀 Development server: http://${finalDevConfig.server.host}:${finalDevConfig.server.port}`));
+  console.log(chalk.blue(`🚀 Release server: http://${finalReleaseConfig.server.host}:${finalReleaseConfig.server.port}\n`));
+  
+  // Configure loggers for both servers
+  logger.setConfig({
+    logLevel: finalDevConfig.debug.logLevel,
+    debugMode: finalDevConfig.debug.enabled,
+    logDir: finalDevConfig.debug.logDir,
+    traceRequests: finalDevConfig.debug.traceRequests
+  });
+  
+  // Create both servers
+  const devServer = new RouterServer(finalDevConfig);
+  const releaseServer = new RouterServer(finalReleaseConfig);
+  
+  // Start both servers
+  const devServerPromise = devServer.start().then(() => {
+    console.log(chalk.green(`✅ Development server started on port ${finalDevConfig.server.port}`));
+  });
+  
+  const releaseServerPromise = releaseServer.start().then(() => {
+    console.log(chalk.green(`✅ Release server started on port ${finalReleaseConfig.server.port}`));
+  });
+  
+  await Promise.all([devServerPromise, releaseServerPromise]);
+  
+  console.log(chalk.cyan('\n🎯 Both servers are running!'));
+  console.log(chalk.gray('   Press Ctrl+C to stop both servers\n'));
+  
+  // Handle graceful shutdown for both servers
+  let isShuttingDown = false;
+  const shutdown = async () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
+    
+    console.log(chalk.yellow('\n🛑 Shutting down both servers...'));
+    
+    try {
+      await Promise.all([
+        devServer.stop(),
+        releaseServer.stop()
+      ]);
+      console.log(chalk.green('✅ Both servers stopped gracefully'));
+    } catch (error) {
+      console.error(chalk.red('❌ Error during shutdown:'), error);
+    }
+    
+    process.exit(0);
+  };
+  
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+  process.on('uncaughtException', (error) => {
+    console.error(chalk.red('❌ Uncaught Exception:'), error);
+    shutdown();
+  });
+  
+  // Keep the process alive
+  return new Promise(() => {});
+}
+
+/**
  * Load configuration from file
  */
 function loadConfig(configPath: string): RouterConfig {
@@ -111,6 +224,7 @@ program
   .option('-d, --debug', 'Enable debug mode')
   .option('--log-level <level>', 'Log level (error, warn, info, debug)', 'info')
   .option('--autostart', 'Enable automatic startup on system boot')
+  .option('--dual-config', 'Start both development and release servers simultaneously')
   .action(async (options) => {
     try {
       // Check for migration before starting
@@ -133,6 +247,11 @@ program
       }
       
       console.log(chalk.blue('🚀 Starting Claude Code Router...\n'));
+
+      // Check for dual config mode
+      if (options.dualConfig) {
+        return await startDualConfigServers(options);
+      }
 
       // Load configuration
       const configPath = resolve(options.config);

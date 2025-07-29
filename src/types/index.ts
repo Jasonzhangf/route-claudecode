@@ -141,6 +141,9 @@ export interface ProviderHealth {
   temporaryBlacklistUntil?: Date;
   rateLimitFailureCount: number;
   lastRateLimitFailure?: Date;
+  
+  // 用户临时禁用状态（仅用于状态显示，不影响持久化配置）
+  isTemporarilyDisabledByUser?: boolean;
 }
 
 export interface CategoryRouting {

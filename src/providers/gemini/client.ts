@@ -114,11 +114,31 @@ export class GeminiClient {
     let fullResponseContent = '';
 
     try {
-      // 收集完整响应
+      // 收集完整响应，同时发送心跳保持连接
+      let lastHeartbeat = Date.now();
+      const heartbeatInterval = 30000; // 30秒发送一次心跳
+      
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         fullResponseContent += decoder.decode(value, { stream: true });
+        
+        // 发送心跳以保持连接活跃
+        const now = Date.now();
+        if (now - lastHeartbeat > heartbeatInterval) {
+          logger.debug('Sending heartbeat to keep connection alive', {
+            requestId,
+            elapsed: now - lastHeartbeat
+          }, requestId, 'gemini-provider');
+          
+          // 发送心跳事件
+          yield {
+            type: 'ping',
+            timestamp: now
+          };
+          
+          lastHeartbeat = now;
+        }
       }
 
       logger.info('Gemini response collection completed', {

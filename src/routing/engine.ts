@@ -12,6 +12,9 @@ export class RoutingEngine {
   private providerHealth: Map<string, ProviderHealth> = new Map();
   private roundRobinIndex: Map<string, number> = new Map();
   
+  // 临时禁用的providers - 非持久化存储
+  private temporarilyDisabledProviders: Set<string> = new Set();
+  
   constructor(private routingConfig: Record<RoutingCategory, CategoryRouting>, concurrencyConfig?: ConcurrentLoadBalancingConfig) {
     // 🚀 移除并发管理 - HTTP本身就是天然隔离的
 
@@ -445,6 +448,12 @@ export class RoutingEngine {
    * Check if provider is healthy with intelligent failover logic
    */
   private isProviderHealthy(providerId: string): boolean {
+    // 🚫 临时禁用检查 - 最高优先级
+    if (this.temporarilyDisabledProviders.has(providerId)) {
+      logger.debug(`Provider ${providerId} is temporarily disabled via user control`);
+      return false;
+    }
+    
     const health = this.providerHealth.get(providerId);
     if (!health) {
       return true; // Assume healthy for new providers
@@ -1186,5 +1195,57 @@ export class RoutingEngine {
    */
   public resetStats(): void {
     responseStatsManager.reset();
+  }
+
+  /**
+   * 临时禁用provider（非持久化）
+   */
+  public temporarilyDisableProvider(providerId: string): boolean {
+    if (!this.providerHealth.has(providerId)) {
+      logger.warn(`Cannot disable unknown provider: ${providerId}`);
+      return false;
+    }
+    
+    this.temporarilyDisabledProviders.add(providerId);
+    logger.info(`Provider ${providerId} temporarily disabled via user control`);
+    return true;
+  }
+
+  /**
+   * 临时启用provider（非持久化）
+   */
+  public temporarilyEnableProvider(providerId: string): boolean {
+    if (!this.providerHealth.has(providerId)) {
+      logger.warn(`Cannot enable unknown provider: ${providerId}`);
+      return false;
+    }
+    
+    const wasDisabled = this.temporarilyDisabledProviders.delete(providerId);
+    if (wasDisabled) {
+      logger.info(`Provider ${providerId} temporarily enabled via user control`);
+    }
+    return wasDisabled;
+  }
+
+  /**
+   * 检查provider是否被临时禁用
+   */
+  public isProviderTemporarilyDisabled(providerId: string): boolean {
+    return this.temporarilyDisabledProviders.has(providerId);
+  }
+
+  /**
+   * 获取所有临时禁用的providers
+   */
+  public getTemporarilyDisabledProviders(): string[] {
+    return Array.from(this.temporarilyDisabledProviders);
+  }
+
+  /**
+   * 清除所有临时禁用状态（重启时自动调用）
+   */
+  public clearTemporaryDisables(): void {
+    this.temporarilyDisabledProviders.clear();
+    logger.info('All temporary provider disables cleared');
   }
 }
