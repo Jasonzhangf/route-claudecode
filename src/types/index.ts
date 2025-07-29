@@ -135,6 +135,12 @@ export interface ProviderHealth {
   lastAuthFailure?: Date;
   lastNetworkFailure?: Date;
   lastGatewayFailure?: Date;
+  
+  // 429错误临时黑名单支持
+  isTemporarilyBlacklisted: boolean;
+  temporaryBlacklistUntil?: Date;
+  rateLimitFailureCount: number;
+  lastRateLimitFailure?: Date;
 }
 
 export interface CategoryRouting {

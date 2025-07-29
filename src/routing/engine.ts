@@ -215,7 +215,7 @@ export class RoutingEngine {
    */
   private applyLoadBalancingStrategy(
     providers: ProviderEntry[],
-    strategy: 'round_robin' | 'weighted' | 'health_based',
+    strategy: 'round_robin' | 'weighted' | 'health_based' | 'health_based_with_blacklist',
     category: string,
     requestId: string
   ): ProviderEntry {
@@ -226,6 +226,8 @@ export class RoutingEngine {
         return this.selectWeighted(providers, requestId);
       case 'health_based':
         return this.selectHealthBased(providers, requestId);
+      case 'health_based_with_blacklist':
+        return this.selectHealthBasedWithBlacklist(providers, requestId);
       default:
         logger.warn(`Unknown load balancing strategy: ${strategy}, using round_robin`, {}, requestId, 'routing');
         return this.selectRoundRobin(providers, category, requestId);
@@ -332,6 +334,102 @@ export class RoutingEngine {
   }
 
   /**
+   * Health-based selection with blacklist awareness and dynamic load balancing
+   * 智能黑名单感知的健康负载均衡选择
+   */
+  private selectHealthBasedWithBlacklist(providers: ProviderEntry[], requestId: string): ProviderEntry {
+    // 获取所有可用（未被拉黑）的providers
+    const availableProviders = providers.filter(provider => this.isProviderHealthy(provider.provider));
+    
+    if (availableProviders.length === 0) {
+      // 所有provider都被拉黑，选择最先恢复的那个
+      logger.warn('All providers are blacklisted, selecting earliest recovery provider', {
+        totalProviders: providers.length,
+        allProviders: providers.map(p => p.provider)
+      }, requestId, 'routing');
+      
+      const providerRecoveryTimes = providers.map(provider => {
+        const health = this.providerHealth.get(provider.provider);
+        let recoveryTime = new Date();
+        
+        if (health?.isTemporarilyBlacklisted && health.temporaryBlacklistUntil) {
+          recoveryTime = health.temporaryBlacklistUntil;
+        } else if (health?.nextRetryTime) {
+          recoveryTime = health.nextRetryTime;
+        }
+        
+        return { provider, recoveryTime };
+      });
+      
+      // 选择最先恢复的provider
+      const earliestRecovery = providerRecoveryTimes.sort((a, b) => 
+        a.recoveryTime.getTime() - b.recoveryTime.getTime()
+      )[0];
+      
+      return earliestRecovery.provider;
+    }
+    
+    // 计算可用providers的权重分布（动态调整）
+    const totalOriginalWeight = availableProviders.reduce((sum, p) => sum + (p.weight || 1), 0);
+    
+    // 为每个可用provider计算动态权重
+    const adjustedProviders = availableProviders.map(provider => {
+      const health = this.providerHealth.get(provider.provider);
+      let adjustedWeight = provider.weight || 1;
+      
+      if (health) {
+        // 基于成功率调整权重
+        const successRate = health.totalRequests > 0 
+          ? health.successCount / health.totalRequests 
+          : 1.0;
+        
+        // 基于429错误频率调整权重（有429历史的降低权重）
+        const rateLimitPenalty = health.rateLimitFailureCount > 0 
+          ? Math.max(0.3, 1 - (health.rateLimitFailureCount * 0.1)) 
+          : 1.0;
+        
+        adjustedWeight = adjustedWeight * successRate * rateLimitPenalty;
+      }
+      
+      return {
+        ...provider,
+        adjustedWeight: Math.max(0.1, adjustedWeight) // 最小权重0.1
+      };
+    });
+    
+    // 权重随机选择
+    const totalAdjustedWeight = adjustedProviders.reduce((sum, p) => sum + p.adjustedWeight, 0);
+    const random = Math.random() * totalAdjustedWeight;
+    
+    let currentWeight = 0;
+    for (const provider of adjustedProviders) {
+      currentWeight += provider.adjustedWeight;
+      if (random < currentWeight) {
+        logger.debug(`Health-based blacklist-aware selection: ${provider.provider}`, {
+          originalWeight: provider.weight || 1,
+          adjustedWeight: provider.adjustedWeight.toFixed(3),
+          totalAdjustedWeight: totalAdjustedWeight.toFixed(3),
+          availableProviders: availableProviders.length,
+          totalProviders: providers.length,
+          selectionProbability: `${((provider.adjustedWeight / totalAdjustedWeight) * 100).toFixed(1)}%`
+        }, requestId, 'routing');
+        
+        return provider;
+      }
+    }
+    
+    // 降级选择（浮点精度问题）
+    const fallbackProvider = adjustedProviders[adjustedProviders.length - 1];
+    logger.warn(`Health-based blacklist-aware selection fallback: ${fallbackProvider.provider}`, {
+      reason: 'floating_point_precision_issue',
+      totalAdjustedWeight,
+      randomValue: random
+    }, requestId, 'routing');
+    
+    return fallbackProvider;
+  }
+
+  /**
    * Get provider success rate for health-based selection
    */
   private getProviderSuccessRate(providerId: string): number {
@@ -361,6 +459,26 @@ export class RoutingEngine {
         authFailureCount: health.authFailureCount
       });
       return false;
+    }
+    
+    // 🚫 TEMPORARY BLACKLIST CHECK for 429 errors
+    if (health.isTemporarilyBlacklisted && health.temporaryBlacklistUntil) {
+      if (now < health.temporaryBlacklistUntil) {
+        const remainingSeconds = Math.ceil((health.temporaryBlacklistUntil.getTime() - now.getTime()) / 1000);
+        logger.debug(`Provider ${providerId} is temporarily blacklisted for 429 errors`, {
+          remainingSeconds,
+          rateLimitFailures: health.rateLimitFailureCount,
+          blacklistUntil: health.temporaryBlacklistUntil.toISOString()
+        });
+        return false;
+      } else {
+        // 黑名单期满，自动恢复
+        health.isTemporarilyBlacklisted = false;
+        health.temporaryBlacklistUntil = undefined;
+        logger.info(`Provider ${providerId} recovered from temporary blacklist`, {
+          rateLimitFailures: health.rateLimitFailureCount
+        });
+      }
     }
     
     // 📈 TEMPORARY BACKOFF CHECK - check if retry time has passed
@@ -430,7 +548,10 @@ export class RoutingEngine {
         temporaryBackoffLevel: 0,
         authFailureCount: 0,
         networkFailureCount: 0,
-        gatewayFailureCount: 0
+        gatewayFailureCount: 0,
+        // 429错误临时黑名单支持
+        isTemporarilyBlacklisted: false,
+        rateLimitFailureCount: 0
       });
     });
     
@@ -460,7 +581,10 @@ export class RoutingEngine {
         temporaryBackoffLevel: 0,
         authFailureCount: 0,
         networkFailureCount: 0,
-        gatewayFailureCount: 0
+        gatewayFailureCount: 0,
+        // 429错误临时黑名单支持
+        isTemporarilyBlacklisted: false,
+        rateLimitFailureCount: 0
       };
       this.providerHealth.set(providerId, health);
     }
@@ -532,6 +656,11 @@ export class RoutingEngine {
   private categorizeFailure(error?: string, httpCode?: number): string {
     const errorLower = (error || '').toLowerCase();
     
+    // Rate limit failures (temporary blacklist candidates)
+    if (httpCode === 429) return 'rate_limit';
+    if (errorLower.includes('rate limit') || errorLower.includes('quota') || errorLower.includes('exhausted')) return 'rate_limit';
+    if (errorLower.includes('too many requests')) return 'rate_limit';
+    
     // Authentication failures (permanent blacklist candidates)
     if (httpCode === 401 || httpCode === 403) return 'authentication';
     if (errorLower.includes('unauthorized') || errorLower.includes('forbidden')) return 'authentication';
@@ -550,7 +679,6 @@ export class RoutingEngine {
     if (errorLower.includes('upstream') || errorLower.includes('bad gateway')) return 'gateway';
     
     // Other failures
-    if (httpCode === 429) return 'rate_limit';
     if (httpCode && httpCode >= 500) return 'server_error';
     if (httpCode && httpCode >= 400) return 'client_error';
     
@@ -585,6 +713,25 @@ export class RoutingEngine {
             error, httpCode, remainingAttempts: 3 - health.authFailureCount
           });
         }
+        break;
+        
+      case 'rate_limit':
+        health.rateLimitFailureCount++;
+        health.lastRateLimitFailure = now;
+        
+        // 🚫 TEMPORARY BLACKLISTING for 429 rate limit errors
+        // 根据配置中的blacklistDuration设置临时拉黑时长（默认5分钟）
+        const blacklistDurationSeconds = 300; // 5 minutes
+        health.isTemporarilyBlacklisted = true;
+        health.temporaryBlacklistUntil = new Date(now.getTime() + (blacklistDurationSeconds * 1000));
+        health.isHealthy = false;
+        
+        logger.warn(`🚫 Provider ${health.providerId} TEMPORARILY BLACKLISTED for rate limit (429)`, {
+          rateLimitFailures: health.rateLimitFailureCount,
+          blacklistDurationSeconds,
+          blacklistUntil: health.temporaryBlacklistUntil.toISOString(),
+          error, httpCode
+        });
         break;
         
       case 'network':
@@ -661,7 +808,10 @@ export class RoutingEngine {
         temporaryBackoffLevel: 0,
         authFailureCount: 0,
         networkFailureCount: 0,
-        gatewayFailureCount: 0
+        gatewayFailureCount: 0,
+        // 429错误临时黑名单支持
+        isTemporarilyBlacklisted: false,
+        rateLimitFailureCount: 0
       };
       this.providerHealth.set(providerId, health);
     } else {
@@ -819,7 +969,7 @@ export class RoutingEngine {
     // Check if any failover config would trigger
     for (const failoverConfig of failoverConfigs) {
       for (const trigger of failoverConfig.triggers) {
-        if (this.shouldTriggerFailover(health, trigger)) {
+        if (this.shouldTriggerFailover(health!, trigger)) {
           return true;
         }
       }
