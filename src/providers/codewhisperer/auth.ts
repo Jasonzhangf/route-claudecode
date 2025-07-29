@@ -368,24 +368,123 @@ export class CodeWhispererAuth {
   /**
    * Report authentication failure - used by client to track failures
    */
-  reportAuthFailure(): void {
+  reportAuthFailure(error?: any, httpCode?: number): void {
     this.consecutiveFailures++;
     this.lastValidationTime = new Date();
     this.lastRefreshAttempt = new Date(); // Track when we last attempted refresh
     
-    logger.warn(`Authentication failure reported (${this.consecutiveFailures}/${this.MAX_CONSECUTIVE_FAILURES})`, {
-      consecutiveFailures: this.consecutiveFailures,
-      maxFailures: this.MAX_CONSECUTIVE_FAILURES,
+    // 🔍 ENHANCED ERROR REPORTING with detailed failure analysis
+    const errorDetails = this.analyzeAuthFailure(error, httpCode);
+    
+    logger.error(`🚨 CodeWhisperer Authentication Failure Detailed Report`, {
+      failureCount: `${this.consecutiveFailures}/${this.MAX_CONSECUTIVE_FAILURES}`,
+      tokenPath: this.tokenPath,
+      httpStatusCode: httpCode,
+      errorCategory: errorDetails.category,
+      errorMessage: errorDetails.message,
+      possibleCause: errorDetails.possibleCause,
+      recommendedAction: errorDetails.recommendedAction,
+      tokenStatus: {
+        hasAccessToken: !!this.cachedToken?.accessToken,
+        hasRefreshToken: !!this.cachedToken?.refreshToken,
+        tokenPrefix: this.cachedToken?.accessToken?.substring(0, 20) + '...',
+        expiresAt: this.cachedToken?.expiresAt,
+        lastRefreshTime: this.cachedToken?.lastRefreshTime
+      },
       refreshCooldownUntil: new Date(Date.now() + this.REFRESH_COOLDOWN_MS).toISOString()
     });
     
     if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
       this.tokenInvalid = true;
-      logger.error(`Token marked as invalid due to ${this.consecutiveFailures} consecutive failures. API calls will be blocked for 10 minutes.`);
+      logger.error(`🔒 Token BLOCKED - ${this.consecutiveFailures} consecutive authentication failures`, {
+        blockDuration: '10 minutes',
+        action: 'All API calls will be blocked',
+        recovery: 'Run `aws sso login` to refresh your credentials'
+      });
     }
     
     // Clear cached token on any auth failure
     this.clearCache();
+  }
+
+  /**
+   * 🔍 Analyze authentication failure to provide detailed error information
+   */
+  private analyzeAuthFailure(error?: any, httpCode?: number): {
+    category: string;
+    message: string;
+    possibleCause: string;
+    recommendedAction: string;
+  } {
+    const errorStr = error instanceof Error ? error.message : String(error || '');
+    const errorLower = errorStr.toLowerCase();
+    
+    // 401 Unauthorized
+    if (httpCode === 401) {
+      return {
+        category: 'TOKEN_EXPIRED_OR_INVALID',
+        message: 'Token is expired or invalid',
+        possibleCause: 'Your AWS SSO session has expired or the token format is incorrect',
+        recommendedAction: 'Run `aws sso login` to refresh your credentials'
+      };
+    }
+    
+    // 403 Forbidden
+    if (httpCode === 403) {
+      return {
+        category: 'INSUFFICIENT_PERMISSIONS',
+        message: 'Token lacks required permissions',
+        possibleCause: 'Your AWS account may not have CodeWhisperer access or the profile ARN is incorrect',
+        recommendedAction: 'Check your AWS account permissions and ensure CodeWhisperer is enabled'
+      };
+    }
+    
+    // Token refresh specific errors
+    if (errorLower.includes('refresh')) {
+      if (errorLower.includes('expired') || errorLower.includes('invalid')) {
+        return {
+          category: 'REFRESH_TOKEN_INVALID',
+          message: 'Refresh token is expired or invalid',
+          possibleCause: 'Your refresh token has expired and cannot be used to get a new access token',
+          recommendedAction: 'Run `aws sso login` to obtain fresh credentials'
+        };
+      }
+      
+      return {
+        category: 'REFRESH_FAILED',
+        message: 'Token refresh request failed',
+        possibleCause: 'Network issue or authentication service unavailable',
+        recommendedAction: 'Check network connection and retry in a few minutes'
+      };
+    }
+    
+    // Network related errors
+    if (errorLower.includes('network') || errorLower.includes('timeout') || errorLower.includes('econnreset')) {
+      return {
+        category: 'NETWORK_ERROR',
+        message: 'Network connection failed during authentication',
+        possibleCause: 'Network connectivity issue or authentication service is down',
+        recommendedAction: 'Check your internet connection and retry'
+      };
+    }
+    
+    // File access errors
+    if (errorLower.includes('file') || errorLower.includes('enoent')) {
+      return {
+        category: 'TOKEN_FILE_MISSING',
+        message: 'Token file not found',
+        possibleCause: `Token file missing at ${this.tokenPath}`,
+        recommendedAction: 'Run `aws sso login` to create token file'
+      };
+    }
+    
+    // Default case
+    return {
+      category: 'UNKNOWN_AUTH_ERROR',
+      message: errorStr || 'Unknown authentication error',
+      possibleCause: 'Unexpected authentication error occurred',
+      recommendedAction: 'Check logs for more details and try `aws sso login`'
+    };
   }
 
   /**

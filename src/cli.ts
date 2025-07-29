@@ -159,11 +159,29 @@ program
       const server = new RouterServer(config);
       
       // Handle graceful shutdown
+      let isShuttingDown = false;
       const shutdown = async () => {
+        if (isShuttingDown) return;
+        isShuttingDown = true;
+
         console.log(chalk.yellow('\n🛑 Shutting down server...'));
-        await server.stop();
-        console.log(chalk.green('✅ Server stopped gracefully'));
-        process.exit(0);
+
+        const timeout = setTimeout(() => {
+          console.log(chalk.red('⏰ Graceful shutdown timed out. Forcing exit.'));
+          process.exit(1);
+        }, 5000); // 5-second timeout
+
+        try {
+          await server.stop();
+          clearTimeout(timeout);
+          console.log(chalk.green('✅ Server stopped gracefully'));
+          process.exit(0);
+        } catch (error) {
+          clearTimeout(timeout);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          console.error(chalk.red('❌ Error during shutdown:'), errorMessage);
+          process.exit(1);
+        }
       };
 
       process.on('SIGINT', shutdown);

@@ -28,7 +28,7 @@ export interface ProviderLockResult {
   sessionId: string;
   waitTime?: number;
   alternativeProvider?: string;
-  reason?: 'occupied' | 'timeout' | 'unhealthy' | 'available';
+  reason?: 'occupied' | 'timeout' | 'unhealthy' | 'available' | 'overloaded' | 'immediate';
 }
 
 export interface ConcurrentLoadBalancingConfig {

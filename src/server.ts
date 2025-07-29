@@ -35,7 +35,10 @@ export class RouterServer {
 
     // Initialize components
     this.inputProcessor = new AnthropicInputProcessor();
-    this.routingEngine = new RoutingEngine(config.routing as Record<RoutingCategory, CategoryRouting>);
+    this.routingEngine = new RoutingEngine(
+      config.routing as Record<RoutingCategory, CategoryRouting>,
+      config.concurrency // 🚀 Pass user's concurrency config for optimization
+    );
     this.outputProcessor = new AnthropicOutputProcessor();
 
     // Initialize providers
@@ -126,7 +129,6 @@ export class RouterServer {
       try {
         const summary = this.routingEngine.getStatsSummary();
         const responseStats = this.routingEngine.getResponseStats();
-        const concurrency = this.routingEngine.getConcurrencySnapshot();
 
         // 处理provider分布数据
         const providers: { [key: string]: number } = {};
@@ -172,7 +174,6 @@ export class RouterServer {
           models,
           distribution,
           performance,
-          concurrency,
           failures: {
             stats: failureStats,
             trends: failureTrends

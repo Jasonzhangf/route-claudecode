@@ -50,7 +50,7 @@ export class ConcurrencyManager {
   }
 
   /**
-   * 尝试获取provider锁 (核心方法)
+   * 🚀 OPTIMIZED: 尝试获取provider锁 (优化版 - 减少严格锁定)
    */
   async acquireProviderLock(request: ProviderLockRequest): Promise<ProviderLockResult> {
     const { sessionId, providerId, requestId } = request;
@@ -63,7 +63,7 @@ export class ConcurrencyManager {
     this.initializeProvider(providerId);
     const state = this.providerStates.get(providerId)!;
 
-    // 检查是否已经被当前session占用
+    // 🎯 OPTIMIZATION 1: 不同provider之间不需要互斥，同一session可以并发访问不同provider
     const currentLock = this.sessionLocks.get(sessionId);
     if (currentLock === providerId) {
       logger.debug(`Session ${sessionId} already holds lock for ${providerId}`);
@@ -75,27 +75,38 @@ export class ConcurrencyManager {
       };
     }
 
-    // 检查是否有可用容量
-    if (state.activeConnections < state.maxConcurrency) {
-      // 获取锁成功
-      return this.grantLock(sessionId, providerId, requestId);
+    // 🎯 OPTIMIZATION 2: 放宽并发限制 - 只在真正超负荷时才拒绝
+    const utilizationRate = state.activeConnections / state.maxConcurrency;
+    
+    // 只有在使用率超过90%且当前连接数大于等于最大并发数时才考虑拒绝
+    if (utilizationRate >= 0.9 && state.activeConnections >= state.maxConcurrency) {
+      logger.debug(`Provider ${providerId} at high utilization`, {
+        activeConnections: state.activeConnections,
+        maxConcurrency: state.maxConcurrency,
+        utilizationRate: `${(utilizationRate * 100).toFixed(1)}%`
+      });
+      
+      // 即使满载，也允许短时间超载（最多+2个连接）
+      if (state.activeConnections >= state.maxConcurrency + 2) {
+        if (this.config.enableWaitingQueue) {
+          return this.addToWaitingQueue(sessionId, providerId, request);
+        } else {
+          return {
+            success: false,
+            providerId,
+            sessionId,
+            reason: 'overloaded'
+          };
+        }
+      }
     }
 
-    // Provider满载，根据配置决定策略
-    if (this.config.enableWaitingQueue) {
-      return this.addToWaitingQueue(sessionId, providerId, request);
-    } else {
-      return {
-        success: false,
-        providerId,
-        sessionId,
-        reason: 'occupied'
-      };
-    }
+    // 🎯 OPTIMIZATION 3: 更宽松的锁获取策略
+    return this.grantLock(sessionId, providerId, requestId);
   }
 
   /**
-   * 批量尝试获取可用provider (负载均衡优化版)
+   * 🚀 OPTIMIZED: 批量尝试获取可用provider (快速并行版)
    */
   async acquireAvailableProvider(
     sessionId: string, 
@@ -104,13 +115,51 @@ export class ConcurrencyManager {
     preferenceWeights?: Map<string, number>
   ): Promise<ProviderLockResult> {
     
-    logger.info(`Searching for available provider among ${candidateProviders.length} candidates`, {
+    logger.debug(`🚀 Fast provider selection among ${candidateProviders.length} candidates`, {
       sessionId, requestId, candidates: candidateProviders
     });
 
-    // 按空闲程度排序provider
-    const sortedProviders = this.sortProvidersByAvailability(candidateProviders, preferenceWeights);
+    // 🎯 OPTIMIZATION 1: 并行检查所有provider的可用性，避免序列等待
+    const availabilityChecks = candidateProviders.map(async (providerId) => {
+      this.initializeProvider(providerId);
+      const state = this.providerStates.get(providerId)!;
+      const utilizationRate = state.activeConnections / state.maxConcurrency;
+      
+      return {
+        providerId,
+        utilizationRate,
+        isAvailable: utilizationRate < 0.9 || state.activeConnections < state.maxConcurrency + 2,
+        weight: preferenceWeights?.get(providerId) || 1
+      };
+    });
     
+    const availabilityResults = await Promise.all(availabilityChecks);
+    
+    // 🎯 OPTIMIZATION 2: 智能排序 - 优先选择可用且权重高的provider
+    const sortedProviders = availabilityResults
+      .filter(result => result.isAvailable)
+      .sort((a, b) => {
+        // 首先按可用性排序，然后按权重和使用率排序
+        if (a.utilizationRate !== b.utilizationRate) {
+          return a.utilizationRate - b.utilizationRate; // 使用率低的优先
+        }
+        return b.weight - a.weight; // 权重高的优先
+      })
+      .map(result => result.providerId);
+    
+    if (sortedProviders.length === 0) {
+      // 🎯 OPTIMIZATION 3: 如果没有"理想"的provider，选择使用率最低的
+      const fallbackProvider = availabilityResults
+        .sort((a, b) => a.utilizationRate - b.utilizationRate)[0];
+      
+      logger.info(`No ideal providers available, using fallback: ${fallbackProvider.providerId}`, {
+        utilizationRate: `${(fallbackProvider.utilizationRate * 100).toFixed(1)}%`
+      });
+      
+      sortedProviders.push(fallbackProvider.providerId);
+    }
+
+    // 🎯 OPTIMIZATION 4: 快速获取锁，不做过多检查
     for (const providerId of sortedProviders) {
       const result = await this.acquireProviderLock({
         sessionId,
@@ -120,28 +169,19 @@ export class ConcurrencyManager {
       });
 
       if (result.success) {
-        logger.info(`Successfully acquired lock for provider: ${providerId}`, {
+        logger.debug(`🎯 Successfully acquired provider: ${providerId}`, {
           sessionId, requestId, 
           utilizationRate: this.getProviderUtilization(providerId)
         });
         return result;
       }
-
-      logger.debug(`Provider ${providerId} unavailable: ${result.reason}`);
     }
 
-    // 所有provider都不可用
-    logger.warn(`No available providers found among candidates`, {
-      sessionId, requestId, candidates: candidateProviders,
-      occupancyStates: this.getOccupancySnapshot()
-    });
-
-    return {
-      success: false,
-      providerId: candidateProviders[0], // 返回第一个作为默认
-      sessionId,
-      reason: 'occupied'
-    };
+    // 兜底策略：选择第一个provider，允许超载
+    const fallbackProvider = candidateProviders[0];
+    logger.info(`🚨 All providers busy, forcing selection: ${fallbackProvider}`);
+    
+    return this.grantLock(sessionId, fallbackProvider, requestId);
   }
 
   /**

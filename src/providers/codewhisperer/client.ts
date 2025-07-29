@@ -10,6 +10,7 @@ import { SafeTokenManager } from './safe-token-manager';
 import { CodeWhispererConverter, CodeWhispererRequest } from './converter';
 import { parseEvents, convertEventsToAnthropic, parseNonStreamingResponse } from './parser';
 import { processBufferedResponse } from './parser-buffered';
+// Removed smart-stream-parser import due to performance issues
 import { logger } from '@/utils/logger';
 import { fixResponse } from '@/utils/response-fixer';
 
@@ -102,8 +103,8 @@ export class CodeWhispererClient implements Provider {
             );
           }
           
-          // Report authentication failure to monitoring system
-          this.auth.reportAuthFailure();
+          // Report authentication failure to monitoring system with detailed error info
+          this.auth.reportAuthFailure(error, error.response?.status);
           
           // Check if token is now blocked due to consecutive failures
           if (this.auth.isTokenBlocked()) {
@@ -133,8 +134,8 @@ export class CodeWhispererClient implements Provider {
             }
           } catch (refreshError) {
             logger.error('Token refresh failed', refreshError);
-            // Report this failure as well
-            this.auth.reportAuthFailure();
+            // Report this failure as well with detailed error info
+            this.auth.reportAuthFailure(refreshError, refreshError instanceof ProviderError ? refreshError.statusCode : undefined);
             
             if (refreshError instanceof ProviderError) {
               throw refreshError;
@@ -234,23 +235,36 @@ export class CodeWhispererClient implements Provider {
       }, requestId, 'provider');
       
       if (response.status !== 200) {
+        // 🔍 ENHANCED 400 ERROR REPORTING - show model name for debugging
+        let errorMessage = `CodeWhisperer API returned status ${response.status}`;
+        
+        if (response.status === 400) {
+          const modelName = cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId || request.model || 'unknown';
+          errorMessage += ` | Sent model: "${modelName}"`;
+          
+          logger.error(`🚨 CodeWhisperer 400 Error - Model Configuration Issue`, {
+            httpStatus: 400,
+            requestedModel: request.model,
+            sentModelId: cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId,
+            endpoint: this.endpoint,
+            possibleCause: 'Model name may not be supported by CodeWhisperer',
+            troubleshooting: 'Check if model name matches CodeWhisperer supported models'
+          }, requestId, 'provider');
+        }
+        
         throw new ProviderError(
-          `CodeWhisperer API returned status ${response.status}`,
+          errorMessage,
           this.name,
           response.status,
           response.data
         );
       }
 
-      // 使用完全缓冲式处理解析非流式响应
-      logger.debug('Using buffered processing for non-streaming response', {
-        responseLength: responseBuffer.length
-      }, requestId, 'provider');
-      
-      logger.info('Starting processBufferedResponse', {
-        bufferLength: responseBuffer.length,
-        bufferPreview: responseBuffer.toString('hex').slice(0, 100)
-      }, requestId, 'provider');
+      // 🚀 使用完全缓冲处理 - 避免智能流式解析器的性能问题
+      logger.info('Starting full buffered response processing', {
+        responseLength: responseBuffer.length,
+        rawPreview: responseBuffer.toString('hex').substring(0, 100)
+      }, requestId);
       
       const anthropicEvents = processBufferedResponse(responseBuffer, requestId, request.model);
       
@@ -421,8 +435,26 @@ export class CodeWhispererClient implements Provider {
       });
 
       if (response.status !== 200) {
+        // 🔍 ENHANCED STREAMING ERROR REPORTING - show model name for debugging
+        let errorMessage = `CodeWhisperer streaming API returned status ${response.status}`;
+        
+        if (response.status === 400) {
+          const modelName = cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId || request.model || 'unknown';
+          errorMessage += ` | Sent model: "${modelName}"`;
+          
+          logger.error(`🚨 CodeWhisperer Streaming 400 Error - Model Configuration Issue`, {
+            httpStatus: 400,
+            requestedModel: request.model,
+            sentModelId: cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId,
+            endpoint: this.endpoint,
+            streamingMode: true,
+            possibleCause: 'Model name may not be supported by CodeWhisperer streaming API',
+            troubleshooting: 'Check if model name matches CodeWhisperer supported models'
+          }, requestId, 'provider');
+        }
+        
         throw new ProviderError(
-          `CodeWhisperer API returned status ${response.status}`,
+          errorMessage,
           this.name,
           response.status
         );
@@ -619,4 +651,7 @@ export class CodeWhispererClient implements Provider {
     
     throw lastError;
   }
+
+  // Removed processWithSmartStreaming method due to severe performance issues
+  // It was generating 77,643 events causing 65-second delays
 }

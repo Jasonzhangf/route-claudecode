@@ -5,15 +5,30 @@
 
 import { logger } from './logger';
 
+export interface CategoryStats {
+  totalResponses: number;
+  successfulResponses: number;
+  failedResponses: number;
+  streamingResponses: number;
+  nonStreamingResponses: number;
+  totalResponseTime: number;
+  averageResponseTime: number;
+}
+
 export interface ResponseStat {
   providerId: string;
   model: string;
   totalResponses: number;
   successfulResponses: number;
   failedResponses: number;
+  streamingResponses: number;
+  nonStreamingResponses: number;
   lastResponseTime: Date;
   averageResponseTime: number;
   totalResponseTime: number;
+  categories: {
+    [category: string]: CategoryStats;
+  };
 }
 
 export interface ProviderStats {
@@ -22,24 +37,41 @@ export interface ProviderStats {
   };
 }
 
+import { writeFileSync, readFileSync, existsSync } from 'fs';
+import { resolve } from 'path';
+import { getConfigPaths } from './config-paths';
+
 export class ResponseStatsManager {
   private stats: ProviderStats = {};
   private startTime: Date = new Date();
   private logInterval: NodeJS.Timeout | null = null;
+  private statsFilePath: string;
 
-  constructor() {
+
+    constructor() {
+    const configPaths = getConfigPaths();
+    this.statsFilePath = resolve(configPaths.configDir, 'response-stats.json');
+    this.loadStats();
+
     // 每5分钟输出一次统计日志
     this.startPeriodicLogging();
+    // Save stats on exit
+    process.on('beforeExit', () => this.saveStats());
     logger.info('ResponseStatsManager initialized');
   }
 
-  /**
+    /**
    * 记录成功响应
    */
-  recordSuccess(providerId: string, model: string, responseTimeMs: number): void {
+  recordSuccess(providerId: string, model: string, responseTimeMs: number, isStreaming: boolean = false): void {
     const stat = this.getOrCreateStat(providerId, model);
     
     stat.totalResponses++;
+    if (isStreaming) {
+      stat.streamingResponses++;
+    } else {
+      stat.nonStreamingResponses++;
+    }
     stat.successfulResponses++;
     stat.lastResponseTime = new Date();
     stat.totalResponseTime += responseTimeMs;
@@ -49,6 +81,7 @@ export class ResponseStatsManager {
       providerId,
       model,
       responseTimeMs,
+      isStreaming,
       totalResponses: stat.totalResponses,
       successRate: `${((stat.successfulResponses / stat.totalResponses) * 100).toFixed(1)}%`
     });
@@ -57,10 +90,15 @@ export class ResponseStatsManager {
   /**
    * 记录失败响应
    */
-  recordFailure(providerId: string, model: string, error: string): void {
+  recordFailure(providerId: string, model: string, error: string, isStreaming: boolean = false): void {
     const stat = this.getOrCreateStat(providerId, model);
     
     stat.totalResponses++;
+    if (isStreaming) {
+      stat.streamingResponses++;
+    } else {
+      stat.nonStreamingResponses++;
+    }
     stat.failedResponses++;
     stat.lastResponseTime = new Date();
 
@@ -68,6 +106,7 @@ export class ResponseStatsManager {
       providerId,
       model,
       error,
+      isStreaming,
       totalResponses: stat.totalResponses,
       failureRate: `${((stat.failedResponses / stat.totalResponses) * 100).toFixed(1)}%`
     });
@@ -88,9 +127,12 @@ export class ResponseStatsManager {
         totalResponses: 0,
         successfulResponses: 0,
         failedResponses: 0,
+        streamingResponses: 0,
+        nonStreamingResponses: 0,
         lastResponseTime: new Date(),
         averageResponseTime: 0,
-        totalResponseTime: 0
+        totalResponseTime: 0,
+        categories: {}
       };
     }
 
@@ -255,6 +297,29 @@ export class ResponseStatsManager {
   /**
    * 停止定期日志
    */
+  private loadStats(): void {
+    try {
+      if (existsSync(this.statsFilePath)) {
+        const data = readFileSync(this.statsFilePath, 'utf8');
+        this.stats = JSON.parse(data);
+        logger.info('Response stats loaded from file');
+      } else {
+        logger.info('No existing response stats file found, starting fresh.');
+      }
+    } catch (error) {
+      logger.error('Failed to load response stats', error);
+    }
+  }
+
+  private saveStats(): void {
+    try {
+      writeFileSync(this.statsFilePath, JSON.stringify(this.stats, null, 2));
+      logger.info('Response stats saved to file');
+    } catch (error) {
+      logger.error('Failed to save response stats', error);
+    }
+  }
+  
   destroy(): void {
     if (this.logInterval) {
       clearInterval(this.logInterval);

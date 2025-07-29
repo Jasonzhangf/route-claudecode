@@ -4,6 +4,8 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
+import http from 'http';
+import https from 'https';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
 import { logger } from '@/utils/logger';
 import { fixResponse } from '@/utils/response-fixer';
@@ -34,13 +36,19 @@ export class EnhancedOpenAIClient implements Provider {
     }
 
     // Use endpoint as full URL including path
+    // Enable keep-alive for both HTTP and HTTPS
+    const httpAgent = new http.Agent({ keepAlive: true });
+    const httpsAgent = new https.Agent({ keepAlive: true });
+
     this.httpClient = axios.create({
       baseURL: this.endpoint,
       timeout: 300000, // 5 minute timeout for production
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'claude-code-router/2.0.0'
-      }
+      },
+      httpAgent,
+      httpsAgent
     });
 
     // Add request interceptor for authentication
@@ -161,7 +169,7 @@ export class EnhancedOpenAIClient implements Provider {
       // Execute with retry logic
       const response = await this.executeWithRetry(
         async () => {
-          const resp = await this.httpClient.post('', openaiRequest);
+          const resp = await this.httpClient.post(this.endpoint, openaiRequest);
           
           if (resp.status < 200 || resp.status >= 300) {
             throw new ProviderError(

@@ -123,6 +123,18 @@ export interface ProviderHealth {
   failureCount: number;
   inCooldown: boolean;
   cooldownUntil?: Date;
+  
+  // Enhanced intelligent failover support
+  isPermanentlyBlacklisted: boolean;
+  blacklistReason?: string;
+  temporaryBackoffLevel: number; // 0=none, 1=1min, 2=5min, 3=10min
+  nextRetryTime?: Date;
+  authFailureCount: number;
+  networkFailureCount: number;
+  gatewayFailureCount: number;
+  lastAuthFailure?: Date;
+  lastNetworkFailure?: Date;
+  lastGatewayFailure?: Date;
 }
 
 export interface CategoryRouting {
@@ -230,6 +242,7 @@ export interface RouterConfig {
     logDir: string;
   };
   hooks: Hook[];
+  concurrency?: import('./concurrency').ConcurrentLoadBalancingConfig;
 }
 
 // Utility types

@@ -8,24 +8,12 @@ import { ConcurrentLoadBalancingConfig } from '@/types/concurrency';
 import { logger } from '@/utils/logger';
 import { calculateTokenCount } from '@/utils/tokenizer';
 import { responseStatsManager } from '@/utils/response-stats';
-import { ConcurrencyManager } from './concurrency-manager';
-
 export class RoutingEngine {
   private providerHealth: Map<string, ProviderHealth> = new Map();
   private roundRobinIndex: Map<string, number> = new Map();
-  private concurrencyManager: ConcurrencyManager;
   
-  constructor(private routingConfig: Record<RoutingCategory, CategoryRouting>) {
-    // 初始化并发管理器
-    const concurrencyConfig: ConcurrentLoadBalancingConfig = {
-      enabled: true,
-      maxConcurrencyPerProvider: 3, // 每个provider最多3个并发
-      lockTimeoutMs: 300000, // 5分钟超时
-      queueTimeoutMs: 60000, // 队列等待1分钟
-      enableWaitingQueue: true,
-      preferIdleProviders: true
-    };
-    this.concurrencyManager = new ConcurrencyManager(concurrencyConfig);
+  constructor(private routingConfig: Record<RoutingCategory, CategoryRouting>, concurrencyConfig?: ConcurrentLoadBalancingConfig) {
+    // 🚀 移除并发管理 - HTTP本身就是天然隔离的
 
     logger.info('Routing engine initialized with category-based configuration', {
       categories: Object.keys(routingConfig),
@@ -139,15 +127,7 @@ export class RoutingEngine {
       };
     }
 
-    // 🚀 NEW: 使用并发感知的负载均衡
-    if (loadBalancingConfig.enabled) {
-      return this.selectWithConcurrencyControl(
-        healthyProviders, 
-        loadBalancingConfig, 
-        category, 
-        requestId
-      );
-    }
+    // 🚀 简化: 直接使用负载均衡，无需并发控制
 
     // Apply load balancing strategy
     let selectedProvider: ProviderEntry;
@@ -364,7 +344,7 @@ export class RoutingEngine {
   }
 
   /**
-   * Check if provider is healthy
+   * Check if provider is healthy with intelligent failover logic
    */
   private isProviderHealthy(providerId: string): boolean {
     const health = this.providerHealth.get(providerId);
@@ -372,12 +352,42 @@ export class RoutingEngine {
       return true; // Assume healthy for new providers
     }
     
-    // Check if in cooldown
-    if (health.inCooldown && health.cooldownUntil && new Date() < health.cooldownUntil) {
+    const now = new Date();
+    
+    // 🔒 PERMANENT BLACKLIST CHECK - highest priority
+    if (health.isPermanentlyBlacklisted) {
+      logger.debug(`Provider ${providerId} is permanently blacklisted`, {
+        reason: health.blacklistReason,
+        authFailureCount: health.authFailureCount
+      });
       return false;
     }
     
-    // Check consecutive errors threshold
+    // 📈 TEMPORARY BACKOFF CHECK - check if retry time has passed
+    if (health.temporaryBackoffLevel > 0 && health.nextRetryTime) {
+      if (now < health.nextRetryTime) {
+        const minutesRemaining = Math.ceil((health.nextRetryTime.getTime() - now.getTime()) / (60 * 1000));
+        logger.debug(`Provider ${providerId} in backoff level ${health.temporaryBackoffLevel}`, {
+          minutesRemaining,
+          nextRetryTime: health.nextRetryTime.toISOString()
+        });
+        return false;
+      } else {
+        // Backoff time has passed, allow health check but don't reset backoff level
+        // (backoff level will be reset on successful request)
+        logger.info(`Provider ${providerId} backoff period expired, allowing health check`, {
+          backoffLevel: health.temporaryBackoffLevel,
+          nextRetryTime: health.nextRetryTime.toISOString()
+        });
+      }
+    }
+    
+    // Standard cooldown check (for legacy compatibility)
+    if (health.inCooldown && health.cooldownUntil && now < health.cooldownUntil) {
+      return false;
+    }
+    
+    // Check consecutive errors threshold (fallback for non-categorized errors)
     if (health.consecutiveErrors >= 5) {
       return false;
     }
@@ -414,7 +424,13 @@ export class RoutingEngine {
         totalRequests: 0,
         successCount: 0,
         failureCount: 0,
-        inCooldown: false
+        inCooldown: false,
+        // Enhanced intelligent failover fields
+        isPermanentlyBlacklisted: false,
+        temporaryBackoffLevel: 0,
+        authFailureCount: 0,
+        networkFailureCount: 0,
+        gatewayFailureCount: 0
       });
     });
     
@@ -424,9 +440,9 @@ export class RoutingEngine {
   }
 
   /**
-   * Record provider request result for health tracking and statistics
+   * Record provider request result for health tracking and statistics with intelligent failover
    */
-  public recordProviderResult(providerId: string, success: boolean, error?: string, httpCode?: number, model?: string, responseTimeMs?: number): void {
+  public recordProviderResult(providerId: string, success: boolean, error?: string, httpCode?: number, model?: string, responseTimeMs?: number, isStreaming: boolean = false): void {
     let health = this.providerHealth.get(providerId);
     if (!health) {
       // Initialize if not exists
@@ -438,7 +454,13 @@ export class RoutingEngine {
         totalRequests: 0,
         successCount: 0,
         failureCount: 0,
-        inCooldown: false
+        inCooldown: false,
+        // Enhanced intelligent failover fields
+        isPermanentlyBlacklisted: false,
+        temporaryBackoffLevel: 0,
+        authFailureCount: 0,
+        networkFailureCount: 0,
+        gatewayFailureCount: 0
       };
       this.providerHealth.set(providerId, health);
     }
@@ -452,9 +474,19 @@ export class RoutingEngine {
       health.lastSuccessTime = new Date();
       health.inCooldown = false;
       
+      // Reset temporary backoff on successful request
+      if (health.temporaryBackoffLevel > 0) {
+        logger.info(`Provider ${providerId} recovered - resetting backoff level`, {
+          previousBackoffLevel: health.temporaryBackoffLevel,
+          totalRequests: health.totalRequests
+        });
+        health.temporaryBackoffLevel = 0;
+        health.nextRetryTime = undefined;
+      }
+      
       // 记录成功响应统计
       if (model) {
-        responseStatsManager.recordSuccess(providerId, model, responseTimeMs || 0);
+        responseStatsManager.recordSuccess(providerId, model, responseTimeMs || 0, isStreaming);
       }
       
       logger.debug(`Provider ${providerId} request succeeded`, {
@@ -468,15 +500,13 @@ export class RoutingEngine {
       health.consecutiveErrors++;
       health.lastFailureTime = new Date();
       
-      // 记录失败响应统计
-      if (model) {
-        responseStatsManager.recordFailure(providerId, model, error || 'unknown');
-      }
+      // 🧠 INTELLIGENT FAILURE CATEGORIZATION
+      const failureCategory = this.categorizeFailure(error, httpCode);
       
       // Add to error history
       health.errorHistory.push({
         timestamp: new Date(),
-        errorType: error || 'unknown',
+        errorType: failureCategory,
         errorMessage: error || 'No error message provided',
         httpCode
       });
@@ -486,18 +516,128 @@ export class RoutingEngine {
         health.errorHistory = health.errorHistory.slice(-10);
       }
       
-      // Mark unhealthy if consecutive errors exceed threshold
-      if (health.consecutiveErrors >= 5) {
-        health.isHealthy = false;
-        health.inCooldown = true;
-        health.cooldownUntil = new Date(Date.now() + 60000); // 1 minute cooldown
-        
-        logger.warn(`Provider ${providerId} marked unhealthy after ${health.consecutiveErrors} consecutive errors`, {
-          errorType: error,
-          httpCode,
-          cooldownUntil: health.cooldownUntil
-        });
+      // 🚨 APPLY INTELLIGENT FAILOVER LOGIC
+      this.applyIntelligentFailover(health, failureCategory, error, httpCode);
+      
+      // 记录失败响应统计
+      if (model) {
+        responseStatsManager.recordFailure(providerId, model, error || 'unknown', isStreaming);
       }
+    }
+  }
+
+  /**
+   * 🧠 Intelligent failure categorization
+   */
+  private categorizeFailure(error?: string, httpCode?: number): string {
+    const errorLower = (error || '').toLowerCase();
+    
+    // Authentication failures (permanent blacklist candidates)
+    if (httpCode === 401 || httpCode === 403) return 'authentication';
+    if (errorLower.includes('unauthorized') || errorLower.includes('forbidden')) return 'authentication';
+    if (errorLower.includes('token') && (errorLower.includes('invalid') || errorLower.includes('expired'))) return 'authentication';
+    if (errorLower.includes('authentication') || errorLower.includes('auth')) return 'authentication';
+    
+    // Network failures (temporary backoff candidates)
+    if (errorLower.includes('network') || errorLower.includes('connection')) return 'network';
+    if (errorLower.includes('timeout') || errorLower.includes('etimedout')) return 'network';
+    if (errorLower.includes('econnreset') || errorLower.includes('enotfound')) return 'network';
+    if (errorLower.includes('dns') || errorLower.includes('resolve')) return 'network';
+    
+    // Gateway failures (temporary backoff candidates)
+    if (httpCode === 502 || httpCode === 503 || httpCode === 504) return 'gateway';
+    if (errorLower.includes('gateway') || errorLower.includes('proxy')) return 'gateway';
+    if (errorLower.includes('upstream') || errorLower.includes('bad gateway')) return 'gateway';
+    
+    // Other failures
+    if (httpCode === 429) return 'rate_limit';
+    if (httpCode && httpCode >= 500) return 'server_error';
+    if (httpCode && httpCode >= 400) return 'client_error';
+    
+    return 'unknown';
+  }
+
+  /**
+   * 🚨 Apply intelligent failover logic based on failure type
+   */
+  private applyIntelligentFailover(health: ProviderHealth, failureCategory: string, error?: string, httpCode?: number): void {
+    const now = new Date();
+    
+    switch (failureCategory) {
+      case 'authentication':
+        health.authFailureCount++;
+        health.lastAuthFailure = now;
+        
+        // 🔒 PERMANENT BLACKLISTING for authentication failures
+        if (health.authFailureCount >= 3) {
+          health.isPermanentlyBlacklisted = true;
+          health.blacklistReason = `Authentication failures: ${health.authFailureCount} consecutive failures. Last error: ${error}`;
+          health.isHealthy = false;
+          
+          logger.error(`🔒 Provider ${health.providerId} PERMANENTLY BLACKLISTED due to authentication failures`, {
+            authFailureCount: health.authFailureCount,
+            lastError: error,
+            httpCode,
+            blacklistReason: health.blacklistReason
+          });
+        } else {
+          logger.warn(`⚠️ Authentication failure ${health.authFailureCount}/3 for provider ${health.providerId}`, {
+            error, httpCode, remainingAttempts: 3 - health.authFailureCount
+          });
+        }
+        break;
+        
+      case 'network':
+      case 'gateway':
+        // Update failure counters
+        if (failureCategory === 'network') {
+          health.networkFailureCount++;
+          health.lastNetworkFailure = now;
+        } else {
+          health.gatewayFailureCount++;
+          health.lastGatewayFailure = now;
+        }
+        
+        // 📈 PROGRESSIVE TEMPORARY BACKOFF for network/gateway issues
+        const failureCount = failureCategory === 'network' ? health.networkFailureCount : health.gatewayFailureCount;
+        
+        if (failureCount >= 3) {
+          // Escalate backoff level (max level 3)
+          health.temporaryBackoffLevel = Math.min(health.temporaryBackoffLevel + 1, 3);
+          
+          // Calculate backoff duration: 1min → 5min → 10min
+          const backoffMinutes = health.temporaryBackoffLevel === 1 ? 1 : 
+                                 health.temporaryBackoffLevel === 2 ? 5 : 10;
+          
+          health.nextRetryTime = new Date(now.getTime() + (backoffMinutes * 60 * 1000));
+          health.isHealthy = false;
+          health.inCooldown = true;
+          health.cooldownUntil = health.nextRetryTime;
+          
+          logger.warn(`📈 Provider ${health.providerId} entering backoff level ${health.temporaryBackoffLevel}`, {
+            failureCategory,
+            failureCount,
+            backoffMinutes,
+            nextRetryTime: health.nextRetryTime.toISOString(),
+            error, httpCode
+          });
+        }
+        break;
+        
+      default:
+        // Standard failover logic for other errors
+        if (health.consecutiveErrors >= 5) {
+          health.isHealthy = false;
+          health.inCooldown = true;
+          health.cooldownUntil = new Date(now.getTime() + 60000); // 1 minute cooldown
+          
+          logger.warn(`Provider ${health.providerId} marked unhealthy after ${health.consecutiveErrors} consecutive errors`, {
+            errorType: failureCategory,
+            error, httpCode,
+            cooldownUntil: health.cooldownUntil
+          });
+        }
+        break;
     }
   }
 
@@ -515,7 +655,13 @@ export class RoutingEngine {
         totalRequests: 0,
         successCount: 0,
         failureCount: 0,
-        inCooldown: false
+        inCooldown: false,
+        // Enhanced intelligent failover support - 添加缺失的属性
+        isPermanentlyBlacklisted: false,
+        temporaryBackoffLevel: 0,
+        authFailureCount: 0,
+        networkFailureCount: 0,
+        gatewayFailureCount: 0
       };
       this.providerHealth.set(providerId, health);
     } else {
@@ -862,226 +1008,7 @@ export class RoutingEngine {
 
   // ==================== 并发控制方法 ====================
 
-  /**
-   * 并发感知的负载均衡选择
-   */
-  private async selectWithConcurrencyControl(
-    providers: ProviderEntry[],
-    loadBalancingConfig: LoadBalancingConfig,
-    category: string,
-    requestId: string
-  ): Promise<{ provider: string; model: string }> {
-    
-    // 提取sessionId用于并发控制
-    const sessionId = requestId; // 简化实现，实际应该从request中提取
-
-    // 初始化所有providers
-    providers.forEach(p => this.concurrencyManager.initializeProvider(p.provider, 3));
-
-    // 根据负载均衡策略选择
-    switch (loadBalancingConfig.strategy) {
-      case 'weighted':
-        return this.selectWithConcurrentWeighted(providers, sessionId, requestId);
-      case 'round_robin':
-        return this.selectWithConcurrentRoundRobin(providers, category, sessionId, requestId);
-      case 'health_based':
-        return this.selectWithConcurrentHealthBased(providers, sessionId, requestId);
-      default:
-        return this.selectWithConcurrentWeighted(providers, sessionId, requestId);
-    }
-  }
-
-  /**
-   * 并发感知的权重选择
-   */
-  private async selectWithConcurrentWeighted(
-    providers: ProviderEntry[],
-    sessionId: string,
-    requestId: string
-  ): Promise<{ provider: string; model: string }> {
-    
-    // 构建权重映射
-    const weights = new Map<string, number>();
-    providers.forEach(p => weights.set(p.provider, p.weight || 1));
-
-    // 尝试获取可用provider
-    const lockResult = await this.concurrencyManager.acquireAvailableProvider(
-      sessionId,
-      requestId,
-      providers.map(p => p.provider),
-      weights
-    );
-
-    if (lockResult.success) {
-      const selectedProvider = providers.find(p => p.provider === lockResult.providerId)!;
-      
-      logger.info(`Concurrent weighted selection: ${lockResult.providerId}`, {
-        sessionId,
-        weight: selectedProvider.weight || 1,
-        concurrencyMetrics: this.concurrencyManager.getProviderMetrics(lockResult.providerId)
-      }, requestId, 'routing');
-
-      return {
-        provider: selectedProvider.provider,
-        model: selectedProvider.model
-      };
-    }
-
-    // 降级：使用传统权重选择
-    logger.warn('Concurrent provider selection failed, falling back to traditional weighted', {
-      sessionId, requestId
-    }, requestId, 'routing');
-    
-    const traditionalSelection = this.selectWeighted(providers, requestId);
-    return {
-      provider: traditionalSelection.provider,
-      model: traditionalSelection.model
-    };
-  }
-
-  /**
-   * 并发感知的轮询选择
-   */
-  private async selectWithConcurrentRoundRobin(
-    providers: ProviderEntry[],
-    category: string,
-    sessionId: string,
-    requestId: string
-  ): Promise<{ provider: string; model: string }> {
-    
-    // 按轮询顺序排序
-    const currentIndex = this.roundRobinIndex.get(category) || 0;
-    const orderedProviders = [
-      ...providers.slice(currentIndex),
-      ...providers.slice(0, currentIndex)
-    ];
-
-    // 尝试按顺序获取可用provider
-    for (let i = 0; i < orderedProviders.length; i++) {
-      const provider = orderedProviders[i];
-      
-      const lockResult = await this.concurrencyManager.acquireProviderLock({
-        sessionId,
-        requestId,
-        providerId: provider.provider,
-        priority: 'normal'
-      });
-
-      if (lockResult.success) {
-        // 更新轮询索引
-        const nextIndex = (currentIndex + i + 1) % providers.length;
-        this.roundRobinIndex.set(category, nextIndex);
-
-        logger.info(`Concurrent round-robin selection: ${provider.provider}`, {
-          sessionId,
-          roundRobinIndex: nextIndex,
-          concurrencyMetrics: this.concurrencyManager.getProviderMetrics(provider.provider)
-        }, requestId, 'routing');
-
-        return {
-          provider: provider.provider,
-          model: provider.model
-        };
-      }
-    }
-
-    // 所有provider都被占用，返回第一个
-    logger.warn('All providers occupied in round-robin, using first provider', {
-      sessionId, requestId, 
-      providerCount: providers.length
-    }, requestId, 'routing');
-
-    return {
-      provider: providers[0].provider,
-      model: providers[0].model
-    };
-  }
-
-  /**
-   * 并发感知的健康状态选择
-   */
-  private async selectWithConcurrentHealthBased(
-    providers: ProviderEntry[],
-    sessionId: string,
-    requestId: string
-  ): Promise<{ provider: string; model: string }> {
-    
-    // 按健康分数和并发利用率综合排序
-    const scoredProviders = providers.map(provider => {
-      const health = this.providerHealth.get(provider.provider);
-      const concurrencyMetrics = this.concurrencyManager.getProviderMetrics(provider.provider);
-      
-      let healthScore = 1.0;
-      if (health) {
-        const successRate = health.totalRequests > 0 ? health.successCount / health.totalRequests : 1.0;
-        const errorPenalty = Math.max(0, health.consecutiveErrors) * 0.1;
-        const cooldownPenalty = health.inCooldown ? 0.5 : 0;
-        healthScore = successRate - errorPenalty - cooldownPenalty;
-      }
-      
-      // 考虑并发负载
-      const concurrencyScore = concurrencyMetrics ? (1 - concurrencyMetrics.utilizationRate) : 1.0;
-      
-      // 综合分数
-      const finalScore = (healthScore * 0.7) + (concurrencyScore * 0.3);
-      
-      return {
-        provider,
-        score: Math.max(0.1, finalScore),
-        healthScore,
-        concurrencyScore
-      };
-    }).sort((a, b) => b.score - a.score);
-
-    // 按分数顺序尝试获取锁
-    for (const scoredProvider of scoredProviders) {
-      const lockResult = await this.concurrencyManager.acquireProviderLock({
-        sessionId,
-        requestId,
-        providerId: scoredProvider.provider.provider,
-        priority: 'normal'
-      });
-
-      if (lockResult.success) {
-        logger.info(`Concurrent health-based selection: ${scoredProvider.provider.provider}`, {
-          sessionId,
-          finalScore: scoredProvider.score.toFixed(3),
-          healthScore: scoredProvider.healthScore.toFixed(3),
-          concurrencyScore: scoredProvider.concurrencyScore.toFixed(3),
-          concurrencyMetrics: this.concurrencyManager.getProviderMetrics(scoredProvider.provider.provider)
-        }, requestId, 'routing');
-
-        return {
-          provider: scoredProvider.provider.provider,
-          model: scoredProvider.provider.model
-        };
-      }
-    }
-
-    // 降级处理
-    logger.warn('Health-based concurrent selection failed, using first provider', {
-      sessionId, requestId
-    }, requestId, 'routing');
-
-    return {
-      provider: providers[0].provider,
-      model: providers[0].model
-    };
-  }
-
-  /**
-   * 释放provider锁 (供外部调用)
-   */
-  public releaseProviderLock(sessionId: string, requestId?: string): boolean {
-    return this.concurrencyManager.releaseProviderLock(sessionId, requestId);
-  }
-
-  /**
-   * 获取并发状态快照
-   */
-  public getConcurrencySnapshot(): Record<string, any> {
-    return this.concurrencyManager.getOccupancySnapshot();
-  }
+  // 🔥 移除了所有并发控制方法 - HTTP天然隔离，无需进程锁
 
   /**
    * 获取响应统计数据
