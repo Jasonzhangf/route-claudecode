@@ -18,6 +18,8 @@ import { executeCodeCommand } from './code-command';
 import { getConfigPaths, needsMigration } from './utils/config-paths';
 import { migrateConfiguration } from './utils/migration';
 import { setupAutoStart } from './utils/autostart';
+import { spawn, exec } from 'child_process';
+import { promisify } from 'util';
 
 // Read version from package.json
 const packageJsonPath = join(__dirname, '..', 'package.json');
@@ -27,6 +29,138 @@ const VERSION = packageJson.version;
 const program = new Command();
 const configPaths = getConfigPaths();
 const DEFAULT_CONFIG_PATH = configPaths.configFile;
+const execAsync = promisify(exec);
+
+/**
+ * Start daemon mode - using rcc-daemon.sh script
+ */
+async function startDaemonMode(options: any): Promise<void> {
+  const projectRoot = resolve(__dirname, '..');
+  const daemonScript = join(projectRoot, 'rcc-daemon.sh');
+  
+  // Check if daemon script exists
+  if (!existsSync(daemonScript)) {
+    console.error(chalk.red(`❌ Daemon script not found: ${daemonScript}`));
+    console.error(chalk.gray('   Please ensure rcc-daemon.sh is in the project root'));
+    process.exit(1);
+  }
+  
+  try {
+    console.log(chalk.blue('🚀 Starting RCC daemon (dual-config mode)...'));
+    
+    // Execute daemon start command (daemon script already uses --dual-config by default)
+    const { stdout, stderr } = await execAsync(`bash "${daemonScript}" start`);
+    
+    if (stdout) {
+      console.log(stdout);
+    }
+    if (stderr) {
+      console.error(chalk.yellow(stderr));
+    }
+    
+    // Handle autostart if requested
+    if (options.autostart) {
+      console.log(chalk.blue('\n🔧 Setting up automatic startup...'));
+      try {
+        const autostartResult = await setupAutoStart({
+          configPath: join(homedir(), '.route-claude-code', 'config.json'),
+          port: 3456, // Primary development port
+          host: 'localhost',
+          debug: options.debug || false,
+          logLevel: options.logLevel || 'info'
+        });
+        
+        if (autostartResult.success) {
+          console.log(chalk.green('✅ Automatic startup configured!'));
+          console.log(chalk.gray(`   Service: ${autostartResult.serviceName}`));
+          console.log(chalk.gray(`   Status: ${autostartResult.message}`));
+        } else {
+          console.log(chalk.yellow('⚠️  Automatic startup setup failed:'));
+          console.log(chalk.red(`   ${autostartResult.error}`));
+        }
+      } catch (error) {
+        console.log(chalk.yellow('⚠️  Could not setup automatic startup:'));
+        console.log(chalk.red(`   ${error instanceof Error ? error.message : String(error)}`));
+      }
+    }
+    
+  } catch (error) {
+    console.error(chalk.red('❌ Failed to start daemon:'), error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}
+
+/**
+ * Stop daemon mode - using rcc-daemon.sh script
+ */
+async function stopDaemonMode(): Promise<void> {
+  const projectRoot = resolve(__dirname, '..');
+  const daemonScript = join(projectRoot, 'rcc-daemon.sh');
+  
+  // Check if daemon script exists
+  if (!existsSync(daemonScript)) {
+    console.error(chalk.red(`❌ Daemon script not found: ${daemonScript}`));
+    console.error(chalk.gray('   Please ensure rcc-daemon.sh is in the project root'));
+    process.exit(1);
+  }
+  
+  try {
+    console.log(chalk.blue('🛑 Stopping RCC daemon...'));
+    
+    // Execute daemon stop command
+    const { stdout, stderr } = await execAsync(`bash "${daemonScript}" stop`);
+    
+    if (stdout) {
+      console.log(stdout);
+    }
+    if (stderr) {
+      console.error(chalk.yellow(stderr));
+    }
+    
+  } catch (error) {
+    console.error(chalk.red('❌ Failed to stop daemon:'), error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+}
+
+/**
+ * Check daemon status - using rcc-daemon.sh script
+ */
+async function checkDaemonStatus(): Promise<void> {
+  const projectRoot = resolve(__dirname, '..');
+  const daemonScript = join(projectRoot, 'rcc-daemon.sh');
+  
+  // Check if daemon script exists
+  if (!existsSync(daemonScript)) {
+    console.error(chalk.red(`❌ Daemon script not found: ${daemonScript}`));
+    console.error(chalk.gray('   Please ensure rcc-daemon.sh is in the project root'));
+    process.exit(1);
+  }
+  
+  try {
+    console.log(chalk.blue('📊 Checking RCC daemon status...'));
+    
+    // Execute daemon status command
+    const { stdout, stderr } = await execAsync(`bash "${daemonScript}" status`);
+    
+    if (stdout) {
+      console.log(stdout);
+    }
+    if (stderr && stderr.trim()) {
+      console.error(chalk.yellow(stderr));
+    }
+    
+  } catch (error) {
+    // Status command might exit with non-zero code if daemon is not running
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes('not running')) {
+      console.log(chalk.red('❌ RCC daemon is not running'));
+    } else {
+      console.error(chalk.red('❌ Failed to check daemon status:'), errorMessage);
+    }
+    process.exit(1);
+  }
+}
 
 /**
  * Default configuration
@@ -213,18 +347,19 @@ function printEnvironmentSetup(port: number, host: string): void {
 }
 
 /**
- * Start command
+ * Start command - enhanced with daemon support
  */
 program
   .command('start')
-  .description('Start the Claude Code Router server')
+  .description('Start the Claude Code Router server (default: dual-config mode)')
   .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
   .option('-p, --port <number>', 'Server port', parseInt)
   .option('-h, --host <string>', 'Server host')
   .option('-d, --debug', 'Enable debug mode')
   .option('--log-level <level>', 'Log level (error, warn, info, debug)', 'info')
   .option('--autostart', 'Enable automatic startup on system boot')
-  .option('--dual-config', 'Start both development and release servers simultaneously')
+  .option('--single-config', 'Start only single server instead of dual-config mode')
+  .option('--daemon', 'Start in daemon mode (background process)')
   .action(async (options) => {
     try {
       // Check for migration before starting
@@ -248,8 +383,13 @@ program
       
       console.log(chalk.blue('🚀 Starting Claude Code Router...\n'));
 
-      // Check for dual config mode
-      if (options.dualConfig) {
+      // Check for daemon mode first
+      if (options.daemon) {
+        return await startDaemonMode(options);
+      }
+
+      // Default to dual config mode unless explicitly disabled
+      if (!options.singleConfig) {
         return await startDualConfigServers(options);
       }
 
@@ -344,14 +484,19 @@ program
   });
 
 /**
- * Status command
+ * Status command - enhanced with daemon support
  */
 program
   .command('status')
   .description('Check router status')
   .option('-p, --port <number>', 'Server port (overrides config)')
   .option('-h, --host <string>', 'Server host (overrides config)')
+  .option('--daemon', 'Check daemon status instead of direct server status')
   .action(async (options) => {
+    // Check for daemon mode first
+    if (options.daemon) {
+      return await checkDaemonStatus();
+    }
     const config = loadConfig(options.config);
     const host = options.host || config.server?.host || 'localhost';
     const port = options.port || config.server?.port || 3000;
@@ -580,7 +725,7 @@ program
   });
 
 /**
- * Stop command
+ * Stop command - enhanced with daemon support
  */
 program
   .command('stop')
@@ -589,7 +734,12 @@ program
   .option('-h, --host <string>', 'Server host', '127.0.0.1')
   .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
   .option('-f, --force', 'Force stop using kill signal if graceful shutdown fails')
+  .option('--daemon', 'Stop daemon mode (background process)')
   .action(async (options) => {
+    // Check for daemon mode first
+    if (options.daemon) {
+      return await stopDaemonMode();
+    }
     try {
       // Load configuration to get default port if not specified
       let config;

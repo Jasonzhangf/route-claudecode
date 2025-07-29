@@ -201,11 +201,10 @@ function createMacOSPlist(options: {
   logLevel: string;
   logsDir: string;
 }): string {
+  // 默认使用dual-config + daemon模式，确保开机自启动也是双服务器
   const args = [
     'start',
-    '--config', options.configPath,
-    '--port', options.port.toString(),
-    '--host', options.host,
+    '--daemon',
     '--log-level', options.logLevel
   ];
   
@@ -271,11 +270,10 @@ function createLinuxSystemdService(options: {
   logLevel: string;
   workingDir: string;
 }): string {
+  // 默认使用dual-config + daemon模式，确保开机自启动也是双服务器
   const args = [
     'start',
-    '--config', options.configPath,
-    '--port', options.port.toString(),
-    '--host', options.host,
+    '--daemon',
     '--log-level', options.logLevel
   ];
   
