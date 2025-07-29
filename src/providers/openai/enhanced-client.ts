@@ -36,7 +36,7 @@ export class EnhancedOpenAIClient implements Provider {
     // Use endpoint as full URL including path
     this.httpClient = axios.create({
       baseURL: this.endpoint,
-      timeout: 60000,
+      timeout: 300000, // 5 minute timeout for production
       headers: {
         'Content-Type': 'application/json',
         'User-Agent': 'claude-code-router/2.0.0'

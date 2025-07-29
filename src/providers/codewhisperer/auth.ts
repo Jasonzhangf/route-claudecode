@@ -8,6 +8,7 @@ import { join } from 'path';
 import { homedir } from 'os';
 import axios from 'axios';
 import { logger } from '@/utils/logger';
+import { getConfigPaths } from '@/utils/config-paths';
 
 export interface TokenData {
   accessToken: string;
@@ -70,7 +71,8 @@ export class CodeWhispererAuth {
    */
   private getLastRefreshFilePath(): string {
     const homeDir = homedir();
-    return join(homeDir, '.claude-code-router', 'last-token-refresh.json');
+    const configPaths = getConfigPaths();
+    return join(configPaths.configDir, 'last-token-refresh.json');
   }
 
   /**
@@ -281,7 +283,7 @@ export class CodeWhispererAuth {
           headers: {
             'Content-Type': 'application/json'
           },
-          timeout: 10000
+          timeout: 60000 // 1 minute timeout for token refresh
         }
       );
 
@@ -345,7 +347,7 @@ export class CodeWhispererAuth {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          timeout: 5000
+          timeout: 30000 // 30 second timeout for token validation
         }
       );
 

@@ -1,0 +1,119 @@
+{
+  "timestamp": "2025-07-28T19:27:22.150Z",
+  "test": "step2-provider-mapping",
+  "step1Summary": {
+    "total": 5,
+    "passed": 0,
+    "failed": 5,
+    "passRate": 0
+  },
+  "mappingTests": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "passRate": 100
+  },
+  "endToEndTests": {
+    "total": 5,
+    "passed": 1,
+    "failed": 4,
+    "passRate": 20
+  },
+  "results": {
+    "providerMappings": [
+      {
+        "provider": "codewhisperer-primary",
+        "tests": [
+          {
+            "category": "default",
+            "originalModel": "claude-sonnet-4-20250514",
+            "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+            "expected": "CLAUDE_SONNET_4_20250514_V1_0",
+            "actual": "CLAUDE_SONNET_4_20250514_V1_0",
+            "passed": true
+          },
+          {
+            "category": "thinking",
+            "originalModel": "claude-3-5-sonnet-20241022",
+            "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+            "expected": "CLAUDE_SONNET_4_20250514_V1_0",
+            "actual": "CLAUDE_SONNET_4_20250514_V1_0",
+            "passed": true
+          }
+        ]
+      },
+      {
+        "provider": "shuaihong-openai",
+        "tests": [
+          {
+            "category": "background",
+            "originalModel": "claude-3-5-haiku-20241022",
+            "targetModel": "gemini-2.5-flash",
+            "expected": "gemini-2.5-flash",
+            "actual": "gemini-2.5-flash",
+            "passed": true
+          },
+          {
+            "category": "longcontext",
+            "originalModel": "claude-3-5-sonnet-20241022",
+            "targetModel": "gemini-2.5-pro",
+            "expected": "gemini-2.5-pro",
+            "actual": "gemini-2.5-pro",
+            "passed": true
+          },
+          {
+            "category": "search",
+            "originalModel": "claude-sonnet-4-20250514",
+            "targetModel": "gemini-2.5-flash",
+            "expected": "gemini-2.5-flash",
+            "actual": "gemini-2.5-flash",
+            "passed": true
+          }
+        ]
+      }
+    ],
+    "endToEndFlow": [
+      {
+        "testName": "Default Category",
+        "originalModel": "claude-sonnet-4-20250514",
+        "category": "default",
+        "provider": "anthropic-test",
+        "targetModel": "claude-sonnet-4-20250514",
+        "correct": false
+      },
+      {
+        "testName": "Background Category (Haiku Model)",
+        "originalModel": "claude-3-5-haiku-20241022",
+        "category": "background",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "finalModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "correct": true
+      },
+      {
+        "testName": "Thinking Category (Explicit)",
+        "originalModel": "claude-sonnet-4-20250514",
+        "category": "thinking",
+        "provider": "anthropic-test",
+        "targetModel": "claude-sonnet-4-20250514",
+        "correct": false
+      },
+      {
+        "testName": "Long Context Category",
+        "originalModel": "claude-3-5-sonnet-20241022",
+        "category": "longcontext",
+        "provider": "anthropic-test",
+        "targetModel": "claude-sonnet-4-20250514",
+        "correct": false
+      },
+      {
+        "testName": "Search Category (With Tools)",
+        "originalModel": "claude-sonnet-4-20250514",
+        "category": "search",
+        "provider": "anthropic-test",
+        "targetModel": "claude-3-5-sonnet-20241022",
+        "correct": false
+      }
+    ]
+  }
+}

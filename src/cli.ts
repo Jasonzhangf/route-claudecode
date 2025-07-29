@@ -15,6 +15,8 @@ import { RouterServer } from './server';
 import { RouterConfig, ProviderConfig } from './types';
 import { logger } from './utils/logger';
 import { executeCodeCommand } from './code-command';
+import { getConfigPaths, needsMigration } from './utils/config-paths';
+import { migrateConfiguration } from './utils/migration';
 
 // Read version from package.json
 const packageJsonPath = join(__dirname, '..', 'package.json');
@@ -22,7 +24,8 @@ const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
 const VERSION = packageJson.version;
 
 const program = new Command();
-const DEFAULT_CONFIG_PATH = join(homedir(), '.claude-code-router', 'config.json');
+const configPaths = getConfigPaths();
+const DEFAULT_CONFIG_PATH = configPaths.configFile;
 
 /**
  * Default configuration
@@ -58,12 +61,12 @@ function loadConfig(configPath: string): RouterConfig {
  * Ensure config directory exists
  */
 function ensureConfigDir(): void {
-  const configDir = join(homedir(), '.claude-code-router');
+  const configDir = configPaths.configDir;
   if (!existsSync(configDir)) {
     require('fs').mkdirSync(configDir, { recursive: true });
   }
 
-  const logsDir = join(configDir, 'logs');
+  const logsDir = configPaths.logsDir;
   if (!existsSync(logsDir)) {
     require('fs').mkdirSync(logsDir, { recursive: true });
   }
@@ -108,6 +111,25 @@ program
   .option('--log-level <level>', 'Log level (error, warn, info, debug)', 'info')
   .action(async (options) => {
     try {
+      // Check for migration before starting
+      if (needsMigration()) {
+        console.log(chalk.yellow('🔄 Configuration migration needed...'));
+        console.log(chalk.gray('   Legacy config found at ~/.claude-code-router'));
+        console.log(chalk.gray('   Migrating to ~/.route-claude-code...'));
+        
+        const migrationResult = await migrateConfiguration();
+        
+        if (migrationResult.success) {
+          console.log(chalk.green(`✅ Migration completed! ${migrationResult.filesTransferred} files transferred`));
+          console.log(chalk.gray('   Now using ~/.route-claude-code for configuration'));
+        } else {
+          console.log(chalk.red('❌ Migration failed:'));
+          migrationResult.errors.forEach(error => console.log(chalk.red(`   • ${error}`)));
+          console.log(chalk.yellow('\n⚠️  Please run migration manually: node migrate-config.js'));
+        }
+        console.log('');
+      }
+      
       console.log(chalk.blue('🚀 Starting Claude Code Router...\n'));
 
       // Load configuration
@@ -296,6 +318,98 @@ program
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(chalk.red('❌ Config operation failed:'), errorMessage);
+      process.exit(1);
+    }
+  });
+
+/**
+ * Migrate command
+ */
+program
+  .command('migrate')
+  .description('Migrate configuration from ~/.claude-code-router to ~/.route-claude-code')
+  .option('--force', 'Force migration even if new config already exists')
+  .option('--backup', 'Create backup before migration')
+  .action(async (options) => {
+    try {
+      const { getLegacyConfigPaths, getNewConfigPaths } = require('./utils/config-paths');
+      const { migrateConfiguration, backupLegacyConfiguration, removeLegacyConfiguration } = require('./utils/migration');
+      
+      const legacyPaths = getLegacyConfigPaths();
+      const newPaths = getNewConfigPaths();
+      
+      console.log(chalk.blue('🔄 Configuration Migration Tool'));
+      console.log('================================');
+      
+      // Check if legacy directory exists
+      if (!existsSync(legacyPaths.configDir)) {
+        console.log(chalk.green('✅ No legacy configuration found - nothing to migrate'));
+        return;
+      }
+      
+      // Check if new directory already exists (unless forced)
+      if (existsSync(newPaths.configDir) && !options.force) {
+        console.log(chalk.yellow('⚠️  New configuration directory already exists'));
+        console.log(`   Legacy: ${legacyPaths.configDir}`);
+        console.log(`   New:    ${newPaths.configDir}`);
+        console.log('');
+        console.log('Use --force to overwrite or manually review configurations.');
+        return;
+      }
+      
+      // Create backup if requested
+      if (options.backup) {
+        console.log(chalk.blue('🔍 Creating backup...'));
+        const backupPath = await backupLegacyConfiguration();
+        if (backupPath) {
+          console.log(chalk.green(`✅ Backup created: ${backupPath}`));
+        } else {
+          console.log(chalk.red('❌ Failed to create backup'));
+          return;
+        }
+      }
+      
+      // Perform migration
+      console.log(chalk.blue('🚀 Starting migration...'));
+      const result = await migrateConfiguration();
+      
+      if (result.success) {
+        console.log(chalk.green('✅ Migration completed successfully!'));
+        console.log(`   Files transferred: ${result.filesTransferred}`);
+        console.log(`   From: ${legacyPaths.configDir}`);
+        console.log(`   To:   ${newPaths.configDir}`);
+        console.log('');
+        console.log(chalk.blue('🎉 Your configuration is now using the new path!'));
+        
+        // Ask about cleanup
+        const readline = require('readline');
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout
+        });
+        
+        rl.question('Remove legacy configuration directory? (y/N): ', async (answer: string) => {
+          if (answer.toLowerCase() === 'y') {
+            const removed = await removeLegacyConfiguration();
+            if (removed) {
+              console.log(chalk.green('✅ Legacy configuration removed'));
+            } else {
+              console.log(chalk.yellow('⚠️  Failed to remove legacy configuration'));
+            }
+          } else {
+            console.log(chalk.gray('Legacy configuration preserved'));
+          }
+          rl.close();
+        });
+        
+      } else {
+        console.log(chalk.red('❌ Migration failed:'));
+        result.errors.forEach((error: string) => console.log(chalk.red(`   • ${error}`)));
+      }
+      
+    } catch (error: any) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(chalk.red('❌ Migration failed:'), errorMessage);
       process.exit(1);
     }
   });

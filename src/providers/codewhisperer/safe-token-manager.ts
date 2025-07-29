@@ -8,6 +8,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { getConfigPaths } from '@/utils/config-paths';
 import axios from 'axios';
 import { logger } from '@/utils/logger';
 
@@ -50,7 +51,8 @@ export class SafeTokenManager {
 
   private constructor(customTokenPath?: string) {
     this.tokenPath = customTokenPath || join(homedir(), '.aws', 'sso', 'cache', 'kiro-auth-token.json');
-    this.statusPath = join(homedir(), '.claude-code-router', 'token-status.json');
+    const configPaths = getConfigPaths();
+    this.statusPath = join(configPaths.configDir, 'token-status.json');
     
     // 确保状态文件目录存在
     this.ensureStatusDirectory();

@@ -41,7 +41,7 @@ export class CodeWhispererClient implements Provider {
     
     this.httpClient = axios.create({
       baseURL: this.endpoint,
-      timeout: 60000, // 60 second timeout
+      timeout: 300000, // 5 minute timeout for production
       headers: {
         'Content-Type': 'application/json'
         // 完全模仿demo2，不设置User-Agent

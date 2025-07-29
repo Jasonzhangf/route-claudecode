@@ -663,8 +663,9 @@ API调用: Step4 (第三方API验证)
 
 # 启动脚本规范
 ## 统一脚本集合
+- **推荐启动**: `./rcc start` (简化启动器，支持正常Ctrl+C退出)
 - **完整开发流程**: `./fix-and-test.sh` (构建+启动+测试一体化)
-- **开发模式启动**: `./start-dev.sh` (自动构建+启动服务+日志记录)
+- **开发模式启动**: `./start-dev.sh` (自动构建+启动服务+日志记录，信号处理已修复)
 - **单独构建**: `./build.sh` (清理和构建项目)
 - **测试套件**: `./test-all.sh` (完整测试，包括API和transformer验证)
 - **本地安装**: `./install-local.sh` (构建+打包+全局安装)
@@ -676,8 +677,10 @@ API调用: Step4 (第三方API验证)
 - **启动脚本端口管理**: 自动监控端口冲突，直接关闭并继续启动，无需人工确认
 
 ## 服务管理
-- **状态检查**: `node dist/cli.js status`
-- **服务监控**: `tail -f /tmp/ccr-dev.log`
+- **推荐启动**: `./rcc start` (支持正常Ctrl+C退出)
+- **状态检查**: `./rcc status` 或 `node dist/cli.js status`
+- **停止服务**: `./rcc stop` 或 Ctrl+C (使用rcc时)
+- **服务监控**: 使用rcc时直接显示日志，或 `tail -f ~/.route-claude-code/logs/ccr-*.log`
 - **多实例处理**: 最后启动的服务器替代前面的实例
 - **对话ID**: 每次对话有独立ID，不受实例替换影响
 

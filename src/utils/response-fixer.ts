@@ -64,13 +64,13 @@ export function fixResponse(response: ResponseToFix, requestId: string): FixedRe
       
       // 如果文本中发现工具调用，则拆分
       if (fixedTextBlock.extractedTools.length > 0) {
-        // 添加修复后的文本块（如果有剩余文本）
-        if (fixedTextBlock.block.text.trim()) {
-          fixedContent.push(fixedTextBlock.block);
-        }
+        // ⚠️ 关键修复：完全跳过包含工具调用的原始文本块，避免显示剩余内容
+        // 不添加修复后的文本块，只添加提取的工具调用
+        
         // 添加提取的工具调用块
         fixedContent.push(...fixedTextBlock.extractedTools);
         fixes.push(`extracted_${fixedTextBlock.extractedTools.length}_tools_from_text`);
+        fixes.push('skipped_original_text_with_tool_calls');
       } else {
         fixedContent.push(fixedTextBlock.block);
       }

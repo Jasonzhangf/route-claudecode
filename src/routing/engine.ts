@@ -68,7 +68,7 @@ export class RoutingEngine {
 
     // Check for long context based on token count
     const tokenCount = this.calculateRequestTokens(request);
-    if (tokenCount > 60000) {
+    if (tokenCount > 45000) {
       return 'longcontext';
     }
 

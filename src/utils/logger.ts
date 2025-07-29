@@ -6,6 +6,7 @@
 import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { getConfigPaths } from './config-paths';
 
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
 
@@ -27,7 +28,8 @@ class Logger {
   private sessionLogFile: string | null = null;
 
   constructor() {
-    this.logDir = join(homedir(), '.claude-code-router', 'logs');
+    const configPaths = getConfigPaths();
+    this.logDir = configPaths.logsDir;
     this.ensureLogDir();
     this.initSessionLogFile();
   }

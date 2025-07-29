@@ -14,7 +14,8 @@
     "test:watch": "jest --watch",
     "clean": "rm -rf dist/",
     "prebuild": "npm run clean",
-    "release": "npm run build && npm publish"
+    "release": "npm run build && npm publish",
+    "migrate": "node migrate-config.js"
   },
   "keywords": [
     "claude",

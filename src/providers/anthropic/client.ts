@@ -34,6 +34,7 @@ export class AnthropicClient {
           'x-api-key': this.apiKey,
           'anthropic-version': '2023-06-01'
         },
+        signal: AbortSignal.timeout(30000), // 30 second timeout for health check
         body: JSON.stringify({
           model: 'claude-3-haiku-20240307',
           max_tokens: 1,
@@ -68,7 +69,8 @@ export class AnthropicClient {
         'x-api-key': this.apiKey,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify(anthropicRequest)
+      body: JSON.stringify(anthropicRequest),
+      signal: AbortSignal.timeout(300000) // 5 minute timeout for production
     });
 
     if (!response.ok) {
@@ -98,7 +100,8 @@ export class AnthropicClient {
         'x-api-key': this.apiKey,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify(anthropicRequest)
+      body: JSON.stringify(anthropicRequest),
+      signal: AbortSignal.timeout(300000) // 5 minute timeout for production
     });
 
     if (!response.ok) {

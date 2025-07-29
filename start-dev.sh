@@ -5,6 +5,23 @@
 
 set -e  # Exit on any error
 
+# Signal handler for clean shutdown
+cleanup() {
+    echo -e "\n${YELLOW}🛑 Shutting down server...${NC}"
+    if [ ! -z "$SERVER_PID" ] && kill -0 $SERVER_PID 2>/dev/null; then
+        kill $SERVER_PID
+        wait $SERVER_PID 2>/dev/null || true
+        echo -e "${GREEN}✅ Server stopped gracefully${NC}"
+    fi
+    if [ ! -z "$TAIL_PID" ] && kill -0 $TAIL_PID 2>/dev/null; then
+        kill $TAIL_PID 2>/dev/null || true
+    fi
+    exit 0
+}
+
+# Trap signals for clean shutdown
+trap cleanup SIGINT SIGTERM
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -92,7 +109,11 @@ else
         echo -e "${GREEN}🌐 Available at: http://127.0.0.1:$PORT${NC}"
         echo ""
         echo -e "${BLUE}📊 Monitoring logs (Ctrl+C to stop):${NC}"
-        tail -f "$LOG_FILE"
+        tail -f "$LOG_FILE" &
+        TAIL_PID=$!
+        
+        # Wait for interrupt signal
+        wait $TAIL_PID 2>/dev/null || true
     else
         echo -e "${RED}❌ Server failed to start${NC}"
         echo -e "${RED}📋 Check logs: $LOG_FILE${NC}"

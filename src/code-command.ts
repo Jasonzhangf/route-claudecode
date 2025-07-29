@@ -7,6 +7,7 @@ import chalk from 'chalk';
 import { resolve, join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { RouterConfig } from './types';
+import { getConfigPaths } from './utils/config-paths';
 
 /**
  * Load configuration from file
@@ -55,7 +56,8 @@ export async function executeCodeCommand(args: string[], options: any) {
 
     // Reference counting for service management
     const refCountFile = path.join(os.tmpdir(), 'ccr-reference-count.txt');
-    const pidFile = path.join(os.homedir(), '.claude-code-router', '.ccr.pid');
+    const configPaths = getConfigPaths();
+    const pidFile = path.join(configPaths.configDir, '.ccr.pid');
 
     function incrementReferenceCount(): void {
       let count = 0;
