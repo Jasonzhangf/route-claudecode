@@ -17,39 +17,34 @@ export interface TokenData {
   profileArn?: string;
   authMethod?: string;
   provider?: string;
-  // Track when this specific token was last refreshed
   lastRefreshedBy?: string;
   lastRefreshTime?: string;
-  // Allow any additional fields to preserve original token structure
-  [key: string]: any;
 }
 
 export class CodeWhispererAuth {
   private tokenPath: string;
   private lastRefreshFilePath: string;
   private cachedToken: TokenData | null = null;
+  private refreshTimer: NodeJS.Timeout | null = null;
   private lastRefreshTime: Date | null = null;
+  private readonly REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
   private readonly MIN_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes minimum between refreshes
   private isRefreshing: boolean = false;
   private refreshPromise: Promise<TokenData> | null = null;
-  
-  // Token validation state
-  private tokenInvalid: boolean = false;
-  private lastValidationTime: Date | null = null;
-  private consecutiveFailures: number = 0;
-  private readonly MAX_CONSECUTIVE_FAILURES = 3;
-  private lastRefreshAttempt: Date | null = null;
-  private readonly REFRESH_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
+  private configProfileArn?: string;
+  private failureCount: number = 0;
+  private isBlocked: boolean = false;
 
-  constructor(customTokenPath?: string) {
+  constructor(customTokenPath?: string, profileArn?: string) {
+    this.configProfileArn = profileArn;
     this.tokenPath = customTokenPath ? this.expandPath(customTokenPath) : this.getTokenFilePath();
     this.lastRefreshFilePath = this.getLastRefreshFilePath();
     this.loadLastRefreshTime();
-    // No periodic refresh - use monitoring-based approach
+    this.startPeriodicRefresh();
   }
 
   /**
-   * Expand path with ~ support
+   * Expand ~ path to full path (Demo2 style path handling)
    */
   private expandPath(path: string): string {
     if (path.startsWith('~/')) {
@@ -70,7 +65,6 @@ export class CodeWhispererAuth {
    * Get the path for storing last refresh time
    */
   private getLastRefreshFilePath(): string {
-    const homeDir = homedir();
     const configPaths = getConfigPaths();
     return join(configPaths.configDir, 'last-token-refresh.json');
   }
@@ -110,121 +104,97 @@ export class CodeWhispererAuth {
   }
 
   /**
-   * Check if this specific token can be refreshed (30-minute minimum since last refresh)
+   * Check if enough time has passed since last refresh (30-minute minimum)
    */
-  private canRefreshToken(tokenData: TokenData): boolean {
-    // If token doesn't have lastRefreshTime, it hasn't been refreshed by us, allow refresh
-    if (!tokenData.lastRefreshTime) {
-      logger.debug('Token has no refresh history, allowing refresh');
+  private canRefreshToken(): boolean {
+    if (!this.lastRefreshTime) {
       return true;
     }
     
-    const lastRefreshTime = new Date(tokenData.lastRefreshTime);
-    const timeSinceLastRefresh = Date.now() - lastRefreshTime.getTime();
+    const timeSinceLastRefresh = Date.now() - this.lastRefreshTime.getTime();
     const canRefresh = timeSinceLastRefresh >= this.MIN_REFRESH_INTERVAL;
-    
-    logger.debug('Token-specific refresh interval check', {
-      tokenLastRefreshTime: lastRefreshTime.toISOString(),
-      timeSinceLastRefresh: `${Math.floor(timeSinceLastRefresh / (60 * 1000))} minutes`,
-      minInterval: `${this.MIN_REFRESH_INTERVAL / (60 * 1000)} minutes`,
-      canRefresh,
-      accessTokenPrefix: tokenData.accessToken.substring(0, 20) + '...'
-    });
     
     if (!canRefresh) {
       const remainingTime = Math.ceil((this.MIN_REFRESH_INTERVAL - timeSinceLastRefresh) / (60 * 1000));
-      logger.warn(`Token refresh blocked - ${remainingTime} minutes remaining since last refresh of this token`);
+      logger.debug(`Token refresh blocked - ${remainingTime} minutes remaining until next allowed refresh`);
     }
     
     return canRefresh;
   }
 
   /**
-   * Get current token - non-blocking, uses cached token
-   * Background thread handles refresh every 10 minutes
+   * Get current token - Demo2 style: simple and direct
+   * Always ensures fresh token availability
    */
   async getToken(): Promise<string> {
-    // Check if token has been marked as invalid due to consecutive failures
-    if (this.tokenInvalid) {
-      // Check if cooldown period has passed
-      if (this.lastRefreshAttempt) {
-        const timeSinceLast = Date.now() - this.lastRefreshAttempt.getTime();
-        if (timeSinceLast < this.REFRESH_COOLDOWN_MS) {
-          const remainingMinutes = Math.ceil((this.REFRESH_COOLDOWN_MS - timeSinceLast) / (60 * 1000));
-          throw new Error(`Token blocked due to ${this.consecutiveFailures} consecutive authentication failures. Cannot retry for ${remainingMinutes} more minutes.`);
-        } else {
-          // Cooldown has passed, allow one more attempt by resetting state
-          logger.info('Cooldown period passed, allowing token refresh attempt');
-          this.tokenInvalid = false;
-          this.consecutiveFailures = 0;
-          this.lastRefreshAttempt = null;
-        }
-      } else {
-        throw new Error(`Token blocked due to ${this.consecutiveFailures} consecutive authentication failures. Please refresh your token manually.`);
-      }
-    }
-    
     try {
-      // If we have a valid cached token, return it immediately
-      if (this.cachedToken && this.isTokenValid(this.cachedToken)) {
-        logger.debug('Using cached valid token');
-        this.resetFailureCount(); // Reset on successful use
-        return this.cachedToken.accessToken;
-      }
-      
-      // If we're currently refreshing, wait for that to complete
-      if (this.isRefreshing && this.refreshPromise) {
-        logger.debug('Token refresh in progress, waiting...');
-        const refreshedToken = await this.refreshPromise;
-        return refreshedToken.accessToken;
-      }
-      
-      // Read token from file
-      logger.debug('Reading token from file');
+      // Read token from file (always fresh read)
       const tokenData = this.readTokenFromFile();
       
-      // Check token validity
-      const isValid = this.isTokenValid(tokenData);
-      logger.debug('Token validation result', {
-        expiresAt: tokenData.expiresAt,
-        isValid,
-        currentTime: new Date().toISOString()
-      });
-      
-      // If file token is valid, cache and return it
-      if (isValid) {
-        logger.debug('Token is valid, caching for future use');
+      // If token is valid, use it directly
+      if (this.isTokenValid(tokenData)) {
         this.cachedToken = tokenData;
-        this.resetFailureCount(); // Reset on successful validation
         return tokenData.accessToken;
       }
       
-      // Token is expired, attempt refresh if allowed
-      logger.info('Token is expired, attempting refresh', {
-        expiresAt: tokenData.expiresAt,
-        currentTime: new Date().toISOString()
-      });
-      
-      const refreshedToken = await this.performRefresh(tokenData);
-      logger.info('Token refresh completed successfully');
-      // NOTE: Don't reset failure count here - only reset on successful API call
-      // this.resetFailureCount(); // Reset on successful refresh
+      // Token is expired, do immediate refresh (Demo2 style)
+      logger.info('Token expired, performing immediate refresh (Demo2 style)...');
+      const refreshedToken = await this.performSyncRefresh(tokenData);
       return refreshedToken.accessToken;
-      
     } catch (error) {
-      logger.error('Failed to get CodeWhisperer token', {
-        error: error instanceof Error ? error.message : String(error),
-        tokenPath: this.tokenPath
-      });
+      logger.error('Failed to get CodeWhisperer token', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`CodeWhisperer authentication failed: ${errorMessage}`);
     }
   }
 
   /**
+   * Startup token validation and refresh - Demo2 style
+   * Called during provider initialization
+   */
+  async validateAndRefreshOnStartup(): Promise<void> {
+    try {
+      logger.info('Startup token validation (Demo2 style)...');
+      
+      // Try to read token
+      const tokenData = this.readTokenFromFile();
+      
+      // If token is expired or will expire soon, refresh it
+      if (!this.isTokenValid(tokenData)) {
+        logger.info('Token expired or invalid on startup, refreshing...');
+        await this.performSyncRefresh(tokenData);
+        logger.info('Startup token refresh completed successfully');
+      } else {
+        logger.info('Startup token validation passed - token is valid');
+        this.cachedToken = tokenData;
+      }
+    } catch (error) {
+      logger.error('Startup token validation failed', error);
+      throw new Error(`Startup token validation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Get profileArn from config or token file
+   */
+  getProfileArn(): string | undefined {
+    if (this.configProfileArn) {
+      return this.configProfileArn;
+    }
+    
+    try {
+      const tokenData = this.readTokenFromFile();
+      return tokenData.profileArn;
+    } catch (error) {
+      logger.debug('Failed to read profileArn from token file', error);
+      return undefined;
+    }
+  }
+
+  /**
    * Read token data from file
    */
-  public readTokenFromFile(): TokenData {
+  readTokenFromFile(): TokenData {
     if (!existsSync(this.tokenPath)) {
       throw new Error(`Token file not found at ${this.tokenPath}. Please install Kiro and login.`);
     }
@@ -255,9 +225,8 @@ export class CodeWhispererAuth {
     const expiryTime = new Date(token.expiresAt);
     const now = new Date();
     
-    // Reduce buffer to 2 minutes to handle timezone edge cases
-    // This ensures we don't prematurely invalidate tokens due to timezone differences
-    return expiryTime.getTime() - now.getTime() > 2 * 60 * 1000;
+    // Add 5 minute buffer before expiry
+    return expiryTime.getTime() - now.getTime() > 5 * 60 * 1000;
   }
 
   /**
@@ -268,10 +237,13 @@ export class CodeWhispererAuth {
   }
 
   /**
-   * Refresh the access token using refresh token
+   * Refresh the access token using refresh token (Demo2 style)
+   * Demo2只使用3个基本字段：accessToken, refreshToken, expiresAt
+   * 但要保护所有现有metadata字段
    */
   async refreshToken(currentToken: TokenData): Promise<TokenData> {
     try {
+      // Demo2风格的refresh请求 - 只发送refreshToken
       const refreshRequest = {
         refreshToken: currentToken.refreshToken
       };
@@ -283,7 +255,7 @@ export class CodeWhispererAuth {
           headers: {
             'Content-Type': 'application/json'
           },
-          timeout: 60000 // 1 minute timeout for token refresh
+          timeout: 10000
         }
       );
 
@@ -291,18 +263,14 @@ export class CodeWhispererAuth {
         throw new Error(`Token refresh failed with status ${response.status}`);
       }
 
-      // Calculate expiresAt from expiresIn (API returns seconds, we need ISO timestamp)
-      const expiresAt = response.data.expiresAt || 
-        (response.data.expiresIn ? new Date(Date.now() + response.data.expiresIn * 1000).toISOString() : null);
-
-      // Preserve all original fields and only update the refreshed ones
+      // 🔑 CRITICAL: Demo2风格 - 保护所有现有字段，只更新token相关字段
       const newTokenData: TokenData = {
-        ...currentToken, // Keep all original fields
+        ...currentToken, // 保护所有现有字段(profileArn, authMethod, provider等)
+        // 只更新Demo2返回的3个核心字段
         accessToken: response.data.accessToken,
         refreshToken: response.data.refreshToken,
-        expiresAt: expiresAt,
-        profileArn: response.data.profileArn || currentToken.profileArn,
-        // Mark when and by whom this token was refreshed
+        expiresAt: response.data.expiresAt,
+        // 添加追踪字段
         lastRefreshedBy: 'claude-code-router',
         lastRefreshTime: new Date().toISOString()
       };
@@ -310,10 +278,7 @@ export class CodeWhispererAuth {
       // Save new token to file
       this.saveTokenToFile(newTokenData);
       
-      logger.debug('Token refreshed successfully', {
-        preservedFields: Object.keys(currentToken),
-        updatedFields: ['accessToken', 'refreshToken', 'expiresAt']
-      });
+      logger.debug('Token refreshed successfully (Demo2 style)');
       return newTokenData;
     } catch (error) {
       logger.error('Failed to refresh token', error);
@@ -347,7 +312,7 @@ export class CodeWhispererAuth {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          timeout: 30000 // 30 second timeout for token validation
+          timeout: 5000
         }
       );
 
@@ -366,182 +331,92 @@ export class CodeWhispererAuth {
   }
 
   /**
-   * Report authentication failure - used by client to track failures
+   * Start periodic token refresh every 10 minutes in background
    */
-  reportAuthFailure(error?: any, httpCode?: number): void {
-    this.consecutiveFailures++;
-    this.lastValidationTime = new Date();
-    this.lastRefreshAttempt = new Date(); // Track when we last attempted refresh
-    
-    // 🔍 ENHANCED ERROR REPORTING with detailed failure analysis
-    const errorDetails = this.analyzeAuthFailure(error, httpCode);
-    
-    logger.error(`🚨 CodeWhisperer Authentication Failure Detailed Report`, {
-      failureCount: `${this.consecutiveFailures}/${this.MAX_CONSECUTIVE_FAILURES}`,
-      tokenPath: this.tokenPath,
-      httpStatusCode: httpCode,
-      errorCategory: errorDetails.category,
-      errorMessage: errorDetails.message,
-      possibleCause: errorDetails.possibleCause,
-      recommendedAction: errorDetails.recommendedAction,
-      tokenStatus: {
-        hasAccessToken: !!this.cachedToken?.accessToken,
-        hasRefreshToken: !!this.cachedToken?.refreshToken,
-        tokenPrefix: this.cachedToken?.accessToken?.substring(0, 20) + '...',
-        expiresAt: this.cachedToken?.expiresAt,
-        lastRefreshTime: this.cachedToken?.lastRefreshTime
-      },
-      refreshCooldownUntil: new Date(Date.now() + this.REFRESH_COOLDOWN_MS).toISOString()
-    });
-    
-    if (this.consecutiveFailures >= this.MAX_CONSECUTIVE_FAILURES) {
-      this.tokenInvalid = true;
-      logger.error(`🔒 Token BLOCKED - ${this.consecutiveFailures} consecutive authentication failures`, {
-        blockDuration: '10 minutes',
-        action: 'All API calls will be blocked',
-        recovery: 'Run `aws sso login` to refresh your credentials'
-      });
+  private startPeriodicRefresh(): void {
+    // Clear any existing timer
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
     }
-    
-    // Clear cached token on any auth failure
-    this.clearCache();
-  }
 
-  /**
-   * 🔍 Analyze authentication failure to provide detailed error information
-   */
-  private analyzeAuthFailure(error?: any, httpCode?: number): {
-    category: string;
-    message: string;
-    possibleCause: string;
-    recommendedAction: string;
-  } {
-    const errorStr = error instanceof Error ? error.message : String(error || '');
-    const errorLower = errorStr.toLowerCase();
-    
-    // 401 Unauthorized
-    if (httpCode === 401) {
-      return {
-        category: 'TOKEN_EXPIRED_OR_INVALID',
-        message: 'Token is expired or invalid',
-        possibleCause: 'Your AWS SSO session has expired or the token format is incorrect',
-        recommendedAction: 'Run `aws sso login` to refresh your credentials'
-      };
-    }
-    
-    // 403 Forbidden
-    if (httpCode === 403) {
-      return {
-        category: 'INSUFFICIENT_PERMISSIONS',
-        message: 'Token lacks required permissions',
-        possibleCause: 'Your AWS account may not have CodeWhisperer access or the profile ARN is incorrect',
-        recommendedAction: 'Check your AWS account permissions and ensure CodeWhisperer is enabled'
-      };
-    }
-    
-    // Token refresh specific errors
-    if (errorLower.includes('refresh')) {
-      if (errorLower.includes('expired') || errorLower.includes('invalid')) {
-        return {
-          category: 'REFRESH_TOKEN_INVALID',
-          message: 'Refresh token is expired or invalid',
-          possibleCause: 'Your refresh token has expired and cannot be used to get a new access token',
-          recommendedAction: 'Run `aws sso login` to obtain fresh credentials'
-        };
-      }
-      
-      return {
-        category: 'REFRESH_FAILED',
-        message: 'Token refresh request failed',
-        possibleCause: 'Network issue or authentication service unavailable',
-        recommendedAction: 'Check network connection and retry in a few minutes'
-      };
-    }
-    
-    // Network related errors
-    if (errorLower.includes('network') || errorLower.includes('timeout') || errorLower.includes('econnreset')) {
-      return {
-        category: 'NETWORK_ERROR',
-        message: 'Network connection failed during authentication',
-        possibleCause: 'Network connectivity issue or authentication service is down',
-        recommendedAction: 'Check your internet connection and retry'
-      };
-    }
-    
-    // File access errors
-    if (errorLower.includes('file') || errorLower.includes('enoent')) {
-      return {
-        category: 'TOKEN_FILE_MISSING',
-        message: 'Token file not found',
-        possibleCause: `Token file missing at ${this.tokenPath}`,
-        recommendedAction: 'Run `aws sso login` to create token file'
-      };
-    }
-    
-    // Default case
-    return {
-      category: 'UNKNOWN_AUTH_ERROR',
-      message: errorStr || 'Unknown authentication error',
-      possibleCause: 'Unexpected authentication error occurred',
-      recommendedAction: 'Check logs for more details and try `aws sso login`'
-    };
-  }
+    this.refreshTimer = setInterval(() => {
+      this.triggerBackgroundRefresh();
+    }, this.REFRESH_INTERVAL);
 
-  /**
-   * Reset failure count (called on successful authentication)
-   */
-  resetFailureCount(): void {
-    if (this.consecutiveFailures > 0) {
-      logger.debug(`Resetting failure count (was ${this.consecutiveFailures})`);
-      this.consecutiveFailures = 0;
-      this.tokenInvalid = false;
-    }
+    logger.debug('Started periodic token refresh timer (10-minute interval)');
   }
-
-  /**
-   * Check if token is currently blocked due to failures
-   */
-  isTokenBlocked(): boolean {
-    if (!this.tokenInvalid) {
-      return false;
-    }
-    
-    // If token is invalid, check if cooldown period has passed
-    if (this.lastRefreshAttempt) {
-      const timeSinceLast = Date.now() - this.lastRefreshAttempt.getTime();
-      return timeSinceLast < this.REFRESH_COOLDOWN_MS;
-    }
-    
-    return true;
-  }
-
-  /**
-   * Get remaining cooldown time in minutes
-   */
-  getRemainingCooldownMinutes(): number {
-    if (!this.tokenInvalid || !this.lastRefreshAttempt) {
-      return 0;
-    }
-    
-    const timeSinceLast = Date.now() - this.lastRefreshAttempt.getTime();
-    if (timeSinceLast >= this.REFRESH_COOLDOWN_MS) {
-      return 0;
-    }
-    
-    return Math.ceil((this.REFRESH_COOLDOWN_MS - timeSinceLast) / (60 * 1000));
-  }
-
-  /**
-   * Manually unblock token (for recovery scenarios)
-   */
-  unblockToken(): void {
-    logger.info('Manually unblocking token');
-    this.tokenInvalid = false;
-    this.consecutiveFailures = 0;
-    this.clearCache();
-  }
-
   
+  /**
+   * Trigger background token refresh (non-blocking)
+   */
+  private triggerBackgroundRefresh(): void {
+    // Don't start multiple refresh operations
+    if (this.isRefreshing) {
+      return;
+    }
+    
+    // Check if we can refresh (30-minute minimum interval)
+    if (!this.canRefreshToken()) {
+      logger.debug('Background refresh skipped - 30-minute minimum interval not met');
+      return;
+    }
+    
+    // Run refresh in background without blocking
+    setImmediate(async () => {
+      try {
+        const tokenData = this.readTokenFromFile();
+        await this.performRefresh(tokenData);
+      } catch (error) {
+        logger.error('Background token refresh failed', error);
+      }
+    });
+  }
+  
+  /**
+   * Perform synchronous token refresh (Demo2 style)
+   * No time interval restrictions, always refreshes when called
+   */
+  private async performSyncRefresh(currentToken: TokenData): Promise<TokenData> {
+    try {
+      logger.info('Performing synchronous token refresh (Demo2 style)');
+      const refreshedToken = await this.refreshToken(currentToken);
+      this.cachedToken = refreshedToken;
+      this.lastRefreshTime = new Date();
+      this.saveLastRefreshTime();
+      this.resetFailureCount(); // Reset failure count on successful refresh
+      logger.info('Synchronous token refresh completed successfully');
+      return refreshedToken;
+    } catch (error) {
+      logger.error('Synchronous token refresh failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle 403/401 authentication error - Demo2 style
+   * Immediately refresh token and return new token
+   */
+  async handleAuthError(): Promise<string> {
+    try {
+      logger.info('Handling authentication error - performing immediate token refresh (Demo2 style)');
+      
+      // Clear cached token
+      this.cachedToken = null;
+      
+      // Read fresh token from file
+      const tokenData = this.readTokenFromFile();
+      
+      // Force refresh regardless of expiry
+      const refreshedToken = await this.performSyncRefresh(tokenData);
+      
+      logger.info('Authentication error handled - token refreshed successfully');
+      return refreshedToken.accessToken;
+    } catch (error) {
+      logger.error('Failed to handle authentication error', error);
+      throw new Error(`Authentication error handling failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   /**
    * Perform actual token refresh with proper synchronization
    */
@@ -551,9 +426,9 @@ export class CodeWhispererAuth {
       return this.refreshPromise;
     }
     
-    // Double-check 30-minute interval for this specific token before actual refresh
-    if (!this.canRefreshToken(currentToken)) {
-      throw new Error('Token refresh blocked - 30-minute minimum interval not met for this token');
+    // Double-check 30-minute interval before actual refresh
+    if (!this.canRefreshToken()) {
+      throw new Error('Token refresh blocked - 30-minute minimum interval not met');
     }
     
     this.isRefreshing = true;
@@ -572,6 +447,16 @@ export class CodeWhispererAuth {
     }
   }
 
+  /**
+   * Stop periodic refresh (for cleanup)
+   */
+  stopPeriodicRefresh(): void {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+      logger.debug('Stopped periodic token refresh timer');
+    }
+  }
 
   /**
    * Get authentication headers for CodeWhisperer requests
@@ -592,7 +477,7 @@ export class CodeWhispererAuth {
     try {
       const tokenData = this.readTokenFromFile();
       const timeSinceLastRefresh = this.lastRefreshTime ? Date.now() - this.lastRefreshTime.getTime() : null;
-      const canRefresh = this.canRefreshToken(tokenData);
+      const canRefresh = this.canRefreshToken();
       const minutesUntilNextRefresh = this.lastRefreshTime && !canRefresh 
         ? Math.ceil((this.MIN_REFRESH_INTERVAL - (Date.now() - this.lastRefreshTime.getTime())) / (60 * 1000))
         : 0;
@@ -606,14 +491,8 @@ export class CodeWhispererAuth {
         timeSinceLastRefresh: timeSinceLastRefresh ? `${Math.floor(timeSinceLastRefresh / (60 * 1000))} minutes` : null,
         canRefreshNow: canRefresh,
         minutesUntilNextRefresh: minutesUntilNextRefresh,
-        monitoringEnabled: true,
-        minRefreshInterval: `${this.MIN_REFRESH_INTERVAL / (60 * 1000)} minutes`,
-        // Monitoring state
-        isBlocked: this.isTokenBlocked(),
-        consecutiveFailures: this.consecutiveFailures,
-        maxFailures: this.MAX_CONSECUTIVE_FAILURES,
-        remainingCooldownMinutes: this.getRemainingCooldownMinutes(),
-        lastFailureTime: this.lastRefreshAttempt?.toISOString()
+        periodicRefreshActive: !!this.refreshTimer,
+        minRefreshInterval: `${this.MIN_REFRESH_INTERVAL / (60 * 1000)} minutes`
       };
     } catch (error) {
       return {
@@ -623,9 +502,45 @@ export class CodeWhispererAuth {
   }
 
   /**
+   * Reset failure count on successful requests
+   */
+  resetFailureCount(): void {
+    this.failureCount = 0;
+    this.isBlocked = false;
+  }
+
+  /**
+   * Report authentication failure for monitoring
+   */
+  reportAuthFailure(error: any, statusCode?: number): void {
+    this.failureCount++;
+    logger.warn('Authentication failure reported', {
+      failureCount: this.failureCount,
+      statusCode,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    
+    // Block token after 3 consecutive failures
+    if (this.failureCount >= 3) {
+      this.isBlocked = true;
+      logger.error('Token blocked due to consecutive authentication failures', {
+        failureCount: this.failureCount
+      });
+    }
+  }
+
+  /**
+   * Check if token is blocked due to failures
+   */
+  isTokenBlocked(): boolean {
+    return this.isBlocked;
+  }
+
+  /**
    * Cleanup resources
    */
   destroy(): void {
+    this.stopPeriodicRefresh();
     this.clearCache();
   }
 }

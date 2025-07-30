@@ -251,7 +251,7 @@ export interface RouterConfig {
     logDir: string;
   };
   hooks: Hook[];
-  concurrency?: import('./concurrency').ConcurrentLoadBalancingConfig;
+  // Removed concurrency configuration - using simple provider management
 }
 
 // Utility types

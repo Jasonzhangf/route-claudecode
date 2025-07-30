@@ -4,21 +4,22 @@
  */
 
 import { BaseRequest, RoutingCategory, CategoryRouting, ProviderHealth, FailoverTrigger, ProviderEntry, LoadBalancingConfig, FailoverConfig } from '@/types';
-import { ConcurrentLoadBalancingConfig } from '@/types/concurrency';
 import { logger } from '@/utils/logger';
 import { calculateTokenCount } from '@/utils/tokenizer';
 import { responseStatsManager } from '@/utils/response-stats';
+import { SimpleProviderManager } from './simple-provider-manager';
 export class RoutingEngine {
   private providerHealth: Map<string, ProviderHealth> = new Map();
-  private roundRobinIndex: Map<string, number> = new Map();
+  private simpleProviderManager: SimpleProviderManager;
   
   // 临时禁用的providers - 非持久化存储
   private temporarilyDisabledProviders: Set<string> = new Set();
   
-  constructor(private routingConfig: Record<RoutingCategory, CategoryRouting>, concurrencyConfig?: ConcurrentLoadBalancingConfig) {
-    // 🚀 移除并发管理 - HTTP本身就是天然隔离的
+  constructor(private routingConfig: Record<RoutingCategory, CategoryRouting>) {
+    // Initialize simple provider manager for round-robin and blacklisting
+    this.simpleProviderManager = new SimpleProviderManager();
 
-    logger.info('Routing engine initialized with category-based configuration', {
+    logger.info('Routing engine initialized with simplified provider management', {
       categories: Object.keys(routingConfig),
       hasBackup: Object.values(routingConfig).some(config => config.backup && config.backup.length > 0),
       hasMultiProvider: Object.values(routingConfig).some(config => config.providers && config.providers.length > 0)
@@ -88,7 +89,7 @@ export class RoutingEngine {
   }
 
   /**
-   * Select from multi-provider configuration with concurrent load balancing
+   * Select from multi-provider configuration with simple round-robin and blacklisting
    */
   private async selectFromMultiProvider(
     categoryRule: CategoryRouting,
@@ -96,341 +97,111 @@ export class RoutingEngine {
     requestId: string
   ): Promise<{ provider: string; model: string }> {
     const providers = categoryRule.providers!;
-    const loadBalancingConfig = categoryRule.loadBalancing || { enabled: false, strategy: 'round_robin' };
-    const failoverConfig = categoryRule.failover || { enabled: false, triggers: [], cooldown: 60 };
     
-    logger.debug(`Multi-provider selection for ${category}`, {
+    logger.debug(`Simplified multi-provider selection for ${category}`, {
       providerCount: providers.length,
-      loadBalancing: loadBalancingConfig.enabled,
-      strategy: loadBalancingConfig.strategy,
-      failoverEnabled: failoverConfig.enabled
+      allProviders: providers.map(p => p.provider)
     }, requestId, 'routing');
 
-    // Apply error priority fallback if failover is enabled
-    let availableProviders = providers;
-    if (failoverConfig.enabled) {
-      availableProviders = this.applyFailoverFiltering(providers, failoverConfig, requestId);
-    }
-
-    // Filter healthy providers
-    const healthyProviders = availableProviders.filter(p => this.isProviderHealthy(p.provider));
+    // Extract provider IDs for simple manager
+    const providerIds = providers.map(p => p.provider);
     
-    if (healthyProviders.length === 0) {
-      logger.error('No healthy providers available in multi-provider config', {
-        category,
-        totalProviders: providers.length,
-        availableAfterFailover: availableProviders.length,
-        allProviders: providers.map(p => p.provider)
+    // Use simple provider manager for round-robin with blacklist filtering
+    const selectedProviderId = this.simpleProviderManager.selectProvider(providerIds, category);
+    
+    if (!selectedProviderId) {
+      logger.error('No providers available', { category, providerIds }, requestId, 'routing');
+      throw new Error(`No providers available for category: ${category}`);
+    }
+    
+    // Find the corresponding provider entry to get the model
+    const selectedProviderEntry = providers.find(p => p.provider === selectedProviderId);
+    if (!selectedProviderEntry) {
+      logger.error('Selected provider not found in configuration', {
+        selectedProviderId,
+        availableProviders: providers.map(p => p.provider)
       }, requestId, 'routing');
-      
-      // Last resort: use first provider despite health status
+      // Fallback to first provider
       return {
         provider: providers[0].provider,
         model: providers[0].model
       };
     }
 
-    // 🚀 简化: 直接使用负载均衡，无需并发控制
-
-    // Apply load balancing strategy
-    let selectedProvider: ProviderEntry;
-    
-    if (!loadBalancingConfig.enabled) {
-      // No load balancing: select first healthy provider by weight
-      const sortedHealthy = healthyProviders.sort((a, b) => (a.weight || 1) - (b.weight || 1));
-      selectedProvider = sortedHealthy[0];
-      logger.debug(`Selected first healthy provider: ${selectedProvider.provider}`, {
-        weight: selectedProvider.weight || 1
-      }, requestId, 'routing');
-    } else {
-      selectedProvider = this.applyLoadBalancingStrategy(
-        healthyProviders, 
-        loadBalancingConfig.strategy, 
-        category, 
-        requestId
-      );
-    }
-
     return {
-      provider: selectedProvider.provider,
-      model: selectedProvider.model
+      provider: selectedProviderEntry.provider,
+      model: selectedProviderEntry.model
     };
   }
 
   /**
-   * Select from legacy single provider + backup configuration
+   * Select from legacy single provider + backup configuration using simple manager
    */
   private async selectFromLegacyBackup(
     categoryRule: CategoryRouting,
     category: string,
     requestId: string
   ): Promise<{ provider: string; model: string }> {
-    // Check if primary provider is healthy
-    const primaryHealthy = this.isProviderHealthy(categoryRule.provider!);
+    // Build list of providers (primary + backups)
+    const providers: Array<{ provider: string; model: string }> = [];
     
-    if (primaryHealthy) {
-      logger.debug(`Using primary provider: ${categoryRule.provider}`, {}, requestId, 'routing');
-      return {
-        provider: categoryRule.provider!,
-        model: categoryRule.model!
-      };
-    }
-
-    // Primary failed, try backup providers
-    if (categoryRule.backup && categoryRule.backup.length > 0) {
-      logger.warn(`Primary provider ${categoryRule.provider} unhealthy, trying backup providers`, {
-        backupCount: categoryRule.backup.length
-      }, requestId, 'routing');
-
-      // Sort backup providers by weight (lower weight = higher priority)
-      const sortedBackups = [...categoryRule.backup].sort((a, b) => (a.weight || 1) - (b.weight || 1));
-      
-      for (const backup of sortedBackups) {
-        if (this.isProviderHealthy(backup.provider)) {
-          logger.info(`Using backup provider: ${backup.provider}`, {
-            weight: backup.weight || 1
-          }, requestId, 'routing');
-          
-          return {
-            provider: backup.provider,
-            model: backup.model
-          };
-        }
-      }
-      
-      logger.error('All backup providers are unhealthy, falling back to primary', {
-        category,
-        primaryProvider: categoryRule.provider,
-        backupProviders: sortedBackups.map(b => b.provider)
-      }, requestId, 'routing');
-    }
-
-    // If no backup or all backups failed, use primary anyway
-    logger.warn(`No healthy backup found for ${category}, using primary provider anyway`, {}, requestId, 'routing');
-    return {
-      provider: categoryRule.provider!,
-      model: categoryRule.model!
-    };
-  }
-
-  /**
-   * Apply load balancing strategy to select provider
-   */
-  private applyLoadBalancingStrategy(
-    providers: ProviderEntry[],
-    strategy: 'round_robin' | 'weighted' | 'health_based' | 'health_based_with_blacklist',
-    category: string,
-    requestId: string
-  ): ProviderEntry {
-    switch (strategy) {
-      case 'round_robin':
-        return this.selectRoundRobin(providers, category, requestId);
-      case 'weighted':
-        return this.selectWeighted(providers, requestId);
-      case 'health_based':
-        return this.selectHealthBased(providers, requestId);
-      case 'health_based_with_blacklist':
-        return this.selectHealthBasedWithBlacklist(providers, requestId);
-      default:
-        logger.warn(`Unknown load balancing strategy: ${strategy}, using round_robin`, {}, requestId, 'routing');
-        return this.selectRoundRobin(providers, category, requestId);
-    }
-  }
-
-  /**
-   * Round robin selection
-   */
-  private selectRoundRobin(providers: ProviderEntry[], category: string, requestId: string): ProviderEntry {
-    const currentIndex = this.roundRobinIndex.get(category) || 0;
-    const selectedProvider = providers[currentIndex % providers.length];
-    
-    this.roundRobinIndex.set(category, currentIndex + 1);
-    
-    logger.debug(`Round robin selection: ${selectedProvider.provider}`, {
-      index: currentIndex,
-      totalProviders: providers.length
-    }, requestId, 'routing');
-    
-    return selectedProvider;
-  }
-
-  /**
-   * Weighted selection based on provider weights (真正的权重随机选择)
-   */
-  private selectWeighted(providers: ProviderEntry[], requestId: string): ProviderEntry {
-    // 计算总权重
-    const totalWeight = providers.reduce((sum, provider) => sum + (provider.weight || 1), 0);
-    
-    // 生成随机数 [0, totalWeight)
-    const random = Math.random() * totalWeight;
-    
-    // 按权重累积选择
-    let currentWeight = 0;
-    for (const provider of providers) {
-      currentWeight += (provider.weight || 1);
-      if (random < currentWeight) {
-        logger.debug(`Weighted selection: ${provider.provider}`, {
-          weight: provider.weight || 1,
-          totalWeight,
-          randomValue: random.toFixed(3),
-          selectionProbability: `${(((provider.weight || 1) / totalWeight) * 100).toFixed(1)}%`
-        }, requestId, 'routing');
-        
-        return provider;
-      }
-    }
-    
-    // 降级：如果由于浮点精度问题没选中，返回最后一个
-    const fallbackProvider = providers[providers.length - 1];
-    logger.warn(`Weighted selection fallback: ${fallbackProvider.provider}`, {
-      reason: 'floating_point_precision_issue',
-      totalWeight,
-      randomValue: random
-    }, requestId, 'routing');
-    
-    return fallbackProvider;
-  }
-
-  /**
-   * Health-based selection (best performing provider)
-   */
-  private selectHealthBased(providers: ProviderEntry[], requestId: string): ProviderEntry {
-    // 计算每个provider的健康分数
-    const scoredProviders = providers.map(provider => {
-      const health = this.providerHealth.get(provider.provider);
-      let score = 1.0; // 默认健康分数
-      
-      if (health) {
-        // 基于成功率计算分数
-        const successRate = health.totalRequests > 0 
-          ? health.successCount / health.totalRequests 
-          : 1.0;
-        
-        // 考虑连续错误数的影响 
-        const errorPenalty = Math.max(0, health.consecutiveErrors) * 0.1;
-        
-        // 考虑冷却状态
-        const cooldownPenalty = health.inCooldown ? 0.5 : 0;
-        
-        score = successRate - errorPenalty - cooldownPenalty;
-      }
-      
-      return {
-        provider,
-        score: Math.max(0.1, score) // 确保分数不为负
-      };
-    });
-    
-    // 按健康分数排序，分数高的优先
-    const sortedByHealth = scoredProviders.sort((a, b) => b.score - a.score);
-    const selectedProvider = sortedByHealth[0].provider;
-    
-    logger.debug(`Health-based selection: ${selectedProvider.provider}`, {
-      score: sortedByHealth[0].score.toFixed(3),
-      allScores: scoredProviders.map(sp => ({
-        provider: sp.provider.provider,
-        score: sp.score.toFixed(3)
-      }))
-    }, requestId, 'routing');
-    
-    return selectedProvider;
-  }
-
-  /**
-   * Health-based selection with blacklist awareness and dynamic load balancing
-   * 智能黑名单感知的健康负载均衡选择
-   */
-  private selectHealthBasedWithBlacklist(providers: ProviderEntry[], requestId: string): ProviderEntry {
-    // 获取所有可用（未被拉黑）的providers
-    const availableProviders = providers.filter(provider => this.isProviderHealthy(provider.provider));
-    
-    if (availableProviders.length === 0) {
-      // 所有provider都被拉黑，选择最先恢复的那个
-      logger.warn('All providers are blacklisted, selecting earliest recovery provider', {
-        totalProviders: providers.length,
-        allProviders: providers.map(p => p.provider)
-      }, requestId, 'routing');
-      
-      const providerRecoveryTimes = providers.map(provider => {
-        const health = this.providerHealth.get(provider.provider);
-        let recoveryTime = new Date();
-        
-        if (health?.isTemporarilyBlacklisted && health.temporaryBlacklistUntil) {
-          recoveryTime = health.temporaryBlacklistUntil;
-        } else if (health?.nextRetryTime) {
-          recoveryTime = health.nextRetryTime;
-        }
-        
-        return { provider, recoveryTime };
+    // Add primary provider
+    if (categoryRule.provider && categoryRule.model) {
+      providers.push({
+        provider: categoryRule.provider,
+        model: categoryRule.model
       });
-      
-      // 选择最先恢复的provider
-      const earliestRecovery = providerRecoveryTimes.sort((a, b) => 
-        a.recoveryTime.getTime() - b.recoveryTime.getTime()
-      )[0];
-      
-      return earliestRecovery.provider;
     }
     
-    // 计算可用providers的权重分布（动态调整）
-    const totalOriginalWeight = availableProviders.reduce((sum, p) => sum + (p.weight || 1), 0);
-    
-    // 为每个可用provider计算动态权重
-    const adjustedProviders = availableProviders.map(provider => {
-      const health = this.providerHealth.get(provider.provider);
-      let adjustedWeight = provider.weight || 1;
-      
-      if (health) {
-        // 基于成功率调整权重
-        const successRate = health.totalRequests > 0 
-          ? health.successCount / health.totalRequests 
-          : 1.0;
-        
-        // 基于429错误频率调整权重（有429历史的降低权重）
-        const rateLimitPenalty = health.rateLimitFailureCount > 0 
-          ? Math.max(0.3, 1 - (health.rateLimitFailureCount * 0.1)) 
-          : 1.0;
-        
-        adjustedWeight = adjustedWeight * successRate * rateLimitPenalty;
-      }
-      
-      return {
-        ...provider,
-        adjustedWeight: Math.max(0.1, adjustedWeight) // 最小权重0.1
-      };
-    });
-    
-    // 权重随机选择
-    const totalAdjustedWeight = adjustedProviders.reduce((sum, p) => sum + p.adjustedWeight, 0);
-    const random = Math.random() * totalAdjustedWeight;
-    
-    let currentWeight = 0;
-    for (const provider of adjustedProviders) {
-      currentWeight += provider.adjustedWeight;
-      if (random < currentWeight) {
-        logger.debug(`Health-based blacklist-aware selection: ${provider.provider}`, {
-          originalWeight: provider.weight || 1,
-          adjustedWeight: provider.adjustedWeight.toFixed(3),
-          totalAdjustedWeight: totalAdjustedWeight.toFixed(3),
-          availableProviders: availableProviders.length,
-          totalProviders: providers.length,
-          selectionProbability: `${((provider.adjustedWeight / totalAdjustedWeight) * 100).toFixed(1)}%`
-        }, requestId, 'routing');
-        
-        return provider;
-      }
+    // Add backup providers
+    if (categoryRule.backup && categoryRule.backup.length > 0) {
+      providers.push(...categoryRule.backup);
     }
     
-    // 降级选择（浮点精度问题）
-    const fallbackProvider = adjustedProviders[adjustedProviders.length - 1];
-    logger.warn(`Health-based blacklist-aware selection fallback: ${fallbackProvider.provider}`, {
-      reason: 'floating_point_precision_issue',
-      totalAdjustedWeight,
-      randomValue: random
+    if (providers.length === 0) {
+      throw new Error(`No providers configured for category: ${category}`);
+    }
+    
+    // Extract provider IDs for simple manager
+    const providerIds = providers.map(p => p.provider);
+    
+    // Use simple provider manager for selection
+    const selectedProviderId = this.simpleProviderManager.selectProvider(providerIds, category);
+    
+    if (!selectedProviderId) {
+      logger.error('No providers available in legacy config', { category, providerIds }, requestId, 'routing');
+      // Fallback to first provider
+      return providers[0];
+    }
+    
+    // Find the corresponding provider entry
+    const selectedProvider = providers.find(p => p.provider === selectedProviderId);
+    if (!selectedProvider) {
+      logger.error('Selected provider not found in legacy configuration', {
+        selectedProviderId,
+        availableProviders: providers.map(p => p.provider)
+      }, requestId, 'routing');
+      return providers[0];
+    }
+    
+    logger.debug(`Legacy provider selection: ${selectedProvider.provider}`, {
+      category,
+      totalProviders: providers.length,
+      isBackupProvider: selectedProvider.provider !== categoryRule.provider
     }, requestId, 'routing');
     
-    return fallbackProvider;
+    return selectedProvider;
   }
+
+  // Removed complex load balancing strategies - using SimpleProviderManager instead
+
+  // Removed old round-robin method - using SimpleProviderManager instead
+
+  // Removed old weighted selection method - using SimpleProviderManager instead
+
+  // Removed old health-based selection method - using SimpleProviderManager instead
+
+  // Removed old health-based blacklist selection method - using SimpleProviderManager instead
 
   /**
    * Get provider success rate for health-based selection
@@ -445,7 +216,7 @@ export class RoutingEngine {
   }
 
   /**
-   * Check if provider is healthy with intelligent failover logic
+   * Check if provider is healthy using simple provider manager
    */
   private isProviderHealthy(providerId: string): boolean {
     // 🚫 临时禁用检查 - 最高优先级
@@ -454,67 +225,19 @@ export class RoutingEngine {
       return false;
     }
     
+    // Use simple provider manager blacklist check
+    if (this.simpleProviderManager.isBlacklisted(providerId)) {
+      logger.debug(`Provider ${providerId} is blacklisted by simple provider manager`);
+      return false;
+    }
+    
+    // Keep legacy health check for compatibility
     const health = this.providerHealth.get(providerId);
     if (!health) {
       return true; // Assume healthy for new providers
     }
     
-    const now = new Date();
-    
-    // 🔒 PERMANENT BLACKLIST CHECK - highest priority
-    if (health.isPermanentlyBlacklisted) {
-      logger.debug(`Provider ${providerId} is permanently blacklisted`, {
-        reason: health.blacklistReason,
-        authFailureCount: health.authFailureCount
-      });
-      return false;
-    }
-    
-    // 🚫 TEMPORARY BLACKLIST CHECK for 429 errors
-    if (health.isTemporarilyBlacklisted && health.temporaryBlacklistUntil) {
-      if (now < health.temporaryBlacklistUntil) {
-        const remainingSeconds = Math.ceil((health.temporaryBlacklistUntil.getTime() - now.getTime()) / 1000);
-        logger.debug(`Provider ${providerId} is temporarily blacklisted for 429 errors`, {
-          remainingSeconds,
-          rateLimitFailures: health.rateLimitFailureCount,
-          blacklistUntil: health.temporaryBlacklistUntil.toISOString()
-        });
-        return false;
-      } else {
-        // 黑名单期满，自动恢复
-        health.isTemporarilyBlacklisted = false;
-        health.temporaryBlacklistUntil = undefined;
-        logger.info(`Provider ${providerId} recovered from temporary blacklist`, {
-          rateLimitFailures: health.rateLimitFailureCount
-        });
-      }
-    }
-    
-    // 📈 TEMPORARY BACKOFF CHECK - check if retry time has passed
-    if (health.temporaryBackoffLevel > 0 && health.nextRetryTime) {
-      if (now < health.nextRetryTime) {
-        const minutesRemaining = Math.ceil((health.nextRetryTime.getTime() - now.getTime()) / (60 * 1000));
-        logger.debug(`Provider ${providerId} in backoff level ${health.temporaryBackoffLevel}`, {
-          minutesRemaining,
-          nextRetryTime: health.nextRetryTime.toISOString()
-        });
-        return false;
-      } else {
-        // Backoff time has passed, allow health check but don't reset backoff level
-        // (backoff level will be reset on successful request)
-        logger.info(`Provider ${providerId} backoff period expired, allowing health check`, {
-          backoffLevel: health.temporaryBackoffLevel,
-          nextRetryTime: health.nextRetryTime.toISOString()
-        });
-      }
-    }
-    
-    // Standard cooldown check (for legacy compatibility)
-    if (health.inCooldown && health.cooldownUntil && now < health.cooldownUntil) {
-      return false;
-    }
-    
-    // Check consecutive errors threshold (fallback for non-categorized errors)
+    // Simple consecutive errors check
     if (health.consecutiveErrors >= 5) {
       return false;
     }
@@ -648,6 +371,9 @@ export class RoutingEngine {
       if (health.errorHistory.length > 10) {
         health.errorHistory = health.errorHistory.slice(-10);
       }
+      
+      // Report failure to simple provider manager
+      this.simpleProviderManager.reportFailure(providerId, error || 'Unknown error', httpCode);
       
       // 🚨 APPLY INTELLIGENT FAILOVER LOGIC
       this.applyIntelligentFailover(health, failureCategory, error, httpCode);
@@ -1126,14 +852,10 @@ export class RoutingEngine {
   }
 
   /**
-   * Get current round robin state
+   * Get current round robin state from simple provider manager
    */
   private getRoundRobinState(): Record<string, number> {
-    const state: Record<string, number> = {};
-    this.roundRobinIndex.forEach((index, category) => {
-      state[category] = index;
-    });
-    return state;
+    return this.simpleProviderManager.getRoundRobinState();
   }
 
   /**
@@ -1246,6 +968,14 @@ export class RoutingEngine {
    */
   public clearTemporaryDisables(): void {
     this.temporarilyDisabledProviders.clear();
-    logger.info('All temporary provider disables cleared');
+    this.simpleProviderManager.clearAllBlacklists();
+    logger.info('All temporary provider disables and blacklists cleared');
+  }
+  
+  /**
+   * Get blacklist status from simple provider manager
+   */
+  public getBlacklistStatus(): any {
+    return this.simpleProviderManager.getBlacklistStatus();
   }
 }

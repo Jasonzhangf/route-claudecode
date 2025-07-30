@@ -584,6 +584,7 @@ program
 program
   .command('status')
   .description('Check router status')
+  .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
   .option('-p, --port <number>', 'Server port (overrides config)')
   .option('-h, --host <string>', 'Server host (overrides config)')
   .option('--daemon', 'Check daemon status instead of direct server status')

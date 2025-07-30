@@ -36,8 +36,7 @@ export class RouterServer {
     // Initialize components
     this.inputProcessor = new AnthropicInputProcessor();
     this.routingEngine = new RoutingEngine(
-      config.routing as Record<RoutingCategory, CategoryRouting>,
-      config.concurrency // 🚀 Pass user's concurrency config for optimization
+      config.routing as Record<RoutingCategory, CategoryRouting>
     );
     this.outputProcessor = new AnthropicOutputProcessor();
 

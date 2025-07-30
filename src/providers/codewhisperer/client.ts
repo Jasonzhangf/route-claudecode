@@ -10,8 +10,6 @@ import { SafeTokenManager } from './safe-token-manager';
 import { CodeWhispererConverter, CodeWhispererRequest } from './converter';
 import { parseEvents, convertEventsToAnthropic, parseNonStreamingResponse } from './parser';
 import { processBufferedResponse } from './parser-buffered';
-import { processCodeWhispererResponse } from './universal-codewhisperer-parser';
-import { NonStreamingStrategy, createNonStreamingStrategy, StreamingPerformanceComparator, createPerformanceComparator } from './non-streaming-strategy';
 import { logger } from '@/utils/logger';
 import { fixResponse } from '@/utils/response-fixer';
 
@@ -26,8 +24,7 @@ export class CodeWhispererClient implements Provider {
   private endpoint: string;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000; // 1 second
-  private nonStreamingStrategy: NonStreamingStrategy;
-  private performanceComparator: StreamingPerformanceComparator;
+  // Removed non-streaming strategy - using streaming only
 
   constructor(public config: ProviderConfig) {
     if (!config.endpoint) {
@@ -36,16 +33,19 @@ export class CodeWhispererClient implements Provider {
     this.endpoint = config.endpoint;
     // Use custom token path if provided in config
     const tokenPath = config.authentication?.credentials?.tokenPath;
-    this.auth = new CodeWhispererAuth(tokenPath);
+    // Use profileArn from config if provided, otherwise it will be read from token
+    const profileArn = config.settings?.profileArn;
+    this.auth = new CodeWhispererAuth(tokenPath, profileArn);
     // 临时禁用SafeTokenManager for debugging
     // this.safeTokenManager = SafeTokenManager.getInstance();
     
-    // Initialize converter with profileArn from token
+    // Demo2 style: Perform startup token validation and refresh
+    this.performStartupTokenValidation();
+    
+    // Initialize converter with profileArn from config or token
     this.initializeConverter();
     
-    // Initialize performance testing tools
-    this.nonStreamingStrategy = createNonStreamingStrategy();
-    this.performanceComparator = createPerformanceComparator();
+    // Removed performance testing tools - using streaming only
     
     this.httpClient = axios.create({
       baseURL: this.endpoint,
@@ -93,7 +93,7 @@ export class CodeWhispererClient implements Provider {
       },
       async (error) => {
         if (error.response?.status === 403 || error.response?.status === 401) {
-          logger.warn('CodeWhisperer authentication error - reporting failure to auth monitoring', {
+          logger.warn('CodeWhisperer authentication error - applying Demo2 style immediate refresh', {
             status: error.response?.status,
             statusText: error.response?.statusText
           });
@@ -110,44 +110,23 @@ export class CodeWhispererClient implements Provider {
             );
           }
           
-          // Report authentication failure to monitoring system with detailed error info
-          this.auth.reportAuthFailure(error, error.response?.status);
-          
-          // Check if token is now blocked due to consecutive failures
-          if (this.auth.isTokenBlocked()) {
-            logger.error('Token blocked due to consecutive failures - no retry attempt');
-            throw new ProviderError(
-              'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
-              this.name,
-              500,
-              error
-            );
-          }
-          
           try {
-            // Clear cache and attempt one refresh if token is not blocked
-            this.auth.clearCache();
-            const newToken = await this.auth.getToken();
+            // Demo2 style: Immediate token refresh on auth error
+            const newToken = await this.auth.handleAuthError();
             
-            if (newToken) {
-              // Mark this request as retried to prevent infinite loops
-              error.config._retryCount = retryCount + 1;
-              // Use new token for retry
-              error.config.headers['Authorization'] = `Bearer ${newToken}`;
-              logger.info('Retrying request with refreshed token');
-              return this.httpClient.request(error.config);
-            } else {
-              throw new ProviderError('No valid token for retry', this.name, 500, error);
-            }
+            // Mark this request as retried to prevent infinite loops
+            error.config._retryCount = retryCount + 1;
+            // Use new token for retry
+            error.config.headers['Authorization'] = `Bearer ${newToken}`;
+            logger.info('Retrying request with Demo2-style refreshed token');
+            return this.httpClient.request(error.config);
           } catch (refreshError) {
-            logger.error('Token refresh failed', refreshError);
-            // Report this failure as well with detailed error info
-            this.auth.reportAuthFailure(refreshError, refreshError instanceof ProviderError ? refreshError.statusCode : undefined);
+            logger.error('Demo2-style token refresh failed', refreshError);
             
             if (refreshError instanceof ProviderError) {
               throw refreshError;
             }
-            throw new ProviderError('Token refresh failed', this.name, 500, refreshError);
+            throw new ProviderError('Demo2-style token refresh failed', this.name, 500, refreshError);
           }
         }
         return Promise.reject(error);
@@ -156,17 +135,45 @@ export class CodeWhispererClient implements Provider {
   }
 
   /**
-   * Initialize converter with profileArn from token
+   * Perform startup token validation (Demo2 style)
+   */
+  private performStartupTokenValidation(): void {
+    // Run validation asynchronously but don't block constructor
+    setImmediate(async () => {
+      try {
+        await this.auth.validateAndRefreshOnStartup();
+        logger.info('CodeWhisperer startup token validation completed successfully');
+      } catch (error) {
+        logger.error('CodeWhisperer startup token validation failed', error);
+        // Don't throw here as it would crash the application
+        // The auth system will handle token refresh when requests are made
+      }
+    });
+  }
+
+  /**
+   * Initialize converter with profileArn from config or token
    */
   private initializeConverter(): void {
     try {
-      const tokenData = this.auth.readTokenFromFile();
-      if (!tokenData.profileArn) {
-        throw new Error('CodeWhisperer profileArn not found in token file');
+      // First try to get profileArn from auth (which may have been set from config)
+      const configProfileArn = this.auth.getProfileArn();
+      if (configProfileArn) {
+        this.converter = new CodeWhispererConverter(configProfileArn);
+        logger.debug('Initialized CodeWhisperer converter with profileArn from config', {
+          profileArn: configProfileArn
+        });
+        return;
       }
-      this.converter = new CodeWhispererConverter(tokenData.profileArn);
+      
+      // Fallback: try to get profileArn from token file via auth method
+      const profileArnFromToken = this.auth.getProfileArn();
+      if (!profileArnFromToken) {
+        throw new Error('CodeWhisperer profileArn not found in config or token file');
+      }
+      this.converter = new CodeWhispererConverter(profileArnFromToken);
       logger.debug('Initialized CodeWhisperer converter with profileArn from token', {
-        profileArn: tokenData.profileArn
+        profileArn: profileArnFromToken
       });
     } catch (error) {
       logger.error('Failed to initialize CodeWhisperer converter', error);
@@ -219,62 +226,43 @@ export class CodeWhispererClient implements Provider {
       // Convert request to CodeWhisperer format
       const cwRequest = this.converter.convertRequest(request, requestId);
       
-      // 🚨 EMERGENCY FIX: Force disable non-streaming due to performance issues
-      const shouldUseNonStreaming = false; // this.nonStreamingStrategy.shouldUseNonStreaming(request);
-      
-      logger.info(`🎯 CodeWhisperer strategy decision: ${shouldUseNonStreaming ? 'non-streaming' : 'streaming'}`, {
+      // Using streaming only - no non-streaming conversion
+      logger.info('🎯 CodeWhisperer using streaming strategy', {
         url: this.endpoint + '/generateAssistantResponse',
         requestBodyLength: JSON.stringify(cwRequest).length,
-        strategy: shouldUseNonStreaming ? 'non-streaming-conversion' : 'universal-streaming',
-        reason: shouldUseNonStreaming ? 'Expected performance benefit' : 'Streaming preferred'
+        strategy: 'universal-streaming'
       }, requestId, 'provider');
 
       let response;
       let anthropicEvents;
       const strategyStartTime = Date.now();
       
-      if (shouldUseNonStreaming) {
-        // 🚀 Use non-streaming strategy
-        const result = await this.nonStreamingStrategy.executeNonStreamingRequest(
-          this.httpClient, cwRequest, requestId, request.model
-        );
-        
-        anthropicEvents = result.events;
-        
-        logger.info('✅ Non-streaming strategy completed', {
-          totalTime: Date.now() - strategyStartTime,
-          eventCount: anthropicEvents.length,
-          metrics: result.metrics
-        }, requestId, 'provider');
-        
-      } else {
-        // 🔄 Use traditional streaming approach with universal optimization
-        response = await this.httpClient.post('/generateAssistantResponse', cwRequest, {
-          responseType: 'arraybuffer'
-        });
-        
-        if (response.status !== 200) {
-          let errorMessage = `CodeWhisperer API returned status ${response.status}`;
-          if (response.status === 400) {
-            const modelName = cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId || request.model || 'unknown';
-            errorMessage += ` | Sent model: "${modelName}"`;
-          }
-          throw new ProviderError(errorMessage, this.name, response.status, response.data);
+      // 🔄 Use traditional streaming approach with universal optimization
+      response = await this.httpClient.post('/generateAssistantResponse', cwRequest, {
+        responseType: 'arraybuffer'
+      });
+      
+      if (response.status !== 200) {
+        let errorMessage = `CodeWhisperer API returned status ${response.status}`;
+        if (response.status === 400) {
+          const modelName = cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId || request.model || 'unknown';
+          errorMessage += ` | Sent model: "${modelName}"`;
         }
-
-        const responseBuffer = Buffer.from(response.data);
-        const streamingStartTime = Date.now();
-        
-        anthropicEvents = await processCodeWhispererResponse(responseBuffer, requestId, request.model);
-        
-        const streamingTime = Date.now() - streamingStartTime;
-        
-        logger.info('✅ Universal streaming completed', {
-          processingTime: streamingTime,
-          eventCount: anthropicEvents.length,
-          responseSize: responseBuffer.length
-        }, requestId, 'provider');
+        throw new ProviderError(errorMessage, this.name, response.status, response.data);
       }
+
+      const responseBuffer = Buffer.from(response.data);
+      const streamingStartTime = Date.now();
+      
+      anthropicEvents = processBufferedResponse(responseBuffer, requestId, request.model);
+      
+      const streamingTime = Date.now() - streamingStartTime;
+      
+      logger.info('✅ Universal streaming completed', {
+        processingTime: streamingTime,
+        eventCount: anthropicEvents.length,
+        responseSize: responseBuffer.length
+      }, requestId, 'provider');
       
       // 从事件中提取内容 - 支持完整的工具调用处理
       const contexts: any[] = [];
