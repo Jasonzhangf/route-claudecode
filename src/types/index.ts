@@ -9,6 +9,8 @@ export interface BaseRequest {
   stream?: boolean;
   max_tokens?: number;
   temperature?: number;
+  system?: any; // Support system messages
+  tools?: any[]; // Support tools for compatibility
   metadata?: {
     requestId: string;
     sessionId?: string;
@@ -174,12 +176,27 @@ export interface ProviderConfig {
   endpoint: string;
   authentication: {
     type: 'bearer' | 'api_key';
-    credentials: Record<string, string>;
+    credentials: Record<string, string | string[]>; // 支持多个API keys
   };
   settings: Record<string, any>;
   healthCheck?: {
     endpoint: string;
     interval: number;
+  };
+  keyRotation?: {
+    enabled: boolean;
+    strategy: 'round_robin' | 'health_based' | 'rate_limit_aware';
+    cooldownMs?: number; // 单个key的冷却时间
+    maxRetriesPerKey?: number; // 每个key的最大重试次数
+    rateLimitCooldownMs?: number; // rate limit冷却时间
+  };
+  tokenRotation?: {
+    strategy: 'round_robin' | 'health_based' | 'least_used';
+    cooldownMs?: number;
+    maxRetriesPerToken?: number;
+    tempDisableCooldownMs?: number;
+    maxRefreshFailures?: number;
+    refreshRetryIntervalMs?: number;
   };
 }
 

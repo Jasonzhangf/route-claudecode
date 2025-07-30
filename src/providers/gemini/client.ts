@@ -13,7 +13,9 @@ export class GeminiClient {
   private baseUrl: string;
 
   constructor(private config: ProviderConfig) {
-    this.apiKey = config.authentication.credentials.apiKey;
+    const credentials = config.authentication.credentials;
+    const apiKey = credentials.apiKey || credentials.api_key;
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
     if (!this.apiKey) {
       throw new Error('Gemini API key is required');
     }

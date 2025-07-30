@@ -9,6 +9,7 @@ import { homedir } from 'os';
 import axios from 'axios';
 import { logger } from '@/utils/logger';
 import { getConfigPaths } from '@/utils/config-paths';
+import { captureAuthEvent } from './data-capture';
 
 export interface TokenData {
   accessToken: string;
@@ -126,10 +127,17 @@ export class CodeWhispererAuth {
    * Get current token - Demo2 style: simple and direct
    * Always ensures fresh token availability
    */
-  async getToken(): Promise<string> {
+  async getToken(requestId: string = 'auth-request'): Promise<string> {
+    const startTime = Date.now();
     try {
       // Read token from file (always fresh read)
       const tokenData = this.readTokenFromFile();
+      
+      // Capture token validation event
+      captureAuthEvent(requestId, 'token_validation', {
+        tokenValid: this.isTokenValid(tokenData),
+        timeTaken: Date.now() - startTime
+      });
       
       // If token is valid, use it directly
       if (this.isTokenValid(tokenData)) {
@@ -139,9 +147,23 @@ export class CodeWhispererAuth {
       
       // Token is expired, do immediate refresh (Demo2 style)
       logger.info('Token expired, performing immediate refresh (Demo2 style)...');
-      const refreshedToken = await this.performSyncRefresh(tokenData);
+      
+      // Capture token expiry event
+      captureAuthEvent(requestId, 'token_expired', {
+        tokenValid: false,
+        refreshAttempted: true,
+        timeTaken: Date.now() - startTime
+      });
+      
+      const refreshedToken = await this.performSyncRefresh(tokenData, requestId);
       return refreshedToken.accessToken;
     } catch (error) {
+      // Capture auth failure
+      captureAuthEvent(requestId, 'auth_failure', {
+        authError: error instanceof Error ? error.message : String(error),
+        timeTaken: Date.now() - startTime
+      });
+      
       logger.error('Failed to get CodeWhisperer token', error);
       const errorMessage = error instanceof Error ? error.message : String(error);
       throw new Error(`CodeWhisperer authentication failed: ${errorMessage}`);
@@ -241,7 +263,8 @@ export class CodeWhispererAuth {
    * Demo2只使用3个基本字段：accessToken, refreshToken, expiresAt
    * 但要保护所有现有metadata字段
    */
-  async refreshToken(currentToken: TokenData): Promise<TokenData> {
+  async refreshToken(currentToken: TokenData, requestId: string = 'token-refresh'): Promise<TokenData> {
+    const startTime = Date.now();
     try {
       // Demo2风格的refresh请求 - 只发送refreshToken
       const refreshRequest = {
@@ -278,9 +301,23 @@ export class CodeWhispererAuth {
       // Save new token to file
       this.saveTokenToFile(newTokenData);
       
+      // Capture successful token refresh
+      captureAuthEvent(requestId, 'token_refresh', {
+        refreshAttempted: true,
+        tokenValid: true,
+        timeTaken: Date.now() - startTime
+      });
+      
       logger.debug('Token refreshed successfully (Demo2 style)');
       return newTokenData;
     } catch (error) {
+      // Capture token refresh failure
+      captureAuthEvent(requestId, 'auth_failure', {
+        refreshAttempted: true,
+        authError: error instanceof Error ? error.message : String(error),
+        timeTaken: Date.now() - startTime
+      });
+      
       logger.error('Failed to refresh token', error);
       throw new Error('Token refresh failed. Please re-login to Kiro.');
     }
@@ -376,10 +413,10 @@ export class CodeWhispererAuth {
    * Perform synchronous token refresh (Demo2 style)
    * No time interval restrictions, always refreshes when called
    */
-  private async performSyncRefresh(currentToken: TokenData): Promise<TokenData> {
+  private async performSyncRefresh(currentToken: TokenData, requestId: string = 'sync-refresh'): Promise<TokenData> {
     try {
       logger.info('Performing synchronous token refresh (Demo2 style)');
-      const refreshedToken = await this.refreshToken(currentToken);
+      const refreshedToken = await this.refreshToken(currentToken, requestId);
       this.cachedToken = refreshedToken;
       this.lastRefreshTime = new Date();
       this.saveLastRefreshTime();
@@ -396,7 +433,7 @@ export class CodeWhispererAuth {
    * Handle 403/401 authentication error - Demo2 style
    * Immediately refresh token and return new token
    */
-  async handleAuthError(): Promise<string> {
+  async handleAuthError(requestId: string = 'auth-error-handling'): Promise<string> {
     try {
       logger.info('Handling authentication error - performing immediate token refresh (Demo2 style)');
       
@@ -407,7 +444,7 @@ export class CodeWhispererAuth {
       const tokenData = this.readTokenFromFile();
       
       // Force refresh regardless of expiry
-      const refreshedToken = await this.performSyncRefresh(tokenData);
+      const refreshedToken = await this.performSyncRefresh(tokenData, requestId);
       
       logger.info('Authentication error handled - token refreshed successfully');
       return refreshedToken.accessToken;
@@ -432,7 +469,7 @@ export class CodeWhispererAuth {
     }
     
     this.isRefreshing = true;
-    this.refreshPromise = this.refreshToken(currentToken);
+    this.refreshPromise = this.refreshToken(currentToken, 'background-refresh');
     
     try {
       const refreshedToken = await this.refreshPromise;

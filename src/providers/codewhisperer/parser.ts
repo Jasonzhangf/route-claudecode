@@ -198,721 +198,312 @@ function convertBinaryEventToSSE(binaryEvent: AWSBinaryEvent): SSEEvent | null {
   }
 }
 
-
 /**
- * Text buffer for accumulating fragmented content
+ * Convert raw events to Anthropic format with tool call accumulation
  */
-interface TextBuffer {
-  content: string;
-  isToolCall: boolean;
-  toolName?: string;
-  toolId?: string;
-}
+export function convertEventsToAnthropic(events: SSEEvent[], requestId: string): any[] {
+  logger.debug('Converting events to Anthropic format with tool call processing', {
+    eventCount: events.length
+  }, requestId);
 
-/**
- * Convert CodeWhisperer events to Anthropic format with text accumulation
- */
-export function convertEventsToAnthropic(events: SSEEvent[], requestId: string): ParsedEvent[] {
-  const anthropicEvents: ParsedEvent[] = [];
-  const textBuffer: TextBuffer = { content: '', isToolCall: false };
+  const anthropicEvents: any[] = [];
+  let accumulatedText = ''; // 累积文本用于检测工具调用
+  let currentBlockIndex = 0;
+  let hasStartedText = false;
   
-  try {
-    logger.debug('Converting events to Anthropic format with text accumulation', {
-      inputEventCount: events.length,
-      inputEventTypes: events.map(e => e.Event)
-    }, requestId);
-    
-    // 第一步：累积所有文本内容
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      accumulateTextContent(event, textBuffer, requestId);
-    }
-    
-    // 第二步：如果累积的文本包含工具调用，处理工具调用
-    if (textBuffer.isToolCall && textBuffer.content.trim()) {
-      const toolEvent = processAccumulatedToolCall(textBuffer, requestId);
-      if (toolEvent) {
-        anthropicEvents.push(toolEvent);
-        logger.info('Successfully processed accumulated tool call', {
-          toolName: textBuffer.toolName,
-          contentLength: textBuffer.content.length
-        }, requestId);
+  // 添加消息开始事件
+  anthropicEvents.push({
+    event: 'message_start',
+    data: {
+      type: 'message_start',
+      message: {
+        id: `msg_${Date.now()}`,
+        type: 'message',
+        role: 'assistant',
+        content: [],
+        model: 'CLAUDE_SONNET_4_20250514_V1_0',
+        stop_reason: null,
+        stop_sequence: null,
+        usage: { input_tokens: 0, output_tokens: 0 }
       }
     }
-    
-    // 第三步：处理非文本事件和非工具调用的文本事件
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
-      const converted = convertSingleEvent(event, requestId, textBuffer.isToolCall);
-      if (converted) {
-        anthropicEvents.push(converted);
-        logger.debug('Event converted successfully', {
-          originalEvent: event.Event,
-          convertedEvent: converted.event
-        }, requestId);
-      }
-    }
-    
-    logger.debug('Event conversion completed with accumulation', {
-      outputEventCount: anthropicEvents.length,
-      outputEventTypes: anthropicEvents.map(e => e.event),
-      hadToolCall: textBuffer.isToolCall,
-      bufferContent: textBuffer.content.substring(0, 100)
-    }, requestId);
-    
-    return anthropicEvents;
-  } catch (error) {
-    logger.error('Failed to convert events to Anthropic format', error, requestId);
-    return [];
-  }
-}
+  });
 
-/**
- * Accumulate text content from events to handle fragmented tool calls
- */
-function accumulateTextContent(event: SSEEvent, buffer: TextBuffer, requestId: string): void {
-  try {
-    const { Event, Data } = event;
-    
-    // 累积来自不同事件类型的文本内容
-    let textContent = '';
-    
-    if (Event === 'contentBlockDelta' && Data?.delta?.type === 'text_delta') {
-      textContent = Data.delta.text || '';
-    } else if (Data && typeof Data === 'object' && Data.text) {
-      textContent = Data.text;
-    } else if (Data && typeof Data === 'object' && Data.content) {
-      textContent = Data.content;
-    }
-    
-    if (textContent) {
-      buffer.content += textContent;
-      
-      // 检测是否包含工具调用
-      if (textContent.includes('Tool call:') || buffer.content.includes('Tool call:')) {
-        buffer.isToolCall = true;
-        
-        // 尝试提取工具名称
-        const toolNameMatch = buffer.content.match(/Tool call:\s*(\w+)/);
-        if (toolNameMatch) {
-          buffer.toolName = toolNameMatch[1];
-          buffer.toolId = `accumulated_tool_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-          logger.debug('Accumulated tool call detected', {
-            toolName: buffer.toolName,
-            contentLength: buffer.content.length,
-            contentPreview: buffer.content.substring(0, 150)
-          }, requestId);
-        }
-      }
-    }
-  } catch (error) {
-    logger.error('Failed to accumulate text content', error, requestId);
-  }
-}
-
-/**
- * Process accumulated tool call text and convert to proper tool_use event
- */
-function processAccumulatedToolCall(buffer: TextBuffer, requestId: string): ParsedEvent | null {
-  try {
-    if (!buffer.isToolCall || !buffer.content.trim()) {
-      return null;
-    }
-    
-    logger.debug('Processing accumulated tool call', {
-      contentLength: buffer.content.length,
-      toolName: buffer.toolName,
-      content: buffer.content
-    }, requestId);
-    
-    // 尝试解析完整的工具调用: "Tool call: ToolName({...})"
-    const toolCallMatch = buffer.content.match(/Tool call:\s*(\w+)\s*\((.+?)\)(?:\s*$|\n|$)/s);
-    if (toolCallMatch) {
-      const toolName = toolCallMatch[1];
-      const toolArgsStr = toolCallMatch[2];
-      
-      logger.info('Successfully parsed complete tool call from accumulated text', {
-        toolName,
-        argsString: toolArgsStr.substring(0, 200)
-      }, requestId);
-      
-      // 解析工具参数
-      let toolInput = {};
-      try {
-        const cleanArgsStr = toolArgsStr.trim().replace(/^["']|["']$/g, '');
-        toolInput = JSON.parse(cleanArgsStr);
-      } catch (parseError: any) {
-        logger.warn('Failed to parse accumulated tool arguments, using empty input', {
-          error: parseError?.message || String(parseError),
-          argsString: toolArgsStr.substring(0, 200)
-        }, requestId);
-      }
-      
-      // 返回正确的工具调用开始事件
-      return {
-        event: 'content_block_start',
-        data: {
-          type: 'content_block_start',
-          index: 1, // 工具调用通常是第二个内容块
-          content_block: {
-            type: 'tool_use',
-            id: buffer.toolId || `accumulated_tool_${Date.now()}`,
-            name: toolName,
-            input: toolInput
-          }
-        }
-      };
-    } else {
-      logger.warn('Could not parse complete tool call from accumulated text', {
-        content: buffer.content.substring(0, 200)
-      }, requestId);
-    }
-    
-    return null;
-  } catch (error) {
-    logger.error('Failed to process accumulated tool call', error, requestId);
-    return null;
-  }
-}
-
-/**
- * Convert single CodeWhisperer event to Anthropic format (with skip logic for accumulated tool calls)
- */
-function convertSingleEvent(event: SSEEvent, requestId: string, skipTextForToolCall: boolean = false): ParsedEvent | null {
-  try {
-    const { Event, Data } = event;
-    
-    logger.debug('Converting single event', {
-      eventType: Event,
-      dataKeys: Data ? Object.keys(Data) : [],
-      dataPreview: typeof Data === 'object' ? JSON.stringify(Data).substring(0, 100) : Data
-    }, requestId);
-    
-    // Handle different event types
-    switch (Event) {
-      case 'assistantResponseEvent':
-        return convertAssistantResponseEvent(Data, requestId);
-      
-      case 'toolUseEvent':
-        return convertToolUseEvent(Data, requestId);
-      
-      case 'codeGenerationEvent':
-        return convertCodeGenerationEvent(Data, requestId);
-      
-      case 'messageStart':
-        return {
-          event: 'message_start',
-          data: Data
-        };
-      
-      case 'contentBlockStart':
-        return {
-          event: 'content_block_start',
-          data: Data
-        };
-      
-      case 'contentBlockDelta':
-        return convertContentBlockDelta(Data, requestId, skipTextForToolCall);
-      
-      case 'contentBlockStop':
-        return {
-          event: 'content_block_stop',
-          data: Data
-        };
-      
-      case 'messageStop':
-        return {
-          event: 'message_stop',
-          data: Data
-        };
-      
-      default:
-        logger.debug('Unknown event type, analyzing content', { eventType: Event, data: Data }, requestId);
-        
-        // Handle AWS binary events that have direct text content
-        if (Data && typeof Data === 'object' && Data.text) {
-          // 如果已经在累积阶段处理了工具调用，跳过这些文本事件
-          if (skipTextForToolCall && Data.text.includes('Tool call:')) {
-            logger.debug('Skipping text event as it was processed during accumulation', { 
-              text: Data.text.substring(0, 100) 
-            }, requestId);
-            return null;
-          }
-          
-          // 如果不是工具调用或没有被累积处理，继续作为普通文本处理
-          logger.debug('Treating as regular text content', { text: Data.text.substring(0, 100) }, requestId);
-          return {
-            event: 'content_block_delta',
-            data: {
-              type: 'content_block_delta',  
-              index: 0,
-              delta: {
-                type: 'text_delta',
-                text: Data.text
-              }
-            }
-          };
-        }
-        
-        // Handle AWS binary events with content field
-        if (Data && typeof Data === 'object' && Data.content) {
-          return {
-            event: 'content_block_delta',
-            data: {
-              type: 'content_block_delta',
-              index: 0,
-              delta: {
-                type: 'text_delta',
-                text: Data.content
-              }
-            }
-          };
-        }
-        
-        return null;
-    }
-  } catch (error) {
-    logger.error('Failed to convert single event', error, requestId);
-    return null;
-  }
-}
-
-/**
- * Convert tool use event (based on CodeWhisperer's toolUseEvent format)
- */
-function convertToolUseEvent(data: any, requestId: string): ParsedEvent | null {
-  try {
-    logger.debug('Converting tool use event', {
-      dataType: typeof data,
-      dataKeys: data ? Object.keys(data) : [],
-      hasToolUseId: !!(data && data.toolUseId),
-      hasName: !!(data && data.name),
-      hasInput: !!(data && data.input),
-      hasStop: !!(data && data.stop)
-    }, requestId);
-
-    // Handle tool use events (similar to demo2's assistantResponseEvent with toolUseId)
-    if (data && data.toolUseId && data.name) {
-      // Tool use completion (stop: true)
-      if (data.stop) {
-        logger.debug('Tool use completion event', {
-          toolUseId: data.toolUseId,
-          name: data.name
-        }, requestId);
-        
-        return {
-          event: 'content_block_stop',
-          data: {
-            type: 'content_block_stop',
-            index: 1
-          }
-        };
-      }
-      
-      // Tool input streaming (partial JSON) - Demo2兼容性：检查input不为null/undefined
-      if (data.input !== null && data.input !== undefined && data.input !== '' && !data.stop) {
-        logger.debug('Tool input streaming event', {
-          toolUseId: data.toolUseId,
-          name: data.name,
-          inputLength: data.input.length
-        }, requestId);
-        
-        return {
-          event: 'content_block_delta',
-          data: {
-            type: 'content_block_delta',
-            index: 1,
-            delta: {
-              type: 'input_json_delta',
-              id: data.toolUseId,
-              name: data.name,
-              partial_json: data.input
-            }
-          }
-        };
-      }
-      
-      // Tool use start event (no input yet and no stop) - Demo2兼容性：检查input为null/undefined/empty
-      if ((data.input === null || data.input === undefined || data.input === '') && !data.stop) {
-        logger.debug('Tool use start event', {
-          toolUseId: data.toolUseId,
-          name: data.name
-        }, requestId);
-        
-        return {
-          event: 'content_block_start',
-          data: {
-            type: 'content_block_start',
-            index: 1,
-            content_block: {
-              type: 'tool_use',
-              id: data.toolUseId,
-              name: data.name,
-              input: {}
-            }
-          }
-        };
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    logger.debug('Failed to convert tool use event', error, requestId);
-    return null;
-  }
-}
-
-/**
- * Convert assistant response event (based on demo2 implementation)
- */
-function convertAssistantResponseEvent(data: any, requestId: string): ParsedEvent | null {
-  try {
-    logger.debug('Converting assistant response event', {
-      dataType: typeof data,
-      dataKeys: data ? Object.keys(data) : [],
-      hasContent: !!(data && data.content),
-      hasToolUseId: !!(data && data.toolUseId),
-      hasName: !!(data && data.name),
-      hasInput: !!(data && data.input),
-      stop: !!(data && data.stop)
-    }, requestId);
-    
-    // Handle tool use events (from demo2)
-    if (data && data.toolUseId && data.name) {
-      // Tool use start event
-      if (data.input === null || data.input === undefined) {
-        logger.debug('Tool use start event', {
-          toolUseId: data.toolUseId,
-          name: data.name
-        }, requestId);
-        
-        return {
-          event: 'content_block_start',
-          data: {
-            type: 'content_block_start',
-            index: 1,
-            content_block: {
-              type: 'tool_use',
-              id: data.toolUseId,
-              name: data.name,
-              input: {}
-            }
-          }
-        };
-      }
-      
-      // Tool input streaming (partial JSON)
-      if (data.input && !data.stop) {
-        logger.debug('Tool input streaming event', {
-          toolUseId: data.toolUseId,
-          name: data.name,
-          inputLength: data.input.length
-        }, requestId);
-        
-        return {
-          event: 'content_block_delta',
-          data: {
-            type: 'content_block_delta',
-            index: 1,
-            delta: {
-              type: 'input_json_delta',
-              id: data.toolUseId,
-              name: data.name,
-              partial_json: data.input
-            }
-          }
-        };
-      }
-      
-      // Tool use completion
-      if (data.stop) {
-        logger.debug('Tool use completion event', {
-          toolUseId: data.toolUseId,
-          name: data.name
-        }, requestId);
-        
-        // 修复：工具完成时只发送content_block_stop，不发送会话终止信号
-        // 这样可以让用户在工具调用后继续对话
-        return {
-          event: 'content_block_stop',
-          data: {
-            type: 'content_block_stop',
-            index: 1
-          }
-        };
-      }
-    }
-    
-    // Handle text content (new AWS binary format)
-    if (data && data.content) {
-      return {
-        event: 'content_block_delta',
-        data: {
-          type: 'content_block_delta',
-          index: 0,
-          delta: {
-            type: 'text_delta',
-            text: data.content
-          }
-        }
-      };
-    }
-    
-    // Handle legacy format
-    if (data && data.assistantResponseEvent && data.assistantResponseEvent.content) {
-      return {
-        event: 'content_block_delta',
-        data: {
-          type: 'content_block_delta',
-          index: 0,
-          delta: {
-            type: 'text_delta',
-            text: data.assistantResponseEvent.content
-          }
-        }
-      };
-    }
-    
-    return null;
-  } catch (error) {
-    logger.debug('Failed to convert assistant response event', error, requestId);
-    return null;
-  }
-}
-
-/**
- * Convert code generation event
- */
-function convertCodeGenerationEvent(data: any, requestId: string): ParsedEvent | null {
-  try {
-    if (data.codeGenerationEvent && data.codeGenerationEvent.content) {
-      return {
-        event: 'content_block_delta',
-        data: {
-          type: 'content_block_delta',
-          index: 0,
-          delta: {
-            type: 'text_delta',
-            text: data.codeGenerationEvent.content
-          }
-        }
-      };
-    }
-    return null;
-  } catch (error) {
-    logger.debug('Failed to convert code generation event', error, requestId);
-    return null;
-  }
-}
-
-/**
- * Convert content block delta event
- */
-function convertContentBlockDelta(data: any, requestId: string, skipTextForToolCall: boolean = false): ParsedEvent | null {
-  try {
-    // Handle different delta types
-    if (data.delta) {
-      switch (data.delta.type) {
-        case 'text_delta':
-          const textContent = data.delta.text || '';
-          
-          // 如果已经在累积阶段处理了工具调用，跳过包含工具调用的文本delta
-          if (skipTextForToolCall && textContent.includes('Tool call:')) {
-            logger.debug('Skipping text_delta as tool call was processed during accumulation', { 
-              text: textContent.substring(0, 100) 
-            }, requestId);
-            return null;
-          }
-          
-          return {
-            event: 'content_block_delta',
-            data: {
-              type: 'content_block_delta',
-              index: data.index || 0,
-              delta: {
-                type: 'text_delta',
-                text: textContent
-              }
-            }
-          };
-        
-        case 'input_json_delta':
-          return {
-            event: 'content_block_delta',
-            data: {
-              type: 'content_block_delta',
-              index: data.index || 1,
-              delta: {
-                type: 'input_json_delta',
-                partial_json: data.delta.partial_json || ''
-              }
-            }
-          };
-        
-        default:
-          return {
-            event: 'content_block_delta',
-            data: data
-          };
-      }
-    }
-    
-    return {
-      event: 'content_block_delta',
-      data: data
-    };
-  } catch (error) {
-    logger.debug('Failed to convert content block delta', error, requestId);
-    return null;
-  }
-}
-
-/**
- * Parse non-streaming response from CodeWhisperer
- */
-export function parseNonStreamingResponse(rawResponse: Buffer, requestId: string): any {
-  try {
-    const events = parseEvents(rawResponse);
-    const contexts: any[] = [];
-    
-    logger.debug('parseNonStreamingResponse: parsed events', {
-      eventCount: events.length,
-      eventTypes: events.map(e => e.Event)
-    }, requestId);
-    
-    // Convert SSE events to Anthropic format first
-    const anthropicEvents = convertEventsToAnthropic(events, requestId);
-    
-    logger.debug('parseNonStreamingResponse: converted to Anthropic format', {
-      anthropicEventCount: anthropicEvents.length,
-      eventTypes: anthropicEvents.map(e => e.event)
-    }, requestId);
-    
-    let currentContext = '';
-    let toolName = '';
-    let toolUseId = '';
-    let partialJsonStr = '';
-    let hasTextContent = false;
-    let hasToolContent = false;
-    
-    for (const event of anthropicEvents) {
-      if (event.data && typeof event.data === 'object') {
-        const dataMap = event.data;
-        
-        logger.debug('Processing event in parseNonStreamingResponse', {
-          eventType: event.event,
-          dataType: dataMap.type,
-          dataKeys: Object.keys(dataMap),
-          eventIndex: anthropicEvents.indexOf(event)
-        }, requestId);
-        
-        switch (dataMap.type) {
-          case 'content_block_start':
-            currentContext = '';
-            // For tool use blocks, capture the tool information
-            if (dataMap.content_block && dataMap.content_block.type === 'tool_use') {
-              toolUseId = dataMap.content_block.id || '';
-              toolName = dataMap.content_block.name || '';
-              partialJsonStr = ''; // Reset partial JSON for new tool
-              hasToolContent = true;
-              
-              logger.debug('Captured tool info from content_block_start', {
-                toolUseId,
-                toolName,
-                contentBlock: dataMap.content_block
-              }, 'parseNonStreamingResponse');
-            }
-            break;
-          
-          case 'content_block_delta':
-            if (dataMap.delta) {
-              switch (dataMap.delta.type) {
-                case 'text_delta':
-                  if (dataMap.delta.text) {
-                    currentContext += dataMap.delta.text;
-                    hasTextContent = true;
-                  }
-                  break;
-                
-                case 'input_json_delta':
-                  toolUseId = dataMap.delta.id || toolUseId;
-                  toolName = dataMap.delta.name || toolName;
-                  if (dataMap.delta.partial_json) {
-                    partialJsonStr += dataMap.delta.partial_json;
-                    hasToolContent = true;
-                  }
-                  break;
-              }
-            }
-            break;
-          
-          case 'content_block_stop':
-            const index = dataMap.index || 0;
+  // 添加 ping 事件
+  anthropicEvents.push({
+    event: 'ping',
+    data: { type: 'ping' }
+  });
+  
+  for (const event of events) {
+    try {
+      switch (event.Event) {
+        case 'assistantResponseEvent':
+          // 🔑 关键修复：处理CodeWhisperer的assistantResponseEvent事件
+          if (event.Data && event.Data.content) {
+            const eventContent = event.Data.content;
+            accumulatedText += eventContent;
             
-            if (index === 1) {
-              // Tool use block
-              let toolInput: any = {};
+            // 检查累积文本中是否有完整的工具调用 (支持XML格式)
+            // 匹配格式: <ToolName>input_content</ToolName> 或 Tool call: ToolName({...})
+            const xmlToolCallMatch = accumulatedText.match(/<(\w+)>(.*?)<\/\1>/s);
+            const legacyToolCallMatch = accumulatedText.match(/Tool call: (\w+)\((\{.*?\})\)(?:\s|$)/s);
+            
+            let toolName, toolInput;
+            let toolCallMatch = null;
+            
+            if (xmlToolCallMatch) {
+              // XML格式: <WebSearch>query text</WebSearch>
+              toolName = xmlToolCallMatch[1];
+              const inputContent = xmlToolCallMatch[2].trim();
+              toolInput = { query: inputContent }; // 大多数工具使用query参数
+              toolCallMatch = xmlToolCallMatch;
+              
+              logger.debug('Detected XML-style tool call', {
+                toolName,
+                inputContent: inputContent.substring(0, 100),
+                fullMatch: xmlToolCallMatch[0].substring(0, 200)
+              }, requestId);
+            } else if (legacyToolCallMatch) {
+              // 传统格式: Tool call: ToolName({...})
+              toolName = legacyToolCallMatch[1];
+              const inputStr = legacyToolCallMatch[2];
+              toolCallMatch = legacyToolCallMatch;
+              
               try {
-                toolInput = JSON.parse(partialJsonStr);
-              } catch (error) {
-                logger.warn('Failed to parse tool input JSON', error, requestId);
+                toolInput = JSON.parse(inputStr);
+              } catch (parseError) {
+                logger.error('Failed to parse legacy tool input JSON', {
+                  toolName,
+                  inputStr,
+                  error: parseError instanceof Error ? parseError.message : String(parseError)
+                }, requestId);
+                toolInput = { query: inputStr };
+              }
+            }
+            
+            if (toolCallMatch) {
+              try {
+                
+                // 生成工具调用的开始事件
+                anthropicEvents.push({
+                  event: 'content_block_start',
+                  data: {
+                    type: 'content_block_start',
+                    index: currentBlockIndex,
+                    content_block: {
+                      type: 'tool_use',
+                      id: `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                      name: toolName,
+                      input: {}
+                    }
+                  }
+                });
+
+                // 生成工具输入的流式事件
+                const inputJson = JSON.stringify(toolInput);
+                const chunkSize = 20; // 字符分块大小
+                for (let i = 0; i < inputJson.length; i += chunkSize) {
+                  const chunk = inputJson.slice(i, i + chunkSize);
+                  anthropicEvents.push({
+                    event: 'content_block_delta',
+                    data: {
+                      type: 'content_block_delta',
+                      index: currentBlockIndex,
+                      delta: {
+                        type: 'input_json_delta',
+                        partial_json: chunk
+                      }
+                    }
+                  });
+                }
+
+                // 生成工具调用的结束事件
+                anthropicEvents.push({
+                  event: 'content_block_stop',
+                  data: {
+                    type: 'content_block_stop',
+                    index: currentBlockIndex
+                  }
+                });
+
+                logger.info('Generated tool call events from assistantResponseEvent', {
+                  toolName,
+                  toolInput,
+                  blockIndex: currentBlockIndex
+                }, requestId);
+
+                currentBlockIndex++;
+                
+                // 移除工具调用，保留剩余文本
+                if (xmlToolCallMatch) {
+                  accumulatedText = accumulatedText.replace(/<\w+>.*?<\/\w+>/s, '').trim();
+                } else if (legacyToolCallMatch) {
+                  accumulatedText = accumulatedText.replace(/Tool call: \w+\(\{.*?\}\)(?:\s|$)/s, '').trim();
+                }
+              } catch (parseError) {
+                logger.error('Failed to generate tool call events from assistantResponseEvent', {
+                  toolName,
+                  toolInput,
+                  error: parseError instanceof Error ? parseError.message : String(parseError)
+                }, requestId);
+              }
+            }
+            
+            // 处理普通文本内容 (检查是否包含未完成的工具调用)
+            const hasIncompleteXmlTool = /<\w+(?:[^>]*>(?:[^<]*(?:<(?!\/))*[^<]*)*)?$/s.test(accumulatedText);
+            const hasIncompleteLegacyTool = accumulatedText.includes('Tool call:');
+            
+            if (!toolCallMatch && !hasIncompleteXmlTool && !hasIncompleteLegacyTool) {
+              if (!hasStartedText) {
+                // 开始文本块
+                anthropicEvents.push({
+                  event: 'content_block_start',
+                  data: {
+                    type: 'content_block_start',
+                    index: currentBlockIndex,
+                    content_block: {
+                      type: 'text',
+                      text: ''
+                    }
+                  }
+                });
+                hasStartedText = true;
               }
               
-              contexts.push({
-                type: 'tool_use',
-                id: toolUseId,
-                name: toolName,
-                input: toolInput
-              });
-              hasToolContent = false; // Reset flag
-            } else if (index === 0) {
-              // Text block
-              contexts.push({
-                type: 'text',
-                text: currentContext
-              });
-              hasTextContent = false; // Reset flag
+              // 分块发送文本内容
+              const chunkSize = 50;
+              for (let i = 0; i < eventContent.length; i += chunkSize) {
+                const chunk = eventContent.slice(i, i + chunkSize);
+                anthropicEvents.push({
+                  event: 'content_block_delta',
+                  data: {
+                    type: 'content_block_delta',
+                    index: currentBlockIndex,
+                    delta: {
+                      type: 'text_delta',
+                      text: chunk
+                    }
+                  }
+                });
+              }
+              
+              accumulatedText = ''; // 重置累积器
             }
-            break;
-        }
+          }
+          break;
+
+        case 'contentBlockStart':
+          anthropicEvents.push({
+            event: 'content_block_start',
+            data: {
+              type: 'content_block_start',
+              index: event.Data.index || 0,
+              content_block: event.Data.contentBlock || { type: 'text', text: '' }
+            }
+          });
+          break;
+
+        case 'contentBlockDelta':
+          anthropicEvents.push({
+            event: 'content_block_delta',
+            data: {
+              type: 'content_block_delta',
+              index: event.Data.index || 0,
+              delta: event.Data.delta || { type: 'text_delta', text: '' }
+            }
+          });
+          break;
+
+        case 'contentBlockStop':
+          anthropicEvents.push({
+            event: 'content_block_stop',
+            data: {
+              type: 'content_block_stop',
+              index: event.Data.index || 0
+            }
+          });
+          break;
+
+        default:
+          logger.debug('Unhandled event type in streaming conversion', {
+            eventType: event.Event
+          }, requestId);
+          break;
       }
-    }
-    
-    // 修复：如果有文本内容但没有content_block_stop事件，直接添加文本内容
-    if (hasTextContent && currentContext.trim()) {
-      contexts.push({
-        type: 'text',
-        text: currentContext
-      });
-      logger.debug('Added text content without content_block_stop event', {
-        textLength: currentContext.length
+    } catch (error) {
+      logger.error('Error converting event to Anthropic format', {
+        eventType: event.Event,
+        error: error instanceof Error ? error.message : String(error)
       }, requestId);
     }
-    
-    // 修复：如果有工具内容但没有content_block_stop事件，直接添加工具内容
-    if (hasToolContent && toolUseId && toolName) {
-      let toolInput: any = {};
-      try {
-        toolInput = JSON.parse(partialJsonStr);
-      } catch (error) {
-        logger.warn('Failed to parse tool input JSON without content_block_stop', error, requestId);
-      }
-      
-      contexts.push({
-        type: 'tool_use',
-        id: toolUseId,
-        name: toolName,
-        input: toolInput
-      });
-      logger.debug('Added tool content without content_block_stop event', {
-        toolName,
-        toolUseId
-      }, requestId);
-    }
-    
-    return contexts;
-  } catch (error) {
-    logger.error('Failed to parse non-streaming response', error, requestId);
-    return [{ type: 'text', text: 'Error parsing response' }];
   }
+
+  // 处理剩余的累积文本
+  if (accumulatedText && hasStartedText) {
+    // 发送剩余文本
+    const chunkSize = 50;
+    for (let i = 0; i < accumulatedText.length; i += chunkSize) {
+      const chunk = accumulatedText.slice(i, i + chunkSize);
+      anthropicEvents.push({
+        event: 'content_block_delta',
+        data: {
+          type: 'content_block_delta',
+          index: currentBlockIndex,
+          delta: {
+            type: 'text_delta',
+            text: chunk
+          }
+        }
+      });
+    }
+  }
+
+  // 结束当前文本块
+  if (hasStartedText) {
+    anthropicEvents.push({
+      event: 'content_block_stop',
+      data: {
+        type: 'content_block_stop',
+        index: currentBlockIndex
+      }
+    });
+  }
+
+  // 添加消息结束事件
+  anthropicEvents.push({
+    event: 'message_delta',
+    data: {
+      type: 'message_delta',
+      delta: {
+        stop_reason: 'end_turn',
+        stop_sequence: null
+      },
+      usage: {
+        output_tokens: 100 // 近似计算
+      }
+    }
+  });
+
+  anthropicEvents.push({
+    event: 'message_stop',
+    data: {
+      type: 'message_stop'
+    }
+  });
+
+  return anthropicEvents;
+}
+
+/**
+ * Parse non-streaming response (used by legacy code)
+ */
+export function parseNonStreamingResponse(response: any, requestId: string): any {
+  logger.debug('Parsing non-streaming response (legacy)', {
+    hasContent: !!response.content,
+    contentType: typeof response.content
+  }, requestId);
+
+  // Just return the response as-is for non-streaming
+  return response;
 }

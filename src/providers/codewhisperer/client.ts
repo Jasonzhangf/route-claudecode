@@ -7,17 +7,19 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
 import { CodeWhispererAuth } from './auth';
 import { SafeTokenManager } from './safe-token-manager';
+import { CodeWhispererTokenRotationManager, TokenRotationConfig } from './token-rotation-manager';
 import { CodeWhispererConverter, CodeWhispererRequest } from './converter';
 import { parseEvents, convertEventsToAnthropic, parseNonStreamingResponse } from './parser';
-import { processBufferedResponse } from './parser-buffered';
 import { logger } from '@/utils/logger';
 import { fixResponse } from '@/utils/response-fixer';
+import { captureHttpEvent, captureParsingEvent } from './data-capture';
 
 export class CodeWhispererClient implements Provider {
   public readonly name = 'codewhisperer';
   public readonly type = 'codewhisperer';
   
   private auth: CodeWhispererAuth;
+  private tokenRotationManager?: CodeWhispererTokenRotationManager;
   // private safeTokenManager: SafeTokenManager;
   private converter!: CodeWhispererConverter;
   private httpClient: AxiosInstance;
@@ -31,13 +33,45 @@ export class CodeWhispererClient implements Provider {
       throw new Error('CodeWhisperer endpoint is required but not provided in configuration');
     }
     this.endpoint = config.endpoint;
-    // Use custom token path if provided in config
-    const tokenPath = config.authentication?.credentials?.tokenPath;
-    // Use profileArn from config if provided, otherwise it will be read from token
+    
+    // Handle token configuration - support both single and multiple tokens
+    const credentials = config.authentication?.credentials;
+    const tokenPath = credentials?.tokenPath;
     const profileArn = config.settings?.profileArn;
-    this.auth = new CodeWhispererAuth(tokenPath, profileArn);
-    // 临时禁用SafeTokenManager for debugging
-    // this.safeTokenManager = SafeTokenManager.getInstance();
+    
+    if (Array.isArray(tokenPath) && tokenPath.length > 1) {
+      // Multiple tokens - initialize rotation manager
+      const tokenConfigs = tokenPath.map((path, index) => ({
+        path,
+        profileArn,
+        description: `CodeWhisperer Token ${index + 1}`
+      }));
+      
+      this.tokenRotationManager = new CodeWhispererTokenRotationManager(
+        tokenConfigs,
+        'codewhisperer-primary',
+        config.tokenRotation || {
+          strategy: 'health_based',
+          cooldownMs: 5000,
+          maxRetriesPerToken: 2,
+          tempDisableCooldownMs: 300000,
+          maxRefreshFailures: 3,
+          refreshRetryIntervalMs: 60000
+        }
+      );
+      
+      // Use first token for auth fallback
+      this.auth = new CodeWhispererAuth(tokenPath[0], profileArn);
+      
+      logger.info('Initialized CodeWhisperer token rotation', {
+        tokenCount: tokenPath.length,
+        strategy: config.tokenRotation?.strategy || 'health_based'
+      });
+    } else {
+      // Single token - traditional approach
+      const finalTokenPath = Array.isArray(tokenPath) ? tokenPath[0] : tokenPath;
+      this.auth = new CodeWhispererAuth(finalTokenPath, profileArn);
+    }
     
     // Demo2 style: Perform startup token validation and refresh
     this.performStartupTokenValidation();
@@ -56,20 +90,38 @@ export class CodeWhispererClient implements Provider {
       }
     });
 
-    // Add request interceptor for authentication - temporary bypass SafeTokenManager for testing
+    // Add request interceptor for authentication with token rotation support
     this.httpClient.interceptors.request.use(
       async (config) => {
         try {
-          // 临时绕过SafeTokenManager直接使用auth获取token
-          const token = await this.auth.getToken();
+          const requestId = config.headers['X-Request-ID'] || 'http-interceptor';
+          let token: string;
+          let tokenPath: string;
           
-          if (!token) {
-            logger.error('No valid token available from direct auth');
-            throw new ProviderError('No valid token available', this.name, 401);
+          if (this.tokenRotationManager) {
+            // Use token rotation manager
+            const tokenData = await this.tokenRotationManager.getNextToken(requestId);
+            token = tokenData.token;
+            tokenPath = tokenData.tokenPath;
+            
+            logger.debug('Authentication token obtained from rotation manager', {
+              tokenPath: tokenPath.substring(tokenPath.lastIndexOf('/') + 1),
+              requestId
+            });
+          } else {
+            // Use single token auth
+            token = await this.auth.getToken(requestId);
+            tokenPath = 'single-token';
+            
+            if (!token) {
+              logger.error('No valid token available from direct auth');
+              throw new ProviderError('No valid token available', this.name, 401);
+            }
           }
           
           config.headers['Authorization'] = `Bearer ${token}`;
-          logger.debug('Authentication token added successfully (direct auth)');
+          config.headers['X-Token-Path'] = tokenPath; // For error tracking
+          logger.debug('Authentication token added successfully');
           return config;
         } catch (error) {
           if (error instanceof ProviderError) {
@@ -84,19 +136,38 @@ export class CodeWhispererClient implements Provider {
       }
     );
 
-    // Add response interceptor for monitoring-based error handling
+    // Add response interceptor for monitoring-based error handling with rotation support
     this.httpClient.interceptors.response.use(
       (response) => {
-        // Reset failure count on successful response
-        this.auth.resetFailureCount();
+        // Report success to rotation manager or auth
+        const tokenPath = response.config.headers['X-Token-Path'];
+        const requestId = response.config.headers['X-Request-ID'] || 'unknown';
+        
+        if (this.tokenRotationManager && tokenPath && tokenPath !== 'single-token') {
+          this.tokenRotationManager.reportTokenSuccess(tokenPath, requestId);
+        } else {
+          this.auth.resetFailureCount();
+        }
+        
         return response;
       },
       async (error) => {
-        if (error.response?.status === 403 || error.response?.status === 401) {
-          logger.warn('CodeWhisperer authentication error - applying Demo2 style immediate refresh', {
+        const tokenPath = error.config?.headers?.['X-Token-Path'];
+        const requestId = error.config?.headers?.['X-Request-ID'] || 'auth-retry';
+        const isAuthError = error.response?.status === 403 || error.response?.status === 401;
+        
+        if (isAuthError) {
+          logger.warn('CodeWhisperer authentication error detected', {
             status: error.response?.status,
-            statusText: error.response?.statusText
+            statusText: error.response?.statusText,
+            tokenPath,
+            hasRotationManager: !!this.tokenRotationManager
           });
+          
+          // Report failure to rotation manager or auth
+          if (this.tokenRotationManager && tokenPath && tokenPath !== 'single-token') {
+            this.tokenRotationManager.reportTokenFailure(tokenPath, error, error.response?.status);
+          }
           
           // Check if this request has already been retried (prevent infinite loops)
           const retryCount = error.config._retryCount || 0;
@@ -111,24 +182,43 @@ export class CodeWhispererClient implements Provider {
           }
           
           try {
-            // Demo2 style: Immediate token refresh on auth error
-            const newToken = await this.auth.handleAuthError();
+            let newToken: string;
+            let newTokenPath: string;
+            
+            if (this.tokenRotationManager) {
+              // Try to get a different token from rotation manager
+              const tokenData = await this.tokenRotationManager.getNextToken(requestId);
+              newToken = tokenData.token;
+              newTokenPath = tokenData.tokenPath;
+              
+              logger.info('Retrying with different token from rotation manager', {
+                newTokenPath: newTokenPath.substring(newTokenPath.lastIndexOf('/') + 1)
+              });
+            } else {
+              // Fallback to single token refresh
+              newToken = await this.auth.handleAuthError(requestId);
+              newTokenPath = 'single-token';
+              
+              logger.info('Retrying with refreshed single token');
+            }
             
             // Mark this request as retried to prevent infinite loops
             error.config._retryCount = retryCount + 1;
             // Use new token for retry
             error.config.headers['Authorization'] = `Bearer ${newToken}`;
-            logger.info('Retrying request with Demo2-style refreshed token');
+            error.config.headers['X-Token-Path'] = newTokenPath;
+            
             return this.httpClient.request(error.config);
           } catch (refreshError) {
-            logger.error('Demo2-style token refresh failed', refreshError);
+            logger.error('Token refresh/rotation failed', refreshError);
             
             if (refreshError instanceof ProviderError) {
               throw refreshError;
             }
-            throw new ProviderError('Demo2-style token refresh failed', this.name, 500, refreshError);
+            throw new ProviderError('Token refresh/rotation failed', this.name, 500, refreshError);
           }
         }
+        
         return Promise.reject(error);
       }
     );
@@ -182,19 +272,33 @@ export class CodeWhispererClient implements Provider {
   }
 
   /**
-   * Check if provider is healthy using SafeTokenManager
+   * Check if provider is healthy
    */
   async isHealthy(): Promise<boolean> {
     try {
-      // 临时禁用SafeTokenManager检查，直接检查auth
-      const token = await this.auth.getToken();
-      if (!token) {
-        logger.warn('CodeWhisperer health check failed - no valid token');
-        return false;
-      }
+      if (this.tokenRotationManager) {
+        // Check if any tokens are available from rotation manager
+        const tokenData = await this.tokenRotationManager.getNextToken('health-check');
+        if (!tokenData.token) {
+          logger.warn('CodeWhisperer health check failed - no valid tokens in rotation');
+          return false;
+        }
+        
+        logger.debug('CodeWhisperer health check passed (token rotation)', {
+          tokenPath: tokenData.tokenPath.substring(tokenData.tokenPath.lastIndexOf('/') + 1)
+        });
+        return true;
+      } else {
+        // Single token check
+        const token = await this.auth.getToken('health-check');
+        if (!token) {
+          logger.warn('CodeWhisperer health check failed - no valid token');
+          return false;
+        }
 
-      logger.debug('CodeWhisperer health check passed (direct auth)');
-      return true;
+        logger.debug('CodeWhisperer health check passed (single token)');
+        return true;
+      }
     } catch (error) {
       logger.error('CodeWhisperer health check failed', error);
       return false;
@@ -207,14 +311,29 @@ export class CodeWhispererClient implements Provider {
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     const requestId = request.metadata?.requestId || 'unknown';
     
-    // Check if token is blocked before sending request
-    if (this.auth.isTokenBlocked()) {
-      logger.error('Request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
-      throw new ProviderError(
-        'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
-        this.name,
-        500
-      );
+    // Check if tokens are available before sending request
+    if (this.tokenRotationManager) {
+      // Check if any tokens are available
+      try {
+        await this.tokenRotationManager.getNextToken(requestId);
+      } catch (error) {
+        logger.error('Request blocked - no valid tokens available in rotation', {}, requestId, 'provider');
+        throw new ProviderError(
+          'No valid tokens available. All tokens may be disabled or invalid.',
+          this.name,
+          500
+        );
+      }
+    } else {
+      // Single token check
+      if (this.auth.isTokenBlocked()) {
+        logger.error('Request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
+        throw new ProviderError(
+          'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
+          this.name,
+          500
+        );
+      }
     }
     
     try {
@@ -238,8 +357,31 @@ export class CodeWhispererClient implements Provider {
       const strategyStartTime = Date.now();
       
       // 🔄 Use traditional streaming approach with universal optimization
+      const httpStartTime = Date.now();
+      
+      // Capture HTTP request
+      captureHttpEvent(requestId, 'request_sent', {
+        url: this.endpoint + '/generateAssistantResponse',
+        method: 'POST',
+        requestBody: cwRequest,
+        timeTaken: 0
+      });
+      
       response = await this.httpClient.post('/generateAssistantResponse', cwRequest, {
-        responseType: 'arraybuffer'
+        responseType: 'arraybuffer',
+        headers: {
+          'X-Request-ID': requestId
+        }
+      });
+      
+      // Capture HTTP response
+      captureHttpEvent(requestId, 'response_received', {
+        url: this.endpoint + '/generateAssistantResponse',
+        method: 'POST',
+        responseStatus: response.status,
+        responseHeaders: response.headers as Record<string, string>,
+        responseSize: response.data ? Buffer.from(response.data).length : 0,
+        timeTaken: Date.now() - httpStartTime
       });
       
       if (response.status !== 200) {
@@ -248,15 +390,51 @@ export class CodeWhispererClient implements Provider {
           const modelName = cwRequest?.conversationState?.currentMessage?.userInputMessage?.modelId || request.model || 'unknown';
           errorMessage += ` | Sent model: "${modelName}"`;
         }
+        
+        // Capture HTTP error
+        captureHttpEvent(requestId, 'http_error', {
+          url: this.endpoint + '/generateAssistantResponse',
+          method: 'POST',
+          responseStatus: response.status,
+          timeTaken: Date.now() - httpStartTime
+        }, { errorMessage });
+        
         throw new ProviderError(errorMessage, this.name, response.status, response.data);
       }
 
       const responseBuffer = Buffer.from(response.data);
       const streamingStartTime = Date.now();
       
-      anthropicEvents = processBufferedResponse(responseBuffer, requestId, request.model);
+      // 🔄 Switch back to direct streaming processing with tool call accumulation
+      // Parse raw events from CodeWhisperer
+      const sseEvents = parseEvents(responseBuffer);
+      logger.info('Parsed SSE events from raw response', {
+        eventCount: sseEvents.length,
+        eventTypes: sseEvents.map(e => e.Event)
+      }, requestId);
+      
+      // Capture parsing event start
+      captureParsingEvent(requestId, 'sse_parsing', {
+        parsingMethod: 'streaming',
+        responseSize: responseBuffer.length,
+        sseEventCount: sseEvents.length,
+        processingTime: 0,
+        timeTaken: 0
+      });
+      
+      // Convert to Anthropic format with tool call processing
+      anthropicEvents = convertEventsToAnthropic(sseEvents, requestId);
       
       const streamingTime = Date.now() - streamingStartTime;
+      
+      // Capture parsing completion
+      captureParsingEvent(requestId, 'stream_reconstruction', {
+        parsingMethod: 'streaming',
+        sseEventCount: sseEvents.length,
+        streamEvents: anthropicEvents,
+        processingTime: streamingTime,
+        timeTaken: streamingTime
+      });
       
       logger.info('✅ Universal streaming completed', {
         processingTime: streamingTime,
@@ -404,14 +582,29 @@ export class CodeWhispererClient implements Provider {
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
     
-    // Check if token is blocked before sending streaming request
-    if (this.auth.isTokenBlocked()) {
-      logger.error('Streaming request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
-      throw new ProviderError(
-        'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
-        this.name,
-        500
-      );
+    // Check if tokens are available before sending streaming request
+    if (this.tokenRotationManager) {
+      // Check if any tokens are available
+      try {
+        await this.tokenRotationManager.getNextToken(requestId);
+      } catch (error) {
+        logger.error('Streaming request blocked - no valid tokens available in rotation', {}, requestId, 'provider');
+        throw new ProviderError(
+          'No valid tokens available for streaming. All tokens may be disabled or invalid.',
+          this.name,
+          500
+        );
+      }
+    } else {
+      // Single token check
+      if (this.auth.isTokenBlocked()) {
+        logger.error('Streaming request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
+        throw new ProviderError(
+          'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
+          this.name,
+          500
+        );
+      }
     }
     
     try {
@@ -471,14 +664,17 @@ export class CodeWhispererClient implements Provider {
       }, requestId, 'provider');
       
       // 使用完全缓冲式处理：非流式 -> 流式转换
-      logger.debug('Using full buffered processing strategy', {
+      logger.debug('Using streaming processing strategy', {
         responseLength: fullResponse.length
       }, requestId, 'provider');
       
-      const anthropicEvents = processBufferedResponse(fullResponse, requestId, request.model);
-      logger.debug('Completed buffered processing', {
+      // Parse events and convert to Anthropic format
+      const sseEvents = parseEvents(fullResponse);
+      const anthropicEvents = convertEventsToAnthropic(sseEvents, requestId);
+      logger.debug('Completed streaming processing', {
+        sseEventCount: sseEvents.length,
         anthropicEventCount: anthropicEvents.length,
-        events: anthropicEvents.map(e => ({ event: e.event, hasData: !!e.data }))
+        events: anthropicEvents.map((e: any) => ({ event: e.event, hasData: !!e.data }))
       }, requestId, 'provider');
       
       // Yield events

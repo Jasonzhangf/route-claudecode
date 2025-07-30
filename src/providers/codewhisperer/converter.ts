@@ -7,6 +7,7 @@ import { BaseRequest, BaseResponse, AnthropicRequest } from '@/types';
 import { logger } from '@/utils/logger';
 import { sessionManager } from '@/session/manager';
 import { v4 as uuidv4 } from 'uuid';
+import { captureConversionEvent } from './data-capture';
 
 // CodeWhisperer API types (from demo2)
 export interface CodeWhispererRequest {
@@ -73,6 +74,7 @@ export class CodeWhispererConverter {
    * Convert BaseRequest to CodeWhisperer format
    */
   convertRequest(request: BaseRequest, requestId: string): CodeWhispererRequest {
+    const startTime = Date.now();
     try {
       logger.trace(requestId, 'converter', 'Converting request to CodeWhisperer format', {
         model: request.model,
@@ -108,34 +110,163 @@ export class CodeWhispererConverter {
 
       const anthropicReq = request as AnthropicRequest;
 
-      // Add tools if present
+      // Handle tools if present - Fix from aca415c: read from top-level tools
       if (anthropicReq.tools && Array.isArray(anthropicReq.tools)) {
         cwRequest.conversationState.currentMessage.userInputMessage.userInputMessageContext.tools = 
-          this.convertTools(anthropicReq.tools);
+          anthropicReq.tools.map((tool: any) => ({
+            toolSpecification: {
+              name: tool.name,
+              description: tool.description,
+              inputSchema: {
+                json: tool.input_schema
+              }
+            }
+          }));
+
+        logger.debug('Added tools to CodeWhisperer request', {
+          toolCount: anthropicReq.tools.length,
+          toolNames: anthropicReq.tools.map((t: any) => t.name)
+        }, requestId);
       }
 
-      // Build conversation history
-      this.buildHistory(cwRequest, request, requestId);
+      // Handle tool results if present (for multi-turn tool conversations)
+      if (request.metadata?.toolResults && request.metadata.toolResults.length > 0) {
+        cwRequest.conversationState.currentMessage.userInputMessage.userInputMessageContext.toolResults = 
+          request.metadata.toolResults.map((result: any) => ({
+            content: [{ text: result.content }],
+            status: result.is_error ? 'ERROR' : 'SUCCESS',
+            toolUseId: result.tool_use_id
+          }));
 
-      logger.trace(requestId, 'converter', 'Request converted successfully', {
+        logger.debug('Added tool results to CodeWhisperer request', {
+          toolResultCount: request.metadata.toolResults.length
+        }, requestId);
+      }
+
+      // Build conversation history (demo2 style)
+      cwRequest.conversationState.history = this.buildConversationHistory(request, requestId);
+
+      logger.trace(requestId, 'converter', 'Request conversion completed', {
         conversationId: cwRequest.conversationState.conversationId,
-        modelId: cwRequest.conversationState.currentMessage.userInputMessage.modelId,
-        hasTools: !!cwRequest.conversationState.currentMessage.userInputMessage.userInputMessageContext.tools?.length,
-        historyLength: cwRequest.conversationState.history.length
+        historyLength: cwRequest.conversationState.history.length,
+        hasTools: !!(request.metadata?.tools?.length),
+        hasToolResults: !!(request.metadata?.toolResults?.length)
+      });
+
+      // Capture successful request conversion
+      captureConversionEvent(requestId, 'request_conversion', {
+        originalRequest: request,
+        convertedRequest: cwRequest,
+        historyLength: cwRequest.conversationState.history.length,
+        toolsCount: request.metadata?.tools?.length || 0,
+        toolResultsCount: request.metadata?.toolResults?.length || 0,
+        timeTaken: Date.now() - startTime
       });
 
       return cwRequest;
     } catch (error) {
-      logger.error('Failed to convert request', error, requestId, 'converter');
-      throw error;
+      // Capture conversion failure
+      captureConversionEvent(requestId, 'request_conversion', {
+        originalRequest: request,
+        timeTaken: Date.now() - startTime
+      }, { error: error instanceof Error ? error.message : String(error) });
+      
+      logger.error('Failed to convert request to CodeWhisperer format', error, requestId, 'converter');
+      throw new Error(`Request conversion failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   /**
-   * Extract text content from message content (string or array)
+   * Build conversation history (demo2 style)
+   */
+  private buildConversationHistory(request: BaseRequest, requestId: string): any[] {
+    const history: any[] = [];
+    const messages = request.messages;
+
+    logger.debug('Building conversation history', {
+      totalMessages: messages.length,
+      hasSystem: !!(request as any).system
+    }, requestId);
+
+    // Add system messages as history - Fix from aca415c: proper system message handling
+    const anthropicReq = request as AnthropicRequest;
+    if (anthropicReq.system) {
+      const systemMessages = Array.isArray(anthropicReq.system) ? anthropicReq.system : [{ type: 'text', text: anthropicReq.system }];
+      
+      for (const sysMsg of systemMessages) {
+        const content = this.extractMessageContent(sysMsg.text || sysMsg); // Apply system reminder cleanup
+        const userMsg: HistoryUserMessage = {
+          userInputMessage: {
+            content,
+            modelId: request.model, // Use mapped model from routing engine
+            origin: 'AI_EDITOR'
+          }
+        };
+        
+        const assistantMsg: HistoryAssistantMessage = {
+          assistantResponseMessage: {
+            content: 'I will follow these instructions.',
+            toolUses: []
+          }
+        };
+        
+        history.push(userMsg, assistantMsg);
+      }
+      
+      logger.debug('Added system messages to history', {
+        systemMessageCount: systemMessages.length
+      }, requestId);
+    }
+
+    // Add message history (excluding the current/last message)
+    for (let i = 0; i < messages.length - 1; i++) {
+      const message = messages[i];
+      
+      if (message.role === 'user') {
+        const userMsg: HistoryUserMessage = {
+          userInputMessage: {
+            content: this.extractMessageContent(message.content),
+            modelId: request.model,
+            origin: 'AI_EDITOR'
+          }
+        };
+        history.push(userMsg);
+        
+        // Check if next message is assistant response - Fix from aca415c: proper tool handling in history
+        if (i + 1 < messages.length - 1 && messages[i + 1].role === 'assistant') {
+          const assistantMessage = messages[i + 1];
+          const assistantContentBlocks = Array.isArray(assistantMessage.content) ? assistantMessage.content : [{ type: 'text', text: assistantMessage.content }];
+          const toolUses = assistantContentBlocks.filter((b: any) => b.type === 'tool_use').map((b: any) => ({ name: b.name, input: JSON.stringify(b.input) }));
+          const assistantContent = this.extractMessageContent(assistantMessage.content);
+
+          const assistantMsg: HistoryAssistantMessage = {
+            assistantResponseMessage: {
+              content: assistantContent,
+              toolUses: toolUses
+            }
+          };
+          history.push(assistantMsg);
+          i++; // Skip the assistant message in the next iteration
+        }
+      }
+    }
+
+    logger.debug('Conversation history built', {
+      historyEntries: history.length,
+      userEntries: history.filter((h, i) => i % 2 === 0).length,
+      assistantEntries: history.filter((h, i) => i % 2 === 1).length
+    }, requestId);
+
+    return history;
+  }
+
+  /**
+   * Extract message content from various content formats
+   * Includes system reminder cleanup logic from commit aca415c
    */
   private extractMessageContent(content: any): string {
     if (typeof content === 'string') {
+      // Strip system reminders to prevent large request bodies (from aca415c fix)
       const reminderEndTag = '</system-reminder>';
       const lastIndex = content.lastIndexOf(reminderEndTag);
       let userMessage = content;
@@ -145,194 +276,90 @@ export class CodeWhispererConverter {
       }
 
       if (userMessage.length === 0) {
-        return 'answer for user qeustion';  // 完全模仿demo2的拼写错误
+        return 'answer for user qeustion';  // Demo2 style spelling - preserving exact format
       }
       return userMessage;
     }
 
     if (Array.isArray(content)) {
-      const texts: string[] = [];
+      const textParts: string[] = [];
       
-      content.forEach((block: any) => {
-        if (block && typeof block === 'object') {
+      for (const block of content) {
+        if (typeof block === 'string') {
+          textParts.push(block);
+        } else if (block && typeof block === 'object') {
           switch (block.type) {
             case 'text':
-              if (block.text) texts.push(block.text);
+              if (block.text) {
+                textParts.push(block.text);
+              }
               break;
             case 'tool_result':
               if (block.content) {
-                texts.push(typeof block.content === 'string' ? block.content : JSON.stringify(block.content));
-              }
-              break;
-            case 'tool_use':
-              // 处理工具调用 - 将其转换为文本描述
-              if (block.name) {
-                const toolCall = `Tool call: ${block.name}`;
-                if (block.input) {
-                  texts.push(`${toolCall}(${JSON.stringify(block.input)})`);
-                } else {
-                  texts.push(toolCall);
+                if (typeof block.content === 'string') {
+                  textParts.push(`Tool result: ${block.content}`);
+                } else if (Array.isArray(block.content)) {
+                  const resultTexts = block.content
+                    .filter((c: any) => c.type === 'text')
+                    .map((c: any) => c.text)
+                    .join('\n');
+                  textParts.push(`Tool result: ${resultTexts}`);
                 }
               }
               break;
+            // tool_use blocks are handled separately in extractToolUses
           }
         }
+      }
+      
+      return textParts.length > 0 ? textParts.join('\n') : 'Please respond to the user.';
+    }
+
+    // Fallback for other content types
+    try {
+      const contentStr = JSON.stringify(content);
+      logger.debug('Using JSON string representation for unknown content type', {
+        contentType: typeof content,
+        contentPreview: contentStr.slice(0, 200)
       });
-
-      if (texts.length === 0) {
-        return 'answer for user qeustion';  // 完全模仿demo2的拼写错误
-      }
-      return texts.join('\n');
-    }
-
-    // Fallback for unknown content format - 完全模仿demo2
-    return 'answer for user qeustion';  // 完全模仿demo2的拼写错误
-  }
-
-  /**
-   * Convert Anthropic tools to CodeWhisperer format
-   */
-  private convertTools(tools: any[]): any[] {
-    return tools.map(tool => ({
-      toolSpecification: {
-        name: tool.name,
-        description: tool.description,
-        inputSchema: {
-          json: tool.input_schema || {}
-        }
-      }
-    }));
-  }
-
-  /**
-   * Build conversation history for CodeWhisperer (following demo2 logic exactly)
-   */
-  private buildHistory(cwRequest: CodeWhispererRequest, request: BaseRequest, requestId: string): void {
-    const anthropicReq = request as AnthropicRequest;
-    const modelId = cwRequest.conversationState.currentMessage.userInputMessage.modelId;
-    const hasSystemMessages = anthropicReq.system && Array.isArray(anthropicReq.system) && anthropicReq.system.length > 0;
-    const hasMultipleMessages = request.messages.length > 1;
-
-    logger.debug('History building analysis (demo2 style)', {
-      totalMessages: request.messages.length,
-      hasSystemMessages,
-      systemMessageCount: hasSystemMessages ? request.metadata?.system?.length : 0,
-      hasMultipleMessages,
-      shouldBuildHistory: hasSystemMessages || hasMultipleMessages
-    }, requestId);
-
-    // Following demo2 logic: only build history if there are system messages OR multiple regular messages
-    if (hasSystemMessages || hasMultipleMessages) {
-      const history: any[] = [];
-      
-      // First add system messages as history (like demo2)
-      const assistantDefaultMsg: HistoryAssistantMessage = {
-        assistantResponseMessage: {
-          content: 'I will follow these instructions',
-          toolUses: []
-        }
-      };
-
-      if (hasSystemMessages) {
-        logger.debug('Processing system messages', {
-          systemMessageCount: anthropicReq.system?.length
-        }, requestId);
-        
-        anthropicReq.system!.forEach((sysMsg: any, index: number) => {
-          const content = this.extractMessageContent(sysMsg.text || sysMsg);
-          const userMsg: HistoryUserMessage = {
-            userInputMessage: {
-              content,
-              modelId: cwRequest.conversationState.currentMessage.userInputMessage.modelId, // Use the mapped modelId
-              origin: 'AI_EDITOR'
-            }
-          };
-          history.push(userMsg);
-          history.push(assistantDefaultMsg);
-          
-          logger.debug(`Added system message ${index}`, {
-            content: typeof content === 'string' ? content.substring(0, 50) : 'complex',
-            historyLength: history.length
-          }, requestId);
-        });
-      }
-
-      // Then process regular message history (like demo2)
-      if (hasMultipleMessages) {
-        logger.debug('Building history from request messages (demo2 style)', {
-          totalMessages: request.messages.length,
-          historyMessages: request.messages.length - 1
-        }, requestId);
-
-        for (let i = 0; i < request.messages.length - 1; i++) {
-          const message = request.messages[i];
-          
-          logger.debug(`Processing history message ${i}`, {
-            role: message.role,
-            contentPreview: typeof message.content === 'string' 
-              ? message.content.substring(0, 50) 
-              : 'complex_content'
-          }, requestId);
-          
-          if (message.role === 'user') {
-            const content = this.extractMessageContent(message.content);
-            const userMsg: HistoryUserMessage = {
-              userInputMessage: {
-                content,
-                modelId: cwRequest.conversationState.currentMessage.userInputMessage.modelId, // Use the mapped modelId
-                origin: 'AI_EDITOR'
-              }
-            };
-            history.push(userMsg);
-            
-            logger.debug(`Added user history message ${i}`, {
-              contentLength: content.length,
-              historyLength: history.length
-            }, requestId);
-
-            // Check if next message is assistant response (like demo2)
-            if (i + 1 < request.messages.length - 1 && request.messages[i + 1].role === 'assistant') {
-              const assistantContentBlocks = Array.isArray(request.messages[i + 1].content) ? request.messages[i + 1].content : [{ type: 'text', text: request.messages[i + 1].content }];
-              const toolUses = assistantContentBlocks.filter((b: any) => b.type === 'tool_use').map((b: any) => ({ name: b.name, input: JSON.stringify(b.input) }));
-              const assistantContent = this.extractMessageContent(request.messages[i + 1].content);
-
-              const assistantMsg: HistoryAssistantMessage = {
-                assistantResponseMessage: {
-                  content: assistantContent,
-                  toolUses: toolUses
-                }
-              };
-              history.push(assistantMsg);
-              i++; // Skip the processed assistant message
-              
-              logger.debug(`Added assistant history message ${i}`, {
-                contentLength: assistantContent.length,
-                historyLength: history.length
-              }, requestId);
-            }
-          }
-        }
-      }
-
-      cwRequest.conversationState.history = history;
-      
-      logger.debug('Built conversation history', { 
-        historyLength: history.length,
-        systemMessages: hasSystemMessages ? request.metadata?.system?.length : 0,
-        regularMessages: hasMultipleMessages ? request.messages.length - 1 : 0
-      }, requestId, 'converter');
-    } else {
-      // No history needed for single message without system messages (like demo2)
-      cwRequest.conversationState.history = [];
-      logger.debug('No history needed - single message without system messages (demo2 style)', {}, requestId);
+      return contentStr.slice(0, 1000); // Limit length
+    } catch (error) {
+      return 'Please respond to the user.';
     }
   }
 
   /**
-   * Update profile ARN
+   * Extract tool uses from message content for history
+   */
+  private extractToolUses(content: any): any[] {
+    if (!Array.isArray(content)) {
+      return [];
+    }
+
+    return content
+      .filter(block => block && block.type === 'tool_use')
+      .map(block => ({
+        name: block.name,
+        input: block.input || {},
+        id: block.id
+      }));
+  }
+
+  /**
+   * Get profileArn (used by client for initialization)
+   */
+  getProfileArn(): string {
+    return this.profileArn;
+  }
+
+  /**
+   * Update profileArn if needed
    */
   updateProfileArn(profileArn: string): void {
+    if (!profileArn) {
+      throw new Error('Invalid profileArn provided');
+    }
     this.profileArn = profileArn;
-    logger.info('Updated CodeWhisperer profile ARN', { profileArn });
+    logger.debug('Updated CodeWhisperer profileArn', { profileArn });
   }
 }

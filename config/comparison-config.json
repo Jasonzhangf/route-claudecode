@@ -1,0 +1,201 @@
+{
+  "comparisonAnalysis": {
+    "enableContentAnalysis": true,
+    "enablePerformanceAnalysis": true,
+    "enableStructuralAnalysis": true,
+    "qualityThresholds": {
+      "critical": 0.3,
+      "major": 0.6,
+      "minor": 0.8
+    },
+    "analysisTimeout": 30000,
+    "maxHistorySize": 1000,
+    "similarityAlgorithm": "word_overlap",
+    "weightings": {
+      "contentSimilarity": 0.4,
+      "structuralConsistency": 0.3,
+      "performanceScore": 0.2,
+      "metadataAccuracy": 0.1
+    }
+  },
+  
+  "correctionEngine": {
+    "enableContentCorrection": true,
+    "enableStructuralCorrection": true,
+    "enableToolCorrection": true,
+    "enableMetadataCorrection": false,
+    "confidenceThreshold": 0.7,
+    "maxCorrections": 10,
+    "strategies": {
+      "content": {
+        "useReferenceLength": true,
+        "preserveOriginalStyle": false,
+        "similarityThreshold": 0.5
+      },
+      "structure": {
+        "normalizeFields": true,
+        "preserveOriginalData": true
+      },
+      "tools": {
+        "fixFormat": true,
+        "validateParameters": true
+      }
+    },
+    "correctionPriorities": {
+      "critical": 1,
+      "major": 2,
+      "minor": 3
+    }
+  },
+  
+  "autoCorrection": {
+    "learningEnabled": true,
+    "minimumDataPoints": 10,
+    "confidenceThreshold": 0.6,
+    "patternDetectionThreshold": 3,
+    "ruleGenerationThreshold": 5,
+    "maxPatternsPerType": 10,
+    "maxRules": 50,
+    "dataStoragePath": "~/.claude-code-router/learning",
+    "autoSaveInterval": 300000,
+    "learningRates": {
+      "patternConfidence": 0.05,
+      "rulePerformance": 0.1,
+      "overallConfidence": 0.02
+    }
+  },
+  
+  "testConfiguration": {
+    "localRouterUrl": "http://localhost:3456",
+    "timeout": 30000,
+    "retryAttempts": 3,
+    "retryDelay": 1000,
+    "outputDirectory": "/tmp/provider-comparison-test",
+    "saveDetailedLogs": true,
+    "testScenarios": {
+      "simple": {
+        "enabled": true,
+        "maxTokens": 500,
+        "complexity": "low"
+      },
+      "complex": {
+        "enabled": true,
+        "maxTokens": 1000,
+        "complexity": "high"
+      },
+      "toolCalling": {
+        "enabled": true,
+        "maxTokens": 300,
+        "requiresTools": true
+      },
+      "longContext": {
+        "enabled": true,
+        "maxTokens": 800,
+        "contextLength": "large"
+      }
+    }
+  },
+  
+  "providerConfiguration": {
+    "primaryProvider": "codewhisperer-primary",
+    "referenceProvider": "shuaihong-openai",
+    "comparisonPairs": [
+      {
+        "primary": "codewhisperer-primary",
+        "reference": "shuaihong-openai",
+        "weight": 1.0
+      }
+    ],
+    "providerSettings": {
+      "codewhisperer-primary": {
+        "responseBuffering": true,
+        "streamProcessing": false,
+        "timeout": 30000
+      },
+      "shuaihong-openai": {
+        "responseBuffering": false,
+        "streamProcessing": true,
+        "timeout": 25000
+      }
+    }
+  },
+  
+  "qualityMetrics": {
+    "contentQuality": {
+      "completenessWeight": 0.3,
+      "accuracyWeight": 0.4,
+      "coherenceWeight": 0.3
+    },
+    "structuralQuality": {
+      "consistencyWeight": 0.5,
+      "standardComplianceWeight": 0.5
+    },
+    "performanceMetrics": {
+      "responseTimeWeight": 0.4,
+      "tokenEfficiencyWeight": 0.3,
+      "resourceUsageWeight": 0.3
+    },
+    "overallScoring": {
+      "contentWeight": 0.4,
+      "structuralWeight": 0.3,
+      "performanceWeight": 0.3
+    }
+  },
+  
+  "alerting": {
+    "enabled": true,
+    "qualityThresholds": {
+      "critical": 40,
+      "warning": 70,
+      "good": 85
+    },
+    "performanceThresholds": {
+      "slowResponse": 5000,
+      "verySlowResponse": 10000
+    },
+    "differenceThresholds": {
+      "majorDifference": 5,
+      "criticalDifference": 10
+    },
+    "notifications": {
+      "logLevel": "info",
+      "saveToFile": true,
+      "alertFrequency": "immediate"
+    }
+  },
+  
+  "reporting": {
+    "generateReports": true,
+    "reportFormats": ["json", "markdown"],
+    "reportDirectory": "/tmp/provider-comparison-reports",
+    "reportRetention": {
+      "days": 30,
+      "maxFiles": 100
+    },
+    "includeCharts": false,
+    "includeRawData": true,
+    "reportSchedule": {
+      "enabled": false,
+      "frequency": "daily",
+      "time": "02:00"
+    }
+  },
+  
+  "debugging": {
+    "enabled": true,
+    "logLevel": "debug",
+    "saveRequestResponses": true,
+    "saveCorrectionSteps": true,
+    "detailedErrorLogging": true,
+    "performanceTracking": true,
+    "memoryUsageTracking": false
+  },
+  
+  "experimental": {
+    "enableMLLearning": false,
+    "useAdvancedSimilarity": false,
+    "enablePredictiveCorrection": false,
+    "realTimeFeedback": false,
+    "adaptiveThresholds": false
+  }
+}

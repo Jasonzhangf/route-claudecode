@@ -18,7 +18,9 @@ export class OpenAICompatibleClient implements Provider {
   constructor(public config: ProviderConfig, providerId: string) {
     this.name = providerId;
     this.endpoint = config.endpoint;
-    this.apiKey = config.authentication.credentials.apiKey || config.authentication.credentials.api_key;
+    const credentials = config.authentication.credentials;
+    const apiKey = credentials.apiKey || credentials.api_key;
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
     
     if (!this.endpoint) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);

@@ -15,6 +15,9 @@ import {
   transformOpenAIResponseToAnthropic,
   StreamTransformOptions
 } from '@/transformers';
+import { processOpenAIBufferedResponse, OpenAIEvent } from './buffered-processor';
+import { ApiKeyRotationManager } from './api-key-rotation';
+import { captureRequest, captureResponse, captureError } from './data-capture';
 
 export class EnhancedOpenAIClient implements Provider {
   public readonly name: string;
@@ -23,16 +26,43 @@ export class EnhancedOpenAIClient implements Provider {
   private httpClient: AxiosInstance;
   private endpoint: string;
   private apiKey: string;
+  private apiKeyRotationManager?: ApiKeyRotationManager;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
 
   constructor(public config: ProviderConfig, providerId: string) {
     this.name = providerId;
     this.endpoint = config.endpoint;
-    this.apiKey = config.authentication.credentials.apiKey || config.authentication.credentials.api_key;
+    
+    // Handle API key configuration - support both single and multiple keys
+    const credentials = config.authentication.credentials;
+    const apiKey = credentials.apiKey || credentials.api_key;
+    
+    if (Array.isArray(apiKey) && apiKey.length > 1) {
+      // Multiple API keys - initialize rotation manager
+      this.apiKeyRotationManager = new ApiKeyRotationManager(
+        apiKey,
+        providerId,
+        config.keyRotation || { strategy: 'round_robin' }
+      );
+      this.apiKey = ''; // Will be set dynamically per request
+      
+      logger.info('Initialized API key rotation for provider', {
+        providerId,
+        keyCount: apiKey.length,
+        strategy: config.keyRotation?.strategy || 'round_robin'
+      });
+    } else {
+      // Single API key - traditional approach
+      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+    }
     
     if (!this.endpoint) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
+    }
+    
+    if (!this.apiKey && !this.apiKeyRotationManager) {
+      throw new Error(`OpenAI-compatible provider ${providerId} requires API key configuration`);
     }
 
     // Use endpoint as full URL including path
@@ -51,13 +81,41 @@ export class EnhancedOpenAIClient implements Provider {
       httpsAgent
     });
 
-    // Add request interceptor for authentication
+    // Add request interceptor for authentication (fallback for single key)
     this.httpClient.interceptors.request.use((config) => {
-      if (this.apiKey) {
+      if (this.apiKey && !config.headers['Authorization']) {
         config.headers['Authorization'] = `Bearer ${this.apiKey}`;
       }
       return config;
     });
+  }
+
+  /**
+   * Get current API key for request
+   */
+  private getCurrentApiKey(requestId?: string): string {
+    if (this.apiKeyRotationManager) {
+      return this.apiKeyRotationManager.getNextApiKey(requestId);
+    }
+    return this.apiKey;
+  }
+
+  /**
+   * Report success to rotation manager
+   */
+  private reportApiKeySuccess(apiKey: string, requestId?: string): void {
+    if (this.apiKeyRotationManager) {
+      this.apiKeyRotationManager.reportSuccess(apiKey, requestId);
+    }
+  }
+
+  /**
+   * Report error to rotation manager
+   */
+  private reportApiKeyError(apiKey: string, isRateLimit: boolean, requestId?: string): void {
+    if (this.apiKeyRotationManager) {
+      this.apiKeyRotationManager.reportError(apiKey, isRateLimit, requestId);
+    }
   }
 
   /**
@@ -101,26 +159,38 @@ export class EnhancedOpenAIClient implements Provider {
   }
 
   /**
-   * Execute request with retry logic
+   * Execute request with retry logic and API key rotation
    */
   private async executeWithRetry<T>(
-    requestFn: () => Promise<T>,
+    requestFn: (apiKey: string) => Promise<T>,
     operation: string,
     requestId: string
   ): Promise<T> {
     let lastError: any;
+    let currentApiKey: string;
     
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
-        return await requestFn();
+        // Get current API key for this attempt
+        currentApiKey = this.getCurrentApiKey(requestId);
+        
+        const result = await requestFn(currentApiKey);
+        
+        // Report success to rotation manager
+        this.reportApiKeySuccess(currentApiKey, requestId);
+        
+        return result;
       } catch (error) {
         lastError = error;
+        
+        // Report error to rotation manager
+        const isRateLimited = (error as any)?.response?.status === 429;
+        this.reportApiKeyError(currentApiKey!, isRateLimited, requestId);
         
         if (attempt === this.maxRetries || !this.isRetryableError(error)) {
           break;
         }
         
-        const isRateLimited = (error as any)?.response?.status === 429;
         const delayInfo = isRateLimited ? 
           (attempt === 0 ? '1s' : attempt === 1 ? '5s' : '60s') : 
           `${this.retryDelay * Math.pow(2, attempt)}ms`;
@@ -131,7 +201,8 @@ export class EnhancedOpenAIClient implements Provider {
           error: error instanceof Error ? error.message : String(error),
           status: (error as any)?.response?.status,
           nextRetryDelay: delayInfo,
-          isRateLimited
+          isRateLimited,
+          currentApiKey: currentApiKey! ? `***${currentApiKey!.slice(-4)}` : 'none'
         }, requestId, 'provider');
         
         await this.waitForRetry(attempt, isRateLimited);
@@ -166,10 +237,18 @@ export class EnhancedOpenAIClient implements Provider {
       // Transform Anthropic format to OpenAI format using new transformer
       const openaiRequest = this.convertToOpenAI(request);
       
+      // Capture request data
+      captureRequest(this.name, request.model, openaiRequest, requestId);
+      
       // Execute with retry logic
       const response = await this.executeWithRetry(
-        async () => {
-          const resp = await this.httpClient.post(this.endpoint, openaiRequest);
+        async (apiKey: string) => {
+          // Set API key in headers for this specific request
+          const resp = await this.httpClient.post(this.endpoint, openaiRequest, {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`
+            }
+          });
           
           if (resp.status < 200 || resp.status >= 300) {
             throw new ProviderError(
@@ -188,6 +267,9 @@ export class EnhancedOpenAIClient implements Provider {
 
       // Transform OpenAI response back to Anthropic format using new transformer
       const baseResponse = this.convertFromOpenAI(response.data, request);
+      
+      // Capture successful response data
+      captureResponse(this.name, request.model, openaiRequest, response.data, requestId);
 
       logger.trace(requestId, 'provider', `Request completed successfully for ${this.name}`, {
         usage: baseResponse.usage
@@ -195,6 +277,14 @@ export class EnhancedOpenAIClient implements Provider {
 
       return baseResponse;
     } catch (error) {
+      // Capture error data
+      try {
+        const openaiRequest = this.convertToOpenAI(request);
+        captureError(this.name, request.model, openaiRequest, error, requestId);
+      } catch (captureError) {
+        logger.error('Failed to capture error data', captureError, requestId, 'provider');
+      }
+      
       logger.error(`${this.name} request failed after retries`, error, requestId, 'provider');
       
       if (error instanceof ProviderError) {
@@ -226,6 +316,7 @@ export class EnhancedOpenAIClient implements Provider {
    */
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
+    let currentApiKey: string;
     
     try {
       logger.trace(requestId, 'provider', `Sending streaming request to ${this.name}`, {
@@ -235,12 +326,25 @@ export class EnhancedOpenAIClient implements Provider {
       // Transform to OpenAI format  
       const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
       
+      // Capture request data
+      captureRequest(this.name, request.model, openaiRequest, requestId);
+      
+      // Get current API key
+      currentApiKey = this.getCurrentApiKey(requestId);
+      
       // Send streaming request - use empty path since baseURL includes full endpoint
       const response = await this.httpClient.post('', openaiRequest, {
-        responseType: 'stream'
+        responseType: 'stream',
+        headers: {
+          'Authorization': `Bearer ${currentApiKey}`
+        }
       });
 
       if (response.status < 200 || response.status >= 300) {
+        // Report error to rotation manager
+        const isRateLimit = response.status === 429;
+        this.reportApiKeyError(currentApiKey, isRateLimit, requestId);
+        
         throw new ProviderError(
           `${this.name} API returned status ${response.status}`,
           this.name,
@@ -266,7 +370,7 @@ export class EnhancedOpenAIClient implements Provider {
       }, requestId, 'provider');
       
       // Step 2: Parse complete response to extract all OpenAI streaming events
-      const allOpenAIEvents: any[] = [];
+      const allOpenAIEvents: OpenAIEvent[] = [];
       const lines = fullResponseBuffer.split('\n');
       
       for (const line of lines) {
@@ -290,99 +394,65 @@ export class EnhancedOpenAIClient implements Provider {
         hasToolCalls: allOpenAIEvents.some(e => e.choices?.[0]?.delta?.tool_calls)
       }, requestId, 'provider');
       
-      // Step 3: Process all events through streaming transformer 
-      const webStream = new ReadableStream({
-        start(controller) {
-          (async () => {
-            try {
-              for (const event of allOpenAIEvents) {
-                const sseData = `data: ${JSON.stringify(event)}\n\n`;
-                controller.enqueue(new TextEncoder().encode(sseData));
-              }
-              // Send [DONE] signal
-              controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
-              controller.close();
-            } catch (error) {
-              controller.error(error);
-            }
-          })();
-        }
-      });
-
-      // Use proper streaming transformer on the buffered and processed events
-      const streamOptions: StreamTransformOptions = {
-        sourceFormat: 'openai',
-        targetFormat: 'anthropic', 
-        model: request.model,
-        requestId
-      };
-
-      // Use the transformation manager's streaming transformer
-      const transformedStream = transformationManager.transformStream(webStream, streamOptions);
-      
-      let outputTokens = 0;
-      for await (const transformedChunk of transformedStream) {
-        // Defensive programming - comprehensive filtering like demo1
-        if (
-          transformedChunk === undefined ||
-          transformedChunk === null ||
-          transformedChunk === '' ||
-          typeof transformedChunk !== 'string' ||
-          transformedChunk.length === 0
-        ) {
-          // Skip invalid chunks silently (this is expected for some metadata chunks)
-          continue;
-        }
-        
-        // Additional validation for SSE format
-        if (!transformedChunk.startsWith('event:') && !transformedChunk.startsWith('data:')) {
-          // Not a valid SSE chunk format, skip it
-          continue;
-        }
-        
-        logger.debug(`[BUFFERED] Streaming chunk after full buffering`, { 
-          chunk: transformedChunk.slice(0, 200),
-          length: transformedChunk.length
-        }, requestId, 'provider');
-        
-        // Parse SSE format and convert to {event, data} object format expected by server.ts
-        const eventMatch = transformedChunk.match(/^event:\s*(.+)$/m);
-        const dataMatch = transformedChunk.match(/^data:\s*(.+)$/m);
-        
-        if (eventMatch && dataMatch) {
-          const event = eventMatch[1].trim();
-          let data;
-          
-          try {
-            data = JSON.parse(dataMatch[1].trim());
-          } catch (error) {
-            logger.debug('Failed to parse buffered SSE data as JSON', error, requestId, 'provider');
-            continue;
-          }
-          
-          // Yield in {event, data} format expected by server.ts
-          yield { event, data };
-          
-          // Count output tokens for all content types
-          if (event === 'content_block_delta') {
-            if (data?.delta?.text) {
-              outputTokens += Math.ceil(data.delta.text.length / 4);
-            } else if (data?.delta?.partial_json) {
-              outputTokens += Math.ceil(data.delta.partial_json.length / 4);
-            }
-          } else if (event === 'content_block_start' && data?.content_block?.name) {
-            outputTokens += Math.ceil(data.content_block.name.length / 4);
-          }
-        }
-      }
-
-      logger.info('Buffered streaming request completed', {
-        totalEvents: allOpenAIEvents.length,
-        outputTokens
+      // Step 3: Use OpenAI buffered processor (like CodeWhisperer's processBufferedResponse)
+      logger.debug('Using OpenAI buffered processor for tool call safety', {
+        eventCount: allOpenAIEvents.length
       }, requestId, 'provider');
       
+      const anthropicEvents = processOpenAIBufferedResponse(allOpenAIEvents, requestId, request.model);
+      
+      logger.debug('OpenAI buffered processing completed', {
+        anthropicEventCount: anthropicEvents.length,
+        events: anthropicEvents.map(e => ({ event: e.event, hasData: !!e.data }))
+      }, requestId, 'provider');
+      
+      // Capture successful streaming response data
+      try {
+        captureResponse(this.name, request.model, openaiRequest, {
+          events: allOpenAIEvents,
+          anthropicEvents: anthropicEvents
+        }, requestId);
+      } catch (captureError) {
+        logger.error('Failed to capture streaming response data', captureError, requestId, 'provider');
+      }
+      
+      // Yield events directly
+      for (const event of anthropicEvents) {
+        logger.debug('Yielding buffered event', { 
+          event: event.event, 
+          data: event.data 
+        }, requestId, 'provider');
+        
+        yield {
+          event: event.event,
+          data: event.data
+        };
+      }
+
+      logger.info('OpenAI buffered streaming request completed', {
+        totalEvents: allOpenAIEvents.length,
+        anthropicEventCount: anthropicEvents.length
+      }, requestId, 'provider');
+      
+      // Report success to rotation manager
+      this.reportApiKeySuccess(currentApiKey!, requestId);
+      
     } catch (error) {
+      // Capture error data
+      try {
+        const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
+        captureError(this.name, request.model, openaiRequest, error, requestId);
+      } catch (captureError) {
+        logger.error('Failed to capture streaming error data', captureError, requestId, 'provider');
+      }
+      
       logger.error(`${this.name} buffered streaming request failed`, error, requestId, 'provider');
+      
+      // Report error to rotation manager if we have a current API key
+      if (currentApiKey!) {
+        const isRateLimit = (error as any)?.response?.status === 429;
+        this.reportApiKeyError(currentApiKey!, isRateLimit, requestId);
+      }
       
       if (error instanceof ProviderError) {
         throw error;
