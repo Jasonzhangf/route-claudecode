@@ -300,21 +300,39 @@ export class GeminiClient {
     const contents: any[] = [];
     
     for (const message of messages) {
+      // 处理不同类型的content格式
+      let textContent: string;
+      
+      if (typeof message.content === 'string') {
+        textContent = message.content;
+      } else if (Array.isArray(message.content)) {
+        // Anthropic格式：content是一个数组，提取text类型的内容
+        textContent = message.content
+          .filter(block => block.type === 'text')
+          .map(block => block.text)
+          .join('\n');
+      } else if (message.content && typeof message.content === 'object') {
+        // 其他对象格式
+        textContent = message.content.text || JSON.stringify(message.content);
+      } else {
+        textContent = String(message.content || '');
+      }
+      
       if (message.role === 'system') {
         // System messages are treated as user messages in Gemini
         contents.push({
           role: 'user',
-          parts: [{ text: message.content }]
+          parts: [{ text: textContent }]
         });
       } else if (message.role === 'user') {
         contents.push({
           role: 'user',
-          parts: [{ text: message.content }]
+          parts: [{ text: textContent }]
         });
       } else if (message.role === 'assistant') {
         contents.push({
           role: 'model',
-          parts: [{ text: message.content }]
+          parts: [{ text: textContent }]
         });
       }
     }
