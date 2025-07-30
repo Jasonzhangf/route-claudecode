@@ -28,7 +28,7 @@
 - **模块化设计**: 输入格式模块 → 模型路由模块 → 输出格式模块 → 提供商模块
 - **Development Port: 3456, Production Port: 3457** - 分别用于开发和生产环境
 - **环境变量劫持**: 通过ANTHROPIC_BASE_URL和ANTHROPIC_API_KEY将Claude Code路由到本地路由器
-- **统一日志目录**: 开发和生产环境日志统一存储在 `~/.claude-code-router/logs/` 目录下
+- **统一日志目录**: 开发和生产环境日志统一存储在 `~/.route-claude-code/logs/` 目录下
 
 #### 🧱 核心架构模块
 
@@ -146,7 +146,7 @@ private applyModelMapping(request: BaseRequest, providerId: string, targetModel:
 
 ##### 3. 输出格式模块 (Output Format Module)
 - **Anthropic格式**: AWS CodeWhisperer (参考 `../kiro2cc`)
-- **OpenAI格式**: 第三方Shuaihong (参考 `~/.claude-code-router/config.json`)
+- **OpenAI格式**: 第三方Shuaihong (参考 `~/.route-claude-code/config.json`)
 - **负载均衡**: 支持同一路由多个供应商实例的负载均衡
 - **动态轮询**: CodeWhisperer多token配置时支持动态轮询
 
@@ -474,7 +474,7 @@ Commit: 4726cb7 - 🏗️ Complete Routing Architecture Refactor - Category-Base
 
 ### 📚 开发注意事项
 - **参考实现**: 基于 `../kiro2cc` 进行模块化重构
-- **配置兼容**: 兼容现有 `~/.claude-code-router/config.json` 配置
+- **配置兼容**: 兼容现有 `~/.route-claude-code/config.json` 配置
 - **渐进开发**: 先实现核心功能，再完善负载均衡等高级特性
 - **测试优先**: 在实地测试前完成完整的测试用例设计
 

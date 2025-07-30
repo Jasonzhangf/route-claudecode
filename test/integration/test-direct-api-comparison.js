@@ -10,7 +10,7 @@ async function testDirectAPI() {
   console.log('================================');
   
   const endpoint = 'https://ai.shuaihong.fun/v1/chat/completions';
-  const apiKey = 'sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl';
+  const apiKey = '${SHUAIHONG_API_KEY}';
   
   // 测试案例：相同的简单请求，不同模型
   const testCases = [

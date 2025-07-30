@@ -42,7 +42,7 @@ async function testStep4() {
     const response = await axios.post(apiEndpoint, directRequest, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl'
+        'Authorization': 'Bearer ${SHUAIHONG_API_KEY}'
       },
       timeout: 30000
     });

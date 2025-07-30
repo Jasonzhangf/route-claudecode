@@ -10,7 +10,7 @@ async function testEndpointFix() {
   console.log('==================================');
   
   const fullEndpoint = 'https://ai.shuaihong.fun/v1/chat/completions';
-  const apiKey = 'sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl';
+  const apiKey = '${SHUAIHONG_API_KEY}';
   
   console.log(`🎯 Full endpoint: ${fullEndpoint}`);
   console.log(`📡 Making request to: POST ${fullEndpoint}`);
@@ -67,7 +67,7 @@ async function testBothModels() {
         timeout: 30000,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl'
+          'Authorization': 'Bearer ${SHUAIHONG_API_KEY}'
         }
       });
       

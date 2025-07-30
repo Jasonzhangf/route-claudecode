@@ -35,7 +35,7 @@ async function testFixedClient() {
         timeout: 30000,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl'
+          'Authorization': 'Bearer ${SHUAIHONG_API_KEY}'
         }
       });
       

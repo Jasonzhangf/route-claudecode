@@ -18,7 +18,7 @@ async function testClientFingerprintSession() {
   const claudeCodeHeaders = {
     'Content-Type': 'application/json',
     'anthropic-version': '2023-06-01',
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE0NjEsImVtYWlsIjoiMjA5NDQyM0BxcS5jb20iLCJhY2Nlc3NUb2tlbiI6IjRhOTYzODQwMTg1MTEzNjlhZWIyMjBiN2UyNDMyOTkxNWVmZGI1MmVhZmMwOGE5MjExMDU2NGQ1ZjdiODc2MTciLCJpYXQiOjE3NTIyNDA3ODEsImV4cCI6MTc1NDgzMjc4MX0.1lngsOZfYrG8n2GRBrAz5PLM1j1EvyWeWXyPZX-vfGI',
+    'Authorization': 'Bearer ${ANTHROPIC_API_KEY}',
     'x-app': 'cli',
     'user-agent': 'claude-cli/1.0.56 (external, cli)',
     'x-stainless-package-version': '0.55.1',

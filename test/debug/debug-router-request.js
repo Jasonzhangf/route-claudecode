@@ -93,7 +93,7 @@ async function testRouterFormat() {
   // Test with the converted request
   const config = {
     endpoint: 'https://ai.shuaihong.fun/v1/chat/completions',
-    apiKey: 'sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl'
+    apiKey: '${SHUAIHONG_API_KEY}'
   };
 
   try {
@@ -170,7 +170,7 @@ async function testDifferentConfigurations() {
 
   const apiConfig = {
     endpoint: 'https://ai.shuaihong.fun/v1/chat/completions',
-    apiKey: 'sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl'
+    apiKey: '${SHUAIHONG_API_KEY}'
   };
 
   for (const testConfig of configs) {

@@ -11,7 +11,7 @@ async function testModelAPI(model) {
   
   // Shuaihong配置
   const endpoint = 'https://ai.shuaihong.fun/v1/chat/completions';
-  const apiKey = 'sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl';
+  const apiKey = '${SHUAIHONG_API_KEY}';
   
   const request = {
     model: model,

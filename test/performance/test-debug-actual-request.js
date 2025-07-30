@@ -10,7 +10,7 @@ async function debugActualRequest() {
   console.log('================================================');
   
   const endpoint = 'https://ai.shuaihong.fun/v1/chat/completions';
-  const apiKey = 'sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl';
+  const apiKey = process.env.SHUAIHONG_API_KEY || '${SHUAIHONG_API_KEY}';
   
   // 1. 测试标准工作请求
   console.log('\n📡 Testing Working Request (like other apps):');

@@ -23,7 +23,7 @@ async function testModel(modelName, testName) {
 
   const config = {
     endpoint: 'https://ai.shuaihong.fun/v1/chat/completions',
-    apiKey: 'sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl'
+    apiKey: '${SHUAIHONG_API_KEY}'
   };
 
   try {
