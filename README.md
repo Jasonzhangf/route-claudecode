@@ -392,4 +392,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Made with ❤️ for the Claude Code community**
 
-*RCC v2.4.0 - Cross-platform dual-server architecture with intelligent configuration detection*
+*RCC v2.4.1 - Cross-platform dual-server architecture with intelligent configuration detection*
