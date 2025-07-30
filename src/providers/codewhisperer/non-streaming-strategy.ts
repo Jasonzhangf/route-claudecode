@@ -186,33 +186,13 @@ export class NonStreamingStrategy {
    * 决策算法：是否应该使用非流式策略
    */
   shouldUseNonStreaming(request: BaseRequest): boolean {
-    // 决策因素：
-    // 1. 响应大小预期（基于消息长度）
-    // 2. 是否包含工具调用
-    // 3. 历史性能数据
-    
-    const messageLength = this.calculateMessageLength(request);
-    const hasTools = !!(request.metadata?.tools?.length);
-    const stats = this.getPerformanceStats();
-    
-    // 决策逻辑
-    const largeResponse = messageLength > 1000; // 预期大响应
-    const complexProcessing = hasTools; // 复杂处理场景
-    const goodPerformance = stats.averageResponseTime < 3000; // 历史性能良好
-    
-    logger.debug('Non-streaming strategy decision analysis', {
-      messageLength,
-      hasTools,
-      largeResponse,
-      complexProcessing,
-      goodPerformance,
-      historicalStats: stats
+    // 🚨 EMERGENCY FIX: Force disable non-streaming due to severe performance issues
+    // Non-streaming is causing 100+ second response times
+    logger.warn('🚨 Non-streaming strategy temporarily disabled due to performance issues', {
+      reason: 'Causing excessive response times (100+ seconds)',
+      forceStreaming: true
     });
-
-    // 推荐使用非流式的条件：
-    // - 大响应或复杂处理 AND 历史性能良好
-    // - 或者工具调用场景（需要完整解析）
-    return (largeResponse || complexProcessing) && goodPerformance || hasTools;
+    return false;
   }
 
   private calculateMessageLength(request: BaseRequest): number {

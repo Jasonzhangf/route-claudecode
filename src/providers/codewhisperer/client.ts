@@ -49,7 +49,7 @@ export class CodeWhispererClient implements Provider {
     
     this.httpClient = axios.create({
       baseURL: this.endpoint,
-      timeout: 300000, // 5 minute timeout for production
+      timeout: 30000, // 30 second timeout - emergency fix for hanging requests
       headers: {
         'Content-Type': 'application/json'
         // 完全模仿demo2，不设置User-Agent
@@ -219,8 +219,8 @@ export class CodeWhispererClient implements Provider {
       // Convert request to CodeWhisperer format
       const cwRequest = this.converter.convertRequest(request, requestId);
       
-      // 🚀 Intelligent strategy selection: non-streaming vs streaming
-      const shouldUseNonStreaming = this.nonStreamingStrategy.shouldUseNonStreaming(request);
+      // 🚨 EMERGENCY FIX: Force disable non-streaming due to performance issues
+      const shouldUseNonStreaming = false; // this.nonStreamingStrategy.shouldUseNonStreaming(request);
       
       logger.info(`🎯 CodeWhisperer strategy decision: ${shouldUseNonStreaming ? 'non-streaming' : 'streaming'}`, {
         url: this.endpoint + '/generateAssistantResponse',

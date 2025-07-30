@@ -37,7 +37,7 @@ export async function setupAutoStart(config: AutoStartConfig): Promise<AutoStart
     case 'linux':
       return setupLinuxSystemd(config);
     case 'win32':
-      return { success: false, error: 'Windows自动启动暂未支持，请手动配置任务计划程序' };
+      return setupWindowsTaskScheduler(config);
     default:
       return { success: false, error: `平台 ${platform} 不支持自动启动功能` };
   }
@@ -109,6 +109,88 @@ async function setupMacOSLaunchd(config: AutoStartConfig): Promise<AutoStartResu
     
   } catch (error) {
     logger.error('Failed to setup macOS autostart', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+/**
+ * Windows Task Scheduler 服务配置
+ */
+async function setupWindowsTaskScheduler(config: AutoStartConfig): Promise<AutoStartResult> {
+  try {
+    const taskName = 'RCCRouter';
+    
+    // 获取 rcc 命令的完整路径
+    let rccPath: string;
+    try {
+      rccPath = execSync('where rcc', { encoding: 'utf-8' }).trim();
+      // Windows的where命令可能返回多行，取第一行
+      rccPath = rccPath.split('\n')[0].trim();
+    } catch (error) {
+      return { success: false, error: '找不到 rcc 命令，请确保已正确安装' };
+    }
+    
+    // 获取日志目录
+    const logsDir = path.join(os.homedir(), '.route-claude-code', 'logs');
+    
+    // 创建任务计划程序XML配置
+    const taskXml = createWindowsTaskXml({
+      taskName,
+      rccPath,
+      configPath: config.configPath,
+      port: config.port,
+      host: config.host,
+      debug: config.debug,
+      logLevel: config.logLevel,
+      logsDir
+    });
+    
+    // 保存临时XML文件
+    const tempXmlPath = path.join(os.tmpdir(), `${taskName}.xml`);
+    await fs.writeFile(tempXmlPath, taskXml, 'utf-8');
+    
+    try {
+      // 删除已存在的任务（如果有）
+      try {
+        execSync(`schtasks /delete /tn "${taskName}" /f`, { stdio: 'pipe' });
+      } catch {
+        // 忽略删除失败（可能任务不存在）
+      }
+      
+      // 创建新任务
+      execSync(`schtasks /create /xml "${tempXmlPath}" /tn "${taskName}"`, { stdio: 'pipe' });
+      
+      // 启动任务
+      execSync(`schtasks /run /tn "${taskName}"`, { stdio: 'pipe' });
+      
+      // 清理临时文件
+      try {
+        await fs.unlink(tempXmlPath);
+      } catch {}
+      
+      return {
+        success: true,
+        serviceName: taskName,
+        message: 'Windows 任务计划程序已配置，将在系统启动时自动运行'
+      };
+      
+    } catch (schedTaskError) {
+      // 清理临时文件
+      try {
+        await fs.unlink(tempXmlPath);
+      } catch {}
+      
+      return {
+        success: false,
+        error: `任务计划程序操作失败: ${schedTaskError instanceof Error ? schedTaskError.message : String(schedTaskError)}`
+      };
+    }
+    
+  } catch (error) {
+    logger.error('Failed to setup Windows autostart', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : String(error)
@@ -300,6 +382,86 @@ WantedBy=default.target`;
 }
 
 /**
+ * 创建 Windows 任务计划程序 XML 配置文件内容
+ */
+function createWindowsTaskXml(options: {
+  taskName: string;
+  rccPath: string;
+  configPath: string;
+  port: number;
+  host: string;
+  debug: boolean;
+  logLevel: string;
+  logsDir: string;
+}): string {
+  // 默认使用daemon模式，确保开机自启动也使用智能配置检测
+  const args = [
+    'start',
+    '--daemon',
+    '--log-level', options.logLevel
+  ];
+  
+  if (options.debug) {
+    args.push('--debug');
+  }
+  
+  const argsString = args.join(' ');
+  
+  return `<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Date>2024-01-01T00:00:00</Date>
+    <Author>RCC Router</Author>
+    <Description>Claude Code Router - Auto-start service with intelligent config detection</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <LogonTrigger>
+      <Enabled>true</Enabled>
+      <Delay>PT30S</Delay>
+    </LogonTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfNetworkAvailable>false</RunOnlyIfNetworkAvailable>
+    <IdleSettings>
+      <StopOnIdleEnd>false</StopOnIdleEnd>
+      <RestartOnIdle>false</RestartOnIdle>
+    </IdleSettings>
+    <AllowStartOnDemand>true</AllowStartOnDemand>
+    <Enabled>true</Enabled>
+    <Hidden>false</Hidden>
+    <RunOnlyIfIdle>false</RunOnlyIfIdle>
+    <DisallowStartOnRemoteAppSession>false</DisallowStartOnRemoteAppSession>
+    <UseUnifiedSchedulingEngine>true</UseUnifiedSchedulingEngine>
+    <WakeToRun>false</WakeToRun>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+    <Priority>7</Priority>
+    <RestartOnFailure>
+      <Interval>PT5M</Interval>
+      <Count>3</Count>
+    </RestartOnFailure>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>${options.rccPath}</Command>
+      <Arguments>${argsString}</Arguments>
+      <WorkingDirectory>${os.homedir()}</WorkingDirectory>
+    </Exec>
+  </Actions>
+</Task>`;
+}
+
+/**
  * 移除自动启动配置
  */
 export async function removeAutoStart(): Promise<AutoStartResult> {
@@ -310,6 +472,8 @@ export async function removeAutoStart(): Promise<AutoStartResult> {
       return removeMacOSLaunchd();
     case 'linux':
       return removeLinuxSystemd();
+    case 'win32':
+      return removeWindowsTaskScheduler();
     default:
       return { success: false, error: `平台 ${platform} 不支持移除自动启动` };
   }
@@ -341,6 +505,40 @@ async function removeMacOSLaunchd(): Promise<AutoStartResult> {
       success: true,
       serviceName,
       message: 'macOS 自动启动服务已移除'
+    };
+    
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+/**
+ * 移除 Windows 任务计划程序
+ */
+async function removeWindowsTaskScheduler(): Promise<AutoStartResult> {
+  try {
+    const taskName = 'RCCRouter';
+    
+    // 停止并删除任务
+    try {
+      execSync(`schtasks /end /tn "${taskName}"`, { stdio: 'pipe' });
+    } catch {
+      // 忽略停止失败（可能任务未运行）
+    }
+    
+    try {
+      execSync(`schtasks /delete /tn "${taskName}" /f`, { stdio: 'pipe' });
+    } catch {
+      // 忽略删除失败（可能任务不存在）
+    }
+    
+    return {
+      success: true,
+      serviceName: taskName,
+      message: 'Windows 自动启动任务已移除'
     };
     
   } catch (error) {

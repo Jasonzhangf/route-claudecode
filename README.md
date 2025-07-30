@@ -31,7 +31,7 @@
 ## 📋 Prerequisites
 
 - **Node.js 16+** (18+ recommended)
-- **Operating System**: macOS 10.15+, Ubuntu 20.04+, Windows 10+ (with WSL)
+- **Operating System**: macOS 10.15+, Ubuntu 20.04+, Windows 10+ (native support)
 - **Claude Code CLI** installed
 - **Provider credentials** (AWS CodeWhisperer, OpenAI keys, etc.)
 
@@ -339,14 +339,20 @@ done
 curl http://localhost:3456/api/stats | jq '.providers'
 ```
 
-## 🔄 **Version 2.3.0 Changelog**
+## 🔄 **Version 2.4.0 Changelog**
 
 ### 🆕 **Major New Features**
+- ✅ **Cross-Platform Support**: Native Windows support with PowerShell daemon scripts
+- ✅ **Intelligent Configuration Detection**: Auto-detects single vs dual-config mode
+- ✅ **Enhanced Auto-Start**: Boot-time startup for macOS (launchd), Linux (systemd), and Windows (Task Scheduler)
+- ✅ **Windows Daemon Mode**: Full daemon support with PowerShell scripts
+- ✅ **Smart Model Routing**: Intelligent routing based on configuration files present
+
+### 🔧 **Previous Features (v2.3.0)**
 - ✅ **Dual-Server Architecture**: Simultaneous dev/release server management
 - ✅ **Enhanced Daemon Mode**: Proper background process management with auto-restart
 - ✅ **Unified Monitoring Dashboard**: Single interface for monitoring both servers
 - ✅ **Temporary Model Toggle**: Real-time enable/disable without configuration changes
-- ✅ **Auto-Start Integration**: Boot-time startup with dual-server configuration
 - ✅ **Rate Limit Protection**: 429 error handling with temporary blacklisting
 - ✅ **Health-Based Load Balancing**: Intelligent routing based on provider health
 
@@ -386,4 +392,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Made with ❤️ for the Claude Code community**
 
-*RCC v2.3.0 - Dual-server architecture with intelligent daemon management*
+*RCC v2.4.0 - Cross-platform dual-server architecture with intelligent configuration detection*

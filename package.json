@@ -1,6 +1,6 @@
 {
   "name": "route-claudecode",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Advanced routing and transformation system for Claude Code outputs to multiple AI providers",
   "bin": {
     "rcc": "./dist/cli.js"
@@ -57,7 +57,9 @@
     "public/",
     "README.md",
     "LICENSE",
-    "config.sample.json"
+    "config.sample.json",
+    "rcc-daemon.sh",
+    "rcc-daemon.ps1"
   ],
   "repository": {
     "type": "git",

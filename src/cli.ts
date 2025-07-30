@@ -32,24 +32,77 @@ const DEFAULT_CONFIG_PATH = configPaths.configFile;
 const execAsync = promisify(exec);
 
 /**
- * Start daemon mode - using rcc-daemon.sh script
+ * Intelligent configuration detection
+ * 智能配置检测：根据配置文件存在情况自动选择模式
+ */
+function detectConfigurationMode(): { mode: 'single' | 'dual', configs: string[] } {
+  const baseConfigDir = join(homedir(), '.route-claude-code');
+  const devConfigPath = join(baseConfigDir, 'config.json');
+  const releaseConfigPath = join(baseConfigDir, 'config.release.json');
+  
+  const hasDevConfig = existsSync(devConfigPath);
+  const hasReleaseConfig = existsSync(releaseConfigPath);
+  
+  console.log(chalk.gray(`🔍 Configuration detection:`));
+  console.log(chalk.gray(`   Development config: ${hasDevConfig ? '✅ Found' : '❌ Missing'} (${devConfigPath})`));
+  console.log(chalk.gray(`   Release config: ${hasReleaseConfig ? '✅ Found' : '❌ Missing'} (${releaseConfigPath})`));
+  
+  if (hasDevConfig && hasReleaseConfig) {
+    console.log(chalk.blue('🎯 Detected: Dual-config mode (both configurations found)'));
+    return { mode: 'dual', configs: [devConfigPath, releaseConfigPath] };
+  } else if (hasDevConfig) {
+    console.log(chalk.blue('🎯 Detected: Single-config mode (development only)'));
+    return { mode: 'single', configs: [devConfigPath] };
+  } else if (hasReleaseConfig) {
+    console.log(chalk.blue('🎯 Detected: Single-config mode (release only)'));
+    return { mode: 'single', configs: [releaseConfigPath] };
+  } else {
+    console.log(chalk.red('❌ No configuration files found'));
+    console.log(chalk.gray('   Please create at least one configuration file:'));
+    console.log(chalk.gray(`   - ${devConfigPath}`));
+    console.log(chalk.gray(`   - ${releaseConfigPath}`));
+    throw new Error('No configuration files found');
+  }
+}
+
+/**
+ * Start daemon mode - using rcc-daemon.sh script with intelligent config detection
  */
 async function startDaemonMode(options: any): Promise<void> {
+  // Detect configuration mode intelligently
+  let configMode: { mode: 'single' | 'dual', configs: string[] };
+  try {
+    configMode = detectConfigurationMode();
+  } catch (error) {
+    console.error(chalk.red('❌ Configuration detection failed:'), error instanceof Error ? error.message : String(error));
+    process.exit(1);
+  }
+  
+  // For daemon mode, we use the appropriate daemon script based on platform
   const projectRoot = resolve(__dirname, '..');
-  const daemonScript = join(projectRoot, 'rcc-daemon.sh');
+  const isWindows = process.platform === 'win32';
+  const daemonScript = isWindows 
+    ? join(projectRoot, 'rcc-daemon.ps1')
+    : join(projectRoot, 'rcc-daemon.sh');
   
   // Check if daemon script exists
   if (!existsSync(daemonScript)) {
-    console.error(chalk.red(`❌ Daemon script not found: ${daemonScript}`));
-    console.error(chalk.gray('   Please ensure rcc-daemon.sh is in the project root'));
+    const scriptType = isWindows ? 'PowerShell' : 'shell';
+    console.error(chalk.red(`❌ Daemon ${scriptType} script not found: ${daemonScript}`));
+    console.error(chalk.gray(`   Please ensure ${isWindows ? 'rcc-daemon.ps1' : 'rcc-daemon.sh'} is in the project root`));
     process.exit(1);
   }
   
   try {
-    console.log(chalk.blue('🚀 Starting RCC daemon (dual-config mode)...'));
+    console.log(chalk.blue(`🚀 Starting RCC daemon (${configMode.mode}-config mode)...`));
     
-    // Execute daemon start command (daemon script already uses --dual-config by default)
-    const { stdout, stderr } = await execAsync(`bash "${daemonScript}" start`);
+    // Execute daemon start command with detected mode
+    const daemonArgs = configMode.mode === 'dual' ? '--dual-config' : '--single-config';
+    const command = isWindows 
+      ? `powershell -ExecutionPolicy Bypass -File "${daemonScript}" -Command start -ConfigMode ${daemonArgs}`
+      : `bash "${daemonScript}" start ${daemonArgs}`;
+    
+    const { stdout, stderr } = await execAsync(command);
     
     if (stdout) {
       console.log(stdout);
@@ -91,16 +144,20 @@ async function startDaemonMode(options: any): Promise<void> {
 }
 
 /**
- * Stop daemon mode - using rcc-daemon.sh script
+ * Stop daemon mode - using platform-appropriate daemon script
  */
 async function stopDaemonMode(): Promise<void> {
   const projectRoot = resolve(__dirname, '..');
-  const daemonScript = join(projectRoot, 'rcc-daemon.sh');
+  const isWindows = process.platform === 'win32';
+  const daemonScript = isWindows 
+    ? join(projectRoot, 'rcc-daemon.ps1')
+    : join(projectRoot, 'rcc-daemon.sh');
   
   // Check if daemon script exists
   if (!existsSync(daemonScript)) {
-    console.error(chalk.red(`❌ Daemon script not found: ${daemonScript}`));
-    console.error(chalk.gray('   Please ensure rcc-daemon.sh is in the project root'));
+    const scriptType = isWindows ? 'PowerShell' : 'shell';
+    console.error(chalk.red(`❌ Daemon ${scriptType} script not found: ${daemonScript}`));
+    console.error(chalk.gray(`   Please ensure ${isWindows ? 'rcc-daemon.ps1' : 'rcc-daemon.sh'} is in the project root`));
     process.exit(1);
   }
   
@@ -108,7 +165,11 @@ async function stopDaemonMode(): Promise<void> {
     console.log(chalk.blue('🛑 Stopping RCC daemon...'));
     
     // Execute daemon stop command
-    const { stdout, stderr } = await execAsync(`bash "${daemonScript}" stop`);
+    const command = isWindows 
+      ? `powershell -ExecutionPolicy Bypass -File "${daemonScript}" -Command stop`
+      : `bash "${daemonScript}" stop`;
+    
+    const { stdout, stderr } = await execAsync(command);
     
     if (stdout) {
       console.log(stdout);
@@ -124,16 +185,20 @@ async function stopDaemonMode(): Promise<void> {
 }
 
 /**
- * Check daemon status - using rcc-daemon.sh script
+ * Check daemon status - using platform-appropriate daemon script
  */
 async function checkDaemonStatus(): Promise<void> {
   const projectRoot = resolve(__dirname, '..');
-  const daemonScript = join(projectRoot, 'rcc-daemon.sh');
+  const isWindows = process.platform === 'win32';
+  const daemonScript = isWindows 
+    ? join(projectRoot, 'rcc-daemon.ps1')
+    : join(projectRoot, 'rcc-daemon.sh');
   
   // Check if daemon script exists
   if (!existsSync(daemonScript)) {
-    console.error(chalk.red(`❌ Daemon script not found: ${daemonScript}`));
-    console.error(chalk.gray('   Please ensure rcc-daemon.sh is in the project root'));
+    const scriptType = isWindows ? 'PowerShell' : 'shell';
+    console.error(chalk.red(`❌ Daemon ${scriptType} script not found: ${daemonScript}`));
+    console.error(chalk.gray(`   Please ensure ${isWindows ? 'rcc-daemon.ps1' : 'rcc-daemon.sh'} is in the project root`));
     process.exit(1);
   }
   
@@ -141,7 +206,11 @@ async function checkDaemonStatus(): Promise<void> {
     console.log(chalk.blue('📊 Checking RCC daemon status...'));
     
     // Execute daemon status command
-    const { stdout, stderr } = await execAsync(`bash "${daemonScript}" status`);
+    const command = isWindows 
+      ? `powershell -ExecutionPolicy Bypass -File "${daemonScript}" -Command status`
+      : `bash "${daemonScript}" status`;
+    
+    const { stdout, stderr } = await execAsync(command);
     
     if (stdout) {
       console.log(stdout);
@@ -359,6 +428,7 @@ program
   .option('--log-level <level>', 'Log level (error, warn, info, debug)', 'info')
   .option('--autostart', 'Enable automatic startup on system boot')
   .option('--single-config', 'Start only single server instead of dual-config mode')
+  .option('--dual-config', 'Force dual-config mode (start both servers)')
   .option('--daemon', 'Start in daemon mode (background process)')
   .action(async (options) => {
     try {
@@ -388,9 +458,34 @@ program
         return await startDaemonMode(options);
       }
 
-      // Default to dual config mode unless explicitly disabled
-      if (!options.singleConfig) {
+      // Handle explicit dual-config mode first
+      if (options.dualConfig) {
+        console.log(chalk.blue('🎯 Explicit dual-config mode requested\n'));
         return await startDualConfigServers(options);
+      }
+      
+      // Handle explicit single-config mode
+      if (options.singleConfig) {
+        console.log(chalk.blue('🎯 Explicit single-config mode requested\n'));
+        // Continue to single server logic below
+      } else {
+        // Intelligent configuration detection (default behavior)
+        try {
+          const configMode = detectConfigurationMode();
+          
+          if (configMode.mode === 'dual') {
+            console.log(chalk.blue('🎯 Intelligent detection: Starting dual-config servers\n'));
+            return await startDualConfigServers(options);
+          } else {
+            console.log(chalk.blue(`🎯 Intelligent detection: Starting single-config server\n`));
+            // Continue to single server logic below with detected config
+            const configPath = resolve(configMode.configs[0]);
+            options.config = configPath;
+          }
+        } catch (error) {
+          console.error(chalk.red('❌ Configuration detection failed:'), error instanceof Error ? error.message : String(error));
+          process.exit(1);
+        }
       }
 
       // Load configuration

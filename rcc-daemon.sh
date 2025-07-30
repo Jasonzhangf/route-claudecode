@@ -31,9 +31,20 @@ function start_daemon() {
     
     sleep 2
     
-    # 启动daemon
-    echo "🎯 Starting dual config servers..."
-    nohup rcc start --dual-config > "$RCC_LOG_FILE" 2>&1 &
+    # 启动daemon - 支持智能配置检测
+    local config_mode="${2:-auto}"  # 默认使用auto模式，让rcc start自动检测
+    
+    if [ "$config_mode" = "--dual-config" ]; then
+        echo "🎯 Starting dual config servers..."
+        nohup rcc start --dual-config > "$RCC_LOG_FILE" 2>&1 &
+    elif [ "$config_mode" = "--single-config" ]; then
+        echo "🎯 Starting single config server..."
+        nohup rcc start --single-config > "$RCC_LOG_FILE" 2>&1 &
+    else
+        echo "🎯 Starting with intelligent config detection..."
+        nohup rcc start > "$RCC_LOG_FILE" 2>&1 &
+    fi
+    
     local daemon_pid=$!
     
     # 保存PID
@@ -129,7 +140,7 @@ function restart_daemon() {
     echo "🔄 Restarting RCC daemon..."
     stop_daemon
     sleep 2
-    start_daemon
+    start_daemon "$@"
 }
 
 function logs_daemon() {
@@ -144,7 +155,7 @@ function logs_daemon() {
 
 case "${1:-}" in
     start)
-        start_daemon
+        start_daemon "$@"
         ;;
     stop)
         stop_daemon
@@ -153,20 +164,25 @@ case "${1:-}" in
         status_daemon
         ;;
     restart)
-        restart_daemon
+        restart_daemon "$@"
         ;;
     logs)
         logs_daemon
         ;;
     *)
-        echo "Usage: $0 {start|stop|status|restart|logs}"
+        echo "Usage: $0 {start|stop|status|restart|logs} [options]"
         echo ""
         echo "Commands:"
-        echo "  start   - Start RCC daemon with dual config"
-        echo "  stop    - Stop RCC daemon"
-        echo "  status  - Show daemon status"
-        echo "  restart - Restart daemon" 
-        echo "  logs    - Show daemon logs"
+        echo "  start [--dual-config|--single-config]  - Start RCC daemon"
+        echo "  stop                                    - Stop RCC daemon"
+        echo "  status                                  - Show daemon status"
+        echo "  restart [--dual-config|--single-config] - Restart daemon" 
+        echo "  logs                                    - Show daemon logs"
+        echo ""
+        echo "Options:"
+        echo "  --dual-config   - Force dual-config mode"
+        echo "  --single-config - Force single-config mode"
+        echo "  (no option)     - Intelligent config detection"
         exit 1
         ;;
 esac
