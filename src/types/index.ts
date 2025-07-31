@@ -162,21 +162,14 @@ export interface CategoryRouting {
 
 // Routing configuration is part of RouterConfig
 
-// Legacy support - will be removed
-export interface RoutingRule {
-  category: RoutingCategory;
-  condition: (request: BaseRequest) => boolean;
-  provider: string;
-  priority: number;
-}
 
 // Provider types
 export interface ProviderConfig {
   type: 'codewhisperer' | 'shuaihong' | 'openai' | 'anthropic' | 'gemini';
   endpoint: string;
   authentication: {
-    type: 'bearer' | 'api_key';
-    credentials: Record<string, string | string[]>; // 支持多个API keys
+    type: 'bearer' | 'api_key' | 'none';
+    credentials?: Record<string, string | string[]>; // 支持多个API keys，none类型时可选
   };
   settings: Record<string, any>;
   healthCheck?: {
@@ -268,7 +261,6 @@ export interface RouterConfig {
     logDir: string;
   };
   hooks: Hook[];
-  // Removed concurrency configuration - using simple provider management
 }
 
 // Utility types

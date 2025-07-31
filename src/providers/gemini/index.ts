@@ -9,16 +9,17 @@ import { logger } from '../../utils/logger';
 import { GeminiClient } from './client';
 
 export class GeminiProvider implements Provider {
-  public readonly name = 'gemini';
+  public readonly name: string;
   public readonly type = 'gemini';
   private client: GeminiClient;
 
-  constructor(public readonly config: ProviderConfig) {
+  constructor(public readonly config: ProviderConfig, providerId?: string) {
+    this.name = providerId || 'gemini';
     if (config.type !== 'gemini') {
       throw new Error(`Invalid provider type: ${config.type}, expected 'gemini'`);
     }
     
-    this.client = new GeminiClient(config);
+    this.client = new GeminiClient(config, this.name);
     logger.info(`Initialized Gemini provider: ${config.endpoint}`, {
       provider: this.name,
       endpoint: config.endpoint

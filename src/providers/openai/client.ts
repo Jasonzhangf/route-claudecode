@@ -19,8 +19,8 @@ export class OpenAICompatibleClient implements Provider {
     this.name = providerId;
     this.endpoint = config.endpoint;
     const credentials = config.authentication.credentials;
-    const apiKey = credentials.apiKey || credentials.api_key;
-    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
     
     if (!this.endpoint) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
@@ -252,9 +252,10 @@ export class OpenAICompatibleClient implements Provider {
       });
     }
 
-    // Add tools if present
-    if (request.metadata?.tools && Array.isArray(request.metadata.tools)) {
-      openaiRequest.tools = request.metadata.tools.map((tool: any) => ({
+    // Add tools if present - Check both top-level and metadata
+    const tools = request.tools || request.metadata?.tools;
+    if (tools && Array.isArray(tools) && tools.length > 0) {
+      openaiRequest.tools = tools.map((tool: any) => ({
         type: 'function',
         function: {
           name: tool.name,
@@ -262,6 +263,11 @@ export class OpenAICompatibleClient implements Provider {
           parameters: tool.input_schema
         }
       }));
+      
+      logger.debug('Converted tools for OpenAI request', {
+        toolCount: tools.length,
+        toolNames: tools.map((t: any) => t.name)
+      });
     }
 
     return openaiRequest;

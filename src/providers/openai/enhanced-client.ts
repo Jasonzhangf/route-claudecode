@@ -36,7 +36,7 @@ export class EnhancedOpenAIClient implements Provider {
     
     // Handle API key configuration - support both single and multiple keys
     const credentials = config.authentication.credentials;
-    const apiKey = credentials.apiKey || credentials.api_key;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
     
     if (Array.isArray(apiKey) && apiKey.length > 1) {
       // Multiple API keys - initialize rotation manager
@@ -53,15 +53,16 @@ export class EnhancedOpenAIClient implements Provider {
         strategy: config.keyRotation?.strategy || 'round_robin'
       });
     } else {
-      // Single API key - traditional approach
-      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+      // Single API key - traditional approach (or no auth for local services)
+      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
     }
     
     if (!this.endpoint) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
     }
     
-    if (!this.apiKey && !this.apiKeyRotationManager) {
+    // Check if authentication is required (type !== "none")
+    if (config.authentication.type !== 'none' && !this.apiKey && !this.apiKeyRotationManager) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires API key configuration`);
     }
 
@@ -243,11 +244,14 @@ export class EnhancedOpenAIClient implements Provider {
       // Execute with retry logic
       const response = await this.executeWithRetry(
         async (apiKey: string) => {
-          // Set API key in headers for this specific request
+          // Set API key in headers for this specific request (if authentication is required)
+          const headers: Record<string, string> = {};
+          if (this.config.authentication.type !== 'none' && apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+          }
+          
           const resp = await this.httpClient.post(this.endpoint, openaiRequest, {
-            headers: {
-              'Authorization': `Bearer ${apiKey}`
-            }
+            headers
           });
           
           if (resp.status < 200 || resp.status >= 300) {
@@ -333,11 +337,14 @@ export class EnhancedOpenAIClient implements Provider {
       currentApiKey = this.getCurrentApiKey(requestId);
       
       // Send streaming request - use empty path since baseURL includes full endpoint
+      const headers: Record<string, string> = {};
+      if (this.config.authentication.type !== 'none' && currentApiKey) {
+        headers['Authorization'] = `Bearer ${currentApiKey}`;
+      }
+      
       const response = await this.httpClient.post('', openaiRequest, {
         responseType: 'stream',
-        headers: {
-          'Authorization': `Bearer ${currentApiKey}`
-        }
+        headers
       });
 
       if (response.status < 200 || response.status >= 300) {

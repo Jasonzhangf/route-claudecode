@@ -13,8 +13,8 @@ export class AnthropicClient {
 
   constructor(private config: ProviderConfig) {
     const credentials = config.authentication.credentials;
-    const apiKey = credentials.apiKey || credentials.api_key;
-    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
     if (!this.apiKey) {
       throw new Error('Anthropic API key is required');
     }

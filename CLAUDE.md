@@ -147,8 +147,159 @@ private applyModelMapping(request: BaseRequest, providerId: string, targetModel:
 ##### 3. 输出格式模块 (Output Format Module)
 - **Anthropic格式**: AWS CodeWhisperer (参考 `../kiro2cc`)
 - **OpenAI格式**: 第三方Shuaihong (参考 `~/.route-claude-code/config.json`)
+- **Gemini格式**: Google Gemini API直接调用
 - **负载均衡**: 支持同一路由多个供应商实例的负载均衡
 - **动态轮询**: CodeWhisperer多token配置时支持动态轮询
+
+#### 🔄 **Gemini ↔ Anthropic 格式转换规范**
+
+##### **请求转换 (Anthropic → Gemini)**
+
+**1. 消息格式转换**
+```typescript
+// Anthropic格式 → Gemini格式
+anthropic.messages = [
+  { role: "user", content: "Hello" },
+  { role: "assistant", content: "Hi there!" }
+]
+↓
+gemini.contents = [
+  { role: "user", parts: [{ text: "Hello" }] },
+  { role: "model", parts: [{ text: "Hi there!" }] }
+]
+```
+
+**2. 角色映射规则**
+- `"user"` → `"user"` (保持不变)
+- `"assistant"` → `"model"` (Gemini使用"model"角色)
+- `"system"` → 转换为首个user消息的前缀内容
+
+**3. 工具定义转换**
+```typescript
+// 关键：JSON Schema兼容性处理
+function cleanJsonSchemaForGemini(schema: any): any {
+  // 移除Gemini不支持的字段
+  const unsupportedFields = ['$schema', 'additionalProperties', 'minLength', 'maxLength', 'format'];
+  // 保留支持的字段：type, properties, required, items, description, enum
+  
+  return cleanedSchema;
+}
+
+// Anthropic工具 → Gemini工具
+anthropic.tools = [{
+  name: "TodoWrite",
+  description: "Create todo items", 
+  input_schema: {
+    type: "object",
+    properties: { /* ... */ },
+    required: ["todos"],
+    $schema: "...",           // ❌ Gemini不支持
+    additionalProperties: false  // ❌ Gemini不支持
+  }
+}]
+↓
+gemini.tools = [{
+  functionDeclarations: [{
+    name: "TodoWrite",
+    description: "Create todo items",
+    parameters: {              // 清理后的schema
+      type: "object", 
+      properties: { /* ... */ },
+      required: ["todos"]      // ✅ 只保留支持的字段
+    }
+  }]
+}]
+```
+
+##### **响应转换 (Gemini → Anthropic)**
+
+**1. 流式事件转换**
+```typescript
+// Gemini响应 → Anthropic流式事件
+gemini.candidates[0].content.parts = [
+  { functionCall: { name: "TodoWrite", args: {...} } }
+]
+↓
+anthropic_events = [
+  { event: "message_start", data: { message: {...} } },
+  { event: "content_block_start", data: { 
+    content_block: { 
+      type: "tool_use",
+      id: "toolu_xxx",
+      name: "TodoWrite", 
+      input: {}
+    }
+  }},
+  { event: "content_block_delta", data: {
+    delta: { type: "input_json_delta", partial_json: "..." }
+  }},
+  { event: "content_block_stop", data: {...} },
+  { event: "message_stop", data: {...} }
+]
+```
+
+**2. 工具调用格式转换**
+```typescript
+// 核心转换逻辑
+part.functionCall = {
+  name: "TodoWrite",
+  args: { todos: [...] }
+}
+↓
+tool_use_block = {
+  type: "tool_use",
+  id: `toolu_${Date.now()}_${index}`,  // 生成唯一ID
+  name: part.functionCall.name,        // 工具名称
+  input: part.functionCall.args        // 参数对象
+}
+```
+
+**3. Token计算转换**
+```typescript
+// Gemini usage → Anthropic usage
+gemini.usageMetadata = {
+  promptTokenCount: 51,
+  candidatesTokenCount: 18,
+  totalTokenCount: 69
+}
+↓ 
+anthropic.usage = {
+  input_tokens: 51,      // promptTokenCount
+  output_tokens: 18      // candidatesTokenCount
+}
+```
+
+##### **实现关键点**
+
+**1. JSON Schema兼容性**
+- **问题**: Gemini API拒绝包含 `$schema`, `additionalProperties` 等元数据的工具定义
+- **解决**: `cleanJsonSchemaForGemini()` 函数递归清理不支持的字段
+- **支持字段**: `type`, `properties`, `required`, `items`, `description`, `enum`
+
+**2. 直接格式转换**
+- **架构**: 实现直接 Gemini → Anthropic 转换，不通过OpenAI中间格式
+- **核心方法**: `convertGeminiToAnthropicStream()`
+- **优势**: 避免格式转换链的复杂性和数据丢失
+
+**3. 流式事件生成**
+- **完整序列**: 按Anthropic规范生成完整的流式事件序列
+- **工具调用**: 特殊处理工具调用的 `input_json_delta` 事件
+- **Token流**: 分块传输JSON数据，模拟真实流式响应
+
+##### **错误处理和兼容性**
+
+**1. API错误处理**
+- **400错误**: JSON Schema字段不兼容 → 自动清理并重试
+- **空响应**: 生成默认文本响应避免客户端错误
+- **工具解析失败**: 降级为文本响应，记录警告日志
+
+**2. 版本兼容性**
+- **Gemini API版本**: v1beta (支持工具调用)
+- **响应格式**: 兼容最新的Anthropic Messages API规范
+- **向后兼容**: 保持与现有路由系统的完全兼容
+
+**文件位置**: `src/providers/gemini/client.ts`
+**核心方法**: `cleanJsonSchemaForGemini()`, `convertGeminiToAnthropicStream()`
 
 ##### 4. 提供商模块 (Provider Module)
 - **CodeWhisperer**: AWS提供商 (参考 `../kiro2cc` 实现)
@@ -310,6 +461,63 @@ flowchart TD
 - **Token计算**: 正确计算工具调用相关的输入输出token数量
 - **会话持续**: 工具调用完成后移除停止信号，保持对话可以继续
 - **修复位置**: `src/providers/codewhisperer/parser.ts:309-361`
+
+#### 🔧 CodeWhisperer请求格式要求 (2025-07-31重大发现)
+
+**🚨 核心发现：Demo2兼容性格式要求**
+
+经过深入对比分析Demo2和我们router的实际请求格式，发现导致400错误的根本原因：
+
+**❌ 错误的请求格式**:
+```json
+{
+  "conversationState": {
+    "currentMessage": {
+      "userInputMessage": {
+        "userInputMessageContext": {
+          "toolResults": [],
+          "tools": [/* 工具定义数据 */]
+        }
+      }
+    }
+  }
+}
+```
+
+**✅ 正确的请求格式（Demo2兼容）**:
+```json
+{
+  "conversationState": {
+    "currentMessage": {
+      "userInputMessage": {
+        "userInputMessageContext": {}  // 必须是空对象！
+      }
+    }
+  }
+}
+```
+
+**🔑 关键规则**:
+1. **完全忽略工具**: CodeWhisperer不支持工具调用，必须完全忽略所有tools和toolResults
+2. **空userInputMessageContext**: 始终发送空对象`{}`，不能包含任何字段
+3. **Demo2策略**: 完全采用Demo2的"工具忽略"策略，确保100%兼容性
+
+**📋 修复实现**:
+- **位置**: `src/providers/codewhisperer/converter.ts:106`
+- **修改**: 强制设置`userInputMessageContext: {}`
+- **移除**: 所有工具处理逻辑，包括tools检测、转换、tool results处理
+- **日志**: 添加调试日志记录被忽略的工具信息
+
+**🧪 验证结果**:
+- ✅ 请求格式完全匹配Demo2
+- ✅ 消除所有400错误
+- ✅ 工具调用请求正常响应（工具在响应端处理）
+- ✅ 保持与Demo2完全一致的行为
+
+**⚠️ 重要说明**:
+- 这不影响工具调用功能的实现
+- 工具调用在响应阶段由Claude模型直接处理
+- 请求端只需传递用户消息内容，不传递工具定义
 
 ## 🚨 **硬编码模型名问题 - 完整修复记录 (2025-07-28)**
 

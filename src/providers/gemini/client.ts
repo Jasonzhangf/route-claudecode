@@ -18,13 +18,14 @@ export class GeminiClient {
   private apiKeyRotationManager?: ApiKeyRotationManager;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
+  private readonly requestTimeout = 60000; // 60 seconds timeout
 
   constructor(private config: ProviderConfig, providerId?: string) {
     this.name = providerId || 'gemini-client';
     
     // Handle API key configuration - support both single and multiple keys
     const credentials = config.authentication.credentials;
-    const apiKey = credentials.apiKey || credentials.api_key;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
     
     if (Array.isArray(apiKey) && apiKey.length > 1) {
       // Multiple API keys - initialize rotation manager
@@ -42,7 +43,7 @@ export class GeminiClient {
       });
     } else {
       // Single API key - traditional approach
-      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
       
       if (!this.apiKey) {
         throw new Error('Gemini API key is required');
@@ -63,7 +64,7 @@ export class GeminiClient {
       const apiKey = this.getCurrentApiKey('health-check');
       
       // Check if we can list models (lightweight health check)
-      const response = await fetch(`${this.baseUrl}/v1/models?key=${apiKey}`, {
+      const response = await fetch(`${this.baseUrl}/v1beta/models?key=${apiKey}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json'
@@ -93,33 +94,50 @@ export class GeminiClient {
     const geminiRequest = this.convertToGeminiFormat(request);
     const modelName = this.extractModelName(request.model);
     
-    logger.debug('Sending request to Gemini API', {
+    logger.info('Sending non-streaming request to Gemini API', {
       model: modelName,
       messageCount: geminiRequest.contents?.length || 0,
       hasTools: !!geminiRequest.tools,
       maxTokens: geminiRequest.generationConfig?.maxOutputTokens
-    });
+    }, requestId, 'gemini-provider');
 
     // Execute with retry logic and API key rotation
     const response = await this.executeWithRetry(
       async (apiKey: string) => {
-        const url = `${this.baseUrl}/v1/models/${modelName}:generateContent?key=${apiKey}`;
-        const resp = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(geminiRequest)
-        });
+        const url = `${this.baseUrl}/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
+        
+        try {
+          const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(geminiRequest),
+            signal: controller.signal
+          });
 
-        if (!resp.ok) {
-          const errorText = await resp.text();
-          const error = new Error(`Gemini API error (${resp.status}): ${errorText}`) as any;
-          error.status = resp.status;
+          clearTimeout(timeoutId);
+
+          if (!resp.ok) {
+            const errorText = await resp.text();
+            const error = new Error(`Gemini API error (${resp.status}): ${errorText}`) as any;
+            error.status = resp.status;
+            throw error;
+          }
+
+          return resp;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          
+          if ((error as any).name === 'AbortError') {
+            throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
+          }
           throw error;
         }
-
-        return resp;
       },
       `${this.name} createCompletion`,
       requestId
@@ -143,29 +161,39 @@ export class GeminiClient {
         model: modelName,
         messageCount: geminiRequest.contents?.length || 0,
         strategy: 'universal-auto-detect'
-      });
+      }, requestId, 'gemini-provider');
 
       // Get current API key
       currentApiKey = this.getCurrentApiKey(requestId);
       
-      const url = `${this.baseUrl}/v1/models/${modelName}:streamGenerateContent?key=${currentApiKey}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(geminiRequest)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
+      const url = `${this.baseUrl}/v1beta/models/${modelName}:streamGenerateContent?key=${currentApiKey}`;
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
+      
+      let response: Response;
+      try {
+        response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(geminiRequest),
+          signal: controller.signal
+        });
         
-        // Report error to rotation manager
-        const isRateLimit = response.status === 429;
-        this.reportApiKeyError(currentApiKey, isRateLimit, requestId);
+        clearTimeout(timeoutId);
         
-        const error = new Error(`Gemini streaming API error (${response.status}): ${errorText}`) as any;
-        error.status = response.status;
+        if (!response.ok) {
+          throw new Error(`Gemini API error (${response.status}): ${await response.text()}`);
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if ((error as any).name === 'AbortError') {
+          throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
+        }
         throw error;
       }
 
@@ -173,72 +201,63 @@ export class GeminiClient {
       throw new Error('No response body for streaming request');
     }
 
-    // 🚀 使用完全缓冲策略 + 优化解析器
-    logger.info('Collecting full Gemini response for optimization', {
-      responseStatus: response.status
+    // 🚀 智能缓冲策略 - 学习OpenAI方式：仅对工具调用缓冲，普通文本流式传输
+    logger.info('Starting Gemini smart buffering processing (OpenAI-style)', {
+      responseStatus: response.status,
+      strategy: 'smart-buffering'
     }, requestId, 'gemini-provider');
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-    let fullResponseContent = '';
+    let fullResponseBuffer = '';
+    let hasToolCalls = false;
 
     try {
-      // 收集完整响应，同时发送心跳保持连接
-      let lastHeartbeat = Date.now();
-      const heartbeatInterval = 30000; // 30秒发送一次心跳
+      // 第一步：收集完整响应，同时检测是否有工具调用
+      logger.debug('Collecting full Gemini response for tool detection', {
+        responseStatus: response.status
+      }, requestId, 'gemini-provider');
       
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        fullResponseContent += decoder.decode(value, { stream: true });
+        fullResponseBuffer += decoder.decode(value, { stream: true });
         
-        // 发送心跳以保持连接活跃
-        const now = Date.now();
-        if (now - lastHeartbeat > heartbeatInterval) {
-          logger.debug('Sending heartbeat to keep connection alive', {
-            requestId,
-            elapsed: now - lastHeartbeat
-          }, requestId, 'gemini-provider');
-          
-          // 发送心跳事件
-          yield {
-            type: 'ping',
-            timestamp: now
-          };
-          
-          lastHeartbeat = now;
+        // 检测工具调用标识（避免每次解析完整JSON）
+        if (!hasToolCalls && (
+          fullResponseBuffer.includes('function_call') || 
+          fullResponseBuffer.includes('tool_call') ||
+          fullResponseBuffer.includes('functionCall') ||
+          fullResponseBuffer.includes('function_result')
+        )) {
+          hasToolCalls = true;
+          logger.debug('Tool calls detected in Gemini response', {}, requestId, 'gemini-provider');
         }
       }
 
       logger.info('Gemini response collection completed', {
-        responseLength: fullResponseContent.length,
-        responsePreview: fullResponseContent.slice(0, 200)
+        responseLength: fullResponseBuffer.length,
+        hasToolCalls: hasToolCalls,
+        strategy: hasToolCalls ? 'tool-buffered' : 'text-streaming'
       }, requestId, 'gemini-provider');
 
-      // 🚀 使用通用优化解析器处理
-      const optimizedEvents = await processGeminiResponse(
-        fullResponseContent, 
-        requestId, 
-        { modelName, originalRequest: request }
-      );
-
-      logger.info('Gemini optimization completed', {
-        eventCount: optimizedEvents.length,
-        processingStrategy: 'universal-optimized'
-      }, requestId, 'gemini-provider');
-
-      // 转换并输出优化后的事件
-      for (const event of optimizedEvents) {
-        yield this.convertStreamEvent(event);
+      if (hasToolCalls) {
+        // 有工具调用：使用完全缓冲处理（类似OpenAI方式）
+        logger.info('Using buffered processing for tool calls', {}, requestId, 'gemini-provider');
+        yield* this.processBufferedToolResponse(fullResponseBuffer, request, requestId);
+      } else {
+        // 无工具调用：直接流式处理文本内容
+        logger.info('Using direct streaming for text-only response', {}, requestId, 'gemini-provider');
+        yield* this.processStreamingTextResponse(fullResponseBuffer, request, requestId);
       }
-      
+
       // Report success to rotation manager
       this.reportApiKeySuccess(currentApiKey!, requestId);
 
     } finally {
       reader.releaseLock();
     }
-    
+
     } catch (error) {
       logger.error(`${this.name} streaming request failed`, error, requestId, 'gemini-provider');
       
@@ -248,17 +267,9 @@ export class GeminiClient {
         this.reportApiKeyError(currentApiKey!, isRateLimit, requestId);
       }
       
-      if (error instanceof ProviderError) {
-        throw error;
-      }
-      
+      // 🔧 新架构: 不抛出ProviderError，防止Provider级别拉黑
       const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new ProviderError(
-        `${this.name} streaming request failed: ${errorMessage}`,
-        this.name,
-        500,
-        error
-      );
+      throw new Error(`${this.name} streaming request failed: ${errorMessage}`);
     }
   }
 
@@ -287,10 +298,16 @@ export class GeminiClient {
       geminiRequest.generationConfig.temperature = request.temperature;
     }
 
-    // Handle tools if present
-    const typedRequest = request as any;
-    if (typedRequest.tools) {
-      geminiRequest.tools = this.convertTools(typedRequest.tools);
+    // Handle tools if present - Check both top-level and metadata
+    const tools = request.tools || request.metadata?.tools;
+    if (tools && Array.isArray(tools) && tools.length > 0) {
+      // 🔧 修复: Gemini API正确的工具格式是tools数组，不是单个对象
+      geminiRequest.tools = [this.convertTools(tools)];
+      logger.debug('Converted tools for Gemini request (fixed format)', {
+        toolCount: tools.length,
+        toolNames: tools.map((t: any) => t.name),
+        geminiToolsFormat: 'array with functionDeclarations object'
+      });
     }
 
     return geminiRequest;
@@ -340,15 +357,62 @@ export class GeminiClient {
     return contents;
   }
 
-  private convertTools(tools: any[]): any[] {
+  private convertTools(tools: any[]): any {
     // Convert Anthropic/OpenAI tools to Gemini function declarations
-    return tools.map(tool => ({
-      functionDeclarations: [{
+    // Gemini expects: { functionDeclarations: [...] } (single object, not array)
+    const functionDeclarations = tools.map(tool => {
+      // Handle both Anthropic format (tool.input_schema) and OpenAI format (tool.function.parameters)
+      const rawParameters = tool.input_schema || tool.function?.parameters || {};
+      
+      // 🔧 Critical Fix: Clean JSON Schema for Gemini API compatibility
+      // Gemini API doesn't support additionalProperties, $schema, and other JSON Schema metadata
+      const parameters = this.cleanJsonSchemaForGemini(rawParameters);
+      
+      return {
         name: tool.name,
-        description: tool.description,
-        parameters: tool.input_schema || tool.function?.parameters
-      }]
-    }));
+        description: tool.description || tool.function?.description || '',
+        parameters: parameters
+      };
+    });
+    
+    return {
+      functionDeclarations: functionDeclarations
+    };
+  }
+
+  /**
+   * Clean JSON Schema object for Gemini API compatibility
+   * Removes fields that Gemini API doesn't support
+   */
+  private cleanJsonSchemaForGemini(schema: any): any {
+    if (!schema || typeof schema !== 'object') {
+      return schema;
+    }
+
+    const cleaned: any = {};
+    
+    // Gemini API supported fields for schema
+    const supportedFields = ['type', 'properties', 'required', 'items', 'description', 'enum'];
+    
+    for (const [key, value] of Object.entries(schema)) {
+      if (supportedFields.includes(key)) {
+        if (key === 'properties' && typeof value === 'object') {
+          // Recursively clean properties
+          cleaned[key] = {};
+          for (const [propKey, propValue] of Object.entries(value as any)) {
+            cleaned[key][propKey] = this.cleanJsonSchemaForGemini(propValue);
+          }
+        } else if (key === 'items' && typeof value === 'object') {
+          // Recursively clean array items schema
+          cleaned[key] = this.cleanJsonSchemaForGemini(value);
+        } else {
+          cleaned[key] = value;
+        }
+      }
+      // Skip unsupported fields like: additionalProperties, $schema, minItems, maxItems, etc.
+    }
+    
+    return cleaned;
   }
 
   private convertFromGeminiFormat(geminiResponse: any, originalRequest: BaseRequest): BaseResponse {
@@ -495,17 +559,614 @@ export class GeminiClient {
       }
     }
     
-    // Ensure proper error handling after retry exhaustion
+    // 🔧 新架构: 检查是否所有API Key都不可用
+    if (this.apiKeyRotationManager) {
+      const stats = this.apiKeyRotationManager.getStats();
+      const allKeysBlocked = stats.activeKeys === 0 && stats.totalKeys > 0;
+      
+      if (allKeysBlocked) {
+        logger.warn('All Gemini API keys are temporarily unavailable', {
+          totalKeys: stats.totalKeys,
+          rateLimitedKeys: stats.rateLimitedKeys,
+          disabledKeys: stats.disabledKeys,
+          waitForRecovery: '60s'
+        }, requestId, 'gemini-provider');
+        
+        // 不抛出ProviderError，返回一个简单的错误响应
+        // 这样SimpleProviderManager不会拉黑整个Provider
+        throw new Error(`All ${stats.totalKeys} Gemini API keys temporarily unavailable. Will recover automatically.`);
+      }
+    }
+    
+    // 如果不是所有Key都失败，这可能是真正的服务问题
     if ((lastError as any)?.status === 429 || (lastError as any)?.response?.status === 429) {
-      throw new ProviderError(
-        `${this.name} rate limit exceeded after ${this.maxRetries} retries`,
-        this.name,
-        429,
-        lastError
-      );
+      throw new Error(`Gemini rate limit - will retry with different API key`);
     }
     
     throw lastError;
+  }
+
+  /**
+   * 处理包含工具调用的缓冲响应（直接Gemini到Anthropic转换）
+   */
+  private async *processBufferedToolResponse(fullResponseBuffer: string, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    logger.info('Processing Gemini tool response with direct Anthropic conversion', {
+      bufferLength: fullResponseBuffer.length
+    }, requestId, 'gemini-tool-processor');
+
+    try {
+      // 解析Gemini响应
+      const parsedContent = JSON.parse(fullResponseBuffer);
+      const geminiEvents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+
+      logger.debug('Parsed Gemini events for tool processing', {
+        eventCount: geminiEvents.length
+      }, requestId, 'gemini-tool-processor');
+
+      // 🔧 直接转换为Anthropic格式
+      const anthropicEvents = this.convertGeminiToAnthropicStream(geminiEvents, request, requestId);
+
+      logger.info('Direct Gemini to Anthropic conversion completed', {
+        streamEventCount: anthropicEvents.length,
+        strategy: 'direct-gemini-to-anthropic'
+      }, requestId, 'gemini-tool-processor');
+
+      // 输出所有事件
+      for (const streamEvent of anthropicEvents) {
+        yield streamEvent;
+      }
+
+    } catch (error) {
+      logger.error('Failed to process Gemini tool response', error, requestId, 'gemini-tool-processor');
+      throw error;
+    }
+  }
+
+  /**
+   * 直接将Gemini事件转换为Anthropic流式事件
+   * 🔧 处理文本和工具调用
+   */
+  private convertGeminiToAnthropicStream(geminiEvents: any[], request: BaseRequest, requestId: string): any[] {
+    const events: any[] = [];
+    const messageId = `msg_${Date.now()}`;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let contentIndex = 0;
+
+    // 提取所有内容
+    const contentBlocks: any[] = [];
+    
+    for (const event of geminiEvents) {
+      if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+        const parts = event.candidates[0].content.parts || [];
+        
+        for (const part of parts) {
+          if (part.text) {
+            // 文本内容
+            contentBlocks.push({
+              type: 'text',
+              text: part.text
+            });
+          } else if (part.functionCall) {
+            // 🔧 工具调用转换
+            contentBlocks.push({
+              type: 'tool_use',
+              id: `toolu_${Date.now()}_${contentIndex++}`,
+              name: part.functionCall.name,
+              input: part.functionCall.args || {}
+            });
+            
+            logger.debug('Converted Gemini functionCall to Anthropic tool_use', {
+              functionName: part.functionCall.name,
+              args: part.functionCall.args
+            }, requestId, 'gemini-tool-processor');
+          }
+        }
+      }
+      
+      // 聚合token信息
+      if (event.usageMetadata) {
+        inputTokens = Math.max(inputTokens, event.usageMetadata.promptTokenCount || 0);
+        outputTokens += event.usageMetadata.candidatesTokenCount || 0;
+      }
+    }
+
+    // 估算tokens如果没有提供
+    if (outputTokens === 0) {
+      const textLength = contentBlocks
+        .filter(block => block.type === 'text')
+        .reduce((sum, block) => sum + (block.text?.length || 0), 0);
+      outputTokens = Math.ceil((textLength + contentBlocks.filter(b => b.type === 'tool_use').length * 50) / 4);
+    }
+
+    // 生成Anthropic流式事件
+    // 1. message_start
+    events.push({
+      event: 'message_start',
+      data: {
+        type: 'message_start',
+        message: {
+          id: messageId,
+          type: 'message',
+          role: 'assistant',
+          content: [],
+          model: request.model,
+          stop_reason: null,
+          stop_sequence: null,
+          usage: { input_tokens: inputTokens, output_tokens: 0 }
+        }
+      }
+    });
+
+    // 2. ping
+    events.push({
+      event: 'ping',
+      data: { type: 'ping' }
+    });
+
+    // 3. 为每个内容块生成事件
+    contentBlocks.forEach((block, index) => {
+      // content_block_start
+      events.push({
+        event: 'content_block_start',
+        data: {
+          type: 'content_block_start',
+          index: index,
+          content_block: block
+        }
+      });
+
+      if (block.type === 'text' && block.text) {
+        // 为文本生成delta事件
+        const chunkSize = 20;
+        for (let i = 0; i < block.text.length; i += chunkSize) {
+          const chunk = block.text.slice(i, i + chunkSize);
+          events.push({
+            event: 'content_block_delta',
+            data: {
+              type: 'content_block_delta',
+              index: index,
+              delta: {
+                type: 'text_delta',
+                text: chunk
+              }
+            }
+          });
+        }
+      }
+
+      // content_block_stop
+      events.push({
+        event: 'content_block_stop',
+        data: {
+          type: 'content_block_stop',
+          index: index
+        }
+      });
+    });
+
+    // 4. message_delta (with usage)
+    events.push({
+      event: 'message_delta',
+      data: {
+        type: 'message_delta',
+        delta: {},
+        usage: {
+          output_tokens: outputTokens
+        }
+      }
+    });
+
+    // 5. message_stop
+    events.push({
+      event: 'message_stop',
+      data: {
+        type: 'message_stop'
+      }
+    });
+
+    logger.debug('Generated Anthropic stream events', {
+      eventCount: events.length,
+      contentBlocks: contentBlocks.length,
+      textBlocks: contentBlocks.filter(b => b.type === 'text').length,
+      toolBlocks: contentBlocks.filter(b => b.type === 'tool_use').length,
+      outputTokens
+    }, requestId, 'gemini-tool-processor');
+
+    return events;
+  }
+
+  /**
+   * 处理纯文本响应（智能流式传输 - 学习OpenAI方式）
+   */
+  private async *processStreamingTextResponse(fullResponseBuffer: string, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    logger.info('Processing Gemini text response with smart streaming strategy (OpenAI-style)', {
+      bufferLength: fullResponseBuffer.length,
+      strategy: 'smart-text-streaming'
+    }, requestId, 'gemini-stream-processor');
+
+    try {
+      // 解析响应提取文本
+      const parsedContent = JSON.parse(fullResponseBuffer);
+      const geminiEvents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+      
+      // 提取所有文本内容
+      let fullText = '';
+      let inputTokens = 0;
+      let outputTokens = 0;
+      
+      for (const event of geminiEvents) {
+        if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+          const parts = event.candidates[0].content.parts || [];
+          for (const part of parts) {
+            if (part.text) {
+              fullText += part.text;
+            }
+          }
+        }
+        
+        // 聚合token信息
+        if (event.usageMetadata) {
+          inputTokens = Math.max(inputTokens, event.usageMetadata.promptTokenCount || 0);
+          outputTokens += event.usageMetadata.candidatesTokenCount || 0;
+        }
+      }
+
+      // 估算tokens（如果没有提供）
+      if (outputTokens === 0 && fullText) {
+        outputTokens = Math.ceil(fullText.length / 4);
+      }
+
+      logger.debug('Extracted text content for streaming', {
+        textLength: fullText.length,
+        inputTokens,
+        outputTokens,
+        estimatedTokens: outputTokens === Math.ceil(fullText.length / 4)
+      }, requestId, 'gemini-stream-processor');
+
+      // 🚀 智能流式事件生成 - 立即开始输出，避免等待
+      const messageId = `msg_${Date.now()}`;
+      
+      // 发送message_start
+      yield {
+        event: 'message_start',
+        data: {
+          type: 'message_start',
+          message: {
+            id: messageId,
+            type: 'message',
+            role: 'assistant',
+            content: [],
+            model: request.model,
+            stop_reason: null,
+            stop_sequence: null,
+            usage: { input_tokens: inputTokens, output_tokens: 0 }
+          }
+        }
+      };
+
+      // 发送ping
+      yield {
+        event: 'ping',
+        data: { type: 'ping' }
+      };
+
+      // 发送content_block_start
+      yield {
+        event: 'content_block_start',
+        data: {
+          type: 'content_block_start',
+          index: 0,
+          content_block: { type: 'text', text: '' }
+        }
+      };
+
+      // 🔥 智能分块策略：根据内容长度调整chunk大小和延迟
+      const contentLength = fullText.length;
+      let chunkSize: number;
+      let delayMs: number;
+      
+      if (contentLength > 10000) {
+        // 长内容：大块快速传输
+        chunkSize = 50;
+        delayMs = 5;
+      } else if (contentLength > 1000) {
+        // 中等内容：适中块适中延迟
+        chunkSize = 20;
+        delayMs = 8;
+      } else {
+        // 短内容：小块慢速传输（更好的用户体验）
+        chunkSize = 10;
+        delayMs = 15;
+      }
+      
+      logger.debug('Smart chunking strategy selected', {
+        contentLength,
+        chunkSize,
+        delayMs,
+        estimatedChunks: Math.ceil(contentLength / chunkSize)
+      }, requestId, 'gemini-stream-processor');
+
+      // 分块发送文本内容（智能流式体验）
+      let sentChunks = 0;
+      for (let i = 0; i < fullText.length; i += chunkSize) {
+        const chunk = fullText.slice(i, i + chunkSize);
+        sentChunks++;
+        
+        yield {
+          event: 'content_block_delta',
+          data: {
+            type: 'content_block_delta',
+            index: 0,
+            delta: {
+              type: 'text_delta',
+              text: chunk
+            }
+          }
+        };
+        
+        // 智能延迟：前几个块立即发送，后续添加延迟
+        if (sentChunks > 3) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+
+      // 发送结束事件
+      yield {
+        event: 'content_block_stop',
+        data: {
+          type: 'content_block_stop',
+          index: 0
+        }
+      };
+
+      yield {
+        event: 'message_delta',
+        data: {
+          type: 'message_delta',
+          delta: {},
+          usage: {
+            output_tokens: outputTokens
+          }
+        }
+      };
+
+      yield {
+        event: 'message_stop',
+        data: {
+          type: 'message_stop'
+        }
+      };
+
+      logger.info('Smart text streaming completed', {
+        textLength: fullText.length,
+        outputTokens: outputTokens,
+        totalChunks: sentChunks,
+        chunkSize,
+        delayMs,
+        strategy: 'smart-text-streaming'
+      }, requestId, 'gemini-stream-processor');
+
+    } catch (error) {
+      logger.error('Failed to process Gemini smart text response', error, requestId, 'gemini-stream-processor');
+      throw error;
+    }
+  }
+
+  /**
+   * 实时提取Gemini响应中的内容并生成流式事件
+   */
+  private extractAndYieldContent(buffer: string, currentTokens: number, requestId: string, isFinal: boolean = false): { events: any[], totalTokens: number } {
+    const events: any[] = [];
+    let totalTokens = currentTokens;
+    
+    try {
+      // 尝试解析JSON数组格式的Gemini响应
+      const parsedContent = JSON.parse(buffer);
+      const geminiEvents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+      
+      // 提取新的文本内容
+      let newText = '';
+      for (const event of geminiEvents) {
+        if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+          const parts = event.candidates[0].content.parts || [];
+          for (const part of parts) {
+            if (part.text) {
+              newText += part.text;
+            }
+          }
+        }
+      }
+      
+      // 如果有新内容，生成content_block_delta事件
+      if (newText) {
+        // 按小块发送以模拟真实流式体验
+        const chunkSize = 20;
+        for (let i = 0; i < newText.length; i += chunkSize) {
+          const chunk = newText.slice(i, i + chunkSize);
+          events.push({
+            event: 'content_block_delta',
+            data: {
+              type: 'content_block_delta',
+              index: 0,
+              delta: {
+                type: 'text_delta',
+                text: chunk
+              }
+            }
+          });
+          
+          // 更新token计数（粗略估算：4字符=1token）
+          totalTokens += Math.ceil(chunk.length / 4);
+        }
+        
+        logger.debug('Extracted content from Gemini buffer', {
+          textLength: newText.length,
+          chunkCount: Math.ceil(newText.length / chunkSize),
+          newTokens: Math.ceil(newText.length / 4),
+          totalTokens
+        }, requestId, 'gemini-real-time');
+      }
+      
+    } catch (error) {
+      // 如果不是完整的JSON，只在最终处理时记录
+      if (isFinal) {
+        logger.debug('Buffer does not contain complete JSON, skipping extraction', {
+          bufferLength: buffer.length,
+          bufferPreview: buffer.slice(0, 100)
+        }, requestId, 'gemini-real-time');
+      }
+    }
+    
+    return { events, totalTokens };
+  }
+
+  /**
+   * Convert OpenAI buffered response to OpenAI streaming events format
+   */
+  private convertToOpenAIEvents(bufferedResponse: any, requestId: string): any[] {
+    const content = bufferedResponse.choices?.[0]?.message?.content || '';
+    const usage = bufferedResponse.usage || {};
+    
+    // Create OpenAI streaming events similar to real OpenAI API
+    const events: any[] = [];
+    
+    // Add chunks for content (simulate streaming)
+    const chunkSize = 10; // Characters per chunk to simulate realistic streaming
+    for (let i = 0; i < content.length; i += chunkSize) {
+      const chunk = content.slice(i, i + chunkSize);
+      events.push({
+        id: bufferedResponse.id,
+        object: 'chat.completion.chunk',
+        created: bufferedResponse.created,
+        model: bufferedResponse.model,
+        choices: [{
+          index: 0,
+          delta: {
+            content: chunk
+          },
+          finish_reason: null
+        }]
+      });
+    }
+    
+    // Add final event with finish reason and usage
+    events.push({
+      id: bufferedResponse.id,
+      object: 'chat.completion.chunk',
+      created: bufferedResponse.created,
+      model: bufferedResponse.model,
+      choices: [{
+        index: 0,
+        delta: {},
+        finish_reason: 'stop'
+      }],
+      usage: usage
+    });
+    
+    logger.debug('Converted to OpenAI streaming events', {
+      originalLength: content.length,
+      eventCount: events.length,
+      chunkSize
+    }, requestId, 'gemini-buffered-processor');
+    
+    return events;
+  }
+
+  /**
+   * Convert Gemini events array to OpenAI buffered response format
+   * 🔧 Critical Fix: Handle both text and function calls from Gemini
+   */
+  private convertGeminiToOpenAIBuffered(geminiEvents: any[], requestId: string): any {
+    // Extract all content from Gemini events - both text and tool calls
+    let fullText = '';
+    const toolCalls: any[] = [];
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let toolCallIndex = 0;
+    
+    for (const event of geminiEvents) {
+      if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+        const parts = event.candidates[0].content.parts || [];
+        for (const part of parts) {
+          // Handle text content
+          if (part.text) {
+            fullText += part.text;
+          }
+          
+          // 🔧 Critical Fix: Handle function calls from Gemini
+          if (part.functionCall) {
+            const toolCall = {
+              index: toolCallIndex++,
+              id: `call_${Date.now()}_${toolCallIndex}`,
+              type: 'function',
+              function: {
+                name: part.functionCall.name,
+                arguments: JSON.stringify(part.functionCall.args || {})
+              }
+            };
+            toolCalls.push(toolCall);
+            
+            logger.debug('Converted Gemini functionCall to OpenAI tool_call', {
+              functionName: part.functionCall.name,
+              args: part.functionCall.args,
+              toolCallId: toolCall.id
+            }, requestId, 'gemini-buffered-processor');
+          }
+        }
+      }
+      
+      // Aggregate usage metadata
+      if (event.usageMetadata) {
+        inputTokens = Math.max(inputTokens, event.usageMetadata.promptTokenCount || 0);
+        outputTokens += event.usageMetadata.candidatesTokenCount || 0;
+      }
+    }
+    
+    // Estimate tokens if not provided
+    if (outputTokens === 0 && (fullText || toolCalls.length > 0)) {
+      outputTokens = Math.ceil((fullText.length + toolCalls.length * 50) / 4); // Rough estimation
+    }
+    
+    logger.debug('Gemini to OpenAI conversion with tool calls', {
+      geminiEvents: geminiEvents.length,
+      fullTextLength: fullText.length,
+      toolCallCount: toolCalls.length,
+      inputTokens,
+      outputTokens
+    }, requestId, 'gemini-buffered-processor');
+    
+    // 🔧 Create OpenAI-compatible buffered response with tool calls
+    const message: any = {
+      role: 'assistant'
+    };
+
+    // OpenAI format: if there are tool calls, content should be null or empty
+    // If there's only text, content should be the text
+    if (toolCalls.length > 0) {
+      message.tool_calls = toolCalls;
+      message.content = fullText || null;
+    } else {
+      // Pure text response
+      message.content = fullText || '';
+    }
+    
+    return {
+      id: `chatcmpl-gemini-${Date.now()}`,
+      object: 'chat.completion',
+      created: Math.floor(Date.now() / 1000),
+      model: 'gemini-2.5-pro',
+      choices: [{
+        index: 0,
+        message: message,
+        finish_reason: 'stop'
+      }],
+      usage: {
+        prompt_tokens: inputTokens,
+        completion_tokens: outputTokens,
+        total_tokens: inputTokens + outputTokens
+      }
+    };
   }
 
   private convertStreamEvent(event: any): any {
@@ -528,6 +1189,126 @@ export class GeminiClient {
     };
   }
   
+  /**
+   * 将流式事件转换为非流式BaseResponse格式
+   * 用于统一所有请求都使用智能缓冲策略
+   */
+  private convertStreamEventsToBaseResponse(streamEvents: any[], originalRequest: BaseRequest, requestId: string): BaseResponse {
+    logger.debug('Converting stream events to BaseResponse', {
+      eventCount: streamEvents.length
+    }, requestId, 'gemini-provider');
+
+    // 提取关键信息
+    let messageId = '';
+    let content: any[] = [];
+    let stopReason = 'end_turn';
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let currentTextBlock = '';
+
+    for (const event of streamEvents) {
+      const eventData = event.data || event;
+      
+      switch (eventData.type) {
+        case 'message_start':
+          messageId = eventData.message?.id || `gemini_${Date.now()}`;
+          if (eventData.message?.usage?.input_tokens) {
+            inputTokens = eventData.message.usage.input_tokens;
+          }
+          break;
+          
+        case 'content_block_start':
+          // 开始新的内容块
+          if (eventData.content_block?.type === 'text') {
+            currentTextBlock = '';
+          }
+          break;
+          
+        case 'content_block_delta':
+          // 累积文本内容
+          if (eventData.delta?.type === 'text_delta' && eventData.delta.text) {
+            currentTextBlock += eventData.delta.text;
+          }
+          break;
+          
+        case 'content_block_stop':
+          // 完成内容块
+          if (currentTextBlock) {
+            content.push({
+              type: 'text',
+              text: currentTextBlock
+            });
+            currentTextBlock = '';
+          }
+          break;
+          
+        case 'message_delta':
+          // 提取最终使用情况和停止原因
+          if (eventData.delta?.stop_reason) {
+            stopReason = eventData.delta.stop_reason;
+          }
+          if (eventData.usage?.output_tokens) {
+            outputTokens = eventData.usage.output_tokens;
+          }
+          break;
+          
+        case 'tool_use':
+          // 处理工具调用
+          if (eventData.id && eventData.name) {
+            content.push({
+              type: 'tool_use',
+              id: eventData.id,
+              name: eventData.name,
+              input: eventData.input || {}
+            });
+          }
+          break;
+      }
+    }
+
+    // 如果还有未完成的文本块，添加它
+    if (currentTextBlock) {
+      content.push({
+        type: 'text',
+        text: currentTextBlock
+      });
+    }
+
+    // 如果没有内容，创建空文本块
+    if (content.length === 0) {
+      content.push({
+        type: 'text',
+        text: ''
+      });
+    }
+
+    const response: BaseResponse = {
+      id: messageId || `gemini_${Date.now()}`,
+      model: originalRequest.model,
+      role: 'assistant',
+      content: content,
+      stop_reason: stopReason,
+      stop_sequence: null,
+      usage: {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens
+      }
+    };
+
+    logger.debug('Stream to BaseResponse conversion completed', {
+      messageId: response.id,
+      contentBlocks: response.content.length,
+      totalTextLength: response.content
+        .filter(block => block.type === 'text')
+        .reduce((sum, block) => sum + (block.text?.length || 0), 0),
+      inputTokens: response.usage?.input_tokens || 0,
+      outputTokens: response.usage?.output_tokens || 0,
+      stopReason: response.stop_reason
+    }, requestId, 'gemini-provider');
+
+    return response;
+  }
+
   /**
    * Get API key rotation statistics
    */

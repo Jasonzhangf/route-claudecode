@@ -4,10 +4,10 @@
  */
 
 import chalk from 'chalk';
-import { resolve, join } from 'path';
+import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { RouterConfig } from './types';
-import { getConfigPaths } from './utils/config-paths';
+import { getConfigPaths, resolvePath } from './utils';
 
 /**
  * Load configuration from file
@@ -37,9 +37,12 @@ export async function executeCodeCommand(args: string[], options: any) {
     const fs = require('fs');
     const path = require('path');
     const os = require('os');
+    
+    // Import fetch for Node.js compatibility
+    const fetch = globalThis.fetch;
 
     // Load configuration
-    const configPath = resolve(options.config);
+    const configPath = resolvePath(options.config);
     const config = loadConfig(configPath);
     
     // Override with CLI options
@@ -122,6 +125,32 @@ export async function executeCodeCommand(args: string[], options: any) {
       return false;
     }
 
+    async function checkServiceOnPort(checkPort: number, checkHost: string = host): Promise<boolean> {
+      return new Promise((resolve) => {
+        const http = require('http');
+        const url = `http://${checkHost}:${checkPort}/status`;
+        console.log(chalk.gray(`   Testing: ${url}`));
+        
+        const req = http.get(url, (res: any) => {
+          const isOk = res.statusCode >= 200 && res.statusCode < 300;
+          console.log(chalk.gray(`   Result: ${isOk ? '✅' : '❌'} (${res.statusCode})`));
+          resolve(isOk);
+          res.resume(); // Consume response to free up memory
+        });
+        
+        req.on('error', (error: any) => {
+          console.log(chalk.gray(`   Error: ${error.message}`));
+          resolve(false);
+        });
+        
+        req.setTimeout(5000, () => {
+          console.log(chalk.gray(`   Error: Timeout`));
+          req.destroy();
+          resolve(false);
+        });
+      });
+    }
+
     function startBackgroundService(): void {
       console.log(chalk.blue('🚀 Starting Claude Code Router service...'));
       
@@ -144,13 +173,14 @@ export async function executeCodeCommand(args: string[], options: any) {
       startProcess.stderr?.on('data', () => {});
     }
 
-    async function executeClaudeCode(claudeArgs: string[] = []): Promise<void> {
+    async function executeClaudeCode(claudeArgs: string[] = [], overrideHost?: string): Promise<void> {
       incrementReferenceCount();
 
       // Set environment variables for claude subprocess
+      const hostForUrl = overrideHost || (host === '0.0.0.0' ? '127.0.0.1' : host);
       const env = {
         ...process.env,
-        ANTHROPIC_BASE_URL: `http://${host}:${port}`,
+        ANTHROPIC_BASE_URL: `http://${hostForUrl}:${port}`,
         ANTHROPIC_API_KEY: 'any-string-is-ok',
         API_TIMEOUT_MS: '600000' // 10 minutes
       };
@@ -207,20 +237,70 @@ export async function executeCodeCommand(args: string[], options: any) {
       process.on('SIGTERM', cleanup);
     }
 
-    // Main logic: Check if service is running, start if needed, then launch Claude Code
-    if (!isServiceRunning()) {
-      startBackgroundService();
+    // Main logic implementation
+    if (options.port) {
+      // Mode 1: Port specified - only check connection, don't start service
+      console.log(chalk.blue(`🔍 Checking for service on specified port ${port}...`));
       
-      if (await waitForService()) {
-        console.log(chalk.green('✅ Router service is ready!'));
-        await executeClaudeCode(args);
+      // Try common hosts when port is specified: 127.0.0.1 and 0.0.0.0
+      // If other IP needed, must use --host explicitly
+      const hostsToTry = options.host ? [host] : ['127.0.0.1', '0.0.0.0'];
+      let serviceFound = false;
+      let workingHost = '';
+      
+      for (const hostToTry of hostsToTry) {
+        if (await checkServiceOnPort(port, hostToTry)) {
+          serviceFound = true;
+          workingHost = hostToTry;
+          break;
+        }
+      }
+      
+      if (serviceFound) {
+        console.log(chalk.green(`✅ Router service found on ${workingHost}:${port}!`));
+        await executeClaudeCode(args, workingHost);
       } else {
-        console.error(chalk.red('❌ Failed to start router service'));
+        console.error(chalk.red(`❌ No service found on port ${port}`));
+        console.log(chalk.gray(`   Tried hosts: ${hostsToTry.join(', ')}`));
+        console.log(chalk.yellow('💡 Make sure to start the service first: rcc start --config=your-config.json'));
         process.exit(1);
       }
+    } else if (options.config && options.config !== configPaths.configFile) {
+      // Mode 2: Config specified - start service for this specific config
+      console.log(chalk.blue(`🎯 Starting service with specified config: ${options.config}`));
+      
+      if (!isServiceRunning()) {
+        startBackgroundService();
+        
+        if (await waitForService()) {
+          console.log(chalk.green('✅ Router service is ready!'));
+          await executeClaudeCode(args);
+        } else {
+          console.error(chalk.red('❌ Failed to start router service'));
+          process.exit(1);
+        }
+      } else {
+        console.log(chalk.green('✅ Router service already running'));
+        await executeClaudeCode(args);
+      }
     } else {
-      console.log(chalk.green('✅ Router service already running'));
-      await executeClaudeCode(args);
+      // Mode 3: Default mode - intelligent config detection and service startup
+      console.log(chalk.blue('🎯 Default mode: Intelligent configuration detection'));
+      
+      if (!isServiceRunning()) {
+        startBackgroundService();
+        
+        if (await waitForService()) {
+          console.log(chalk.green('✅ Router service is ready!'));
+          await executeClaudeCode(args);
+        } else {
+          console.error(chalk.red('❌ Failed to start router service'));
+          process.exit(1);
+        }
+      } else {
+        console.log(chalk.green('✅ Router service already running'));
+        await executeClaudeCode(args);
+      }
     }
 
   } catch (error) {

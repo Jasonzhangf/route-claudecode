@@ -70,7 +70,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     const normalized: AnthropicResponse = {
       content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
-      model: originalRequest.model,
+      model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
       ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
       stop_sequence: response.stop_sequence || null,
@@ -135,7 +135,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     return {
       content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
-      model: originalRequest.model,
+      model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
       // stop_reason: this.mapOpenAIFinishReason(choice.finish_reason), // 移除OpenAI停止原因映射
       stop_sequence: undefined,
@@ -157,7 +157,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       id: `msg_${uuidv4().replace(/-/g, '')}`,
       type: 'message',
       role: 'assistant',
-      model: originalRequest.model,
+      model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: normalizedContent,
       // stop_reason: 'end_turn', // 移除硬编码停止原因
       stop_sequence: undefined,
@@ -178,7 +178,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       id: `msg_${uuidv4().replace(/-/g, '')}`,
       type: 'message',
       role: 'assistant',
-      model: originalRequest.model,
+      model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: content,
       // stop_reason: 'end_turn', // 移除硬编码停止原因
       stop_sequence: undefined,
@@ -197,7 +197,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       type: 'message',
       role: 'assistant',
-      model: originalRequest.model,
+      model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: this.normalizeContent(response.content),
       ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
       stop_sequence: response.stop_sequence || null,

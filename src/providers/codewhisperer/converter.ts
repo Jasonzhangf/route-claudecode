@@ -64,10 +64,13 @@ export class CodeWhispererConverter {
   private profileArn: string;
 
   constructor(profileArn?: string) {
-    if (!profileArn) {
-      throw new Error('CodeWhisperer profileArn is required but not provided');
-    }
-    this.profileArn = profileArn;
+    // 🔧 Demo2方式：强制使用固定profileArn，忽略配置文件
+    this.profileArn = "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK";
+    logger.debug('Using hardcoded demo2 profileArn (forced)', { 
+      profileArn: this.profileArn,
+      configProfileArn: profileArn || 'none',
+      reason: 'Demo2 compatibility - avoiding configuration issues'
+    });
   }
 
   /**
@@ -100,48 +103,22 @@ export class CodeWhispererConverter {
               content: this.extractMessageContent(request.messages[request.messages.length - 1].content),
               modelId: request.model, // Use model name directly from routing engine
               origin: 'AI_EDITOR',
-              userInputMessageContext: {}
+              userInputMessageContext: {} // Demo2 style: always empty object, never include tools
             }
           },
           history: []
         },
-        profileArn: this.profileArn
+        profileArn: "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"  // 🔧 Demo2方式：强制写死profileArn
       };
 
-      const anthropicReq = request as AnthropicRequest;
-
-      // Handle tools if present - Fix from aca415c: read from top-level tools
-      if (anthropicReq.tools && Array.isArray(anthropicReq.tools)) {
-        cwRequest.conversationState.currentMessage.userInputMessage.userInputMessageContext.tools = 
-          anthropicReq.tools.map((tool: any) => ({
-            toolSpecification: {
-              name: tool.name,
-              description: tool.description,
-              inputSchema: {
-                json: tool.input_schema
-              }
-            }
-          }));
-
-        logger.debug('Added tools to CodeWhisperer request', {
-          toolCount: anthropicReq.tools.length,
-          toolNames: anthropicReq.tools.map((t: any) => t.name)
-        }, requestId);
-      }
-
-      // Handle tool results if present (for multi-turn tool conversations)
-      if (request.metadata?.toolResults && request.metadata.toolResults.length > 0) {
-        cwRequest.conversationState.currentMessage.userInputMessage.userInputMessageContext.toolResults = 
-          request.metadata.toolResults.map((result: any) => ({
-            content: [{ text: result.content }],
-            status: result.is_error ? 'ERROR' : 'SUCCESS',
-            toolUseId: result.tool_use_id
-          }));
-
-        logger.debug('Added tool results to CodeWhisperer request', {
-          toolResultCount: request.metadata.toolResults.length
-        }, requestId);
-      }
+      // 🚨 Demo2 Compatibility: Completely ignore all tools and tool results
+      // Demo2 never sends tools to CodeWhisperer, always uses empty userInputMessageContext
+      logger.debug('Ignoring tools (Demo2 compatibility)', {
+        hasRequestTools: !!(request.tools?.length),
+        hasMetadataTools: !!(request.metadata?.tools?.length),
+        hasToolResults: !!(request.metadata?.toolResults?.length),
+        reason: 'Demo2 always sends empty userInputMessageContext'
+      }, requestId);
 
       // Build conversation history (demo2 style)
       cwRequest.conversationState.history = this.buildConversationHistory(request, requestId);
@@ -152,6 +129,12 @@ export class CodeWhispererConverter {
         hasTools: !!(request.metadata?.tools?.length),
         hasToolResults: !!(request.metadata?.toolResults?.length)
       });
+
+      // 🔍 DEBUG: Save actual CodeWhisperer request for comparison with Demo2
+      const fs = require('fs');
+      const debugPath = `/tmp/our-cw-request-${Date.now()}.json`;
+      fs.writeFileSync(debugPath, JSON.stringify(cwRequest, null, 2));
+      console.log(`🔍 Our CodeWhisperer request saved to: ${debugPath}`);
 
       // Capture successful request conversion
       captureConversionEvent(requestId, 'request_conversion', {
@@ -353,13 +336,14 @@ export class CodeWhispererConverter {
   }
 
   /**
-   * Update profileArn if needed
+   * Update profileArn if needed (Demo2方式：忽略更新请求)
    */
   updateProfileArn(profileArn: string): void {
-    if (!profileArn) {
-      throw new Error('Invalid profileArn provided');
-    }
-    this.profileArn = profileArn;
-    logger.debug('Updated CodeWhisperer profileArn', { profileArn });
+    logger.debug('ProfileArn update ignored (demo2 mode)', { 
+      requestedProfileArn: profileArn,
+      currentProfileArn: this.profileArn,
+      reason: 'Demo2 compatibility - using hardcoded profileArn'
+    });
+    // 不执行更新，保持硬编码的profileArn
   }
 }

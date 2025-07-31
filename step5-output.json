@@ -1,0 +1,77 @@
+{
+  "timestamp": "2025-07-31T00:03:05.431Z",
+  "step": "step5-transformer-input",
+  "input": {
+    "rawApiResponse": {
+      "id": "chatcmpl-mock123",
+      "object": "chat.completion",
+      "created": 1753920185428,
+      "model": "gemini-2.5-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "This is a mock response for testing transformer input processing."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 15,
+        "completion_tokens": 12,
+        "total_tokens": 27
+      }
+    }
+  },
+  "analysis": {
+    "dataStructure": {
+      "hasId": true,
+      "hasObject": true,
+      "hasModel": true,
+      "hasChoices": true,
+      "hasUsage": true,
+      "choicesCount": 1
+    },
+    "choice": {
+      "hasIndex": true,
+      "hasMessage": true,
+      "hasFinishReason": true,
+      "messageRole": "assistant",
+      "messageContent": "This is a mock response for testing transformer input processing.",
+      "messageContentLength": 65,
+      "hasToolCalls": false
+    },
+    "usage": {
+      "hasPromptTokens": true,
+      "hasCompletionTokens": true,
+      "hasTotalTokens": true,
+      "promptTokens": 15,
+      "completionTokens": 12,
+      "totalTokens": 27
+    },
+    "isTransformerReady": true
+  },
+  "transformerInput": {
+    "id": "chatcmpl-mock123",
+    "object": "chat.completion",
+    "created": 1753920185428,
+    "model": "gemini-2.5-flash",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "This is a mock response for testing transformer input processing."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 15,
+      "completion_tokens": 12,
+      "total_tokens": 27
+    }
+  },
+  "success": true
+}

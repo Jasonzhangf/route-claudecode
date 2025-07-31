@@ -50,12 +50,14 @@ export class AnthropicInputProcessor implements InputProcessor {
         stream: anthropicRequest.stream || false,
         max_tokens: anthropicRequest.max_tokens || 131072,
         temperature: anthropicRequest.temperature,
+        // 🔧 FIX: Store tools at top level for Provider access
+        tools: anthropicRequest.tools,
         metadata: {
           requestId: '',  // Will be set by server
           ...anthropicRequest.metadata,
           originalFormat: 'anthropic',
           system: anthropicRequest.system,
-          tools: anthropicRequest.tools,
+          tools: anthropicRequest.tools,  // Keep copy in metadata for session management
           thinking: anthropicRequest.thinking || false
         }
       };

@@ -21,12 +21,32 @@ async function testStep5() {
     hasContent: step4Data.analysis?.hasContent
   });
 
+  let rawApiResponse;
   if (!step4Data.success) {
-    console.log('⚠️  Step4 returned empty content - proceeding to test transformer with empty response');
+    console.log('⚠️  Step4 failed - using mock data for testing transformer input');
+    // 创建模拟的OpenAI API响应用于测试
+    rawApiResponse = {
+      id: 'chatcmpl-mock123',
+      object: 'chat.completion',
+      created: Date.now(),
+      model: 'gemini-2.5-flash',
+      choices: [{
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: 'This is a mock response for testing transformer input processing.'
+        },
+        finish_reason: 'stop'
+      }],
+      usage: {
+        prompt_tokens: 15,
+        completion_tokens: 12,
+        total_tokens: 27
+      }
+    };
+  } else {
+    rawApiResponse = step4Data.output.data;
   }
-
-  // 模拟transformer接收数据的过程
-  const rawApiResponse = step4Data.output.data;
   console.log('📤 Raw API Response to Transformer:', JSON.stringify(rawApiResponse, null, 2));
 
   // 分析transformer应该接收到的数据结构

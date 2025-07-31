@@ -7,6 +7,8 @@ import { Command } from 'commander';
 import { readFileSync, existsSync, writeFileSync } from 'fs';
 import { join, resolve } from 'path';
 import { homedir } from 'os';
+import { promisify } from 'util';
+import { spawn, exec } from 'child_process';
 import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -15,11 +17,9 @@ import { RouterServer } from './server';
 import { RouterConfig, ProviderConfig } from './types';
 import { logger } from './utils/logger';
 import { executeCodeCommand } from './code-command';
-import { getConfigPaths, needsMigration } from './utils/config-paths';
+import { getConfigPaths, needsMigration, resolvePath } from './utils';
 import { migrateConfiguration } from './utils/migration';
 import { setupAutoStart } from './utils/autostart';
-import { spawn, exec } from 'child_process';
-import { promisify } from 'util';
 
 // Read version from package.json
 const packageJsonPath = join(__dirname, '..', 'package.json');
@@ -30,6 +30,7 @@ const program = new Command();
 const configPaths = getConfigPaths();
 const DEFAULT_CONFIG_PATH = configPaths.configFile;
 const execAsync = promisify(exec);
+
 
 /**
  * Intelligent configuration detection
@@ -291,17 +292,16 @@ async function startDualConfigServers(options: any): Promise<void> {
   console.log(chalk.blue(`🚀 Development server: http://${finalDevConfig.server.host}:${finalDevConfig.server.port}`));
   console.log(chalk.blue(`🚀 Release server: http://${finalReleaseConfig.server.host}:${finalReleaseConfig.server.port}\n`));
   
-  // Configure loggers for both servers
-  logger.setConfig({
-    logLevel: finalDevConfig.debug.logLevel,
-    debugMode: finalDevConfig.debug.enabled,
-    logDir: finalDevConfig.debug.logDir,
-    traceRequests: finalDevConfig.debug.traceRequests
-  });
+  // Configure separate log directories for dual servers
+  finalDevConfig.debug.logDir = join(finalDevConfig.debug.logDir, 'dev');
+  finalReleaseConfig.debug.logDir = join(finalReleaseConfig.debug.logDir, 'release');
   
-  // Create both servers
-  const devServer = new RouterServer(finalDevConfig);
-  const releaseServer = new RouterServer(finalReleaseConfig);
+  console.log(chalk.gray(`📁 Development logs: ${finalDevConfig.debug.logDir}`));
+  console.log(chalk.gray(`📁 Release logs: ${finalReleaseConfig.debug.logDir}`));
+  
+  // Create both servers with independent loggers
+  const devServer = new RouterServer(finalDevConfig, 'dev');
+  const releaseServer = new RouterServer(finalReleaseConfig, 'release');
   
   // Start both servers
   const devServerPromise = devServer.start().then(() => {
@@ -345,8 +345,14 @@ async function startDualConfigServers(options: any): Promise<void> {
     shutdown();
   });
   
-  // Keep the process alive
-  return new Promise(() => {});
+  // Keep the process alive until shutdown is called
+  console.log(chalk.gray('\n📋 Dual servers are running. Press Ctrl+C to stop.'));
+  
+  // Keep the process alive indefinitely - signal handlers are already set up above
+  return new Promise<void>(() => {
+    // This promise never resolves, keeping the process alive
+    // Signal handlers (already set up) will call shutdown() and process.exit()
+  });
 }
 
 /**
@@ -468,6 +474,11 @@ program
       if (options.singleConfig) {
         console.log(chalk.blue('🎯 Explicit single-config mode requested\n'));
         // Continue to single server logic below
+      } else if (resolvePath(options.config) !== DEFAULT_CONFIG_PATH) {
+        // User specified a custom config file, use single-config mode
+        console.log(chalk.blue(`🎯 Custom config specified: ${options.config}\n`));
+        console.log(chalk.blue('🎯 Starting single-config server with custom configuration\n'));
+        // Continue to single server logic below with user-specified config
       } else {
         // Intelligent configuration detection (default behavior)
         try {
@@ -489,7 +500,7 @@ program
       }
 
       // Load configuration
-      const configPath = resolve(options.config);
+      const configPath = resolvePath(options.config);
       const config = loadConfig(configPath);
 
       // Override with CLI options
@@ -570,6 +581,15 @@ program
       }
       
       printEnvironmentSetup(config.server.port, config.server.host);
+
+      // 🔧 FIX: Keep process alive to handle SIGINT/SIGTERM
+      console.log(chalk.gray('\n📋 Server is running. Press Ctrl+C to stop.'));
+      
+      // Keep the process alive indefinitely - signal handlers are already set up above
+      return new Promise<void>(() => {
+        // This promise never resolves, keeping the process alive
+        // Signal handlers (already set up) will call shutdown() and process.exit()
+      });
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -691,7 +711,7 @@ program
   .option('--edit', 'Open configuration in default editor')
   .action(async (options) => {
     try {
-      const configPath = resolve(options.config);
+      const configPath = resolvePath(options.config);
       
       if (options.show) {
         if (existsSync(configPath)) {
@@ -840,7 +860,7 @@ program
       // Load configuration to get default port if not specified
       let config;
       try {
-        const configPath = resolve(options.config);
+        const configPath = resolvePath(options.config);
         config = loadConfig(configPath);
       } catch (error) {
         // If config loading fails, use defaults

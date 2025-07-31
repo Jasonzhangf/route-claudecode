@@ -1,0 +1,72 @@
+{
+  "timestamp": "2025-07-31T04:03:40.454Z",
+  "step": "step3-transformation",
+  "input": {
+    "anthropicRequest": {
+      "model": "claude-sonnet-4-20250514",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello, this is a test message for transformation testing."
+        }
+      ],
+      "max_tokens": 100
+    },
+    "mockOpenAIResponse": {
+      "id": "chatcmpl-test123",
+      "object": "chat.completion",
+      "created": 1753934620454,
+      "model": "CLAUDE_SONNET_4_20250514_V1_0",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "Hello! This is a test response."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 10,
+        "completion_tokens": 8,
+        "total_tokens": 18
+      }
+    }
+  },
+  "output": {
+    "openaiRequest": {
+      "model": "claude-sonnet-4-20250514",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello, this is a test message for transformation testing."
+        }
+      ],
+      "max_tokens": 100,
+      "stream": false
+    },
+    "anthropicResponse": {
+      "id": "chatcmpl-test123",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! This is a test response."
+        }
+      ],
+      "stop_reason": "end_turn",
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 8
+      }
+    }
+  },
+  "verification": {
+    "hasContent": true,
+    "hasTextContent": "Hello! This is a test response.",
+    "contentLength": 31
+  },
+  "success": "Hello! This is a test response."
+}

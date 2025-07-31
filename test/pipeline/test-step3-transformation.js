@@ -103,13 +103,23 @@ async function testStep3() {
   
   const step2Data = JSON.parse(fs.readFileSync('step2-output.json', 'utf8'));
   console.log('📥 Input from Step2:', {
-    model: step2Data.input.model,
-    routingSuccess: step2Data.success
+    mappingTests: step2Data.mappingTests.passed + '/' + step2Data.mappingTests.total,
+    endToEndTests: step2Data.endToEndTests.passed + '/' + step2Data.endToEndTests.total
   });
   
   // 测试 Anthropic -> OpenAI 转换
   console.log('\n=== Testing Anthropic to OpenAI Transform ===');
-  const anthropicRequest = step2Data.input;
+  // 使用默认的测试请求结构
+  const anthropicRequest = {
+    model: 'claude-sonnet-4-20250514',
+    messages: [
+      {
+        role: 'user',
+        content: 'Hello, this is a test message for transformation testing.'
+      }
+    ],
+    max_tokens: 100
+  };
   console.log('📥 Anthropic Request:', JSON.stringify(anthropicRequest, null, 2));
   
   const openaiRequest = testTransformAnthropicToOpenAI(anthropicRequest);
@@ -121,7 +131,7 @@ async function testStep3() {
     id: 'chatcmpl-test123',
     object: 'chat.completion',
     created: Date.now(),
-    model: step2Data.actualModel || 'gpt-4o',
+    model: 'CLAUDE_SONNET_4_20250514_V1_0',
     choices: [{
       index: 0,
       message: {

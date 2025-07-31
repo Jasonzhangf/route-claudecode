@@ -201,7 +201,7 @@ function convertBinaryEventToSSE(binaryEvent: AWSBinaryEvent): SSEEvent | null {
 /**
  * Convert raw events to Anthropic format with tool call accumulation
  */
-export function convertEventsToAnthropic(events: SSEEvent[], requestId: string): any[] {
+export function convertEventsToAnthropic(events: SSEEvent[], requestId: string, modelName?: string): any[] {
   logger.debug('Converting events to Anthropic format with tool call processing', {
     eventCount: events.length
   }, requestId);
@@ -221,7 +221,7 @@ export function convertEventsToAnthropic(events: SSEEvent[], requestId: string):
         type: 'message',
         role: 'assistant',
         content: [],
-        model: 'CLAUDE_SONNET_4_20250514_V1_0',
+        model: modelName,
         stop_reason: null,
         stop_sequence: null,
         usage: { input_tokens: 0, output_tokens: 0 }

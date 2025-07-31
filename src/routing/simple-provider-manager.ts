@@ -24,7 +24,12 @@ export class SimpleProviderManager {
   private readonly SERVER_ERROR_BLACKLIST_DURATION = 180; // 3 minutes for server errors
   
   constructor() {
-    logger.info('SimpleProviderManager initialized with round-robin and blacklisting');
+    // 🔧 启动时清空所有黑名单，防止重启后仍被拉黑
+    this.blacklist.clear();
+    logger.info('SimpleProviderManager initialized with round-robin and blacklisting', {
+      blacklistCleared: true,
+      startupTime: new Date().toISOString()
+    });
   }
 
   /**

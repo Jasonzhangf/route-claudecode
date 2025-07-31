@@ -26,7 +26,6 @@ export class CodeWhispererClient implements Provider {
   private endpoint: string;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000; // 1 second
-  // Removed non-streaming strategy - using streaming only
 
   constructor(public config: ProviderConfig) {
     if (!config.endpoint) {
@@ -79,7 +78,6 @@ export class CodeWhispererClient implements Provider {
     // Initialize converter with profileArn from config or token
     this.initializeConverter();
     
-    // Removed performance testing tools - using streaming only
     
     this.httpClient = axios.create({
       baseURL: this.endpoint,
@@ -318,21 +316,16 @@ export class CodeWhispererClient implements Provider {
         await this.tokenRotationManager.getNextToken(requestId);
       } catch (error) {
         logger.error('Request blocked - no valid tokens available in rotation', {}, requestId, 'provider');
-        throw new ProviderError(
-          'No valid tokens available. All tokens may be disabled or invalid.',
-          this.name,
-          500
-        );
+        // 🔧 新架构: 不抛出ProviderError，防止Provider级别拉黑
+        // Token轮询系统会自动恢复
+        throw new Error('All CodeWhisperer tokens temporarily unavailable. Will recover automatically.');
       }
     } else {
       // Single token check
       if (this.auth.isTokenBlocked()) {
         logger.error('Request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
-        throw new ProviderError(
-          'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
-          this.name,
-          500
-        );
+        // 🔧 新架构: 不抛出ProviderError，防止Provider级别拉黑
+        throw new Error('CodeWhisperer token temporarily blocked. Will recover automatically.');
       }
     }
     
@@ -423,7 +416,13 @@ export class CodeWhispererClient implements Provider {
       });
       
       // Convert to Anthropic format with tool call processing
-      anthropicEvents = convertEventsToAnthropic(sseEvents, requestId);
+      const originalModelName = request.metadata?.originalModel || request.model;
+      logger.info('Debugging model name passed to parser', {
+        requestModel: request.model,
+        metadataOriginalModel: request.metadata?.originalModel,
+        passingToParser: originalModelName
+      }, requestId, 'provider');
+      anthropicEvents = convertEventsToAnthropic(sseEvents, requestId, originalModelName);
       
       const streamingTime = Date.now() - streamingStartTime;
       
@@ -534,10 +533,15 @@ export class CodeWhispererClient implements Provider {
       }
       
       // Convert to BaseResponse format
-      // Model name has already been replaced by routing engine
+      // Return original model name (Demo2 style) instead of mapped internal name
+      logger.info('CodeWhisperer model name resolution', {
+        originalModel: request.metadata?.originalModel,
+        finalModelName: request.metadata?.originalModel || request.model
+      }, requestId, 'provider');
+      
       const baseResponse: BaseResponse = {
         id: `cw_${Date.now()}`,
-        model: request.model, // Already mapped by routing engine
+        model: request.metadata?.originalModel || request.model, // Use original model name like Demo2
         role: 'assistant',
         content: finalContexts,
         // No stop_reason to allow conversation continuation
@@ -589,21 +593,15 @@ export class CodeWhispererClient implements Provider {
         await this.tokenRotationManager.getNextToken(requestId);
       } catch (error) {
         logger.error('Streaming request blocked - no valid tokens available in rotation', {}, requestId, 'provider');
-        throw new ProviderError(
-          'No valid tokens available for streaming. All tokens may be disabled or invalid.',
-          this.name,
-          500
-        );
+        // 🔧 新架构: 不抛出ProviderError，防止Provider级别拉黑
+        throw new Error('All CodeWhisperer tokens temporarily unavailable for streaming. Will recover automatically.');
       }
     } else {
       // Single token check
       if (this.auth.isTokenBlocked()) {
         logger.error('Streaming request blocked - token is invalid due to consecutive failures', {}, requestId, 'provider');
-        throw new ProviderError(
-          'Token blocked due to consecutive authentication failures. Please refresh your token manually.',
-          this.name,
-          500
-        );
+        // 🔧 新架构: 不抛出ProviderError，防止Provider级别拉黑
+        throw new Error('CodeWhisperer token temporarily blocked for streaming. Will recover automatically.');
       }
     }
     
@@ -670,7 +668,13 @@ export class CodeWhispererClient implements Provider {
       
       // Parse events and convert to Anthropic format
       const sseEvents = parseEvents(fullResponse);
-      const anthropicEvents = convertEventsToAnthropic(sseEvents, requestId);
+      const originalModelName = request.metadata?.originalModel || request.model;
+      logger.info('Debugging streaming model name passed to parser', {
+        requestModel: request.model,
+        metadataOriginalModel: request.metadata?.originalModel,
+        passingToParser: originalModelName
+      }, requestId, 'provider');
+      const anthropicEvents = convertEventsToAnthropic(sseEvents, requestId, originalModelName);
       logger.debug('Completed streaming processing', {
         sseEventCount: sseEvents.length,
         anthropicEventCount: anthropicEvents.length,

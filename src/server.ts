@@ -12,10 +12,12 @@ import { EnhancedOpenAIClient } from './providers/openai';
 import { AnthropicProvider } from './providers/anthropic';
 import { GeminiProvider } from './providers/gemini';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from './types';
-import { logger } from './utils/logger';
+import { logger, createLogger } from './utils/logger';
 import { failureLogger } from './utils/failure-logger';
 import { sessionManager } from './session/manager';
+import { ProviderExpander, ProviderExpansionResult } from './routing/provider-expander';
 import { v4 as uuidv4 } from 'uuid';
+// Debug hooks temporarily removed
 
 export class RouterServer {
   private fastify: FastifyInstance;
@@ -24,23 +26,45 @@ export class RouterServer {
   private routingEngine: RoutingEngine;
   private outputProcessor: AnthropicOutputProcessor;
   private providers: Map<string, Provider> = new Map();
+  private providerExpansion?: ProviderExpansionResult;
+  private instanceLogger: any;  // Independent logger for this server instance
 
-  constructor(config: RouterConfig) {
+  constructor(config: RouterConfig, serverType?: string) {
     this.config = config;
+    
+    // Create independent logger for this server instance
+    const loggerType = serverType || (config.server.port === 3456 ? 'dev' : 'release');
+    this.instanceLogger = createLogger(config.debug.logDir, loggerType);
+    this.instanceLogger.setConfig({
+      logLevel: config.debug.logLevel,
+      debugMode: config.debug.enabled,
+      logDir: config.debug.logDir,
+      traceRequests: config.debug.traceRequests
+    });
+    
     this.fastify = Fastify({
       logger: config.debug.enabled ? {
         level: config.debug.logLevel
       } : false
     });
 
+    // 🔧 Step 1: 扩展providers（多Key等价于多Provider）
+    this.providerExpansion = ProviderExpander.expandProviders(config.providers);
+    
+    // 🔧 Step 2: 更新routing配置以使用扩展后的providers
+    const expandedRouting = ProviderExpander.updateRoutingWithExpandedProviders(
+      config.routing,
+      this.providerExpansion.expandedProviders
+    );
+    
     // Initialize components
     this.inputProcessor = new AnthropicInputProcessor();
     this.routingEngine = new RoutingEngine(
-      config.routing as Record<RoutingCategory, CategoryRouting>
+      expandedRouting as Record<RoutingCategory, CategoryRouting>
     );
     this.outputProcessor = new AnthropicOutputProcessor();
 
-    // Initialize providers
+    // Initialize providers (using expanded configurations)
     this.initializeProviders();
     
     // Setup routes
@@ -49,17 +73,26 @@ export class RouterServer {
     // Setup hooks if enabled
     if (config.debug.enabled) {
       this.setupHooks();
+      // Enable model name debug tracer
+      // Debug tracer removed
     }
   }
 
   /**
-   * Initialize providers from configuration
+   * Initialize providers from expanded configuration
    */
   private initializeProviders(): void {
     // Clear existing providers
     this.providers.clear();
     
-    for (const [providerId, providerConfig] of Object.entries(this.config.providers)) {
+    if (!this.providerExpansion) {
+      this.instanceLogger.error('Provider expansion not completed, cannot initialize providers');
+      return;
+    }
+    
+    // 🔧 使用扩展后的providers配置
+    for (const [expandedProviderId, expandedProvider] of this.providerExpansion.expandedProviders) {
+      const providerConfig = expandedProvider.config;
       try {
         let client: Provider;
         
@@ -67,28 +100,43 @@ export class RouterServer {
           client = new CodeWhispererClient(providerConfig);
         } else if (providerConfig.type === 'openai') {
           // Generic OpenAI-compatible client (works for Shuaihong, etc.)
-          client = new EnhancedOpenAIClient(providerConfig, providerId);
+          client = new EnhancedOpenAIClient(providerConfig, expandedProviderId);
         } else if (providerConfig.type === 'anthropic') {
           // Direct Anthropic API client
           client = new AnthropicProvider(providerConfig);
         } else if (providerConfig.type === 'gemini') {
           // Google Gemini API client
-          client = new GeminiProvider(providerConfig);
+          client = new GeminiProvider(providerConfig, expandedProviderId);
         } else {
-          logger.warn(`Unsupported provider type: ${providerConfig.type}`, { providerId });
+          this.instanceLogger.warn(`Unsupported provider type: ${providerConfig.type}`, { providerId: expandedProviderId });
           continue;
         }
         
-        this.providers.set(providerId, client);
-        logger.info(`Initialized provider: ${providerId}`, { 
-          type: providerConfig.type,
-          endpoint: providerConfig.endpoint 
-        });
+        this.providers.set(expandedProviderId, client);
+        
+        // 🔧 增强日志：显示扩展信息
+        if (expandedProvider.totalKeys > 1) {
+          this.instanceLogger.info(`Initialized expanded provider: ${expandedProviderId}`, { 
+            type: providerConfig.type,
+            endpoint: providerConfig.endpoint,
+            originalProvider: expandedProvider.originalProviderId,
+            keyIndex: expandedProvider.keyIndex + 1,
+            totalKeys: expandedProvider.totalKeys,
+            expansionStrategy: 'multi-key-as-multi-provider'
+          });
+        } else {
+          this.instanceLogger.info(`Initialized provider: ${expandedProviderId}`, { 
+            type: providerConfig.type,
+            endpoint: providerConfig.endpoint 
+          });
+        }
       } catch (error) {
-        logger.error(`Failed to initialize provider: ${providerId}`, {
+        this.instanceLogger.error(`Failed to initialize expanded provider: ${expandedProviderId}`, {
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined,
-          providerId,
+          expandedProviderId,
+          originalProvider: expandedProvider.originalProviderId,
+          keyIndex: expandedProvider.keyIndex + 1,
           providerType: providerConfig.type,
           endpoint: providerConfig.endpoint
         });
@@ -191,7 +239,7 @@ export class RouterServer {
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        logger.error('Failed to get statistics', error);
+        this.instanceLogger.error('Failed to get statistics', error);
         reply.status(500).send({
           error: 'Failed to get statistics',
           message: error instanceof Error ? error.message : 'Unknown error'
@@ -264,7 +312,7 @@ export class RouterServer {
           }
         });
       } catch (error) {
-        logger.error('Failed to get failure analysis', error);
+        this.instanceLogger.error('Failed to get failure analysis', error);
         reply.status(500).send({
           error: 'Failed to get failure analysis',
           message: error instanceof Error ? error.message : 'Unknown error'
@@ -294,7 +342,7 @@ export class RouterServer {
           });
         }
       } catch (error) {
-        logger.error('Failed to disable provider', error);
+        this.instanceLogger.error('Failed to disable provider', error);
         reply.status(500).send({
           success: false,
           error: 'Failed to disable provider',
@@ -319,7 +367,7 @@ export class RouterServer {
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        logger.error('Failed to enable provider', error);
+        this.instanceLogger.error('Failed to enable provider', error);
         reply.status(500).send({
           success: false,
           error: 'Failed to enable provider',
@@ -338,7 +386,7 @@ export class RouterServer {
           timestamp: new Date().toISOString()
         });
       } catch (error) {
-        logger.error('Failed to get disabled providers', error);
+        this.instanceLogger.error('Failed to get disabled providers', error);
         reply.status(500).send({
           error: 'Failed to get disabled providers',
           message: error instanceof Error ? error.message : 'Unknown error'
@@ -349,7 +397,7 @@ export class RouterServer {
     // Shutdown endpoint for graceful server stop
     this.fastify.post('/shutdown', async (request, reply) => {
       try {
-        logger.info('Shutdown request received via API', {}, 'server');
+        this.instanceLogger.info('Shutdown request received via API', {}, 'server');
         
         reply.send({
           message: 'Server shutdown initiated',
@@ -359,16 +407,16 @@ export class RouterServer {
         // Give the response time to be sent before shutting down
         setTimeout(() => {
           this.stop().then(() => {
-            logger.info('Server shutdown completed via API', {}, 'server');
+            this.instanceLogger.info('Server shutdown completed via API', {}, 'server');
             process.exit(0);
           }).catch((error) => {
-            logger.error('Error during API shutdown', error, 'server');
+            this.instanceLogger.error('Error during API shutdown', error, 'server');
             process.exit(1);
           });
         }, 100);
         
       } catch (error) {
-        logger.error('Error handling shutdown request', error, 'server');
+        this.instanceLogger.error('Error handling shutdown request', error, 'server');
         reply.code(500).send({
           error: {
             type: 'shutdown_error',
@@ -381,6 +429,11 @@ export class RouterServer {
     // Main messages endpoint (Anthropic API compatible)
     this.fastify.post('/v1/messages', async (request, reply) => {
       return this.handleMessagesRequest(request, reply);
+    });
+
+    // Token counting endpoint (Anthropic API compatible)
+    this.fastify.post('/v1/messages/count_tokens', async (request, reply) => {
+      return this.handleCountTokensRequest(request, reply);
     });
 
     // Catch-all for other paths
@@ -403,7 +456,7 @@ export class RouterServer {
       (request as any).requestId = requestId;
       (request as any).startTime = Date.now();
       
-      logger.trace(requestId, 'server', 'Request received', {
+      this.instanceLogger.trace(requestId, 'server', 'Request received', {
         method: request.method,
         url: request.url,
         headers: request.headers
@@ -414,7 +467,7 @@ export class RouterServer {
       const requestId = (request as any).requestId;
       const duration = Date.now() - ((request as any).startTime || Date.now());
       
-      logger.trace(requestId, 'server', 'Response sent', {
+      this.instanceLogger.trace(requestId, 'server', 'Response sent', {
         statusCode: reply.statusCode,
         duration: `${duration}ms`
       });
@@ -432,13 +485,13 @@ export class RouterServer {
     let baseRequest: BaseRequest | undefined;
     
     try {
-      logger.info('Processing messages request', {}, requestId, 'server');
+      this.instanceLogger.info('Processing messages request', {}, requestId, 'server');
 
       // Step 0: Session Management
       const sessionId = sessionManager.extractSessionId(request.headers as Record<string, string>);
       const session = sessionManager.getOrCreateSession(sessionId);
       
-      logger.debug('Session information', { 
+      this.instanceLogger.debug('Session information', { 
         sessionId, 
         conversationId: session.conversationId,
         messageHistory: session.messageHistory.length 
@@ -456,6 +509,11 @@ export class RouterServer {
 
       baseRequest = await this.inputProcessor.process(request.body);
       
+      // Debug Hook: Trace input processing
+      if (this.config.debug.enabled) {
+        // Debug trace removed
+      }
+      
       // Add session context to request metadata
       baseRequest.metadata = { 
         ...baseRequest.metadata, 
@@ -467,7 +525,7 @@ export class RouterServer {
       // 处理工具和系统消息的持久化
       if (baseRequest.metadata?.tools && Array.isArray(baseRequest.metadata.tools)) {
         sessionManager.updateSessionTools(sessionId, baseRequest.metadata.tools);
-        logger.debug('Updated session tools', { 
+        this.instanceLogger.debug('Updated session tools', { 
           sessionId, 
           toolCount: baseRequest.metadata.tools.length 
         }, requestId);
@@ -479,7 +537,7 @@ export class RouterServer {
             ...baseRequest.metadata, 
             tools: sessionTools 
           };
-          logger.debug('Restored session tools', { 
+          this.instanceLogger.debug('Restored session tools', { 
             sessionId, 
             toolCount: sessionTools.length 
           }, requestId);
@@ -488,7 +546,7 @@ export class RouterServer {
 
       if (baseRequest.metadata?.system && Array.isArray(baseRequest.metadata.system)) {
         sessionManager.updateSessionSystem(sessionId, baseRequest.metadata.system);
-        logger.debug('Updated session system', { 
+        this.instanceLogger.debug('Updated session system', { 
           sessionId, 
           systemCount: baseRequest.metadata.system.length 
         }, requestId);
@@ -500,7 +558,7 @@ export class RouterServer {
             ...baseRequest.metadata, 
             system: sessionSystem 
           };
-          logger.debug('Restored session system', { 
+          this.instanceLogger.debug('Restored session system', { 
             sessionId, 
             systemCount: sessionSystem.length 
           }, requestId);
@@ -520,6 +578,12 @@ export class RouterServer {
       // Step 2: Route request
       providerId = await this.routingEngine.route(baseRequest, requestId);
       targetModel = baseRequest.metadata?.targetModel || baseRequest.model;
+      
+      // Debug Hook: Trace routing
+      if (this.config.debug.enabled) {
+        // Debug trace removed
+      }
+      
       const provider = this.providers.get(providerId);
 
       if (!provider) {
@@ -531,16 +595,31 @@ export class RouterServer {
       if (baseRequest.stream) {
         return this.handleStreamingRequest(baseRequest, provider, reply, requestId);
       } else {
+        // Debug Hook: Trace provider request
+        if (this.config.debug.enabled) {
+          // Debug trace removed
+        }
+        
         providerResponse = await provider.sendRequest(baseRequest);
+        
+        // Debug Hook: Trace provider response
+        if (this.config.debug.enabled) {
+          // Debug trace removed
+        }
       }
 
       // Step 4: Process output
       const finalResponse = await this.outputProcessor.process(providerResponse, baseRequest);
       
+      // Debug Hook: Trace output processing
+      if (this.config.debug.enabled) {
+        // Debug trace removed
+      }
+      
       // 修复：强制移除stop_reason，确保工具调用后会话可以继续
       if (finalResponse && 'stop_reason' in finalResponse) {
         delete (finalResponse as any).stop_reason;
-        logger.debug('Removed stop_reason from final response to allow conversation continuation', {}, requestId, 'server');
+        this.instanceLogger.debug('Removed stop_reason from final response to allow conversation continuation', {}, requestId, 'server');
       }
 
       // Store assistant response in session
@@ -562,7 +641,7 @@ export class RouterServer {
         });
       }
 
-      logger.info('Request processed successfully', {
+      this.instanceLogger.info('Request processed successfully', {
         provider: providerId,
         responseType: finalResponse.type || 'message',
         sessionId
@@ -583,10 +662,15 @@ export class RouterServer {
       const cleanResponse = { ...finalResponse };
       delete (cleanResponse as any).stop_reason;
       
+      // Debug Hook: Finalize trace and generate report
+      if (this.config.debug.enabled) {
+        // Debug trace removed
+      }
+      
       return cleanResponse;
 
     } catch (error) {
-      logger.error('Request processing failed', error, requestId, 'server');
+      this.instanceLogger.error('Request processing failed', error, requestId, 'server');
       
       // 记录失败的统计信息
       if (providerId && targetModel) {
@@ -638,6 +722,47 @@ export class RouterServer {
   }
 
   /**
+   * Handle token counting requests
+   */
+  private async handleCountTokensRequest(request: FastifyRequest, reply: FastifyReply): Promise<any> {
+    const requestId = (request as any).requestId || uuidv4();
+    
+    try {
+      this.instanceLogger.info('Processing count tokens request', {}, requestId, 'server');
+      
+      const body = request.body as any;
+      if (!body || !body.messages) {
+        return reply.code(400).send({
+          error: {
+            type: 'invalid_request_error',
+            message: 'Missing required field: messages'
+          }
+        });
+      }
+
+      // Use our tokenizer to count tokens
+      const { calculateTokenCount } = await import('./utils/tokenizer');
+      
+      // Calculate input tokens from messages
+      const inputTokens = calculateTokenCount(body.messages);
+      
+      // Return token count in Anthropic format
+      return reply.send({
+        input_tokens: inputTokens
+      });
+      
+    } catch (error) {
+      this.instanceLogger.error('Error processing count tokens request', error, requestId, 'server');
+      return reply.code(500).send({
+        error: {
+          type: 'internal_server_error',
+          message: 'Failed to count tokens'
+        }
+      });
+    }
+  }
+
+  /**
    * Handle streaming requests
    */
   private async handleStreamingRequest(
@@ -659,14 +784,20 @@ export class RouterServer {
       const messageId = `msg_${Date.now()}`;
 
       // Send message start event
-      // CRITICAL: Use targetModel from routing if available
-      const modelForStreaming = request.metadata?.targetModel || request.model;
+      // CRITICAL: Use original model name for streaming response, not internal mapped name
+      const modelForStreaming = request.metadata?.originalModel || request.model;
       
-      logger.debug('Streaming message start model', {
-        originalModel: request.model,
+      // Debug Hook: Trace streaming start
+      if (this.config.debug.enabled) {
+        // Debug trace removed
+      }
+      
+      this.instanceLogger.debug('Streaming message start model', {
+        originalRequestModel: request.model,
+        originalModelFromMetadata: request.metadata?.originalModel,
         targetModel: request.metadata?.targetModel,
         modelForStreaming,
-        hasTargetModel: !!request.metadata?.targetModel
+        hasOriginalModel: !!request.metadata?.originalModel
       }, requestId, 'streaming');
       
       this.sendSSEEvent(reply, 'message_start', {
@@ -702,13 +833,15 @@ export class RouterServer {
       // Stream from provider
       let outputTokens = 0;
       let chunkCount = 0;
-      // 修改：永远不设置停止原因，保持对话持续
-      // let stopReason = 'end_turn'; // 注释掉默认停止原因
+      
+      // Debug Hook: Trace provider streaming request
+      if (this.config.debug.enabled) {
+        // Debug trace removed
+      }
       
       for await (const chunk of provider.sendStreamRequest(request)) {
         chunkCount++;
-        logger.debug(`[PIPELINE-NODE] Raw chunk ${chunkCount} from provider`, { event: chunk.event, dataType: typeof chunk.data, hasData: !!chunk.data }, requestId, 'server');
-        // Token计算调试已完成，移除调试代码
+        this.instanceLogger.debug(`[PIPELINE-NODE] Raw chunk ${chunkCount} from provider`, { event: chunk.event, dataType: typeof chunk.data, hasData: !!chunk.data }, requestId, 'server');
         
         // 过滤掉可能包含停止信号的事件，但保留工具调用相关的事件
         if (chunk.event === 'message_delta' && chunk.data?.delta?.stop_reason) {
@@ -722,7 +855,7 @@ export class RouterServer {
           this.sendSSEEvent(reply, chunk.event, filteredData);
         } else if (chunk.event === 'message_stop') {
           // 跳过 message_stop 事件，避免会话终止
-          logger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
+          this.instanceLogger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
         } else {
           // 正常转发其他事件（包括工具调用相关事件）
           this.sendSSEEvent(reply, chunk.event, chunk.data);
@@ -734,25 +867,21 @@ export class RouterServer {
             // 文本内容
             const textLength = chunk.data.delta.text.length;
             outputTokens += Math.ceil(textLength / 4);
-            logger.debug(`Token calculation - text: "${chunk.data.delta.text}" (${textLength} chars = ${Math.ceil(textLength / 4)} tokens)`, {}, requestId, 'server');
+            this.instanceLogger.debug(`Token calculation - text: "${chunk.data.delta.text}" (${textLength} chars = ${Math.ceil(textLength / 4)} tokens)`, {}, requestId, 'server');
           } else if (chunk.data?.delta?.type === 'input_json_delta' && chunk.data?.delta?.partial_json) {
             // 工具调用的JSON输入内容
             const jsonLength = chunk.data.delta.partial_json.length;
             outputTokens += Math.ceil(jsonLength / 4);
-            logger.debug(`Token calculation - tool JSON: "${chunk.data.delta.partial_json}" (${jsonLength} chars = ${Math.ceil(jsonLength / 4)} tokens)`, {}, requestId, 'server');
+            this.instanceLogger.debug(`Token calculation - tool JSON: "${chunk.data.delta.partial_json}" (${jsonLength} chars = ${Math.ceil(jsonLength / 4)} tokens)`, {}, requestId, 'server');
           }
         } else if (chunk.event === 'content_block_start' && chunk.data?.content_block?.type === 'tool_use') {
           // 工具调用开始 - 计算工具名称的token
           const toolName = chunk.data.content_block.name || '';
           const nameLength = toolName.length;
           outputTokens += Math.ceil(nameLength / 4);
-          logger.debug(`Token calculation - tool name: "${toolName}" (${nameLength} chars = ${Math.ceil(nameLength / 4)} tokens)`, {}, requestId, 'server');
+          this.instanceLogger.debug(`Token calculation - tool name: "${toolName}" (${nameLength} chars = ${Math.ceil(nameLength / 4)} tokens)`, {}, requestId, 'server');
         }
         
-        // 修改：忽略所有停止原因，不捕获停止信号
-        // if (chunk.event === 'stream_complete' && chunk.data?.stop_reason) {
-        //   stopReason = chunk.data.stop_reason;
-        // }
       }
 
       // 保留content_block_stop事件，这对工具调用完整性是必需的
@@ -761,33 +890,26 @@ export class RouterServer {
         index: 0
       });
 
-      // 修改：只发送使用量信息，不包含停止原因
+      // 发送使用量信息，不包含停止原因以保持对话继续
       this.sendSSEEvent(reply, 'message_delta', {
         type: 'message_delta',
-        delta: {
-          // stop_reason: stopReason, // 移除停止原因，但保持HTTP连接正常结束
-          // stop_sequence: null      // 移除停止序列  
-        },
+        delta: {},
         usage: {
           output_tokens: outputTokens
         }
       });
 
-      // 修改：不发送message_stop，避免消息结束信号
-      // this.sendSSEEvent(reply, 'message_stop', {
-      //   type: 'message_stop'
-      // });
 
       // 保持HTTP连接正常结束，避免连接悬挂
       reply.raw.end();
 
-      logger.info('Streaming request completed', {
+      this.instanceLogger.info('Streaming request completed', {
         messageId,
         outputTokens
       }, requestId, 'server');
 
     } catch (error) {
-      logger.error('Streaming request failed', error, requestId, 'server');
+      this.instanceLogger.error('Streaming request failed', error, requestId, 'server');
       
       const errorMessage = error instanceof Error ? error.message : 'Stream processing failed';
       // Send error event
@@ -826,7 +948,7 @@ export class RouterServer {
         if (isHealthy) healthyCount++;
       } catch (error) {
         providerHealth[providerId] = false;
-        logger.debug(`Health check failed for provider ${providerId}`, error);
+        this.instanceLogger.debug(`Health check failed for provider ${providerId}`, error);
       }
     }
 
@@ -851,7 +973,7 @@ export class RouterServer {
       const { host, port } = this.config.server;
       await this.fastify.listen({ port, host });
       
-      logger.info(`Claude Code Router started`, {
+      this.instanceLogger.info(`Claude Code Router started`, {
         host,
         port,
         providers: Array.from(this.providers.keys()),
@@ -860,10 +982,11 @@ export class RouterServer {
 
       console.log(`🚀 Claude Code Router listening on http://${host}:${port}`);
       console.log(`📊 Available endpoints:`);
-      console.log(`   POST /v1/messages  - Anthropic API proxy`);
-      console.log(`   GET  /health       - Health check`);
-      console.log(`   GET  /status       - Server status`);
-      console.log(`   GET  /stats        - Statistics dashboard`);
+      console.log(`   POST /v1/messages             - Anthropic API proxy`);
+      console.log(`   POST /v1/messages/count_tokens - Token counting API`);
+      console.log(`   GET  /health                  - Health check`);
+      console.log(`   GET  /status                  - Server status`);
+      console.log(`   GET  /stats                   - Statistics dashboard`);
       console.log(`   GET  /api/stats    - Statistics API (JSON)`);
       console.log(`   GET  /api/failures - Failure analysis API`);
       
@@ -872,7 +995,7 @@ export class RouterServer {
       }
 
     } catch (error) {
-      logger.error('Failed to start server', error);
+      this.instanceLogger.error('Failed to start server', error);
       throw error;
     }
   }
@@ -883,9 +1006,9 @@ export class RouterServer {
   async stop(): Promise<void> {
     try {
       await this.fastify.close();
-      logger.info('Server stopped');
+      this.instanceLogger.info('Server stopped');
     } catch (error) {
-      logger.error('Error stopping server', error);
+      this.instanceLogger.error('Error stopping server', error);
       throw error;
     }
   }
@@ -900,7 +1023,7 @@ export class RouterServer {
     // Reinitialize providers if needed
     this.initializeProviders();
     
-    logger.info('Server configuration updated');
+    this.instanceLogger.info('Server configuration updated');
   }
 
   /**

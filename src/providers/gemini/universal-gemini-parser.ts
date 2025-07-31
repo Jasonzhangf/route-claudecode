@@ -259,31 +259,53 @@ class GeminiBufferedStrategy extends BufferedProcessingStrategy {
   }
 
   private parseGeminiStreamResponse(content: string, requestId: string): any[] {
-    const events: any[] = [];
-    const lines = content.split('\n');
+    let events: any[] = [];
     
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') {
-          break;
-        }
-        
-        try {
-          const parsedData = JSON.parse(data);
-          events.push(parsedData);
-        } catch (error) {
-          logger.debug('Failed to parse Gemini buffered line', {
-            linePreview: data.slice(0, 100),
-            error: error instanceof Error ? error.message : String(error)
-          }, requestId, 'gemini-buffered-parser');
+    try {
+      // First try parsing as direct JSON array (Gemini's actual format)
+      const parsedContent = JSON.parse(content);
+      
+      if (Array.isArray(parsedContent)) {
+        events = parsedContent;
+        logger.debug('Parsed Gemini response as JSON array', {
+          eventCount: events.length
+        }, requestId, 'gemini-buffered-parser');
+      } else {
+        // Single JSON object, wrap in array
+        events = [parsedContent];
+        logger.debug('Parsed Gemini response as single JSON object', {
+          eventCount: 1
+        }, requestId, 'gemini-buffered-parser');
+      }
+    } catch (error) {
+      // Fallback: try parsing as SSE format (legacy)
+      logger.debug('Attempting SSE format parsing as fallback', {}, requestId, 'gemini-buffered-parser');
+      
+      const lines = content.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') {
+            break;
+          }
+          
+          try {
+            const parsedData = JSON.parse(data);
+            events.push(parsedData);
+          } catch (parseError) {
+            logger.debug('Failed to parse Gemini SSE line', {
+              linePreview: data.slice(0, 100),
+              error: parseError instanceof Error ? parseError.message : String(parseError)
+            }, requestId, 'gemini-buffered-parser');
+          }
         }
       }
     }
     
     logger.debug('Gemini buffered parsing completed', {
       totalEvents: events.length,
-      hasToolCalls: this.detectToolCallsInEvents(events)
+      hasToolCalls: this.detectToolCallsInEvents(events),
+      contentPreview: content.slice(0, 200) + '...'
     }, requestId, 'gemini-buffered-parser');
     
     return events;
@@ -319,24 +341,45 @@ class GeminiDirectStrategy extends DirectStreamingStrategy {
   }
 
   private parseGeminiStreamResponse(content: string, requestId: string): any[] {
-    const events: any[] = [];
-    const lines = content.split('\n');
+    let events: any[] = [];
     
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6).trim();
-        if (data === '[DONE]') {
-          break;
-        }
-        
-        try {
-          const parsedData = JSON.parse(data);
-          events.push(parsedData);
-        } catch (error) {
-          logger.debug('Failed to parse Gemini direct line', {
-            linePreview: data.slice(0, 50),
-            error: error instanceof Error ? error.message : String(error)
-          }, requestId, 'gemini-direct-parser');
+    try {
+      // First try parsing as direct JSON array (Gemini's actual format)
+      const parsedContent = JSON.parse(content);
+      
+      if (Array.isArray(parsedContent)) {
+        events = parsedContent;
+        logger.debug('Parsed Gemini response as JSON array', {
+          eventCount: events.length
+        }, requestId, 'gemini-direct-parser');
+      } else {
+        // Single JSON object, wrap in array
+        events = [parsedContent];
+        logger.debug('Parsed Gemini response as single JSON object', {
+          eventCount: 1
+        }, requestId, 'gemini-direct-parser');
+      }
+    } catch (error) {
+      // Fallback: try parsing as SSE format (legacy)
+      logger.debug('Attempting SSE format parsing as fallback', {}, requestId, 'gemini-direct-parser');
+      
+      const lines = content.split('\n');
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') {
+            break;
+          }
+          
+          try {
+            const parsedData = JSON.parse(data);
+            events.push(parsedData);
+          } catch (parseError) {
+            logger.debug('Failed to parse Gemini SSE line', {
+              linePreview: data.slice(0, 50),
+              error: parseError instanceof Error ? parseError.message : String(parseError)
+            }, requestId, 'gemini-direct-parser');
+          }
         }
       }
     }

@@ -12,9 +12,23 @@ const path = require('path');
 console.log('🧪 Step 1: 基础路由测试');
 console.log('========================\n');
 
-// 加载配置
-const configPath = path.join(process.env.HOME, '.claude-code-router', 'config.json');
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+// 加载配置 - 使用测试配置
+const testConfigPath = '/tmp/test-config.json';
+const userConfigPath = path.join(process.env.HOME, '.route-claude-code', 'config.json');
+
+let config;
+if (fs.existsSync(testConfigPath)) {
+  console.log('🧪 使用测试配置:', testConfigPath);
+  config = JSON.parse(fs.readFileSync(testConfigPath, 'utf8'));
+} else if (fs.existsSync(userConfigPath)) {
+  console.log('📋 使用用户配置:', userConfigPath);
+  config = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
+} else {
+  console.error('❌ 无法找到配置文件');
+  console.log('   测试配置路径:', testConfigPath);
+  console.log('   用户配置路径:', userConfigPath);
+  process.exit(1);
+}
 
 console.log('📋 当前路由配置:');
 console.log('================');
@@ -42,8 +56,8 @@ const testCases = [
       content: '简单任务'
     },
     expectedCategory: 'background',
-    expectedProvider: 'shuaihong-openai',
-    expectedTargetModel: 'gemini-2.5-flash',
+    expectedProvider: 'codewhisperer-primary',
+    expectedTargetModel: 'CLAUDE_SONNET_4_20250514_V1_0',
     reason: '模型名包含"haiku"触发background类别'
   },
   {
@@ -65,8 +79,8 @@ const testCases = [
       content: 'A'.repeat(25000) + '长文档分析'
     },
     expectedCategory: 'longcontext',
-    expectedProvider: 'shuaihong-openai',
-    expectedTargetModel: 'gemini-2.5-pro',
+    expectedProvider: 'codewhisperer-primary',
+    expectedTargetModel: 'CLAUDE_SONNET_4_20250514_V1_0',
     reason: '内容长度超过20000字符'
   },
   {
@@ -82,8 +96,8 @@ const testCases = [
       }
     },
     expectedCategory: 'search',
-    expectedProvider: 'shuaihong-openai',
-    expectedTargetModel: 'gemini-2.5-flash',
+    expectedProvider: 'codewhisperer-primary',
+    expectedTargetModel: 'CLAUDE_SONNET_4_20250514_V1_0',
     reason: '包含搜索相关工具'
   }
 ];

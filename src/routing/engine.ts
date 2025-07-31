@@ -40,13 +40,28 @@ export class RoutingEngine {
       });
 
       // Step 1: Determine routing category based on request characteristics
-      const category = this.determineCategory(request);
-      logger.debug(`Determined routing category: ${category}`, { requestId }, requestId, 'routing');
+      const originalCategory = this.determineCategory(request);
+      logger.debug(`Determined routing category: ${originalCategory}`, { requestId }, requestId, 'routing');
 
-      // Step 2: Get provider and model from category configuration
-      const categoryRule = this.routingConfig[category];
+      // Step 2: Get provider and model from category configuration with fallback to default
+      let categoryRule = this.routingConfig[originalCategory];
+      let category = originalCategory;
+      
       if (!categoryRule) {
-        throw new Error(`No routing configuration found for category: ${category}`);
+        logger.warn(`No routing configuration found for category: ${originalCategory}, falling back to default`, { 
+          requestId, 
+          originalCategory, 
+          fallbackCategory: 'default' 
+        });
+        
+        // Fallback to default category
+        categoryRule = this.routingConfig['default'];
+        if (!categoryRule) {
+          throw new Error(`No routing configuration found for category: ${originalCategory} and no default configuration available`);
+        }
+        
+        // Update the category to default for downstream processing
+        category = 'default' as RoutingCategory;
       }
 
       // Step 3: Select provider with advanced routing (backup + multi-provider + failover)
@@ -193,15 +208,6 @@ export class RoutingEngine {
     return selectedProvider;
   }
 
-  // Removed complex load balancing strategies - using SimpleProviderManager instead
-
-  // Removed old round-robin method - using SimpleProviderManager instead
-
-  // Removed old weighted selection method - using SimpleProviderManager instead
-
-  // Removed old health-based selection method - using SimpleProviderManager instead
-
-  // Removed old health-based blacklist selection method - using SimpleProviderManager instead
 
   /**
    * Get provider success rate for health-based selection

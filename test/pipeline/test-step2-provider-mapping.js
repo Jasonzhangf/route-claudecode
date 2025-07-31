@@ -48,26 +48,26 @@ const mappingTests = [
     ]
   },
   {
-    name: 'Shuaihong OpenAI Provider Mapping',
-    provider: 'shuaihong-openai',
+    name: 'ModelScope OpenAI Provider Mapping',
+    provider: 'modelscope-openai',
     tests: [
       {
         originalModel: 'claude-3-5-haiku-20241022',
-        targetModel: 'gemini-2.5-flash',
+        targetModel: 'Qwen/Qwen3-Coder-480B-A35B-Instruct',
         category: 'background',
-        expected: 'gemini-2.5-flash' // targetModel优先
+        expected: 'Qwen/Qwen3-Coder-480B-A35B-Instruct' // targetModel优先
       },
       {
         originalModel: 'claude-3-5-sonnet-20241022',
-        targetModel: 'gemini-2.5-pro',
+        targetModel: 'Qwen/Qwen3-Coder-480B-A35B-Instruct',
         category: 'longcontext',
-        expected: 'gemini-2.5-pro' // targetModel优先
+        expected: 'Qwen/Qwen3-Coder-480B-A35B-Instruct' // targetModel优先
       },
       {
         originalModel: 'claude-sonnet-4-20250514',
-        targetModel: 'gemini-2.5-flash',
+        targetModel: 'Qwen/Qwen3-Coder-480B-A35B-Instruct',
         category: 'search',
-        expected: 'gemini-2.5-flash' // targetModel优先
+        expected: 'Qwen/Qwen3-Coder-480B-A35B-Instruct' // targetModel优先
       }
     ]
   }
@@ -123,7 +123,7 @@ mappingTests.forEach((providerTest, providerIndex) => {
     let actualModel;
     if (providerTest.provider === 'codewhisperer-primary') {
       actualModel = simulateCodeWhispererMapping(test.originalModel, test.targetModel);
-    } else if (providerTest.provider === 'shuaihong-openai') {
+    } else if (providerTest.provider === 'modelscope-openai') {
       actualModel = simulateOpenAIMapping(test.originalModel, test.targetModel);
     }
     
@@ -170,7 +170,7 @@ const endToEndTests = step1Result.results.map(result => {
   let finalModel;
   if (provider === 'codewhisperer-primary') {
     finalModel = simulateCodeWhispererMapping(originalModel, targetModel);
-  } else if (provider === 'shuaihong-openai') {
+  } else if (provider === 'modelscope-openai') {
     finalModel = simulateOpenAIMapping(originalModel, targetModel);
   }
   

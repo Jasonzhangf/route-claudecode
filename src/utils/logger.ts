@@ -27,11 +27,15 @@ class Logger {
   private quietMode: boolean = false;
   private sessionLogFile: string | null = null;
 
-  constructor() {
-    const configPaths = getConfigPaths();
-    this.logDir = configPaths.logsDir;
+  constructor(logDir?: string, serverType?: string) {
+    if (logDir) {
+      this.logDir = logDir;
+    } else {
+      const configPaths = getConfigPaths();
+      this.logDir = configPaths.logsDir;
+    }
     this.ensureLogDir();
-    this.initSessionLogFile();
+    this.initSessionLogFile(serverType);
   }
 
   setConfig(options: {
@@ -63,10 +67,11 @@ class Logger {
     }
   }
 
-  private initSessionLogFile() {
+  private initSessionLogFile(serverType?: string) {
     // Create one log file per server session
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
-    this.sessionLogFile = join(this.logDir, `ccr-session-${timestamp}.log`);
+    const suffix = serverType ? `-${serverType}` : '';
+    this.sessionLogFile = join(this.logDir, `ccr-session${suffix}-${timestamp}.log`);
     
     // Write session start marker
     if (this.sessionLogFile) {
@@ -76,6 +81,7 @@ class Logger {
         message: '🚀 Claude Code Router session started',
         data: {
           sessionId: timestamp,
+          serverType: serverType || 'single',
           pid: process.pid,
           nodeVersion: process.version,
           platform: process.platform
@@ -214,3 +220,8 @@ class Logger {
 }
 
 export const logger = new Logger();
+
+// Factory function to create independent logger instances
+export function createLogger(logDir: string, serverType: string): Logger {
+  return new Logger(logDir, serverType);
+}
