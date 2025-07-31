@@ -5,7 +5,7 @@
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
-import { CodeWhispererAuth } from './auth';
+import { CodeWhispererAuthDemo2 } from './auth-demo2-style';
 import { SafeTokenManager } from './safe-token-manager';
 import { CodeWhispererTokenRotationManager, TokenRotationConfig } from './token-rotation-manager';
 import { CodeWhispererConverter, CodeWhispererRequest } from './converter';
@@ -18,7 +18,7 @@ export class CodeWhispererClient implements Provider {
   public readonly name = 'codewhisperer';
   public readonly type = 'codewhisperer';
   
-  private auth: CodeWhispererAuth;
+  private auth: CodeWhispererAuthDemo2;
   private tokenRotationManager?: CodeWhispererTokenRotationManager;
   // private safeTokenManager: SafeTokenManager;
   private converter!: CodeWhispererConverter;
@@ -50,26 +50,21 @@ export class CodeWhispererClient implements Provider {
         tokenConfigs,
         'codewhisperer-primary',
         config.tokenRotation || {
-          strategy: 'health_based',
-          cooldownMs: 5000,
-          maxRetriesPerToken: 2,
-          tempDisableCooldownMs: 300000,
-          maxRefreshFailures: 3,
-          refreshRetryIntervalMs: 60000
+          strategy: 'round_robin'
         }
       );
       
       // Use first token for auth fallback
-      this.auth = new CodeWhispererAuth(tokenPath[0], profileArn);
+      this.auth = new CodeWhispererAuthDemo2(tokenPath[0], profileArn);
       
       logger.info('Initialized CodeWhisperer token rotation', {
         tokenCount: tokenPath.length,
         strategy: config.tokenRotation?.strategy || 'health_based'
       });
     } else {
-      // Single token - traditional approach
+      // Single token - Demo2 approach (simplified)
       const finalTokenPath = Array.isArray(tokenPath) ? tokenPath[0] : tokenPath;
-      this.auth = new CodeWhispererAuth(finalTokenPath, profileArn);
+      this.auth = new CodeWhispererAuthDemo2(finalTokenPath, profileArn);
     }
     
     // Demo2 style: Perform startup token validation and refresh
@@ -647,53 +642,14 @@ export class CodeWhispererClient implements Provider {
         );
       }
 
-      // Collect all chunks first (like demo2 implementation)
-      const chunks: Buffer[] = [];
-      
-      for await (const chunk of response.data) {
-        chunks.push(Buffer.from(chunk));
-      }
-      
-      const fullResponse = Buffer.concat(chunks);
-      
-      logger.debug('Raw response received from CodeWhisperer', {
-        responseLength: fullResponse.length,
-        responseStart: fullResponse.toString('utf-8', 0, Math.min(500, fullResponse.length))
+      // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
+      logger.debug('Starting CodeWhisperer smart caching strategy', {
+        strategy: 'cache_tools_stream_text'
       }, requestId, 'provider');
       
-      // 使用完全缓冲式处理：非流式 -> 流式转换
-      logger.debug('Using streaming processing strategy', {
-        responseLength: fullResponse.length
-      }, requestId, 'provider');
-      
-      // Parse events and convert to Anthropic format
-      const sseEvents = parseEvents(fullResponse);
-      const originalModelName = request.metadata?.originalModel || request.model;
-      logger.info('Debugging streaming model name passed to parser', {
-        requestModel: request.model,
-        metadataOriginalModel: request.metadata?.originalModel,
-        passingToParser: originalModelName
-      }, requestId, 'provider');
-      const anthropicEvents = convertEventsToAnthropic(sseEvents, requestId, originalModelName);
-      logger.debug('Completed streaming processing', {
-        sseEventCount: sseEvents.length,
-        anthropicEventCount: anthropicEvents.length,
-        events: anthropicEvents.map((e: any) => ({ event: e.event, hasData: !!e.data }))
-      }, requestId, 'provider');
-      
-      // Yield events
-      for (const event of anthropicEvents) {
-        logger.debug('Yielding event', { event: event.event, data: event.data }, requestId, 'provider');
-        yield {
-          event: event.event,
-          data: event.data
-        };
-      }
+      yield* this.processSmartCachedCodeWhispererStream(response.data, request, requestId);
 
-      logger.trace(requestId, 'provider', 'Streaming request completed', {
-        eventCount: anthropicEvents.length,
-        totalYielded: anthropicEvents.length
-      });
+      logger.trace(requestId, 'provider', 'CodeWhisperer smart cached streaming completed');
       
     } catch (error) {
       // Log detailed error information
@@ -846,6 +802,96 @@ export class CodeWhispererClient implements Provider {
     }
     
     throw lastError;
+  }
+
+  /**
+   * Smart caching strategy for CodeWhisperer: Only cache tool calls, stream text transparently
+   */
+  private async *processSmartCachedCodeWhispererStream(stream: any, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    const chunks: Buffer[] = [];
+    let hasToolCalls = false;
+    let responseBuffer = '';
+    
+    logger.debug('Starting CodeWhisperer smart cached stream processing', {
+      strategy: 'cache_tools_stream_text'
+    }, requestId, 'provider');
+
+    try {
+      // First pass: collect chunks and detect tool calls
+      for await (const chunk of stream) {
+        const chunkBuffer = Buffer.from(chunk);
+        chunks.push(chunkBuffer);
+        responseBuffer += chunkBuffer.toString('utf-8');
+        
+        // Quick tool call detection without full parsing
+        if (!hasToolCalls && (
+          responseBuffer.includes('tool_use') ||
+          responseBuffer.includes('function_call') ||
+          responseBuffer.includes('"type":"tool_use"')
+        )) {
+          hasToolCalls = true;
+          logger.debug('Tool calls detected in CodeWhisperer response', {}, requestId, 'provider');
+        }
+      }
+      
+      const fullResponse = Buffer.concat(chunks);
+      
+      logger.debug('CodeWhisperer response analysis completed', {
+        responseLength: fullResponse.length,
+        hasToolCalls,
+        strategy: hasToolCalls ? 'buffered_tool_parsing' : 'direct_streaming'
+      }, requestId, 'provider');
+
+      if (hasToolCalls) {
+        // Tool calls detected: use buffered processing for reliability
+        logger.info('Using buffered processing for CodeWhisperer tool calls', {}, requestId, 'provider');
+        
+        const sseEvents = parseEvents(fullResponse);
+        const originalModelName = request.metadata?.originalModel || request.model;
+        const anthropicEvents = convertEventsToAnthropic(sseEvents, requestId, originalModelName);
+        
+        // Yield buffered events
+        for (const event of anthropicEvents) {
+          yield {
+            event: event.event,
+            data: event.data
+          };
+        }
+      } else {
+        // No tool calls: stream text content directly
+        logger.info('Using direct streaming for CodeWhisperer text-only response', {}, requestId, 'provider');
+        
+        yield* this.processDirectTextStream(fullResponse, request, requestId);
+      }
+
+      logger.trace(requestId, 'provider', 'CodeWhisperer smart cached streaming completed');
+      
+    } catch (error) {
+      logger.error('CodeWhisperer smart cached stream processing failed', error, requestId, 'provider');
+      throw error;
+    }
+  }
+
+  /**
+   * Process text-only responses with direct streaming
+   */
+  private async *processDirectTextStream(fullResponse: Buffer, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    try {
+      const sseEvents = parseEvents(fullResponse);
+      const originalModelName = request.metadata?.originalModel || request.model;
+      const anthropicEvents = convertEventsToAnthropic(sseEvents, requestId, originalModelName);
+      
+      // Stream events immediately for text-only responses
+      for (const event of anthropicEvents) {
+        yield {
+          event: event.event,
+          data: event.data
+        };
+      }
+    } catch (error) {
+      logger.error('Direct text stream processing failed', error, requestId, 'provider');
+      throw error;
+    }
   }
 
   // Removed processWithSmartStreaming method due to severe performance issues

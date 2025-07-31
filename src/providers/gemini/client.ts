@@ -201,61 +201,19 @@ export class GeminiClient {
       throw new Error('No response body for streaming request');
     }
 
-    // 🚀 智能缓冲策略 - 学习OpenAI方式：仅对工具调用缓冲，普通文本流式传输
-    logger.info('Starting Gemini smart buffering processing (OpenAI-style)', {
+    // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
+    logger.info('Starting Gemini smart caching strategy', {
       responseStatus: response.status,
-      strategy: 'smart-buffering'
+      strategy: 'cache_tools_stream_text'
     }, requestId, 'gemini-provider');
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullResponseBuffer = '';
-    let hasToolCalls = false;
-
     try {
-      // 第一步：收集完整响应，同时检测是否有工具调用
-      logger.debug('Collecting full Gemini response for tool detection', {
-        responseStatus: response.status
-      }, requestId, 'gemini-provider');
+      yield* this.processSmartCachedGeminiStream(response.body, request, requestId);
       
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        fullResponseBuffer += decoder.decode(value, { stream: true });
-        
-        // 检测工具调用标识（避免每次解析完整JSON）
-        if (!hasToolCalls && (
-          fullResponseBuffer.includes('function_call') || 
-          fullResponseBuffer.includes('tool_call') ||
-          fullResponseBuffer.includes('functionCall') ||
-          fullResponseBuffer.includes('function_result')
-        )) {
-          hasToolCalls = true;
-          logger.debug('Tool calls detected in Gemini response', {}, requestId, 'gemini-provider');
-        }
-      }
-
-      logger.info('Gemini response collection completed', {
-        responseLength: fullResponseBuffer.length,
-        hasToolCalls: hasToolCalls,
-        strategy: hasToolCalls ? 'tool-buffered' : 'text-streaming'
-      }, requestId, 'gemini-provider');
-
-      if (hasToolCalls) {
-        // 有工具调用：使用完全缓冲处理（类似OpenAI方式）
-        logger.info('Using buffered processing for tool calls', {}, requestId, 'gemini-provider');
-        yield* this.processBufferedToolResponse(fullResponseBuffer, request, requestId);
-      } else {
-        // 无工具调用：直接流式处理文本内容
-        logger.info('Using direct streaming for text-only response', {}, requestId, 'gemini-provider');
-        yield* this.processStreamingTextResponse(fullResponseBuffer, request, requestId);
-      }
-
       // Report success to rotation manager
       this.reportApiKeySuccess(currentApiKey!, requestId);
-
-    } finally {
-      reader.releaseLock();
+    } catch (error) {
+      throw error;
     }
 
     } catch (error) {
@@ -1322,5 +1280,60 @@ export class GeminiClient {
       activeKeys: 1,
       rotationEnabled: false
     };
+  }
+
+  /**
+   * Smart caching strategy for Gemini: Only cache tool calls, stream text transparently
+   */
+  private async *processSmartCachedGeminiStream(responseBody: ReadableStream, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    const reader = responseBody.getReader();
+    const decoder = new TextDecoder();
+    let fullResponseBuffer = '';
+    let hasToolCalls = false;
+
+    logger.debug('Starting Gemini smart cached stream processing', {
+      strategy: 'cache_tools_stream_text'
+    }, requestId, 'gemini-provider');
+
+    try {
+      // First pass: collect response and detect tool calls
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponseBuffer += chunk;
+        
+        // Quick tool call detection without full parsing
+        if (!hasToolCalls && (
+          fullResponseBuffer.includes('functionCall') || 
+          fullResponseBuffer.includes('function_call') ||
+          fullResponseBuffer.includes('tool_call') ||
+          fullResponseBuffer.includes('function_result')
+        )) {
+          hasToolCalls = true;
+          logger.debug('Tool calls detected in Gemini response', {}, requestId, 'gemini-provider');
+        }
+      }
+
+      logger.info('Gemini response analysis completed', {
+        responseLength: fullResponseBuffer.length,
+        hasToolCalls,
+        strategy: hasToolCalls ? 'buffered_tool_parsing' : 'direct_streaming'
+      }, requestId, 'gemini-provider');
+
+      if (hasToolCalls) {
+        // Tool calls detected: use buffered processing for reliability
+        logger.info('Using buffered processing for Gemini tool calls', {}, requestId, 'gemini-provider');
+        yield* this.processBufferedToolResponse(fullResponseBuffer, request, requestId);
+      } else {
+        // No tool calls: stream text content directly
+        logger.info('Using direct streaming for Gemini text-only response', {}, requestId, 'gemini-provider');
+        yield* this.processStreamingTextResponse(fullResponseBuffer, request, requestId);
+      }
+
+    } finally {
+      reader.releaseLock();
+    }
   }
 }

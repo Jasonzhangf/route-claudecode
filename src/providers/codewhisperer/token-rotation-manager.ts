@@ -4,38 +4,36 @@
  */
 
 import { logger } from '@/utils/logger';
-import { CodeWhispererAuth, TokenData } from './auth';
+import { CodeWhispererAuthDemo2 } from './auth-demo2-style';
 
 export interface TokenState {
   tokenPath: string;
   index: number;
-  isActive: boolean;
-  lastUsed: Date;
-  consecutiveErrors: number;
-  tempDisabledUntil?: Date;
-  totalRequests: number;
-  successfulRequests: number;
-  lastRefreshAttempt?: Date;
-  refreshFailures: number;
-  profileArn?: string;
   description?: string;
+  profileArn?: string;
+  isActive?: boolean;
+  totalRequests?: number;
+  successfulRequests?: number;
+  consecutiveErrors?: number;
+  refreshFailures?: number;
+  lastUsed?: Date;
+  tempDisabledUntil?: Date;
 }
 
 export interface TokenRotationConfig {
   strategy: 'round_robin' | 'health_based' | 'least_used';
-  cooldownMs: number;
-  maxRetriesPerToken: number;
-  tempDisableCooldownMs: number;
-  maxRefreshFailures: number;
-  refreshRetryIntervalMs: number;
+  cooldownMs?: number;
+  maxRetriesPerToken?: number;
+  tempDisableCooldownMs?: number;
+  maxRefreshFailures?: number;
+  refreshRetryIntervalMs?: number;
 }
 
 export class CodeWhispererTokenRotationManager {
   private tokens: TokenState[] = [];
   private currentIndex = 0;
-  private config: TokenRotationConfig;
   private providerId: string;
-  private authManagers: Map<string, CodeWhispererAuth> = new Map();
+  private authManagers: Map<string, CodeWhispererAuthDemo2> = new Map();
 
   constructor(
     tokenConfigs: Array<{path: string, profileArn?: string, description?: string}> | string[],
@@ -43,24 +41,13 @@ export class CodeWhispererTokenRotationManager {
     config: Partial<TokenRotationConfig> = {}
   ) {
     this.providerId = providerId;
-    this.config = {
-      strategy: config.strategy || 'health_based',
-      cooldownMs: config.cooldownMs || 5000,
-      maxRetriesPerToken: config.maxRetriesPerToken || 2,
-      tempDisableCooldownMs: config.tempDisableCooldownMs || 300000, // 5分钟临时禁用
-      maxRefreshFailures: config.maxRefreshFailures || 3,
-      refreshRetryIntervalMs: config.refreshRetryIntervalMs || 60000, // 1分钟重试间隔
-      ...config
-    };
 
     // 初始化token配置
     this.initializeTokens(tokenConfigs);
 
-    logger.info('CodeWhisperer token rotation manager initialized', {
+    logger.info('CodeWhisperer token rotation manager initialized (Demo2 style)', {
       providerId: this.providerId,
-      tokenCount: this.tokens.length,
-      strategy: this.config.strategy,
-      cooldownMs: this.config.cooldownMs
+      tokenCount: this.tokens.length
     });
   }
 
@@ -76,309 +63,112 @@ export class CodeWhispererTokenRotationManager {
     this.tokens = configs.map((config, index) => ({
       tokenPath: config.path.trim(),
       index,
+      description: config.description,
+      profileArn: config.profileArn,
       isActive: true,
-      lastUsed: new Date(0),
-      consecutiveErrors: 0,
       totalRequests: 0,
       successfulRequests: 0,
+      consecutiveErrors: 0,
       refreshFailures: 0,
-      profileArn: config.profileArn,
-      description: config.description
+      lastUsed: new Date(),
+      tempDisabledUntil: undefined
     }));
 
     // 为每个token初始化认证管理器
     for (const tokenState of this.tokens) {
       try {
-        const auth = new CodeWhispererAuth(tokenState.tokenPath, tokenState.profileArn);
+        // 注意：这里使用了新的认证类，需要确认是否应该使用 CodeWhispererAuthDemo2
+        const auth = new CodeWhispererAuthDemo2(tokenState.tokenPath, tokenState.profileArn);
         this.authManagers.set(tokenState.tokenPath, auth);
         
-        logger.debug('Initialized auth manager for token', {
+        logger.debug('Initialized auth manager for token (Demo2 style)', {
           tokenPath: tokenState.tokenPath,
-          description: tokenState.description,
-          hasProfileArn: !!tokenState.profileArn
+          description: tokenState.description
         });
       } catch (error) {
         logger.error('Failed to initialize auth manager for token', {
           tokenPath: tokenState.tokenPath,
           error: error instanceof Error ? error.message : String(error)
         });
-        tokenState.isActive = false;
       }
     }
   }
 
   /**
-   * 获取下一个可用的token
+   * 获取下一个可用的token (Demo2风格：简单轮询)
    */
-  async getNextToken(requestId?: string): Promise<{ token: string; tokenPath: string; auth: CodeWhispererAuth }> {
-    const availableTokenState = this.selectBestToken();
+  async getNextToken(requestId?: string): Promise<{ token: string; tokenPath: string }> {
+    // 简单轮询选择
+    this.currentIndex = (this.currentIndex + 1) % this.tokens.length;
+    const selectedToken = this.tokens[this.currentIndex];
     
-    if (!availableTokenState) {
-      // 尝试重置错误状态并重试
-      this.resetErrorStates();
-      const fallbackTokenState = this.selectBestToken();
-      
-      if (!fallbackTokenState) {
-        throw new Error(`No CodeWhisperer tokens available for provider ${this.providerId}`);
-      }
-      
-      return this.getTokenFromState(fallbackTokenState, requestId);
-    }
-    
-    return this.getTokenFromState(availableTokenState, requestId);
-  }
-
-  private async getTokenFromState(tokenState: TokenState, requestId?: string): Promise<{ token: string; tokenPath: string; auth: CodeWhispererAuth }> {
-    const auth = this.authManagers.get(tokenState.tokenPath);
+    const auth = this.authManagers.get(selectedToken.tokenPath);
     if (!auth) {
-      throw new Error(`Auth manager not found for token: ${tokenState.tokenPath}`);
+      throw new Error(`Auth manager not found for token: ${selectedToken.tokenPath}`);
     }
 
     try {
       // 尝试获取token，如果过期会自动刷新
       const token = await auth.getToken(requestId || 'token-rotation');
       
-      // 更新使用统计
-      tokenState.lastUsed = new Date();
-      tokenState.totalRequests++;
-      
-      logger.debug('Selected token for request', {
-        tokenPath: tokenState.tokenPath,
-        description: tokenState.description,
-        totalRequests: tokenState.totalRequests,
+      logger.debug('Selected token for request (Demo2 style)', {
+        tokenPath: selectedToken.tokenPath,
+        description: selectedToken.description,
         requestId
       });
       
-      return { token, tokenPath: tokenState.tokenPath, auth };
+      return { token, tokenPath: selectedToken.tokenPath };
     } catch (error) {
       logger.error('Failed to get token from selected auth manager', {
-        tokenPath: tokenState.tokenPath,
+        tokenPath: selectedToken.tokenPath,
         error: error instanceof Error ? error.message : String(error)
       });
       
-      // 标记此token为失败
-      this.reportTokenFailure(tokenState.tokenPath, error);
-      
-      // 递归尝试下一个token
-      return this.getNextToken(requestId);
-    }
-  }
-
-  private selectBestToken(): TokenState | null {
-    const now = new Date();
-    
-    // 过滤可用的tokens
-    const availableTokens = this.tokens.filter(token => {
-      // 检查是否临时禁用
-      if (token.tempDisabledUntil && now < token.tempDisabledUntil) {
-        return false;
+      // Demo2风格：错了马上刷新，无限制
+      // 直接尝试刷新token
+      try {
+        const refreshedToken = await auth.handleAuthError(requestId || 'token-rotation');
+        logger.info('✅ Token刷新成功，重试请求', {
+          tokenPath: selectedToken.tokenPath
+        });
+        return { token: refreshedToken, tokenPath: selectedToken.tokenPath };
+      } catch (refreshError) {
+        logger.error('❌ Token刷新失败', {
+          tokenPath: selectedToken.tokenPath,
+          error: refreshError instanceof Error ? refreshError.message : String(refreshError)
+        });
+        
+        // 如果刷新失败，尝试下一个token
+        return this.getNextToken(requestId);
       }
-      
-      // 检查是否因为刷新失败而禁用
-      if (!token.isActive) {
-        return false;
-      }
-      
-      return true;
-    });
-
-    if (availableTokens.length === 0) {
-      return null;
     }
-
-    switch (this.config.strategy) {
-      case 'round_robin':
-        return this.selectRoundRobin(availableTokens);
-      
-      case 'health_based':
-        return this.selectHealthBased(availableTokens);
-      
-      case 'least_used':
-        return this.selectLeastUsed(availableTokens);
-      
-      default:
-        return availableTokens[0];
-    }
-  }
-
-  private selectRoundRobin(availableTokens: TokenState[]): TokenState {
-    // 简单轮询选择
-    this.currentIndex = (this.currentIndex + 1) % availableTokens.length;
-    return availableTokens[this.currentIndex];
-  }
-
-  private selectHealthBased(availableTokens: TokenState[]): TokenState {
-    // 根据健康状态选择最佳token
-    return availableTokens.sort((a, b) => {
-      // 优先级：错误次数最少，使用最久，成功率最高
-      const aErrorScore = a.consecutiveErrors * 10;
-      const bErrorScore = b.consecutiveErrors * 10;
-      
-      const aSuccessRate = a.totalRequests > 0 ? a.successfulRequests / a.totalRequests : 1;
-      const bSuccessRate = b.totalRequests > 0 ? b.successfulRequests / b.totalRequests : 1;
-      
-      const aTimeSinceUsed = Date.now() - a.lastUsed.getTime();
-      const bTimeSinceUsed = Date.now() - b.lastUsed.getTime();
-      
-      const aScore = aErrorScore - (aSuccessRate * 5) + (aTimeSinceUsed / 60000); // 时间差转分钟
-      const bScore = bErrorScore - (bSuccessRate * 5) + (bTimeSinceUsed / 60000);
-      
-      return aScore - bScore;
-    })[0];
-  }
-
-  private selectLeastUsed(availableTokens: TokenState[]): TokenState {
-    // 选择使用次数最少的token
-    return availableTokens.sort((a, b) => a.totalRequests - b.totalRequests)[0];
   }
 
   /**
-   * 报告token使用成功
+   * 报告token使用成功 (Demo2风格：简化处理)
    */
   reportTokenSuccess(tokenPath: string, requestId?: string): void {
-    const tokenState = this.tokens.find(t => t.tokenPath === tokenPath);
-    if (!tokenState) return;
-
-    tokenState.consecutiveErrors = 0;
-    tokenState.successfulRequests++;
-    tokenState.refreshFailures = 0;
-    tokenState.tempDisabledUntil = undefined;
-    
-    if (!tokenState.isActive) {
-      tokenState.isActive = true;
-      logger.info('Token re-enabled after successful request', {
-        tokenPath,
-        description: tokenState.description,
-        requestId
-      });
-    }
-
-    logger.debug('Token success reported', {
+    logger.debug('Token success reported (Demo2 style)', {
       tokenPath,
-      description: tokenState.description,
-      successfulRequests: tokenState.successfulRequests,
-      totalRequests: tokenState.totalRequests,
       requestId
     });
+    // Demo2风格：无复杂的状态跟踪
   }
 
   /**
-   * 报告token使用失败
+   * 报告token使用失败 (Demo2风格：简化处理)
    */
   reportTokenFailure(tokenPath: string, error: any, statusCode?: number): void {
-    const tokenState = this.tokens.find(t => t.tokenPath === tokenPath);
-    if (!tokenState) return;
-
-    tokenState.consecutiveErrors++;
-    
-    logger.warn('Token failure reported', {
+    logger.warn('Token failure reported (Demo2 style)', {
       tokenPath,
-      description: tokenState.description,
-      consecutiveErrors: tokenState.consecutiveErrors,
       statusCode,
       error: error instanceof Error ? error.message : String(error)
     });
-
-    // 如果是认证错误，尝试刷新token
-    if (statusCode === 401 || statusCode === 403) {
-      this.attemptTokenRefresh(tokenState);
-    }
-
-    // 连续错误达到阈值时临时禁用
-    if (tokenState.consecutiveErrors >= this.config.maxRetriesPerToken) {
-      this.temporarilyDisableToken(tokenState);
-    }
-  }
-
-  private async attemptTokenRefresh(tokenState: TokenState): Promise<void> {
-    const auth = this.authManagers.get(tokenState.tokenPath);
-    if (!auth) return;
-
-    const now = new Date();
-    
-    // 检查是否过于频繁地尝试刷新
-    if (tokenState.lastRefreshAttempt && 
-        (now.getTime() - tokenState.lastRefreshAttempt.getTime()) < this.config.refreshRetryIntervalMs) {
-      logger.debug('Skipping token refresh - too soon since last attempt', {
-        tokenPath: tokenState.tokenPath
-      });
-      return;
-    }
-
-    tokenState.lastRefreshAttempt = now;
-
-    try {
-      logger.info('Attempting token refresh', {
-        tokenPath: tokenState.tokenPath,
-        description: tokenState.description
-      });
-
-      // 尝试刷新token
-      await auth.handleAuthError('token-rotation-refresh');
-      
-      // 刷新成功，重置失败计数
-      tokenState.refreshFailures = 0;
-      tokenState.consecutiveErrors = 0;
-      
-      logger.info('Token refresh successful', {
-        tokenPath: tokenState.tokenPath,
-        description: tokenState.description
-      });
-      
-    } catch (error) {
-      tokenState.refreshFailures++;
-      
-      logger.error('Token refresh failed', {
-        tokenPath: tokenState.tokenPath,
-        description: tokenState.description,
-        refreshFailures: tokenState.refreshFailures,
-        error: error instanceof Error ? error.message : String(error)
-      });
-
-      // 刷新失败次数过多时禁用token
-      if (tokenState.refreshFailures >= this.config.maxRefreshFailures) {
-        tokenState.isActive = false;
-        logger.warn('Token disabled due to repeated refresh failures', {
-          tokenPath: tokenState.tokenPath,
-          description: tokenState.description,
-          refreshFailures: tokenState.refreshFailures
-        });
-      }
-    }
-  }
-
-  private temporarilyDisableToken(tokenState: TokenState): void {
-    const disableUntil = new Date(Date.now() + this.config.tempDisableCooldownMs);
-    tokenState.tempDisabledUntil = disableUntil;
-    
-    logger.warn('Token temporarily disabled', {
-      tokenPath: tokenState.tokenPath,
-      description: tokenState.description,
-      consecutiveErrors: tokenState.consecutiveErrors,
-      disabledUntil: disableUntil.toISOString(),
-      cooldownMinutes: this.config.tempDisableCooldownMs / 60000
-    });
+    // Demo2风格：无复杂的失败处理，错了马上刷新
   }
 
   /**
-   * 重置所有token的错误状态（紧急情况下使用）
-   */
-  private resetErrorStates(): void {
-    logger.warn('Resetting all token error states', {
-      providerId: this.providerId
-    });
-    
-    for (const token of this.tokens) {
-      token.consecutiveErrors = 0;
-      token.tempDisabledUntil = undefined;
-      if (!token.isActive && token.refreshFailures < this.config.maxRefreshFailures) {
-        token.isActive = true;
-      }
-    }
-  }
-
-  /**
-   * 获取token状态信息
+   * 获取token状态信息 (Demo2风格：简化版本)
    */
   getTokenStats(): Array<{
     tokenPath: string;
@@ -395,14 +185,14 @@ export class CodeWhispererTokenRotationManager {
     return this.tokens.map(token => ({
       tokenPath: token.tokenPath,
       description: token.description || 'Unknown',
-      isActive: token.isActive,
-      totalRequests: token.totalRequests,
-      successfulRequests: token.successfulRequests,
-      successRate: token.totalRequests > 0 ? 
-        Math.round((token.successfulRequests / token.totalRequests) * 100) / 100 : 0,
-      consecutiveErrors: token.consecutiveErrors,
-      refreshFailures: token.refreshFailures,
-      lastUsed: token.lastUsed.toISOString(),
+      isActive: token.isActive || false,
+      totalRequests: token.totalRequests || 0,
+      successfulRequests: token.successfulRequests || 0,
+      successRate: token.totalRequests && token.totalRequests > 0 ?
+        Math.round((token.successfulRequests! / token.totalRequests!) * 100) / 100 : 0,
+      consecutiveErrors: token.consecutiveErrors || 0,
+      refreshFailures: token.refreshFailures || 0,
+      lastUsed: token.lastUsed?.toISOString() || new Date().toISOString(),
       tempDisabledUntil: token.tempDisabledUntil?.toISOString()
     }));
   }
@@ -411,7 +201,8 @@ export class CodeWhispererTokenRotationManager {
    * 清理资源
    */
   destroy(): void {
-    for (const auth of this.authManagers.values()) {
+    const authValues = Array.from(this.authManagers.values());
+    for (const auth of authValues) {
       auth.destroy();
     }
     this.authManagers.clear();

@@ -145,6 +145,53 @@ export class RouterServer {
   }
 
   /**
+   * 动态查找提供者：支持原始名称和多密钥轮询
+   */
+  private findProvider(providerId: string, requestId: string): any {
+    // 1. 首先尝试直接查找原始名称
+    let provider = this.providers.get(providerId);
+    if (provider) {
+      return provider;
+    }
+
+    // 2. 如果找不到，查找所有匹配的扩展提供者
+    const availableProviders = Array.from(this.providers.keys());
+    const matchingProviders = availableProviders.filter(name => name.startsWith(`${providerId}-key`));
+    
+    if (matchingProviders.length > 0) {
+      // 3. 使用简单的轮询策略选择一个提供者
+      const selectedProvider = this.selectProviderFromPool(matchingProviders, providerId, requestId);
+      provider = this.providers.get(selectedProvider);
+      
+      if (provider) {
+        this.instanceLogger.debug(`Dynamic provider selection: ${selectedProvider} for ${providerId}`, {
+          availableKeys: matchingProviders.length,
+          selectedProvider
+        }, requestId, 'server');
+        return provider;
+      }
+    }
+
+    // 4. 如果都找不到，抛出错误
+    this.instanceLogger.error(`Provider not found: ${providerId}`, {
+      availableProviders,
+      requestedProvider: providerId,
+      matchingProviders
+    }, requestId, 'server');
+    throw new Error(`Provider not found: ${providerId}. Available providers: ${availableProviders.join(', ')}`);
+  }
+
+  /**
+   * 从提供者池中选择一个提供者（简单轮询）
+   */
+  private selectProviderFromPool(providers: string[], originalProviderId: string, requestId: string): string {
+    // 使用请求ID的哈希来实现简单的负载均衡
+    const hash = requestId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const index = hash % providers.length;
+    return providers[index];
+  }
+
+  /**
    * Setup HTTP routes
    */
   private setupRoutes(): void {
@@ -584,11 +631,7 @@ export class RouterServer {
         // Debug trace removed
       }
       
-      const provider = this.providers.get(providerId);
-
-      if (!provider) {
-        throw new Error(`Provider not found: ${providerId}`);
-      }
+      let provider = this.findProvider(providerId, requestId);
 
       // Step 3: Send to provider
       let providerResponse;
@@ -616,7 +659,7 @@ export class RouterServer {
         // Debug trace removed
       }
       
-      // 修复：强制移除stop_reason，确保工具调用后会话可以继续
+      // 完全移除stop_reason，确保多轮会话不会被打断
       if (finalResponse && 'stop_reason' in finalResponse) {
         delete (finalResponse as any).stop_reason;
         this.instanceLogger.debug('Removed stop_reason from final response to allow conversation continuation', {}, requestId, 'server');
@@ -843,7 +886,7 @@ export class RouterServer {
         chunkCount++;
         this.instanceLogger.debug(`[PIPELINE-NODE] Raw chunk ${chunkCount} from provider`, { event: chunk.event, dataType: typeof chunk.data, hasData: !!chunk.data }, requestId, 'server');
         
-        // 过滤掉可能包含停止信号的事件，但保留工具调用相关的事件
+        // 完全移除停止信号，确保多轮会话不会被打断
         if (chunk.event === 'message_delta' && chunk.data?.delta?.stop_reason) {
           // 移除 message_delta 中的停止原因，但保留其他数据
           const filteredData = { ...chunk.data };
@@ -853,8 +896,9 @@ export class RouterServer {
             delete filteredData.delta.stop_sequence;
           }
           this.sendSSEEvent(reply, chunk.event, filteredData);
+          this.instanceLogger.debug('Removed stop_reason from message_delta to prevent early termination', {}, requestId, 'server');
         } else if (chunk.event === 'message_stop') {
-          // 跳过 message_stop 事件，避免会话终止
+          // 完全跳过 message_stop 事件，避免会话终止
           this.instanceLogger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
         } else {
           // 正常转发其他事件（包括工具调用相关事件）

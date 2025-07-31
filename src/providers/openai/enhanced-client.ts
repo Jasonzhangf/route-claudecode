@@ -4,8 +4,8 @@
  */
 
 import axios, { AxiosInstance } from 'axios';
-import http from 'http';
-import https from 'https';
+import * as http from 'http';
+import * as https from 'https';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
 import { logger } from '@/utils/logger';
 import { fixResponse } from '@/utils/response-fixer';
@@ -15,7 +15,6 @@ import {
   transformOpenAIResponseToAnthropic,
   StreamTransformOptions
 } from '@/transformers';
-import { processOpenAIBufferedResponse, OpenAIEvent } from './buffered-processor';
 import { ApiKeyRotationManager } from './api-key-rotation';
 import { captureRequest, captureResponse, captureError } from './data-capture';
 
@@ -316,7 +315,7 @@ export class EnhancedOpenAIClient implements Provider {
   }
 
   /**
-   * Send streaming request - Full buffering approach to handle tool calls correctly
+   * Send streaming request - Smart caching strategy: only cache tool parts, stream text transparently
    */
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
@@ -359,88 +358,14 @@ export class EnhancedOpenAIClient implements Provider {
         );
       }
 
-      // CRITICAL FIX: Full buffering approach for tool calls
-      // Step 1: Collect ALL chunks first (like CodeWhisperer buffered approach)
-      let fullResponseBuffer = '';
-      
-      logger.debug('Starting full response buffering for tool call safety', {
-        provider: this.name
+      // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
+      logger.debug('Starting smart caching strategy for OpenAI streaming', {
+        provider: this.name,
+        strategy: 'smart_cache_tools_only'
       }, requestId, 'provider');
       
-      for await (const chunk of response.data) {
-        fullResponseBuffer += chunk.toString();
-      }
-      
-      logger.debug('Completed response buffering', {
-        bufferLength: fullResponseBuffer.length,
-        bufferPreview: fullResponseBuffer.slice(0, 200)
-      }, requestId, 'provider');
-      
-      // Step 2: Parse complete response to extract all OpenAI streaming events
-      const allOpenAIEvents: OpenAIEvent[] = [];
-      const lines = fullResponseBuffer.split('\n');
-      
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6).trim();
-          if (data === '[DONE]') {
-            break;
-          }
-          
-          try {
-            const parsed = JSON.parse(data);
-            allOpenAIEvents.push(parsed);
-          } catch (error) {
-            logger.debug('Failed to parse OpenAI event', { line, error }, requestId, 'provider');
-          }
-        }
-      }
-      
-      logger.debug('Parsed complete OpenAI events', {
-        eventCount: allOpenAIEvents.length,
-        hasToolCalls: allOpenAIEvents.some(e => e.choices?.[0]?.delta?.tool_calls)
-      }, requestId, 'provider');
-      
-      // Step 3: Use OpenAI buffered processor (like CodeWhisperer's processBufferedResponse)
-      logger.debug('Using OpenAI buffered processor for tool call safety', {
-        eventCount: allOpenAIEvents.length
-      }, requestId, 'provider');
-      
-      const anthropicEvents = processOpenAIBufferedResponse(allOpenAIEvents, requestId, request.model);
-      
-      logger.debug('OpenAI buffered processing completed', {
-        anthropicEventCount: anthropicEvents.length,
-        events: anthropicEvents.map(e => ({ event: e.event, hasData: !!e.data }))
-      }, requestId, 'provider');
-      
-      // Capture successful streaming response data
-      try {
-        captureResponse(this.name, request.model, openaiRequest, {
-          events: allOpenAIEvents,
-          anthropicEvents: anthropicEvents
-        }, requestId);
-      } catch (captureError) {
-        logger.error('Failed to capture streaming response data', captureError, requestId, 'provider');
-      }
-      
-      // Yield events directly
-      for (const event of anthropicEvents) {
-        logger.debug('Yielding buffered event', { 
-          event: event.event, 
-          data: event.data 
-        }, requestId, 'provider');
-        
-        yield {
-          event: event.event,
-          data: event.data
-        };
-      }
+      yield* this.processSmartCachedStream(response.data, request, requestId);
 
-      logger.info('OpenAI buffered streaming request completed', {
-        totalEvents: allOpenAIEvents.length,
-        anthropicEventCount: anthropicEvents.length
-      }, requestId, 'provider');
-      
       // Report success to rotation manager
       this.reportApiKeySuccess(currentApiKey!, requestId);
       
@@ -453,7 +378,7 @@ export class EnhancedOpenAIClient implements Provider {
         logger.error('Failed to capture streaming error data', captureError, requestId, 'provider');
       }
       
-      logger.error(`${this.name} buffered streaming request failed`, error, requestId, 'provider');
+      logger.error(`${this.name} smart cached streaming request failed`, error, requestId, 'provider');
       
       // Report error to rotation manager if we have a current API key
       if (currentApiKey!) {
@@ -473,6 +398,294 @@ export class EnhancedOpenAIClient implements Provider {
         error
       );
     }
+  }
+
+  /**
+   * Smart caching strategy: Only cache tool calls, stream text transparently
+   * This provides the best of both worlds - real-time text streaming and reliable tool parsing
+   */
+  private async *processSmartCachedStream(stream: any, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    const decoder = new TextDecoder('utf-8', { fatal: false, ignoreBOM: true });
+    let buffer = '';
+    let messageId = `msg_${Date.now()}`;
+    let hasStarted = false;
+    let hasContentBlock = false;
+    let toolCallBuffer: Map<number, { id?: string; name?: string; arguments: string }> = new Map();
+    let isInToolCall = false;
+    let outputTokens = 0;
+    
+    logger.debug('Starting smart cached stream processing', {
+      strategy: 'cache_tools_stream_text'
+    }, requestId, 'provider');
+
+    try {
+      // Send initial events
+      if (!hasStarted) {
+        yield {
+          event: 'message_start',
+          data: {
+            type: 'message_start',
+            message: {
+              id: messageId,
+              type: 'message',
+              role: 'assistant',
+              content: [],
+              model: request.model,
+              stop_reason: null,
+              stop_sequence: null,
+              usage: { input_tokens: 0, output_tokens: 0 }
+            }
+          }
+        };
+
+        yield {
+          event: 'ping',
+          data: { type: 'ping' }
+        };
+        hasStarted = true;
+      }
+
+      // Process stream chunks
+      let streamEnded = false;
+      for await (const chunk of stream) {
+        if (streamEnded) break;
+        
+        try {
+          const decodedChunk = decoder.decode(chunk, { stream: true });
+          buffer += decodedChunk;
+          
+          // 调试：记录接收到的数据块
+          if (decodedChunk.length > 0) {
+            logger.debug('Received chunk', {
+              chunkLength: decodedChunk.length,
+              bufferLength: buffer.length,
+              chunkPreview: decodedChunk.slice(0, 100)
+            }, requestId, 'provider');
+          }
+        } catch (decodeError) {
+          logger.warn('Failed to decode chunk, skipping', {
+            error: decodeError instanceof Error ? decodeError.message : String(decodeError),
+            chunkLength: chunk.length
+          }, requestId, 'provider');
+          continue;
+        }
+        
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') {
+              streamEnded = true;
+              break;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              const choice = parsed.choices?.[0];
+              if (!choice?.delta) continue;
+
+              // Handle text content - STREAM TRANSPARENTLY
+              if (choice.delta.content !== undefined) {
+                if (!hasContentBlock && !isInToolCall) {
+                  yield {
+                    event: 'content_block_start',
+                    data: {
+                      type: 'content_block_start',
+                      index: 0,
+                      content_block: { type: 'text', text: '' }
+                    }
+                  };
+                  hasContentBlock = true;
+                }
+
+                // Stream text content immediately - NO CACHING
+                if (choice.delta.content && choice.delta.content.length > 0 && !isInToolCall) {
+                  yield {
+                    event: 'content_block_delta',
+                    data: {
+                      type: 'content_block_delta',
+                      index: 0,
+                      delta: { type: 'text_delta', text: choice.delta.content }
+                    }
+                  };
+                  outputTokens += Math.ceil(choice.delta.content.length / 4);
+                }
+              }
+
+              // Handle tool calls - CACHE FOR PARSING
+              if (choice.delta.tool_calls) {
+                // Close text content block if open
+                if (hasContentBlock && !isInToolCall) {
+                  yield {
+                    event: 'content_block_stop',
+                    data: { type: 'content_block_stop', index: 0 }
+                  };
+                }
+                isInToolCall = true;
+
+                for (const toolCall of choice.delta.tool_calls) {
+                  const index = toolCall.index ?? 0;
+                  
+                  if (!toolCallBuffer.has(index)) {
+                    toolCallBuffer.set(index, {
+                      id: toolCall.id || `call_${Date.now()}_${index}`,
+                      name: toolCall.function?.name || `tool_${index}`,
+                      arguments: ''
+                    });
+
+                    // Start tool block immediately
+                    const blockIndex = hasContentBlock ? index + 1 : index;
+                    yield {
+                      event: 'content_block_start',
+                      data: {
+                        type: 'content_block_start',
+                        index: blockIndex,
+                        content_block: {
+                          type: 'tool_use',
+                          id: toolCallBuffer.get(index)!.id,
+                          name: toolCallBuffer.get(index)!.name,
+                          input: {}
+                        }
+                      }
+                    };
+                  }
+
+                  // Cache tool arguments for parsing
+                  const toolData = toolCallBuffer.get(index)!;
+                  if (toolCall.function?.arguments) {
+                    toolData.arguments += toolCall.function.arguments;
+                    
+                    // Stream tool arguments as they come (partial JSON)
+                    const blockIndex = hasContentBlock ? index + 1 : index;
+                    yield {
+                      event: 'content_block_delta',
+                      data: {
+                        type: 'content_block_delta',
+                        index: blockIndex,
+                        delta: {
+                          type: 'input_json_delta',
+                          partial_json: toolCall.function.arguments
+                        }
+                      }
+                    };
+                  }
+                }
+              }
+
+              // Handle finish reason - 但不发送停止信号，避免提前终止
+              if (choice.finish_reason) {
+                // Close text content block if open
+                if (hasContentBlock && !isInToolCall) {
+                  yield {
+                    event: 'content_block_stop',
+                    data: { type: 'content_block_stop', index: 0 }
+                  };
+                }
+
+                // Close any open tool blocks
+                const toolEntries = Array.from(toolCallBuffer.entries());
+                for (const [index, toolData] of toolEntries) {
+                  const blockIndex = hasContentBlock ? index + 1 : index;
+                  yield {
+                    event: 'content_block_stop',
+                    data: { type: 'content_block_stop', index: blockIndex }
+                  };
+                }
+
+                // 发送使用情况但不发送停止信号
+                yield {
+                  event: 'message_delta',
+                  data: {
+                    type: 'message_delta',
+                    delta: { 
+                      // 移除stop_reason，避免提前终止
+                      stop_sequence: null 
+                    },
+                    usage: { output_tokens: outputTokens }
+                  }
+                };
+
+                // 不发送message_stop事件，避免会话终止
+                logger.info('Smart cached streaming completed (no stop signals)', {
+                  outputTokens,
+                  toolCalls: toolCallBuffer.size,
+                  strategy: 'cache_tools_stream_text',
+                  finishReason: choice.finish_reason
+                }, requestId, 'provider');
+                return;
+              }
+
+            } catch (error) {
+              logger.debug('Failed to parse streaming chunk', error, requestId, 'provider');
+            }
+          }
+        }
+      }
+
+      // 如果流正常结束但没有收到finish_reason，发送默认完成事件
+      if (!streamEnded) {
+        // Close text content block if open
+        if (hasContentBlock && !isInToolCall) {
+          yield {
+            event: 'content_block_stop',
+            data: { type: 'content_block_stop', index: 0 }
+          };
+        }
+
+        // Close any open tool blocks
+        const toolEntries = Array.from(toolCallBuffer.entries());
+        for (const [index, toolData] of toolEntries) {
+          const blockIndex = hasContentBlock ? index + 1 : index;
+          yield {
+            event: 'content_block_stop',
+            data: { type: 'content_block_stop', index: blockIndex }
+          };
+        }
+
+        // Send completion events
+        yield {
+          event: 'message_delta',
+          data: {
+            type: 'message_delta',
+            delta: { 
+              stop_reason: 'end_turn',
+              stop_sequence: null 
+            },
+            usage: { output_tokens: outputTokens }
+          }
+        };
+
+        yield {
+          event: 'message_stop',
+          data: { type: 'message_stop' }
+        };
+        
+        logger.info('Smart cached streaming completed without explicit finish_reason', {
+          outputTokens,
+          toolCalls: toolCallBuffer.size,
+          strategy: 'cache_tools_stream_text'
+        }, requestId, 'provider');
+      }
+
+    } catch (error) {
+      logger.error('Smart cached stream processing failed', error, requestId, 'provider');
+      throw error;
+    }
+  }
+
+  /**
+   * Map OpenAI finish reason to Anthropic stop reason
+   */
+  private mapFinishReason(finishReason: string): string {
+    const mapping: Record<string, string> = {
+      'stop': 'end_turn',
+      'length': 'max_tokens',
+      'tool_calls': 'tool_use',
+      'function_call': 'tool_use'
+    };
+    return mapping[finishReason] || 'end_turn';
   }
 
   /**
