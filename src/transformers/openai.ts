@@ -141,12 +141,14 @@ export class OpenAITransformer implements MessageTransformer {
 
   /**
    * Convert OpenAI streaming chunk to unified format
+   * 移除finish_reason，保证停止的权力在模型这边
    */
   transformStreamChunk(chunk: any): StreamChunk | null {
     if (!chunk.choices?.[0]) {
       return null;
     }
 
+    // 移除finish_reason，不传递给Anthropic
     return {
       id: chunk.id,
       object: 'chat.completion.chunk',
@@ -154,8 +156,8 @@ export class OpenAITransformer implements MessageTransformer {
       model: chunk.model,
       choices: [{
         index: 0,
-        delta: chunk.choices[0].delta,
-        finish_reason: chunk.choices[0].finish_reason
+        delta: chunk.choices[0].delta
+        // 完全移除finish_reason
       }]
     };
   }

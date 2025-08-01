@@ -660,10 +660,11 @@ export class RouterServer {
         // Debug trace removed
       }
       
-      // 完全移除stop_reason，确保多轮会话不会被打断
+      // Keep stop_reason for proper conversation flow control
       if (finalResponse && 'stop_reason' in finalResponse) {
-        delete (finalResponse as any).stop_reason;
-        this.instanceLogger.debug('Removed stop_reason from final response to allow conversation continuation', {}, requestId, 'server');
+        this.instanceLogger.debug('Preserving stop_reason for proper conversation flow', {
+          stopReason: (finalResponse as any).stop_reason
+        }, requestId, 'server');
       }
 
       // Store assistant response in session
@@ -702,9 +703,8 @@ export class RouterServer {
         responseTimeMs
       );
 
-      // 最后一次确保移除stop_reason
+      // Keep stop_reason in final response for proper conversation flow
       const cleanResponse = { ...finalResponse };
-      delete (cleanResponse as any).stop_reason;
       
       // Debug Hook: Finalize trace and generate report
       if (this.config.debug.enabled) {
@@ -844,6 +844,7 @@ export class RouterServer {
         hasOriginalModel: !!request.metadata?.originalModel
       }, requestId, 'streaming');
       
+      // Send proper message_start event with stop_reason
       this.sendSSEEvent(reply, 'message_start', {
         type: 'message_start',
         message: {
@@ -887,20 +888,38 @@ export class RouterServer {
         chunkCount++;
         this.instanceLogger.debug(`[PIPELINE-NODE] Raw chunk ${chunkCount} from provider`, { event: chunk.event, dataType: typeof chunk.data, hasData: !!chunk.data }, requestId, 'server');
         
-        // 完全移除停止信号，确保多轮会话不会被打断
+        // 智能停止信号处理：保留工具调用stop_reason，移除其他stop_reason
         if (chunk.event === 'message_delta' && chunk.data?.delta?.stop_reason) {
-          // 移除 message_delta 中的停止原因，但保留其他数据
-          const filteredData = { ...chunk.data };
-          if (filteredData.delta) {
-            filteredData.delta = { ...filteredData.delta };
-            delete filteredData.delta.stop_reason;
-            delete filteredData.delta.stop_sequence;
+          const stopReason = chunk.data.delta.stop_reason;
+          const isToolUse = stopReason === 'tool_use';
+          
+          if (isToolUse) {
+            // 工具调用完成 - 保留stop_reason以触发继续对话
+            this.sendSSEEvent(reply, chunk.event, chunk.data);
+            this.instanceLogger.debug(`Preserved tool_use stop_reason for continuation: ${stopReason}`, {}, requestId, 'server');
+          } else {
+            // 非工具调用 - 移除stop_reason防止会话终止
+            const filteredData = { ...chunk.data };
+            if (filteredData.delta) {
+              filteredData.delta = { ...filteredData.delta };
+              delete filteredData.delta.stop_reason;
+              delete filteredData.delta.stop_sequence;
+            }
+            this.sendSSEEvent(reply, chunk.event, filteredData);
+            this.instanceLogger.debug(`Removed non-tool stop_reason to prevent early termination: ${stopReason}`, {}, requestId, 'server');
           }
-          this.sendSSEEvent(reply, chunk.event, filteredData);
-          this.instanceLogger.debug('Removed stop_reason from message_delta to prevent early termination', {}, requestId, 'server');
         } else if (chunk.event === 'message_stop') {
-          // 完全跳过 message_stop 事件，避免会话终止
-          this.instanceLogger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
+          // message_stop事件处理：只有工具调用时才发送
+          // 检查前面是否有tool_use stop_reason来判断是否应该发送message_stop
+          // 这里我们简化处理：如果有工具调用相关的流，允许message_stop事件
+          const shouldAllowMessageStop = true; // 简化：总是允许message_stop，让Claude Code决定是否继续
+          
+          if (shouldAllowMessageStop) {
+            this.sendSSEEvent(reply, chunk.event, chunk.data);
+            this.instanceLogger.debug('Allowed message_stop event for proper tool calling workflow', {}, requestId, 'server');
+          } else {
+            this.instanceLogger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
+          }
         } else {
           // 正常转发其他事件（包括工具调用相关事件）
           this.sendSSEEvent(reply, chunk.event, chunk.data);
@@ -935,15 +954,18 @@ export class RouterServer {
         index: 0
       });
 
-      // 发送使用量信息，不包含停止原因以保持对话继续
+      // Send usage info without stop signals to keep conversation open
       this.sendSSEEvent(reply, 'message_delta', {
         type: 'message_delta',
-        delta: {},
+        delta: {
+          // Empty delta - no stop signals to keep conversation alive
+        },
         usage: {
           output_tokens: outputTokens
         }
       });
 
+      // Do NOT send message_stop event to keep conversation open
 
       // 保持HTTP连接正常结束，避免连接悬挂
       reply.raw.end();

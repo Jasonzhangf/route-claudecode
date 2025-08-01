@@ -122,6 +122,7 @@ export class AnthropicTransformer implements MessageTransformer {
       }
     }));
 
+    // 移除stop_reason，保证停止的权力在模型这边
     return {
       id: response.id || `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
@@ -134,7 +135,8 @@ export class AnthropicTransformer implements MessageTransformer {
           content: textContent?.text || null,
           tool_calls: toolCalls.length > 0 ? toolCalls : undefined
         },
-        finish_reason: this.mapStopReason(response.stop_reason)
+        // 设置为null而不是完全移除，以满足类型要求
+        finish_reason: null as any
       }],
       usage: {
         prompt_tokens: response.usage?.input_tokens || 0,
@@ -171,13 +173,14 @@ export class AnthropicTransformer implements MessageTransformer {
       });
     }
 
+    // 移除stop_reason，保证停止的权力在模型这边
     return {
       id: response.id,
       type: 'message',
       role: 'assistant',
       content,
       model: response.model,
-      stop_reason: this.mapFinishReason(choice.finish_reason),
+      // 完全移除stop_reason
       stop_sequence: null,
       usage: {
         input_tokens: response.usage.prompt_tokens,
@@ -206,6 +209,7 @@ export class AnthropicTransformer implements MessageTransformer {
     }
 
     if (chunk.type === 'message_delta' && chunk.delta?.stop_reason) {
+      // 移除stop_reason，保证停止的权力在模型这边
       return {
         id: `chatcmpl-${Date.now()}`,
         object: 'chat.completion.chunk',
@@ -214,7 +218,7 @@ export class AnthropicTransformer implements MessageTransformer {
         choices: [{
           index: 0,
           delta: {},
-          finish_reason: this.mapStopReason(chunk.delta.stop_reason)
+          // 完全移除finish_reason，而不是设置为null
         }]
       };
     }

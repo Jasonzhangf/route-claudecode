@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-08-01T07:20:28.819Z",
+  "timestamp": "2025-07-31T11:40:30.867Z",
   "test": "step2-provider-mapping",
   "step1Summary": {
     "total": 5,
-    "passed": 0,
-    "failed": 5,
-    "passRate": 0
+    "passed": 5,
+    "failed": 0,
+    "passRate": 100
   },
   "mappingTests": {
     "total": 5,
@@ -77,30 +77,45 @@
         "testName": "Default Category",
         "originalModel": "claude-sonnet-4-20250514",
         "category": "default",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "finalModel": "CLAUDE_SONNET_4_20250514_V1_0",
         "correct": true
       },
       {
         "testName": "Background Category (Haiku Model)",
         "originalModel": "claude-3-5-haiku-20241022",
         "category": "background",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "finalModel": "CLAUDE_SONNET_4_20250514_V1_0",
         "correct": true
       },
       {
         "testName": "Thinking Category (Explicit)",
         "originalModel": "claude-sonnet-4-20250514",
         "category": "thinking",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "finalModel": "CLAUDE_SONNET_4_20250514_V1_0",
         "correct": true
       },
       {
         "testName": "Long Context Category",
         "originalModel": "claude-3-5-sonnet-20241022",
         "category": "longcontext",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "finalModel": "CLAUDE_SONNET_4_20250514_V1_0",
         "correct": true
       },
       {
         "testName": "Search Category (With Tools)",
         "originalModel": "claude-sonnet-4-20250514",
         "category": "search",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "finalModel": "CLAUDE_SONNET_4_20250514_V1_0",
         "correct": true
       }
     ]

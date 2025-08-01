@@ -1,0 +1,91 @@
+{
+  "name": "Anthropic Only - Delivery Testing",
+  "description": "Routes ALL categories to Anthropic direct API for isolated testing",
+  
+  "server": {
+    "port": 3461,
+    "host": "127.0.0.1"
+  },
+  
+  "routing": {
+    "default": {
+      "provider": "anthropic-delivery",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    "background": {
+      "provider": "anthropic-delivery",
+      "model": "claude-3-5-haiku-20241022"
+    },
+    "thinking": {
+      "provider": "anthropic-delivery",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    "longcontext": {
+      "provider": "anthropic-delivery",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    "search": {
+      "provider": "anthropic-delivery",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  },
+  
+  "providers": {
+    "anthropic-delivery": {
+      "type": "anthropic",
+      "name": "Anthropic Direct Delivery Testing",
+      "endpoint": "https://api.anthropic.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "${ANTHROPIC_API_KEY}"
+        }
+      },
+      "settings": {
+        "maxConcurrentRequests": 8,
+        "timeoutMs": 30000,
+        "retryAttempts": 3,
+        "models": [
+          "claude-3-5-sonnet-20241022",
+          "claude-3-5-haiku-20241022",
+          "claude-3-opus-20240229"
+        ],
+        "outputFormat": "anthropic"
+      }
+    }
+  },
+  
+  "input": {
+    "format": "anthropic",
+    "defaultInstance": true,
+    "validation": {
+      "enabled": true,
+      "strictMode": true
+    }
+  },
+  
+  "output": {
+    "anthropic": {
+      "enabled": true,
+      "preserveMetadata": true
+    }
+  },
+  
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "~/.route-claude-code/logs/delivery-testing",
+    "dataCapture": {
+      "enabled": true,
+      "savePath": "~/.route-claude-code/database/delivery-testing/providers/anthropic"
+    }
+  },
+  
+  "health": {
+    "checkIntervalMs": 10000,
+    "timeoutMs": 5000,
+    "failureThreshold": 2
+  }
+}

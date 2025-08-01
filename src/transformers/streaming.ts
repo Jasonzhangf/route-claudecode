@@ -61,7 +61,8 @@ export class StreamingTransformer {
             role: 'assistant',
             content: [],
             model: this.model,
-            stop_reason: null,
+            // 完全移除stop_reason，保证停止的权力在模型这边
+            // stop_reason: null,
             stop_sequence: null,
             usage: { input_tokens: 0, output_tokens: 0 }
           }
@@ -238,22 +239,45 @@ export class StreamingTransformer {
         }
       }
 
-      // Send message delta with usage
-      const messageDeltaEvent = this.createAnthropicEvent('message_delta', {
-        type: 'message_delta',
-        delta: { stop_reason: stopReason, stop_sequence: null },
-        usage: { output_tokens: outputTokens }
-      });
-      if (messageDeltaEvent) {
-        yield messageDeltaEvent;
-      }
+      // Send message delta with usage - 智能处理stop_reason
+      const hasToolCalls = this.toolCallMap.size > 0;
+      const shouldIncludeStopReason = stopReason === 'tool_use' || hasToolCalls;
+      
+      if (shouldIncludeStopReason) {
+        // 工具调用完成 - 需要发送stop_reason以触发下一轮
+        const messageDeltaEvent = this.createAnthropicEvent('message_delta', {
+          type: 'message_delta',
+          delta: { 
+            stop_reason: stopReason || 'tool_use',
+            stop_sequence: null
+          },
+          usage: { output_tokens: outputTokens }
+        });
+        if (messageDeltaEvent) {
+          yield messageDeltaEvent;
+        }
 
-      // Send message stop
-      const messageStopEvent = this.createAnthropicEvent('message_stop', {
-        type: 'message_stop'
-      });
-      if (messageStopEvent) {
-        yield messageStopEvent;
+        // 发送message_stop事件以正确结束当前工具调用轮次
+        const messageStopEvent = this.createAnthropicEvent('message_stop', {
+          type: 'message_stop'
+        });
+        if (messageStopEvent) {
+          yield messageStopEvent;
+        }
+      } else {
+        // 非工具调用 - 移除stop signals保持对话开放
+        const messageDeltaEvent = this.createAnthropicEvent('message_delta', {
+          type: 'message_delta',
+          delta: { 
+            // Empty delta - no stop signals to keep conversation alive
+          },
+          usage: { output_tokens: outputTokens }
+        });
+        if (messageDeltaEvent) {
+          yield messageDeltaEvent;
+        }
+        
+        // 不发送message_stop事件，避免会话终止
       }
 
     } catch (error) {

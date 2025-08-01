@@ -1,0 +1,91 @@
+{
+  "name": "CodeWhisperer Only - Delivery Testing",
+  "description": "Routes ALL categories to CodeWhisperer for isolated testing",
+  
+  "server": {
+    "port": 3458,
+    "host": "127.0.0.1"
+  },
+  
+  "routing": {
+    "default": {
+      "provider": "codewhisperer-delivery",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "background": {
+      "provider": "codewhisperer-delivery",
+      "model": "CLAUDE_3_5_HAIKU_20241022_V1_0"
+    },
+    "thinking": {
+      "provider": "codewhisperer-delivery",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "longcontext": {
+      "provider": "codewhisperer-delivery",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "search": {
+      "provider": "codewhisperer-delivery",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    }
+  },
+  
+  "providers": {
+    "codewhisperer-delivery": {
+      "type": "codewhisperer",
+      "name": "CodeWhisperer Delivery Testing",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/YOUR_PROFILE_ID",
+          "tokenPath": "~/.aws/sso/cache/kiro-auth-token-primary.json"
+        }
+      },
+      "settings": {
+        "maxConcurrentRequests": 10,
+        "timeoutMs": 30000,
+        "retryAttempts": 3,
+        "models": [
+          "CLAUDE_SONNET_4_20250514_V1_0",
+          "CLAUDE_3_5_HAIKU_20241022_V1_0",
+          "CLAUDE_3_7_SONNET_20250219_V1_0"
+        ]
+      }
+    }
+  },
+  
+  "input": {
+    "format": "anthropic",
+    "defaultInstance": true,
+    "validation": {
+      "enabled": true,
+      "strictMode": false
+    }
+  },
+  
+  "output": {
+    "anthropic": {
+      "enabled": true,
+      "preserveMetadata": true
+    }
+  },
+  
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "~/.route-claude-code/logs/delivery-testing",
+    "dataCapture": {
+      "enabled": true,
+      "savePath": "~/.route-claude-code/database/delivery-testing/providers/codewhisperer"
+    }
+  },
+  
+  "health": {
+    "checkIntervalMs": 10000,
+    "timeoutMs": 5000,
+    "failureThreshold": 2
+  }
+}

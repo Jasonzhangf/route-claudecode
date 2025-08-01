@@ -7,11 +7,17 @@
 
 const fetch = require('node-fetch');
 
+// Get API key from environment variable
+const API_KEY = process.env.LM_STUDIO_API_KEY || '';
+
+// Get model name from environment variable
+const MODEL_NAME = process.env.LM_STUDIO_MODEL_NAME || 'qwen3-30b-a3b-instruct-2507-mlx';
+
 async function testDirectLMStudio() {
   console.log('🔧 Testing direct LM Studio connection...');
   
   const request = {
-    model: "qwen3-30b-a3b-instruct-2507-mlx",
+    model: MODEL_NAME,
     messages: [
       {
         role: "user", 
@@ -26,12 +32,19 @@ async function testDirectLMStudio() {
     console.log('📤 Direct LM Studio Request:');
     console.log(JSON.stringify(request, null, 2));
     
+    // Prepare headers - only add Authorization if API key is provided
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    
+    // Only add API key if it's provided (LM Studio usually doesn't require authentication)
+    if (API_KEY) {
+      headers['Authorization'] = `Bearer ${API_KEY}`;
+    }
+    
     const response = await fetch('http://localhost:1234/v1/chat/completions', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ms-7af85c83-5871-43bb-9e2f-fc099ef08baf'
-      },
+      headers,
       body: JSON.stringify(request)
     });
 

@@ -72,7 +72,8 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
-      ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
+      // 完全移除stop_reason，保证停止的权力在模型这边
+      // ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
       stop_sequence: response.stop_sequence || null,
       type: 'message',
       usage: {
@@ -199,7 +200,8 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: this.normalizeContent(response.content),
-      ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
+      // 完全移除stop_reason，保证停止的权力在模型这边
+      // ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
       stop_sequence: response.stop_sequence || null,
       usage: {
         input_tokens: response.usage?.input_tokens || this.estimateInputTokens(originalRequest),

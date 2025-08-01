@@ -22,7 +22,7 @@ export class EnhancedOpenAIClient implements Provider {
   public readonly name: string;
   public readonly type = 'openai';
   
-  private httpClient: AxiosInstance;
+  protected httpClient: AxiosInstance;
   private endpoint: string;
   private apiKey: string;
   private apiKeyRotationManager?: ApiKeyRotationManager;
@@ -574,7 +574,7 @@ export class EnhancedOpenAIClient implements Provider {
                 }
               }
 
-              // Handle finish reason - 但不发送停止信号，避免提前终止
+              // Handle finish reason - 智能处理stop reason
               if (choice.finish_reason) {
                 // Close text content block if open
                 if (hasContentBlock && !isInToolCall) {
@@ -594,26 +594,57 @@ export class EnhancedOpenAIClient implements Provider {
                   };
                 }
 
-                // 发送使用情况但不发送停止信号
-                yield {
-                  event: 'message_delta',
-                  data: {
-                    type: 'message_delta',
-                    delta: { 
-                      // 移除stop_reason，避免提前终止
-                      stop_sequence: null 
-                    },
-                    usage: { output_tokens: outputTokens }
-                  }
-                };
+                // 智能stop_reason处理：工具调用需要正确的stop_reason来触发继续
+                const mappedStopReason = this.mapFinishReason(choice.finish_reason);
+                const shouldIncludeStopReason = choice.finish_reason === 'tool_calls' || choice.finish_reason === 'function_call';
+                
+                if (shouldIncludeStopReason) {
+                  // 工具调用完成 - 需要发送stop_reason以触发下一轮
+                  yield {
+                    event: 'message_delta',
+                    data: {
+                      type: 'message_delta',
+                      delta: { 
+                        stop_reason: mappedStopReason,
+                        stop_sequence: null
+                      },
+                      usage: { output_tokens: outputTokens }
+                    }
+                  };
 
-                // 不发送message_stop事件，避免会话终止
-                logger.info('Smart cached streaming completed (no stop signals)', {
-                  outputTokens,
-                  toolCalls: toolCallBuffer.size,
-                  strategy: 'cache_tools_stream_text',
-                  finishReason: choice.finish_reason
-                }, requestId, 'provider');
+                  // 发送message_stop事件以正确结束当前工具调用轮次
+                  yield {
+                    event: 'message_stop',
+                    data: { type: 'message_stop' }
+                  };
+
+                  logger.info('Smart cached streaming completed with tool_use stop_reason for continuation', {
+                    outputTokens,
+                    toolCalls: toolCallBuffer.size,
+                    strategy: 'cache_tools_stream_text',
+                    finishReason: choice.finish_reason,
+                    stopReason: mappedStopReason
+                  }, requestId, 'provider');
+                } else {
+                  // 非工具调用 - 移除stop signals保持对话开放
+                  yield {
+                    event: 'message_delta',
+                    data: {
+                      type: 'message_delta',
+                      delta: { 
+                        // Empty delta - no stop signals to keep conversation alive
+                      },
+                      usage: { output_tokens: outputTokens }
+                    }
+                  };
+
+                  logger.info('Smart cached streaming completed (no stop signals to keep conversation alive)', {
+                    outputTokens,
+                    toolCalls: toolCallBuffer.size,
+                    strategy: 'cache_tools_stream_text',
+                    finishReason: choice.finish_reason
+                  }, requestId, 'provider');
+                }
                 return;
               }
 
@@ -625,6 +656,7 @@ export class EnhancedOpenAIClient implements Provider {
       }
 
       // 如果流正常结束但没有收到finish_reason，发送默认完成事件
+      // 但移除所有stop reason给anthropic，保证停止的权力在模型这边
       if (!streamEnded) {
         // Close text content block if open
         if (hasContentBlock && !isInToolCall) {
@@ -644,29 +676,54 @@ export class EnhancedOpenAIClient implements Provider {
           };
         }
 
-        // Send completion events
-        yield {
-          event: 'message_delta',
-          data: {
-            type: 'message_delta',
-            delta: { 
-              stop_reason: 'end_turn',
-              stop_sequence: null 
-            },
-            usage: { output_tokens: outputTokens }
-          }
-        };
-
-        yield {
-          event: 'message_stop',
-          data: { type: 'message_stop' }
-        };
+        // 如果有工具调用但没有明确的finish_reason，推断为tool_use完成
+        const hasToolCalls = toolCallBuffer.size > 0;
         
-        logger.info('Smart cached streaming completed without explicit finish_reason', {
-          outputTokens,
-          toolCalls: toolCallBuffer.size,
-          strategy: 'cache_tools_stream_text'
-        }, requestId, 'provider');
+        if (hasToolCalls) {
+          // 推断为工具调用完成 - 发送tool_use stop_reason
+          yield {
+            event: 'message_delta',
+            data: {
+              type: 'message_delta',
+              delta: { 
+                stop_reason: 'tool_use',
+                stop_sequence: null
+              },
+              usage: { output_tokens: outputTokens }
+            }
+          };
+
+          // 发送message_stop事件以正确结束当前工具调用轮次
+          yield {
+            event: 'message_stop',
+            data: { type: 'message_stop' }
+          };
+
+          logger.info('Smart cached streaming completed with inferred tool_use stop_reason', {
+            outputTokens,
+            toolCalls: toolCallBuffer.size,
+            strategy: 'cache_tools_stream_text',
+            stopReason: 'tool_use'
+          }, requestId, 'provider');
+        } else {
+          // 没有工具调用 - 移除stop signals保持对话开放  
+          yield {
+            event: 'message_delta',
+            data: {
+              type: 'message_delta',
+              delta: { 
+                // Empty delta - no stop signals to keep conversation alive
+              },
+              usage: { output_tokens: outputTokens }
+            }
+          };
+
+          logger.info('Smart cached streaming completed without explicit finish_reason (no stop signals)', {
+            outputTokens,
+            toolCalls: toolCallBuffer.size,
+            strategy: 'cache_tools_stream_text'
+          }, requestId, 'provider');
+        }
       }
 
     } catch (error) {
@@ -744,13 +801,14 @@ export class EnhancedOpenAIClient implements Provider {
       }, originalRequest.metadata?.requestId, 'provider');
     }
 
-    // Convert to BaseResponse format
+    // Convert to BaseResponse format with proper stop_reason
     return {
       id: anthropicResponse.id,
       model: originalRequest.model,
       role: 'assistant',
       content: fixedResponse.content,
-      stop_reason: anthropicResponse.stop_reason, // 移除默认停止原因
+      stop_reason: anthropicResponse.stop_reason || 'end_turn',
+      stop_sequence: anthropicResponse.stop_sequence || null,
       usage: {
         input_tokens: fixedResponse.usage?.input_tokens || anthropicResponse.usage?.input_tokens || 0,
         output_tokens: fixedResponse.usage?.output_tokens || anthropicResponse.usage?.output_tokens || 0

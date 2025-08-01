@@ -291,44 +291,108 @@ export class GeminiClient {
     const contents: any[] = [];
     
     for (const message of messages) {
-      // 处理不同类型的content格式
-      let textContent: string;
-      
-      if (typeof message.content === 'string') {
-        textContent = message.content;
-      } else if (Array.isArray(message.content)) {
-        // Anthropic格式：content是一个数组，提取text类型的内容
-        textContent = message.content
-          .filter(block => block.type === 'text')
-          .map(block => block.text)
-          .join('\n');
-      } else if (message.content && typeof message.content === 'object') {
-        // 其他对象格式
-        textContent = message.content.text || JSON.stringify(message.content);
-      } else {
-        textContent = String(message.content || '');
-      }
-      
       if (message.role === 'system') {
         // System messages are treated as user messages in Gemini
+        const textContent = this.extractTextContent(message.content);
         contents.push({
           role: 'user',
           parts: [{ text: textContent }]
         });
       } else if (message.role === 'user') {
+        const textContent = this.extractTextContent(message.content);
         contents.push({
           role: 'user',
           parts: [{ text: textContent }]
         });
       } else if (message.role === 'assistant') {
+        // 🔧 Fixed: Handle assistant messages with tool_use and text content
+        const parts = this.convertAssistantContent(message.content);
+        if (parts.length > 0) {
+          contents.push({
+            role: 'model',
+            parts: parts
+          });
+        }
+      } else if (message.role === 'tool') {
+        // 🔧 Fixed: Handle tool result messages for conversation history
+        const toolContent = this.convertToolResultContent(message);
         contents.push({
-          role: 'model',
-          parts: [{ text: textContent }]
+          role: 'user',
+          parts: [{ text: toolContent }]
         });
       }
     }
 
     return contents;
+  }
+
+  /**
+   * Extract text content from various content formats
+   */
+  private extractTextContent(content: any): string {
+    if (typeof content === 'string') {
+      return content;
+    } else if (Array.isArray(content)) {
+      // Anthropic格式：content是一个数组，提取text类型的内容
+      return content
+        .filter(block => block.type === 'text')
+        .map(block => block.text)
+        .join('\n');
+    } else if (content && typeof content === 'object') {
+      // 其他对象格式
+      return content.text || JSON.stringify(content);
+    } else {
+      return String(content || '');
+    }
+  }
+
+  /**
+   * Convert assistant content to Gemini parts format
+   * Handle both text and tool_use content blocks
+   */
+  private convertAssistantContent(content: any): any[] {
+    const parts: any[] = [];
+    
+    if (typeof content === 'string') {
+      // Simple text content
+      if (content.trim()) {
+        parts.push({ text: content });
+      }
+    } else if (Array.isArray(content)) {
+      // Anthropic format: array of content blocks
+      for (const block of content) {
+        if (block.type === 'text' && block.text) {
+          parts.push({ text: block.text });
+        } else if (block.type === 'tool_use') {
+          // 🔧 Convert tool_use to Gemini functionCall format
+          parts.push({
+            functionCall: {
+              name: block.name,
+              args: block.input || {}
+            }
+          });
+        }
+      }
+    } else if (content && typeof content === 'object') {
+      // Other object formats
+      const textContent = content.text || JSON.stringify(content);
+      if (textContent.trim()) {
+        parts.push({ text: textContent });
+      }
+    }
+
+    return parts;
+  }
+
+  /**
+   * Convert tool result message to text format for Gemini
+   */
+  private convertToolResultContent(message: any): string {
+    const toolCallId = message.tool_call_id || 'unknown';
+    const content = message.content || '';
+    
+    // Format tool result as readable text for conversation history
+    return `Tool "${toolCallId}" result: ${typeof content === 'string' ? content : JSON.stringify(content)}`;
   }
 
   private convertTools(tools: any[]): any {

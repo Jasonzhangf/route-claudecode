@@ -1,0 +1,93 @@
+{
+  "name": "OpenAI Compatible Only - Delivery Testing",
+  "description": "Routes ALL categories to OpenAI Compatible providers for isolated testing",
+  
+  "server": {
+    "port": 3459,
+    "host": "127.0.0.1"
+  },
+  
+  "routing": {  
+    "default": {
+      "provider": "openai-delivery",
+      "model": "gpt-4o"
+    },
+    "background": {
+      "provider": "openai-delivery", 
+      "model": "gpt-4o-mini"
+    },
+    "thinking": {
+      "provider": "openai-delivery",
+      "model": "gpt-4o"
+    },
+    "longcontext": {
+      "provider": "openai-delivery",
+      "model": "gpt-4o"
+    },
+    "search": {
+      "provider": "openai-delivery",
+      "model": "gpt-4o-mini"
+    }
+  },
+  
+  "providers": {
+    "openai-delivery": {
+      "type": "openai",
+      "name": "OpenAI Compatible Delivery Testing",
+      "endpoint": "https://api.shuaihong.ai/v1",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "${SHUAIHONG_API_KEY}"
+        }
+      },
+      "settings": {
+        "maxConcurrentRequests": 15,
+        "timeoutMs": 20000,
+        "retryAttempts": 3,
+        "models": [
+          "gpt-4o",
+          "gpt-4o-mini",
+          "gpt-4-turbo"
+        ],
+        "outputFormat": "openai",
+        "convertToAnthropic": true
+      }
+    }
+  },
+  
+  "input": {
+    "format": "anthropic",
+    "defaultInstance": true,
+    "validation": {
+      "enabled": true,
+      "strictMode": false
+    }
+  },
+  
+  "output": {
+    "openai": {
+      "enabled": true,
+      "convertToAnthropic": true,
+      "preserveToolCalls": true
+    }
+  },
+  
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "~/.route-claude-code/logs/delivery-testing",
+    "dataCapture": {
+      "enabled": true,
+      "savePath": "~/.route-claude-code/database/delivery-testing/providers/openai-compatible"
+    }
+  },
+  
+  "health": {
+    "checkIntervalMs": 10000,
+    "timeoutMs": 5000,
+    "failureThreshold": 2
+  }
+}

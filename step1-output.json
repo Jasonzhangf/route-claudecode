@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-07-31T11:40:30.832Z",
+  "timestamp": "2025-08-01T07:20:28.796Z",
   "test": "step1-basic-routing",
   "summary": {
     "total": 5,
-    "passed": 5,
-    "failed": 0,
-    "passRate": 100
+    "passed": 0,
+    "failed": 5,
+    "passRate": 0
   },
   "results": [
     {
@@ -16,11 +16,9 @@
         "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
       },
       "actual": {
-        "category": "default",
-        "provider": "codewhisperer-primary",
-        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+        "category": "default"
       },
-      "passed": true
+      "passed": false
     },
     {
       "name": "Background Category (Haiku Model)",
@@ -30,11 +28,9 @@
         "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
       },
       "actual": {
-        "category": "background",
-        "provider": "codewhisperer-primary",
-        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+        "category": "background"
       },
-      "passed": true
+      "passed": false
     },
     {
       "name": "Thinking Category (Explicit)",
@@ -44,11 +40,9 @@
         "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
       },
       "actual": {
-        "category": "thinking",
-        "provider": "codewhisperer-primary",
-        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+        "category": "thinking"
       },
-      "passed": true
+      "passed": false
     },
     {
       "name": "Long Context Category",
@@ -58,11 +52,9 @@
         "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
       },
       "actual": {
-        "category": "longcontext",
-        "provider": "codewhisperer-primary",
-        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+        "category": "longcontext"
       },
-      "passed": true
+      "passed": false
     },
     {
       "name": "Search Category (With Tools)",
@@ -72,39 +64,82 @@
         "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
       },
       "actual": {
-        "category": "search",
-        "provider": "codewhisperer-primary",
-        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+        "category": "search"
       },
-      "passed": true
+      "passed": false
     }
   ],
   "config": {
     "routing": {
       "default": {
-        "provider": "codewhisperer-primary",
-        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+        "providers": [
+          {
+            "provider": "kiro-gmail",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          },
+          {
+            "provider": "kiro-zcam",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          },
+          {
+            "provider": "kiro-backup",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          }
+        ]
       },
       "background": {
-        "provider": "codewhisperer-primary",
-        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+        "providers": [
+          {
+            "provider": "kiro-gmail",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          },
+          {
+            "provider": "kiro-zcam",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          }
+        ]
       },
       "thinking": {
-        "provider": "codewhisperer-primary",
-        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+        "providers": [
+          {
+            "provider": "kiro-zcam",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          },
+          {
+            "provider": "kiro-gmail",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          }
+        ]
       },
       "longcontext": {
-        "provider": "codewhisperer-primary",
-        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+        "providers": [
+          {
+            "provider": "kiro-backup",
+            "model": "CLAUDE_3_7_SONNET_20250219_V1_0"
+          },
+          {
+            "provider": "kiro-gmail",
+            "model": "CLAUDE_3_7_SONNET_20250219_V1_0"
+          }
+        ]
       },
       "search": {
-        "provider": "codewhisperer-primary",
-        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+        "providers": [
+          {
+            "provider": "kiro-gmail",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          },
+          {
+            "provider": "kiro-zcam",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0"
+          }
+        ]
       }
     },
     "providers": [
-      "0",
-      "1"
+      "kiro-gmail",
+      "kiro-zcam",
+      "kiro-backup"
     ]
   }
 }
