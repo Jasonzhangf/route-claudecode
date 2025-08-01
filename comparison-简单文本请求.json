@@ -1,0 +1,29 @@
+{
+  "testCase": "简单文本请求",
+  "results": {
+    "我们的实现 (TypeScript移植)": {
+      "success": false,
+      "duration": null,
+      "response": null,
+      "error": "connect ECONNREFUSED 127.0.0.1:3456"
+    },
+    "Demo2原始实现 (Go)": {
+      "success": true,
+      "duration": 8867,
+      "response": {
+        "content": [],
+        "model": "claude-sonnet-4-20250514",
+        "role": "assistant",
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "type": "message",
+        "usage": {
+          "input_tokens": 39,
+          "output_tokens": 102
+        }
+      },
+      "error": null
+    }
+  },
+  "timestamp": "2025-07-31T15:01:45.565Z"
+}

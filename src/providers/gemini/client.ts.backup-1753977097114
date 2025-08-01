@@ -144,22 +144,6 @@ export class GeminiClient {
     );
 
     const geminiResponse = await response.json();
-    
-    // 🔧 Capture raw response for debugging empty response issues
-    if (process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development') {
-      try {
-        const debugFile = `/tmp/gemini-raw-response-${Date.now()}-${requestId}.json`;
-        require('fs').writeFileSync(debugFile, JSON.stringify({
-          request: geminiRequest,
-          response: geminiResponse,
-          timestamp: new Date().toISOString(),
-          requestId
-        }, null, 2));
-        logger.debug('Raw Gemini response captured for debugging', { debugFile });
-      } catch (err) {
-        logger.warn('Failed to capture raw response', { error: err instanceof Error ? err.message : String(err) });
-      }
-    }
     return this.convertFromGeminiFormat(geminiResponse, request);
   }
 
@@ -393,16 +377,6 @@ export class GeminiClient {
     const candidate = geminiResponse.candidates?.[0];
     const parts = candidate?.content?.parts || [];
     
-    // 🔧 Enhanced debugging for empty response diagnosis
-    logger.debug('Converting Gemini response to Anthropic format', {
-      candidatesCount: geminiResponse.candidates?.length || 0,
-      partsCount: parts.length,
-      finishReason: candidate?.finishReason,
-      hasUsageMetadata: !!geminiResponse.usageMetadata,
-      safetyRatings: candidate?.safetyRatings,
-      requestId: originalRequest.metadata?.requestId || 'unknown'
-    });
-    
     // Extract usage information
     const usageMetadata = geminiResponse.usageMetadata || {};
     
@@ -427,22 +401,13 @@ export class GeminiClient {
       }
     }
     
-    // If no content found, add helpful default response instead of empty text
+    // If no content found, add empty text block
     if (content.length === 0) {
       content.push({
         type: 'text',
-        text: 'I apologize, but I cannot provide a response at the moment. This may be due to content filtering, API limitations, or quota restrictions. Please try rephrasing your question or try again later.'
+        text: ''
       });
     }
-    
-    // 🔧 Log conversion results for debugging
-    logger.debug('Gemini response conversion completed', {
-      contentBlocks: content.length,
-      textBlocks: content.filter(c => c.type === 'text').length,
-      toolBlocks: content.filter(c => c.type === 'tool_use').length,
-      isEmpty: content.length === 1 && content[0].type === 'text' && (!content[0].text || content[0].text.trim() === ''),
-      requestId: originalRequest.metadata?.requestId || 'unknown'
-    });
     
     return {
       id: `gemini_${Date.now()}`,
@@ -469,30 +434,6 @@ export class GeminiClient {
     };
 
     return reasonMap[finishReason || 'OTHER'] || 'end_turn';
-  }
-
-  /**
-   * Detect if response was blocked by Content Safety
-   */
-  private detectContentSafetyBlock(geminiResponse: any): { blocked: boolean, reason?: string, details?: string } {
-    const candidate = geminiResponse.candidates?.[0];
-    
-    // Check finish reason
-    if (candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'RECITATION') {
-      return { blocked: true, reason: candidate.finishReason };
-    }
-    
-    // Check safety ratings
-    const blockedRatings = candidate?.safetyRatings?.filter((rating: any) => rating.blocked === true);
-    if (blockedRatings?.length > 0) {
-      return { 
-        blocked: true, 
-        reason: 'SAFETY_RATINGS',
-        details: blockedRatings.map((r: any) => r.category).join(', ')
-      };
-    }
-    
-    return { blocked: false };
   }
 
   /**

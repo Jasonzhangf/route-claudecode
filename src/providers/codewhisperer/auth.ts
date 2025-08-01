@@ -1,583 +1,226 @@
 /**
- * CodeWhisperer Authentication Module
- * Handles AWS SSO token management for CodeWhisperer
+ * CodeWhisperer Authentication Manager
+ * 完全基于demo2 Go代码移植的认证管理
+ * 项目所有者: Jason Zhang
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import axios from 'axios';
 import { logger } from '@/utils/logger';
-import { getConfigPaths } from '@/utils/config-paths';
-import { captureAuthEvent } from './data-capture';
-
-export interface TokenData {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt?: string;
-  profileArn?: string;
-  authMethod?: string;
-  provider?: string;
-  lastRefreshedBy?: string;
-  lastRefreshTime?: string;
-}
+import { TokenData, RefreshRequest, RefreshResponse } from './types';
 
 export class CodeWhispererAuth {
-  private tokenPath: string;
-  private lastRefreshFilePath: string;
-  private cachedToken: TokenData | null = null;
-  private refreshTimer: NodeJS.Timeout | null = null;
-  private lastRefreshTime: Date | null = null;
-  private readonly REFRESH_INTERVAL = 10 * 60 * 1000; // 10 minutes
-  private readonly MIN_REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes minimum between refreshes
-  private isRefreshing: boolean = false;
-  private refreshPromise: Promise<TokenData> | null = null;
-  private configProfileArn?: string;
-  private failureCount: number = 0;
-  private isBlocked: boolean = false;
+  private static instance: CodeWhispererAuth;
+  private tokenCache: TokenData | null = null;
+  private lastTokenRead: number = 0;
+  private readonly TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
 
-  constructor(customTokenPath?: string, profileArn?: string) {
-    this.configProfileArn = profileArn;
-    this.tokenPath = customTokenPath ? this.expandPath(customTokenPath) : this.getTokenFilePath();
-    this.lastRefreshFilePath = this.getLastRefreshFilePath();
-    this.loadLastRefreshTime();
-    this.startPeriodicRefresh();
-  }
+  private constructor() {}
 
-  /**
-   * Expand ~ path to full path (Demo2 style path handling)
-   */
-  private expandPath(path: string): string {
-    if (path.startsWith('~/')) {
-      return join(homedir(), path.slice(2));
+  public static getInstance(): CodeWhispererAuth {
+    if (!CodeWhispererAuth.instance) {
+      CodeWhispererAuth.instance = new CodeWhispererAuth();
     }
-    return path;
+    return CodeWhispererAuth.instance;
   }
 
   /**
-   * Get the platform-specific token file path
+   * 获取跨平台的token文件路径 (完全基于demo2的getTokenFilePath)
    */
   private getTokenFilePath(): string {
-    const homeDir = homedir();
-    return join(homeDir, '.aws', 'sso', 'cache', 'kiro-auth-token.json');
+    const homeDir = os.homedir();
+    return path.join(homeDir, '.aws', 'sso', 'cache', 'kiro-auth-token.json');
   }
 
   /**
-   * Get the path for storing last refresh time
+   * 获取ProfileArn (基于demo2的token.ProfileArn)
    */
-  private getLastRefreshFilePath(): string {
-    const configPaths = getConfigPaths();
-    return join(configPaths.configDir, 'last-token-refresh.json');
-  }
-
-  /**
-   * Load last refresh time from persistent storage
-   */
-  private loadLastRefreshTime(): void {
+  public async getProfileArn(): Promise<string> {
     try {
-      if (existsSync(this.lastRefreshFilePath)) {
-        const data = readFileSync(this.lastRefreshFilePath, 'utf8');
-        const parsed = JSON.parse(data);
-        if (parsed.lastRefreshTime) {
-          this.lastRefreshTime = new Date(parsed.lastRefreshTime);
-          logger.debug(`Loaded last refresh time: ${this.lastRefreshTime.toISOString()}`);
-        }
-      }
-    } catch (error) {
-      logger.debug('Failed to load last refresh time, starting fresh', error);
-      this.lastRefreshTime = null;
-    }
-  }
-
-  /**
-   * Save last refresh time to persistent storage
-   */
-  private saveLastRefreshTime(): void {
-    try {
-      const data = {
-        lastRefreshTime: this.lastRefreshTime?.toISOString()
-      };
-      writeFileSync(this.lastRefreshFilePath, JSON.stringify(data, null, 2), { mode: 0o600 });
-      logger.debug(`Saved last refresh time: ${this.lastRefreshTime?.toISOString()}`);
-    } catch (error) {
-      logger.error('Failed to save last refresh time', error);
-    }
-  }
-
-  /**
-   * Check if enough time has passed since last refresh (30-minute minimum)
-   */
-  private canRefreshToken(): boolean {
-    if (!this.lastRefreshTime) {
-      return true;
-    }
-    
-    const timeSinceLastRefresh = Date.now() - this.lastRefreshTime.getTime();
-    const canRefresh = timeSinceLastRefresh >= this.MIN_REFRESH_INTERVAL;
-    
-    if (!canRefresh) {
-      const remainingTime = Math.ceil((this.MIN_REFRESH_INTERVAL - timeSinceLastRefresh) / (60 * 1000));
-      logger.debug(`Token refresh blocked - ${remainingTime} minutes remaining until next allowed refresh`);
-    }
-    
-    return canRefresh;
-  }
-
-  /**
-   * Get current token - Demo2 style: simple and direct
-   * Always ensures fresh token availability
-   */
-  async getToken(requestId: string = 'auth-request'): Promise<string> {
-    const startTime = Date.now();
-    try {
-      // Read token from file (always fresh read)
-      const tokenData = this.readTokenFromFile();
+      // 先获取token以确保缓存更新
+      await this.getToken();
       
-      // Capture token validation event
-      captureAuthEvent(requestId, 'token_validation', {
-        tokenValid: this.isTokenValid(tokenData),
-        timeTaken: Date.now() - startTime
-      });
-      
-      // If token is valid, use it directly
-      if (this.isTokenValid(tokenData)) {
-        this.cachedToken = tokenData;
-        return tokenData.accessToken;
+      if (this.tokenCache?.profileArn) {
+        return this.tokenCache.profileArn;
       }
       
-      // Token is expired, do immediate refresh (Demo2 style)
-      logger.info('Token expired, performing immediate refresh (Demo2 style)...');
-      
-      // Capture token expiry event
-      captureAuthEvent(requestId, 'token_expired', {
-        tokenValid: false,
-        refreshAttempted: true,
-        timeTaken: Date.now() - startTime
-      });
-      
-      const refreshedToken = await this.performSyncRefresh(tokenData, requestId);
-      return refreshedToken.accessToken;
+      // 如果token文件中没有profileArn，使用默认值
+      const defaultProfileArn = 'arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK';
+      logger.warn('Token文件中未找到profileArn，使用默认值', { defaultProfileArn });
+      return defaultProfileArn;
     } catch (error) {
-      // Capture auth failure
-      captureAuthEvent(requestId, 'auth_failure', {
-        authError: error instanceof Error ? error.message : String(error),
-        timeTaken: Date.now() - startTime
-      });
-      
-      logger.error('Failed to get CodeWhisperer token', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`CodeWhisperer authentication failed: ${errorMessage}`);
-    }
-  }
-
-  /**
-   * Startup token validation and refresh - Demo2 style
-   * Called during provider initialization
-   */
-  async validateAndRefreshOnStartup(): Promise<void> {
-    try {
-      logger.info('Startup token validation (Demo2 style)...');
-      
-      // Try to read token
-      const tokenData = this.readTokenFromFile();
-      
-      // If token is expired or will expire soon, refresh it
-      if (!this.isTokenValid(tokenData)) {
-        logger.info('Token expired or invalid on startup, refreshing...');
-        await this.performSyncRefresh(tokenData);
-        logger.info('Startup token refresh completed successfully');
-      } else {
-        logger.info('Startup token validation passed - token is valid');
-        this.cachedToken = tokenData;
-      }
-    } catch (error) {
-      logger.error('Startup token validation failed', error);
-      throw new Error(`Startup token validation failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
-
-  /**
-   * Get profileArn from config or token file
-   */
-  getProfileArn(): string | undefined {
-    if (this.configProfileArn) {
-      return this.configProfileArn;
-    }
-    
-    try {
-      const tokenData = this.readTokenFromFile();
-      return tokenData.profileArn;
-    } catch (error) {
-      logger.debug('Failed to read profileArn from token file', error);
-      return undefined;
-    }
-  }
-
-  /**
-   * Read token data from file
-   */
-  readTokenFromFile(): TokenData {
-    if (!existsSync(this.tokenPath)) {
-      throw new Error(`Token file not found at ${this.tokenPath}. Please install Kiro and login.`);
-    }
-
-    try {
-      const data = readFileSync(this.tokenPath, 'utf8');
-      const tokenData = JSON.parse(data) as TokenData;
-      
-      if (!tokenData.accessToken || !tokenData.refreshToken) {
-        throw new Error('Invalid token file format');
-      }
-
-      return tokenData;
-    } catch (error) {
-      throw new Error(`Failed to read token file: ${error}`);
-    }
-  }
-
-  /**
-   * Check if token is valid (not expired)
-   */
-  private isTokenValid(token: TokenData): boolean {
-    if (!token.expiresAt) {
-      // If no expiry date, assume valid for 1 hour from read
-      return true;
-    }
-
-    const expiryTime = new Date(token.expiresAt);
-    const now = new Date();
-    
-    // Add 5 minute buffer before expiry
-    return expiryTime.getTime() - now.getTime() > 5 * 60 * 1000;
-  }
-
-  /**
-   * Check if token is expired
-   */
-  private isTokenExpired(token: TokenData): boolean {
-    return !this.isTokenValid(token);
-  }
-
-  /**
-   * Refresh the access token using refresh token (Demo2 style)
-   * Demo2只使用3个基本字段：accessToken, refreshToken, expiresAt
-   * 但要保护所有现有metadata字段
-   */
-  async refreshToken(currentToken: TokenData, requestId: string = 'token-refresh'): Promise<TokenData> {
-    const startTime = Date.now();
-    try {
-      // Demo2风格的refresh请求 - 只发送refreshToken
-      const refreshRequest = {
-        refreshToken: currentToken.refreshToken
-      };
-
-      const response = await axios.post(
-        process.env.CODEWHISPERER_AUTH_ENDPOINT || 'https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken',
-        refreshRequest,
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000
-        }
-      );
-
-      if (response.status !== 200) {
-        throw new Error(`Token refresh failed with status ${response.status}`);
-      }
-
-      // 🔑 CRITICAL: Demo2风格 - 保护所有现有字段，只更新token相关字段
-      const newTokenData: TokenData = {
-        ...currentToken, // 保护所有现有字段(profileArn, authMethod, provider等)
-        // 只更新Demo2返回的3个核心字段
-        accessToken: response.data.accessToken,
-        refreshToken: response.data.refreshToken,
-        expiresAt: response.data.expiresAt,
-        // 添加追踪字段
-        lastRefreshedBy: 'claude-code-router',
-        lastRefreshTime: new Date().toISOString()
-      };
-
-      // Save new token to file
-      this.saveTokenToFile(newTokenData);
-      
-      // Capture successful token refresh
-      captureAuthEvent(requestId, 'token_refresh', {
-        refreshAttempted: true,
-        tokenValid: true,
-        timeTaken: Date.now() - startTime
-      });
-      
-      logger.debug('Token refreshed successfully (Demo2 style)');
-      return newTokenData;
-    } catch (error) {
-      // Capture token refresh failure
-      captureAuthEvent(requestId, 'auth_failure', {
-        refreshAttempted: true,
-        authError: error instanceof Error ? error.message : String(error),
-        timeTaken: Date.now() - startTime
-      });
-      
-      logger.error('Failed to refresh token', error);
-      throw new Error('Token refresh failed. Please re-login to Kiro.');
-    }
-  }
-
-  /**
-   * Save token data to file
-   */
-  private saveTokenToFile(tokenData: TokenData): void {
-    try {
-      const jsonData = JSON.stringify(tokenData, null, 2);
-      writeFileSync(this.tokenPath, jsonData, { mode: 0o600 });
-    } catch (error) {
-      logger.error('Failed to save token to file', error);
-      throw new Error('Failed to save refreshed token');
-    }
-  }
-
-  /**
-   * Validate token by making a test request
-   */
-  async validateToken(token: string): Promise<boolean> {
-    try {
-      // Make a simple request to CodeWhisperer to validate token
-      const response = await axios.get(
-        process.env.CODEWHISPERER_HEALTH_ENDPOINT || 'https://codewhisperer.us-east-1.amazonaws.com/health', // Health endpoint
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 5000
-        }
-      );
-
-      return response.status === 200;
-    } catch (error) {
-      logger.debug('Token validation failed', error);
-      return false;
-    }
-  }
-
-  /**
-   * Clear cached token (force refresh on next request)
-   */
-  clearCache(): void {
-    this.cachedToken = null;
-  }
-
-  /**
-   * Start periodic token refresh every 10 minutes in background
-   */
-  private startPeriodicRefresh(): void {
-    // Clear any existing timer
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer);
-    }
-
-    this.refreshTimer = setInterval(() => {
-      this.triggerBackgroundRefresh();
-    }, this.REFRESH_INTERVAL);
-
-    logger.debug('Started periodic token refresh timer (10-minute interval)');
-  }
-  
-  /**
-   * Trigger background token refresh (non-blocking)
-   */
-  private triggerBackgroundRefresh(): void {
-    // Don't start multiple refresh operations
-    if (this.isRefreshing) {
-      return;
-    }
-    
-    // Check if we can refresh (30-minute minimum interval)
-    if (!this.canRefreshToken()) {
-      logger.debug('Background refresh skipped - 30-minute minimum interval not met');
-      return;
-    }
-    
-    // Run refresh in background without blocking
-    setImmediate(async () => {
-      try {
-        const tokenData = this.readTokenFromFile();
-        await this.performRefresh(tokenData);
-      } catch (error) {
-        logger.error('Background token refresh failed', error);
-      }
-    });
-  }
-  
-  /**
-   * Perform synchronous token refresh (Demo2 style)
-   * No time interval restrictions, always refreshes when called
-   */
-  private async performSyncRefresh(currentToken: TokenData, requestId: string = 'sync-refresh'): Promise<TokenData> {
-    try {
-      logger.info('Performing synchronous token refresh (Demo2 style)');
-      const refreshedToken = await this.refreshToken(currentToken, requestId);
-      this.cachedToken = refreshedToken;
-      this.lastRefreshTime = new Date();
-      this.saveLastRefreshTime();
-      this.resetFailureCount(); // Reset failure count on successful refresh
-      logger.info('Synchronous token refresh completed successfully');
-      return refreshedToken;
-    } catch (error) {
-      logger.error('Synchronous token refresh failed', error);
+      logger.error('获取ProfileArn失败', error);
       throw error;
     }
   }
 
   /**
-   * Handle 403/401 authentication error - Demo2 style
-   * Immediately refresh token and return new token
+   * 读取token信息 (基于demo2的readToken逻辑)
    */
-  async handleAuthError(requestId: string = 'auth-error-handling'): Promise<string> {
+  public async getToken(): Promise<string> {
     try {
-      logger.info('Handling authentication error - performing immediate token refresh (Demo2 style)');
+      // 检查缓存是否有效
+      const now = Date.now();
+      if (this.tokenCache && (now - this.lastTokenRead) < this.TOKEN_CACHE_TTL) {
+        return this.tokenCache.accessToken;
+      }
+
+      const tokenPath = this.getTokenFilePath();
       
-      // Clear cached token
-      this.cachedToken = null;
-      
-      // Read fresh token from file
-      const tokenData = this.readTokenFromFile();
-      
-      // Force refresh regardless of expiry
-      const refreshedToken = await this.performSyncRefresh(tokenData, requestId);
-      
-      logger.info('Authentication error handled - token refreshed successfully');
-      return refreshedToken.accessToken;
-    } catch (error) {
-      logger.error('Failed to handle authentication error', error);
-      throw new Error(`Authentication error handling failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
-  }
+      if (!fs.existsSync(tokenPath)) {
+        throw new Error(`Token文件不存在: ${tokenPath}. 请先安装Kiro并登录！`);
+      }
 
-  /**
-   * Perform actual token refresh with proper synchronization
-   */
-  private async performRefresh(currentToken: TokenData): Promise<TokenData> {
-    // Prevent concurrent refreshes
-    if (this.isRefreshing && this.refreshPromise) {
-      return this.refreshPromise;
-    }
-    
-    // Double-check 30-minute interval before actual refresh
-    if (!this.canRefreshToken()) {
-      throw new Error('Token refresh blocked - 30-minute minimum interval not met');
-    }
-    
-    this.isRefreshing = true;
-    this.refreshPromise = this.refreshToken(currentToken, 'background-refresh');
-    
-    try {
-      const refreshedToken = await this.refreshPromise;
-      this.cachedToken = refreshedToken;
-      this.lastRefreshTime = new Date();
-      this.saveLastRefreshTime(); // Persist the refresh time
-      logger.debug('Token refresh completed successfully');
-      return refreshedToken;
-    } finally {
-      this.isRefreshing = false;
-      this.refreshPromise = null;
-    }
-  }
+      const data = fs.readFileSync(tokenPath, 'utf8');
+      const token: TokenData = JSON.parse(data);
 
-  /**
-   * Stop periodic refresh (for cleanup)
-   */
-  stopPeriodicRefresh(): void {
-    if (this.refreshTimer) {
-      clearInterval(this.refreshTimer);
-      this.refreshTimer = null;
-      logger.debug('Stopped periodic token refresh timer');
-    }
-  }
+      if (!token.accessToken) {
+        throw new Error('Token文件中缺少accessToken');
+      }
 
-  /**
-   * Get authentication headers for CodeWhisperer requests
-   */
-  async getAuthHeaders(): Promise<Record<string, string>> {
-    const token = await this.getToken();
-    return {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'User-Agent': 'claude-code-router/2.0.0'
-    };
-  }
+      // 更新缓存
+      this.tokenCache = token;
+      this.lastTokenRead = now;
 
-  /**
-   * Get token info for debugging
-   */
-  async getTokenInfo(): Promise<any> {
-    try {
-      const tokenData = this.readTokenFromFile();
-      const timeSinceLastRefresh = this.lastRefreshTime ? Date.now() - this.lastRefreshTime.getTime() : null;
-      const canRefresh = this.canRefreshToken();
-      const minutesUntilNextRefresh = this.lastRefreshTime && !canRefresh 
-        ? Math.ceil((this.MIN_REFRESH_INTERVAL - (Date.now() - this.lastRefreshTime.getTime())) / (60 * 1000))
-        : 0;
-      
-      return {
-        hasAccessToken: !!tokenData.accessToken,
-        hasRefreshToken: !!tokenData.refreshToken,
-        expiresAt: tokenData.expiresAt,
-        isValid: this.isTokenValid(tokenData),
-        lastRefreshTime: this.lastRefreshTime?.toISOString(),
-        timeSinceLastRefresh: timeSinceLastRefresh ? `${Math.floor(timeSinceLastRefresh / (60 * 1000))} minutes` : null,
-        canRefreshNow: canRefresh,
-        minutesUntilNextRefresh: minutesUntilNextRefresh,
-        periodicRefreshActive: !!this.refreshTimer,
-        minRefreshInterval: `${this.MIN_REFRESH_INTERVAL / (60 * 1000)} minutes`
-      };
-    } catch (error) {
-      return {
-        error: (error as Error).message
-      };
-    }
-  }
-
-  /**
-   * Reset failure count on successful requests
-   */
-  resetFailureCount(): void {
-    this.failureCount = 0;
-    this.isBlocked = false;
-  }
-
-  /**
-   * Report authentication failure for monitoring
-   */
-  reportAuthFailure(error: any, statusCode?: number): void {
-    this.failureCount++;
-    logger.warn('Authentication failure reported', {
-      failureCount: this.failureCount,
-      statusCode,
-      error: error instanceof Error ? error.message : String(error)
-    });
-    
-    // Block token after 3 consecutive failures
-    if (this.failureCount >= 3) {
-      this.isBlocked = true;
-      logger.error('Token blocked due to consecutive authentication failures', {
-        failureCount: this.failureCount
+      logger.debug('Token读取成功', {
+        tokenLength: token.accessToken.length,
+        hasRefreshToken: !!token.refreshToken,
+        expiresAt: token.expiresAt,
       });
+
+      return token.accessToken;
+    } catch (error) {
+      logger.error('读取token失败', error);
+      throw error;
     }
   }
 
   /**
-   * Check if token is blocked due to failures
+   * 刷新token (完全基于demo2的refreshToken)
    */
-  isTokenBlocked(): boolean {
-    return this.isBlocked;
+  public async refreshToken(): Promise<void> {
+    try {
+      logger.info('开始刷新token...');
+      
+      const tokenPath = this.getTokenFilePath();
+      
+      // 读取当前token
+      const data = fs.readFileSync(tokenPath, 'utf8');
+      const currentToken: TokenData = JSON.parse(data);
+
+      if (!currentToken.refreshToken) {
+        throw new Error('当前token中缺少refreshToken，无法刷新');
+      }
+
+      // 准备刷新请求 (基于demo2的RefreshRequest)
+      const refreshReq: RefreshRequest = {
+        refreshToken: currentToken.refreshToken,
+      };
+
+      logger.debug('发送token刷新请求', {
+        refreshTokenLength: currentToken.refreshToken.length,
+      });
+
+      // 发送刷新请求 (基于demo2的HTTP请求)
+      const response = await axios.post<RefreshResponse>(
+        'https://prod.us-east-1.auth.desktop.kiro.dev/refreshToken',
+        refreshReq,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+        }
+      );
+
+      if (response.status !== 200) {
+        throw new Error(`刷新token失败，状态码: ${response.status}`);
+      }
+
+      // 更新token文件 (基于demo2的写入逻辑)
+      const newToken: TokenData = response.data;
+      
+      fs.writeFileSync(tokenPath, JSON.stringify(newToken, null, 2), { mode: 0o600 });
+
+      // 更新缓存
+      this.tokenCache = newToken;
+      this.lastTokenRead = Date.now();
+
+      logger.info('Token刷新成功', {
+        newTokenLength: newToken.accessToken.length,
+        expiresAt: newToken.expiresAt,
+      });
+
+    } catch (error) {
+      logger.error('刷新token失败', error);
+      // 清除缓存以强制重新读取
+      this.tokenCache = null;
+      throw error;
+    }
   }
 
   /**
-   * Cleanup resources
+   * 验证token是否有效 (基于demo2的启动时验证逻辑)
    */
-  destroy(): void {
-    this.stopPeriodicRefresh();
-    this.clearCache();
+  public async validateToken(): Promise<boolean> {
+    try {
+      const token = await this.getToken();
+      
+      // 简单验证：检查token格式和长度
+      if (!token || token.length < 10) {
+        return false;
+      }
+
+      logger.debug('Token验证通过', {
+        tokenLength: token.length,
+      });
+
+      return true;
+    } catch (error) {
+      logger.warn('Token验证失败', error);
+      return false;
+    }
+  }
+
+  /**
+   * 导出环境变量格式 (基于demo2的exportEnvVars)
+   */
+  public async exportEnvVars(): Promise<string> {
+    try {
+      const token = await this.getToken();
+      
+      const isWindows = process.platform === 'win32';
+      
+      if (isWindows) {
+        return [
+          'REM CMD格式',
+          'set ANTHROPIC_BASE_URL=http://localhost:8080',
+          `set ANTHROPIC_API_KEY=${token}`,
+          '',
+          'REM PowerShell格式',
+          '$env:ANTHROPIC_BASE_URL="http://localhost:8080"',
+          `$env:ANTHROPIC_API_KEY="${token}"`,
+        ].join('\n');
+      } else {
+        return [
+          'export ANTHROPIC_BASE_URL=http://localhost:8080',
+          `export ANTHROPIC_API_KEY="${token}"`,
+        ].join('\n');
+      }
+    } catch (error) {
+      logger.error('导出环境变量失败', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 清除token缓存
+   */
+  public clearCache(): void {
+    this.tokenCache = null;
+    this.lastTokenRead = 0;
+    logger.debug('Token缓存已清除');
   }
 }

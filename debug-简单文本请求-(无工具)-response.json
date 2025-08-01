@@ -1,0 +1,116 @@
+{
+  "request": {
+    "conversationState": {
+      "chatTriggerType": "MANUAL",
+      "conversationId": "27c97470-cc11-49a5-b18d-6fa0057c520a",
+      "currentMessage": {
+        "userInputMessage": {
+          "content": "Hello! Please give me a brief greeting.",
+          "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+          "origin": "AI_EDITOR",
+          "userInputMessageContext": {}
+        }
+      },
+      "history": []
+    },
+    "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+  },
+  "response": {
+    "id": "cw_1753973827809",
+    "type": "message",
+    "model": "claude-sonnet-4-20250514",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "Hello! Nice to meet you! I'm Claude, an AI assistant. How are you doing today, and how can I help you?"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 25,
+      "output_tokens": 25
+    }
+  },
+  "events": [
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "Hello! Nice"
+        }
+      }
+    },
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " to meet you! I"
+        }
+      }
+    },
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": "'m Claude"
+        }
+      }
+    },
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": ", an AI assistant."
+        }
+      }
+    },
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " How are"
+        }
+      }
+    },
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " you doing today,"
+        }
+      }
+    },
+    {
+      "event": "content_block_delta",
+      "data": {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {
+          "type": "text_delta",
+          "text": " and how can I help you?"
+        }
+      }
+    }
+  ],
+  "rawResponseSize": 956
+}

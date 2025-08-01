@@ -462,21 +462,20 @@ flowchart TD
 - **会话持续**: 工具调用完成后移除停止信号，保持对话可以继续
 - **修复位置**: `src/providers/codewhisperer/parser.ts:309-361`
 
-#### 🔧 CodeWhisperer请求格式要求 (2025-07-31重大发现)
+#### 🔧 CodeWhisperer请求格式要求 (2025-07-31重构完成)
 
-**🚨 核心发现：Demo2兼容性格式要求**
+**🚨 核心发现：Demo2完全支持工具调用**
 
-经过深入对比分析Demo2和我们router的实际请求格式，发现导致400错误的根本原因：
+经过深入对比分析Demo2的Go实现代码，发现我们之前的理解完全错误：
 
-**❌ 错误的请求格式**:
+**✅ 正确的请求格式（基于Demo2 Go代码）**:
 ```json
 {
   "conversationState": {
     "currentMessage": {
       "userInputMessage": {
         "userInputMessageContext": {
-          "toolResults": [],
-          "tools": [/* 工具定义数据 */]
+          "tools": [/* 完整的工具定义数据 */]
         }
       }
     }
@@ -484,40 +483,38 @@ flowchart TD
 }
 ```
 
-**✅ 正确的请求格式（Demo2兼容）**:
-```json
-{
-  "conversationState": {
-    "currentMessage": {
-      "userInputMessage": {
-        "userInputMessageContext": {}  // 必须是空对象！
-      }
+**🔑 关键发现**:
+1. **Demo2完全支持工具**: Demo2的Go代码在`buildCodeWhispererRequest`函数中完整实现了工具转换
+2. **工具转换逻辑**: 将Anthropic tools转换为CodeWhisperer tools格式并放入`userInputMessageContext.tools`
+3. **成功验证**: Demo2能成功处理包含8个工具定义的大请求（4KB+）
+
+**📋 Demo2的Go实现（参考标准）**:
+```go
+// 处理 tools 信息
+if len(anthropicReq.Tools) > 0 {
+    var tools []CodeWhispererTool
+    for _, tool := range anthropicReq.Tools {
+        cwTool := CodeWhispererTool{}
+        cwTool.ToolSpecification.Name = tool.Name
+        cwTool.ToolSpecification.Description = tool.Description
+        cwTool.ToolSpecification.InputSchema = InputSchema{
+            Json: tool.InputSchema,
+        }
+        tools = append(tools, cwTool)
     }
-  }
+    cwReq.ConversationState.CurrentMessage.UserInputMessage.UserInputMessageContext.Tools = tools
 }
 ```
 
-**🔑 关键规则**:
-1. **完全忽略工具**: CodeWhisperer不支持工具调用，必须完全忽略所有tools和toolResults
-2. **空userInputMessageContext**: 始终发送空对象`{}`，不能包含任何字段
-3. **Demo2策略**: 完全采用Demo2的"工具忽略"策略，确保100%兼容性
-
-**📋 修复实现**:
-- **位置**: `src/providers/codewhisperer/converter.ts:106`
-- **修改**: 强制设置`userInputMessageContext: {}`
-- **移除**: 所有工具处理逻辑，包括tools检测、转换、tool results处理
-- **日志**: 添加调试日志记录被忽略的工具信息
-
 **🧪 验证结果**:
-- ✅ 请求格式完全匹配Demo2
-- ✅ 消除所有400错误
-- ✅ 工具调用请求正常响应（工具在响应端处理）
-- ✅ 保持与Demo2完全一致的行为
+- ✅ Demo2成功处理大请求：4296字符，8个工具，4168ms响应
+- ✅ 返回完整tool_use响应：`{"type": "tool_use", "name": "Glob", "input": {"pattern": "**/*.ts"}}`
+- ✅ 证明CodeWhisperer API完全支持工具调用
 
-**⚠️ 重要说明**:
-- 这不影响工具调用功能的实现
-- 工具调用在响应阶段由Claude模型直接处理
-- 请求端只需传递用户消息内容，不传递工具定义
+**🚨 我们的问题**:
+- 我们的TypeScript实现虽然与Demo2的Go代码逻辑相同，但在某些细节上存在差异
+- 需要逐行对比找出导致400错误的具体差异点
+- 问题不在工具支持性，而在实现细节的微妙差异
 
 ## 🚨 **硬编码模型名问题 - 完整修复记录 (2025-07-28)**
 

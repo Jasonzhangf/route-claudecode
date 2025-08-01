@@ -1,0 +1,50 @@
+{
+  "server": {
+    "port": 3456,
+    "host": "0.0.0.0"
+  },
+  "providers": {
+    "codewhisperer-primary": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.kiro2cc/auth_files/kiro-auth-token_gmail.json"
+        }
+      },
+      "settings": {
+        "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+      }
+    }
+  },
+  "routing": {
+    "default": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "background": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "thinking": {
+      "provider": "codewhisperer-primary", 
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "longcontext": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "search": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "traceRequests": true,
+    "saveRequests": false,
+    "logDir": "/Users/fanzhang/.route-claude-code/logs"
+  }
+}

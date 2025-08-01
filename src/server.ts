@@ -7,10 +7,11 @@ import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { AnthropicInputProcessor } from './input/anthropic';
 import { RoutingEngine } from './routing';
 import { AnthropicOutputProcessor } from './output/anthropic';
-import { CodeWhispererClient } from './providers/codewhisperer';
+import { CodeWhispererProvider } from './providers/codewhisperer';
 import { EnhancedOpenAIClient } from './providers/openai';
 import { AnthropicProvider } from './providers/anthropic';
 import { GeminiProvider } from './providers/gemini';
+import { LMStudioClient } from './providers/lmstudio';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from './types';
 import { logger, createLogger } from './utils/logger';
 import { failureLogger } from './utils/failure-logger';
@@ -85,19 +86,16 @@ export class RouterServer {
     // Clear existing providers
     this.providers.clear();
     
-    if (!this.providerExpansion) {
-      this.instanceLogger.error('Provider expansion not completed, cannot initialize providers');
-      return;
-    }
+    // Provider expansion should be completed in constructor
     
     // 🔧 使用扩展后的providers配置
-    for (const [expandedProviderId, expandedProvider] of this.providerExpansion.expandedProviders) {
+    for (const [expandedProviderId, expandedProvider] of this.providerExpansion!.expandedProviders) {
       const providerConfig = expandedProvider.config;
       try {
         let client: Provider;
         
         if (providerConfig.type === 'codewhisperer') {
-          client = new CodeWhispererClient(providerConfig);
+          client = new CodeWhispererProvider(expandedProviderId);
         } else if (providerConfig.type === 'openai') {
           // Generic OpenAI-compatible client (works for Shuaihong, etc.)
           client = new EnhancedOpenAIClient(providerConfig, expandedProviderId);
@@ -107,6 +105,9 @@ export class RouterServer {
         } else if (providerConfig.type === 'gemini') {
           // Google Gemini API client
           client = new GeminiProvider(providerConfig, expandedProviderId);
+        } else if (providerConfig.type === 'lmstudio') {
+          // LM Studio local server client
+          client = new LMStudioClient(providerConfig, expandedProviderId);
         } else {
           this.instanceLogger.warn(`Unsupported provider type: ${providerConfig.type}`, { providerId: expandedProviderId });
           continue;

@@ -1,509 +1,387 @@
 /**
- * CodeWhisperer AWS Binary Event Stream Parser
- * Handles AWS CodeWhisperer's binary event stream format
+ * CodeWhisperer SSE Parser
+ * 完全基于demo2 parser/sse_parser.go 移植的二进制响应解析器
+ * 项目所有者: Jason Zhang
  */
 
 import { logger } from '@/utils/logger';
+import { AssistantResponseEvent, SSEEvent } from './types';
 
-export interface ParsedEvent {
-  event: string;
-  data: any;
-}
+export class CodeWhispererParser {
+  /**
+   * 解析CodeWhisperer的二进制响应 (完全基于demo2的ParseEvents函数)
+   */
+  public parseEvents(responseBuffer: Buffer): SSEEvent[] {
+    const events: SSEEvent[] = [];
+    let offset = 0;
 
-export interface SSEEvent {
-  Event: string;
-  Data: any;
-}
-
-export interface AWSBinaryEvent {
-  headers: Record<string, any>;
-  payload: string;
-  payloadJSON?: any;
-}
-
-/**
- * Parse CodeWhisperer AWS Binary Event Stream from raw response
- * Handles the binary format returned by CodeWhisperer API
- */
-export function parseEvents(rawResponse: Buffer): SSEEvent[] {
-  try {
-    logger.debug('Parsing AWS Binary Event Stream', {
-      responseLength: rawResponse.length,
-      responsePreview: rawResponse.toString('hex').substring(0, 100)
+    logger.debug('开始解析CodeWhisperer响应', {
+      bufferLength: responseBuffer.length,
     });
-    
-    const binaryEvents = parseAWSBinaryEvents(rawResponse);
-    const sseEvents: SSEEvent[] = [];
-    
-    logger.debug('Binary events parsed', {
-      eventCount: binaryEvents.length
-    });
-    
-    // Convert AWS binary events to SSE format
-    for (const binaryEvent of binaryEvents) {
-      const sseEvent = convertBinaryEventToSSE(binaryEvent);
-      if (sseEvent) {
-        sseEvents.push(sseEvent);
-      }
-    }
-    
-    logger.debug('Events converted to SSE format', {
-      eventCount: sseEvents.length,
-      eventTypes: sseEvents.map(e => e.Event)
-    });
-    
-    return sseEvents;
-  } catch (error) {
-    logger.error('Failed to parse AWS Binary Event Stream', error);
-    return [];
-  }
-}
 
-/**
- * Parse AWS Binary Event Stream format
- */
-function parseAWSBinaryEvents(buffer: Buffer): AWSBinaryEvent[] {
-  const events: AWSBinaryEvent[] = [];
-  let offset = 0;
-  
-  while (offset < buffer.length) {
-    try {
-      const event = parseEventAtOffset(buffer, offset);
-      if (event) {
-        events.push(event.data);
-        offset = event.nextOffset;
-      } else {
+    while (offset < responseBuffer.length) {
+      // 检查是否有足够的字节读取帧头 (基于demo2的长度检查)
+      if (responseBuffer.length - offset < 12) {
+        logger.debug('剩余字节不足12，停止解析', {
+          remaining: responseBuffer.length - offset,
+        });
         break;
       }
-    } catch (error) {
-      logger.debug('Failed to parse event at offset', { offset, error });
-      break;
-    }
-  }
-  
-  return events;
-}
 
-/**
- * Parse single AWS event at given offset
- */
-function parseEventAtOffset(buffer: Buffer, offset: number): { data: AWSBinaryEvent; nextOffset: number } | null {
-  if (offset + 12 > buffer.length) {
-    return null;
-  }
+      // 读取总长度和头部长度 (基于demo2的binary.Read逻辑)
+      const totalLen = responseBuffer.readUInt32BE(offset);
+      const headerLen = responseBuffer.readUInt32BE(offset + 4);
+      offset += 8;
 
-  // AWS Event Stream format:
-  // 4 bytes: total message length
-  // 4 bytes: headers length  
-  // 4 bytes: CRC of prelude
-  // headers
-  // payload
-  // 4 bytes: message CRC
+      logger.debug('读取帧信息', {
+        totalLen,
+        headerLen,
+        currentOffset: offset,
+      });
 
-  const totalLength = buffer.readUInt32BE(offset);
-  const headersLength = buffer.readUInt32BE(offset + 4);
-  
-  if (offset + totalLength > buffer.length) {
-    return null;
-  }
+      // 验证帧长度 (基于demo2的长度验证)
+      if (totalLen > responseBuffer.length - offset + 8) {
+        logger.warn('帧长度无效，停止解析', {
+          totalLen,
+          remainingBytes: responseBuffer.length - offset + 8,
+        });
+        break;
+      }
 
-  // Parse headers
-  const headersStart = offset + 12;
-  const headers = parseHeaders(buffer, headersStart, headersLength);
-  
-  // Parse payload
-  const payloadStart = headersStart + headersLength;
-  const payloadLength = totalLength - 12 - headersLength - 4;
-  const payload = buffer.slice(payloadStart, payloadStart + payloadLength);
-  
-  const eventData: AWSBinaryEvent = {
-    headers: headers,
-    payload: payload.toString('utf8')
-  };
+      // 跳过头部 (基于demo2的header跳过逻辑)
+      if (headerLen > 0) {
+        const header = responseBuffer.subarray(offset, offset + headerLen);
+        offset += headerLen;
+        
+        logger.debug('跳过头部', {
+          headerLen,
+          headerPreview: header.toString('hex').substring(0, 40),
+        });
+      }
 
-  // Try to parse JSON payload
-  try {
-    eventData.payloadJSON = JSON.parse(eventData.payload);
-  } catch {
-    // Payload is not JSON, keep as string
-  }
+      // 读取payload (基于demo2的payload读取)
+      const payloadLen = totalLen - headerLen - 12;
+      if (payloadLen <= 0) {
+        // 跳过CRC32并继续
+        offset += 4;
+        continue;
+      }
 
-  return {
-    data: eventData,
-    nextOffset: offset + totalLength
-  };
-}
+      const payload = responseBuffer.subarray(offset, offset + payloadLen);
+      offset += payloadLen;
 
-/**
- * Parse AWS event headers
- */
-function parseHeaders(buffer: Buffer, start: number, length: number): Record<string, any> {
-  const headers: Record<string, any> = {};
-  let offset = start;
-  const end = start + length;
+      // 跳过CRC32 (基于demo2的CRC32跳过)
+      offset += 4;
 
-  while (offset < end) {
-    if (offset + 4 > end) break;
+      // 处理payload (基于demo2的payload处理)
+      let payloadStr = payload.toString('utf8');
+      
+      // 移除"vent"前缀 (基于demo2的TrimPrefix逻辑)
+      if (payloadStr.startsWith('vent')) {
+        payloadStr = payloadStr.substring(4);
+      }
 
-    const nameLength = buffer.readUInt8(offset);
-    offset += 1;
+      logger.debug('解析payload', {
+        payloadLen,
+        payloadPreview: payloadStr.substring(0, 100),
+      });
 
-    if (offset + nameLength > end) break;
+      // 尝试解析为JSON (基于demo2的json.Unmarshal)
+      try {
+        const evt: AssistantResponseEvent = JSON.parse(payloadStr);
+        
+        logger.debug('成功解析事件', {
+          hasContent: !!evt.content,
+          hasToolInfo: !!(evt.toolUseId && evt.name),
+          stop: evt.stop,
+        });
 
-    const name = buffer.slice(offset, offset + nameLength).toString('utf8');
-    offset += nameLength;
+        // 转换为SSE事件 (基于demo2的convertAssistantEventToSSE)
+        const sseEvent = this.convertAssistantEventToSSE(evt);
+        if (sseEvent.event) { // 只添加有效事件
+          events.push(sseEvent);
+        }
 
-    if (offset + 3 > end) break;
+        // 处理工具调用的特殊情况 (基于demo2的工具调用处理)
+        if (evt.toolUseId && evt.name && evt.stop) {
+          const stopEvent: SSEEvent = {
+            event: 'message_delta',
+            data: {
+              type: 'message_delta',
+              delta: {
+                stop_reason: 'tool_use',
+                stop_sequence: null,
+              },
+              usage: { output_tokens: 0 },
+            },
+          };
+          events.push(stopEvent);
+          
+          logger.debug('添加工具调用停止事件');
+        }
 
-    const valueType = buffer.readUInt8(offset);
-    offset += 1;
-
-    const valueLength = buffer.readUInt16BE(offset);
-    offset += 2;
-
-    if (offset + valueLength > end) break;
-
-    let value;
-    if (valueType === 7) { // String
-      value = buffer.slice(offset, offset + valueLength).toString('utf8');
-    } else {
-      value = buffer.slice(offset, offset + valueLength);
-    }
-
-    headers[name] = value;
-    offset += valueLength;
-  }
-
-  return headers;
-}
-
-/**
- * Convert AWS binary event to SSE format
- */
-function convertBinaryEventToSSE(binaryEvent: AWSBinaryEvent): SSEEvent | null {
-  try {
-    // Extract event type from headers
-    const eventType = binaryEvent.headers[':event-type'] || 'assistantResponseEvent';
-    
-    // Use JSON payload if available, otherwise use raw payload
-    const data = binaryEvent.payloadJSON || { text: binaryEvent.payload };
-    
-    return {
-      Event: eventType,
-      Data: data
-    };
-  } catch (error) {
-    logger.debug('Failed to convert binary event to SSE', { error, binaryEvent });
-    return null;
-  }
-}
-
-/**
- * Convert raw events to Anthropic format with tool call accumulation
- */
-export function convertEventsToAnthropic(events: SSEEvent[], requestId: string, modelName?: string): any[] {
-  logger.debug('Converting events to Anthropic format with tool call processing', {
-    eventCount: events.length
-  }, requestId);
-
-  const anthropicEvents: any[] = [];
-  let accumulatedText = ''; // 累积文本用于检测工具调用
-  let currentBlockIndex = 0;
-  let hasStartedText = false;
-  
-  // 添加消息开始事件
-  anthropicEvents.push({
-    event: 'message_start',
-    data: {
-      type: 'message_start',
-      message: {
-        id: `msg_${Date.now()}`,
-        type: 'message',
-        role: 'assistant',
-        content: [],
-        model: modelName,
-        stop_reason: null,
-        stop_sequence: null,
-        usage: { input_tokens: 0, output_tokens: 0 }
+      } catch (parseError) {
+        logger.warn('JSON解析失败', {
+          error: parseError instanceof Error ? parseError.message : String(parseError),
+          payloadPreview: payloadStr.substring(0, 200),
+        });
       }
     }
-  });
 
-  // 添加 ping 事件
-  anthropicEvents.push({
-    event: 'ping',
-    data: { type: 'ping' }
-  });
-  
-  for (const event of events) {
-    try {
-      switch (event.Event) {
-        case 'assistantResponseEvent':
-          // 🔑 关键修复：处理CodeWhisperer的assistantResponseEvent事件
-          if (event.Data && event.Data.content) {
-            const eventContent = event.Data.content;
-            accumulatedText += eventContent;
-            
-            // 检查累积文本中是否有完整的工具调用 (支持XML格式)
-            // 匹配格式: <ToolName>input_content</ToolName> 或 Tool call: ToolName({...})
-            const xmlToolCallMatch = accumulatedText.match(/<(\w+)>(.*?)<\/\1>/s);
-            const legacyToolCallMatch = accumulatedText.match(/Tool call: (\w+)\((\{.*?\})\)(?:\s|$)/s);
-            
-            let toolName, toolInput;
-            let toolCallMatch = null;
-            
-            if (xmlToolCallMatch) {
-              // XML格式: <WebSearch>query text</WebSearch>
-              toolName = xmlToolCallMatch[1];
-              const inputContent = xmlToolCallMatch[2].trim();
-              toolInput = { query: inputContent }; // 大多数工具使用query参数
-              toolCallMatch = xmlToolCallMatch;
-              
-              logger.debug('Detected XML-style tool call', {
-                toolName,
-                inputContent: inputContent.substring(0, 100),
-                fullMatch: xmlToolCallMatch[0].substring(0, 200)
-              }, requestId);
-            } else if (legacyToolCallMatch) {
-              // 传统格式: Tool call: ToolName({...})
-              toolName = legacyToolCallMatch[1];
-              const inputStr = legacyToolCallMatch[2];
-              toolCallMatch = legacyToolCallMatch;
-              
-              try {
-                toolInput = JSON.parse(inputStr);
-              } catch (parseError) {
-                logger.error('Failed to parse legacy tool input JSON', {
-                  toolName,
-                  inputStr,
-                  error: parseError instanceof Error ? parseError.message : String(parseError)
-                }, requestId);
-                toolInput = { query: inputStr };
-              }
-            }
-            
-            if (toolCallMatch) {
-              try {
-                
-                // 生成工具调用的开始事件
-                anthropicEvents.push({
-                  event: 'content_block_start',
-                  data: {
-                    type: 'content_block_start',
-                    index: currentBlockIndex,
-                    content_block: {
-                      type: 'tool_use',
-                      id: `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                      name: toolName,
-                      input: {}
-                    }
-                  }
-                });
+    logger.debug('CodeWhisperer响应解析完成', {
+      totalEvents: events.length,
+      parsedBytes: offset,
+      totalBytes: responseBuffer.length,
+    });
 
-                // 生成工具输入的流式事件
-                const inputJson = JSON.stringify(toolInput);
-                const chunkSize = 20; // 字符分块大小
-                for (let i = 0; i < inputJson.length; i += chunkSize) {
-                  const chunk = inputJson.slice(i, i + chunkSize);
-                  anthropicEvents.push({
-                    event: 'content_block_delta',
-                    data: {
-                      type: 'content_block_delta',
-                      index: currentBlockIndex,
-                      delta: {
-                        type: 'input_json_delta',
-                        partial_json: chunk
-                      }
-                    }
-                  });
-                }
-
-                // 生成工具调用的结束事件
-                anthropicEvents.push({
-                  event: 'content_block_stop',
-                  data: {
-                    type: 'content_block_stop',
-                    index: currentBlockIndex
-                  }
-                });
-
-                logger.info('Generated tool call events from assistantResponseEvent', {
-                  toolName,
-                  toolInput,
-                  blockIndex: currentBlockIndex
-                }, requestId);
-
-                currentBlockIndex++;
-                
-                // 移除工具调用，保留剩余文本
-                if (xmlToolCallMatch) {
-                  accumulatedText = accumulatedText.replace(/<\w+>.*?<\/\w+>/s, '').trim();
-                } else if (legacyToolCallMatch) {
-                  accumulatedText = accumulatedText.replace(/Tool call: \w+\(\{.*?\}\)(?:\s|$)/s, '').trim();
-                }
-              } catch (parseError) {
-                logger.error('Failed to generate tool call events from assistantResponseEvent', {
-                  toolName,
-                  toolInput,
-                  error: parseError instanceof Error ? parseError.message : String(parseError)
-                }, requestId);
-              }
-            }
-            
-            // 处理普通文本内容 (检查是否包含未完成的工具调用)
-            const hasIncompleteXmlTool = /<\w+(?:[^>]*>(?:[^<]*(?:<(?!\/))*[^<]*)*)?$/s.test(accumulatedText);
-            const hasIncompleteLegacyTool = accumulatedText.includes('Tool call:');
-            
-            if (!toolCallMatch && !hasIncompleteXmlTool && !hasIncompleteLegacyTool) {
-              if (!hasStartedText) {
-                // 开始文本块
-                anthropicEvents.push({
-                  event: 'content_block_start',
-                  data: {
-                    type: 'content_block_start',
-                    index: currentBlockIndex,
-                    content_block: {
-                      type: 'text',
-                      text: ''
-                    }
-                  }
-                });
-                hasStartedText = true;
-              }
-              
-              // 分块发送文本内容
-              const chunkSize = 50;
-              for (let i = 0; i < eventContent.length; i += chunkSize) {
-                const chunk = eventContent.slice(i, i + chunkSize);
-                anthropicEvents.push({
-                  event: 'content_block_delta',
-                  data: {
-                    type: 'content_block_delta',
-                    index: currentBlockIndex,
-                    delta: {
-                      type: 'text_delta',
-                      text: chunk
-                    }
-                  }
-                });
-              }
-              
-              accumulatedText = ''; // 重置累积器
-            }
-          }
-          break;
-
-        case 'contentBlockStart':
-          anthropicEvents.push({
-            event: 'content_block_start',
-            data: {
-              type: 'content_block_start',
-              index: event.Data.index || 0,
-              content_block: event.Data.contentBlock || { type: 'text', text: '' }
-            }
-          });
-          break;
-
-        case 'contentBlockDelta':
-          anthropicEvents.push({
-            event: 'content_block_delta',
-            data: {
-              type: 'content_block_delta',
-              index: event.Data.index || 0,
-              delta: event.Data.delta || { type: 'text_delta', text: '' }
-            }
-          });
-          break;
-
-        case 'contentBlockStop':
-          anthropicEvents.push({
-            event: 'content_block_stop',
-            data: {
-              type: 'content_block_stop',
-              index: event.Data.index || 0
-            }
-          });
-          break;
-
-        default:
-          logger.debug('Unhandled event type in streaming conversion', {
-            eventType: event.Event
-          }, requestId);
-          break;
-      }
-    } catch (error) {
-      logger.error('Error converting event to Anthropic format', {
-        eventType: event.Event,
-        error: error instanceof Error ? error.message : String(error)
-      }, requestId);
-    }
+    return events;
   }
 
-  // 处理剩余的累积文本
-  if (accumulatedText && hasStartedText) {
-    // 发送剩余文本
-    const chunkSize = 50;
-    for (let i = 0; i < accumulatedText.length; i += chunkSize) {
-      const chunk = accumulatedText.slice(i, i + chunkSize);
-      anthropicEvents.push({
+  /**
+   * 将AssistantResponseEvent转换为SSEEvent (完全基于demo2的convertAssistantEventToSSE函数)
+   */
+  private convertAssistantEventToSSE(evt: AssistantResponseEvent): SSEEvent {
+    // 文本内容事件 (基于demo2的文本处理)
+    if (evt.content) {
+      return {
         event: 'content_block_delta',
         data: {
           type: 'content_block_delta',
-          index: currentBlockIndex,
+          index: 0,
           delta: {
             type: 'text_delta',
-            text: chunk
-          }
-        }
-      });
+            text: evt.content,
+          },
+        },
+      };
     }
+    
+    // 工具调用事件 (基于demo2的工具调用处理)
+    if (evt.toolUseId && evt.name && !evt.stop) {
+      if (!evt.input) {
+        // 工具调用开始事件
+        return {
+          event: 'content_block_start',
+          data: {
+            type: 'content_block_start',
+            index: 1,
+            content_block: {
+              type: 'tool_use',
+              id: evt.toolUseId,
+              name: evt.name,
+              input: {},
+            },
+          },
+        };
+      } else {
+        // 工具调用输入增量事件
+        return {
+          event: 'content_block_delta',
+          data: {
+            type: 'content_block_delta',
+            index: 1,
+            delta: {
+              type: 'input_json_delta',
+              id: evt.toolUseId,
+              name: evt.name,
+              partial_json: evt.input,
+            },
+          },
+        };
+      }
+    }
+    
+    // 停止事件 (基于demo2的停止处理)
+    if (evt.stop) {
+      return {
+        event: 'content_block_stop',
+        data: {
+          type: 'content_block_stop',
+          index: 1,
+        },
+      };
+    }
+
+    // 无效事件
+    return { event: '', data: null };
   }
 
-  // 结束当前文本块
-  if (hasStartedText) {
-    anthropicEvents.push({
-      event: 'content_block_stop',
-      data: {
-        type: 'content_block_stop',
-        index: currentBlockIndex
-      }
+  /**
+   * 缓冲式工具调用解析 - 完全基于demo2策略
+   * 先完整缓冲所有JSON片段，再统一解析
+   */
+  public buildNonStreamResponse(events: SSEEvent[], originalModel: string): any {
+    const contexts: any[] = [];
+    
+    // 缓冲状态管理
+    let textBuffer = '';
+    let toolCallBuffer = new Map<string, {
+      id: string;
+      name: string;
+      jsonFragments: string[];
+      isComplete: boolean;
+    }>();
+    
+    logger.debug('开始缓冲式响应构建', {
+      eventCount: events.length,
+      originalModel,
     });
-  }
 
-  // 添加消息结束事件
-  anthropicEvents.push({
-    event: 'message_delta',
-    data: {
-      type: 'message_delta',
-      delta: {
-        stop_reason: 'end_turn',
-        stop_sequence: null
-      },
-      usage: {
-        output_tokens: 100 // 近似计算
+    // 第一阶段：完整缓冲所有数据
+    for (const event of events) {
+      if (!event.data || typeof event.data !== 'object') continue;
+
+      const dataMap = event.data as any;
+      
+      switch (dataMap.type) {
+        case 'content_block_start':
+          if (dataMap.content_block && dataMap.content_block.type === 'tool_use') {
+            const toolId = dataMap.content_block.id;
+            const toolName = dataMap.content_block.name;
+            
+            // 🔧 关键修复：只在工具不存在时才初始化，避免重复初始化导致片段丢失
+            if (!toolCallBuffer.has(toolId)) {
+              toolCallBuffer.set(toolId, {
+                id: toolId,
+                name: toolName,
+                jsonFragments: [],
+                isComplete: false
+              });
+              
+              logger.debug('初始化工具调用缓冲区', { toolId, toolName });
+            } else {
+              logger.debug('工具调用缓冲区已存在，跳过重复初始化', { 
+                toolId, 
+                toolName,
+                existingFragments: toolCallBuffer.get(toolId)!.jsonFragments.length
+              });
+            }
+          }
+          break;
+
+        case 'content_block_delta':
+          if (dataMap.delta) {
+            const deltaMap = dataMap.delta;
+            
+            switch (deltaMap.type) {
+              case 'text_delta':
+                if (deltaMap.text) {
+                  textBuffer += deltaMap.text;
+                  logger.debug('缓冲文本片段', { fragment: deltaMap.text });
+                }
+                break;
+
+              case 'input_json_delta':
+                const toolId = deltaMap.id;
+                if (deltaMap.partial_json && toolCallBuffer.has(toolId)) {
+                  toolCallBuffer.get(toolId)!.jsonFragments.push(deltaMap.partial_json);
+                  logger.debug('缓冲JSON片段', { 
+                    toolId, 
+                    fragment: deltaMap.partial_json,
+                    totalFragments: toolCallBuffer.get(toolId)!.jsonFragments.length
+                  });
+                }
+                break;
+            }
+          }
+          break;
+
+        case 'content_block_stop':
+          const index = dataMap.index;
+          logger.debug('内容块停止', { index });
+          
+          if (index === 1) {
+            // 标记工具调用完成
+            for (const [toolId, toolData] of toolCallBuffer) {
+              if (!toolData.isComplete) {
+                toolData.isComplete = true;
+                logger.debug('工具调用标记完成', { toolId });
+                break; // 只标记第一个未完成的
+              }
+            }
+          } else if (index === 0 && textBuffer) {
+            // 文本内容完成
+            contexts.push({
+              type: 'text',
+              text: textBuffer
+            });
+            logger.debug('添加文本内容', { textLength: textBuffer.length });
+            textBuffer = ''; // 重置文本缓冲区
+          }
+          break;
       }
     }
-  });
 
-  anthropicEvents.push({
-    event: 'message_stop',
-    data: {
-      type: 'message_stop'
+    // 第二阶段：处理完整的工具调用缓冲区
+    for (const [toolId, toolData] of toolCallBuffer) {
+      if (toolData.isComplete && toolData.jsonFragments.length > 0) {
+        const completeJsonStr = toolData.jsonFragments.join('');
+        logger.debug('合并JSON片段', { 
+          toolId, 
+          fragmentCount: toolData.jsonFragments.length,
+          completeJson: completeJsonStr
+        });
+        
+        try {
+          const toolInput = JSON.parse(completeJsonStr);
+          contexts.push({
+            type: 'tool_use',
+            id: toolData.id,
+            name: toolData.name,
+            input: toolInput
+          });
+          logger.debug('成功解析工具调用', { 
+            toolId: toolData.id, 
+            toolName: toolData.name,
+            inputKeys: Object.keys(toolInput)
+          });
+        } catch (parseError) {
+          logger.warn('工具JSON解析失败，添加为文本', {
+            toolId: toolData.id,
+            error: parseError instanceof Error ? parseError.message : String(parseError),
+            jsonString: completeJsonStr
+          });
+          
+          // 解析失败时作为文本处理
+          contexts.push({
+            type: 'text',
+            text: `Tool call: ${toolData.name}(${completeJsonStr})`
+          });
+        }
+      }
     }
-  });
 
-  return anthropicEvents;
-}
+    // 处理遗留的文本缓冲区
+    if (textBuffer && contexts.length === 0) {
+      contexts.push({
+        type: 'text',
+        text: textBuffer
+      });
+      logger.debug('添加遗留文本内容', { textLength: textBuffer.length });
+    }
 
-/**
- * Parse non-streaming response (used by legacy code)
- */
-export function parseNonStreamingResponse(response: any, requestId: string): any {
-  logger.debug('Parsing non-streaming response (legacy)', {
-    hasContent: !!response.content,
-    contentType: typeof response.content
-  }, requestId);
+    // 构建最终响应
+    const response = {
+      content: contexts,
+      model: originalModel,
+      role: 'assistant',
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      type: 'message',
+      usage: {
+        input_tokens: Math.max(1, Math.floor((textBuffer.length || 50) / 4)),
+        output_tokens: Math.max(1, Math.floor((textBuffer.length || 50) / 4)),
+      },
+    };
 
-  // Just return the response as-is for non-streaming
-  return response;
+    logger.debug('缓冲式响应构建完成', {
+      contextCount: contexts.length,
+      textBufferLength: textBuffer.length,
+      toolCallCount: Array.from(toolCallBuffer.values()).filter(t => t.isComplete).length,
+      hasToolUse: contexts.some(c => c.type === 'tool_use'),
+      finalContexts: contexts.map(c => ({ type: c.type, hasContent: !!(c.text || c.input) }))
+    });
+
+    return response;
+  }
 }
