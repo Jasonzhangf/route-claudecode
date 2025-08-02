@@ -41,21 +41,31 @@ export async function executeCodeCommand(args: string[], options: any) {
     // Import fetch for Node.js compatibility
     const fetch = globalThis.fetch;
 
-    // Load configuration
-    const configPath = resolvePath(options.config);
-    const config = loadConfig(configPath);
-    
-    // Override with CLI options
-    if (options.port) config.server.port = options.port;
-    if (options.host) config.server.host = options.host;
-    if (options.debug) {
-      config.debug.enabled = true;
-      config.debug.traceRequests = true;
-    }
-    if (options.logLevel) config.debug.logLevel = options.logLevel;
+    let config: RouterConfig | null = null;
+    let port: number;
+    let host: string;
 
-    const port = config.server.port;
-    const host = config.server.host;
+    // If port is specified, skip config loading and use direct connection
+    if (options.port) {
+      port = options.port;
+      host = options.host || '127.0.0.1';
+      console.log(chalk.blue(`🎯 Direct connection mode: targeting ${host}:${port}`));
+    } else {
+      // Load configuration only when not using --port
+      const configPath = resolvePath(options.config);
+      config = loadConfig(configPath);
+      
+      // Override with CLI options
+      if (options.host) config.server.host = options.host;
+      if (options.debug) {
+        config.debug.enabled = true;
+        config.debug.traceRequests = true;
+      }
+      if (options.logLevel) config.debug.logLevel = options.logLevel;
+
+      port = config.server.port;
+      host = config.server.host;
+    }
 
     // Reference counting for service management
     const refCountFile = path.join(os.tmpdir(), 'ccr-reference-count.txt');
@@ -262,10 +272,10 @@ export async function executeCodeCommand(args: string[], options: any) {
       } else {
         console.error(chalk.red(`❌ No service found on port ${port}`));
         console.log(chalk.gray(`   Tried hosts: ${hostsToTry.join(', ')}`));
-        console.log(chalk.yellow('💡 Make sure to start the service first: rcc start --config=your-config.json'));
+        console.log(chalk.yellow('💡 Make sure the service is running on the specified port first'));
         process.exit(1);
       }
-    } else if (options.config && options.config !== configPaths.configFile) {
+    } else if (config && options.config && options.config !== configPaths.configFile) {
       // Mode 2: Config specified - start service for this specific config
       console.log(chalk.blue(`🎯 Starting service with specified config: ${options.config}`));
       

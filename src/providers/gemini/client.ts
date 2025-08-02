@@ -8,7 +8,7 @@ import { BaseRequest, BaseResponse, ProviderConfig, ProviderError } from '../../
 import { logger } from '../../utils/logger';
 import { processGeminiResponse } from './universal-gemini-parser';
 import { ApiKeyRotationManager } from '../openai/api-key-rotation';
-import { EnhancedGeminiRateLimitManager } from './enhanced-rate-limit-manager';
+import { EnhancedRateLimitManager } from './enhanced-rate-limit-manager';
 
 export class GeminiClient {
   public readonly name: string;
@@ -17,7 +17,7 @@ export class GeminiClient {
   private apiKey: string;
   private baseUrl: string;
   private apiKeyRotationManager?: ApiKeyRotationManager;
-  private enhancedRateLimitManager?: EnhancedGeminiRateLimitManager;
+  private enhancedRateLimitManager?: EnhancedRateLimitManager;
   private apiKeys: string[] = [];
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
@@ -33,7 +33,7 @@ export class GeminiClient {
     if (Array.isArray(apiKey) && apiKey.length > 1) {
       // Multiple API keys - initialize enhanced rate limit manager
       this.apiKeys = apiKey;
-      this.enhancedRateLimitManager = new EnhancedGeminiRateLimitManager(
+      this.enhancedRateLimitManager = new EnhancedRateLimitManager(
         apiKey,
         this.name
       );
@@ -185,11 +185,9 @@ export class GeminiClient {
       if (this.enhancedRateLimitManager) {
         const errorStatus = (error as any)?.status || 0;
         const errorDetails = (error as any)?.responseText || (error as any)?.message;
-        this.enhancedRateLimitManager.reportError(
+        this.enhancedRateLimitManager.report429Error(
           keyIndex,
-          modelName,
-          errorStatus,
-          errorDetails,
+          errorDetails || 'Unknown error',
           requestId
         );
       }
@@ -201,7 +199,7 @@ export class GeminiClient {
     // Report success to enhanced rate limit manager
     if (this.enhancedRateLimitManager) {
       const tokensUsed = this.extractTokenUsage(geminiResponse);
-      this.enhancedRateLimitManager.reportSuccess(keyIndex, modelName, tokensUsed, requestId);
+      // Enhanced Rate Limit Manager automatically tracks usage internally
     }
     
     // 🔧 Capture raw response for debugging empty response issues
@@ -334,7 +332,7 @@ export class GeminiClient {
       if (this.enhancedRateLimitManager) {
         // Estimate tokens from stream (will be more accurate in real implementation)
         const estimatedTokens = 100; // TODO: Calculate from actual stream content
-        this.enhancedRateLimitManager.reportSuccess(keyIndex, modelName, estimatedTokens, requestId);
+        // Enhanced Rate Limit Manager automatically tracks usage internally
       } else {
         this.reportApiKeySuccess(currentApiKey!, requestId);
       }
@@ -349,11 +347,9 @@ export class GeminiClient {
       if (this.enhancedRateLimitManager && currentApiKey!) {
         const errorStatus = (error as any)?.status || 0;
         const errorDetails = (error as any)?.responseText || (error as any)?.message;
-        this.enhancedRateLimitManager.reportError(
+        this.enhancedRateLimitManager.report429Error(
           keyIndex,
-          modelName,
-          errorStatus,
-          errorDetails,
+          errorDetails || 'Unknown error',
           requestId
         );
       } else if (currentApiKey!) {
