@@ -15,7 +15,7 @@ import {
   transformOpenAIResponseToAnthropic,
   StreamTransformOptions
 } from '@/transformers';
-import { ApiKeyRotationManager } from './api-key-rotation';
+import { EnhancedOpenAIKeyManager } from './enhanced-api-key-manager';
 import { captureRequest, captureResponse, captureError } from './data-capture';
 
 export class EnhancedOpenAIClient implements Provider {
@@ -25,7 +25,7 @@ export class EnhancedOpenAIClient implements Provider {
   protected httpClient: AxiosInstance;
   private endpoint: string;
   private apiKey: string;
-  private apiKeyRotationManager?: ApiKeyRotationManager;
+  private keyManager?: EnhancedOpenAIKeyManager;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
 
@@ -38,19 +38,9 @@ export class EnhancedOpenAIClient implements Provider {
     const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
     
     if (Array.isArray(apiKey) && apiKey.length > 1) {
-      // Multiple API keys - initialize rotation manager
-      this.apiKeyRotationManager = new ApiKeyRotationManager(
-        apiKey,
-        providerId,
-        config.keyRotation || { strategy: 'round_robin' }
-      );
+      // Multiple API keys - initialize the enhanced key manager
+      this.keyManager = new EnhancedOpenAIKeyManager(apiKey, providerId);
       this.apiKey = ''; // Will be set dynamically per request
-      
-      logger.info('Initialized API key rotation for provider', {
-        providerId,
-        keyCount: apiKey.length,
-        strategy: config.keyRotation?.strategy || 'round_robin'
-      });
     } else {
       // Single API key - traditional approach (or no auth for local services)
       this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
@@ -61,7 +51,7 @@ export class EnhancedOpenAIClient implements Provider {
     }
     
     // Check if authentication is required (type !== "none")
-    if (config.authentication.type !== 'none' && !this.apiKey && !this.apiKeyRotationManager) {
+    if (config.authentication.type !== 'none' && !this.apiKey && !this.keyManager) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires API key configuration`);
     }
 
@@ -94,8 +84,8 @@ export class EnhancedOpenAIClient implements Provider {
    * Get current API key for request
    */
   private getCurrentApiKey(requestId?: string): string {
-    if (this.apiKeyRotationManager) {
-      return this.apiKeyRotationManager.getNextApiKey(requestId);
+    if (this.keyManager) {
+      return this.keyManager.getNextAvailableKey(requestId);
     }
     return this.apiKey;
   }
@@ -104,8 +94,8 @@ export class EnhancedOpenAIClient implements Provider {
    * Report success to rotation manager
    */
   private reportApiKeySuccess(apiKey: string, requestId?: string): void {
-    if (this.apiKeyRotationManager) {
-      this.apiKeyRotationManager.reportSuccess(apiKey, requestId);
+    if (this.keyManager) {
+      this.keyManager.reportSuccess(apiKey, requestId);
     }
   }
 
@@ -113,8 +103,12 @@ export class EnhancedOpenAIClient implements Provider {
    * Report error to rotation manager
    */
   private reportApiKeyError(apiKey: string, isRateLimit: boolean, requestId?: string): void {
-    if (this.apiKeyRotationManager) {
-      this.apiKeyRotationManager.reportError(apiKey, isRateLimit, requestId);
+    if (this.keyManager) {
+      if (isRateLimit) {
+        this.keyManager.report429Error(apiKey, requestId);
+      } else {
+        this.keyManager.reportGenericError(apiKey, requestId);
+      }
     }
   }
 
@@ -167,59 +161,35 @@ export class EnhancedOpenAIClient implements Provider {
     requestId: string
   ): Promise<T> {
     let lastError: any;
-    let currentApiKey: string;
-    
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      const currentApiKey = this.getCurrentApiKey(requestId);
+
       try {
-        // Get current API key for this attempt
-        currentApiKey = this.getCurrentApiKey(requestId);
-        
         const result = await requestFn(currentApiKey);
-        
-        // Report success to rotation manager
         this.reportApiKeySuccess(currentApiKey, requestId);
-        
         return result;
       } catch (error) {
         lastError = error;
-        
-        // Report error to rotation manager
         const isRateLimited = (error as any)?.response?.status === 429;
-        this.reportApiKeyError(currentApiKey!, isRateLimited, requestId);
-        
-        if (attempt === this.maxRetries || !this.isRetryableError(error)) {
-          break;
-        }
-        
-        const delayInfo = isRateLimited ? 
-          (attempt === 0 ? '1s' : attempt === 1 ? '5s' : '60s') : 
-          `${this.retryDelay * Math.pow(2, attempt)}ms`;
-        
-        logger.warn(`${operation} failed, will retry`, {
-          attempt: attempt + 1,
-          maxRetries: this.maxRetries,
-          error: error instanceof Error ? error.message : String(error),
-          status: (error as any)?.response?.status,
-          nextRetryDelay: delayInfo,
-          isRateLimited,
-          currentApiKey: currentApiKey! ? `***${currentApiKey!.slice(-4)}` : 'none'
+
+        logger.warn(`${operation} failed on key`, {
+            key: `***${currentApiKey.slice(-4)}`,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
         }, requestId, 'provider');
-        
-        await this.waitForRetry(attempt, isRateLimited);
+
+        this.reportApiKeyError(currentApiKey, isRateLimited, requestId);
+
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
+        }
+        // For retryable errors, the loop will continue and get the next available key.
       }
     }
-    
-    // Ensure proper error handling after retry exhaustion
-    if ((lastError as any)?.response?.status === 429) {
-      throw new ProviderError(
-        `${this.name} rate limit exceeded after ${this.maxRetries} retries`,
-        this.name,
-        429,
-        (lastError as any)?.response?.data
-      );
-    }
-    
-    throw lastError;
+    throw lastError; // Throw last error if all retries fail
   }
 
   /**
@@ -227,51 +197,29 @@ export class EnhancedOpenAIClient implements Provider {
    */
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     const requestId = request.metadata?.requestId || 'unknown';
-    
+
     logger.trace(requestId, 'provider', `Sending request to ${this.name}`, {
       model: request.model,
       stream: request.stream
     });
 
     try {
-      // Transform Anthropic format to OpenAI format using new transformer
       const openaiRequest = this.convertToOpenAI(request);
-      
-      // Capture request data
       captureRequest(this.name, request.model, openaiRequest, requestId);
-      
-      // Execute with retry logic
+
       const response = await this.executeWithRetry(
-        async (apiKey: string) => {
-          // Set API key in headers for this specific request (if authentication is required)
+        (apiKey) => {
           const headers: Record<string, string> = {};
           if (this.config.authentication.type !== 'none' && apiKey) {
             headers['Authorization'] = `Bearer ${apiKey}`;
           }
-          
-          const resp = await this.httpClient.post(this.endpoint, openaiRequest, {
-            headers
-          });
-          
-          if (resp.status < 200 || resp.status >= 300) {
-            throw new ProviderError(
-              `${this.name} API returned status ${resp.status}`,
-              this.name,
-              resp.status,
-              resp.data
-            );
-          }
-          
-          return resp;
+          return this.httpClient.post(this.endpoint, openaiRequest, { headers });
         },
         `${this.name} sendRequest`,
         requestId
       );
 
-      // Transform OpenAI response back to Anthropic format using new transformer
       const baseResponse = this.convertFromOpenAI(response.data, request);
-      
-      // Capture successful response data
       captureResponse(this.name, request.model, openaiRequest, response.data, requestId);
 
       logger.trace(requestId, 'provider', `Request completed successfully for ${this.name}`, {
@@ -319,28 +267,22 @@ export class EnhancedOpenAIClient implements Provider {
    */
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
-    let currentApiKey: string;
-    
+    let currentApiKey = this.getCurrentApiKey(requestId);
+
     try {
       logger.trace(requestId, 'provider', `Sending streaming request to ${this.name}`, {
-        model: request.model
+        model: request.model,
+        apiKey: `***${currentApiKey.slice(-4)}`
       });
 
-      // Transform to OpenAI format  
       const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
-      
-      // Capture request data
       captureRequest(this.name, request.model, openaiRequest, requestId);
-      
-      // Get current API key
-      currentApiKey = this.getCurrentApiKey(requestId);
-      
-      // Send streaming request - use empty path since baseURL includes full endpoint
+
       const headers: Record<string, string> = {};
       if (this.config.authentication.type !== 'none' && currentApiKey) {
         headers['Authorization'] = `Bearer ${currentApiKey}`;
       }
-      
+
       const response = await this.httpClient.post('', openaiRequest, {
         responseType: 'stream',
         headers

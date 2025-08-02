@@ -57,7 +57,7 @@ export class AnthropicClient {
   async createMessage(request: BaseRequest): Promise<BaseResponse> {
     const anthropicRequest = this.convertToAnthropicFormat(request);
     
-    logger.debug('Sending request to Anthropic API', {
+    logger.trace(request.metadata?.requestId || 'unknown', 'provider', 'Sending request to Anthropic API', {
       model: anthropicRequest.model,
       messageCount: anthropicRequest.messages.length,
       hasTools: !!anthropicRequest.tools,

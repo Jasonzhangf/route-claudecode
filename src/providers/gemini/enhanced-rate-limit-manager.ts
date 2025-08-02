@@ -4,21 +4,12 @@
  * Project Owner: Jason Zhang
  */
 
-interface RateLimitState {
-  keyIndex: number;
-  rpm: number;
-  tpm: number;
-  rpd: number;
-  rpmResetTime: number;
-  tpmResetTime: number;
-  rpdResetTime: number;
-  lastRequestTime: number;
-}
+import { ProviderError } from '../../types';
 
-interface RateLimitConfig {
-  rpm: number;
-  tpm: number;
-  rpd: number;
+interface KeyModelState {
+  cooldownUntil: number;       // Timestamp until which this combo is cooling down
+  permanentlyDowngraded: boolean; // Flag for permanent downgrade for this model
+  lastFailure: number;         // Timestamp of the last 429 error
 }
 
 interface KeyRotationResult {
@@ -30,27 +21,19 @@ interface KeyRotationResult {
 }
 
 /**
- * Enhanced Gemini Rate Limit Manager
+ * Enhanced Gemini Rate Limit Manager - v2
  * 
  * Features:
- * - Round Robin key rotation: key1→key2→key3→key1
- * - Model fallback hierarchy: gemini-2.5-pro → gemini-2.5-flash → gemini-2.0-flash → gemini-1.5-flash-8b
- * - RPD tracking with 24-hour reset
- * - Global fallback to gemini-2.5-flash-lite when all keys exhausted
+ * - Prioritizes Key Rotation over Model Downgrade.
+ * - When a (Key, Model) combination gets a 429 error, it enters a 60-second cooldown.
+ * - If it fails again immediately after cooldown, it's permanently downgraded for that Key.
+ * - A model downgrade is only considered if ALL keys are in cooldown for the requested model.
  */
 export class EnhancedRateLimitManager {
   private apiKeys: string[];
-  private state: Map<string, RateLimitState> = new Map();
+  // Key: `key-${keyIndex}:${modelName}`, e.g., 'key-0:gemini-2.5-pro'
+  private keyModelState: Map<string, KeyModelState> = new Map();
   private providerId: string;
-  
-  // Google Free Tier Rate Limits (per key)
-  private readonly rateLimits: Record<string, RateLimitConfig> = {
-    'gemini-2.5-pro': { rpm: 2, tpm: 32000, rpd: 50 },
-    'gemini-2.5-flash': { rpm: 15, tpm: 1000000, rpd: 1500 },
-    'gemini-2.0-flash': { rpm: 15, tpm: 1000000, rpd: 1500 },
-    'gemini-1.5-flash-8b': { rpm: 15, tpm: 1000000, rpd: 1500 },
-    'gemini-2.5-flash-lite': { rpm: 15, tpm: 1000000, rpd: 1500 } // Global fallback
-  };
   
   // Model fallback hierarchy
   private readonly modelFallbackHierarchy: Record<string, string[]> = {
@@ -68,191 +51,104 @@ export class EnhancedRateLimitManager {
       throw new Error('At least one API key is required for Enhanced Rate Limit Manager');
     }
     
-    // Initialize state for each key
-    this.apiKeys.forEach((_, index) => {
-      this.initializeKeyState(`key-${index}`);
-    });
-    
-    console.log(`🔧 Enhanced Rate Limit Manager initialized with ${this.apiKeys.length} keys`);
-  }
-
-  private initializeKeyState(keyId: string): void {
-    const now = Date.now();
-    this.state.set(keyId, {
-      keyIndex: 0,
-      rpm: 0,
-      tpm: 0,
-      rpd: 0,
-      rpmResetTime: now + 60000, // 1 minute
-      tpmResetTime: now + 60000, // 1 minute  
-      rpdResetTime: now + 86400000, // 24 hours
-      lastRequestTime: 0
-    });
+    console.log(`🔧 Enhanced Rate Limit Manager (v2) initialized with ${this.apiKeys.length} keys`);
   }
 
   /**
    * Get available API key and model with intelligent fallback
    */
-  getAvailableKeyAndModel(
-    requestedModel: string, 
-    estimatedTokens: number = 1000,
-    requestId?: string
-  ): KeyRotationResult {
+  getAvailableKeyAndModel(requestedModel: string, requestId?: string): KeyRotationResult {
     const now = Date.now();
-    
-    // First try: Round Robin across all keys for requested model
-    for (let attempt = 0; attempt < this.apiKeys.length; attempt++) {
-      const keyIndex = attempt % this.apiKeys.length;
-      const keyId = `key-${keyIndex}`;
-      const state = this.state.get(keyId)!;
-      
-      // Reset counters if time windows have expired
-      this.resetExpiredCounters(state, now);
-      
-      if (this.canUseKey(state, requestedModel, estimatedTokens)) {
-        this.updateUsage(state, requestedModel, estimatedTokens);
-        
-        console.log(`✅ Selected key ${keyIndex + 1}/${this.apiKeys.length} for ${requestedModel}`, {
-          rpm: state.rpm,
-          tpm: state.tpm,
-          rpd: state.rpd,
-          requestId
-        });
-        
+
+    // --- Stage 1: Try requested model with all available keys ---
+    for (let keyIndex = 0; keyIndex < this.apiKeys.length; keyIndex++) {
+      const modelStateKey = `key-${keyIndex}:${requestedModel}`;
+      const state = this.keyModelState.get(modelStateKey);
+
+      if (!state || (!state.permanentlyDowngraded && now >= state.cooldownUntil)) {
+        // This (key, model) combo is available
+        console.log(`✅ Using key ${keyIndex + 1} for model ${requestedModel}.`, { requestId });
         return {
           apiKey: this.apiKeys[keyIndex],
           model: requestedModel,
           keyIndex,
-          fallbackApplied: false
+          fallbackApplied: false,
         };
       }
     }
-    
-    // Second try: Model fallback for each key
+
+    // --- Stage 2: If all keys are unavailable for the requested model, try fallbacks ---
     const fallbackModels = this.modelFallbackHierarchy[requestedModel] || [];
-    
     for (const fallbackModel of fallbackModels) {
       for (let keyIndex = 0; keyIndex < this.apiKeys.length; keyIndex++) {
-        const keyId = `key-${keyIndex}`;
-        const state = this.state.get(keyId)!;
-        
-        this.resetExpiredCounters(state, now);
-        
-        if (this.canUseKey(state, fallbackModel, estimatedTokens)) {
-          this.updateUsage(state, fallbackModel, estimatedTokens);
-          
-          console.log(`🔄 Model fallback: ${requestedModel} → ${fallbackModel} (key ${keyIndex + 1})`, {
-            reason: 'Rate limit exceeded for requested model',
-            rpm: state.rpm,
-            tpm: state.tpm,
-            rpd: state.rpd,
+        const modelStateKey = `key-${keyIndex}:${fallbackModel}`;
+        const state = this.keyModelState.get(modelStateKey);
+
+        if (!state || (!state.permanentlyDowngraded && now >= state.cooldownUntil)) {
+          // Found an available fallback combination
+          console.log(`🔄 Falling back to model ${fallbackModel} with key ${keyIndex + 1}.`, {
+            originalModel: requestedModel,
+            reason: `All keys for ${requestedModel} are in cooldown or downgraded.`,
             requestId
           });
-          
           return {
             apiKey: this.apiKeys[keyIndex],
             model: fallbackModel,
             keyIndex,
             fallbackApplied: true,
-            fallbackReason: `Rate limit exceeded for ${requestedModel}`
+            fallbackReason: `All keys for ${requestedModel} are currently rate-limited.`
           };
         }
       }
     }
     
-    // Final fallback: Global fallback model
+    // --- Stage 3: All keys and all fallbacks are exhausted ---
+    // Find the combo that will be available soonest to provide a better error message.
+    let soonestAvailableTime = Infinity;
     for (let keyIndex = 0; keyIndex < this.apiKeys.length; keyIndex++) {
-      const keyId = `key-${keyIndex}`;
-      const state = this.state.get(keyId)!;
-      
-      this.resetExpiredCounters(state, now);
-      
-      if (this.canUseKey(state, 'gemini-2.5-flash-lite', estimatedTokens)) {
-        this.updateUsage(state, 'gemini-2.5-flash-lite', estimatedTokens);
-        
-        console.log(`🆘 Global fallback: ${requestedModel} → gemini-2.5-flash-lite (key ${keyIndex + 1})`, {
-          reason: 'All primary models exhausted',
-          requestId
-        });
-        
-        return {
-          apiKey: this.apiKeys[keyIndex],
-          model: 'gemini-2.5-flash-lite',
-          keyIndex,
-          fallbackApplied: true,
-          fallbackReason: `All rate limits exhausted for ${requestedModel}`
-        };
-      }
+        const modelStateKey = `key-${keyIndex}:${requestedModel}`;
+        const state = this.keyModelState.get(modelStateKey);
+        if (state && !state.permanentlyDowngraded && state.cooldownUntil < soonestAvailableTime) {
+            soonestAvailableTime = state.cooldownUntil;
+        }
     }
-    
-    // All keys exhausted
-    throw new Error(`All API keys rate limited for model ${requestedModel}. Please try again later.`);
-  }
 
-  private canUseKey(state: RateLimitState, model: string, estimatedTokens: number): boolean {
-    const limits = this.rateLimits[model];
-    if (!limits) return false;
-    
-    return (
-      state.rpm < limits.rpm &&
-      state.tpm + estimatedTokens <= limits.tpm &&
-      state.rpd < limits.rpd
+    const waitTime = soonestAvailableTime === Infinity ? 'N/A' : Math.ceil((soonestAvailableTime - now) / 1000);
+    throw new ProviderError(
+        `All API keys for model ${requestedModel} and its fallbacks are currently rate-limited. Please try again in about ${waitTime} seconds.`,
+        this.providerId,
+        429
     );
   }
 
-  private resetExpiredCounters(state: RateLimitState, now: number): void {
-    if (now >= state.rpmResetTime) {
-      state.rpm = 0;
-      state.rpmResetTime = now + 60000; // Next minute
-    }
-    
-    if (now >= state.tpmResetTime) {
-      state.tpm = 0;
-      state.tpmResetTime = now + 60000; // Next minute
-    }
-    
-    if (now >= state.rpdResetTime) {
-      state.rpd = 0;
-      state.rpdResetTime = now + 86400000; // Next 24 hours
-    }
-  }
-
-  private updateUsage(state: RateLimitState, model: string, estimatedTokens: number): void {
-    state.rpm += 1;
-    state.tpm += estimatedTokens;
-    state.rpd += 1;
-    state.lastRequestTime = Date.now();
-  }
 
   /**
    * Report 429 error to update rate limit tracking
    */
-  report429Error(keyIndex: number, errorMessage: string, requestId?: string): void {
-    const keyId = `key-${keyIndex}`;
-    const state = this.state.get(keyId);
-    
-    if (!state) return;
-    
-    // Aggressive rate limit increase for 429 errors
+  report429Error(keyIndex: number, model: string, requestId?: string): void {
+    const modelStateKey = `key-${keyIndex}:${model}`;
     const now = Date.now();
-    
-    if (errorMessage.toLowerCase().includes('rpm')) {
-      state.rpm = 999; // Max out RPM
-      state.rpmResetTime = now + 60000;
-      console.log(`🚨 RPM limit hit for key ${keyIndex + 1}`, { requestId });
+    const currentState = this.keyModelState.get(modelStateKey) || {
+      cooldownUntil: 0,
+      permanentlyDowngraded: false,
+      lastFailure: 0,
+    };
+
+    // Check if the last failure was very recent (e.g., within 2 seconds of cooldown ending)
+    const isImmediateFailureAfterCooldown = (now - currentState.lastFailure) < 62000 && currentState.lastFailure > 0;
+
+    if (isImmediateFailureAfterCooldown) {
+      // Failure occurred again right after cooldown, so permanently downgrade.
+      currentState.permanentlyDowngraded = true;
+      console.log(`🚫 Permanently downgrading model ${model} for key ${keyIndex + 1} due to immediate re-failure.`, { requestId });
+    } else {
+      // Regular 429: set a 60-second cooldown.
+      currentState.cooldownUntil = now + 60000;
+      console.log(`⏳ Cooldown initiated for model ${model} on key ${keyIndex + 1} for 60s.`, { requestId });
     }
-    
-    if (errorMessage.toLowerCase().includes('tpm') || errorMessage.toLowerCase().includes('token')) {
-      state.tpm = 9999999; // Max out TPM
-      state.tpmResetTime = now + 60000;
-      console.log(`🚨 TPM limit hit for key ${keyIndex + 1}`, { requestId });
-    }
-    
-    if (errorMessage.toLowerCase().includes('rpd') || errorMessage.toLowerCase().includes('daily')) {
-      state.rpd = 9999; // Max out RPD
-      state.rpdResetTime = now + 86400000;
-      console.log(`🚨 RPD limit hit for key ${keyIndex + 1}`, { requestId });
-    }
+
+    currentState.lastFailure = now;
+    this.keyModelState.set(modelStateKey, currentState);
   }
 
   /**
@@ -260,31 +156,29 @@ export class EnhancedRateLimitManager {
    */
   getStatus(): Record<string, any> {
     const now = Date.now();
-    const status: Record<string, any> = {};
-    
-    this.apiKeys.forEach((_, index) => {
-      const keyId = `key-${index}`;
-      const state = this.state.get(keyId)!;
-      
-      this.resetExpiredCounters(state, now);
-      
-      status[`key-${index + 1}`] = {
-        rpm: state.rpm,
-        tpm: state.tpm,
-        rpd: state.rpd,
-        rpmResetIn: Math.max(0, state.rpmResetTime - now),
-        tpmResetIn: Math.max(0, state.tpmResetTime - now),
-        rpdResetIn: Math.max(0, state.rpdResetTime - now),
-        lastUsed: state.lastRequestTime
-      };
+    const keyStatus: any = {};
+
+    this.apiKeys.forEach((_, keyIndex) => {
+      const models: any = {};
+      for (const model in this.modelFallbackHierarchy) {
+        const modelStateKey = `key-${keyIndex}:${model}`;
+        const state = this.keyModelState.get(modelStateKey);
+        if (state) {
+          models[model] = {
+            cooldown: Math.max(0, state.cooldownUntil - now),
+            permanentlyDowngraded: state.permanentlyDowngraded,
+            lastFailure: state.lastFailure
+          };
+        }
+      }
+      keyStatus[`key-${keyIndex + 1}`] = models;
     });
-    
+
     return {
       totalKeys: this.apiKeys.length,
       providerId: this.providerId,
-      keys: status,
+      status: keyStatus,
       modelHierarchy: this.modelFallbackHierarchy,
-      globalFallback: 'gemini-2.5-flash-lite'
     };
   }
 

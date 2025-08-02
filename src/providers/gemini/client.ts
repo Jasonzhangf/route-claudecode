@@ -7,7 +7,6 @@
 import { BaseRequest, BaseResponse, ProviderConfig, ProviderError } from '../../types';
 import { logger } from '../../utils/logger';
 import { processGeminiResponse } from './universal-gemini-parser';
-import { ApiKeyRotationManager } from '../openai/api-key-rotation';
 import { EnhancedRateLimitManager } from './enhanced-rate-limit-manager';
 
 export class GeminiClient {
@@ -16,7 +15,6 @@ export class GeminiClient {
   
   private apiKey: string;
   private baseUrl: string;
-  private apiKeyRotationManager?: ApiKeyRotationManager;
   private enhancedRateLimitManager?: EnhancedRateLimitManager;
   private apiKeys: string[] = [];
   private readonly maxRetries = 3;
@@ -38,12 +36,6 @@ export class GeminiClient {
         this.name
       );
       
-      // Also keep the old rotation manager for backward compatibility
-      this.apiKeyRotationManager = new ApiKeyRotationManager(
-        apiKey,
-        this.name,
-        config.keyRotation || { strategy: 'rate_limit_aware' }
-      );
       this.apiKey = ''; // Will be set dynamically per request
       
       logger.info('Initialized Enhanced Gemini Rate Limit Manager', {
@@ -65,15 +57,15 @@ export class GeminiClient {
     this.baseUrl = config.endpoint || 'https://generativelanguage.googleapis.com';
     logger.info('Gemini client initialized', {
       endpoint: this.baseUrl,
-      hasApiKey: !!this.apiKey || !!this.apiKeyRotationManager,
-      keyRotationEnabled: !!this.apiKeyRotationManager
+      hasApiKey: !!this.apiKey || !!this.enhancedRateLimitManager,
+      keyRotationEnabled: !!this.enhancedRateLimitManager
     });
   }
 
   async healthCheck(): Promise<boolean> {
     try {
-      // Get current API key for health check
-      const apiKey = this.getCurrentApiKey('health-check');
+      // Use the first API key for the health check
+      const apiKey = this.apiKeys[0];
       
       // Check if we can list models (lightweight health check)
       const response = await fetch(`${this.baseUrl}/v1beta/models?key=${apiKey}`, {
@@ -86,10 +78,7 @@ export class GeminiClient {
       const success = response.ok;
       
       if (success) {
-        this.reportApiKeySuccess(apiKey, 'health-check');
       } else {
-        const isRateLimit = response.status === 429;
-        this.reportApiKeyError(apiKey, isRateLimit, 'health-check');
       }
       
       return success;
@@ -112,18 +101,13 @@ export class GeminiClient {
     
     // Enhanced Rate Limit Management with Model Fallback
     if (this.enhancedRateLimitManager) {
-      const estimatedTokens = this.estimateTokens(request);
-      const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(
-        modelName, 
-        estimatedTokens, 
-        requestId
-      );
-      
-      actualApiKey = this.apiKeys[keyAndModel.keyIndex];
-      keyIndex = keyAndModel.keyIndex;
-      modelName = keyAndModel.model;
-      fallbackApplied = keyAndModel.fallbackApplied;
-      fallbackReason = keyAndModel.fallbackReason;
+        const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+        
+        actualApiKey = this.apiKeys[keyAndModel.keyIndex];
+        keyIndex = keyAndModel.keyIndex;
+        modelName = keyAndModel.model;
+        fallbackApplied = keyAndModel.fallbackApplied;
+        fallbackReason = keyAndModel.fallbackReason;
       
       if (fallbackApplied) {
         logger.info('Applied Gemini model fallback due to rate limits', {
@@ -134,7 +118,7 @@ export class GeminiClient {
         }, requestId, 'gemini-provider');
       }
     } else {
-      actualApiKey = this.getCurrentApiKey(requestId);
+      actualApiKey = this.apiKeys[0];
     }
     
     logger.info('Sending non-streaming request to Gemini API', {
@@ -185,11 +169,9 @@ export class GeminiClient {
       if (this.enhancedRateLimitManager) {
         const errorStatus = (error as any)?.status || 0;
         const errorDetails = (error as any)?.responseText || (error as any)?.message;
-        this.enhancedRateLimitManager.report429Error(
-          keyIndex,
-          errorDetails || 'Unknown error',
-          requestId
-        );
+        if (errorStatus === 429) {
+          this.enhancedRateLimitManager.report429Error(keyIndex, modelName, requestId);
+        }
       }
       throw error;
     }
@@ -249,13 +231,8 @@ export class GeminiClient {
       
       // Enhanced Rate Limit Management for streaming
       if (this.enhancedRateLimitManager) {
-        const estimatedTokens = this.estimateTokens(request);
-        const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(
-          modelName, 
-          estimatedTokens, 
-          requestId
-        );
-        
+        const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+
         currentApiKey = this.apiKeys[keyAndModel.keyIndex];
         keyIndex = keyAndModel.keyIndex;
         modelName = keyAndModel.model;
@@ -271,8 +248,7 @@ export class GeminiClient {
           }, requestId, 'gemini-provider');
         }
       } else {
-        // Get current API key
-        currentApiKey = this.getCurrentApiKey(requestId);
+        currentApiKey = this.apiKeys[0];
       }
 
       logger.info('Starting optimized Gemini streaming request', {
@@ -333,8 +309,6 @@ export class GeminiClient {
         // Estimate tokens from stream (will be more accurate in real implementation)
         const estimatedTokens = 100; // TODO: Calculate from actual stream content
         // Enhanced Rate Limit Manager automatically tracks usage internally
-      } else {
-        this.reportApiKeySuccess(currentApiKey!, requestId);
       }
     } catch (error) {
       throw error;
@@ -347,14 +321,9 @@ export class GeminiClient {
       if (this.enhancedRateLimitManager && currentApiKey!) {
         const errorStatus = (error as any)?.status || 0;
         const errorDetails = (error as any)?.responseText || (error as any)?.message;
-        this.enhancedRateLimitManager.report429Error(
-          keyIndex,
-          errorDetails || 'Unknown error',
-          requestId
-        );
-      } else if (currentApiKey!) {
-        const isRateLimit = (error as any)?.status === 429;
-        this.reportApiKeyError(currentApiKey!, isRateLimit, requestId);
+        if (errorStatus === 429) {
+          this.enhancedRateLimitManager.report429Error(keyIndex, modelName, requestId);
+        }
       }
       
       // 🔧 新架构: 不抛出ProviderError，防止Provider级别拉黑
@@ -678,12 +647,6 @@ export class GeminiClient {
   /**
    * Get current API key for request
    */
-  private getCurrentApiKey(requestId?: string): string {
-    if (this.apiKeyRotationManager) {
-      return this.apiKeyRotationManager.getNextApiKey(requestId);
-    }
-    return this.apiKey;
-  }
 
   /**
    * Estimate token usage for a request (for rate limiting)
@@ -716,20 +679,10 @@ export class GeminiClient {
   /**
    * Report success to rotation manager
    */
-  private reportApiKeySuccess(apiKey: string, requestId?: string): void {
-    if (this.apiKeyRotationManager) {
-      this.apiKeyRotationManager.reportSuccess(apiKey, requestId);
-    }
-  }
 
   /**
    * Report error to rotation manager
    */
-  private reportApiKeyError(apiKey: string, isRateLimit: boolean, requestId?: string): void {
-    if (this.apiKeyRotationManager) {
-      this.apiKeyRotationManager.reportError(apiKey, isRateLimit, requestId);
-    }
-  }
 
   /**
    * Check if error is retryable (429, 502, 503, 504)
@@ -764,81 +717,6 @@ export class GeminiClient {
   /**
    * Execute request with retry logic and API key rotation
    */
-  private async executeWithRetry<T>(
-    requestFn: (apiKey: string) => Promise<T>,
-    operation: string,
-    requestId: string
-  ): Promise<T> {
-    let lastError: any;
-    let currentApiKey: string;
-    
-    for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
-      try {
-        // Get current API key for this attempt
-        currentApiKey = this.getCurrentApiKey(requestId);
-        
-        const result = await requestFn(currentApiKey);
-        
-        // Report success to rotation manager
-        this.reportApiKeySuccess(currentApiKey, requestId);
-        
-        return result;
-      } catch (error) {
-        lastError = error;
-        
-        // Report error to rotation manager
-        const isRateLimited = (error as any)?.status === 429 || 
-                             (error as any)?.response?.status === 429;
-        this.reportApiKeyError(currentApiKey!, isRateLimited, requestId);
-        
-        if (attempt === this.maxRetries || !this.isRetryableError(error)) {
-          break;
-        }
-        
-        const delayInfo = isRateLimited ? 
-          (attempt === 0 ? '1s' : attempt === 1 ? '5s' : '60s') : 
-          `${this.retryDelay * Math.pow(2, attempt)}ms`;
-        
-        logger.warn(`${operation} failed, will retry`, {
-          attempt: attempt + 1,
-          maxRetries: this.maxRetries,
-          error: error instanceof Error ? error.message : String(error),
-          status: (error as any)?.status || (error as any)?.response?.status,
-          nextRetryDelay: delayInfo,
-          isRateLimited,
-          currentApiKey: currentApiKey! ? `***${currentApiKey!.slice(-4)}` : 'none'
-        }, requestId, 'gemini-provider');
-        
-        await this.waitForRetry(attempt, isRateLimited);
-      }
-    }
-    
-    // 🔧 新架构: 检查是否所有API Key都不可用
-    if (this.apiKeyRotationManager) {
-      const stats = this.apiKeyRotationManager.getStats();
-      const allKeysBlocked = stats.activeKeys === 0 && stats.totalKeys > 0;
-      
-      if (allKeysBlocked) {
-        logger.warn('All Gemini API keys are temporarily unavailable', {
-          totalKeys: stats.totalKeys,
-          rateLimitedKeys: stats.rateLimitedKeys,
-          disabledKeys: stats.disabledKeys,
-          waitForRecovery: '60s'
-        }, requestId, 'gemini-provider');
-        
-        // 不抛出ProviderError，返回一个简单的错误响应
-        // 这样SimpleProviderManager不会拉黑整个Provider
-        throw new Error(`All ${stats.totalKeys} Gemini API keys temporarily unavailable. Will recover automatically.`);
-      }
-    }
-    
-    // 如果不是所有Key都失败，这可能是真正的服务问题
-    if ((lastError as any)?.status === 429 || (lastError as any)?.response?.status === 429) {
-      throw new Error(`Gemini rate limit - will retry with different API key`);
-    }
-    
-    throw lastError;
-  }
 
   /**
    * 处理包含工具调用的缓冲响应（直接Gemini到Anthropic转换）
@@ -1567,8 +1445,8 @@ export class GeminiClient {
    * Get API key rotation statistics
    */
   getRotationStats(): any {
-    if (this.apiKeyRotationManager) {
-      return this.apiKeyRotationManager.getStats();
+    if (this.enhancedRateLimitManager) {
+      return this.enhancedRateLimitManager.getStatus();
     }
     return {
       providerId: this.name,

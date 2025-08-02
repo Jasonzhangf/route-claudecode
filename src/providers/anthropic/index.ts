@@ -39,10 +39,9 @@ export class AnthropicProvider implements Provider {
 
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     try {
-      logger.debug('Sending request to Anthropic', {
+      logger.trace(request.metadata?.requestId || 'unknown', 'provider', 'Sending request to Anthropic', {
         provider: this.name,
         model: request.model,
-        requestId: request.metadata?.requestId,
         endpoint: this.config.endpoint
       });
 

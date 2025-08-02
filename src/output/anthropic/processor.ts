@@ -6,9 +6,15 @@
 import { OutputProcessor, BaseRequest, BaseResponse, AnthropicResponse } from '@/types';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { PipelineDebugger } from '@/debug/pipeline-debugger';
 
 export class AnthropicOutputProcessor implements OutputProcessor {
   public readonly name = 'anthropic';
+  private pipelineDebugger: PipelineDebugger;
+
+  constructor(port: number = 3456) {
+    this.pipelineDebugger = new PipelineDebugger(port);
+  }
 
   /**
    * Check if this processor can handle the response format
@@ -66,7 +72,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
    * Validate and normalize existing Anthropic format response
    */
   private validateAndNormalize(response: any, originalRequest: BaseRequest, requestId: string): AnthropicResponse {
-    const content = this.normalizeContent(response.content);
+    const content = this.normalizeContent(response.content, requestId);
     const normalized: AnthropicResponse = {
       content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
@@ -152,7 +158,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
    * Convert content array format to Anthropic
    */
   private convertFromContentArray(content: any[], originalRequest: BaseRequest, requestId: string): AnthropicResponse {
-    const normalizedContent = this.normalizeContent(content);
+    const normalizedContent = this.normalizeContent(content, requestId);
 
     return {
       id: `msg_${uuidv4().replace(/-/g, '')}`,
@@ -199,7 +205,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       type: 'message',
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
-      content: this.normalizeContent(response.content),
+      content: this.normalizeContent(response.content, requestId),
       // 完全移除stop_reason，保证停止的权力在模型这边
       // ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
       stop_sequence: response.stop_sequence || null,
@@ -211,54 +217,83 @@ export class AnthropicOutputProcessor implements OutputProcessor {
   }
 
   /**
-   * Normalize content to Anthropic format
+   * Normalize content to Anthropic format with tool error detection
    */
-  private normalizeContent(content: any): any[] {
+  private normalizeContent(content: any, requestId?: string): any[] {
     if (!content) return [];
     
     if (typeof content === 'string') {
+      this.checkForToolCallsInText(content, requestId || 'unknown', 'content-normalization');
       return [{ type: 'text', text: content }];
     }
 
     if (Array.isArray(content)) {
-      return content.map(block => this.normalizeContentBlock(block));
+      return content.map(block => this.normalizeContentBlock(block, requestId));
     }
 
     if (typeof content === 'object') {
-      return [this.normalizeContentBlock(content)];
+      return [this.normalizeContentBlock(content, requestId)];
     }
 
-    return [{ type: 'text', text: String(content) }];
+    const textContent = String(content);
+    this.checkForToolCallsInText(textContent, requestId || 'unknown', 'content-normalization');
+    return [{ type: 'text', text: textContent }];
   }
 
   /**
-   * Normalize a single content block
+   * Normalize a single content block with tool error detection
    */
-  private normalizeContentBlock(block: any): any {
+  private normalizeContentBlock(block: any, requestId?: string): any {
     if (typeof block === 'string') {
+      // Check for tool calls in text content
+      this.checkForToolCallsInText(block, requestId || 'unknown', 'output-processing');
       return { type: 'text', text: block };
     }
 
     if (!block || typeof block !== 'object') {
-      return { type: 'text', text: String(block) };
+      const textContent = String(block);
+      // Check for tool calls in converted text
+      this.checkForToolCallsInText(textContent, requestId || 'unknown', 'output-processing');
+      return { type: 'text', text: textContent };
     }
 
     // Already in correct format
     if (block.type && (block.text || block.id || block.content)) {
+      // Check text content in properly formatted blocks
+      if (block.type === 'text' && block.text) {
+        this.checkForToolCallsInText(block.text, requestId || 'unknown', 'output-processing');
+      }
       return block;
     }
 
     // Convert common formats
     if (block.content && !block.type) {
+      this.checkForToolCallsInText(block.content, requestId || 'unknown', 'output-processing');
       return { type: 'text', text: block.content };
     }
 
     if (block.message && !block.type) {
+      this.checkForToolCallsInText(block.message, requestId || 'unknown', 'output-processing');
       return { type: 'text', text: block.message };
     }
 
     // Default to text block
-    return { type: 'text', text: JSON.stringify(block) };
+    const jsonText = JSON.stringify(block);
+    this.checkForToolCallsInText(jsonText, requestId || 'unknown', 'output-processing');
+    return { type: 'text', text: jsonText };
+  }
+
+  /**
+   * Check for tool calls appearing in text areas (error condition)
+   */
+  private checkForToolCallsInText(text: string, requestId: string, stage: string): void {
+    this.pipelineDebugger.detectToolCallError(
+      text,
+      requestId,
+      stage,
+      'anthropic-output',
+      'unknown'
+    );
   }
 
   /**

@@ -5,12 +5,14 @@
 
 import { StreamChunk, MessageTransformer } from './types';
 import { logger } from '@/utils/logger';
+import { PipelineDebugger } from '@/debug/pipeline-debugger';
 
 export interface StreamTransformOptions {
   sourceFormat: 'openai' | 'anthropic';
   targetFormat: 'openai' | 'anthropic';
   model?: string;
   requestId?: string;
+  port?: number;
 }
 
 export class StreamingTransformer {
@@ -21,6 +23,7 @@ export class StreamingTransformer {
   private contentBlockIndex = 0;
   private hasStarted = false;
   private isCompleted = false;
+  private pipelineDebugger: PipelineDebugger;
 
   constructor(
     private sourceTransformer: MessageTransformer,
@@ -31,6 +34,7 @@ export class StreamingTransformer {
     // Use the model from options (should be the targetModel from routing)
     this.model = options.model || 'unknown';
     this.requestId = options.requestId || 'unknown';
+    this.pipelineDebugger = new PipelineDebugger(options.port || 3456);
     
     logger.debug('StreamingTransformer initialized', {
       model: this.model,
@@ -122,6 +126,15 @@ export class StreamingTransformer {
 
                 // Only yield content delta if there is actual non-empty content
                 if (choice.delta.content && choice.delta.content.length > 0) {
+                  // Check for tool calls appearing in text content (error condition)
+                  this.pipelineDebugger.detectToolCallError(
+                    choice.delta.content,
+                    this.requestId,
+                    'streaming-text-delta',
+                    'streaming-transformer',
+                    this.model
+                  );
+                  
                   const deltaEvent = this.createAnthropicEvent('content_block_delta', {
                     type: 'content_block_delta',
                     index: 0,
@@ -212,6 +225,18 @@ export class StreamingTransformer {
               
             } catch (error) {
               logger.debug('Failed to parse streaming chunk', error, this.requestId);
+              
+              // Check for tool call errors in the problematic chunk
+              if (data && this.isLikelyToolCallError(data, error)) {
+                logger.error('Tool call parsing error detected', { 
+                  error: (error as Error).message, 
+                  rawChunk: data,
+                  requestId: this.requestId 
+                });
+                
+                // Save raw data for analysis - this will be captured by the debug system
+                this.saveRawStreamDataForAnalysis([data], 'openai-to-anthropic', error);
+              }
             }
           }
         }
@@ -320,6 +345,15 @@ export class StreamingTransformer {
               
               // Handle content block deltas
               if (event.type === 'content_block_delta' && event.delta?.text) {
+                // Check for tool calls appearing in text content (error condition)
+                this.pipelineDebugger.detectToolCallError(
+                  event.delta.text,
+                  this.requestId,
+                  'streaming-anthropic-to-openai',
+                  'streaming-transformer',
+                  this.model
+                );
+                
                 yield this.createOpenAIChunk({
                   choices: [{
                     index: 0,
@@ -452,6 +486,52 @@ export class StreamingTransformer {
       throw new Error(`Unknown finish reason '${finishReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
     }
     return result;
+  }
+
+  /**
+   * Check if raw data contains tool call signatures
+   */
+  private isLikelyToolCallError(rawChunk: string, error: any): boolean {
+    const toolCallPatterns = [
+      // Tool call signatures
+      /\{\s*"type"\s*:\s*"tool_use"/i,
+      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"/i,
+      /\{\s*"function"\s*:/i,
+      // Tool call keywords
+      /tool_call/i,
+      /function_call/i,
+      // JSON structures
+      /\{\s*"id"\s*:\s*"call_/i,
+      /\{\s*"index"\s*:\s*\d+/i
+    ];
+
+    return toolCallPatterns.some(pattern => pattern.test(rawChunk));
+  }
+
+  /**
+   * Save raw stream data for analysis
+   */
+  private saveRawStreamDataForAnalysis(rawStreamData: string[], transformationStage: string, error: any): void {
+    try {
+      this.pipelineDebugger.addRawStreamData(this.requestId, rawStreamData.join(''));
+      
+      // Log the error for analysis
+      this.pipelineDebugger.logToolCallError({
+        requestId: this.requestId,
+        errorType: 'raw_stream_analysis',
+        errorMessage: `Raw stream analysis error: ${error.message}`,
+        rawChunk: rawStreamData.slice(-5).join(''), // Last 5 chunks for context
+        transformationStage,
+        timestamp: new Date().toISOString(),
+        provider: 'streaming-transformer',
+        model: this.model,
+        port: this.options.port || 3456
+      }).catch(err => {
+        console.error('Failed to log tool call error:', err);
+      });
+    } catch (error) {
+      console.error('Failed to prepare raw stream analysis data:', error);
+    }
   }
 
   /**

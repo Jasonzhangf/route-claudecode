@@ -40,10 +40,9 @@ export class GeminiProvider implements Provider {
 
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     try {
-      logger.debug('Sending request to Gemini', {
+      logger.trace(request.metadata?.requestId || 'unknown', 'provider', 'Sending request to Gemini', {
         provider: this.name,
         model: request.model,
-        requestId: request.metadata?.requestId,
         endpoint: this.config.endpoint
       });
 

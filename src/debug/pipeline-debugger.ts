@@ -1,11 +1,12 @@
 /**
- * Pipeline Debugger with Streaming Chunk Aggregation
- * Optimized debug system that merges streaming chunks into session files
+ * Pipeline Debugger with Time-Based Log Rotation and Comprehensive Debug System
+ * Implements the design specifications from pipeline-debug-system-design.md
  * Project Owner: Jason Zhang
  */
 
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 interface StreamingSession {
   requestId: string;
@@ -14,9 +15,11 @@ interface StreamingSession {
     chunkIndex: number;
     stage: string;
     data: any;
+    rawChunk?: string; // Store raw chunk data for error analysis
   }>;
   startTime: number;
   metadata: any;
+  rawStreamData: string[]; // Capture raw stream data for analysis
 }
 
 interface DebugNode {
@@ -26,22 +29,97 @@ interface DebugNode {
   requestId: string;
 }
 
+interface StandardizedError {
+  port: number;
+  provider: string;
+  model: string;
+  key: string;
+  errorCode: number;
+  reason: string;
+  timestamp: string;
+  requestId: string;
+}
+
+interface ToolCallErrorData {
+  requestId: string;
+  errorType: 'tool_call_parsing' | 'tool_call_conversion' | 'tool_call_text_area' | 'raw_stream_analysis';
+  errorMessage: string;
+  rawChunk: string;
+  parsedData?: any;
+  transformationStage: string;
+  timestamp: string;
+  provider: string;
+  model: string;
+  port: number;
+}
+
 export class PipelineDebugger {
-  private logDir: string;
+  private baseLogDir: string;
+  private portLogDir: string;
+  private currentRotationDir: string = '';
+  private rotationInterval: number;
+  private lastRotationTime: number;
   private streamingSessions: Map<string, StreamingSession> = new Map();
   private port: number;
+  private failuresLogPath: string;
+  private toolCallErrorsLogPath: string;
 
   constructor(port: number) {
     this.port = port;
-    this.logDir = path.join(process.env.HOME || '', '.route-claude-code', 'logs', `port-${port}`);
-    this.ensureLogDir();
+    this.rotationInterval = 5 * 60 * 1000; // 5 minutes
+    this.lastRotationTime = Date.now();
+    this.baseLogDir = path.join(process.env.HOME || '', '.route-claude-code', 'logs');
+    this.portLogDir = path.join(this.baseLogDir, `port-${port}`);
+    this.failuresLogPath = path.join(this.portLogDir, 'failures.jsonl');
+    this.toolCallErrorsLogPath = path.join(this.portLogDir, 'tool-call-errors.jsonl');
+    this.initializeDirectories();
   }
 
-  private async ensureLogDir(): Promise<void> {
+  private async initializeDirectories(): Promise<void> {
     try {
-      await fs.mkdir(this.logDir, { recursive: true });
+      // Create base log directory
+      await fs.mkdir(this.baseLogDir, { recursive: true });
+      // Create port-specific directory
+      await fs.mkdir(this.portLogDir, { recursive: true });
+      // Create initial rotation directory
+      this.updateRotationDirectory();
+      // Create failures.jsonl if it doesn't exist
+      try {
+        await fs.access(this.failuresLogPath);
+      } catch {
+        await fs.writeFile(this.failuresLogPath, '', 'utf-8');
+      }
+      
+      // Create tool-call-errors.jsonl if it doesn't exist
+      try {
+        await fs.access(this.toolCallErrorsLogPath);
+      } catch {
+        await fs.writeFile(this.toolCallErrorsLogPath, '', 'utf-8');
+      }
     } catch (error) {
-      console.error('Failed to create log directory:', error);
+      console.error('Failed to initialize debug directories:', error);
+    }
+  }
+
+  private updateRotationDirectory(): void {
+    const now = new Date();
+    const rotationDirName = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    this.currentRotationDir = path.join(this.portLogDir, rotationDirName);
+    this.lastRotationTime = Date.now();
+  }
+
+  private async ensureRotationDirectory(): Promise<void> {
+    const now = Date.now();
+    if (now - this.lastRotationTime > this.rotationInterval) {
+      this.updateRotationDirectory();
+    }
+    
+    try {
+      await fs.mkdir(this.currentRotationDir, { recursive: true });
+    } catch (error) {
+      if ((error as any).code !== 'EEXIST') {
+        console.error('Failed to create rotation directory:', error);
+      }
     }
   }
 
@@ -49,16 +127,20 @@ export class PipelineDebugger {
    * Log a pipeline node (traditional method)
    */
   logNode(requestId: string, stage: string, data: any): void {
-    const node: DebugNode = {
-      timestamp: new Date().toISOString(),
-      stage,
-      data,
-      requestId
-    };
+    this.ensureRotationDirectory().then(() => {
+      const node: DebugNode = {
+        timestamp: new Date().toISOString(),
+        stage,
+        data,
+        requestId
+      };
 
-    // Write to individual file (legacy support)
-    this.writeNodeFile(node).catch(error => {
-      console.error('Failed to write debug node:', error);
+      // Write to individual node file in current rotation directory
+      this.writeNodeFile(node).catch(error => {
+        console.error('Failed to write debug node:', error);
+      });
+    }).catch(error => {
+      console.error('Failed to ensure rotation directory:', error);
     });
   }
 
@@ -74,7 +156,8 @@ export class PipelineDebugger {
         requestId,
         chunks: [],
         startTime: Date.now(),
-        metadata: {}
+        metadata: {},
+        rawStreamData: []
       };
       this.streamingSessions.set(requestId, session);
     }
@@ -87,10 +170,7 @@ export class PipelineDebugger {
       data
     });
 
-    // Log progress every 10 chunks to avoid console spam
-    if (session.chunks.length % 10 === 0) {
-      console.log(`📦 Streaming session ${requestId}: ${session.chunks.length} chunks aggregated`);
-    }
+    // Chunks aggregated silently - progress tracked internally only
   }
 
   /**
@@ -101,11 +181,12 @@ export class PipelineDebugger {
       requestId,
       chunks: [],
       startTime: Date.now(),
-      metadata
+      metadata,
+      rawStreamData: []
     };
     
     this.streamingSessions.set(requestId, session);
-    console.log(`🚀 Started streaming session: ${requestId}`);
+    // Streaming session started silently
   }
 
   /**
@@ -116,7 +197,7 @@ export class PipelineDebugger {
   }
 
   /**
-   * Finish streaming session and write aggregated file
+   * Finish streaming session and write aggregated file with proper rotation
    */
   async finishStreamingSession(requestId: string, finalMetadata: any = {}): Promise<void> {
     const session = this.streamingSessions.get(requestId);
@@ -127,6 +208,8 @@ export class PipelineDebugger {
     }
 
     try {
+      await this.ensureRotationDirectory();
+      
       // Create aggregated session file
       const sessionData = {
         sessionInfo: {
@@ -146,15 +229,13 @@ export class PipelineDebugger {
         }
       };
 
-      // Write single consolidated file
-      const filename = `streaming-session-${requestId}-${Date.now()}.json`;
-      const filepath = path.join(this.logDir, filename);
+      // Write single consolidated file to current rotation directory
+      const filename = `pipeline-trace-${requestId}.json`;
+      const filepath = path.join(this.currentRotationDir, filename);
       
       await fs.writeFile(filepath, JSON.stringify(sessionData, null, 2), 'utf-8');
       
-      console.log(`✅ Streaming session completed: ${requestId}`);
-      console.log(`📄 Aggregated ${session.chunks.length} chunks into: ${filename}`);
-      console.log(`⏱️  Session duration: ${Date.now() - session.startTime}ms`);
+      // Streaming session completed silently - data saved to file
       
       // Clean up memory
       this.streamingSessions.delete(requestId);
@@ -181,33 +262,209 @@ export class PipelineDebugger {
   }
 
   /**
-   * Log failure information
+   * Capture and log tool call conversion errors
+   * Detects when tool calls appear in text areas or conversion fails
    */
-  async logFailure(failureData: any): Promise<void> {
-    const failure = {
-      timestamp: new Date().toISOString(),
-      type: 'failure',
-      ...failureData
-    };
-
+  async logToolCallError(errorData: ToolCallErrorData): Promise<void> {
     try {
+      await this.ensureRotationDirectory();
+      
+      const errorEntry = {
+        timestamp: new Date().toISOString(),
+        requestId: errorData.requestId,
+        errorType: errorData.errorType,
+        errorMessage: errorData.errorMessage,
+        rawChunk: errorData.rawChunk,
+        parsedData: errorData.parsedData,
+        transformationStage: errorData.transformationStage,
+        provider: errorData.provider,
+        model: errorData.model,
+        port: errorData.port
+      };
+
+      // Append to tool-call-errors.jsonl
+      const errorLine = JSON.stringify(errorEntry) + '\n';
+      await fs.appendFile(this.toolCallErrorsLogPath, errorLine, 'utf-8');
+      
+      // Also write individual error file to rotation directory
+      const filename = `tool-call-error-${errorData.requestId}-${Date.now()}.json`;
+      const filepath = path.join(this.currentRotationDir, filename);
+      await fs.writeFile(filepath, JSON.stringify(errorEntry, null, 2), 'utf-8');
+      
+      // Tool call error logged silently
+      
+    } catch (error) {
+      console.error('Failed to write tool call error log:', error);
+    }
+  }
+
+  /**
+   * Check if raw data contains tool call signatures
+   */
+  private isLikelyToolCallError(rawChunk: string, error: any): boolean {
+    const toolCallPatterns = [
+      // Tool call signatures
+      /\{\s*"type"\s*:\s*"tool_use"/i,
+      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"/i,
+      /\{\s*"function"\s*:/i,
+      // Tool call keywords
+      /tool_call/i,
+      /function_call/i,
+      // JSON structures
+      /\{\s*"id"\s*:\s*"call_/i,
+      /\{\s*"index"\s*:\s*\d+/i
+    ];
+
+    return toolCallPatterns.some(pattern => pattern.test(rawChunk));
+  }
+
+  /**
+   * Save raw stream data for analysis
+   */
+  public saveRawStreamDataForAnalysis(rawStreamData: string[], transformationStage: string, error: any, requestId: string): void {
+    try {
+      const timestamp = new Date().toISOString();
+      const filename = `raw-stream-error-${requestId}-${Date.now()}.json`;
+      const filepath = path.join(this.currentRotationDir, filename);
+      
+      const analysisData = {
+        timestamp,
+        requestId,
+        transformationStage,
+        error: {
+          message: error.message,
+          stack: error.stack,
+          type: error.constructor.name
+        },
+        rawStreamData,
+        dataSize: rawStreamData.length,
+        totalBytes: rawStreamData.join('').length
+      };
+      
+      fs.writeFile(filepath, JSON.stringify(analysisData, null, 2), 'utf-8').catch(err => {
+        console.error('Failed to save raw stream analysis data:', err);
+      });
+    } catch (error) {
+      console.error('Failed to prepare raw stream analysis data:', error);
+    }
+  }
+
+  /**
+   * Detect tool call errors in text content
+   */
+  detectToolCallError(text: string, requestId: string, transformationStage: string, provider: string, model: string): boolean {
+    const toolCallPatterns = [
+      // Tool call signatures
+      /\{\s*"type"\s*:\s*"tool_use"/i,
+      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"/i,
+      /\{\s*"function"\s*:/i,
+      // Tool call keywords that shouldn't appear in regular text
+      /tool_call/i,
+      /function_call/i,
+      // JSON structures that look like tool calls
+      /\{\s*"id"\s*:\s*"call_/i,
+      /\{\s*"index"\s*:\s*\d+/i
+    ];
+
+    for (const pattern of toolCallPatterns) {
+      if (pattern.test(text)) {
+        this.logToolCallError({
+          requestId,
+          errorType: 'tool_call_text_area',
+          errorMessage: `Tool call detected in text area: ${pattern.toString()}`,
+          rawChunk: text,
+          transformationStage,
+          timestamp: new Date().toISOString(),
+          provider,
+          model,
+          port: this.port
+        }).catch(error => {
+          console.error('Failed to log tool call error:', error);
+        });
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Add raw stream data for analysis
+   */
+  addRawStreamData(requestId: string, rawData: string): void {
+    let session = this.streamingSessions.get(requestId);
+    
+    if (!session) {
+      session = {
+        requestId,
+        chunks: [],
+        startTime: Date.now(),
+        metadata: {},
+        rawStreamData: []
+      };
+      this.streamingSessions.set(requestId, session);
+    }
+    
+    session.rawStreamData.push(rawData);
+    
+    // Limit raw data size to prevent memory issues
+    if (session.rawStreamData.length > 1000) {
+      session.rawStreamData = session.rawStreamData.slice(-500);
+    }
+  }
+
+  /**
+   * Log failure information with standardized format
+   */
+  async logFailure(failureData: StandardizedError): Promise<void> {
+    try {
+      await this.ensureRotationDirectory();
+      
+      const failureEntry = {
+        timestamp: new Date().toISOString(),
+        port: failureData.port,
+        provider: failureData.provider,
+        model: failureData.model,
+        key: this.redactKey(failureData.key),
+        errorCode: failureData.errorCode,
+        reason: failureData.reason,
+        requestId: failureData.requestId
+      };
+
+      // Append to failures.jsonl
+      const failureLine = JSON.stringify(failureEntry) + '\n';
+      await fs.appendFile(this.failuresLogPath, failureLine, 'utf-8');
+      
+      // Also write individual failure file to rotation directory
       const filename = `failure-${failureData.requestId || 'unknown'}-${Date.now()}.json`;
-      const filepath = path.join(this.logDir, filename);
-      await fs.writeFile(filepath, JSON.stringify(failure, null, 2), 'utf-8');
+      const filepath = path.join(this.currentRotationDir, filename);
+      await fs.writeFile(filepath, JSON.stringify(failureEntry, null, 2), 'utf-8');
+      
+      // Failure logged silently
+      
     } catch (error) {
       console.error('Failed to write failure log:', error);
     }
   }
 
+  /**
+   * Redact sensitive key information
+   */
+  private redactKey(key: string): string {
+    if (!key) return 'unknown';
+    if (key.length <= 8) return '****';
+    return `${key.substring(0, 4)}****${key.substring(key.length - 4)}`;
+  }
+
   private async writeNodeFile(node: DebugNode): Promise<void> {
-    const filename = `debug-node-${node.requestId}-${node.stage}-${Date.now()}.json`;
-    const filepath = path.join(this.logDir, filename);
+    const filename = `node-${node.stage}-${node.requestId}.json`;
+    const filepath = path.join(this.currentRotationDir, filename);
     await fs.writeFile(filepath, JSON.stringify(node, null, 2), 'utf-8');
   }
 
   private async writeTraceFile(trace: any): Promise<void> {
+    await this.ensureRotationDirectory();
     const filename = `trace-${trace.requestId}-${Date.now()}.json`;
-    const filepath = path.join(this.logDir, filename);
+    const filepath = path.join(this.currentRotationDir, filename);
     await fs.writeFile(filepath, JSON.stringify(trace, null, 2), 'utf-8');
   }
 
@@ -244,7 +501,7 @@ export class PipelineDebugger {
   }
 
   /**
-   * Get current streaming sessions status
+   * Get current streaming sessions status with rotation info
    */
   getStreamingStatus(): any {
     const sessions: Record<string, any> = {};
@@ -261,9 +518,74 @@ export class PipelineDebugger {
     return {
       activeSessionsCount: this.streamingSessions.size,
       sessions,
-      logDirectory: this.logDir,
-      port: this.port
+      baseLogDirectory: this.baseLogDir,
+      portDirectory: this.portLogDir,
+      currentRotationDir: this.currentRotationDir,
+      failuresLogPath: this.failuresLogPath,
+      toolCallErrorsLogPath: this.toolCallErrorsLogPath,
+      port: this.port,
+      rotationInterval: this.rotationInterval,
+      lastRotationTime: this.lastRotationTime
     };
+  }
+
+  /**
+   * Get recent tool call errors from the log file
+   */
+  async getRecentToolCallErrors(count: number = 10): Promise<any[]> {
+    try {
+      const content = await fs.readFile(this.toolCallErrorsLogPath, 'utf-8');
+      const lines = content.trim().split('\n').filter(line => line.length > 0);
+      const errors = lines.slice(-count).map(line => JSON.parse(line));
+      return errors.reverse();
+    } catch (error) {
+      console.error('Failed to read recent tool call errors:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get recent failures from the log file
+   */
+  async getRecentFailures(count: number = 10): Promise<any[]> {
+    try {
+      const content = await fs.readFile(this.failuresLogPath, 'utf-8');
+      const lines = content.trim().split('\n').filter(line => line.length > 0);
+      const failures = lines.slice(-count).map(line => JSON.parse(line));
+      return failures.reverse();
+    } catch (error) {
+      console.error('Failed to read recent failures:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Clean up old rotation directories (keep last 24 hours)
+   */
+  async cleanupOldRotationDirectories(): Promise<number> {
+    try {
+      const dirs = await fs.readdir(this.portLogDir);
+      const rotationDirs = dirs.filter(dir => dir.match(/^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/));
+      
+      const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+      let cleaned = 0;
+      
+      for (const dir of rotationDirs) {
+        const dirPath = path.join(this.portLogDir, dir);
+        const stats = await fs.stat(dirPath);
+        
+        if (stats.birthtimeMs < oneDayAgo) {
+          await fs.rm(dirPath, { recursive: true });
+          // Old rotation directory cleaned up silently
+          cleaned++;
+        }
+      }
+      
+      return cleaned;
+    } catch (error) {
+      console.error('Failed to cleanup old rotation directories:', error);
+      return 0;
+    }
   }
 
   /**
