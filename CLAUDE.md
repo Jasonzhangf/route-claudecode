@@ -293,6 +293,11 @@ curl http://localhost:5502/health
 - [ ] **编码规范检查** - 零硬编码、零Fallback确认
 - [ ] **测试要求满足** - STD-6-STEP-PIPELINE或交付测试准备就绪
 - [ ] **记忆专家准备** - 架构变更时记忆专家调用计划确认
+
+## 🧠 项目记忆存储路径
+- **主路径**: `~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/`
+- **命名约定**: `YYYYMMDD-HHMMSS-[descriptive-english-id].md`
+- **注意**: 所有项目记忆都将集中存储在此路径下，便于统一管理和回顾。
 - [ ] **文档更新计划** - 架构变更后文档更新方案确认
 - [ ] **长任务记忆管理** - 长任务的记忆保存和提取机制确认
 - [ ] **用户确认需求** - 识别需要用户确认的操作

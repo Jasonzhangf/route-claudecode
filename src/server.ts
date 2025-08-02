@@ -14,10 +14,10 @@ import { GeminiProvider } from './providers/gemini';
 import { LMStudioClient } from './providers/lmstudio';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from './types';
 import { logger, createLogger } from './utils/logger';
-import { failureLogger } from './utils/failure-logger';
 import { sessionManager } from './session/manager';
 import { ProviderExpander, ProviderExpansionResult } from './routing/provider-expander';
 import { v4 as uuidv4 } from 'uuid';
+import { PipelineDebugger } from './debug/pipeline-debugger';
 // Debug hooks temporarily removed
 
 export class RouterServer {
@@ -29,6 +29,7 @@ export class RouterServer {
   private providers: Map<string, Provider> = new Map();
   private providerExpansion?: ProviderExpansionResult;
   private instanceLogger: any;  // Independent logger for this server instance
+  private pipelineDebugger: PipelineDebugger;
 
   constructor(config: RouterConfig, serverType?: string) {
     this.config = config;
@@ -36,6 +37,8 @@ export class RouterServer {
     // Create independent logger for this server instance
     const loggerType = serverType || (config.server.port === 3456 ? 'dev' : 'release');
     this.instanceLogger = createLogger(config.debug.logDir, loggerType);
+    this.pipelineDebugger = new PipelineDebugger(config.server.port);
+
     this.instanceLogger.setConfig({
       logLevel: config.debug.logLevel,
       debugMode: config.debug.enabled,
@@ -270,9 +273,9 @@ export class RouterServer {
           requestsPerMinute: Math.round(totalResponses / (process.uptime() / 60))
         };
 
-        // 获取失败统计
-        const failureStats = await failureLogger.getFailureStats(24);
-        const failureTrends = await failureLogger.getFailureTrends(7);
+        // 获取失败统计 (temporarily disabled)
+        const failureStats = {};
+        const failureTrends = {};
 
         reply.send({
           summary,
@@ -345,10 +348,7 @@ export class RouterServer {
         const hours = parseInt((request.query as any)?.hours || '24');
         const days = parseInt((request.query as any)?.days || '7');
         
-        const [stats, trends] = await Promise.all([
-          failureLogger.getFailureStats(hours),
-          failureLogger.getFailureTrends(days)
-        ]);
+        const [stats, trends] = [{}, {}];
 
         reply.send({
           stats,
@@ -533,7 +533,7 @@ export class RouterServer {
     let baseRequest: BaseRequest | undefined;
     
     try {
-      this.instanceLogger.info('Processing messages request', {}, requestId, 'server');
+      this.pipelineDebugger.logNode(requestId, 'start', { timestamp: new Date().toISOString() });
 
       // Step 0: Session Management
       const sessionId = sessionManager.extractSessionId(request.headers as Record<string, string>);
@@ -556,6 +556,7 @@ export class RouterServer {
       }
 
       baseRequest = await this.inputProcessor.process(request.body);
+      this.pipelineDebugger.logNode(requestId, 'input-processed', { baseRequest });
       
       // Debug Hook: Trace input processing
       if (this.config.debug.enabled) {
@@ -625,6 +626,7 @@ export class RouterServer {
 
       // Step 2: Route request
       providerId = await this.routingEngine.route(baseRequest, requestId);
+      this.pipelineDebugger.logNode(requestId, 'routing-complete', { providerId, targetModel: baseRequest.metadata?.targetModel });
       targetModel = baseRequest.metadata?.targetModel || baseRequest.model;
       
       // Debug Hook: Trace routing
@@ -645,6 +647,7 @@ export class RouterServer {
         }
         
         providerResponse = await provider.sendRequest(baseRequest);
+        this.pipelineDebugger.logNode(requestId, 'provider-response', { providerResponse });
         
         // Debug Hook: Trace provider response
         if (this.config.debug.enabled) {
@@ -654,6 +657,7 @@ export class RouterServer {
 
       // Step 4: Process output
       const finalResponse = await this.outputProcessor.process(providerResponse, baseRequest);
+      this.pipelineDebugger.logNode(requestId, 'output-processed', { finalResponse });
       
       // Debug Hook: Trace output processing
       if (this.config.debug.enabled) {
@@ -711,6 +715,7 @@ export class RouterServer {
         // Debug trace removed
       }
       
+      this.pipelineDebugger.logTrace(requestId, { finalResponse: cleanResponse });
       return cleanResponse;
 
     } catch (error) {
@@ -729,7 +734,7 @@ export class RouterServer {
         );
 
         // 记录详细的失败日志
-        await failureLogger.logFailure({
+        await this.pipelineDebugger.logFailure({
           timestamp: new Date().toISOString(),
           requestId,
           providerId,
@@ -884,8 +889,20 @@ export class RouterServer {
         // Debug trace removed
       }
       
+      let heartbeatInterval: NodeJS.Timeout | undefined;
+
+      // Start heartbeat for Gemini models if stream is from a Gemini provider
+      if ((provider as any).type === 'gemini') {
+        this.instanceLogger.debug('Starting heartbeat for Gemini streaming', {}, requestId, 'streaming');
+        heartbeatInterval = setInterval(() => {
+          this.sendSSEEvent(reply, 'ping', { type: 'ping' });
+          this.instanceLogger.debug('Sent heartbeat ping for Gemini stream', {}, requestId, 'streaming');
+        }, 30000); // Send a ping every 30 seconds
+      }
+
       for await (const chunk of provider.sendStreamRequest(request)) {
         chunkCount++;
+        this.pipelineDebugger.logNodeOptimized(requestId, `streaming-chunk-${chunkCount}`, { chunk });
         this.instanceLogger.debug(`[PIPELINE-NODE] Raw chunk ${chunkCount} from provider`, { event: chunk.event, dataType: typeof chunk.data, hasData: !!chunk.data }, requestId, 'server');
         
         // 智能停止信号处理：保留工具调用stop_reason，移除其他stop_reason
@@ -968,6 +985,21 @@ export class RouterServer {
       // Do NOT send message_stop event to keep conversation open
 
       // 保持HTTP连接正常结束，避免连接悬挂
+      this.pipelineDebugger.logNode(requestId, 'streaming-end', { outputTokens });
+      
+      // 完成streaming session，将所有chunks合并写入单个文件
+      await this.pipelineDebugger.finishStreamingSession(requestId, {
+        totalChunks: chunkCount,
+        outputTokens,
+        provider: provider.name || 'unknown'
+      });
+      
+      // Clear heartbeat interval if it was set
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        this.instanceLogger.debug('Cleared Gemini streaming heartbeat interval', {}, requestId, 'streaming');
+      }
+
       reply.raw.end();
 
       this.instanceLogger.info('Streaming request completed', {
@@ -979,6 +1011,7 @@ export class RouterServer {
       this.instanceLogger.error('Streaming request failed', error, requestId, 'server');
       
       const errorMessage = error instanceof Error ? error.message : 'Stream processing failed';
+      this.pipelineDebugger.logFailure({ requestId, error: errorMessage, stage: 'streaming' });
       // Send error event
       this.sendSSEEvent(reply, 'error', {
         type: 'error',
