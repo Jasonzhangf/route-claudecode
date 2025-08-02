@@ -94,32 +94,6 @@ export class GeminiClient {
     const requestId = request.metadata?.requestId || 'unknown';
     let geminiRequest = this.convertToGeminiFormat(request);
     let modelName = this.extractModelName(request.model);
-    let actualApiKey: string;
-    let keyIndex = 0;
-    let fallbackApplied = false;
-    let fallbackReason: string | undefined;
-    
-    // Enhanced Rate Limit Management with Model Fallback
-    if (this.enhancedRateLimitManager) {
-        const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
-        
-        actualApiKey = this.apiKeys[keyAndModel.keyIndex];
-        keyIndex = keyAndModel.keyIndex;
-        modelName = keyAndModel.model;
-        fallbackApplied = keyAndModel.fallbackApplied;
-        fallbackReason = keyAndModel.fallbackReason;
-      
-      if (fallbackApplied) {
-        logger.info('Applied Gemini model fallback due to rate limits', {
-          originalModel: this.extractModelName(request.model),
-          fallbackModel: modelName,
-          reason: fallbackReason,
-          keyIndex
-        }, requestId, 'gemini-provider');
-      }
-    } else {
-      actualApiKey = this.apiKeys[0];
-    }
     
     logger.info('Sending non-streaming request to Gemini API', {
       model: modelName,
@@ -128,61 +102,51 @@ export class GeminiClient {
       maxTokens: geminiRequest.generationConfig?.maxOutputTokens
     }, requestId, 'gemini-provider');
 
-    // Execute with enhanced error handling and fallback support
-    let response: Response;
-    try {
-      const url = `${this.baseUrl}/v1beta/models/${modelName}:generateContent?key=${actualApiKey}`;
-      
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-      
-      try {
-        response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(geminiRequest),
-          signal: controller.signal
-        });
+    // Execute with retry logic and key rotation
+    const response = await this.executeWithRetry(
+      async (apiKey: string, model: string) => {
+        const url = `${this.baseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
+        
+        try {
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(geminiRequest),
+            signal: controller.signal
+          });
 
-        clearTimeout(timeoutId);
+          clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          const error = new Error(`Gemini API error (${response.status}): ${errorText}`) as any;
-          error.status = response.status;
-          error.responseText = errorText;
+          if (!response.ok) {
+            const errorText = await response.text();
+            const error = new Error(`Gemini API error (${response.status}): ${errorText}`) as any;
+            error.status = response.status;
+            error.responseText = errorText;
+            throw error;
+          }
+          
+          return response;
+        } catch (error) {
+          clearTimeout(timeoutId);
+          
+          if ((error as any).name === 'AbortError') {
+            throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
+          }
           throw error;
         }
-      } catch (error) {
-        clearTimeout(timeoutId);
-        
-        if ((error as any).name === 'AbortError') {
-          throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
-        }
-        throw error;
-      }
-    } catch (error) {
-      // Report error to enhanced rate limit manager
-      if (this.enhancedRateLimitManager) {
-        const errorStatus = (error as any)?.status || 0;
-        const errorDetails = (error as any)?.responseText || (error as any)?.message;
-        if (errorStatus === 429) {
-          this.enhancedRateLimitManager.report429Error(keyIndex, modelName, requestId);
-        }
-      }
-      throw error;
-    }
+      },
+      modelName,
+      'createCompletion',
+      requestId
+    );
 
     const geminiResponse = await response.json();
-    
-    // Report success to enhanced rate limit manager
-    if (this.enhancedRateLimitManager) {
-      const tokensUsed = this.extractTokenUsage(geminiResponse);
-      // Enhanced Rate Limit Manager automatically tracks usage internally
-    }
     
     // 🔧 Capture raw response for debugging empty response issues
     if (process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development') {
@@ -192,15 +156,11 @@ export class GeminiClient {
           request: geminiRequest,
           response: geminiResponse,
           actualModel: modelName,
-          fallbackApplied,
-          fallbackReason,
-          keyIndex,
           timestamp: new Date().toISOString(),
           requestId
         }, null, 2));
         logger.debug('Raw Gemini response captured for debugging', { 
           debugFile, 
-          fallbackApplied, 
           actualModel: modelName 
         });
       } catch (err) {
@@ -210,7 +170,7 @@ export class GeminiClient {
     
     const finalResponse = this.convertFromGeminiFormat(geminiResponse, request);
     
-    // Update response model to reflect actual model used (important for fallback transparency)
+    // Update response model to reflect actual model used
     finalResponse.model = modelName;
     
     return finalResponse;
@@ -218,118 +178,150 @@ export class GeminiClient {
 
   async* streamCompletion(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
-    let currentApiKey: string;
-    let keyIndex = 0;
-    let fallbackApplied = false;
-    let fallbackReason: string | undefined;
+    let lastError: any;
     let modelName = this.extractModelName(request.model);
     
-    try {
-      let geminiRequest = {
-        ...this.convertToGeminiFormat(request)
-      };
+    // Retry streaming requests with key rotation for initial connection failures
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      let currentApiKey: string;
+      let keyIndex = 0;
+      let fallbackApplied = false;
+      let fallbackReason: string | undefined;
+      let currentModel = modelName;
       
-      // Enhanced Rate Limit Management for streaming
-      if (this.enhancedRateLimitManager) {
-        const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
-
-        currentApiKey = this.apiKeys[keyAndModel.keyIndex];
-        keyIndex = keyAndModel.keyIndex;
-        modelName = keyAndModel.model;
-        fallbackApplied = keyAndModel.fallbackApplied;
-        fallbackReason = keyAndModel.fallbackReason;
-        
-        if (fallbackApplied) {
-          logger.info('Applied Gemini streaming model fallback due to rate limits', {
-            originalModel: this.extractModelName(request.model),
-            fallbackModel: modelName,
-            reason: fallbackReason,
-            keyIndex
-          }, requestId, 'gemini-provider');
-        }
-      } else {
-        currentApiKey = this.apiKeys[0];
-      }
-
-      logger.info('Starting optimized Gemini streaming request', {
-        model: modelName,
-        originalModel: this.extractModelName(request.model),
-        messageCount: geminiRequest.contents?.length || 0,
-        strategy: 'enhanced-rate-limit-aware',
-        fallbackApplied,
-        fallbackReason
-      }, requestId, 'gemini-provider');
-      
-      const url = `${this.baseUrl}/v1beta/models/${modelName}:streamGenerateContent?key=${currentApiKey}`;
-      
-      // Create AbortController for timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-      
-      let response: Response;
       try {
-        response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(geminiRequest),
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          throw new Error(`Gemini API error (${response.status}): ${await response.text()}`);
+        // Get a fresh available key and model for each attempt
+        if (this.enhancedRateLimitManager) {
+          const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+
+          currentApiKey = this.apiKeys[keyAndModel.keyIndex];
+          keyIndex = keyAndModel.keyIndex;
+          currentModel = keyAndModel.model;
+          fallbackApplied = keyAndModel.fallbackApplied;
+          fallbackReason = keyAndModel.fallbackReason;
+          
+          if (fallbackApplied) {
+            logger.info('Applied Gemini streaming model fallback due to rate limits', {
+              originalModel: modelName,
+              fallbackModel: currentModel,
+              reason: fallbackReason,
+              keyIndex,
+              attempt: attempt + 1
+            }, requestId, 'gemini-provider');
+          }
+        } else {
+          currentApiKey = this.apiKeys[0];
         }
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for streaming request to ${this.name}`, keyError, requestId, 'gemini-provider');
+        throw keyError;
+      }
+
+      try {
+        let geminiRequest = {
+          ...this.convertToGeminiFormat(request)
+        };
+
+        logger.info('Starting optimized Gemini streaming request', {
+          model: currentModel,
+          originalModel: modelName,
+          messageCount: geminiRequest.contents?.length || 0,
+          strategy: 'enhanced-rate-limit-aware',
+          fallbackApplied,
+          fallbackReason,
+          attempt: attempt + 1
+        }, requestId, 'gemini-provider');
+        
+        const url = `${this.baseUrl}/v1beta/models/${currentModel}:streamGenerateContent?key=${currentApiKey}`;
+        
+        // Create AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
+        
+        let response: Response;
+        try {
+          response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(geminiRequest),
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            const errorText = await response.text();
+            const error = new Error(`Gemini API error (${response.status}): ${errorText}`) as any;
+            error.status = response.status;
+            error.responseText = errorText;
+            throw error;
+          }
+        } catch (error) {
+          clearTimeout(timeoutId);
+          
+          if ((error as any).name === 'AbortError') {
+            throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
+          }
+          throw error;
+        }
+
+        if (!response.body) {
+          throw new Error('No response body for streaming request');
+        }
+
+        // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
+        logger.info('Starting Gemini smart caching strategy', {
+          responseStatus: response.status,
+          strategy: 'cache_tools_stream_text'
+        }, requestId, 'gemini-provider');
+
+        yield* this.processSmartCachedGeminiStream(response.body, request, requestId);
+        
+        // Report success to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          // Success is automatically tracked by the rate limit manager
+        }
+        return; // Success - exit retry loop
+        
       } catch (error) {
-        clearTimeout(timeoutId);
+        lastError = error;
+        const isRateLimited = (error as any)?.status === 429;
+
+        logger.warn(`${this.name} streaming request failed on key`, {
+            key: `***${currentApiKey.slice(-4)}`,
+            model: currentModel,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'gemini-provider');
+
+        // Report error to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          if (isRateLimited) {
+            this.enhancedRateLimitManager.report429Error(keyIndex, currentModel, requestId);
+          }
+        }
         
-        if ((error as any).name === 'AbortError') {
-          throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
         }
-        throw error;
-      }
-
-    if (!response.body) {
-      throw new Error('No response body for streaming request');
-    }
-
-    // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
-    logger.info('Starting Gemini smart caching strategy', {
-      responseStatus: response.status,
-      strategy: 'cache_tools_stream_text'
-    }, requestId, 'gemini-provider');
-
-    try {
-      yield* this.processSmartCachedGeminiStream(response.body, request, requestId);
-      
-      // Report success to enhanced rate limit manager
-      if (this.enhancedRateLimitManager) {
-        // Estimate tokens from stream (will be more accurate in real implementation)
-        const estimatedTokens = 100; // TODO: Calculate from actual stream content
-        // Enhanced Rate Limit Manager automatically tracks usage internally
-      }
-    } catch (error) {
-      throw error;
-    }
-
-    } catch (error) {
-      logger.error(`${this.name} streaming request failed`, error, requestId, 'gemini-provider');
-      
-      // Report error to enhanced rate limit manager
-      if (this.enhancedRateLimitManager && currentApiKey!) {
-        const errorStatus = (error as any)?.status || 0;
-        const errorDetails = (error as any)?.responseText || (error as any)?.message;
-        if (errorStatus === 429) {
-          this.enhancedRateLimitManager.report429Error(keyIndex, modelName, requestId);
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
         }
       }
-      
-      // 🔧 新架构: 不抛出ProviderError，防止Provider级别拉黑
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`${this.name} streaming request failed: ${errorMessage}`);
     }
+    
+    // All retries failed
+    logger.error(`${this.name} streaming request failed after all retries`, lastError, requestId, 'gemini-provider');
+    
+    const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    throw new Error(`${this.name} streaming request failed: ${errorMessage}`);
   }
 
   private extractModelName(model: string): string {
@@ -712,6 +704,95 @@ export class GeminiClient {
     }
     
     await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  /**
+   * Execute request with retry logic and API key rotation
+   */
+  private async executeWithRetry<T>(
+    requestFn: (apiKey: string, model: string) => Promise<T>,
+    modelName: string,
+    operation: string,
+    requestId: string
+  ): Promise<T> {
+    let lastError: any;
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      let actualApiKey: string;
+      let keyIndex = 0;
+      let fallbackApplied = false;
+      let fallbackReason: string | undefined;
+      let currentModel = modelName;
+      
+      try {
+        // Get a fresh available key and model for each attempt
+        if (this.enhancedRateLimitManager) {
+          const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+          
+          actualApiKey = this.apiKeys[keyAndModel.keyIndex];
+          keyIndex = keyAndModel.keyIndex;
+          currentModel = keyAndModel.model;
+          fallbackApplied = keyAndModel.fallbackApplied;
+          fallbackReason = keyAndModel.fallbackReason;
+          
+          if (fallbackApplied) {
+            logger.info('Applied Gemini model fallback due to rate limits', {
+              originalModel: modelName,
+              fallbackModel: currentModel,
+              reason: fallbackReason,
+              keyIndex,
+              attempt: attempt + 1
+            }, requestId, 'gemini-provider');
+          }
+        } else {
+          actualApiKey = this.apiKeys[0];
+        }
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for ${operation}`, keyError, requestId, 'gemini-provider');
+        throw keyError;
+      }
+
+      try {
+        const result = await requestFn(actualApiKey, currentModel);
+        
+        // Report success to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          // Success is automatically tracked by the rate limit manager
+        }
+        
+        return result;
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.status === 429;
+
+        logger.warn(`${operation} failed on key`, {
+            key: `***${actualApiKey.slice(-4)}`,
+            model: currentModel,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'gemini-provider');
+
+        // Report error to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          if (isRateLimited) {
+            this.enhancedRateLimitManager.report429Error(keyIndex, currentModel, requestId);
+          }
+        }
+
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
+        }
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
+      }
+    }
+    throw lastError; // Throw last error if all retries fail
   }
 
   /**

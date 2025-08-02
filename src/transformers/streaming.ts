@@ -5,7 +5,7 @@
 
 import { StreamChunk, MessageTransformer } from './types';
 import { logger } from '@/utils/logger';
-import { PipelineDebugger } from '@/debug/pipeline-debugger';
+import { PipelineDebugger, ToolCallError } from '@/debug/pipeline-debugger';
 
 export interface StreamTransformOptions {
   sourceFormat: 'openai' | 'anthropic';
@@ -227,16 +227,22 @@ export class StreamingTransformer {
               logger.debug('Failed to parse streaming chunk', error, this.requestId);
               
               // Check for tool call errors in the problematic chunk
-              if (data && this.isLikelyToolCallError(data, error)) {
-                logger.error('Tool call parsing error detected', { 
-                  error: (error as Error).message, 
-                  rawChunk: data,
-                  requestId: this.requestId 
-                });
-                
-                // Save raw data for analysis - this will be captured by the debug system
-                this.saveRawStreamDataForAnalysis([data], 'openai-to-anthropic', error);
-              }
+              if (this.isLikelyToolCallError(data, error)) {
+                this.pipelineDebugger.logToolCallError(
+                  new ToolCallError(
+                    'Tool call parsing error detected',
+                    this.requestId,
+                    'openai-to-anthropic',
+                    'streaming-transformer',
+                    this.model,
+                    {
+                      rawChunk: data,
+                      error: (error as Error).message
+                    },
+                    this.options.port || 3456
+                  )
+                );
+                              }
             }
           }
         }
@@ -282,12 +288,15 @@ export class StreamingTransformer {
           yield messageDeltaEvent;
         }
 
-        // 发送message_stop事件以正确结束当前工具调用轮次
-        const messageStopEvent = this.createAnthropicEvent('message_stop', {
-          type: 'message_stop'
-        });
-        if (messageStopEvent) {
-          yield messageStopEvent;
+        // 只有在非tool_use场景才发送message_stop，工具调用需要保持对话开放
+        const actualStopReason = stopReason || 'tool_use';
+        if (actualStopReason !== 'tool_use') {
+          const messageStopEvent = this.createAnthropicEvent('message_stop', {
+            type: 'message_stop'
+          });
+          if (messageStopEvent) {
+            yield messageStopEvent;
+          }
         }
       } else {
         // 非工具调用 - 移除stop signals保持对话开放
@@ -490,22 +499,20 @@ export class StreamingTransformer {
 
   /**
    * Check if raw data contains tool call signatures
+   * Made more strict to avoid false positives from normal text
    */
   private isLikelyToolCallError(rawChunk: string, error: any): boolean {
-    const toolCallPatterns = [
-      // Tool call signatures
-      /\{\s*"type"\s*:\s*"tool_use"/i,
-      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"/i,
-      /\{\s*"function"\s*:/i,
-      // Tool call keywords
-      /tool_call/i,
-      /function_call/i,
-      // JSON structures
-      /\{\s*"id"\s*:\s*"call_/i,
-      /\{\s*"index"\s*:\s*\d+/i
+    const strictToolCallPatterns = [
+      // Only detect actual JSON structures that look like tool calls
+      /\{\s*"type"\s*:\s*"tool_use"\s*,/i,
+      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"\s*,\s*"arguments"/i,
+      /\{\s*"function"\s*:\s*\{[^}]*"name"/i,
+      /\{\s*"id"\s*:\s*"call_[a-zA-Z0-9_-]+"/i,
+      // Only detect in specific contexts that indicate parsing issues
+      /\[\s*\{\s*"index"\s*:\s*\d+\s*,\s*"type"\s*:\s*"function"/i
     ];
 
-    return toolCallPatterns.some(pattern => pattern.test(rawChunk));
+    return strictToolCallPatterns.some(pattern => pattern.test(rawChunk));
   }
 
   /**
@@ -516,21 +523,21 @@ export class StreamingTransformer {
       this.pipelineDebugger.addRawStreamData(this.requestId, rawStreamData.join(''));
       
       // Log the error for analysis
-      this.pipelineDebugger.logToolCallError({
-        requestId: this.requestId,
-        errorType: 'raw_stream_analysis',
-        errorMessage: `Raw stream analysis error: ${error.message}`,
-        rawChunk: rawStreamData.slice(-5).join(''), // Last 5 chunks for context
+      this.pipelineDebugger.logToolCallError(new ToolCallError(
+        `Raw stream analysis error: ${error.message}`,
+        this.requestId,
         transformationStage,
-        timestamp: new Date().toISOString(),
-        provider: 'streaming-transformer',
-        model: this.model,
-        port: this.options.port || 3456
-      }).catch(err => {
+        'streaming-transformer',
+        this.model,
+        {
+          rawChunk: rawStreamData.slice(-5).join(''), // Last 5 chunks for context
+        },
+        this.options.port || 3456
+      )).catch(err => {
         console.error('Failed to log tool call error:', err);
       });
-    } catch (error) {
-      console.error('Failed to prepare raw stream analysis data:', error);
+    } catch (analysisError) {
+      console.error('Failed to prepare raw stream analysis data:', analysisError);
     }
   }
 

@@ -97,6 +97,76 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 - **零硬编码**: 模型名在路由阶段直接替换 `request.model = targetModel`
 - **Round Robin**: 多Provider/多Account负载均衡
 
+## 🔄 Refactor目录 - v3.0插件化架构重构 (Refactor Directory - v3.0 Plugin Architecture)
+
+### 📋 重构目标
+Refactor目录包含Claude Code Router v3.0的完整重构计划，目标是：
+- **🔌 插件化模块架构**: 将现有单体架构重构为完全插件化的模块系统
+- **📡 动态模块注册**: 运行时动态加载和卸载模块，无需重启服务器
+- **♻️ 代码复用最大化**: 消除重复实现，建立共享服务组件
+- **🏭 企业级可维护性**: 支持大规模团队协作开发和独立部署
+
+### 📁 Refactor目录结构
+```
+Refactor/
+├── docs/                         # 架构设计和计划文档
+│   ├── architecture/             # 架构设计文档
+│   │   ├── system-overview.md    # 系统架构总览
+│   │   ├── plugin-system.md      # 插件系统设计
+│   │   ├── service-registry.md   # 服务注册发现
+│   │   ├── event-bus.md          # 事件总线设计
+│   │   └── di-container.md       # 依赖注入容器
+│   └── planning/                # 重构计划和路线图
+│       ├── refactoring-plan.md   # 详细实施计划
+│       ├── migration-guide.md    # 迁移指南
+│       ├── timeline.md           # 时间线规划
+│       └── risk-assessment.md    # 风险评估
+├── src/                          # 重构后的源代码架构
+│   ├── core/                     # 核心系统框架
+│   │   └── plugin-system/        # 插件系统核心
+│   ├── shared/                   # 共享服务组件
+│   │   ├── authentication/       # 统一认证服务
+│   │   ├── transformation/       # 转换引擎服务
+│   │   ├── monitoring/          # 监控告警服务
+│   │   └── configuration/       # 配置管理服务
+│   └── plugins/                 # 插件实现集合
+│       ├── provider/            # Provider插件
+│       ├── input-format/        # 输入格式插件
+│       ├── output-format/       # 输出格式插件
+│       ├── transformer/         # 转换器插件
+│       └── monitoring/          # 监控插件
+├── tests/                       # 测试框架和用例
+├── tools/                       # 开发工具和脚本
+└── examples/                    # 示例代码和演示
+```
+
+### 🚀 重构时间线
+- **项目周期**: 12周（3个月）
+- **开始时间**: 2025-08-05
+- **预计结束**: 2025-10-31
+- **团队规模**: 3-5人
+
+### 🏛️ 核心架构特性
+- **🔌 插件化系统**: 所有功能模块都是可插拔的插件
+- **📡 服务注册发现**: 运行时动态服务发现和依赖管理
+- **🔄 事件驱动通信**: 松耦合的模块间通信机制
+- **🏭 依赖注入容器**: 统一的依赖管理和生命周期控制
+- **♻️ 热插拔支持**: 运行时模块更新和配置重载
+
+### 📊 预期收益
+- **代码质量**: 代码重复率从40%降低到15%以下
+- **开发效率**: 新Provider开发时间从2周减少到3-4天
+- **系统性能**: 内存使用降低15%，并发处理能力提升20%
+- **可维护性**: 模块独立性达到90%，故障恢复时间减少60%
+
+### 📚 相关文档
+- **系统架构总览**: [Refactor/docs/architecture/system-overview.md](Refactor/docs/architecture/system-overview.md)
+- **重构实施计划**: [Refactor/docs/planning/refactoring-plan.md](Refactor/docs/planning/refactoring-plan.md)
+- **插件系统设计**: [Refactor/docs/architecture/plugin-system.md](Refactor/docs/architecture/plugin-system.md)
+
+### ⚠️ 重要提醒
+Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍使用v2.7.0的四层架构。重构工作将按计划分阶段实施，确保向后兼容性和系统稳定性。
+
 ## 📋 MANDATORY RULE CONSULTATION - 强制规则查阅 (REQUIRED READING)
 
 ⚠️ **执行指令**: AI必须在每次相关操作前查阅对应规则文件，严禁跳过！
@@ -116,6 +186,7 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 | **架构变更** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) + [📁 记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 变更后记忆保存 | **拒绝无记忆变更** |
 | **问题疑惑** | [📁 项目记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 相关经验查阅 | **强制记忆优先** |
 | **长任务执行** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) | 任务记忆管理 | **要求记忆跟踪** |
+| **服务管理** | [📄 服务管理重要规则](#️-服务管理重要规则-critical-service-management-rules) | rcc start/code区分、配置只读检查 | **阻止破坏性操作** |
 
 ### 🚫 违规处理程序 (VIOLATION HANDLING)
 1. **发现违规** → 立即停止当前操作
@@ -192,26 +263,90 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 | **5506** | OpenAI Compatible | LM Studio | `config-openai-lmstudio-5506.json` | qwen3-30b, glm-4.5-air |
 | **5507** | OpenAI Compatible | ModelScope | `config-openai-modelscope-5507.json` | Qwen3-Coder-480B |
 | **5508** | OpenAI Compatible | ShuaiHong | `config-openai-shuaihong-5508.json` | claude-4-sonnet, gemini-2.5-pro |
+| **5509** | OpenAI Compatible | ModelScope GLM | `config-openai-modelscope-glm-5509.json` | ZhipuAI/GLM-4.5 |
 
 #### 🚀 调试使用示例
 ```bash
+# 启动服务器的标准格式
+rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+
+# 启动Claude Code连接到特定端口
+rcc code --port 5508
+
+# 具体启动命令示例:
 # 启动CodeWhisperer主账号服务 (端口5501)
-./rcc start config-codewhisperer-primary-5501.json
+rcc start ~/.route-claude-code/config/single-provider/config-codewhisperer-primary-5501.json --debug
 
 # 启动Gemini服务 (端口5502) 
-./rcc start config-google-gemini-5502.json
+rcc start ~/.route-claude-code/config/single-provider/config-google-gemini-5502.json --debug
 
-# 启动ModelScope服务 (端口5507)
-./rcc start config-openai-modelscope-5507.json
+# 启动ModelScope GLM服务 (端口5509)
+rcc start ~/.route-claude-code/config/single-provider/config-openai-modelscope-glm-5509.json --debug
+
+# 启动ShuaiHong服务 (端口5508)
+rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
 
 # 检查特定端口服务状态
 curl http://localhost:5502/health
+
+# 连接Claude Code到特定端口进行交互
+rcc code --port 5509  # 连接到ModelScope GLM服务
+rcc code --port 5508  # 连接到ShuaiHong服务
 ```
 
 #### 📁 配置文件位置
 - **单provider配置**: `~/.route-claude-code/config/single-provider/`
 - **多provider配置**: `~/.route-claude-code/config/load-balancing/`
 - **生产环境配置**: `~/.route-claude-code/config/production-ready/`
+
+#### ⚠️ 服务管理重要规则 (CRITICAL SERVICE MANAGEMENT RULES)
+
+**🚨 强制执行服务管理约束 - 违反将导致系统不稳定**
+
+##### 1. **服务类型区分**
+- **`rcc start`服务**: API服务器，可以停止/重启/管理
+- **`rcc code`服务**: Claude Code客户端会话，**绝对不可杀掉**
+
+##### 2. **服务操作权限**
+```bash
+# ✅ 允许的操作 - 可以管理API服务器
+pkill -f "rcc start"           # 只杀掉API服务器
+ps aux | grep "rcc start"      # 查看API服务器状态
+
+# ❌ 禁止的操作 - 不可杀掉客户端会话  
+pkill -f "rcc code"           # 绝对禁止！会断掉用户会话
+kill <rcc code的PID>          # 绝对禁止！
+```
+
+##### 3. **配置文件管理约束**
+- **🔒 只读原则**: `~/.route-claude-code/config/single-provider/`下的配置文件为只读
+- **🚫 禁止修改**: 不允许修改配置文件中的端口设置
+- **🚫 禁止创建**: 不允许创建新的配置文件
+- **✅ 使用现有**: 只能使用文件夹内现有的配置文件启动服务
+
+##### 4. **端口管理规则**
+- **端口固定**: 每个配置文件的端口由文件名和内容预定义
+- **不可变更**: 配置文件中的端口设置不可修改
+- **冲突处理**: 如端口被占用，停止冲突的`rcc start`服务，不修改配置
+
+##### 5. **服务启动标准流程**
+```bash
+# 步骤1: 检查现有API服务器(只检查rcc start)
+ps aux | grep "rcc start" | grep -v grep
+
+# 步骤2: 停止冲突的API服务器(如果需要)
+pkill -f "rcc start.*5508"  # 只停止特定端口的API服务器
+
+# 步骤3: 使用现有配置启动服务
+rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+
+# 注意: 绝不触碰 rcc code 进程！
+```
+
+##### 6. **调试和测试约束**
+- **测试隔离**: 调试单个provider时使用single-provider配置
+- **配置不变**: 测试过程中不修改任何配置文件
+- **会话保护**: 调试期间保护用户的`rcc code`会话不被中断
 
 ## 🔧 细菌式编程原则 (Bacterial Programming)
 
@@ -250,6 +385,7 @@ curl http://localhost:5502/health
 - **稳定性大幅提升**: 工具调用成功率提升至99.9%+
 
 ### 近期重大修复
+- **2025-08-02**: 修复并发流式响应的竞态条件问题，通过引入`hasToolUse`状态锁存器，确保非阻塞模式下工具调用的稳定性和可靠性。
 - **2025-08-02**: v2.7.0 企业级错误监控系统和架构统一优化
 - **2025-07-28**: 完整路由架构重构，消除硬编码模型映射
 - **2025-07-27**: 完全缓冲式解析，彻底解决工具调用问题

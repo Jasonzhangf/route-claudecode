@@ -40,17 +40,23 @@ interface StandardizedError {
   requestId: string;
 }
 
-interface ToolCallErrorData {
-  requestId: string;
-  errorType: 'tool_call_parsing' | 'tool_call_conversion' | 'tool_call_text_area' | 'raw_stream_analysis';
-  errorMessage: string;
-  rawChunk: string;
-  parsedData?: any;
-  transformationStage: string;
-  timestamp: string;
-  provider: string;
-  model: string;
+
+export class ToolCallError extends Error {
   port: number;
+
+  constructor(
+    public errorMessage: string,
+    public requestId: string,
+    public transformationStage: string,
+    public provider: string,
+    public model: string,
+    public context: any,
+    port: number
+  ) {
+    super(errorMessage);
+    this.name = 'ToolCallError';
+    this.port = port;
+  }
 }
 
 export class PipelineDebugger {
@@ -265,17 +271,16 @@ export class PipelineDebugger {
    * Capture and log tool call conversion errors
    * Detects when tool calls appear in text areas or conversion fails
    */
-  async logToolCallError(errorData: ToolCallErrorData): Promise<void> {
+  async logToolCallError(errorData: ToolCallError): Promise<void> {
     try {
       await this.ensureRotationDirectory();
       
       const errorEntry = {
         timestamp: new Date().toISOString(),
         requestId: errorData.requestId,
-        errorType: errorData.errorType,
+        errorType: errorData.name,
         errorMessage: errorData.errorMessage,
-        rawChunk: errorData.rawChunk,
-        parsedData: errorData.parsedData,
+        context: errorData.context,
         transformationStage: errorData.transformationStage,
         provider: errorData.provider,
         model: errorData.model,
@@ -286,11 +291,7 @@ export class PipelineDebugger {
       const errorLine = JSON.stringify(errorEntry) + '\n';
       await fs.appendFile(this.toolCallErrorsLogPath, errorLine, 'utf-8');
       
-      // Also write individual error file to rotation directory
-      const filename = `tool-call-error-${errorData.requestId}-${Date.now()}.json`;
-      const filepath = path.join(this.currentRotationDir, filename);
-      await fs.writeFile(filepath, JSON.stringify(errorEntry, null, 2), 'utf-8');
-      
+            
       // Tool call error logged silently
       
     } catch (error) {
@@ -351,34 +352,33 @@ export class PipelineDebugger {
 
   /**
    * Detect tool call errors in text content
+   * Modified to be less strict and avoid false positives from normal text
    */
   detectToolCallError(text: string, requestId: string, transformationStage: string, provider: string, model: string): boolean {
-    const toolCallPatterns = [
-      // Tool call signatures
-      /\{\s*"type"\s*:\s*"tool_use"/i,
-      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"/i,
-      /\{\s*"function"\s*:/i,
-      // Tool call keywords that shouldn't appear in regular text
-      /tool_call/i,
-      /function_call/i,
-      // JSON structures that look like tool calls
-      /\{\s*"id"\s*:\s*"call_/i,
-      /\{\s*"index"\s*:\s*\d+/i
+    // Only detect actual JSON tool call structures, not mentions in text
+    const strictToolCallPatterns = [
+      // Only detect actual JSON structures that look like tool calls
+      /\{\s*"type"\s*:\s*"tool_use"\s*,/i,
+      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"\s*,\s*"arguments"/i,
+      /\{\s*"function"\s*:\s*\{[^}]*"name"/i,
+      /\{\s*"id"\s*:\s*"call_[a-zA-Z0-9_-]+"/i,
+      // Only detect in specific contexts that indicate parsing issues
+      /\[\s*\{\s*"index"\s*:\s*\d+\s*,\s*"type"\s*:\s*"function"/i
     ];
 
-    for (const pattern of toolCallPatterns) {
+    for (const pattern of strictToolCallPatterns) {
       if (pattern.test(text)) {
-        this.logToolCallError({
-          requestId,
-          errorType: 'tool_call_text_area',
-          errorMessage: `Tool call detected in text area: ${pattern.toString()}`,
-          rawChunk: text,
-          transformationStage,
-          timestamp: new Date().toISOString(),
-          provider,
-          model,
-          port: this.port
-        }).catch(error => {
+        this.logToolCallError(
+          new ToolCallError(
+            `Actual tool call structure detected in text area: ${pattern.toString()}`,
+            requestId,
+            transformationStage,
+            provider,
+            model,
+            { rawChunk: text },
+            this.port
+          )
+        ).catch(error => {
           console.error('Failed to log tool call error:', error);
         });
         return true;

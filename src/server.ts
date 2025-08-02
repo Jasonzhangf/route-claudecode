@@ -475,7 +475,11 @@ export class RouterServer {
     });
 
     // Main messages endpoint (Anthropic API compatible)
-    this.fastify.post('/v1/messages', async (request, reply) => {
+        this.fastify.post('/v1/messages', async (request: FastifyRequest, reply: FastifyReply) => {
+      return this.handleMessagesRequest(request, reply);
+    });
+
+    this.fastify.post('/v1/chat/completions', async (request: FastifyRequest, reply: FastifyReply) => {
       return this.handleMessagesRequest(request, reply);
     });
 
@@ -831,6 +835,7 @@ export class RouterServer {
 
       // Generate message ID
       const messageId = `msg_${Date.now()}`;
+      let hasToolUse = false;
 
       // Send message start event
       // CRITICAL: Use original model name for streaming response, not internal mapped name
@@ -911,6 +916,7 @@ export class RouterServer {
           const isToolUse = stopReason === 'tool_use';
           
           if (isToolUse) {
+            hasToolUse = true;
             // 工具调用完成 - 保留stop_reason以触发继续对话
             this.sendSSEEvent(reply, chunk.event, chunk.data);
             this.instanceLogger.debug(`Preserved tool_use stop_reason for continuation: ${stopReason}`, {}, requestId, 'server');
@@ -927,11 +933,7 @@ export class RouterServer {
           }
         } else if (chunk.event === 'message_stop') {
           // message_stop事件处理：只有工具调用时才发送
-          // 检查前面是否有tool_use stop_reason来判断是否应该发送message_stop
-          // 这里我们简化处理：如果有工具调用相关的流，允许message_stop事件
-          const shouldAllowMessageStop = true; // 简化：总是允许message_stop，让Claude Code决定是否继续
-          
-          if (shouldAllowMessageStop) {
+          if (hasToolUse) {
             this.sendSSEEvent(reply, chunk.event, chunk.data);
             this.instanceLogger.debug('Allowed message_stop event for proper tool calling workflow', {}, requestId, 'server');
           } else {

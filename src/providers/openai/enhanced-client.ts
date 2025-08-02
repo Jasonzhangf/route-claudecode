@@ -163,7 +163,16 @@ export class EnhancedOpenAIClient implements Provider {
     let lastError: any;
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-      const currentApiKey = this.getCurrentApiKey(requestId);
+      let currentApiKey: string;
+      
+      try {
+        // Get a fresh available key for each attempt (critical for 429 rotation)
+        currentApiKey = this.getCurrentApiKey(requestId);
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for ${operation}`, keyError, requestId, 'provider');
+        throw keyError;
+      }
 
       try {
         const result = await requestFn(currentApiKey);
@@ -181,12 +190,17 @@ export class EnhancedOpenAIClient implements Provider {
             error: error instanceof Error ? error.message : String(error)
         }, requestId, 'provider');
 
+        // Report error and trigger cooldown/blacklisting for this key
         this.reportApiKeyError(currentApiKey, isRateLimited, requestId);
 
         if (!this.isRetryableError(error)) {
           break; // Non-retryable error, break immediately
         }
-        // For retryable errors, the loop will continue and get the next available key.
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
       }
     }
     throw lastError; // Throw last error if all retries fail
@@ -267,79 +281,124 @@ export class EnhancedOpenAIClient implements Provider {
    */
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
-    let currentApiKey = this.getCurrentApiKey(requestId);
+    let lastError: any;
 
-    try {
-      logger.trace(requestId, 'provider', `Sending streaming request to ${this.name}`, {
-        model: request.model,
-        apiKey: `***${currentApiKey.slice(-4)}`
-      });
-
-      const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
-      captureRequest(this.name, request.model, openaiRequest, requestId);
-
-      const headers: Record<string, string> = {};
-      if (this.config.authentication.type !== 'none' && currentApiKey) {
-        headers['Authorization'] = `Bearer ${currentApiKey}`;
-      }
-
-      const response = await this.httpClient.post('', openaiRequest, {
-        responseType: 'stream',
-        headers
-      });
-
-      if (response.status < 200 || response.status >= 300) {
-        // Report error to rotation manager
-        const isRateLimit = response.status === 429;
-        this.reportApiKeyError(currentApiKey, isRateLimit, requestId);
-        
-        throw new ProviderError(
-          `${this.name} API returned status ${response.status}`,
-          this.name,
-          response.status
-        );
-      }
-
-      // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
-      logger.debug('Starting smart caching strategy for OpenAI streaming', {
-        provider: this.name,
-        strategy: 'smart_cache_tools_only'
-      }, requestId, 'provider');
+    // Retry streaming requests with key rotation for initial connection failures
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      let currentApiKey: string;
       
-      yield* this.processSmartCachedStream(response.data, request, requestId);
-
-      // Report success to rotation manager
-      this.reportApiKeySuccess(currentApiKey!, requestId);
-      
-    } catch (error) {
-      // Capture error data
       try {
+        // Get a fresh available key for each attempt
+        currentApiKey = this.getCurrentApiKey(requestId);
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for streaming request to ${this.name}`, keyError, requestId, 'provider');
+        throw keyError;
+      }
+
+      try {
+        logger.trace(requestId, 'provider', `Sending streaming request to ${this.name}`, {
+          model: request.model,
+          apiKey: `***${currentApiKey.slice(-4)}`,
+          attempt: attempt + 1
+        });
+
         const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
-        captureError(this.name, request.model, openaiRequest, error, requestId);
-      } catch (captureError) {
-        logger.error('Failed to capture streaming error data', captureError, requestId, 'provider');
+        captureRequest(this.name, request.model, openaiRequest, requestId);
+
+        const headers: Record<string, string> = {};
+        if (this.config.authentication.type !== 'none' && currentApiKey) {
+          headers['Authorization'] = `Bearer ${currentApiKey}`;
+        }
+
+        const response = await this.httpClient.post('', openaiRequest, {
+          responseType: 'stream',
+          headers
+        });
+
+        if (response.status < 200 || response.status >= 300) {
+          // Report error to rotation manager
+          const isRateLimit = response.status === 429;
+          this.reportApiKeyError(currentApiKey, isRateLimit, requestId);
+          
+          const error = new ProviderError(
+            `${this.name} API returned status ${response.status}`,
+            this.name,
+            response.status
+          );
+          
+          if (!this.isRetryableError(error)) {
+            throw error; // Non-retryable error
+          }
+          
+          lastError = error;
+          if (attempt < this.maxRetries - 1) {
+            await this.waitForRetry(attempt, isRateLimit);
+            continue; // Retry with next available key
+          }
+          throw error; // Last attempt failed
+        }
+
+        // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
+        logger.debug('Starting smart caching strategy for OpenAI streaming', {
+          provider: this.name,
+          strategy: 'smart_cache_tools_only'
+        }, requestId, 'provider');
+        
+        yield* this.processSmartCachedStream(response.data, request, requestId);
+
+        // Report success to rotation manager
+        this.reportApiKeySuccess(currentApiKey, requestId);
+        return; // Success - exit retry loop
+        
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.response?.status === 429;
+
+        logger.warn(`${this.name} streaming request failed on key`, {
+            key: `***${currentApiKey.slice(-4)}`,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'provider');
+
+        // Report error to rotation manager
+        this.reportApiKeyError(currentApiKey, isRateLimited, requestId);
+        
+        // Capture error data
+        try {
+          const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
+          captureError(this.name, request.model, openaiRequest, error, requestId);
+        } catch (captureError) {
+          logger.error('Failed to capture streaming error data', captureError, requestId, 'provider');
+        }
+        
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
+        }
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
       }
-      
-      logger.error(`${this.name} smart cached streaming request failed`, error, requestId, 'provider');
-      
-      // Report error to rotation manager if we have a current API key
-      if (currentApiKey!) {
-        const isRateLimit = (error as any)?.response?.status === 429;
-        this.reportApiKeyError(currentApiKey!, isRateLimit, requestId);
-      }
-      
-      if (error instanceof ProviderError) {
-        throw error;
-      }
-      
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new ProviderError(
-        `${this.name} streaming request failed: ${errorMessage}`,
-        this.name,
-        500,
-        error
-      );
     }
+    
+    // All retries failed
+    logger.error(`${this.name} streaming request failed after all retries`, lastError, requestId, 'provider');
+    
+    if (lastError instanceof ProviderError) {
+      throw lastError;
+    }
+    
+    const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    throw new ProviderError(
+      `${this.name} streaming request failed: ${errorMessage}`,
+      this.name,
+      500,
+      lastError
+    );
   }
 
   /**
@@ -456,7 +515,6 @@ export class EnhancedOpenAIClient implements Provider {
                 }
               }
 
-              // Handle tool calls - CACHE FOR PARSING
               if (choice.delta.tool_calls) {
                 // Close text content block if open
                 if (hasContentBlock && !isInToolCall) {
@@ -516,7 +574,6 @@ export class EnhancedOpenAIClient implements Provider {
                 }
               }
 
-              // Handle finish reason - 智能处理stop reason
               if (choice.finish_reason) {
                 // Close text content block if open
                 if (hasContentBlock && !isInToolCall) {
@@ -553,13 +610,6 @@ export class EnhancedOpenAIClient implements Provider {
                       usage: { output_tokens: outputTokens }
                     }
                   };
-
-                  // 发送message_stop事件以正确结束当前工具调用轮次
-                  yield {
-                    event: 'message_stop',
-                    data: { type: 'message_stop' }
-                  };
-
                   logger.info('Smart cached streaming completed with tool_use stop_reason for continuation', {
                     outputTokens,
                     toolCalls: toolCallBuffer.size,
@@ -579,7 +629,6 @@ export class EnhancedOpenAIClient implements Provider {
                       usage: { output_tokens: outputTokens }
                     }
                   };
-
                   logger.info('Smart cached streaming completed (no stop signals to keep conversation alive)', {
                     outputTokens,
                     toolCalls: toolCallBuffer.size,
@@ -587,6 +636,13 @@ export class EnhancedOpenAIClient implements Provider {
                     finishReason: choice.finish_reason
                   }, requestId, 'provider');
                 }
+
+                // ALWAYS send message_stop to properly close the streaming session on the client side
+                yield {
+                  event: 'message_stop',
+                  data: { type: 'message_stop' }
+                };
+
                 return;
               }
 
@@ -635,11 +691,8 @@ export class EnhancedOpenAIClient implements Provider {
             }
           };
 
-          // 发送message_stop事件以正确结束当前工具调用轮次
-          yield {
-            event: 'message_stop',
-            data: { type: 'message_stop' }
-          };
+          // 注意：不发送message_stop，让多轮对话可以继续
+          // message_stop会终止整个对话会话，而tool_use应该暂停等待工具结果
 
           logger.info('Smart cached streaming completed with inferred tool_use stop_reason', {
             outputTokens,

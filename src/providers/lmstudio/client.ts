@@ -3,6 +3,7 @@
  * OpenAI-compatible local server implementation with enhanced tool call support
  */
 
+import { BaseRequest } from '@/types';
 import { EnhancedOpenAIClient } from '../openai';
 import { ProviderConfig } from '@/types';
 import { logger } from '@/utils/logger';
@@ -12,15 +13,15 @@ export class LMStudioClient extends EnhancedOpenAIClient {
     // Update the endpoint to the standard LM Studio endpoint if not already set
     const lmStudioConfig = { ...config };
     if (!lmStudioConfig.endpoint) {
-      lmStudioConfig.endpoint = 'http://localhost:1234/v1';
+      lmStudioConfig.endpoint = 'http://localhost:1234/v1/chat/completions';
+    } else if (lmStudioConfig.endpoint.endsWith('/v1')) {
+      lmStudioConfig.endpoint = `${lmStudioConfig.endpoint}/chat/completions`;
     }
     
     // For LM Studio, we don't need authentication (type: "none")
-    if (!lmStudioConfig.authentication) {
-      lmStudioConfig.authentication = {
-        type: 'none'
-      };
-    }
+    lmStudioConfig.authentication = {
+      type: 'none'
+    };
     
     super(lmStudioConfig, providerId);
   }
@@ -42,7 +43,7 @@ export class LMStudioClient extends EnhancedOpenAIClient {
   /**
    * Override sendRequest to ensure proper session state handling
    */
-  async sendRequest(request: any): Promise<any> {
+  async sendRequest(request: BaseRequest): Promise<any> {
     // Ensure tools are properly formatted for LM Studio
     if (request.metadata?.tools) {
       // LM Studio expects tools in OpenAI format
@@ -55,7 +56,7 @@ export class LMStudioClient extends EnhancedOpenAIClient {
   /**
    * Override sendStreamRequest to ensure proper session state handling
    */
-  async *sendStreamRequest(request: any): AsyncIterable<any> {
+  async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     // Ensure tools are properly formatted for LM Studio
     if (request.metadata?.tools) {
       // LM Studio expects tools in OpenAI format

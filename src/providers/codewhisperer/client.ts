@@ -1,453 +1,485 @@
 /**
- * CodeWhisperer HTTP Client - 重构优化版本
- * 基于demo2兼容性设计，消除硬编码和优化性能
+ * CodeWhisperer 主客户端 - 重构版本
+ * 支持动态切换缓冲式和实时流式实现
  * 项目所有者: Jason Zhang
  */
 
-import axios, { AxiosResponse } from 'axios';
 import { logger } from '@/utils/logger';
-import { CodeWhispererAuth } from './auth';
-import { CodeWhispererConverter } from './converter';
-import { CodeWhispererParser } from './parser';
-import {
-  AnthropicRequest,
-  CodeWhispererRequest,
-  SSEEvent,
-  CodeWhispererConfig,
-  RequestValidationResult,
-  createCodeWhispererConfig,
-} from './types';
+import { ICodeWhispererClient } from './client-interface';
+import { CodeWhispererClientFactory } from './client-factory';
+import { CodeWhispererStreamingConfigManager } from './config/streaming-config';
+import { CodeWhispererStreamingConfig } from './config/streaming-config';
+import { CodeWhispererPerformanceMetrics } from './config/performance-metrics';
+import { AnthropicRequest } from './types';
 
 export class CodeWhispererClient {
-  private readonly auth: CodeWhispererAuth;
-  private readonly converter: CodeWhispererConverter;
-  private readonly parser: CodeWhispererParser;
-  private readonly config: CodeWhispererConfig;
-  private readonly httpTimeout: number;
+  private client: ICodeWhispererClient;
+  private configManager: CodeWhispererStreamingConfigManager;
+  private metrics: CodeWhispererPerformanceMetrics;
+  private configChangeListener: (config: CodeWhispererStreamingConfig) => void = () => {}; // 默认空函数
+  private failureCount: number = 0;
+  private readonly maxFailuresBeforeFallback: number = 3;
 
-  constructor(config?: CodeWhispererConfig) {
-    this.config = config || createCodeWhispererConfig();
-    this.auth = CodeWhispererAuth.getInstance();
-    this.converter = new CodeWhispererConverter(this.config);
-    this.parser = new CodeWhispererParser();
-    this.httpTimeout = 60000; // 60秒超时
-
-    logger.debug('CodeWhispererClient初始化完成', {
-      endpoint: this.config.endpoint,
-      timeout: this.httpTimeout,
+  constructor(config?: CodeWhispererStreamingConfig) {
+    this.configManager = CodeWhispererStreamingConfigManager.getInstance();
+    
+    // 如果提供了配置，更新管理器
+    if (config) {
+      this.configManager.updateConfig(config);
+    }
+    
+    const currentConfig = this.configManager.getConfig();
+    this.metrics = new CodeWhispererPerformanceMetrics(currentConfig);
+    this.client = CodeWhispererClientFactory.createClient(currentConfig);
+    
+    // 设置配置变更监听器
+    this.setupConfigChangeListener();
+    
+    logger.info('CodeWhisperer主客户端初始化完成', {
+      implementation: currentConfig.implementation,
+      config: {
+        implementation: currentConfig.implementation,
+        realtimeOptions: currentConfig.realtimeOptions,
+        performanceMetrics: currentConfig.performanceMetrics,
+        fallback: currentConfig.fallback,
+      },
+      clientType: this.client.getClientType(),
+      healthCheck: typeof this.client.healthCheck === 'function' ? 'available' : 'unavailable',
     });
   }
 
   /**
-   * 处理流式请求 - 重构优化版本
+   * 处理流式请求 - 统一接口
    */
   public async handleStreamRequest(
     anthropicReq: AnthropicRequest,
     writeSSE: (event: string, data: any) => void,
     onError: (message: string, error: Error) => void
   ): Promise<void> {
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const requestId = `main_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const startTime = Date.now();
     
     try {
-      const requestInfo = this.createRequestInfo(anthropicReq, requestId);
-      logger.info('开始处理流式请求', requestInfo);
+      const config = this.configManager.getConfig();
+      
+      logger.info('CodeWhisperer主客户端开始处理流式请求', {
+        requestId,
+        implementation: config.implementation,
+        clientType: this.client.getClientType(),
+        model: anthropicReq.model,
+        messageCount: anthropicReq.messages.length,
+        hasTools: !!(anthropicReq.tools && anthropicReq.tools.length > 0),
+      });
 
-      // 获取认证信息
-      const { accessToken, profileArn } = await this.getAuthInfo();
-
-      // 构建和验证请求
-      const cwReq = await this.buildAndValidateRequest(anthropicReq, profileArn);
-      const cwReqBody = JSON.stringify(cwReq);
-
-      // 发送HTTP请求
-      const responseBuffer = await this.sendHttpRequest(accessToken, cwReqBody, requestId);
-      // 处理响应和事件流
-      await this.processStreamResponse(responseBuffer, anthropicReq, writeSSE, requestId);
+      // 执行请求
+      await this.client.handleStreamRequest(anthropicReq, writeSSE, onError);
+      
+      // 重置失败计数
+      this.failureCount = 0;
+      
+      const duration = Date.now() - startTime;
+      logger.info('CodeWhisperer流式请求处理完成', {
+        requestId,
+        duration,
+        implementation: config.implementation,
+        success: true,
+      });
 
     } catch (error) {
-      await this.handleStreamError(error, onError);
-    }
-  }
+      this.failureCount++;
+      const duration = Date.now() - startTime;
+      const config = this.configManager.getConfig();
+      
+      logger.error('CodeWhisperer流式请求处理失败', {
+        requestId,
+        duration,
+        implementation: config.implementation,
+        clientType: this.client.getClientType(),
+        failureCount: this.failureCount,
+        maxFailuresBeforeFallback: this.maxFailuresBeforeFallback,
+        error: error instanceof Error ? error.message : String(error),
+      });
 
-  /**
-   * 获取认证信息
-   */
-  private async getAuthInfo(): Promise<{ accessToken: string; profileArn: string }> {
-    const [accessToken, profileArn] = await Promise.all([
-      this.auth.getToken(),
-      this.auth.getProfileArn()
-    ]);
-    return { accessToken, profileArn };
-  }
-
-  /**
-   * 构建和验证请求
-   */
-  private async buildAndValidateRequest(anthropicReq: AnthropicRequest, profileArn: string): Promise<CodeWhispererRequest> {
-    const cwReq = await this.converter.buildCodeWhispererRequest(anthropicReq, profileArn);
-    
-    const validation = this.converter.validateRequest(cwReq);
-    if (!validation.isValid) {
-      throw new Error(`请求格式验证失败: ${validation.errors.join(', ')}`);
-    }
-    
-    if (validation.warnings.length > 0) {
-      logger.warn('请求验证警告', { warnings: validation.warnings });
-    }
-    
-    return cwReq;
-  }
-
-  /**
-   * 发送HTTP请求
-   */
-  private async sendHttpRequest(accessToken: string, requestBody: string, requestId: string): Promise<Buffer> {
-    logger.debug('发送CodeWhisperer请求', {
-      requestId,
-      requestSize: requestBody.length,
-      endpoint: this.config.endpoint,
-    });
-
-    const response = await axios.post<ArrayBuffer>(
-      this.config.endpoint,
-      requestBody,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
-        },
-        responseType: 'arraybuffer',
-        timeout: this.httpTimeout,
+      // 检查是否需要故障转移
+      if (this.shouldFallback(config)) {
+        await this.handleFallback(error, onError);
+      } else {
+        // 直接调用错误处理
+        onError(
+          `CodeWhisperer请求失败: ${error instanceof Error ? error.message : String(error)}`,
+          error as Error
+        );
       }
-    );
-
-    if (response.status !== 200) {
-      throw new Error(`HTTP请求失败，状态码: ${response.status}`);
-    }
-
-    const responseBuffer = Buffer.from(response.data);
-    logger.debug('收到CodeWhisperer响应', {
-      requestId,
-      responseSize: responseBuffer.length,
-    });
-
-    return responseBuffer;
-  }
-
-  /**
-   * 处理流式响应
-   */
-  private async processStreamResponse(
-    responseBuffer: Buffer,
-    anthropicReq: AnthropicRequest,
-    writeSSE: (event: string, data: any) => void,
-    requestId: string
-  ): Promise<void> {
-    // 解析响应事件
-    const events = this.parser.parseEvents(responseBuffer);
-
-    if (events.length === 0) {
-      throw new Error('没有解析到任何事件');
-    }
-
-    // 生成消息ID
-    const messageId = `msg_${Date.now()}`;
-
-    // 发送流式事件序列
-    this.sendInitialEvents(messageId, anthropicReq, writeSSE);
-    const outputTokens = await this.sendParsedEvents(events, writeSSE);
-    this.sendFinalEvents(outputTokens, writeSSE);
-
-    logger.info('流式请求处理完成', {
-      requestId,
-      eventCount: events.length,
-      outputTokens,
-    });
-  }
-
-  /**
-   * 发送初始事件
-   */
-  private sendInitialEvents(
-    messageId: string,
-    anthropicReq: AnthropicRequest,
-    writeSSE: (event: string, data: any) => void
-  ): void {
-    // 发送开始事件
-    const messageStart = {
-      type: 'message_start',
-      message: {
-        id: messageId,
-        type: 'message',
-        role: 'assistant',
-        content: [],
-        model: anthropicReq.model,
-        stop_reason: null,
-        stop_sequence: null,
-        usage: {
-          input_tokens: Math.max(1, Math.floor(this.calculateMessageLength(anthropicReq) / 4)),
-          output_tokens: 1,
-        },
-      },
-    };
-    writeSSE('message_start', messageStart);
-
-    // 发送ping事件
-    writeSSE('ping', { type: 'ping' });
-
-    // 发送content_block_start事件
-    const contentBlockStart = {
-      content_block: {
-        text: '',
-        type: 'text',
-      },
-      index: 0,
-      type: 'content_block_start',
-    };
-    writeSSE('content_block_start', contentBlockStart);
-  }
-
-  /**
-   * 发送解析的事件
-   */
-  private async sendParsedEvents(
-    events: SSEEvent[],
-    writeSSE: (event: string, data: any) => void
-  ): Promise<number> {
-    let outputTokens = 0;
-    
-    for (const event of events) {
-      writeSSE(event.event, event.data);
-
-      // 计算输出token数量
-      if (event.event === 'content_block_delta' && event.data?.delta?.text) {
-        outputTokens += Math.floor(event.data.delta.text.length / 4);
-      }
-
-      // 模拟延时（减少延时以提高性能）
-      await this.sleep(Math.random() * 100); // 从300ms降到100ms
-    }
-
-    return outputTokens;
-  }
-
-  /**
-   * 发送结束事件
-   */
-  private sendFinalEvents(outputTokens: number, writeSSE: (event: string, data: any) => void): void {
-    writeSSE('content_block_stop', {
-      index: 0,
-      type: 'content_block_stop',
-    });
-
-    writeSSE('message_delta', {
-      type: 'message_delta',
-      delta: {
-        stop_reason: 'end_turn',
-        stop_sequence: null,
-      },
-      usage: {
-        output_tokens: Math.max(1, outputTokens),
-      },
-    });
-
-    writeSSE('message_stop', {
-      type: 'message_stop',
-    });
-  }
-
-  /**
-   * 处理流式请求错误
-   */
-  private async handleStreamError(error: any, onError: (message: string, error: Error) => void): Promise<void> {
-    logger.error('流式请求处理失败', error);
-    // 处理403错误（token过期）
-    if (axios.isAxiosError(error) && error.response?.status === 403) {
-      logger.info('检测到403错误，尝试刷新token');
-      try {
-        await this.auth.refreshToken();
-        onError('Token已刷新，请重试', new Error('Token refreshed'));
-      } catch (refreshError) {
-        onError('Token刷新失败', refreshError as Error);
-      }
-    } else {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      onError(`CodeWhisperer请求失败: ${errorMessage}`, error as Error);
     }
   }
 
   /**
-   * 处理非流式请求 - 重构优化版本
+   * 处理非流式请求 - 统一接口
    */
   public async handleNonStreamRequest(anthropicReq: AnthropicRequest): Promise<any> {
-    const requestId = `nonstream_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const requestId = `main_nonstream_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const startTime = Date.now();
     
     try {
-      const requestInfo = this.createRequestInfo(anthropicReq, requestId);
-      logger.info('开始处理非流式请求', requestInfo);
-
-      // 获取认证信息
-      const { accessToken, profileArn } = await this.getAuthInfo();
-
-      // 构建和验证请求
-      const cwReq = await this.buildAndValidateRequest(anthropicReq, profileArn);
-      const cwReqBody = JSON.stringify(cwReq);
-
-      // 发送HTTP请求
-      const response = await this.sendNonStreamHttpRequest(accessToken, cwReqBody, requestId);
+      const config = this.configManager.getConfig();
       
-      // 处理响应
-      return await this.processNonStreamResponse(response, anthropicReq, requestId);
+      logger.info('CodeWhisperer主客户端开始处理非流式请求', {
+        requestId,
+        implementation: config.implementation,
+        clientType: this.client.getClientType(),
+        model: anthropicReq.model,
+        messageCount: anthropicReq.messages.length,
+      });
+
+      // 执行请求
+      const result = await this.client.handleNonStreamRequest(anthropicReq);
+      
+      // 重置失败计数
+      this.failureCount = 0;
+      
+      const duration = Date.now() - startTime;
+      logger.info('CodeWhisperer非流式请求处理完成', {
+        requestId,
+        duration,
+        implementation: config.implementation,
+        success: true,
+      });
+      
+      return result;
 
     } catch (error) {
-      return await this.handleNonStreamError(error, requestId);
-    }
-  }
-
-  /**
-   * 发送非流式HTTP请求
-   */
-  private async sendNonStreamHttpRequest(accessToken: string, requestBody: string, requestId: string): Promise<Buffer> {
-    logger.debug('发送CodeWhisperer非流式请求', {
-      requestId,
-      requestSize: requestBody.length,
-      endpoint: this.config.endpoint,
-    });
-
-    const response = await axios.post<ArrayBuffer>(
-      this.config.endpoint,
-      requestBody,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        responseType: 'arraybuffer',
-        timeout: this.httpTimeout,
-      }
-    );
-
-    if (response.status !== 200) {
-      throw new Error(`HTTP请求失败，状态码: ${response.status}`);
-    }
-
-    return Buffer.from(response.data);
-  }
-
-  /**
-   * 处理非流式响应
-   */
-  private async processNonStreamResponse(responseBuffer: Buffer, anthropicReq: AnthropicRequest, requestId: string): Promise<any> {
-    const responseStr = responseBuffer.toString('utf8');
-    
-    logger.debug('收到CodeWhisperer非流式响应', {
-      requestId,
-      responseSize: responseBuffer.length,
-    });
-
-    // 检查错误响应
-    if (responseStr.includes('Improperly formed request.')) {
-      logger.error('CodeWhisperer返回格式错误', { 
+      this.failureCount++;
+      const duration = Date.now() - startTime;
+      const config = this.configManager.getConfig();
+      
+      logger.error('CodeWhisperer非流式请求处理失败', {
         requestId,
-        response: responseStr.substring(0, 500) // 只记录前500字符
+        duration,
+        implementation: config.implementation,
+        clientType: this.client.getClientType(),
+        failureCount: this.failureCount,
+        maxFailuresBeforeFallback: this.maxFailuresBeforeFallback,
+        error: error instanceof Error ? error.message : String(error),
       });
-      throw new Error(`请求格式错误: ${responseStr}`);
-    }
 
-    // 解析响应事件
-    const events = this.parser.parseEvents(responseBuffer);
-
-    // 构建非流式响应
-    const anthropicResp = this.parser.buildNonStreamResponse(events, anthropicReq.model);
-
-    logger.info('非流式请求处理完成', {
-      requestId,
-      eventCount: events.length,
-      contentBlocks: anthropicResp.content?.length || 0,
-    });
-
-    return anthropicResp;
-  }
-
-  /**
-   * 处理非流式请求错误
-   */
-  private async handleNonStreamError(error: any, requestId: string): Promise<never> {
-    logger.error('非流式请求处理失败', { requestId, error });
-
-    // 处理403错误
-    if (axios.isAxiosError(error) && error.response?.status === 403) {
-      logger.info('检测到403错误，尝试刷新token', { requestId });
-      await this.auth.refreshToken();
-      throw new Error('Token已刷新，请重试');
-    }
-
-    throw error;
-  }
-
-  /**
-   * 创建请求信息（用于日志）
-   */
-  private createRequestInfo(anthropicReq: AnthropicRequest, requestId: string) {
-    return {
-      requestId,
-      model: anthropicReq.model,
-      messageCount: anthropicReq.messages.length,
-      hasTools: !!(anthropicReq.tools && anthropicReq.tools.length > 0),
-      hasSystem: !!(anthropicReq.system && anthropicReq.system.length > 0),
-      contentLength: this.calculateMessageLength(anthropicReq),
-    };
-  }
-
-  /**
-   * 计算消息长度（用于token估算）- 优化版本
-   */
-  private calculateMessageLength(anthropicReq: AnthropicRequest): number {
-    let totalLength = 0;
-    
-    // 计算系统消息长度
-    if (anthropicReq.system) {
-      for (const sysMsg of anthropicReq.system) {
-        totalLength += sysMsg.text.length;
+      // 检查是否需要故障转移
+      if (this.shouldFallback(config)) {
+        return await this.handleNonStreamFallback(error);
+      } else {
+        throw error;
       }
     }
-    
-    // 计算常规消息长度
-    for (const message of anthropicReq.messages) {
-      totalLength += this.calculateContentLength(message.content);
-    }
-
-    return totalLength;
   }
 
   /**
-   * 计算内容长度
+   * 动态切换实现
    */
-  private calculateContentLength(content: any): number {
-    if (typeof content === 'string') {
-      return content.length;
-    }
+  public switchImplementation(implementation: 'buffered' | 'realtime'): void {
+    const oldImplementation = this.client.getClientType();
+    const oldConfig = this.configManager.getConfig();
     
-    if (Array.isArray(content)) {
-      return content.reduce((total, block) => {
-        if (typeof block === 'string') {
-          return total + block.length;
-        }
-        if (block && typeof block === 'object' && 'text' in block) {
-          return total + ((block.text as string)?.length || 0);
-        }
-        return total;
-      }, 0);
-    }
+    logger.info('CodeWhisperer主客户端开始切换实现', {
+      from: oldImplementation,
+      to: implementation,
+      failureCount: this.failureCount,
+    });
 
-    return 0;
+    try {
+      // 更新配置
+      this.configManager.switchImplementation(implementation);
+      const newConfig = this.configManager.getConfig();
+      
+      // 创建新的客户端实例
+      const newClient = CodeWhispererClientFactory.createClient(newConfig);
+      
+      // 健康检查
+      newClient.healthCheck().then(healthCheck => {
+        logger.info('新客户端健康检查完成', {
+          implementation,
+          healthCheck,
+        });
+        
+        if (healthCheck.healthy) {
+          // 替换客户端
+          this.client = newClient;
+          
+          // 重置失败计数
+          this.failureCount = 0;
+          
+          logger.info('CodeWhisperer实现切换成功', {
+            from: oldImplementation,
+            to: implementation,
+            newClientType: this.client.getClientType(),
+          });
+        } else {
+          logger.warn('新客户端健康检查失败，回滚到原实现', {
+            implementation,
+            healthCheck,
+          });
+          
+          // 回滚配置
+          this.configManager.switchImplementation(oldImplementation);
+        }
+      }).catch(healthError => {
+        logger.error('新客户端健康检查失败，回滚到原实现', {
+          implementation,
+          error: healthError instanceof Error ? healthError.message : String(healthError),
+        });
+        
+        // 回滚配置
+        this.configManager.switchImplementation(oldImplementation);
+      });
+      
+    } catch (error) {
+      logger.error('CodeWhisperer实现切换失败', {
+        from: oldImplementation,
+        to: implementation,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      
+      throw error;
+    }
   }
 
   /**
-   * 睡眠函数（用于模拟延时）
+   * 获取当前客户端类型
    */
-  private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  public getClientType(): 'buffered' | 'realtime' {
+    return this.client.getClientType();
+  }
+
+  /**
+   * 获取当前配置
+   */
+  public getCurrentConfig(): CodeWhispererStreamingConfig {
+    return this.configManager.getConfig();
+  }
+
+  /**
+   * 更新配置
+   */
+  public updateConfig(newConfig: Partial<CodeWhispererStreamingConfig>): void {
+    this.configManager.updateConfig(newConfig);
+    
+    // 重新创建客户端以应用新配置
+    const updatedConfig = this.configManager.getConfig();
+    this.client = CodeWhispererClientFactory.createClient(updatedConfig);
+    
+    logger.info('CodeWhisperer主客户端配置已更新', {
+      newConfig: updatedConfig,
+      clientType: this.client.getClientType(),
+    });
+  }
+
+  /**
+   * 健康检查
+   */
+  public async healthCheck(): Promise<{
+    healthy: boolean;
+    type: string;
+    message?: string;
+    implementation: string;
+    config?: CodeWhispererStreamingConfig;
+  }> {
+    try {
+      const clientHealth = await this.client.healthCheck();
+      const config = this.configManager.getConfig();
+      
+      return {
+        ...clientHealth,
+        implementation: config.implementation,
+        config,
+      };
+    } catch (error) {
+      const config = this.configManager.getConfig();
+      
+      return {
+        healthy: false,
+        type: this.client.getClientType(),
+        implementation: config.implementation,
+        config,
+        message: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * 获取性能报告
+   */
+  public getPerformanceReport() {
+    return this.metrics.getAggregatedReport();
+  }
+
+  /**
+   * 获取实现对比报告
+   */
+  public getImplementationComparison() {
+    return this.metrics.compareImplementations();
+  }
+
+  /**
+   * 重置性能指标
+   */
+  public resetPerformanceMetrics(): void {
+    this.metrics.resetAggregatedMetrics();
+    logger.info('CodeWhisperer性能指标已重置');
+  }
+
+  /**
+   * 判断是否需要故障转移
+   */
+  private shouldFallback(config: CodeWhispererStreamingConfig): boolean {
+    return (
+      config.fallback.enableFallback &&
+      this.failureCount >= this.maxFailuresBeforeFallback &&
+      config.fallback.fallbackToBuffered &&
+      config.implementation === 'realtime'
+    );
+  }
+
+  /**
+   * 处理流式请求故障转移
+   */
+  private async handleFallback(
+    error: any,
+    onError: (message: string, error: Error) => void
+  ): Promise<void> {
+    logger.warn('CodeWhisperer实时客户端失败，尝试故障转移', {
+      failureCount: this.failureCount,
+      maxFailuresBeforeFallback: this.maxFailuresBeforeFallback,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    try {
+      // 切换到缓冲式实现
+      this.switchImplementation('buffered');
+      
+      // 重新执行请求
+      await this.client.handleStreamRequest(
+        (error as any).anthropicReq || {
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: 'fallback request' }],
+          stream: true,
+        },
+        (event: string, data: any) => {}, // writeSSE
+        (message: string, error: Error) => {} // onError
+      );
+      
+      logger.info('CodeWhisperer故障转移成功');
+      
+    } catch (fallbackError) {
+      logger.error('CodeWhisperer故障转移失败', {
+        fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+      
+      onError(
+        `CodeWhisperer实时客户端失败且故障转移也失败: ${fallbackError instanceof Error ? fallbackError.message : String(fallbackError)}`,
+        fallbackError as Error
+      );
+    }
+  }
+
+  /**
+   * 处理非流式请求故障转移
+   */
+  private async handleNonStreamFallback(error: any): Promise<any> {
+    logger.warn('CodeWhisperer实时非流式客户端失败，尝试故障转移', {
+      failureCount: this.failureCount,
+      maxFailuresBeforeFallback: this.maxFailuresBeforeFallback,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    try {
+      // 切换到缓冲式实现
+      this.switchImplementation('buffered');
+      
+      // 重新执行请求
+      const result = await this.client.handleNonStreamRequest(
+        (error as any).anthropicReq || {
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: 'fallback request' }],
+          stream: false,
+        }
+      );
+      
+      logger.info('CodeWhisperer非流式故障转移成功');
+      return result;
+      
+    } catch (fallbackError) {
+      logger.error('CodeWhisperer非流式故障转移失败', {
+        fallbackError: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+        originalError: error instanceof Error ? error.message : String(error),
+      });
+      
+      throw fallbackError;
+    }
+  }
+
+  /**
+   * 设置配置变更监听器
+   */
+  private setupConfigChangeListener(): void {
+    this.configChangeListener = (config: CodeWhispererStreamingConfig) => {
+      logger.info('检测到CodeWhisperer配置变更', {
+        newImplementation: config.implementation,
+        configChange: true,
+      });
+      
+      try {
+        // 创建新的客户端实例
+        const newClient = CodeWhispererClientFactory.createClient(config);
+        
+        // 健康检查
+        newClient.healthCheck().then(healthCheck => {
+          if (healthCheck.healthy) {
+            // 替换客户端
+            this.client = newClient;
+            logger.info('配置变更后客户端更新成功', {
+              implementation: config.implementation,
+              clientType: this.client.getClientType(),
+            });
+          } else {
+            logger.warn('配置变更后新客户端健康检查失败，保持原客户端', {
+              implementation: config.implementation,
+              healthCheck,
+            });
+          }
+        }).catch(healthError => {
+          logger.error('配置变更后新客户端健康检查失败', {
+            implementation: config.implementation,
+            error: healthError instanceof Error ? healthError.message : String(healthError),
+          });
+        });
+      } catch (clientError) {
+        logger.error('配置变更后客户端创建失败', {
+          implementation: config.implementation,
+          error: clientError instanceof Error ? clientError.message : String(clientError),
+        });
+      }
+    };
+    
+    // 添加监听器
+    this.configManager.addConfigChangeListener(this.configChangeListener);
+  }
+
+  /**
+   * 销毁客户端
+   */
+  public destroy(): void {
+    // 移除配置监听器
+    if (this.configChangeListener) {
+      this.configManager.removeConfigChangeListener(this.configChangeListener);
+    }
+    
+    // 销毁性能监控器
+    this.metrics.destroy();
+    
+    logger.info('CodeWhisperer主客户端已销毁');
   }
 }
+
+// 向后兼容的默认导出
+export default CodeWhispererClient;
