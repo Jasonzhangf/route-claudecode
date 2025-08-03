@@ -17,6 +17,7 @@ import {
 } from '@/transformers';
 import { EnhancedOpenAIKeyManager } from './enhanced-api-key-manager';
 import { captureRequest, captureResponse, captureError } from './data-capture';
+import { fixLmStudioResponse } from '@/transformers/lmstudio-fixer';
 
 export class EnhancedOpenAIClient implements Provider {
   public readonly name: string;
@@ -28,7 +29,7 @@ export class EnhancedOpenAIClient implements Provider {
   private keyManager?: EnhancedOpenAIKeyManager;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
-
+  private readonly isLmStudio: boolean;
   constructor(public config: ProviderConfig, providerId: string) {
     this.name = providerId;
     this.endpoint = config.endpoint;
@@ -49,6 +50,8 @@ export class EnhancedOpenAIClient implements Provider {
     if (!this.endpoint) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
     }
+
+    this.isLmStudio = this.endpoint.includes('localhost:1234') || this.endpoint.includes('lmstudio');
     
     // Check if authentication is required (type !== "none")
     if (config.authentication.type !== 'none' && !this.apiKey && !this.keyManager) {
@@ -221,7 +224,7 @@ export class EnhancedOpenAIClient implements Provider {
       const openaiRequest = this.convertToOpenAI(request);
       captureRequest(this.name, request.model, openaiRequest, requestId);
 
-      const response = await this.executeWithRetry(
+      let response = await this.executeWithRetry(
         (apiKey) => {
           const headers: Record<string, string> = {};
           if (this.config.authentication.type !== 'none' && apiKey) {
@@ -232,6 +235,10 @@ export class EnhancedOpenAIClient implements Provider {
         `${this.name} sendRequest`,
         requestId
       );
+
+      if (this.isLmStudio) {
+        response.data = fixLmStudioResponse(response.data, requestId);
+      }
 
       const baseResponse = this.convertFromOpenAI(response.data, request);
       captureResponse(this.name, request.model, openaiRequest, response.data, requestId);
@@ -339,13 +346,18 @@ export class EnhancedOpenAIClient implements Provider {
           throw error; // Last attempt failed
         }
 
-        // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
-        logger.debug('Starting smart caching strategy for OpenAI streaming', {
-          provider: this.name,
-          strategy: 'smart_cache_tools_only'
-        }, requestId, 'provider');
-        
-        yield* this.processSmartCachedStream(response.data, request, requestId);
+        if (this.isLmStudio) {
+            // LM Studio has a unique, non-standard streaming format
+            // It sends tool calls as plain text, so we need a different processor
+            yield* this.processLmStudioStream(response.data, request, requestId);
+        } else {
+            // Standard OpenAI-compatible streaming
+            logger.debug('Starting smart caching strategy for OpenAI streaming', {
+              provider: this.name,
+              strategy: 'smart_cache_tools_only'
+            }, requestId, 'provider');
+            yield* this.processSmartCachedStream(response.data, request, requestId);
+        }
 
         // Report success to rotation manager
         this.reportApiKeySuccess(currentApiKey, requestId);
@@ -835,6 +847,106 @@ export class EnhancedOpenAIClient implements Provider {
       default:
         return null;
     }
+  }
+
+  /**
+   * Special real-time stream processor for LM Studio.
+   * This handles the non-standard format where tool calls are embedded in the text stream.
+   */
+  private async *processLmStudioStream(stream: any, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    const decoder = new TextDecoder('utf-8', { fatal: false, ignoreBOM: true });
+    let buffer = '';
+    let toolCallBuffer = '';
+    let state: 'text' | 'tool' = 'text';
+    let contentIndex = 0;
+    let textBlockStarted = false;
+
+    // Initial stream events
+    yield { event: 'message_start', data: { type: 'message_start', message: { id: `msg_${Date.now()}`, type: 'message', role: 'assistant', content: [], model: request.model, stop_reason: null, usage: { input_tokens: 0, output_tokens: 0 } } } };
+    yield { event: 'ping', data: { type: 'ping' } };
+
+    let streamDone = false;
+    for await (const chunk of stream) {
+        if (streamDone) break;
+        buffer += decoder.decode(chunk, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+        for (const line of lines) {
+             if (streamDone) break;
+            if (!line.startsWith('data: ')) continue;
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') {
+                streamDone = true;
+                break;
+            }
+
+            try {
+                const parsed = JSON.parse(data);
+                let content = parsed.choices?.[0]?.delta?.content || '';
+
+                while (content) {
+                    if (state === 'text') {
+                        const toolCallStart = content.indexOf('<tool_call>');
+                        if (toolCallStart !== -1) {
+                            const textPart = content.substring(0, toolCallStart);
+                            if (textPart) {
+                                if (!textBlockStarted) {
+                                    yield { event: 'content_block_start', data: { type: 'content_block_start', index: contentIndex, content_block: { type: 'text', text: '' } } };
+                                    textBlockStarted = true;
+                                }
+                                yield { event: 'content_block_delta', data: { type: 'content_block_delta', index: contentIndex, delta: { type: 'text_delta', text: textPart } } };
+                            }
+                            if (textBlockStarted) {
+                                yield { event: 'content_block_stop', data: { type: 'content_block_stop', index: contentIndex } };
+                                contentIndex++;
+                                textBlockStarted = false;
+                            }
+                            state = 'tool';
+                            content = content.substring(toolCallStart + '<tool_call>'.length);
+                        } else {
+                            if (!textBlockStarted) {
+                                yield { event: 'content_block_start', data: { type: 'content_block_start', index: contentIndex, content_block: { type: 'text', text: '' } } };
+                                textBlockStarted = true;
+                            }
+                            yield { event: 'content_block_delta', data: { type: 'content_block_delta', index: contentIndex, delta: { type: 'text_delta', text: content } } };
+                            content = '';
+                        }
+                    } else if (state === 'tool') {
+                        const toolCallEnd = content.indexOf('</tool_call>');
+                        if (toolCallEnd !== -1) {
+                            toolCallBuffer += content.substring(0, toolCallEnd);
+                            try {
+                                const toolCallJson = JSON.parse(toolCallBuffer.trim());
+                                const toolCallId = `call_${Date.now()}`;
+                                yield { event: 'content_block_start', data: { type: 'content_block_start', index: contentIndex, content_block: { type: 'tool_use', id: toolCallId, name: toolCallJson.name, input: toolCallJson.arguments } } };
+                                yield { event: 'content_block_stop', data: { type: 'content_block_stop', index: contentIndex } };
+                                contentIndex++;
+                            } catch (error) {
+                                logger.error('Failed to parse tool call JSON from LM Studio stream', { toolCallBuffer, error }, requestId, 'provider');
+                            }
+                            toolCallBuffer = '';
+                            state = 'text';
+                            content = content.substring(toolCallEnd + '</tool_call>'.length);
+                        } else {
+                            toolCallBuffer += content;
+                            content = '';
+                        }
+                    }
+                }
+            } catch (error) {
+                // Ignore JSON parsing errors for individual chunks
+            }
+        }
+    }
+
+    if (textBlockStarted) {
+        yield { event: 'content_block_stop', data: { type: 'content_block_stop', index: contentIndex } };
+    }
+
+    const hasToolCalls = state === 'text' && contentIndex > 0 && !textBlockStarted;
+    yield { event: 'message_delta', data: { type: 'message_delta', delta: { stop_reason: hasToolCalls ? 'tool_use' : 'end_turn' }, usage: { output_tokens: 1 } } }; // Token count is an approximation
+    yield { event: 'message_stop', data: { type: 'message_stop' } };
   }
 }
 

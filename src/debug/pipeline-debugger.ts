@@ -355,33 +355,48 @@ export class PipelineDebugger {
    * Modified to be less strict and avoid false positives from normal text
    */
   detectToolCallError(text: string, requestId: string, transformationStage: string, provider: string, model: string): boolean {
-    // Only detect actual JSON tool call structures, not mentions in text
-    const strictToolCallPatterns = [
-      // Only detect actual JSON structures that look like tool calls
-      /\{\s*"type"\s*:\s*"tool_use"\s*,/i,
-      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"\s*,\s*"arguments"/i,
-      /\{\s*"function"\s*:\s*\{[^}]*"name"/i,
-      /\{\s*"id"\s*:\s*"call_[a-zA-Z0-9_-]+"/i,
-      // Only detect in specific contexts that indicate parsing issues
-      /\[\s*\{\s*"index"\s*:\s*\d+\s*,\s*"type"\s*:\s*"function"/i
+    // ULTRA STRICT: Only detect complete tool call structures in inappropriate contexts
+    // Completely avoid false positives from normal JSON like {"isNew": false}
+    const ultraStrictToolCallPatterns = [
+      // Complete tool_use blocks with all required fields (Anthropic format)
+      /\{\s*"type"\s*:\s*"tool_use"\s*,\s*"id"\s*:\s*"[^"]+"\s*,\s*"name"\s*:\s*"[^"]+"\s*,\s*"input"/i,
+      // Complete function call blocks with all required fields (OpenAI format)
+      /\{\s*"id"\s*:\s*"call_[a-zA-Z0-9_-]+"\s*,\s*"type"\s*:\s*"function"\s*,\s*"function"\s*:\s*\{/i,
+      // Tool calls array in response context (very specific)
+      /"tool_calls"\s*:\s*\[\s*\{\s*"id"\s*:\s*"call_/i,
+      // Multi-part tool call structures in stream
+      /content_block_start"[^}]*"type"\s*:\s*"tool_use"/i
     ];
 
-    for (const pattern of strictToolCallPatterns) {
+    // Only flag if text contains COMPLETE tool call structures that should be parsed, not rendered as text
+    for (const pattern of ultraStrictToolCallPatterns) {
       if (pattern.test(text)) {
-        this.logToolCallError(
-          new ToolCallError(
-            `Actual tool call structure detected in text area: ${pattern.toString()}`,
-            requestId,
-            transformationStage,
-            provider,
-            model,
-            { rawChunk: text },
-            this.port
-          )
-        ).catch(error => {
-          console.error('Failed to log tool call error:', error);
-        });
-        return true;
+        // Additional validation: check if this looks like a complete tool call structure
+        const hasCompleteStructure = (
+          text.includes('"tool_use"') || 
+          text.includes('"function"') ||
+          text.includes('tool_calls') ||
+          text.includes('content_block_start')
+        ) && (
+          text.includes('"id"') || text.includes('"name"')
+        );
+
+        if (hasCompleteStructure) {
+          this.logToolCallError(
+            new ToolCallError(
+              `Complete tool call structure detected in text rendering context: ${pattern.toString()}`,
+              requestId,
+              transformationStage,
+              provider,
+              model,
+              { rawChunk: text },
+              this.port
+            )
+          ).catch(error => {
+            console.error('Failed to log tool call error:', error);
+          });
+          return true;
+        }
       }
     }
     return false;

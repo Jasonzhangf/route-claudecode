@@ -502,17 +502,29 @@ export class StreamingTransformer {
    * Made more strict to avoid false positives from normal text
    */
   private isLikelyToolCallError(rawChunk: string, error: any): boolean {
-    const strictToolCallPatterns = [
-      // Only detect actual JSON structures that look like tool calls
-      /\{\s*"type"\s*:\s*"tool_use"\s*,/i,
-      /\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"\s*,\s*"arguments"/i,
-      /\{\s*"function"\s*:\s*\{[^}]*"name"/i,
-      /\{\s*"id"\s*:\s*"call_[a-zA-Z0-9_-]+"/i,
-      // Only detect in specific contexts that indicate parsing issues
-      /\[\s*\{\s*"index"\s*:\s*\d+\s*,\s*"type"\s*:\s*"function"/i
+    // ULTRA STRICT: Only detect actual tool call structures in streaming context
+    // Avoid false positives from normal JSON content like {"isNew": false}
+    const ultraStrictToolCallPatterns = [
+      // Complete tool_use blocks (Anthropic format)
+      /\{\s*"type"\s*:\s*"tool_use"\s*,\s*"id"\s*:\s*"[^"]+"\s*,\s*"name"\s*:\s*"[^"]+"/i,
+      // Complete function call blocks (OpenAI format)  
+      /\{\s*"id"\s*:\s*"call_[a-zA-Z0-9_-]+"\s*,\s*"type"\s*:\s*"function"\s*,\s*"function"/i,
+      // Tool calls array context
+      /tool_calls":\s*\[\s*\{\s*"id"/i,
+      // Function arguments with tool context
+      /\{\s*"function"\s*:\s*\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"\s*,\s*"arguments"/i
     ];
 
-    return strictToolCallPatterns.some(pattern => pattern.test(rawChunk));
+    // Additional context check: only flag if error is parse-related AND contains tool signatures
+    const isParseError = error && (
+      error.message?.includes('parse') ||
+      error.message?.includes('JSON') ||
+      error.message?.includes('tool') ||
+      error.message?.includes('function')
+    );
+
+    // Only trigger if both conditions are met: parse error AND actual tool structure
+    return isParseError && ultraStrictToolCallPatterns.some(pattern => pattern.test(rawChunk));
   }
 
   /**
