@@ -5,6 +5,7 @@
  */
 
 import { logger } from '@/utils/logger';
+import { mapFinishReason } from '@/utils/finish-reason-handler';
 
 export interface OpenAIBufferedResponse {
   content: Array<{
@@ -417,7 +418,8 @@ function convertBufferedResponseToAnthropicStream(bufferedResponse: OpenAIBuffer
 
   // 4. message_delta event (with stop reason) - 简化逻辑
   const hasToolCalls = bufferedResponse.content.some(block => block.type === 'tool_use');
-  const finishReason = hasToolCalls ? 'tool_use' : 'end_turn';
+  const openaiFinishReason = hasToolCalls ? 'tool_calls' : 'stop';
+  const finishReason = mapFinishReason(openaiFinishReason);
   
   events.push({
     event: 'message_delta',

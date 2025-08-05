@@ -239,7 +239,10 @@ export class StreamingTransformer {
                     choice.finish_reason,
                     this.options.sourceFormat,
                     this.model,
-                    (this as any).port || 3456,
+                    this.options.port || (this as any).port || (() => { 
+                      console.error('❌ CRITICAL: Port not provided to streaming transformer'); 
+                      throw new Error('Port must be provided to streaming transformer - no fallback allowed'); 
+                    })(),
                     {
                       mappedStopReason: stopReason,
                       context: 'streaming-transformer',
@@ -274,7 +277,7 @@ export class StreamingTransformer {
                       rawChunk: data,
                       error: (error as Error).message
                     },
-                    this.options.port || 3456
+                    this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })()
                   )
                 );
                               }
@@ -323,6 +326,37 @@ export class StreamingTransformer {
           yield messageDeltaEvent;
         }
 
+        // 强制记录工具调用finish reason - 核心功能，必须记录
+        const toolCallFinishReason = stopReason || 'tool_use';
+        logger.logFinishReason(toolCallFinishReason, {
+          provider: this.options.sourceFormat,
+          model: this.model,
+          responseType: 'streaming',
+          toolCallCount: this.toolCallMap.size,
+          context: 'tool-use-completion',
+          originalStopReason: stopReason
+        }, this.requestId, 'streaming-tool-use');
+        
+        // 同时记录到调试日志系统
+        try {
+          const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+          logFinishReasonDebug(
+            this.requestId,
+            toolCallFinishReason,
+            this.options.sourceFormat,
+            this.model,
+            this.options.port || (this as any).port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
+            {
+              toolCallCount: this.toolCallMap.size,
+              context: 'tool-use-completion',
+              originalStopReason: stopReason,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (error) {
+          console.error('Failed to log tool call finish reason debug:', error);
+        }
+
         // 只有在非tool_use场景才发送message_stop，工具调用需要保持对话开放
         const actualStopReason = stopReason || 'tool_use';
         if (actualStopReason !== 'tool_use') {
@@ -351,6 +385,43 @@ export class StreamingTransformer {
 
     } catch (error) {
       logger.error('Streaming transformation failed', error, this.requestId);
+      
+      // 即使在错误情况下也要记录finish reason - 核心功能不能缺失
+      try {
+        const errorFinishReason = 'error';
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.logFinishReason(errorFinishReason, {
+          provider: this.options.sourceFormat,
+          model: this.model,
+          responseType: 'streaming',
+          error: errorMessage,
+          context: 'streaming-error',
+          toolCallCount: this.toolCallMap.size
+        }, this.requestId, 'streaming-error');
+        
+        // 同时记录到调试日志系统
+        try {
+          const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+          logFinishReasonDebug(
+            this.requestId,
+            errorFinishReason,
+            this.options.sourceFormat,
+            this.model,
+            this.options.port || (this as any).port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
+            {
+              error: errorMessage,
+              context: 'streaming-error',
+              toolCallCount: this.toolCallMap.size,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (debugError) {
+          console.error('Failed to log error finish reason debug:', debugError);
+        }
+      } catch (logError) {
+        console.error('Failed to log error finish reason:', logError);
+      }
+      
       throw error;
     } finally {
       reader.releaseLock();
@@ -471,7 +542,7 @@ export class StreamingTransformer {
                     event.delta.stop_reason,
                     this.options.sourceFormat,
                     this.model,
-                    this.options.port || 3456,
+                    this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
                     {
                       mappedFinishReason,
                       context: 'streaming-transformer-anthropic',
@@ -503,6 +574,43 @@ export class StreamingTransformer {
 
     } catch (error) {
       logger.error('Anthropic to OpenAI streaming transformation failed', error, this.requestId);
+      
+      // 即使在错误情况下也要记录finish reason - 核心功能不能缺失
+      try {
+        const errorFinishReason = 'error';
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.logFinishReason(errorFinishReason, {
+          provider: this.options.sourceFormat,
+          model: this.model,
+          responseType: 'streaming',
+          error: errorMessage,
+          context: 'anthropic-streaming-error',
+          toolCallCount: this.toolCallMap.size
+        }, this.requestId, 'anthropic-streaming-error');
+        
+        // 同时记录到调试日志系统
+        try {
+          const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+          logFinishReasonDebug(
+            this.requestId,
+            errorFinishReason,
+            this.options.sourceFormat,
+            this.model,
+            this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
+            {
+              error: errorMessage,
+              context: 'anthropic-streaming-error',
+              toolCallCount: this.toolCallMap.size,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (debugError) {
+          console.error('Failed to log anthropic error finish reason debug:', debugError);
+        }
+      } catch (logError) {
+        console.error('Failed to log anthropic error finish reason:', logError);
+      }
+      
       throw error;
     } finally {
       reader.releaseLock();
@@ -596,7 +704,7 @@ export class StreamingTransformer {
         {
           rawChunk: rawStreamData.slice(-5).join(''), // Last 5 chunks for context
         },
-        this.options.port || 3456
+        this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })()
       ));
     } catch (analysisError) {
       console.error('Failed to prepare raw stream analysis data:', analysisError);

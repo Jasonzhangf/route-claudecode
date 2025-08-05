@@ -155,7 +155,7 @@ export class OpenAICompatibleClient implements Provider {
    */
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
-    let lastFinishReason = 'end_turn';
+    let lastFinishReason = mapFinishReason('stop');
 
     try {
       const openaiRequest = { ...this.convertToOpenAI(request), stream: true };

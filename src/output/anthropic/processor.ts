@@ -6,6 +6,8 @@
 import { OutputProcessor, BaseRequest, BaseResponse, AnthropicResponse } from '@/types';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { mapFinishReason } from '@/utils/finish-reason-handler';
+import { MaxTokensErrorHandler } from '@/utils/max-tokens-error-handler';
 // import { PipelineDebugger } from '@/debug/pipeline-debugger'; // 已迁移到统一日志系统
 import { PipelineDebugger } from '@/utils/logger';
 
@@ -38,11 +40,33 @@ export class AnthropicOutputProcessor implements OutputProcessor {
 
       // If already in correct format, validate and return
       if (this.isAnthropicFormat(response)) {
-        return this.validateAndNormalize(response, originalRequest, requestId);
+        console.log(`🔍 [DEBUG-PROCESS] Taking validateAndNormalize path`);
+        const result = this.validateAndNormalize(response, originalRequest, requestId);
+        console.log(`🔍 [DEBUG-PROCESS] Final result stop_reason: "${result.stop_reason}"`);
+        
+        // 🚨 检查max_tokens错误并抛出500错误
+        MaxTokensErrorHandler.checkAndThrowMaxTokensError(
+          result,
+          originalRequest.metadata?.targetProvider || 'unknown',
+          originalRequest.metadata?.originalModel || originalRequest.model,
+          requestId
+        );
+        
+        return result;
       }
 
       // Convert from other formats
+      console.log(`🔍 [DEBUG-PROCESS] Taking convertToAnthropic path`);
       const anthropicResponse = await this.convertToAnthropic(response, originalRequest, requestId);
+      console.log(`🔍 [DEBUG-PROCESS] Converted result stop_reason: "${anthropicResponse.stop_reason}"`);
+      
+      // 🚨 检查max_tokens错误并抛出500错误
+      MaxTokensErrorHandler.checkAndThrowMaxTokensError(
+        anthropicResponse,
+        originalRequest.metadata?.targetProvider || 'unknown',
+        originalRequest.metadata?.originalModel || originalRequest.model,
+        requestId
+      );
       
       logger.trace(requestId, 'output', 'Response processed successfully', {
         contentBlocks: anthropicResponse.content?.length || 0,
@@ -73,14 +97,17 @@ export class AnthropicOutputProcessor implements OutputProcessor {
    * Validate and normalize existing Anthropic format response
    */
   private validateAndNormalize(response: any, originalRequest: BaseRequest, requestId: string): AnthropicResponse {
+    // 🔍 添加详细调试日志
+    console.log(`🔍 [DEBUG-VALIDATE] Input stop_reason: "${response.stop_reason}" (type: ${typeof response.stop_reason})`);
+    
     const content = this.normalizeContent(response.content, requestId);
     const normalized: AnthropicResponse = {
       content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
-      // 完全移除stop_reason，保证停止的权力在模型这边
-      // ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
+      // 确保stop_reason存在，使用映射的finish reason
+      stop_reason: response.stop_reason || mapFinishReason('stop'),
       stop_sequence: response.stop_sequence || null,
       type: 'message',
       usage: {
@@ -88,6 +115,10 @@ export class AnthropicOutputProcessor implements OutputProcessor {
         output_tokens: response.usage?.output_tokens || this.estimateOutputTokens(content)
       }
     };
+
+    // 🔍 添加详细调试日志
+    console.log(`🔍 [DEBUG-VALIDATE] Output stop_reason: "${normalized.stop_reason}" (type: ${typeof normalized.stop_reason})`);
+    console.log(`🔍 [DEBUG-VALIDATE] Full normalized object:`, JSON.stringify(normalized, null, 2));
 
     logger.debug('Normalized Anthropic response', {
       id: normalized.id,
@@ -167,7 +198,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: normalizedContent,
-      // stop_reason: 'end_turn', // 移除硬编码停止原因
+      stop_reason: mapFinishReason('stop'), // 添加正确的停止原因
       stop_sequence: undefined,
       usage: {
         input_tokens: this.estimateInputTokens(originalRequest),
@@ -188,7 +219,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: content,
-      // stop_reason: 'end_turn', // 移除硬编码停止原因
+      stop_reason: mapFinishReason('stop'), // 添加正确的停止原因
       stop_sequence: undefined,
       usage: {
         input_tokens: this.estimateInputTokens(originalRequest),
@@ -207,8 +238,8 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: this.normalizeContent(response.content, requestId),
-      // 完全移除stop_reason，保证停止的权力在模型这边
-      // ...(response.stop_reason !== undefined && { stop_reason: response.stop_reason }), // 只有存在时才添加
+      // 确保stop_reason存在，使用映射的finish reason
+      stop_reason: response.stop_reason || mapFinishReason('stop'),
       stop_sequence: response.stop_sequence || null,
       usage: {
         input_tokens: response.usage?.input_tokens || this.estimateInputTokens(originalRequest),

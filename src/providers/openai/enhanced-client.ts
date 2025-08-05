@@ -18,9 +18,9 @@ import {
 import { createPatchManager } from '@/patches/registry';
 import { EnhancedOpenAIKeyManager } from './enhanced-api-key-manager';
 import { captureRequest, captureResponse, captureError } from './data-capture';
+import { mapFinishReason } from '@/utils/finish-reason-handler';
 import { fixLmStudioResponse } from '@/transformers/lmstudio-fixer';
 // import { logApiError } from '@/utils/finish-reason-debug'; // Temporarily disabled
-import { mapFinishReason } from '@/utils/finish-reason-handler';
 
 export class EnhancedOpenAIClient implements Provider {
   public readonly name: string;
@@ -999,7 +999,8 @@ export class EnhancedOpenAIClient implements Provider {
 
         // 简化逻辑：根据工具调用决定finish reason
         const hasToolCalls = toolCallBuffer.size > 0 || (needsPatchProcessing && contentBuffer.includes('tool_use'));
-        const finishReason = hasToolCalls ? 'tool_use' : 'end_turn';
+        const openaiFinishReason = hasToolCalls ? 'tool_calls' : 'stop';
+        const finishReason = mapFinishReason(openaiFinishReason);
         
         yield {
           event: 'message_delta',
@@ -1056,8 +1057,13 @@ export class EnhancedOpenAIClient implements Provider {
     logger.debug(`[HOOK] Raw OpenAI response before transform`, { 
       rawResponse: response,
       hasContent: !!(response.choices?.[0]?.message?.content),
-      contentLength: response.choices?.[0]?.message?.content?.length || 0
+      contentLength: response.choices?.[0]?.message?.content?.length || 0,
+      finishReason: response.choices?.[0]?.finish_reason
     }, originalRequest.metadata?.requestId, 'provider');
+    
+    // DEBUG: 追踪stop_reason字段
+    console.log(`🔍 [DEBUG] Raw OpenAI finish_reason: "${response.choices?.[0]?.finish_reason}"`);
+    
     
     const anthropicResponse = transformOpenAIResponseToAnthropic(
       response, 
@@ -1091,7 +1097,7 @@ export class EnhancedOpenAIClient implements Provider {
       model: originalRequest.model,
       role: 'assistant',
       content: fixedResponse.content,
-      stop_reason: anthropicResponse.stop_reason || 'end_turn',
+      stop_reason: anthropicResponse.stop_reason || mapFinishReason('stop'),
       stop_sequence: anthropicResponse.stop_sequence || null,
       usage: {
         input_tokens: fixedResponse.usage?.input_tokens || anthropicResponse.usage?.input_tokens || 0,
@@ -1224,7 +1230,8 @@ export class EnhancedOpenAIClient implements Provider {
     const hasToolCalls = state === 'text' && contentIndex > 0 && !textBlockStarted;
     
     // 简化LM Studio处理
-    const finishReason = hasToolCalls ? 'tool_use' : 'end_turn';
+    const openaiFinishReason = hasToolCalls ? 'tool_calls' : 'stop';
+    const finishReason = mapFinishReason(openaiFinishReason);
     
     yield { event: 'message_delta', data: { type: 'message_delta', delta: { stop_reason: finishReason }, usage: { output_tokens: 1 } } }; // Token count is an approximation
     

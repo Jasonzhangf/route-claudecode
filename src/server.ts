@@ -18,6 +18,7 @@ import { sessionManager } from './session/manager';
 import { ProviderExpander, ProviderExpansionResult } from './routing/provider-expander';
 import { v4 as uuidv4 } from 'uuid';
 import { createPatchManager } from './patches';
+import { MaxTokensErrorHandler } from './utils/max-tokens-error-handler';
 // Debug hooks temporarily removed
 
 export class RouterServer {
@@ -813,6 +814,18 @@ export class RouterServer {
           sessionId: sessionManager.extractSessionId(request.headers as Record<string, string>),
           userAgent: (request.headers as any)['user-agent']
         });*/
+      }
+      
+      // 🚨 Special handling for MaxTokensError
+      if (error instanceof Error && (error as any).code === 'MAX_TOKENS_EXCEEDED') {
+        this.logger.warn('Max tokens limit exceeded', {
+          requestId,
+          provider: (error as any).details?.provider,
+          model: (error as any).details?.model,
+          finishReason: (error as any).details?.finishReason
+        }, requestId, 'server');
+        
+        return reply.code(500).send(MaxTokensErrorHandler.formatErrorResponse(error as any));
       }
       
       // For ProviderError, preserve the original status code (especially 429)
