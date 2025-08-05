@@ -218,6 +218,27 @@ export class UnifiedLogger {
     console.error(`Failed to write finish reason log after ${maxRetries} attempts:`, lastError);
   }
 
+  // 直接写入到finish-reason-debug.log文件（用于双重记录）
+  async writeToFinishReasonDebugFile(entry: LogEntry): Promise<void> {
+    if (!this.config.enableFile) return;
+
+    try {
+      // 确保初始化完成
+      if (!this.initialized) {
+        await this.initialize();
+      }
+      
+      // 写入到独立的finish-reason-debug.log文件（不使用轮转目录）
+      const filename = 'finish-reason-debug.log';
+      const filepath = path.join(this.logDir, filename);
+      const logLine = JSON.stringify(entry) + '\n';
+      
+      await fs.appendFile(filepath, logLine, 'utf-8');
+    } catch (error) {
+      console.error('Failed to write finish reason debug log:', error);
+    }
+  }
+
   private outputToConsole(entry: LogEntry): void {
     if (!this.config.enableConsole) return;
 
@@ -392,6 +413,15 @@ export class UnifiedLogger {
       this.writeToFile(mappingEntry)
     ]).catch(error => {
       console.error('Failed to write dual finish reason to main log:', error);
+    });
+
+    // 同时写入到finish-reason-debug.log文件
+    Promise.all([
+      this.writeToFinishReasonDebugFile(originalEntry),
+      this.writeToFinishReasonDebugFile(convertedEntry),
+      this.writeToFinishReasonDebugFile(mappingEntry)
+    ]).catch(error => {
+      console.error('Failed to write dual finish reason to debug log:', error);
     });
   }
 

@@ -692,12 +692,18 @@ export class RouterServer {
       // Keep stop_reason for proper conversation flow control
       if (finalResponse && 'stop_reason' in finalResponse) {
         const stopReason = (finalResponse as any).stop_reason;
-        // 记录最终的stop reason
-        this.logger.logFinishReason(stopReason, {
-          provider: providerId,
-          model: targetModel,
-          responseType: 'non-streaming'
-        }, requestId, 'final-response');
+        // 使用双重记录记录stop reason
+        this.logger.logDualFinishReason(
+          'unknown', // 原始服务器返回的finish reason未知
+          stopReason, // 转换后的stop reason
+          providerId,
+          {
+            model: targetModel,
+            responseType: 'non-streaming'
+          },
+          requestId,
+          'server-final-response'
+        );
         
         // 同时记录到调试日志系统
         const { logFinishReasonDebug } = await import('./utils/finish-reason-debug');
