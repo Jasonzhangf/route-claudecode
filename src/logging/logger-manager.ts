@@ -7,7 +7,7 @@ import { UnifiedLogger } from './unified-logger';
 
 class LoggerManager {
   private loggers: Map<number, UnifiedLogger> = new Map();
-  private defaultPort: number = 5505;
+  private defaultPort: number = 3456;
 
   getLogger(port?: number): UnifiedLogger {
     const targetPort = port || this.defaultPort;

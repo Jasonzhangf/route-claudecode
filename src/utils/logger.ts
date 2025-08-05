@@ -37,6 +37,9 @@ export const logger = {
   logStopReason: (stopReason: string, data?: any, requestId?: string, stage?: string) => {
     getCompatLogger().logStopReason(stopReason, data, requestId, stage);
   },
+  logDualFinishReason: (originalReason: string, convertedReason: string, provider: string, data?: any, requestId?: string, stage?: string) => {
+    getCompatLogger().logDualFinishReason(originalReason, convertedReason, provider, data, requestId, stage);
+  },
   trace: (requestId: string, stage: string, message: string, data?: any) => {
     getCompatLogger().debug(`[TRACE] ${message}`, data, requestId, stage);
   },

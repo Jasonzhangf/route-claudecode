@@ -7,7 +7,7 @@ import { BaseRequest, RoutingCategory, CategoryRouting, ProviderHealth, Failover
 import { logger } from '@/utils/logger';
 import { calculateTokenCount } from '@/utils/tokenizer';
 import { responseStatsManager } from '@/utils/response-stats';
-import { SimpleProviderManager } from './simple-provider-manager';
+import { SimpleProviderManager, WeightedProvider } from './simple-provider-manager';
 export class RoutingEngine {
   private providerHealth: Map<string, ProviderHealth> = new Map();
   private simpleProviderManager: SimpleProviderManager;
@@ -104,7 +104,7 @@ export class RoutingEngine {
   }
 
   /**
-   * Select from multi-provider configuration with simple round-robin and blacklisting
+   * Select from multi-provider configuration with weighted selection and intelligent blacklisting
    */
   private async selectFromMultiProvider(
     categoryRule: CategoryRouting,
@@ -113,96 +113,109 @@ export class RoutingEngine {
   ): Promise<{ provider: string; model: string }> {
     const providers = categoryRule.providers!;
     
-    logger.debug(`Simplified multi-provider selection for ${category}`, {
+    logger.debug(`Enhanced weighted multi-provider selection for ${category}`, {
       providerCount: providers.length,
-      allProviders: providers.map(p => p.provider)
+      allProviders: providers.map(p => ({ provider: p.provider, model: p.model, weight: p.weight || 1 }))
     }, requestId, 'routing');
 
-    // Extract provider IDs for simple manager
-    const providerIds = providers.map(p => p.provider);
+    // Convert to weighted providers (default weight = 1 if not specified)
+    const weightedProviders: WeightedProvider[] = providers.map(p => ({
+      providerId: p.provider,
+      model: p.model,
+      weight: p.weight || 1
+    }));
     
-    // For model-specific blacklisting, we need to check each provider's model
-    // First, try to find a provider that's not blacklisted for any of their models
-    let selectedProviderId: string | null = null;
-    let selectedModel: string | null = null;
+    // Use enhanced weighted selection with dynamic weight redistribution
+    const selectedProvider = this.simpleProviderManager.selectProviderWeighted(weightedProviders, category);
     
-    // Try each provider in round-robin order, checking model-specific blacklists
-    for (let i = 0; i < providerIds.length; i++) {
-      const candidateProviderId = this.simpleProviderManager.selectProvider(providerIds, category);
-      if (!candidateProviderId) break;
-      
-      const candidateEntry = providers.find(p => p.provider === candidateProviderId);
-      if (candidateEntry) {
-        // Check if this provider+model combination is blacklisted
-        if (!this.simpleProviderManager.isBlacklisted(candidateProviderId, candidateEntry.model)) {
-          selectedProviderId = candidateProviderId;
-          selectedModel = candidateEntry.model;
-          break;
-        }
-      }
-    }
-    
-    if (!selectedProviderId || !selectedModel) {
-      logger.error('No providers available (all blacklisted)', { 
+    if (!selectedProvider) {
+      logger.error('No weighted providers available (all blacklisted)', { 
         category, 
-        providerIds,
+        providers: weightedProviders,
         blacklistStatus: this.simpleProviderManager.getBlacklistStatus()
       }, requestId, 'routing');
       throw new Error(`No providers available for category: ${category}`);
     }
     
-    // Find the corresponding provider entry to get the model
-    const selectedProviderEntry = providers.find(p => p.provider === selectedProviderId);
-    if (!selectedProviderEntry) {
-      logger.error('Selected provider not found in configuration', {
-        selectedProviderId,
-        availableProviders: providers.map(p => p.provider)
-      }, requestId, 'routing');
-      // Fallback to first provider
-      return {
-        provider: providers[0].provider,
-        model: providers[0].model
-      };
-    }
+    logger.info(`🎯 Weighted provider selected: ${selectedProvider.providerId}`, {
+      category,
+      selectedProvider: selectedProvider.providerId,
+      selectedModel: selectedProvider.model,
+      selectedWeight: selectedProvider.weight,
+      totalProviders: providers.length,
+      selectionMethod: 'weighted-with-redistribution'
+    }, requestId, 'routing');
 
     return {
-      provider: selectedProviderId,
-      model: selectedModel
+      provider: selectedProvider.providerId,
+      model: selectedProvider.model || selectedProvider.providerId
     };
   }
 
   /**
-   * Select from legacy single provider + backup configuration using simple manager
+   * Select from legacy single provider + backup configuration using weighted selection
    */
   private async selectFromLegacyBackup(
     categoryRule: CategoryRouting,
     category: string,
     requestId: string
   ): Promise<{ provider: string; model: string }> {
-    // Build list of providers (primary + backups)
-    const providers: Array<{ provider: string; model: string }> = [];
+    // Build list of providers (primary + backups) with weights
+    const providers: Array<{ provider: string; model: string; weight?: number }> = [];
     
-    // Add primary provider
+    // Add primary provider (weight = 1 by default)
     if (categoryRule.provider && categoryRule.model) {
       providers.push({
         provider: categoryRule.provider,
-        model: categoryRule.model
+        model: categoryRule.model,
+        weight: 1
       });
     }
     
-    // Add backup providers
+    // Add backup providers (check if they have weights, default to 1)
     if (categoryRule.backup && categoryRule.backup.length > 0) {
-      providers.push(...categoryRule.backup);
+      providers.push(...categoryRule.backup.map(backup => ({
+        provider: backup.provider,
+        model: backup.model,
+        weight: backup.weight || 1
+      })));
     }
     
     if (providers.length === 0) {
       throw new Error(`No providers configured for category: ${category}`);
     }
+
+    // Convert to weighted providers for enhanced selection
+    const weightedProviders: WeightedProvider[] = providers.map(p => ({
+      providerId: p.provider,
+      model: p.model,
+      weight: p.weight || 1
+    }));
     
-    // Extract provider IDs for simple manager
+    // Use weighted selection if multiple providers, otherwise use simple selection
+    if (weightedProviders.length > 1) {
+      const selectedProvider = this.simpleProviderManager.selectProviderWeighted(weightedProviders, category);
+      
+      if (selectedProvider) {
+        logger.debug(`🎯 Legacy weighted provider selection: ${selectedProvider.providerId}`, {
+          category,
+          selectedProvider: selectedProvider.providerId,
+          selectedModel: selectedProvider.model,
+          selectedWeight: selectedProvider.weight,
+          totalProviders: providers.length,
+          isBackupProvider: selectedProvider.providerId !== categoryRule.provider,
+          selectionMethod: 'legacy-weighted'
+        }, requestId, 'routing');
+        
+        return {
+          provider: selectedProvider.providerId,
+          model: selectedProvider.model || selectedProvider.providerId
+        };
+      }
+    }
+    
+    // Fallback to simple round-robin for legacy compatibility
     const providerIds = providers.map(p => p.provider);
-    
-    // Try each provider in round-robin order, checking model-specific blacklists
     let selectedProviderId: string | null = null;
     let selectedModel: string | null = null;
     
@@ -241,12 +254,12 @@ export class RoutingEngine {
       return providers[0];
     }
     
-    logger.debug(`Legacy provider selection: ${selectedProviderId}`, {
+    logger.debug(`Legacy round-robin provider selection: ${selectedProviderId}`, {
       category,
       model: selectedModel,
       totalProviders: providers.length,
       isBackupProvider: selectedProviderId !== categoryRule.provider,
-      blacklistScope: 'model-specific'
+      selectionMethod: 'legacy-round-robin'
     }, requestId, 'routing');
     
     return {

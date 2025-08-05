@@ -173,6 +173,51 @@ export class UnifiedLogger {
     });
   }
 
+  // 专门写入finish reason到独立文件
+  private async writeToFinishReasonFile(entry: LogEntry): Promise<void> {
+    if (!this.config.enableFile) return;
+
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // 确保初始化完成
+        if (!this.initialized) {
+          await this.initialize();
+        }
+        
+        await this.ensureRotation();
+        
+        // 强制确保目录结构存在
+        await fs.mkdir(this.logDir, { recursive: true });
+        await fs.mkdir(this.currentRotationDir, { recursive: true });
+        
+        // 写入到独立的finish_reason.log文件
+        const filename = 'finish_reason.log';
+        const filepath = path.join(this.currentRotationDir, filename);
+        const logLine = JSON.stringify(entry) + '\n';
+        
+        await fs.appendFile(filepath, logLine, 'utf-8');
+        return; // 成功写入，退出重试循环
+        
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt < maxRetries - 1) {
+          // 等待一小段时间后重试
+          await new Promise(resolve => setTimeout(resolve, 10 * (attempt + 1)));
+          
+          // 重置初始化状态，强制重新初始化
+          this.initialized = false;
+        }
+      }
+    }
+    
+    // 所有重试都失败了
+    console.error(`Failed to write finish reason log after ${maxRetries} attempts:`, lastError);
+  }
+
   private outputToConsole(entry: LogEntry): void {
     if (!this.config.enableConsole) return;
 
@@ -257,34 +302,120 @@ export class UnifiedLogger {
   // 专门记录finish reason - 强制记录，不受日志级别限制
   logFinishReason(finishReason: string, data?: any, requestId?: string, stage?: string): void {
     // 强制记录finish reason，不论日志级别如何
-    const entry = this.formatEntry('finish_reason', 'info', `Finish reason: ${finishReason}`, {
+    const entry = this.formatEntry('finish_reason', 'info', `⚪ [SINGLE-FINISH-REASON] ${finishReason}`, {
+      type: 'single_finish_reason',
       finishReason,
+      timestamp: new Date().toISOString(),
       ...data
     }, requestId, stage);
     
     // 始终输出到控制台（如果启用）
     this.outputToConsole(entry);
     
-    // 强制写入文件，绕过日志级别检查
-    this.writeToFile(entry).catch(error => {
+    // 强制写入到独立的finish reason文件
+    this.writeToFinishReasonFile(entry).catch(error => {
       console.error('Failed to write finish reason log entry:', error);
+    });
+    
+    // 同时写入到常规日志文件
+    this.writeToFile(entry).catch(error => {
+      console.error('Failed to write finish reason to main log:', error);
+    });
+  }
+
+  // 增强版：同时记录原始服务器返回的reason和转换后的reason
+  logDualFinishReason(
+    originalReason: string, 
+    convertedReason: string, 
+    provider: string,
+    data?: any, 
+    requestId?: string, 
+    stage?: string
+  ): void {
+    // 🎯 首先记录原始服务器响应
+    const originalEntry = this.formatEntry('finish_reason', 'info', 
+      `🔵 [ORIGINAL-SERVER-RESPONSE] ${provider} returned: "${originalReason}"`, {
+        type: 'original_server_response',
+        originalFinishReason: originalReason,
+        provider,
+        serverResponseType: 'raw_finish_reason',
+        timestamp: new Date().toISOString(),
+        ...data
+      }, requestId, `${stage}_original`);
+    
+    // 🎯 然后记录转换后的结果
+    const convertedEntry = this.formatEntry('finish_reason', 'info',
+      `🟢 [CONVERTED-ANTHROPIC-FORMAT] Transformed to: "${convertedReason}"`, {
+        type: 'converted_anthropic_format', 
+        convertedStopReason: convertedReason,
+        provider,
+        conversionTarget: 'anthropic_stop_reason',
+        timestamp: new Date().toISOString(),
+        ...data
+      }, requestId, `${stage}_converted`);
+    
+    // 🎯 最后记录完整的转换映射
+    const mappingEntry = this.formatEntry('finish_reason', 'info',
+      `🔄 [CONVERSION-MAPPING] ${originalReason} ═══════► ${convertedReason}`, {
+        type: 'conversion_mapping',
+        originalFinishReason: originalReason,
+        convertedStopReason: convertedReason,
+        provider,
+        conversionMapping: `${originalReason} ═══════► ${convertedReason}`,
+        conversionDirection: 'server_to_anthropic',
+        timestamp: new Date().toISOString(),
+        ...data
+      }, requestId, `${stage}_mapping`);
+    
+    // 输出到控制台（三条分隔的记录）
+    console.log('\n' + '='.repeat(80));
+    console.log('🔍 DUAL FINISH REASON LOGGING');
+    console.log('='.repeat(80));
+    this.outputToConsole(originalEntry);
+    this.outputToConsole(convertedEntry);
+    this.outputToConsole(mappingEntry);
+    console.log('='.repeat(80) + '\n');
+    
+    // 强制写入到独立的finish reason文件（按顺序写入三条记录）
+    Promise.all([
+      this.writeToFinishReasonFile(originalEntry),
+      this.writeToFinishReasonFile(convertedEntry), 
+      this.writeToFinishReasonFile(mappingEntry)
+    ]).catch(error => {
+      console.error('Failed to write dual finish reason log entries:', error);
+    });
+    
+    // 同时写入到常规日志文件
+    Promise.all([
+      this.writeToFile(originalEntry),
+      this.writeToFile(convertedEntry),
+      this.writeToFile(mappingEntry)
+    ]).catch(error => {
+      console.error('Failed to write dual finish reason to main log:', error);
     });
   }
 
   // 专门记录stop reason - 强制记录，不受日志级别限制
   logStopReason(stopReason: string, data?: any, requestId?: string, stage?: string): void {
     // 强制记录stop reason，不论日志级别如何
-    const entry = this.formatEntry('finish_reason', 'info', `Stop reason: ${stopReason}`, {
+    const entry = this.formatEntry('finish_reason', 'info', `⭕ [SINGLE-STOP-REASON] ${stopReason}`, {
+      type: 'single_stop_reason',
       stopReason,
+      timestamp: new Date().toISOString(),
       ...data
     }, requestId, stage);
     
     // 始终输出到控制台（如果启用）
     this.outputToConsole(entry);
     
-    // 强制写入文件，绕过日志级别检查
-    this.writeToFile(entry).catch(error => {
+    // 强制写入到独立的finish reason文件
+    this.writeToFinishReasonFile(entry).catch(error => {
       console.error('Failed to write stop reason log entry:', error);
+    });
+    
+    // 同时写入到常规日志文件
+    this.writeToFile(entry).catch(error => {
+      console.error('Failed to write stop reason to main log:', error);
     });
   }
 

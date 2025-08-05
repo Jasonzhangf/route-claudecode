@@ -216,19 +216,23 @@ export class StreamingTransformer {
               // Handle finish reason
               if (choice.finish_reason) {
                 handledChunk = true;
-                stopReason = mapFinishReason(choice.finish_reason);
+                const originalFinishReason = choice.finish_reason;
+                stopReason = mapFinishReason(originalFinishReason);
                 
-                // 专门记录finish reason
-                logger.logFinishReason(
-                  choice.finish_reason,
+                // 🆕 记录原始OpenAI和转换后的Anthropic finish reason
+                logger.logDualFinishReason(
+                  originalFinishReason,
+                  stopReason,
+                  this.options.sourceFormat,
                   {
-                    mappedStopReason: stopReason,
-                    provider: this.options.sourceFormat,
                     model: this.model,
-                    chunkData: choice
+                    responseType: 'streaming',
+                    context: 'streaming-openai-to-anthropic',
+                    chunkData: choice,
+                    conversionMethod: 'mapFinishReason'
                   },
                   this.requestId,
-                  'streaming-finish-reason'
+                  'dual-reason-streaming'
                 );
                 
                 // 同时记录到调试日志系统
@@ -519,19 +523,23 @@ export class StreamingTransformer {
 
               // Handle message completion
               if (event.type === 'message_delta' && event.delta?.stop_reason) {
-                const mappedFinishReason = mapStopReason(event.delta.stop_reason);
+                const originalStopReason = event.delta.stop_reason;
+                const mappedFinishReason = mapStopReason(originalStopReason);
                 
-                // 专门记录stop reason
-                logger.logStopReason(
-                  event.delta.stop_reason,
+                // 🆕 记录原始Anthropic和转换后的OpenAI finish reason
+                logger.logDualFinishReason(
+                  originalStopReason,
+                  mappedFinishReason,
+                  this.options.sourceFormat,
                   {
-                    mappedFinishReason,
-                    provider: this.options.sourceFormat,
                     model: this.model,
-                    eventData: event
+                    responseType: 'streaming',
+                    context: 'streaming-anthropic-to-openai',
+                    eventData: event,
+                    conversionMethod: 'mapStopReason'
                   },
                   this.requestId,
-                  'streaming-stop-reason'
+                  'dual-reason-anthropic-streaming'
                 );
                 
                 // 同时记录到调试日志系统
@@ -539,13 +547,13 @@ export class StreamingTransformer {
                   const { logStopReasonDebug } = await import('../utils/finish-reason-debug');
                   logStopReasonDebug(
                     this.requestId,
-                    event.delta.stop_reason,
+                    originalStopReason,
                     this.options.sourceFormat,
                     this.model,
                     this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
                     {
                       mappedFinishReason,
-                      context: 'streaming-transformer-anthropic',
+                      context: 'streaming-transformer-anthropic-dual',
                       timestamp: new Date().toISOString()
                     }
                   );

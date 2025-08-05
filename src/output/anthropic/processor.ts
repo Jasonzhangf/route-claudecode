@@ -101,13 +101,16 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     console.log(`🔍 [DEBUG-VALIDATE] Input stop_reason: "${response.stop_reason}" (type: ${typeof response.stop_reason})`);
     
     const content = this.normalizeContent(response.content, requestId);
+    const originalStopReason = response.stop_reason;
+    const finalStopReason = response.stop_reason || mapFinishReason('stop');
+    
     const normalized: AnthropicResponse = {
       content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
       // 确保stop_reason存在，使用映射的finish reason
-      stop_reason: response.stop_reason || mapFinishReason('stop'),
+      stop_reason: finalStopReason,
       stop_sequence: response.stop_sequence || null,
       type: 'message',
       usage: {
@@ -119,6 +122,21 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     // 🔍 添加详细调试日志
     console.log(`🔍 [DEBUG-VALIDATE] Output stop_reason: "${normalized.stop_reason}" (type: ${typeof normalized.stop_reason})`);
     console.log(`🔍 [DEBUG-VALIDATE] Full normalized object:`, JSON.stringify(normalized, null, 2));
+
+    // 🆕 总是记录原始和转换后的finish reason，即使它们相同
+    logger.logDualFinishReason(
+      originalStopReason || 'unknown',
+      finalStopReason,
+      originalRequest.metadata?.targetProvider || 'unknown',
+      {
+        model: originalRequest.metadata?.originalModel || originalRequest.model,
+        responseType: 'non-streaming',
+        context: 'validateAndNormalize',
+        usage: normalized.usage
+      },
+      requestId,
+      'dual-reason-validate'
+    );
 
     logger.debug('Normalized Anthropic response', {
       id: normalized.id,
@@ -170,13 +188,15 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     }
 
     const content = this.convertOpenAIMessageToContent(choice.message);
+    const originalFinishReason = choice.finish_reason;
+    const convertedStopReason = this.mapOpenAIFinishReason(originalFinishReason);
 
-    return {
+    const anthropicResponse: AnthropicResponse = {
       content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
-      stop_reason: this.mapOpenAIFinishReason(choice.finish_reason),
+      stop_reason: convertedStopReason,
       stop_sequence: undefined,
       type: 'message',
       usage: {
@@ -184,6 +204,24 @@ export class AnthropicOutputProcessor implements OutputProcessor {
         output_tokens: response.usage?.completion_tokens || this.estimateOutputTokens(content)
       }
     };
+
+    // 🆕 记录原始OpenAI和转换后的Anthropic finish reason
+    logger.logDualFinishReason(
+      originalFinishReason || 'unknown',
+      convertedStopReason,
+      originalRequest.metadata?.targetProvider || 'unknown',
+      {
+        model: originalRequest.metadata?.originalModel || originalRequest.model,
+        responseType: 'non-streaming',
+        context: 'convertFromOpenAI',
+        usage: anthropicResponse.usage,
+        conversionMethod: 'mapOpenAIFinishReason'
+      },
+      requestId,
+      'dual-reason-openai-convert'
+    );
+
+    return anthropicResponse;
   }
 
   /**
@@ -191,20 +229,38 @@ export class AnthropicOutputProcessor implements OutputProcessor {
    */
   private convertFromContentArray(content: any[], originalRequest: BaseRequest, requestId: string): AnthropicResponse {
     const normalizedContent = this.normalizeContent(content, requestId);
+    const stopReason = mapFinishReason('stop');
 
-    return {
+    const response: AnthropicResponse = {
       id: `msg_${uuidv4().replace(/-/g, '')}`,
       type: 'message',
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: normalizedContent,
-      stop_reason: mapFinishReason('stop'), // 添加正确的停止原因
+      stop_reason: stopReason, // 添加正确的停止原因
       stop_sequence: undefined,
       usage: {
         input_tokens: this.estimateInputTokens(originalRequest),
         output_tokens: this.estimateOutputTokens(normalizedContent)
       }
     };
+    
+    // 🆕 记录原始和转换后的finish reason
+    logger.logDualFinishReason(
+      'unknown', // 原始来源不明确
+      stopReason,
+      originalRequest.metadata?.targetProvider || 'unknown',
+      {
+        model: originalRequest.metadata?.originalModel || originalRequest.model,
+        responseType: 'non-streaming',
+        context: 'convertFromContentArray',
+        usage: response.usage
+      },
+      requestId,
+      'dual-reason-content-array'
+    );
+
+    return response;
   }
 
   /**
@@ -212,40 +268,77 @@ export class AnthropicOutputProcessor implements OutputProcessor {
    */
   private convertFromText(text: string, originalRequest: BaseRequest, requestId: string): AnthropicResponse {
     const content = [{ type: 'text', text: text }];
+    const stopReason = mapFinishReason('stop');
 
-    return {
+    const response: AnthropicResponse = {
       id: `msg_${uuidv4().replace(/-/g, '')}`,
       type: 'message',
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: content,
-      stop_reason: mapFinishReason('stop'), // 添加正确的停止原因
+      stop_reason: stopReason, // 添加正确的停止原因
       stop_sequence: undefined,
       usage: {
         input_tokens: this.estimateInputTokens(originalRequest),
         output_tokens: this.estimateOutputTokens(content)
       }
     };
+    
+    // 🆕 记录原始和转换后的finish reason
+    logger.logDualFinishReason(
+      'unknown', // 原始来源不明确
+      stopReason,
+      originalRequest.metadata?.targetProvider || 'unknown',
+      {
+        model: originalRequest.metadata?.originalModel || originalRequest.model,
+        responseType: 'non-streaming',
+        context: 'convertFromText',
+        usage: response.usage
+      },
+      requestId,
+      'dual-reason-text'
+    );
+
+    return response;
   }
 
   /**
    * Convert structured response to Anthropic
    */
   private convertFromStructured(response: any, originalRequest: BaseRequest, requestId: string): AnthropicResponse {
-    return {
+    const stopReason = response.stop_reason || mapFinishReason('stop');
+    
+    const anthropicResponse: AnthropicResponse = {
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       type: 'message',
       role: 'assistant',
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       content: this.normalizeContent(response.content, requestId),
       // 确保stop_reason存在，使用映射的finish reason
-      stop_reason: response.stop_reason || mapFinishReason('stop'),
+      stop_reason: stopReason,
       stop_sequence: response.stop_sequence || null,
       usage: {
         input_tokens: response.usage?.input_tokens || this.estimateInputTokens(originalRequest),
         output_tokens: response.usage?.output_tokens || this.estimateOutputTokens(response.content)
       }
     };
+    
+    // 🆕 记录原始和转换后的finish reason
+    logger.logDualFinishReason(
+      response.stop_reason || 'unknown',
+      stopReason,
+      originalRequest.metadata?.targetProvider || 'unknown',
+      {
+        model: originalRequest.metadata?.originalModel || originalRequest.model,
+        responseType: 'non-streaming',
+        context: 'convertFromStructured',
+        usage: anthropicResponse.usage
+      },
+      requestId,
+      'dual-reason-structured'
+    );
+
+    return anthropicResponse;
   }
 
   /**

@@ -173,14 +173,25 @@ export class AnthropicTransformer implements MessageTransformer {
       });
     }
 
-    // 移除stop_reason，保证停止的权力在模型这边
+    // Map OpenAI finish_reason to Anthropic stop_reason
+    const mapFinishReason = (finishReason: string): string => {
+      const mapping: Record<string, string> = {
+        'stop': 'end_turn',
+        'length': 'max_tokens',
+        'function_call': 'tool_use',
+        'tool_calls': 'tool_use',
+        'content_filter': 'stop_sequence'
+      };
+      return mapping[finishReason] || 'end_turn';
+    };
+
     return {
       id: response.id,
       type: 'message',
       role: 'assistant',
       content,
       model: response.model,
-      // 完全移除stop_reason
+      stop_reason: mapFinishReason(choice.finish_reason || 'stop'),
       stop_sequence: null,
       usage: {
         input_tokens: response.usage.prompt_tokens,

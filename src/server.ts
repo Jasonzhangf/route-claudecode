@@ -691,7 +691,9 @@ export class RouterServer {
       
       // Keep stop_reason for proper conversation flow control
       if (finalResponse && 'stop_reason' in finalResponse) {
-        this.logger.logFinishReason((finalResponse as any).stop_reason, {
+        const stopReason = (finalResponse as any).stop_reason;
+        // 记录最终的stop reason
+        this.logger.logFinishReason(stopReason, {
           provider: providerId,
           model: targetModel,
           responseType: 'non-streaming'
@@ -701,7 +703,7 @@ export class RouterServer {
         const { logFinishReasonDebug } = await import('./utils/finish-reason-debug');
         logFinishReasonDebug(
           requestId,
-          (finalResponse as any).stop_reason,
+          stopReason,
           providerId,
           targetModel || 'unknown',
           this.config.server.port,

@@ -15,13 +15,14 @@ export class AnthropicToolCallTextFixPatch implements ResponsePatch {
     provider: ['anthropic', 'openai'] as Provider[],
     model: (model: string) => {
       // 支持Claude模型和返回Anthropic格式的OpenAI兼容模型
-      return model.includes('claude') || 
-             model.includes('glm') || 
-             model.includes('zhipu') ||
-             model.includes('qwen') ||  // 添加qwen模型支持
-             model.includes('deepseek') || // 添加deepseek模型支持
-             model.includes('gemini') ||   // 添加gemini模型支持
-             model.includes('claude-4-sonnet'); // 保留旧的ShuaiHong服务模型名
+      const modelLower = model.toLowerCase();
+      return modelLower.includes('claude') || 
+             modelLower.includes('glm') || 
+             modelLower.includes('zhipu') ||
+             modelLower.includes('qwen') ||  // 添加qwen模型支持
+             modelLower.includes('deepseek') || // 添加deepseek模型支持
+             modelLower.includes('gemini') ||   // 添加gemini模型支持
+             modelLower.includes('claude-4-sonnet'); // 保留旧的ShuaiHong服务模型名
     },
     enabled: () => process.env.RCC_PATCHES_ANTHROPIC_TOOL_CALL_FIX !== 'false'
   };
@@ -88,7 +89,11 @@ export class AnthropicToolCallTextFixPatch implements ResponsePatch {
       const toolCallPatterns = [
         /\{\s*"type"\s*:\s*"tool_use"\s*,/i,
         /\{\s*"id"\s*:\s*"toolu_[^"]+"\s*,/i,
-        /"name"\s*:\s*"[^"]+"\s*,\s*"input"\s*:\s*\{/i
+        /"name"\s*:\s*"[^"]+"\s*,\s*"input"\s*:\s*\{/i,
+        // 增强模式：匹配 "Tool call: FunctionName({...})" 格式
+        /Tool\s+call:\s*\w+\s*\(\s*\{[^}]*"[^"]*":[^}]*\}/i,
+        // 匹配直接的工具调用格式："Edit({"file_path": ..."
+        /\w+\s*\(\s*\{\s*"[^"]+"\s*:\s*"[^"]*"/i
       ];
 
       return toolCallPatterns.some(pattern => pattern.test(block.text));
@@ -151,6 +156,60 @@ export class AnthropicToolCallTextFixPatch implements ResponsePatch {
   private extractToolCallsFromText(text: string): { textParts: string[], toolCalls: any[] } {
     const textParts: string[] = [];
     const toolCalls: any[] = [];
+    
+    // 首先尝试解析 "Tool call: FunctionName({...})" 格式
+    const toolCallMatches = text.matchAll(/Tool\s+call:\s*(\w+)\s*\((\{[^}]*(?:\{[^}]*\}[^}]*)*\})\)/gi);
+    let processedRanges: Array<{start: number, end: number}> = [];
+    
+    for (const match of toolCallMatches) {
+      if (match.index !== undefined) {
+        const toolName = match[1];
+        const argsStr = match[2];
+        
+        try {
+          const args = JSON.parse(argsStr);
+          const toolCall = {
+            type: 'tool_use',
+            id: `toolu_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+            name: toolName,
+            input: args
+          };
+          toolCalls.push(toolCall);
+          
+          // 记录已处理的范围
+          processedRanges.push({
+            start: match.index,
+            end: match.index + match[0].length
+          });
+        } catch (error) {
+          // JSON解析失败，继续处理其他格式
+          console.warn('Failed to parse tool call arguments:', argsStr);
+        }
+      }
+    }
+    
+    // 提取未被处理的文本部分
+    let lastEnd = 0;
+    processedRanges.sort((a, b) => a.start - b.start);
+    
+    for (const range of processedRanges) {
+      const beforeText = text.slice(lastEnd, range.start).trim();
+      if (beforeText) {
+        textParts.push(beforeText);
+      }
+      lastEnd = range.end;
+    }
+    
+    // 添加最后剩余的文本
+    const remainingText = text.slice(lastEnd).trim();
+    if (remainingText) {
+      textParts.push(remainingText);
+    }
+    
+    // 如果找到了Tool call格式，直接返回结果
+    if (toolCalls.length > 0) {
+      return { textParts, toolCalls };
+    }
     
     // 使用更智能的方法来查找JSON对象
     let currentIndex = 0;
