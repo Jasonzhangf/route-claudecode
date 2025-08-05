@@ -678,6 +678,11 @@ export class RouterServer {
         if (this.config.debug.enabled) {
           // Debug trace removed
         }
+        
+        // 添加详细日志记录，查看原始响应内容
+        this.logger.debug('Raw provider response', {
+          providerResponse: JSON.stringify(providerResponse, null, 2)
+        }, requestId, 'server');
       }
 
       // Step 4: Process output (patches are now applied inside providers)
@@ -692,9 +697,19 @@ export class RouterServer {
       // Keep stop_reason for proper conversation flow control
       if (finalResponse && 'stop_reason' in finalResponse) {
         const stopReason = (finalResponse as any).stop_reason;
+        // 尝试从原始响应中提取原始finish reason
+        let originalFinishReason = 'unknown';
+        if (providerResponse && typeof providerResponse === 'object' && 'choices' in providerResponse) {
+          // OpenAI格式响应
+          const choices = (providerResponse as any).choices;
+          if (Array.isArray(choices) && choices.length > 0) {
+            originalFinishReason = choices[0].finish_reason || 'unknown';
+          }
+        }
+        
         // 使用双重记录记录stop reason
         this.logger.logDualFinishReason(
-          'unknown', // 原始服务器返回的finish reason未知
+          originalFinishReason, // 原始服务器返回的finish reason
           stopReason, // 转换后的stop reason
           providerId,
           {
