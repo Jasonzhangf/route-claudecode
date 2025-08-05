@@ -7,14 +7,15 @@
   },
   "main": "./dist/cli.js",
   "scripts": {
-    "build": "tsc && esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --external:tiktoken --external:@anthropic-ai/sdk --banner:js='#!/usr/bin/env node'",
+    "build": "tsc && esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --external:tiktoken --external:@anthropic-ai/sdk --banner:js='#!/usr/bin/env node' && esbuild src/cli/dynamic-model-cli.ts --bundle --platform=node --outfile=dist/dynamic-model-cli.js --external:tiktoken --external:@anthropic-ai/sdk --banner:js='#!/usr/bin/env node'",
     "dev": "tsx src/cli.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "clean": "rm -rf dist/",
     "prebuild": "npm run clean",
     "release": "npm run build && npm publish",
-    "migrate": "node migrate-config.js"
+    "migrate": "node migrate-config.js",
+    "dynamic-model": "node dist/dynamic-model-cli.js"
   },
   "keywords": [
     "claude",

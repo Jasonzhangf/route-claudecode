@@ -91,10 +91,10 @@ export class CodeWhispererRealtimeClient implements ICodeWhispererClient {
       await this.executeWithRetry(
         async () => {
           // 获取认证信息
-          const { accessToken, profileArn } = await this.getAuthInfo();
+          const { accessToken, profileArn, authMethod } = await this.getAuthInfo();
 
           // 构建和验证请求
-          const cwReq = await this.buildAndValidateRequest(anthropicReq, profileArn);
+          const cwReq = await this.buildAndValidateRequest(anthropicReq, profileArn, authMethod);
           const cwReqBody = JSON.stringify(cwReq);
 
           // 发送HTTP请求
@@ -298,10 +298,10 @@ export class CodeWhispererRealtimeClient implements ICodeWhispererClient {
       const result = await this.executeWithRetry(
         async () => {
           // 获取认证信息
-          const { accessToken, profileArn } = await this.getAuthInfo();
+          const { accessToken, profileArn, authMethod } = await this.getAuthInfo();
 
           // 构建和验证请求
-          const cwReq = await this.buildAndValidateRequest(anthropicReq, profileArn);
+          const cwReq = await this.buildAndValidateRequest(anthropicReq, profileArn, authMethod);
           const cwReqBody = JSON.stringify(cwReq);
 
           // 发送HTTP请求
@@ -549,21 +549,39 @@ export class CodeWhispererRealtimeClient implements ICodeWhispererClient {
   }
 
   /**
-   * 获取认证信息
+   * 获取认证信息 - 修复支持authMethod
    */
-  private async getAuthInfo(): Promise<{ accessToken: string; profileArn: string }> {
-    const [accessToken, profileArn] = await Promise.all([
-      this.auth.getToken(),
-      this.auth.getProfileArn()
-    ]);
-    return { accessToken, profileArn };
+  private async getAuthInfo(): Promise<{ accessToken: string; profileArn: string; authMethod?: string }> {
+    // 🚨 关键修复：使用auth的新getAuthInfo方法获取完整认证信息
+    const authInfo = await this.auth.getAuthInfo();
+    
+    logger.debug('获取认证信息成功', {
+      tokenLength: authInfo.token.length,
+      profileArnLength: authInfo.profileArn.length,
+      authMethod: authInfo.authMethod,
+      strategy: 'enhanced-auth-info-realtime'
+    });
+    
+    return {
+      accessToken: authInfo.token,
+      profileArn: authInfo.profileArn,
+      authMethod: authInfo.authMethod
+    };
   }
 
   /**
-   * 构建和验证请求
+   * 构建和验证请求 - 修复支持authMethod条件判断
    */
-  private async buildAndValidateRequest(anthropicReq: AnthropicRequest, profileArn: string): Promise<CodeWhispererRequest> {
-    const cwReq = await this.converter.buildCodeWhispererRequest(anthropicReq, profileArn);
+  private async buildAndValidateRequest(anthropicReq: AnthropicRequest, profileArn: string, authMethod?: string): Promise<CodeWhispererRequest> {
+    // 🚨 关键修复：传递authMethod给converter，支持demo3的条件判断逻辑
+    const cwReq = await this.converter.buildCodeWhispererRequest(anthropicReq, profileArn, authMethod);
+    
+    logger.debug('构建CodeWhisperer请求完成 (realtime)', {
+      conversationId: cwReq.conversationState.conversationId,
+      authMethod,
+      hasProfileArn: !!(cwReq as any).profileArn,
+      strategy: 'demo3-conditional-logic-realtime'
+    });
     
     const validation = this.converter.validateRequest(cwReq);
     if (!validation.isValid) {

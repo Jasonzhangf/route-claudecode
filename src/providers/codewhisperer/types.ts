@@ -27,6 +27,7 @@ export interface TokenData {
   readonly refreshToken: string;
   readonly expiresAt?: string;
   readonly profileArn?: string;
+  readonly authMethod?: string;  // ✅ 添加authMethod属性，与demo3一致
 }
 
 export interface RefreshRequest {
@@ -104,8 +105,20 @@ export interface UserInputMessage {
 }
 
 export interface UserInputMessageContext {
-  // 🔑 关键：保持与demo2完全兼容的空对象结构
-  // 工具相关字段已被移除以确保100%兼容性
+  // 🔧 关键修复：基于demo3，CodeWhisperer支持工具调用
+  // 工具字段应该直接存在，不是可选的，与demo3一致
+  readonly tools?: CodeWhispererTool[] | null;
+  readonly toolResults?: ToolResult[] | null;
+}
+
+/**
+ * 工具执行结果接口 - 支持工具调用结果传递
+ * 基于demo3格式修复：content应该是数组格式，包含text对象
+ */
+export interface ToolResult {
+  readonly toolUseId: string;
+  readonly content: { text: string }[];  // ✅ 修复：改为数组格式，与demo3一致
+  readonly status: 'success' | 'error';     // ✅ 修复：添加status字段
 }
 
 export interface CurrentMessage {

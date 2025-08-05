@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-08-05T08:27:52.344Z",
+  "testPort": 3456,
+  "tests": {
+    "test1": {
+      "name": "Simple Tool Call 400 Fix",
+      "success": false,
+      "details": {},
+      "error": ""
+    },
+    "test2": {
+      "name": "Complex Tool Call 400 Fix",
+      "success": false,
+      "details": {},
+      "error": ""
+    },
+    "test3": {
+      "name": "Multiple Tool Calls 400 Fix",
+      "success": false,
+      "details": {},
+      "error": ""
+    }
+  },
+  "summary": {
+    "totalTests": 3,
+    "passedTests": 0,
+    "failedTests": 3,
+    "overallSuccess": false
+  },
+  "errorDetails": [],
+  "issues": [
+    "简单工具调用测试失败: ",
+    "复杂工具调用测试失败: ",
+    "多工具调用测试失败: "
+  ]
+}

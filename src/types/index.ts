@@ -165,7 +165,7 @@ export interface CategoryRouting {
 
 // Provider types
 export interface ProviderConfig {
-  type: 'codewhisperer' | 'shuaihong' | 'openai' | 'anthropic' | 'gemini';
+  type: 'codewhisperer' | 'shuaihong' | 'openai' | 'anthropic' | 'gemini' | 'lmstudio';
   endpoint: string;
   authentication: {
     type: 'bearer' | 'api_key' | 'none';

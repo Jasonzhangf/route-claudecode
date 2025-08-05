@@ -57,6 +57,57 @@ export class CodeWhispererAuth {
   }
 
   /**
+   * 获取AuthMethod - 新增方法，基于demo3的条件判断逻辑
+   */
+  public async getAuthMethod(): Promise<string | undefined> {
+    try {
+      // 先获取token以确保缓存更新
+      await this.getToken();
+      
+      if (this.tokenCache?.authMethod) {
+        logger.debug('从token缓存获取authMethod', { 
+          authMethod: this.tokenCache.authMethod,
+          strategy: 'cached-token-data'
+        });
+        return this.tokenCache.authMethod;
+      }
+      
+      logger.debug('Token中未找到authMethod', { 
+        strategy: 'fallback-to-undefined'
+      });
+      return undefined;
+    } catch (error) {
+      logger.error('获取AuthMethod失败', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * 获取完整的认证信息 - 便捷方法
+   */
+  public async getAuthInfo(): Promise<{ token: string; profileArn: string; authMethod?: string }> {
+    try {
+      const [token, profileArn, authMethod] = await Promise.all([
+        this.getToken(),
+        this.getProfileArn(),
+        this.getAuthMethod()
+      ]);
+      
+      logger.debug('获取完整认证信息成功', {
+        tokenLength: token.length,
+        profileArnLength: profileArn.length,
+        authMethod,
+        strategy: 'parallel-fetch'
+      });
+      
+      return { token, profileArn, authMethod };
+    } catch (error) {
+      logger.error('获取完整认证信息失败', error);
+      throw error;
+    }
+  }
+
+  /**
    * 读取token信息 (基于demo2的readToken逻辑)
    */
   public async getToken(): Promise<string> {

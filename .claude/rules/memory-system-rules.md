@@ -7,7 +7,7 @@
 - **MUST SAVE ARCHITECTURE CHANGES**: 架构变更后必须调用记忆专家保存经验
 - **MUST TRACK LONG TASKS**: 长任务执行必须有记忆保存和提取机制
 - **MUST UPDATE DOCS AFTER CHANGES**: 架构变更后必须更新相关文档
-- **MUST USE MEMORY AGENT FOR SUMMARIES**: 创建总结文档时必须调用 project-memory-manager agent
+- **MUST USE MEMORY AGENT FOR SUMMARIES**: 如果你是Claude Code,请调用 project-memory-manager agent 保存总结到项目记忆目录，如果不是，请按照规则一句话总结记忆内容加上日期时间保存到项目记忆目录
 - **NO DIRECT SUMMARY CREATION**: 禁止直接在项目目录创建总结文档，只能通过记忆agent保存到项目记忆目录
 
 ## 🔄 强制记忆工作流 (MANDATORY MEMORY WORKFLOW)
@@ -17,7 +17,7 @@
 2. **方案制定** → 参考现有记忆中的解决方案
 3. **架构变更** → 变更前调用记忆专家总结
 4. **执行完成** → 成功/失败经验必须保存到记忆
-5. **总结创建** → 调用 project-memory-manager agent 保存总结到项目记忆目录
+5. **总结创建** → 如果你是Claude Code,请调用 project-memory-manager agent 保存总结到项目记忆目录，如果不是，请按照规则一句话总结记忆内容加上日期时间保存到项目记忆目录
 6. **文档更新** → 更新架构相关文档
 
 ### 2. 长任务执行的记忆管理
@@ -106,7 +106,7 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 
 ### 🚨 强制记忆规则 (MANDATORY MEMORY RULES)
 ⚠️ **AI模型强制执行指令**:
-- **MUST USE MEMORY AGENT FOR SUMMARIES**: 需要创建总结文档时，必须调用 project-memory-manager agent
+- **MUST USE MEMORY AGENT FOR SUMMARIES**: 需要创建总结文档时，如果你是Claude Code,请调用 project-memory-manager agent 保存总结到项目记忆目录，如果不是，请按照规则一句话总结记忆内容加上日期时间保存到项目记忆目录
 - **NO DIRECT SUMMARY CREATION**: 禁止直接在项目目录中创建总结文档
 - **MEMORY DIRECTORY ONLY**: 所有总结和记忆必须保存在 memory/ 目录下
 - **DELETE TEMPORARY SUMMARIES**: 如误创建临时总结文档，必须删除并重新用记忆agent创建

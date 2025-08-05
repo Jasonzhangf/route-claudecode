@@ -145,7 +145,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
-      // stop_reason: this.mapOpenAIFinishReason(choice.finish_reason), // 移除OpenAI停止原因映射
+      stop_reason: this.mapOpenAIFinishReason(choice.finish_reason),
       stop_sequence: undefined,
       type: 'message',
       usage: {

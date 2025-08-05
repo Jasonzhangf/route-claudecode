@@ -35,18 +35,20 @@ export class SimpleProviderManager {
 
   /**
    * Select next provider using round-robin with blacklist filtering
+   * Now supports model-specific blacklisting
    */
-  selectProvider(providers: string[], category: string): string | null {
-    // Filter out blacklisted providers
+  selectProvider(providers: string[], category: string, model?: string): string | null {
+    // Filter out blacklisted providers (check both model-specific and provider-wide blacklists)
     const availableProviders = providers.filter(providerId => 
-      !this.isBlacklisted(providerId)
+      !this.isBlacklisted(providerId, model)
     );
     
     if (availableProviders.length === 0) {
       logger.warn('All providers are blacklisted, using first provider anyway', {
         category,
+        model: model || 'all-models',
         totalProviders: providers.length,
-        blacklistedProviders: providers.filter(p => this.isBlacklisted(p))
+        blacklistedProviders: providers.filter(p => this.isBlacklisted(p, model))
       });
       // Return first provider even if blacklisted (emergency fallback)
       return providers[0] || null;
@@ -61,10 +63,12 @@ export class SimpleProviderManager {
     
     logger.debug('Round-robin provider selection', {
       category,
+      model: model || 'all-models',
       selectedProvider,
       availableProviders: availableProviders.length,
       totalProviders: providers.length,
-      roundRobinIndex: currentIndex
+      roundRobinIndex: currentIndex,
+      blacklistScope: model ? 'model-specific' : 'provider-wide'
     });
     
     return selectedProvider;
@@ -133,7 +137,7 @@ export class SimpleProviderManager {
       if (blacklisted && blacklisted.reason !== 'auth_failure') {
         // Remove from blacklist on success (except for auth failures which need time-based recovery)
         this.blacklist.delete(key);
-        logger.info('Provider recovered from blacklist after success', { 
+        logger.debug('Provider recovered from blacklist after success', { 
           providerId, 
           model: model || 'all-models',
           blacklistKey: key

@@ -11,17 +11,25 @@
 - **零硬编码**: 补丁条件通过配置和环境变量控制
 - **高性能**: 超时保护和性能监控确保系统稳定
 
-## 🏗️ 架构设计
+## 🏗️ 架构设计重构
 
-### 四层补丁架构
+### 错误的旧架构
 ```
-Provider响应 → Patch应用 → Transformer处理 → 输出处理 → 最终响应
+Provider响应 → Server层Patch应用 → Transformer处理 → 输出处理 → 最终响应
+```
+**问题**: Patch在server层面应用，无法针对具体模型进行精确修复
+
+### 正确的新架构
+```
+Provider内部: 原始响应 → 模型特定Patch → Transformer → 标准化响应
+Server层面: 标准化响应 → 输出处理 → 最终响应
 ```
 
-1. **Provider响应**: 各种原始格式（OpenAI、Anthropic、Gemini等）
-2. **Patch应用**: 基于原始provider类型修复格式问题  
-3. **Transformer处理**: 统一转换为Anthropic格式
-4. **输出处理**: 最终标准化输出
+**优势**:
+1. **模型精确匹配**: 根据具体模型而不是provider类型应用补丁
+2. **Provider内部处理**: 每个provider独立处理自己的格式问题
+3. **Transformer之前**: 在格式转换之前修复原始响应问题
+4. **架构清晰**: Server层只处理标准化后的响应
 
 ### 核心组件
 

@@ -17,10 +17,10 @@ import {
 export class PatchManager {
   private patches: Map<string, BasePatch> = new Map();
   private stats: Map<string, PatchStats> = new Map();
-  private logger = getLogger();
+  private logger: ReturnType<typeof getLogger>;
   private config: PatchManagerConfig;
 
-  constructor(config?: Partial<PatchManagerConfig>) {
+  constructor(config?: Partial<PatchManagerConfig>, port?: number) {
     this.config = {
       enabled: process.env.RCC_PATCHES_ENABLED !== 'false', // 默认启用
       debugMode: process.env.RCC_PATCHES_DEBUG === 'true',
@@ -30,6 +30,9 @@ export class PatchManager {
       logLevel: 'info',
       ...config
     };
+
+    // 使用传递的端口或默认端口
+    this.logger = getLogger(port);
 
     // console.log('🔧 PatchManager config:', this.config);
 

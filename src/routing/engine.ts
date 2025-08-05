@@ -70,7 +70,7 @@ export class RoutingEngine {
       // Step 4: Apply model mapping and return provider
       this.applyModelMapping(request, selectedProvider.provider, selectedProvider.model, category);
       
-      logger.info(`Routing ${category} to ${selectedProvider.provider}`, {
+      logger.debug(`Routing ${category} to ${selectedProvider.provider}`, {
         category,
         provider: selectedProvider.provider,
         targetModel: selectedProvider.model,
@@ -121,11 +121,33 @@ export class RoutingEngine {
     // Extract provider IDs for simple manager
     const providerIds = providers.map(p => p.provider);
     
-    // Use simple provider manager for round-robin with blacklist filtering
-    const selectedProviderId = this.simpleProviderManager.selectProvider(providerIds, category);
+    // For model-specific blacklisting, we need to check each provider's model
+    // First, try to find a provider that's not blacklisted for any of their models
+    let selectedProviderId: string | null = null;
+    let selectedModel: string | null = null;
     
-    if (!selectedProviderId) {
-      logger.error('No providers available', { category, providerIds }, requestId, 'routing');
+    // Try each provider in round-robin order, checking model-specific blacklists
+    for (let i = 0; i < providerIds.length; i++) {
+      const candidateProviderId = this.simpleProviderManager.selectProvider(providerIds, category);
+      if (!candidateProviderId) break;
+      
+      const candidateEntry = providers.find(p => p.provider === candidateProviderId);
+      if (candidateEntry) {
+        // Check if this provider+model combination is blacklisted
+        if (!this.simpleProviderManager.isBlacklisted(candidateProviderId, candidateEntry.model)) {
+          selectedProviderId = candidateProviderId;
+          selectedModel = candidateEntry.model;
+          break;
+        }
+      }
+    }
+    
+    if (!selectedProviderId || !selectedModel) {
+      logger.error('No providers available (all blacklisted)', { 
+        category, 
+        providerIds,
+        blacklistStatus: this.simpleProviderManager.getBlacklistStatus()
+      }, requestId, 'routing');
       throw new Error(`No providers available for category: ${category}`);
     }
     
@@ -144,8 +166,8 @@ export class RoutingEngine {
     }
 
     return {
-      provider: selectedProviderEntry.provider,
-      model: selectedProviderEntry.model
+      provider: selectedProviderId,
+      model: selectedModel
     };
   }
 
@@ -180,11 +202,31 @@ export class RoutingEngine {
     // Extract provider IDs for simple manager
     const providerIds = providers.map(p => p.provider);
     
-    // Use simple provider manager for selection
-    const selectedProviderId = this.simpleProviderManager.selectProvider(providerIds, category);
+    // Try each provider in round-robin order, checking model-specific blacklists
+    let selectedProviderId: string | null = null;
+    let selectedModel: string | null = null;
     
-    if (!selectedProviderId) {
-      logger.error('No providers available in legacy config', { category, providerIds }, requestId, 'routing');
+    for (let i = 0; i < providerIds.length; i++) {
+      const candidateProviderId = this.simpleProviderManager.selectProvider(providerIds, category);
+      if (!candidateProviderId) break;
+      
+      const candidateEntry = providers.find(p => p.provider === candidateProviderId);
+      if (candidateEntry) {
+        // Check if this provider+model combination is blacklisted
+        if (!this.simpleProviderManager.isBlacklisted(candidateProviderId, candidateEntry.model)) {
+          selectedProviderId = candidateProviderId;
+          selectedModel = candidateEntry.model;
+          break;
+        }
+      }
+    }
+    
+    if (!selectedProviderId || !selectedModel) {
+      logger.error('No providers available in legacy config (all blacklisted)', { 
+        category, 
+        providerIds,
+        blacklistStatus: this.simpleProviderManager.getBlacklistStatus()
+      }, requestId, 'routing');
       // Fallback to first provider
       return providers[0];
     }
@@ -199,13 +241,18 @@ export class RoutingEngine {
       return providers[0];
     }
     
-    logger.debug(`Legacy provider selection: ${selectedProvider.provider}`, {
+    logger.debug(`Legacy provider selection: ${selectedProviderId}`, {
       category,
+      model: selectedModel,
       totalProviders: providers.length,
-      isBackupProvider: selectedProvider.provider !== categoryRule.provider
+      isBackupProvider: selectedProviderId !== categoryRule.provider,
+      blacklistScope: 'model-specific'
     }, requestId, 'routing');
     
-    return selectedProvider;
+    return {
+      provider: selectedProviderId,
+      model: selectedModel
+    };
   }
 
 

@@ -6,19 +6,21 @@
 import { PatchManager } from './manager';
 import { AnthropicToolCallTextFixPatch } from './anthropic/tool-call-text-fix';
 import { OpenAIToolFormatFixPatch } from './openai/tool-format-fix';
+import { OpenAIStreamingToolFormatFixPatch } from './openai/streaming-tool-format-fix';
 import { GeminiResponseFormatFixPatch } from './gemini/response-format-fix';
 
 /**
  * 创建并配置补丁管理器
  */
-export function createPatchManager(): PatchManager {
-  const manager = new PatchManager();
+export function createPatchManager(port?: number): PatchManager {
+  const manager = new PatchManager(undefined, port);
 
   // 注册 Anthropic 补丁
   manager.registerPatch(new AnthropicToolCallTextFixPatch());
 
   // 注册 OpenAI-Compatible 补丁
   manager.registerPatch(new OpenAIToolFormatFixPatch());
+  manager.registerPatch(new OpenAIStreamingToolFormatFixPatch());
 
   // 注册 Gemini 补丁
   manager.registerPatch(new GeminiResponseFormatFixPatch());

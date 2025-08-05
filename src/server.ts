@@ -17,7 +17,7 @@ import { getLogger, setDefaultPort, createRequestTracker, createErrorTracker } f
 import { sessionManager } from './session/manager';
 import { ProviderExpander, ProviderExpansionResult } from './routing/provider-expander';
 import { v4 as uuidv4 } from 'uuid';
-import { getPatchManager } from './patches';
+import { createPatchManager } from './patches';
 // Debug hooks temporarily removed
 
 export class RouterServer {
@@ -31,16 +31,18 @@ export class RouterServer {
   private logger: any;
   private requestTracker: any;
   private errorTracker: any;
-  private patchManager = getPatchManager();
+  private patchManager: ReturnType<typeof createPatchManager>;
 
   constructor(config: RouterConfig, serverType?: string) {
     this.config = config;
     
     // 设置默认端口并初始化统一日志系统
     setDefaultPort(config.server.port);
+    process.env.RCC_PORT = config.server.port.toString(); // 设置环境变量供兼容性logger使用
     this.logger = getLogger(config.server.port);
     this.requestTracker = createRequestTracker(config.server.port);
     this.errorTracker = createErrorTracker(config.server.port);
+    this.patchManager = createPatchManager(config.server.port);
     
     this.fastify = Fastify({
       logger: config.debug.enabled ? {
@@ -643,7 +645,12 @@ export class RouterServer {
 
       // Step 2: Route request
       providerId = await this.routingEngine.route(baseRequest, requestId);
-      this.logger.logPipeline('routing-complete', 'Routing completed', { providerId, targetModel: baseRequest.metadata?.targetModel }, requestId);
+      this.logger.debug('Routing completed', { 
+        providerId, 
+        targetModel: baseRequest.metadata?.targetModel,
+        originalModel: baseRequest.model,
+        routingCategory: baseRequest.metadata?.routingCategory
+      }, requestId, 'routing-complete');
       targetModel = baseRequest.metadata?.targetModel || baseRequest.model;
       
       // Debug Hook: Trace routing
@@ -672,23 +679,8 @@ export class RouterServer {
         }
       }
 
-      // Step 3.5: Apply response patches
-      const patchedResponse = await this.patchManager.applyResponsePatches(
-        providerResponse, 
-        this.getProviderType(providerId), 
-        baseRequest.model, 
-        requestId
-      );
-      
-      if (patchedResponse !== providerResponse) {
-        this.logger.logPipeline('response-patched', 'Response patches applied', { 
-          originalResponse: providerResponse,
-          patchedResponse 
-        }, requestId);
-      }
-
-      // Step 4: Process output
-      const finalResponse = await this.outputProcessor.process(patchedResponse, baseRequest);
+      // Step 4: Process output (patches are now applied inside providers)
+      const finalResponse = await this.outputProcessor.process(providerResponse, baseRequest);
       this.logger.logPipeline('output-processed', 'Output processing completed', { finalResponse }, requestId);
       
       // Debug Hook: Trace output processing
@@ -698,9 +690,25 @@ export class RouterServer {
       
       // Keep stop_reason for proper conversation flow control
       if (finalResponse && 'stop_reason' in finalResponse) {
-        this.logger.debug('Preserving stop_reason for proper conversation flow', {
-          stopReason: (finalResponse as any).stop_reason
-        }, requestId, 'server');
+        this.logger.logFinishReason((finalResponse as any).stop_reason, {
+          provider: providerId,
+          model: targetModel,
+          responseType: 'non-streaming'
+        }, requestId, 'final-response');
+        
+        // 同时记录到调试日志系统
+        const { logFinishReasonDebug } = await import('./utils/finish-reason-debug');
+        logFinishReasonDebug(
+          requestId,
+          (finalResponse as any).stop_reason,
+          providerId,
+          targetModel || 'unknown',
+          this.config.server.port,
+          {
+            responseType: 'non-streaming',
+            timestamp: new Date().toISOString()
+          }
+        );
       }
 
       // Store assistant response in session
@@ -722,10 +730,12 @@ export class RouterServer {
         });
       }
 
-      this.logger.info('Request processed successfully', {
+      this.logger.debug('Request processed successfully', {
         provider: providerId,
         responseType: finalResponse.type || 'message',
-        sessionId
+        sessionId,
+        model: targetModel,
+        originalModel: baseRequest.model
       }, requestId, 'server');
 
       // 记录成功的统计信息
@@ -766,8 +776,20 @@ export class RouterServer {
         stack: error instanceof Error ? error.stack : undefined
       }, requestId, 'server');
       
-      // 记录失败的统计信息
+      // 记录失败的统计信息 - 增强错误信息记录
       if (providerId && targetModel) {
+        // 记录详细的provider失败信息
+        this.logger.warn(`Provider failure reported`, {
+          providerId,
+          model: targetModel,
+          originalModel: baseRequest?.model || 'unknown',
+          errorMessage,
+          httpCode,
+          routingCategory: baseRequest?.metadata?.routingCategory || 'unknown',
+          requestId,
+          timestamp: new Date().toISOString()
+        }, requestId, 'provider');
+        
         this.routingEngine.recordProviderResult(
           providerId, 
           false, 
@@ -940,14 +962,19 @@ export class RouterServer {
         this.logger.debug('Starting heartbeat for Gemini streaming', {}, requestId, 'streaming');
         heartbeatInterval = setInterval(() => {
           this.sendSSEEvent(reply, 'ping', { type: 'ping' });
-          this.logger.debug('Sent heartbeat ping for Gemini stream', {}, requestId, 'streaming');
+          // 移除刷屏的heartbeat日志
+          // this.logger.trace('Sent heartbeat ping for Gemini stream', {}, requestId, 'streaming');
         }, 30000); // Send a ping every 30 seconds
       }
 
       for await (const chunk of provider.sendStreamRequest(request)) {
         chunkCount++;
-        this.logger.logStreaming(`Chunk ${chunkCount}`, { chunk }, requestId, 'streaming');
-        this.logger.debug(`[PIPELINE-NODE] Raw chunk ${chunkCount} from provider`, { event: chunk.event, dataType: typeof chunk.data, hasData: !!chunk.data }, requestId, 'server');
+        // 只在trace级别记录chunk详情，避免刷屏
+        this.logger.trace(`Streaming chunk ${chunkCount}`, { 
+          event: chunk.event, 
+          hasData: !!chunk.data,
+          dataType: typeof chunk.data 
+        }, requestId, 'streaming');
         
         // 智能停止信号处理：保留工具调用stop_reason，移除其他stop_reason
         if (chunk.event === 'message_delta' && chunk.data?.delta?.stop_reason) {
@@ -958,7 +985,27 @@ export class RouterServer {
             hasToolUse = true;
             // 工具调用完成 - 保留stop_reason以触发继续对话
             this.sendSSEEvent(reply, chunk.event, chunk.data);
-            this.logger.debug(`Preserved tool_use stop_reason for continuation: ${stopReason}`, {}, requestId, 'server');
+            this.logger.logFinishReason(stopReason, {
+              provider: provider.name,
+              model: request.model,
+              responseType: 'streaming',
+              action: 'preserved-for-continuation'
+            }, requestId, 'streaming-tool-use');
+            
+            // 同时记录到调试日志系统
+            const { logFinishReasonDebug } = await import('./utils/finish-reason-debug');
+            logFinishReasonDebug(
+              requestId,
+              stopReason,
+              provider.name,
+              request.model,
+              this.config.server.port,
+              {
+                responseType: 'streaming',
+                action: 'preserved-for-continuation',
+                timestamp: new Date().toISOString()
+              }
+            );
           } else {
             // 非工具调用 - 移除stop_reason防止会话终止
             const filteredData = { ...chunk.data };
@@ -989,19 +1036,22 @@ export class RouterServer {
             // 文本内容
             const textLength = chunk.data.delta.text.length;
             outputTokens += Math.ceil(textLength / 4);
-            this.logger.debug(`Token calculation - text: "${chunk.data.delta.text}" (${textLength} chars = ${Math.ceil(textLength / 4)} tokens)`, {}, requestId, 'server');
+            // 移除刷屏的token计算日志
+            // this.logger.trace(`Token calculation - text: "${chunk.data.delta.text}" (${textLength} chars = ${Math.ceil(textLength / 4)} tokens)`, {}, requestId, 'server');
           } else if (chunk.data?.delta?.type === 'input_json_delta' && chunk.data?.delta?.partial_json) {
             // 工具调用的JSON输入内容
             const jsonLength = chunk.data.delta.partial_json.length;
             outputTokens += Math.ceil(jsonLength / 4);
-            this.logger.debug(`Token calculation - tool JSON: "${chunk.data.delta.partial_json}" (${jsonLength} chars = ${Math.ceil(jsonLength / 4)} tokens)`, {}, requestId, 'server');
+            // 移除刷屏的token计算日志
+            // this.logger.trace(`Token calculation - tool JSON: "${chunk.data.delta.partial_json}" (${jsonLength} chars = ${Math.ceil(jsonLength / 4)} tokens)`, {}, requestId, 'server');
           }
         } else if (chunk.event === 'content_block_start' && chunk.data?.content_block?.type === 'tool_use') {
           // 工具调用开始 - 计算工具名称的token
           const toolName = chunk.data.content_block.name || '';
           const nameLength = toolName.length;
           outputTokens += Math.ceil(nameLength / 4);
-          this.logger.debug(`Token calculation - tool name: "${toolName}" (${nameLength} chars = ${Math.ceil(nameLength / 4)} tokens)`, {}, requestId, 'server');
+          // 移除刷屏的token计算日志
+          // this.logger.trace(`Token calculation - tool name: "${toolName}" (${nameLength} chars = ${Math.ceil(nameLength / 4)} tokens)`, {}, requestId, 'server');
         }
         
       }
@@ -1043,9 +1093,11 @@ export class RouterServer {
 
       reply.raw.end();
 
-      this.logger.info('Streaming request completed', {
+      this.logger.debug('Streaming request completed', {
         messageId,
-        outputTokens
+        outputTokens,
+        chunkCount,
+        provider: provider.name
       }, requestId, 'server');
 
     } catch (error) {

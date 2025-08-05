@@ -207,15 +207,17 @@ export class CodeWhispererProvider implements Provider {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      // 检查token是否有效
-      const isValid = await (this.client as any).auth?.validateToken?.();
+      // 使用client的healthCheck方法
+      const healthResult = await this.client.healthCheck();
       
       logger.debug('CodeWhisperer健康检查', {
         providerId: this.providerId,
-        tokenValid: isValid,
+        healthy: healthResult.healthy,
+        type: healthResult.type,
+        implementation: healthResult.implementation,
       });
 
-      return isValid;
+      return healthResult.healthy;
     } catch (error) {
       logger.warn('CodeWhisperer健康检查失败', {
         providerId: this.providerId,

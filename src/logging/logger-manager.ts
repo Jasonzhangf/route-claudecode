@@ -20,9 +20,14 @@ class LoggerManager {
       const isVerboseMode = process.env.RCC_VERBOSE === 'true' || 
                            process.argv.includes('--verbose');
       
+      // 调试信息：记录logger创建
+      if (isDebugMode) {
+        console.log(`[LoggerManager] Creating logger for port ${targetPort} (requested: ${port}, default: ${this.defaultPort})`);
+      }
+      
       const logger = new UnifiedLogger({ 
         port: targetPort,
-        logLevel: isVerboseMode ? 'debug' : (isDebugMode ? 'info' : 'info'), // 默认使用info级别
+        logLevel: isVerboseMode ? 'debug' : (isDebugMode ? 'debug' : 'info'), // debug模式使用debug级别
         enableConsole: isDebugMode || isVerboseMode,
         enableFile: true
       });

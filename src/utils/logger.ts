@@ -6,30 +6,39 @@
 
 import { getLogger, createErrorTracker, createRequestTracker, type ToolCallError } from '../logging';
 
-// 创建兼容的logger实例 - 使用更安静的配置
-const compatLogger = getLogger();
+// 创建兼容的logger实例 - 延迟初始化以获取正确的端口
+let compatLogger: ReturnType<typeof getLogger> | null = null;
+
+function getCompatLogger() {
+  if (!compatLogger) {
+    // 尝试从环境变量或进程参数中获取端口
+    const portFromEnv = process.env.RCC_PORT ? parseInt(process.env.RCC_PORT) : undefined;
+    compatLogger = getLogger(portFromEnv);
+  }
+  return compatLogger;
+}
 
 export const logger = {
   error: (message: string, data?: any, requestId?: string, stage?: string) => {
-    compatLogger.error(message, data, requestId, stage);
+    getCompatLogger().error(message, data, requestId, stage);
   },
   warn: (message: string, data?: any, requestId?: string, stage?: string) => {
-    compatLogger.warn(message, data, requestId, stage);
+    getCompatLogger().warn(message, data, requestId, stage);
   },
   info: (message: string, data?: any, requestId?: string, stage?: string) => {
-    compatLogger.info(message, data, requestId, stage);
+    getCompatLogger().info(message, data, requestId, stage);
   },
   debug: (message: string, data?: any, requestId?: string, stage?: string) => {
-    compatLogger.debug(message, data, requestId, stage);
+    getCompatLogger().debug(message, data, requestId, stage);
   },
   logFinishReason: (finishReason: string, data?: any, requestId?: string, stage?: string) => {
-    compatLogger.logFinishReason(finishReason, data, requestId, stage);
+    getCompatLogger().logFinishReason(finishReason, data, requestId, stage);
   },
   logStopReason: (stopReason: string, data?: any, requestId?: string, stage?: string) => {
-    compatLogger.logStopReason(stopReason, data, requestId, stage);
+    getCompatLogger().logStopReason(stopReason, data, requestId, stage);
   },
   trace: (requestId: string, stage: string, message: string, data?: any) => {
-    compatLogger.debug(`[TRACE] ${message}`, data, requestId, stage);
+    getCompatLogger().debug(`[TRACE] ${message}`, data, requestId, stage);
   },
   setConfig: (_options: any) => {
     // 兼容旧的setConfig调用，但实际不做任何操作

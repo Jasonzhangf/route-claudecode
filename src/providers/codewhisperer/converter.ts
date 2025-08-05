@@ -10,6 +10,7 @@ import {
   AnthropicRequest,
   AnthropicRequestMessage,
   AnthropicSystemMessage,
+  AnthropicTool,
   ContentBlock,
   CodeWhispererRequest,
   CodeWhispererTool,
@@ -118,7 +119,7 @@ export class CodeWhispererConverter {
   /**
    * 构建CodeWhisperer请求 - 重构优化版本
    */
-  public async buildCodeWhispererRequest(anthropicReq: AnthropicRequest, profileArn: string): Promise<CodeWhispererRequest> {
+  public async buildCodeWhispererRequest(anthropicReq: AnthropicRequest, profileArn: string, authMethod?: string): Promise<CodeWhispererRequest> {
     const debugInfo = this.createDebugInfo(anthropicReq);
     logger.debug('开始构建CodeWhisperer请求', debugInfo);
 
@@ -143,18 +144,36 @@ export class CodeWhispererConverter {
         },
         history: [],
       },
-      profileArn: profileArn,
+      // ✅ 修复：初始化时设置空字符串，后面根据authMethod条件更新
+      profileArn: '',
     };
 
-    // 🔑 关键发现：CodeWhisperer不支持工具调用，必须完全忽略
-    // 基于demo2的"工具忽略"策略，确保100%兼容性
-    if (anthropicReq.tools && anthropicReq.tools.length > 0) {
-      logger.debug('检测到工具定义，但CodeWhisperer不支持，忽略处理', {
-        toolCount: anthropicReq.tools.length,
-        toolNames: anthropicReq.tools.map(t => t.name),
-        strategy: 'demo2-compatible-ignore'
-      });
+    // 🔧 关键修复：CodeWhisperer支持工具调用，正确转换工具定义
+    // 完全按照demo3的逻辑：toolsContext包装 + 条件检查
+    let toolsContext: { tools?: CodeWhispererTool[] } = {};
+    if (anthropicReq.tools && Array.isArray(anthropicReq.tools) && anthropicReq.tools.length > 0) {
+      const convertedTools = this.convertTools(anthropicReq.tools);
+      toolsContext = {
+        tools: convertedTools
+      };
     }
+    
+    // 🚨 关键修复：按照demo3的条件检查逻辑设置工具字段
+    const contextData = {
+      tools: Object.keys(toolsContext).length > 0 ? toolsContext.tools : null,
+      toolResults: null  // demo3要求始终存在
+    };
+    
+    // 直接设置整个userInputMessageContext，避免类型问题
+    (cwReq.conversationState.currentMessage.userInputMessage as any).userInputMessageContext = contextData;
+    
+    logger.debug('工具字段设置完成 (demo3精确兼容)', {
+      hasTools: !!(anthropicReq.tools && anthropicReq.tools.length > 0),
+      toolsContextKeys: Object.keys(toolsContext),
+      toolsFieldValue: contextData.tools,
+      toolResultsFieldValue: contextData.toolResults,
+      strategy: 'demo3-exact-match'
+    });
 
     // 构建历史消息 - 优化版本
     const hasHistory = this.shouldBuildHistory(anthropicReq);
@@ -162,10 +181,52 @@ export class CodeWhispererConverter {
       (cwReq.conversationState as any).history = this.buildMessageHistory(anthropicReq);
     }
 
+    // 🚨 关键修复：按照demo3的逻辑，只有当authMethod为'social'时才添加profileArn
+    // 这是导致400错误的根本原因！
+    if (authMethod === 'social') {
+      (cwReq as any).profileArn = profileArn;
+      logger.debug('添加profileArn到请求根级别 (authMethod=social)', { 
+        authMethod,
+        profileArn: profileArn ? profileArn.substring(0, 50) + '...' : 'undefined',
+        strategy: 'demo3-conditional-logic'
+      });
+    } else {
+      // ✅ 修复：明确设置profileArn为undefined，与demo3逻辑完全一致
+      (cwReq as any).profileArn = undefined;
+      logger.debug('设置profileArn为undefined (authMethod!=social)', { 
+        authMethod,
+        strategy: 'demo3-exact-match'
+      });
+    }
+
     const buildResult = this.createBuildResult(cwReq);
     logger.debug('CodeWhisperer请求构建完成', buildResult);
 
     return cwReq;
+  }
+
+  /**
+   * 转换工具定义到 CodeWhisperer 格式
+   * 基于 demo3 的工具转换策略，添加默认值处理
+   */
+  private convertTools(anthropicTools: AnthropicTool[]): CodeWhispererTool[] {
+    const cwTools: CodeWhispererTool[] = anthropicTools.map(tool => ({
+      toolSpecification: {
+        name: tool.name,
+        description: tool.description || "",           // ✅ 修复：添加默认空字符串
+        inputSchema: {
+          json: tool.input_schema || {}              // ✅ 修复：添加默认空对象
+        }
+      }
+    }));
+
+    logger.debug('工具转换完成', {
+      inputToolCount: anthropicTools.length,
+      outputToolCount: cwTools.length,
+      toolNames: cwTools.map(t => t.toolSpecification.name)
+    });
+
+    return cwTools;
   }
 
   /**

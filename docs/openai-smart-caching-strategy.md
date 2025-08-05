@@ -21,10 +21,12 @@
 ```
 文本内容：直接流式输出
 工具调用：缓存解析后流式输出
+格式修复：检测到需要patch时自动缓存
 ```
 - ✅ 延迟低：文本内容实时显示
-- ✅ 内存占用小：只缓存工具部分
+- ✅ 内存占用小：只缓存工具部分和需要修复的内容
 - ✅ 工具调用解析准确
+- ✅ 自动格式修复：支持各种模型的格式差异
 
 ## 实现细节
 
@@ -37,10 +39,16 @@
    yield { event: 'ping', data: {...} };
    ```
 
-2. **文本内容处理**
+2. **文本内容处理（增强版）**
    ```typescript
-   // 文本内容立即流式输出，无缓存
-   if (choice.delta.content !== undefined) {
+   // 检测是否需要格式修复
+   const contentNeedsPatch = this.detectToolCallInText(choice.delta.content);
+   
+   if (needsPatchProcessing) {
+     // 如果需要patch，缓存内容
+     fullResponseBuffer += choice.delta.content || '';
+   } else {
+     // 文本内容立即流式输出，无缓存
      yield {
        event: 'content_block_delta',
        data: {
@@ -58,7 +66,16 @@
    if (choice.delta.tool_calls) {
      for (const toolCall of choice.delta.tool_calls) {
        const toolData = toolCallBuffer.get(index);
-       toolData.arguments += toolCall.function.arguments;
+       
+       // 应用流式patch
+       const patchedArguments = await this.patchManager.applyStreamingPatches(
+         toolCall.function.arguments,
+         'openai',
+         request.model,
+         requestId
+       );
+       
+       toolData.arguments += patchedArguments;
        
        // 同时流式输出部分JSON
        yield {
@@ -68,11 +85,29 @@
            index: blockIndex,
            delta: {
              type: 'input_json_delta',
-             partial_json: toolCall.function.arguments
+             partial_json: patchedArguments
            }
          }
        };
      }
+   }
+   ```
+
+4. **格式修复处理（新增）**
+   ```typescript
+   // 在流式结束前应用patch
+   if (needsPatchProcessing && fullResponseBuffer) {
+     const mockResponse = {
+       choices: [{ message: { content: fullResponseBuffer, role: 'assistant' } }]
+     };
+     
+     const patchedResponse = await this.patchManager.applyResponsePatches(
+       mockResponse, 'openai', request.model, requestId
+     );
+     
+     // 将修复后的内容转换为流式事件
+     const baseResponse = this.convertFromOpenAI(patchedResponse, request);
+     // ... 流式输出修复后的内容
    }
    ```
 

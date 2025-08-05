@@ -9,7 +9,7 @@ import * as path from 'path';
 import * as os from 'os';
 
 export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
-export type LogCategory = 'request' | 'response' | 'pipeline' | 'error' | 'performance' | 'system' | 'tool_call' | 'streaming';
+export type LogCategory = 'request' | 'response' | 'pipeline' | 'error' | 'performance' | 'system' | 'tool_call' | 'streaming' | 'finish_reason';
 
 interface LogEntry {
   timestamp: string;
@@ -125,20 +125,52 @@ export class UnifiedLogger {
   private async writeToFile(entry: LogEntry): Promise<void> {
     if (!this.config.enableFile) return;
 
-    try {
-      // 确保初始化完成
-      if (!this.initialized) {
-        await this.initialize();
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        // 确保初始化完成
+        if (!this.initialized) {
+          await this.initialize();
+        }
+        
+        await this.ensureRotation();
+        
+        // 强制确保目录结构存在
+        await fs.mkdir(this.logDir, { recursive: true });
+        await fs.mkdir(this.currentRotationDir, { recursive: true });
+        
+        const filename = `${entry.category}.log`;
+        const filepath = path.join(this.currentRotationDir, filename);
+        const logLine = JSON.stringify(entry) + '\n';
+        
+        await fs.appendFile(filepath, logLine, 'utf-8');
+        return; // 成功写入，退出重试循环
+        
+      } catch (error) {
+        lastError = error as Error;
+        
+        if (attempt < maxRetries - 1) {
+          // 等待一小段时间后重试
+          await new Promise(resolve => setTimeout(resolve, 10 * (attempt + 1)));
+          
+          // 重置初始化状态，强制重新初始化
+          this.initialized = false;
+        }
       }
-      
-      await this.ensureRotation();
-      const filename = `${entry.category}.log`;
-      const filepath = path.join(this.currentRotationDir, filename);
-      const logLine = JSON.stringify(entry) + '\n';
-      await fs.appendFile(filepath, logLine, 'utf-8');
-    } catch (error) {
-      console.error('Failed to write log:', error);
     }
+    
+    // 所有重试都失败了
+    console.error(`Failed to write log after ${maxRetries} attempts:`, lastError);
+    console.error('Log entry that failed to write:', {
+      category: entry.category,
+      level: entry.level,
+      message: entry.message,
+      port: entry.port,
+      logDir: this.logDir,
+      currentRotationDir: this.currentRotationDir
+    });
   }
 
   private outputToConsole(entry: LogEntry): void {
@@ -219,23 +251,41 @@ export class UnifiedLogger {
   }
 
   logStreaming(message: string, data?: any, requestId?: string, stage?: string): void {
-    this.log('streaming', 'info', message, data, requestId, stage);
+    this.log('streaming', 'debug', message, data, requestId, stage);
   }
 
-  // 专门记录finish reason
+  // 专门记录finish reason - 强制记录，不受日志级别限制
   logFinishReason(finishReason: string, data?: any, requestId?: string, stage?: string): void {
-    this.log('streaming', 'info', `Finish reason: ${finishReason}`, {
+    // 强制记录finish reason，不论日志级别如何
+    const entry = this.formatEntry('finish_reason', 'info', `Finish reason: ${finishReason}`, {
       finishReason,
       ...data
     }, requestId, stage);
+    
+    // 始终输出到控制台（如果启用）
+    this.outputToConsole(entry);
+    
+    // 强制写入文件，绕过日志级别检查
+    this.writeToFile(entry).catch(error => {
+      console.error('Failed to write finish reason log entry:', error);
+    });
   }
 
-  // 专门记录stop reason
+  // 专门记录stop reason - 强制记录，不受日志级别限制
   logStopReason(stopReason: string, data?: any, requestId?: string, stage?: string): void {
-    this.log('streaming', 'info', `Stop reason: ${stopReason}`, {
+    // 强制记录stop reason，不论日志级别如何
+    const entry = this.formatEntry('finish_reason', 'info', `Stop reason: ${stopReason}`, {
       stopReason,
       ...data
     }, requestId, stage);
+    
+    // 始终输出到控制台（如果启用）
+    this.outputToConsole(entry);
+    
+    // 强制写入文件，绕过日志级别检查
+    this.writeToFile(entry).catch(error => {
+      console.error('Failed to write stop reason log entry:', error);
+    });
   }
 
   // 清理方法

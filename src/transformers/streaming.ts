@@ -230,6 +230,25 @@ export class StreamingTransformer {
                   this.requestId,
                   'streaming-finish-reason'
                 );
+                
+                // 同时记录到调试日志系统
+                try {
+                  const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+                  logFinishReasonDebug(
+                    this.requestId,
+                    choice.finish_reason,
+                    this.options.sourceFormat,
+                    this.model,
+                    (this as any).port || 3456,
+                    {
+                      mappedStopReason: stopReason,
+                      context: 'streaming-transformer',
+                      timestamp: new Date().toISOString()
+                    }
+                  );
+                } catch (error) {
+                  console.error('Failed to log finish reason debug:', error);
+                }
               }
               
               // If we didn't handle this chunk, it means it's just a metadata chunk that doesn't need transformation
@@ -443,6 +462,25 @@ export class StreamingTransformer {
                   this.requestId,
                   'streaming-stop-reason'
                 );
+                
+                // 同时记录到调试日志系统
+                try {
+                  const { logStopReasonDebug } = await import('../utils/finish-reason-debug');
+                  logStopReasonDebug(
+                    this.requestId,
+                    event.delta.stop_reason,
+                    this.options.sourceFormat,
+                    this.model,
+                    this.options.port || 3456,
+                    {
+                      mappedFinishReason,
+                      context: 'streaming-transformer-anthropic',
+                      timestamp: new Date().toISOString()
+                    }
+                  );
+                } catch (error) {
+                  console.error('Failed to log stop reason debug:', error);
+                }
                 
                 yield this.createOpenAIChunk({
                   choices: [{

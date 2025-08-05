@@ -1,11 +1,18 @@
 /**
  * CodeWhisperer SSE Parser
  * 完全基于demo2 parser/sse_parser.go 移植的二进制响应解析器
+ * 集成 demo3 的 bracket 工具调用解析功能
  * 项目所有者: Jason Zhang
  */
 
 import { logger } from '@/utils/logger';
 import { AssistantResponseEvent, SSEEvent } from './types';
+import { 
+  parseBracketToolCalls, 
+  deduplicateToolCalls, 
+  cleanToolCallSyntax,
+  BracketToolCall 
+} from './bracket-tool-parser';
 
 export class CodeWhispererParser {
   /**
@@ -360,12 +367,65 @@ export class CodeWhispererParser {
       logger.debug('添加遗留文本内容', { textLength: textBuffer.length });
     }
 
+    // 🔧 集成 demo3 的 bracket 工具调用解析 (关键修复)
+    const rawResponseText = textBuffer || '';
+    const bracketToolCalls = parseBracketToolCalls(rawResponseText);
+    
+    logger.debug('Bracket 工具调用解析结果', {
+      rawTextLength: rawResponseText.length,
+      bracketToolCallsFound: bracketToolCalls.length,
+      bracketToolNames: bracketToolCalls.map(tc => tc.function.name)
+    });
+
+    // 将 bracket 工具调用转换为标准格式并添加到 contexts
+    if (bracketToolCalls.length > 0) {
+      for (const bracketCall of bracketToolCalls) {
+        try {
+          const toolInput = JSON.parse(bracketCall.function.arguments);
+          contexts.push({
+            type: 'tool_use',
+            id: bracketCall.id,
+            name: bracketCall.function.name,
+            input: toolInput
+          });
+          
+          logger.debug('成功添加 bracket 工具调用', {
+            toolId: bracketCall.id,
+            toolName: bracketCall.function.name,
+            inputKeys: Object.keys(toolInput)
+          });
+        } catch (parseError) {
+          logger.error('解析 bracket 工具调用参数失败', {
+            toolId: bracketCall.id,
+            toolName: bracketCall.function.name,
+            error: (parseError as Error).message
+          });
+        }
+      }
+    }
+
+    // 清理文本中的工具调用语法
+    const cleanedText = cleanToolCallSyntax(rawResponseText, bracketToolCalls);
+    if (cleanedText !== rawResponseText && cleanedText.trim()) {
+      // 如果清理后的文本不同且非空，替换或添加文本内容
+      const textIndex = contexts.findIndex(c => c.type === 'text');
+      if (textIndex >= 0) {
+        contexts[textIndex] = { type: 'text', text: cleanedText };
+      } else if (contexts.length === 0 || contexts.every(c => c.type === 'tool_use')) {
+        contexts.unshift({ type: 'text', text: cleanedText });
+      }
+    }
+
+    // 确定 stop_reason
+    const hasAnyToolUse = contexts.some(c => c.type === 'tool_use');
+    const stopReason = hasAnyToolUse ? 'tool_use' : 'end_turn';
+
     // 构建最终响应
     const response = {
       content: contexts,
       model: originalModel,
       role: 'assistant',
-      stop_reason: 'end_turn',
+      stop_reason: stopReason,
       stop_sequence: null,
       type: 'message',
       usage: {
@@ -374,11 +434,14 @@ export class CodeWhispererParser {
       },
     };
 
-    logger.debug('缓冲式响应构建完成', {
+    logger.debug('增强缓冲式响应构建完成', {
       contextCount: contexts.length,
       textBufferLength: textBuffer.length,
-      toolCallCount: Array.from(toolCallBuffer.values()).filter(t => t.isComplete).length,
-      hasToolUse: contexts.some(c => c.type === 'tool_use'),
+      structuredToolCallCount: Array.from(toolCallBuffer.values()).filter(t => t.isComplete).length,
+      bracketToolCallCount: bracketToolCalls.length,
+      totalToolCallCount: contexts.filter(c => c.type === 'tool_use').length,
+      hasToolUse: hasAnyToolUse,
+      stopReason,
       finalContexts: contexts.map(c => ({ type: c.type, hasContent: !!(c.text || c.input) }))
     });
 

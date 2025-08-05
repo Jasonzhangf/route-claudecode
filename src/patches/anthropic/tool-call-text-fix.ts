@@ -18,7 +18,10 @@ export class AnthropicToolCallTextFixPatch implements ResponsePatch {
       return model.includes('claude') || 
              model.includes('glm') || 
              model.includes('zhipu') ||
-             model.includes('claude-4-sonnet'); // ShuaiHong服务的模型名
+             model.includes('qwen') ||  // 添加qwen模型支持
+             model.includes('deepseek') || // 添加deepseek模型支持
+             model.includes('gemini') ||   // 添加gemini模型支持
+             model.includes('claude-4-sonnet'); // 保留旧的ShuaiHong服务模型名
     },
     enabled: () => process.env.RCC_PATCHES_ANTHROPIC_TOOL_CALL_FIX !== 'false'
   };
