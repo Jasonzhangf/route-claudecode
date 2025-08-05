@@ -1,46 +1,48 @@
 /**
- * Generic OpenAI-Compatible Client
- * Works with any OpenAI-compatible API (Shuaihong, etc.)
+ * 简化的OpenAI-Compatible Client
+ * 移除多余的日志和复杂的判断逻辑
  */
 
 import axios, { AxiosInstance } from 'axios';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
+import { mapFinishReason } from '@/utils/finish-reason-handler';
 import { logger } from '@/utils/logger';
 
 export class OpenAICompatibleClient implements Provider {
   public readonly name: string;
   public readonly type = 'openai';
   
-  private httpClient: AxiosInstance;
+  protected httpClient: AxiosInstance;
   private endpoint: string;
   private apiKey: string;
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000;
 
   constructor(public config: ProviderConfig, providerId: string) {
     this.name = providerId;
     this.endpoint = config.endpoint;
+    
     const credentials = config.authentication.credentials;
-    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
-    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : '';
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
     
     if (!this.endpoint) {
       throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
     }
 
+    if (config.authentication.type !== 'none' && !this.apiKey) {
+      throw new Error(`OpenAI-compatible provider ${providerId} requires API key configuration`);
+    }
+
+    // 使用endpoint作为完整URL包括路径
     this.httpClient = axios.create({
       baseURL: this.endpoint,
-      timeout: 0, // No timeout
+      timeout: 300000, // 5 minute timeout
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'claude-code-router/2.0.0'
+        'User-Agent': 'claude-code-router/2.0.0',
+        'Authorization': `Bearer ${this.apiKey}`
       }
-    });
-
-    // Add request interceptor for authentication
-    this.httpClient.interceptors.request.use((config) => {
-      if (this.apiKey) {
-        config.headers['Authorization'] = `Bearer ${this.apiKey}`;
-      }
-      return config;
     });
   }
 
@@ -48,14 +50,64 @@ export class OpenAICompatibleClient implements Provider {
    * Check if provider is healthy
    */
   async isHealthy(): Promise<boolean> {
-    try {
-      // Try to make a simple request to test connectivity
-      const response = await this.httpClient.get('/models', { timeout: 0 });
-      return response.status === 200;
-    } catch (error) {
-      logger.debug(`Health check failed for ${this.name}`, error);
-      return false;
+    return !!(this.endpoint && this.apiKey);
+  }
+
+  /**
+   * Execute request with retry logic
+   */
+  private async executeWithRetry<T>(
+    requestFn: () => Promise<T>,
+    operation: string,
+    requestId: string
+  ): Promise<T> {
+    let lastError: any;
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      try {
+        return await requestFn();
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.response?.status === 429;
+
+        if (!this.isRetryableError(error)) {
+          break;
+        }
+        
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
+      }
     }
+    throw lastError;
+  }
+
+  /**
+   * Wait for retry delay
+   */
+  private async waitForRetry(attempt: number, isRateLimited: boolean = false): Promise<void> {
+    let delay: number;
+    
+    if (isRateLimited) {
+      if (attempt === 0) delay = 1000;
+      else if (attempt === 1) delay = 5000;
+      else delay = 60000;
+    } else {
+      delay = this.retryDelay * Math.pow(2, attempt);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  /**
+   * Check if error is retryable
+   */
+  private isRetryableError(error: any): boolean {
+    if (error.response?.status) {
+      const status = error.response.status;
+      return status === 429 || status === 502 || status === 503 || status === 504;
+    }
+    return false;
   }
 
   /**
@@ -63,41 +115,29 @@ export class OpenAICompatibleClient implements Provider {
    */
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     const requestId = request.metadata?.requestId || 'unknown';
-    
+
     try {
-      logger.trace(requestId, 'provider', `Sending request to ${this.name}`, {
-        model: request.model,
-        stream: request.stream
-      });
-
-      // Convert to OpenAI format
       const openaiRequest = this.convertToOpenAI(request);
-      
-      // Send request
-      const response = await this.httpClient.post('/v1/chat/completions', openaiRequest);
-      
-      if (response.status < 200 || response.status >= 300) {
-        throw new ProviderError(
-          `${this.name} API returned status ${response.status}`,
-          this.name,
-          response.status,
-          response.data
-        );
-      }
 
-      // Convert response back to BaseResponse format
-      const baseResponse = this.convertFromOpenAI(response.data, request);
+      const response = await this.executeWithRetry(
+        () => this.httpClient.post(this.endpoint, openaiRequest),
+        `${this.name} sendRequest`,
+        requestId
+      );
 
-      logger.trace(requestId, 'provider', `Request completed successfully for ${this.name}`, {
-        usage: baseResponse.usage
-      });
-
-      return baseResponse;
+      return this.convertFromOpenAI(response.data, request);
     } catch (error) {
-      logger.error(`${this.name} request failed`, error, requestId, 'provider');
-      
       if (error instanceof ProviderError) {
         throw error;
+      }
+      
+      if ((error as any)?.response?.status === 429) {
+        throw new ProviderError(
+          `${this.name} rate limit exceeded`,
+          this.name,
+          429,
+          (error as any)?.response?.data
+        );
       }
       
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -115,25 +155,21 @@ export class OpenAICompatibleClient implements Provider {
    */
   async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
     const requestId = request.metadata?.requestId || 'unknown';
-    
-    try {
-      logger.trace(requestId, 'provider', `Sending streaming request to ${this.name}`, {
-        model: request.model
-      });
+    let lastFinishReason = 'end_turn';
 
-      // Convert to OpenAI format with streaming
+    try {
       const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
-      
-      logger.debug('OpenAI streaming request model', {
-        requestModel: openaiRequest.model,
-        originalModel: request.model,
-        targetModel: request.metadata?.targetModel
-      }, requestId, 'provider');
-      
-      // Send streaming request
-      const response = await this.httpClient.post('/v1/chat/completions', openaiRequest, {
-        responseType: 'stream'
-      });
+
+      const response = await this.executeWithRetry(
+        () => this.httpClient.post('', openaiRequest, {
+          responseType: 'stream',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`
+          }
+        }),
+        `${this.name} sendStreamRequest`,
+        requestId
+      );
 
       if (response.status < 200 || response.status >= 300) {
         throw new ProviderError(
@@ -143,67 +179,100 @@ export class OpenAICompatibleClient implements Provider {
         );
       }
 
-      // Parse streaming response
+      const decoder = new TextDecoder('utf-8', { fatal: false, ignoreBOM: true });
       let buffer = '';
-      let lastFinishReason = 'end_turn'; // default
-      
-      for await (const chunk of response.data) {
-        buffer += chunk.toString();
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line in buffer
+      let messageId = `msg_${Date.now()}`;
+      let hasStarted = false;
+      let hasContentBlock = false;
 
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6).trim();
-            
-            if (data === '[DONE]') {
-              // Send completion event with stop reason before returning
-              yield {
-                event: 'stream_complete',
-                data: {
-                  stop_reason: lastFinishReason
-                }
-              };
-              return;
-            }
-
-            try {
-              const parsed = JSON.parse(data);
-              logger.trace(requestId, 'provider', `Raw streaming chunk`, { chunk: parsed });
-              
-              // Capture finish reason for final event
-              const choice = parsed.choices?.[0];
-              if (choice?.finish_reason) {
-                lastFinishReason = this.mapFinishReason(choice.finish_reason);
-              }
-              
-              const anthropicEvent = this.convertStreamChunkToAnthropic(parsed);
-              if (anthropicEvent) {
-                logger.trace(requestId, 'provider', `Yielding anthropic event`, { event: anthropicEvent });
-                yield anthropicEvent;
-              } else {
-                logger.trace(requestId, 'provider', `No anthropic event generated for chunk`, { parsed });
-              }
-            } catch (parseError) {
-              logger.debug('Failed to parse streaming chunk', parseError, requestId);
+      // Send initial events
+      if (!hasStarted) {
+        yield {
+          event: 'message_start',
+          data: {
+            type: 'message_start',
+            message: {
+              id: messageId,
+              type: 'message',
+              role: 'assistant',
+              content: [],
+              model: request.model,
+              stop_reason: null,
+              stop_sequence: null,
+              usage: { input_tokens: 0, output_tokens: 0 }
             }
           }
+        };
+
+        yield {
+          event: 'ping',
+          data: { type: 'ping' }
+        };
+        hasStarted = true;
+      }
+
+      let streamEnded = false;
+      for await (const chunk of response.data) {
+        if (streamEnded) break;
+        
+        try {
+          const decodedChunk = decoder.decode(chunk, { stream: true });
+          buffer += decodedChunk;
+          
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') {
+                streamEnded = true;
+                break;
+              }
+
+              try {
+                const parsed = JSON.parse(data);
+                const choice = parsed.choices?.[0];
+                if (!choice?.delta) continue;
+
+                // Capture finish reason for final event
+                const finishReason = choice.finish_reason;
+                if (finishReason) {
+                  lastFinishReason = mapFinishReason(finishReason);
+                }
+                
+                const anthropicEvent = this.convertStreamChunkToAnthropic(parsed);
+                if (anthropicEvent) {
+                  yield anthropicEvent;
+                }
+
+              } catch (error) {
+                // Ignore parsing errors
+              }
+            }
+          }
+        } catch (decodeError) {
+          // Ignore decode errors
         }
       }
-      
-      // Send completion event if we didn't see [DONE]
+
+      // Send completion events
+      if (hasContentBlock) {
+        yield {
+          event: 'content_block_stop',
+          data: { type: 'content_block_stop', index: 0 }
+        };
+      }
+
       yield {
         event: 'stream_complete',
         data: {
-          stop_reason: lastFinishReason
+          type: 'stream_complete',
+          finish_reason: lastFinishReason
         }
       };
 
-      logger.trace(requestId, 'provider', `Streaming request completed for ${this.name}`);
-      
     } catch (error) {
-      logger.error(`${this.name} streaming request failed`, error, requestId, 'provider');
-      
       if (error instanceof ProviderError) {
         throw error;
       }
@@ -220,42 +289,31 @@ export class OpenAICompatibleClient implements Provider {
 
   /**
    * Convert BaseRequest to OpenAI format
-   * Uses targetModel from routing if available for the actual API call
    */
   private convertToOpenAI(request: BaseRequest): any {
-    // CRITICAL: Use targetModel from routing for the actual API call
-    const modelToUse = request.metadata?.targetModel || request.model;
-    const requestId = request.metadata?.requestId || 'unknown';
-    
-    logger.debug('OpenAI request model determination', {
-      originalModel: request.model,
-      targetModel: request.metadata?.targetModel,
-      finalModelForAPI: modelToUse,
-      hasTargetModel: !!request.metadata?.targetModel,
-      routingApplied: !!request.metadata?.targetModel
-    }, requestId, 'provider');
-    
-    const openaiRequest: any = {
-      model: modelToUse, // Use the target model from routing
+    const anthropicRequest = {
+      model: request.model,
       messages: this.convertMessages(request.messages),
-      max_tokens: request.max_tokens || 131072, // 128K tokens default
+      max_tokens: request.max_tokens || 131072,
       temperature: request.temperature,
       stream: false
     };
 
     // Add system message if present
-    if (request.metadata?.system && Array.isArray(request.metadata.system)) {
-      const systemContent = request.metadata.system.map((s: any) => s.text || s).join('\n');
-      openaiRequest.messages.unshift({
+    if (request.metadata?.system) {
+      const systemContent = Array.isArray(request.metadata.system) 
+        ? request.metadata.system.map((s: any) => s.text || s).join('\n')
+        : request.metadata.system;
+      anthropicRequest.messages.unshift({
         role: 'system',
         content: systemContent
       });
     }
 
-    // Add tools if present - Check both top-level and metadata
-    const tools = request.tools || request.metadata?.tools;
-    if (tools && Array.isArray(tools) && tools.length > 0) {
-      openaiRequest.tools = tools.map((tool: any) => ({
+    // Add tools if present
+    if (request.metadata?.tools) {
+      const tools = Array.isArray(request.metadata.tools) ? request.metadata.tools : [request.metadata.tools];
+      (anthropicRequest as any).tools = tools.map((tool: any) => ({
         type: 'function',
         function: {
           name: tool.name,
@@ -263,14 +321,9 @@ export class OpenAICompatibleClient implements Provider {
           parameters: tool.input_schema
         }
       }));
-      
-      logger.debug('Converted tools for OpenAI request', {
-        toolCount: tools.length,
-        toolNames: tools.map((t: any) => t.name)
-      });
     }
 
-    return openaiRequest;
+    return anthropicRequest;
   }
 
   /**
@@ -307,7 +360,6 @@ export class OpenAICompatibleClient implements Provider {
 
   /**
    * Convert OpenAI response to BaseResponse
-   * Returns the targetModel from routing to maintain consistency
    */
   private convertFromOpenAI(response: any, originalRequest: BaseRequest): BaseResponse {
     const choice = response.choices?.[0];
@@ -315,26 +367,12 @@ export class OpenAICompatibleClient implements Provider {
       throw new Error('No choices in OpenAI response');
     }
 
-    // CRITICAL: Always return the targetModel from routing if available
-    // This ensures the client sees the model that was intended by routing config
-    const modelToReturn = originalRequest.metadata?.targetModel || originalRequest.model;
-    const requestId = originalRequest.metadata?.requestId || 'unknown';
-    
-    logger.debug('OpenAI response model determination', {
-      originalModel: originalRequest.model,
-      targetModel: originalRequest.metadata?.targetModel,
-      finalModelInResponse: modelToReturn,
-      apiResponseModel: response.model,
-      hasTargetModel: !!originalRequest.metadata?.targetModel,
-      routingApplied: !!originalRequest.metadata?.targetModel
-    }, requestId, 'provider');
-
     return {
       id: response.id,
-      model: modelToReturn, // Use the target model from routing
+      model: originalRequest.model,
       role: 'assistant',
       content: [{ type: 'text', text: choice.message.content }],
-      stop_reason: this.mapFinishReason(choice.finish_reason),
+      stop_reason: mapFinishReason(choice.finish_reason),
       usage: {
         input_tokens: response.usage?.prompt_tokens || 0,
         output_tokens: response.usage?.completion_tokens || 0
@@ -364,31 +402,6 @@ export class OpenAICompatibleClient implements Provider {
       };
     }
 
-    // Handle tool calls if present
-    if (choice.delta?.tool_calls) {
-      // Handle tool call streaming if needed
-      // For now, we'll skip this and let the server handle it
-    }
-
     return null;
-  }
-
-  /**
-   * Map OpenAI finish reason to Anthropic stop reason
-   */
-  private mapFinishReason(finishReason: string): string {
-    const mapping: Record<string, string> = {
-      'stop': 'end_turn',
-      'length': 'max_tokens',
-      'function_call': 'tool_use',
-      'tool_calls': 'tool_use',
-      'content_filter': 'stop_sequence'
-    };
-
-    const result = mapping[finishReason];
-    if (!result) {
-      throw new Error(`Unknown finish reason '${finishReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
-    }
-    return result;
   }
 }

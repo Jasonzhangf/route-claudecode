@@ -18,6 +18,8 @@ import {
 import { EnhancedOpenAIKeyManager } from './enhanced-api-key-manager';
 import { captureRequest, captureResponse, captureError } from './data-capture';
 import { fixLmStudioResponse } from '@/transformers/lmstudio-fixer';
+// import { logApiError } from '@/utils/finish-reason-debug'; // Temporarily disabled
+import { mapFinishReason } from '@/utils/finish-reason-handler';
 
 export class EnhancedOpenAIClient implements Provider {
   public readonly name: string;
@@ -30,9 +32,71 @@ export class EnhancedOpenAIClient implements Provider {
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
   private readonly isLmStudio: boolean;
+  /**
+   * Intelligent endpoint detection - ensures chat/completions path is properly configured
+   */
+  private ensureChatCompletionsEndpoint(endpoint: string): string {
+    try {
+      const url = new URL(endpoint);
+      
+      // If endpoint has no path, add /v1/chat/completions
+      if (!url.pathname || url.pathname === '/') {
+        url.pathname = '/v1/chat/completions';
+        return url.toString();
+      }
+      
+      // If endpoint ends with /v1, add /chat/completions
+      if (url.pathname.endsWith('/v1')) {
+        url.pathname += '/chat/completions';
+        return url.toString();
+      }
+      
+      // If endpoint ends with /v1/, add chat/completions
+      if (url.pathname.endsWith('/v1/')) {
+        url.pathname += 'chat/completions';
+        return url.toString();
+      }
+      
+      // Check if path already contains chat/completions
+      if (url.pathname.includes('chat/completions')) {
+        return endpoint;
+      }
+      
+      // For other cases, append /chat/completions to existing path
+      if (!url.pathname.endsWith('/')) {
+        url.pathname += '/';
+      }
+      url.pathname += 'chat/completions';
+      return url.toString();
+      
+    } catch (error) {
+      // If URL parsing fails, assume endpoint is already correctly formatted
+      logger.warn(`Failed to parse endpoint URL: ${endpoint}, using as-is`, error, 'endpoint-detection');
+      return endpoint;
+    }
+  }
+
   constructor(public config: ProviderConfig, providerId: string) {
     this.name = providerId;
     this.endpoint = config.endpoint;
+    
+    // Apply intelligent endpoint detection
+    const originalEndpoint = this.endpoint;
+    this.endpoint = this.ensureChatCompletionsEndpoint(this.endpoint);
+    
+    // Log endpoint detection results
+    if (originalEndpoint !== this.endpoint) {
+      logger.info(`Endpoint detection applied for ${providerId}`, {
+        original: originalEndpoint,
+        detected: this.endpoint,
+        provider: providerId
+      }, 'endpoint-detection');
+    } else {
+      logger.debug(`Endpoint detection - no changes needed for ${providerId}`, {
+        endpoint: this.endpoint,
+        provider: providerId
+      }, 'endpoint-detection');
+    }
     
     // Handle API key configuration - support both single and multiple keys
     const credentials = config.authentication.credentials;
@@ -157,6 +221,7 @@ export class EnhancedOpenAIClient implements Provider {
 
   /**
    * Execute request with retry logic and API key rotation
+   * 重点是当前key失效了换下一个尝试，不重试同一个key
    */
   private async executeWithRetry<T>(
     requestFn: (apiKey: string) => Promise<T>,
@@ -200,6 +265,7 @@ export class EnhancedOpenAIClient implements Provider {
           break; // Non-retryable error, break immediately
         }
         
+        // 重点是当前key失效了换下一个尝试，不重试同一个key
         // For retryable errors, continue to next iteration which will get a fresh available key
         if (attempt < this.maxRetries - 1) {
           await this.waitForRetry(attempt, isRateLimited);
@@ -257,7 +323,10 @@ export class EnhancedOpenAIClient implements Provider {
         logger.error('Failed to capture error data', captureError, requestId, 'provider');
       }
       
+      // 确保OpenAI的所有错误都返回给客户端，不静默失败
       logger.error(`${this.name} request failed after retries`, error, requestId, 'provider');
+      
+      // 错误已经通过 captureError 记录了
       
       if (error instanceof ProviderError) {
         throw error;
@@ -397,8 +466,11 @@ export class EnhancedOpenAIClient implements Provider {
       }
     }
     
+    // 确保OpenAI的所有错误都返回给客户端，不静默失败
     // All retries failed
     logger.error(`${this.name} streaming request failed after all retries`, lastError, requestId, 'provider');
+    
+    // 错误已经通过 captureError 记录了
     
     if (lastError instanceof ProviderError) {
       throw lastError;
@@ -605,56 +677,30 @@ export class EnhancedOpenAIClient implements Provider {
                   };
                 }
 
-                // 智能stop_reason处理：工具调用需要正确的stop_reason来触发继续
-                const mappedStopReason = this.mapFinishReason(choice.finish_reason);
-                const shouldIncludeStopReason = choice.finish_reason === 'tool_calls' || choice.finish_reason === 'function_call';
+      // 智能stop_reason处理：工具调用需要正确的stop_reason来触发继续
+                const mappedStopReason = mapFinishReason(choice.finish_reason);
                 
-                if (shouldIncludeStopReason) {
-                  // 工具调用完成 - 需要发送stop_reason以触发下一轮
-                  yield {
-                    event: 'message_delta',
-                    data: {
-                      type: 'message_delta',
-                      delta: { 
-                        stop_reason: mappedStopReason,
-                        stop_sequence: null
-                      },
-                      usage: { output_tokens: outputTokens }
-                    }
-                  };
-                  logger.info('Smart cached streaming completed with tool_use stop_reason for continuation', {
-                    outputTokens,
-                    toolCalls: toolCallBuffer.size,
-                    strategy: 'cache_tools_stream_text',
-                    finishReason: choice.finish_reason,
-                    stopReason: mappedStopReason
-                  }, requestId, 'provider');
-                } else {
-                  // 非工具调用 - 移除stop signals保持对话开放
-                  yield {
-                    event: 'message_delta',
-                    data: {
-                      type: 'message_delta',
-                      delta: { 
-                        // Empty delta - no stop signals to keep conversation alive
-                      },
-                      usage: { output_tokens: outputTokens }
-                    }
-                  };
-                  logger.info('Smart cached streaming completed (no stop signals to keep conversation alive)', {
-                    outputTokens,
-                    toolCalls: toolCallBuffer.size,
-                    strategy: 'cache_tools_stream_text',
-                    finishReason: choice.finish_reason
-                  }, requestId, 'provider');
-                }
-
-                // ALWAYS send message_stop to properly close the streaming session on the client side
+                // 发送message_delta
                 yield {
-                  event: 'message_stop',
-                  data: { type: 'message_stop' }
+                  event: 'message_delta',
+                  data: {
+                    type: 'message_delta',
+                    delta: { 
+                      stop_reason: mappedStopReason,
+                      stop_sequence: null
+                    },
+                    usage: { output_tokens: outputTokens }
+                  }
                 };
-
+                
+                // 只有非工具调用场景才发送message_stop
+                if (mappedStopReason !== 'tool_use') {
+                  yield {
+                    event: 'message_stop',
+                    data: { type: 'message_stop' }
+                  };
+                }
+                
                 return;
               }
 
@@ -666,7 +712,7 @@ export class EnhancedOpenAIClient implements Provider {
       }
 
       // 如果流正常结束但没有收到finish_reason，发送默认完成事件
-      // 但移除所有stop reason给anthropic，保证停止的权力在模型这边
+      // 使用统一处理器推断finish reason
       if (!streamEnded) {
         // Close text content block if open
         if (hasContentBlock && !isInToolCall) {
@@ -686,50 +732,28 @@ export class EnhancedOpenAIClient implements Provider {
           };
         }
 
-        // 如果有工具调用但没有明确的finish_reason，推断为tool_use完成
+        // 简化逻辑：根据工具调用决定finish reason
         const hasToolCalls = toolCallBuffer.size > 0;
+        const finishReason = hasToolCalls ? 'tool_use' : 'end_turn';
         
-        if (hasToolCalls) {
-          // 推断为工具调用完成 - 发送tool_use stop_reason
+        yield {
+          event: 'message_delta',
+          data: {
+            type: 'message_delta',
+            delta: { 
+              stop_reason: finishReason,
+              stop_sequence: null
+            },
+            usage: { output_tokens: outputTokens }
+          }
+        };
+        
+        // 只有非工具调用场景才发送message_stop
+        if (finishReason !== 'tool_use') {
           yield {
-            event: 'message_delta',
-            data: {
-              type: 'message_delta',
-              delta: { 
-                stop_reason: 'tool_use',
-                stop_sequence: null
-              },
-              usage: { output_tokens: outputTokens }
-            }
+            event: 'message_stop',
+            data: { type: 'message_stop' }
           };
-
-          // 注意：不发送message_stop，让多轮对话可以继续
-          // message_stop会终止整个对话会话，而tool_use应该暂停等待工具结果
-
-          logger.info('Smart cached streaming completed with inferred tool_use stop_reason', {
-            outputTokens,
-            toolCalls: toolCallBuffer.size,
-            strategy: 'cache_tools_stream_text',
-            stopReason: 'tool_use'
-          }, requestId, 'provider');
-        } else {
-          // 没有工具调用 - 移除stop signals保持对话开放  
-          yield {
-            event: 'message_delta',
-            data: {
-              type: 'message_delta',
-              delta: { 
-                // Empty delta - no stop signals to keep conversation alive
-              },
-              usage: { output_tokens: outputTokens }
-            }
-          };
-
-          logger.info('Smart cached streaming completed without explicit finish_reason (no stop signals)', {
-            outputTokens,
-            toolCalls: toolCallBuffer.size,
-            strategy: 'cache_tools_stream_text'
-          }, requestId, 'provider');
         }
       }
 
@@ -739,18 +763,6 @@ export class EnhancedOpenAIClient implements Provider {
     }
   }
 
-  /**
-   * Map OpenAI finish reason to Anthropic stop reason
-   */
-  private mapFinishReason(finishReason: string): string {
-    const mapping: Record<string, string> = {
-      'stop': 'end_turn',
-      'length': 'max_tokens',
-      'tool_calls': 'tool_use',
-      'function_call': 'tool_use'
-    };
-    return mapping[finishReason] || 'end_turn';
-  }
 
   /**
    * Convert BaseRequest to OpenAI format using new transformer
@@ -945,8 +957,16 @@ export class EnhancedOpenAIClient implements Provider {
     }
 
     const hasToolCalls = state === 'text' && contentIndex > 0 && !textBlockStarted;
-    yield { event: 'message_delta', data: { type: 'message_delta', delta: { stop_reason: hasToolCalls ? 'tool_use' : 'end_turn' }, usage: { output_tokens: 1 } } }; // Token count is an approximation
-    yield { event: 'message_stop', data: { type: 'message_stop' } };
+    
+    // 简化LM Studio处理
+    const finishReason = hasToolCalls ? 'tool_use' : 'end_turn';
+    
+    yield { event: 'message_delta', data: { type: 'message_delta', delta: { stop_reason: finishReason }, usage: { output_tokens: 1 } } }; // Token count is an approximation
+    
+    // 只有非工具调用场景才发送message_stop
+    if (finishReason !== 'tool_use') {
+      yield { event: 'message_stop', data: { type: 'message_stop' } };
+    }
   }
 }
 

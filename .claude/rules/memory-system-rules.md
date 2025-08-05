@@ -1,5 +1,31 @@
 # 🧠 记忆系统规则 (Memory System Rules)
 
+## 🚨 MANDATORY MEMORY MANAGEMENT - 强制记忆管理规则
+
+⚠️ **AI记忆强制执行指令**:
+- **MUST CHECK MEMORY FIRST**: 每次遇到问题必须先查阅项目记忆目录
+- **MUST SAVE ARCHITECTURE CHANGES**: 架构变更后必须调用记忆专家保存经验
+- **MUST TRACK LONG TASKS**: 长任务执行必须有记忆保存和提取机制
+- **MUST UPDATE DOCS AFTER CHANGES**: 架构变更后必须更新相关文档
+- **MUST USE MEMORY AGENT FOR SUMMARIES**: 创建总结文档时必须调用 project-memory-manager agent
+- **NO DIRECT SUMMARY CREATION**: 禁止直接在项目目录创建总结文档，只能通过记忆agent保存到项目记忆目录
+
+## 🔄 强制记忆工作流 (MANDATORY MEMORY WORKFLOW)
+
+### 1. 问题遇到时的强制流程
+1. **问题遇到** → 先查阅项目记忆目录相关文件
+2. **方案制定** → 参考现有记忆中的解决方案
+3. **架构变更** → 变更前调用记忆专家总结
+4. **执行完成** → 成功/失败经验必须保存到记忆
+5. **总结创建** → 调用 project-memory-manager agent 保存总结到项目记忆目录
+6. **文档更新** → 更新架构相关文档
+
+### 2. 长任务执行的记忆管理
+- **任务开始**: 记录任务目标和计划
+- **关键节点**: 记录重要进展和决策
+- **问题遇到**: 记录问题和解决过程
+- **任务完成**: 记录最终结果和经验总结
+
 ## 🎯 记忆系统目标 (Memory System Objectives)
 
 ### 核心目标
@@ -13,20 +39,40 @@
 - **问题解决**: 重大bug修复过程和解决方案
 - **性能优化**: 性能瓶颈识别和优化策略
 - **最佳实践**: 开发过程中总结的有效模式
+- **架构变更**: 重要的架构演进和变更记录
+- **规则更新**: 项目规则的变更和优化记录
 
 ## 📁 记忆存储结构 (Memory Storage Structure)
 
 ### 存储位置
-**标准项目记忆目录**: `~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/`
+**唯一正确的项目记忆路径**: `~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/`
 
-**记忆管理方式**: 
-- 所有记忆通过 `project-memory-manager` agent 统一管理
-- 记忆文件自动命名和分类
-- 支持多种记忆类型：technical-decision, problem-solution, implementation, rule-change等
+⚠️ **记忆路径规范警告 (MEMORY PATH COMPLIANCE WARNING)**
+**绝对禁止的路径**: 
+- ❌ `./memory/` - 项目相对路径
+- ❌ `docs/memory/` - 文档目录路径
+- ❌ `.claude/memory/` - 规则目录路径
+- ❌ `~/Documents/` - 用户文档路径
+
+**路径验证命令**:
+```bash
+# 验证记忆目录是否存在
+ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/
+
+# 检查最新记忆文件
+ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail -5
+```
+
+### 记忆管理方式
+- **统一管理**: 所有记忆通过 `project-memory-manager` agent 统一管理
+- **自动命名**: 记忆文件自动命名和分类，格式：`YYYYMMDD-HHMMSS-[descriptive-english-id].md`
+- **类型分类**: 支持多种记忆类型：technical-decision, problem-solution, implementation, rule-change等
+- **强制调用**: 架构变更时必须调用记忆专家，不允许直接创建记忆文件
 
 **目录结构**:
 ```
 ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/
+├── 20250802-175031-concurrency-routing-rate-limiting-architecture.md  # 最新架构记忆
 ├── [具体问题描述]-[日期].md           # 问题解决记忆
 ├── [架构变更描述]-[日期].md           # 架构演进记忆  
 ├── [实现总结描述]-[日期].md           # 实现总结记忆

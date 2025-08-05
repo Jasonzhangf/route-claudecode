@@ -6,7 +6,8 @@
 import { OutputProcessor, BaseRequest, BaseResponse, AnthropicResponse } from '@/types';
 import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
-import { PipelineDebugger } from '@/debug/pipeline-debugger';
+// import { PipelineDebugger } from '@/debug/pipeline-debugger'; // 已迁移到统一日志系统
+import { PipelineDebugger } from '@/utils/logger';
 
 export class AnthropicOutputProcessor implements OutputProcessor {
   public readonly name = 'anthropic';
@@ -291,7 +292,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       text,
       requestId,
       stage,
-      'anthropic-output',
+      'anthropic',
       'unknown'
     );
   }

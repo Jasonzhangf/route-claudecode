@@ -5,7 +5,10 @@
 
 import { StreamChunk, MessageTransformer } from './types';
 import { logger } from '@/utils/logger';
-import { PipelineDebugger, ToolCallError } from '@/debug/pipeline-debugger';
+// import { PipelineDebugger, ToolCallError } from '@/debug/pipeline-debugger'; // 已迁移到统一日志系统
+import { ErrorTracker, ToolCallError } from '../logging';
+import { PipelineDebugger, ToolCallErrorClass } from '@/utils/logger';
+import { mapFinishReason, mapStopReason } from '@/utils/finish-reason-handler';
 
 export interface StreamTransformOptions {
   sourceFormat: 'openai' | 'anthropic';
@@ -131,7 +134,7 @@ export class StreamingTransformer {
                     choice.delta.content,
                     this.requestId,
                     'streaming-text-delta',
-                    'streaming-transformer',
+                    'openai',
                     this.model
                   );
                   
@@ -213,7 +216,20 @@ export class StreamingTransformer {
               // Handle finish reason
               if (choice.finish_reason) {
                 handledChunk = true;
-                stopReason = this.mapFinishReason(choice.finish_reason);
+                stopReason = mapFinishReason(choice.finish_reason);
+                
+                // 专门记录finish reason
+                logger.logFinishReason(
+                  choice.finish_reason,
+                  {
+                    mappedStopReason: stopReason,
+                    provider: this.options.sourceFormat,
+                    model: this.model,
+                    chunkData: choice
+                  },
+                  this.requestId,
+                  'streaming-finish-reason'
+                );
               }
               
               // If we didn't handle this chunk, it means it's just a metadata chunk that doesn't need transformation
@@ -229,11 +245,11 @@ export class StreamingTransformer {
               // Check for tool call errors in the problematic chunk
               if (this.isLikelyToolCallError(data, error)) {
                 this.pipelineDebugger.logToolCallError(
-                  new ToolCallError(
+                  new ToolCallErrorClass(
                     'Tool call parsing error detected',
                     this.requestId,
                     'openai-to-anthropic',
-                    'streaming-transformer',
+                    'openai',
                     this.model,
                     {
                       rawChunk: data,
@@ -359,7 +375,7 @@ export class StreamingTransformer {
                   event.delta.text,
                   this.requestId,
                   'streaming-anthropic-to-openai',
-                  'streaming-transformer',
+                  'anthropic',
                   this.model
                 );
                 
@@ -413,11 +429,26 @@ export class StreamingTransformer {
 
               // Handle message completion
               if (event.type === 'message_delta' && event.delta?.stop_reason) {
+                const mappedFinishReason = mapStopReason(event.delta.stop_reason);
+                
+                // 专门记录stop reason
+                logger.logStopReason(
+                  event.delta.stop_reason,
+                  {
+                    mappedFinishReason,
+                    provider: this.options.sourceFormat,
+                    model: this.model,
+                    eventData: event
+                  },
+                  this.requestId,
+                  'streaming-stop-reason'
+                );
+                
                 yield this.createOpenAIChunk({
                   choices: [{
                     index: 0,
                     delta: {},
-                    finish_reason: this.mapStopReason(event.delta.stop_reason)
+                    finish_reason: mappedFinishReason
                   }]
                 });
               }
@@ -481,23 +512,6 @@ export class StreamingTransformer {
   }
 
   /**
-   * Map OpenAI finish reason to Anthropic stop reason
-   */
-  private mapFinishReason(finishReason: string): string {
-    const mapping: Record<string, string> = {
-      'stop': 'end_turn',
-      'length': 'max_tokens',
-      'tool_calls': 'tool_use',
-      'function_call': 'tool_use'
-    };
-    const result = mapping[finishReason];
-    if (!result) {
-      throw new Error(`Unknown finish reason '${finishReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
-    }
-    return result;
-  }
-
-  /**
    * Check if raw data contains tool call signatures
    * Made more strict to avoid false positives from normal text
    */
@@ -535,40 +549,22 @@ export class StreamingTransformer {
       this.pipelineDebugger.addRawStreamData(this.requestId, rawStreamData.join(''));
       
       // Log the error for analysis
-      this.pipelineDebugger.logToolCallError(new ToolCallError(
+      this.pipelineDebugger.logToolCallError(new ToolCallErrorClass(
         `Raw stream analysis error: ${error.message}`,
         this.requestId,
         transformationStage,
-        'streaming-transformer',
+        'openai',
         this.model,
         {
           rawChunk: rawStreamData.slice(-5).join(''), // Last 5 chunks for context
         },
         this.options.port || 3456
-      )).catch(err => {
-        console.error('Failed to log tool call error:', err);
-      });
+      ));
     } catch (analysisError) {
       console.error('Failed to prepare raw stream analysis data:', analysisError);
     }
   }
 
-  /**
-   * Map Anthropic stop reason to OpenAI finish reason
-   */
-  private mapStopReason(stopReason: string): string {
-    const mapping: Record<string, string> = {
-      'end_turn': 'stop',
-      'max_tokens': 'length',
-      'tool_use': 'tool_calls',
-      'stop_sequence': 'stop'
-    };
-    const result = mapping[stopReason];
-    if (!result) {
-      throw new Error(`Unknown stop reason '${stopReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
-    }
-    return result;
-  }
 }
 
 /**

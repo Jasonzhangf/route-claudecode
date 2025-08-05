@@ -427,7 +427,7 @@ function printEnvironmentSetup(port: number, host: string): void {
 program
   .command('start')
   .description('Start the Claude Code Router server (default: dual-config mode)')
-  .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
+  .option('-c, --config <path>', 'Configuration file path')
   .option('-p, --port <number>', 'Server port', parseInt)
   .option('-h, --host <string>', 'Server host')
   .option('-d, --debug', 'Enable debug mode')
@@ -464,23 +464,14 @@ program
         return await startDaemonMode(options);
       }
 
-      // Handle explicit dual-config mode first
-      if (options.dualConfig) {
-        console.log(chalk.blue('🎯 Explicit dual-config mode requested\n'));
-        return await startDualConfigServers(options);
-      }
-      
-      // Handle explicit single-config mode
-      if (options.singleConfig) {
-        console.log(chalk.blue('🎯 Explicit single-config mode requested\n'));
-        // Continue to single server logic below
-      } else if (resolvePath(options.config) !== DEFAULT_CONFIG_PATH) {
-        // User specified a custom config file, use single-config mode
-        console.log(chalk.blue(`🎯 Custom config specified: ${options.config}\n`));
+      // Handle configuration detection based on --config flag
+      if (options.config) {
+        // User specified a config file, force single-config mode
+        console.log(chalk.blue(`🎯 Custom config specified: ${options.config}`));
         console.log(chalk.blue('🎯 Starting single-config server with custom configuration\n'));
-        // Continue to single server logic below with user-specified config
+        // Skip dual config detection - proceed directly to single server logic
       } else {
-        // Intelligent configuration detection (default behavior)
+        // No --config flag, use intelligent configuration detection
         try {
           const configMode = detectConfigurationMode();
           
@@ -490,8 +481,7 @@ program
           } else {
             console.log(chalk.blue(`🎯 Intelligent detection: Starting single-config server\n`));
             // Continue to single server logic below with detected config
-            const configPath = resolve(configMode.configs[0]);
-            options.config = configPath;
+            options.config = configMode.configs[0];
           }
         } catch (error) {
           console.error(chalk.red('❌ Configuration detection failed:'), error instanceof Error ? error.message : String(error));
@@ -512,13 +502,8 @@ program
       }
       if (options.logLevel) config.debug.logLevel = options.logLevel;
 
-      // Configure logger
-      logger.setConfig({
-        logLevel: config.debug.logLevel,
-        debugMode: config.debug.enabled,
-        logDir: config.debug.logDir,
-        traceRequests: config.debug.traceRequests
-      });
+      // Note: Logger configuration is now handled by the unified logging system
+      // in RouterServer constructor, no need for legacy setConfig call
 
       // Create and start server
       const server = new RouterServer(config);
@@ -604,7 +589,7 @@ program
 program
   .command('status')
   .description('Check router status')
-  .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
+  .option('-c, --config <path>', 'Configuration file path')
   .option('-p, --port <number>', 'Server port (overrides config)')
   .option('-h, --host <string>', 'Server host (overrides config)')
   .option('--daemon', 'Check daemon status instead of direct server status')
@@ -613,7 +598,15 @@ program
     if (options.daemon) {
       return await checkDaemonStatus();
     }
-    const config = loadConfig(options.config);
+    let configPath;
+    if (options.config) {
+      configPath = resolvePath(options.config);
+    } else {
+      // No --config flag, use intelligent configuration detection
+      const configMode = detectConfigurationMode();
+      configPath = resolve(configMode.configs[0]);
+    }
+    const config = loadConfig(configPath);
     const host = options.host || config.server?.host || 'localhost';
     const port = options.port || config.server?.port || 3000;
     
@@ -648,9 +641,18 @@ program
   .description('Check router and provider health')
   .option('-p, --port <number>', 'Server port (overrides config)')
   .option('-h, --host <string>', 'Server host (overrides config)')
+  .option('-c, --config <path>', 'Configuration file path')
   .action(async (options) => {
     try {
-      const config = loadConfig(options.config);
+      let configPath;
+      if (options.config) {
+        configPath = resolvePath(options.config);
+      } else {
+        // No --config flag, use intelligent configuration detection
+        const configMode = detectConfigurationMode();
+        configPath = resolve(configMode.configs[0]);
+      }
+      const config = loadConfig(configPath);
       const host = options.host || config.server?.host || 'localhost';
       const port = options.port || config.server?.port || 3000;
       const response = await fetch(`http://${host}:${port}/health`);
@@ -690,7 +692,7 @@ program
 program
   .command('code')
   .description('Start router and launch Claude Code with routing')
-  .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
+  .option('-c, --config <path>', 'Configuration file path')
   .option('-p, --port <number>', 'Server port', parseInt)
   .option('-h, --host <string>', 'Server host')
   .option('-d, --debug', 'Enable debug mode')
@@ -706,12 +708,19 @@ program
 program
   .command('config')
   .description('Show or edit configuration')
-  .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
+  .option('-c, --config <path>', 'Configuration file path')
   .option('--show', 'Show current configuration')
   .option('--edit', 'Open configuration in default editor')
   .action(async (options) => {
     try {
-      const configPath = resolvePath(options.config);
+      let configPath;
+      if (options.config) {
+        configPath = resolvePath(options.config);
+      } else {
+        // No --config flag, use intelligent configuration detection
+        const configMode = detectConfigurationMode();
+        configPath = resolve(configMode.configs[0]);
+      }
       
       if (options.show) {
         if (existsSync(configPath)) {
@@ -848,7 +857,7 @@ program
   .description('Stop the Claude Code Router server')
   .option('-p, --port <number>', 'Server port to stop', parseInt)
   .option('-h, --host <string>', 'Server host', '127.0.0.1')
-  .option('-c, --config <path>', 'Configuration file path', DEFAULT_CONFIG_PATH)
+  .option('-c, --config <path>', 'Configuration file path')
   .option('-f, --force', 'Force stop using kill signal if graceful shutdown fails')
   .option('--daemon', 'Stop daemon mode (background process)')
   .action(async (options) => {
@@ -860,7 +869,11 @@ program
       // Load configuration to get default port if not specified
       let config;
       try {
-        const configPath = resolvePath(options.config);
+        const configPath = options.config ? resolvePath(options.config) : (() => {
+          // No --config flag, use intelligent configuration detection
+          const configMode = detectConfigurationMode();
+          return resolve(configMode.configs[0]);
+        })();
         config = loadConfig(configPath);
       } catch (error) {
         // If config loading fails, use defaults

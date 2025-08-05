@@ -1,227 +1,126 @@
 /**
- * Logger utility for Claude Code Router
- * Provides structured logging with different levels and request tracing
+ * 临时日志兼容层
+ * 为了保持构建兼容性，提供旧日志接口的兼容实现
+ * 项目所有者: Jason Zhang
  */
 
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
-import { homedir } from 'os';
-import { getConfigPaths } from './config-paths';
+import { getLogger, createErrorTracker, createRequestTracker, type ToolCallError } from '../logging';
 
-export type LogLevel = 'error' | 'warn' | 'info' | 'debug';
+// 创建兼容的logger实例 - 使用更安静的配置
+const compatLogger = getLogger();
 
-interface LogEntry {
-  timestamp: string;
-  level: LogLevel;
-  message: string;
-  data?: any;
-  requestId?: string;
-  stage?: string;
-}
+export const logger = {
+  error: (message: string, data?: any, requestId?: string, stage?: string) => {
+    compatLogger.error(message, data, requestId, stage);
+  },
+  warn: (message: string, data?: any, requestId?: string, stage?: string) => {
+    compatLogger.warn(message, data, requestId, stage);
+  },
+  info: (message: string, data?: any, requestId?: string, stage?: string) => {
+    compatLogger.info(message, data, requestId, stage);
+  },
+  debug: (message: string, data?: any, requestId?: string, stage?: string) => {
+    compatLogger.debug(message, data, requestId, stage);
+  },
+  logFinishReason: (finishReason: string, data?: any, requestId?: string, stage?: string) => {
+    compatLogger.logFinishReason(finishReason, data, requestId, stage);
+  },
+  logStopReason: (stopReason: string, data?: any, requestId?: string, stage?: string) => {
+    compatLogger.logStopReason(stopReason, data, requestId, stage);
+  },
+  trace: (requestId: string, stage: string, message: string, data?: any) => {
+    compatLogger.debug(`[TRACE] ${message}`, data, requestId, stage);
+  },
+  setConfig: (_options: any) => {
+    // 兼容旧的setConfig调用，但实际不做任何操作
+  },
+  setQuietMode: (_enabled: boolean) => {
+    // 兼容旧的setQuietMode调用，但实际不做任何操作
+  }
+};
 
-class Logger {
-  private logLevel: LogLevel = 'info';
-  private debugMode: boolean = false;
-  private logDir: string;
-  private traceRequests: boolean = false;
-  private quietMode: boolean = false;
-  private sessionLogFile: string | null = null;
+// PipelineDebugger 兼容类 - 映射到新的日志系统
+export class PipelineDebugger {
+  private errorTracker: ReturnType<typeof createErrorTracker>;
+  private requestTracker: ReturnType<typeof createRequestTracker>;
+  private logger: ReturnType<typeof getLogger>;
 
-  constructor(logDir?: string, serverType?: string) {
-    if (logDir) {
-      this.logDir = logDir;
-    } else {
-      const configPaths = getConfigPaths();
-      this.logDir = configPaths.logsDir;
-    }
-    this.ensureLogDir();
-    this.initSessionLogFile(serverType);
+  constructor(port: number = 3456) {
+    this.errorTracker = createErrorTracker(port);
+    this.requestTracker = createRequestTracker(port);
+    this.logger = getLogger(port);
   }
 
-  setConfig(options: {
-    logLevel?: LogLevel;
-    debugMode?: boolean;
-    logDir?: string;
-    traceRequests?: boolean;
-    quietMode?: boolean;
-  }) {
-    const logDirChanged = options.logDir && options.logDir !== this.logDir;
-    
-    if (options.logLevel) this.logLevel = options.logLevel;
-    if (options.debugMode !== undefined) this.debugMode = options.debugMode;
-    if (options.logDir) this.logDir = options.logDir;
-    if (options.traceRequests !== undefined) this.traceRequests = options.traceRequests;
-    if (options.quietMode !== undefined) this.quietMode = options.quietMode;
-    
-    this.ensureLogDir();
-    
-    // Re-initialize session log file if log directory changed
-    if (logDirChanged) {
-      this.initSessionLogFile();
-    }
+  // 检测工具调用错误
+  detectToolCallError(
+    text: string, 
+    requestId: string, 
+    stage: string = 'unknown',
+    provider: string = 'unknown',
+    model: string = 'unknown'
+  ): boolean {
+    return this.errorTracker.detectToolCallInText(text, requestId, stage, provider, model);
   }
 
-  private ensureLogDir() {
-    if (!existsSync(this.logDir)) {
-      mkdirSync(this.logDir, { recursive: true });
-    }
+  // 记录工具调用错误
+  logToolCallError(error: ToolCallError): void {
+    this.errorTracker.logToolCallError(error);
   }
 
-  private initSessionLogFile(serverType?: string) {
-    // Create one log file per server session
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5); // YYYY-MM-DDTHH-MM-SS
-    const suffix = serverType ? `-${serverType}` : '';
-    this.sessionLogFile = join(this.logDir, `ccr-session${suffix}-${timestamp}.log`);
-    
-    // Write session start marker
-    if (this.sessionLogFile) {
-      const sessionStartEntry = {
-        timestamp: new Date().toISOString(),
-        level: 'info' as LogLevel,
-        message: '🚀 Claude Code Router session started',
-        data: {
-          sessionId: timestamp,
-          serverType: serverType || 'single',
-          pid: process.pid,
-          nodeVersion: process.version,
-          platform: process.platform
-        }
-      };
-      
-      try {
-        writeFileSync(this.sessionLogFile, JSON.stringify(sessionStartEntry) + '\n', { flag: 'w' });
-      } catch (error) {
-        console.error('Failed to initialize session log file:', error);
-        this.sessionLogFile = null;
-      }
-    }
+  // 添加原始流数据
+  addRawStreamData(requestId: string, data: string): void {
+    this.requestTracker.logStage(requestId, 'raw_stream_data', {
+      rawData: data
+    });
   }
 
-  private shouldLog(level: LogLevel): boolean {
-    const levels: Record<LogLevel, number> = {
-      error: 0,
-      warn: 1,
-      info: 2,
-      debug: 3
-    };
-
-    return levels[level] <= levels[this.logLevel];
-  }
-
-  private formatLog(level: LogLevel, message: string, data?: any, requestId?: string, stage?: string): LogEntry {
-    return {
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      data,
-      requestId,
-      stage
-    };
-  }
-
-  private writeToFile(entry: LogEntry) {
-    if (!this.debugMode && !this.traceRequests) return;
-    if (!this.sessionLogFile) return;
-
-    try {
-      const logLine = JSON.stringify(entry) + '\n';
-      writeFileSync(this.sessionLogFile, logLine, { flag: 'a' });
-    } catch (error) {
-      console.error('Failed to write to log file:', error);
-    }
-  }
-
-  private outputToConsole(entry: LogEntry) {
-    // In quiet mode, only show critical errors and important info
-    if (this.quietMode && !['error', 'warn'].includes(entry.level)) {
-      return;
-    }
-    
-    const { timestamp, level, message, data, requestId, stage } = entry;
-    
-    // Only show essential info in console, detailed logs go to file
-    let output: string;
-    if (requestId && stage) {
-      // Compact format for traced requests - only show in debug mode
-      if (!this.debugMode) return;
-      output = `[${level.toUpperCase()}] ${message}`;
-    } else {
-      // Standard format for important logs
-      const timeShort = timestamp.slice(11, 19); // Just HH:MM:SS
-      output = `[${timeShort}] ${level.toUpperCase()}: ${message}`;
-    }
-    
-    switch (level) {
-      case 'error':
-        console.error(output);
-        break;
-      case 'warn':
-        console.warn(output);
-        break;
-      case 'info':
-        console.log(output);
-        break;
-      case 'debug':
-        if (this.debugMode) {
-          console.log(output);
-        }
-        break;
-    }
-  }
-
-  error(message: string, data?: any, requestId?: string, stage?: string) {
-    if (!this.shouldLog('error')) return;
-    
-    const entry = this.formatLog('error', message, data, requestId, stage);
-    this.outputToConsole(entry);
-    this.writeToFile(entry);
-  }
-
-  warn(message: string, data?: any, requestId?: string, stage?: string) {
-    if (!this.shouldLog('warn')) return;
-    
-    const entry = this.formatLog('warn', message, data, requestId, stage);
-    this.outputToConsole(entry);
-    this.writeToFile(entry);
-  }
-
-  info(message: string, data?: any, requestId?: string, stage?: string) {
-    if (!this.shouldLog('info')) return;
-    
-    const entry = this.formatLog('info', message, data, requestId, stage);
-    this.outputToConsole(entry);
-    this.writeToFile(entry);
-  }
-
-  debug(message: string, data?: any, requestId?: string, stage?: string) {
-    if (!this.shouldLog('debug')) return;
-    
-    const entry = this.formatLog('debug', message, data, requestId, stage);
-    this.outputToConsole(entry);
-    this.writeToFile(entry);
-  }
-
-  // Special method for request tracing
-  trace(requestId: string, stage: string, message: string, data?: any) {
-    if (!this.traceRequests) return;
-    
-    const entry = this.formatLog('debug', `[TRACE] ${message}`, data, requestId, stage);
-    this.writeToFile(entry);
-    
-    if (this.debugMode) {
-      this.outputToConsole(entry);
-    }
-  }
-
-  // Enable quiet mode to reduce console output interference
-  setQuietMode(enabled: boolean) {
-    this.quietMode = enabled;
+  // 记录失败
+  logFailure(failureData: any): void {
+    this.errorTracker.logStandardizedError({
+      requestId: failureData.requestId || 'unknown',
+      reason: failureData.reason || 'Unknown failure',
+      provider: failureData.provider || 'unknown',
+      model: failureData.model || 'unknown',
+      errorCode: failureData.errorCode || 'PIPELINE_FAILURE',
+      key: failureData.key || 'unknown',
+      port: failureData.port || 3456
+    });
   }
 }
 
-export const logger = new Logger();
+// ToolCallError 兼容类
+export class ToolCallErrorClass implements ToolCallError {
+  requestId: string;
+  errorMessage: string;
+  transformationStage: string;
+  provider: string;
+  model: string;
+  context: any;
+  port: number;
 
-// Factory function to create independent logger instances
-export function createLogger(logDir: string, serverType: string): Logger {
-  return new Logger(logDir, serverType);
+  constructor(
+    errorMessage: string,
+    requestId: string,
+    transformationStage: string = 'unknown',
+    provider: string = 'unknown',
+    model: string = 'unknown',
+    context: any = {},
+    port: number = 3456
+  ) {
+    this.requestId = requestId;
+    this.errorMessage = errorMessage;
+    this.transformationStage = transformationStage;
+    this.provider = provider;
+    this.model = model;
+    this.context = context;
+    this.port = port;
+  }
 }
+
+// 工厂函数兼容
+export function createLogger(_logDir: string, _serverType: string) {
+  return logger;
+}
+
+// 导出类型和其他兼容接口
+export { type ToolCallError };

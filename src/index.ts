@@ -23,4 +23,4 @@ export { EnhancedOpenAIClient } from './providers/openai';
 export * from './types';
 
 // Utilities
-export { logger, calculateTokenCount, calculateDetailedTokenCount } from './utils';
+export { calculateTokenCount, calculateDetailedTokenCount } from './utils';

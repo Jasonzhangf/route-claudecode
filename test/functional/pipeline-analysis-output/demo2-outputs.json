@@ -1,0 +1,291 @@
+[
+  {
+    "testCaseId": "simple-text-message",
+    "testCaseName": "简单文本消息",
+    "input": {
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 1000,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Hello, how are you?"
+        }
+      ]
+    },
+    "demo2Output": {
+      "conversationState": {
+        "chatTriggerType": "MANUAL",
+        "conversationId": "c4cec4cc-0430-4411-bcba-41756337fed7",
+        "currentMessage": {
+          "userInputMessage": {
+            "content": "Hello, how are you?",
+            "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+            "origin": "AI_EDITOR",
+            "userInputMessageContext": {}
+          }
+        },
+        "history": null
+      },
+      "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+    },
+    "timestamp": "2025-08-04T05:46:34.574Z"
+  },
+  {
+    "testCaseId": "multi-turn-conversation",
+    "testCaseName": "多轮对话",
+    "input": {
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 1000,
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the capital of France?"
+        },
+        {
+          "role": "assistant",
+          "content": "The capital of France is Paris."
+        },
+        {
+          "role": "user",
+          "content": "What about Italy?"
+        }
+      ]
+    },
+    "demo2Output": {
+      "conversationState": {
+        "chatTriggerType": "MANUAL",
+        "conversationId": "c3d35802-625c-42b9-b087-86659de5d750",
+        "currentMessage": {
+          "userInputMessage": {
+            "content": "What about Italy?",
+            "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+            "origin": "AI_EDITOR",
+            "userInputMessageContext": {}
+          }
+        },
+        "history": [
+          {
+            "userInputMessage": {
+              "content": "What is the capital of France?",
+              "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+              "origin": "AI_EDITOR"
+            }
+          },
+          {
+            "assistantResponseMessage": {
+              "content": "The capital of France is Paris.",
+              "toolUses": []
+            }
+          }
+        ]
+      },
+      "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+    },
+    "timestamp": "2025-08-04T05:46:34.737Z"
+  },
+  {
+    "testCaseId": "system-message-conversation",
+    "testCaseName": "带系统消息的对话",
+    "input": {
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 1000,
+      "system": [
+        {
+          "type": "text",
+          "text": "You are a helpful assistant specialized in geography."
+        }
+      ],
+      "messages": [
+        {
+          "role": "user",
+          "content": "Tell me about European capitals."
+        }
+      ]
+    },
+    "demo2Output": {
+      "conversationState": {
+        "chatTriggerType": "MANUAL",
+        "conversationId": "f8b9e700-0fc2-4799-ab30-7c76b6afb32f",
+        "currentMessage": {
+          "userInputMessage": {
+            "content": "Tell me about European capitals.",
+            "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+            "origin": "AI_EDITOR",
+            "userInputMessageContext": {}
+          }
+        },
+        "history": [
+          {
+            "userInputMessage": {
+              "content": "You are a helpful assistant specialized in geography.",
+              "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+              "origin": "AI_EDITOR"
+            }
+          },
+          {
+            "assistantResponseMessage": {
+              "content": "I will follow these instructions",
+              "toolUses": []
+            }
+          }
+        ]
+      },
+      "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+    },
+    "timestamp": "2025-08-04T05:46:34.899Z"
+  },
+  {
+    "testCaseId": "tool-calling-scenario",
+    "testCaseName": "工具调用场景",
+    "input": {
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 1000,
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Get the current weather for a specific location",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "location": {
+                "type": "string",
+                "description": "The city and state, e.g. San Francisco, CA"
+              }
+            },
+            "required": [
+              "location"
+            ]
+          }
+        }
+      ],
+      "messages": [
+        {
+          "role": "user",
+          "content": "What is the weather like in New York?"
+        }
+      ]
+    },
+    "demo2Output": {
+      "conversationState": {
+        "chatTriggerType": "MANUAL",
+        "conversationId": "11778678-cc4d-4834-8bdb-c144eb543242",
+        "currentMessage": {
+          "userInputMessage": {
+            "content": "What is the weather like in New York?",
+            "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+            "origin": "AI_EDITOR",
+            "userInputMessageContext": {
+              "tools": [
+                {
+                  "toolSpecification": {
+                    "name": "get_weather",
+                    "description": "Get the current weather for a specific location",
+                    "inputSchema": {
+                      "json": {
+                        "properties": {
+                          "location": {
+                            "description": "The city and state, e.g. San Francisco, CA",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "location"
+                        ],
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "history": null
+      },
+      "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+    },
+    "timestamp": "2025-08-04T05:46:35.059Z"
+  },
+  {
+    "testCaseId": "complex-tool-with-long-description",
+    "testCaseName": "长描述工具（测试截断）",
+    "input": {
+      "model": "claude-sonnet-4-20250514",
+      "max_tokens": 1000,
+      "tools": [
+        {
+          "name": "complex_analysis_tool",
+          "description": "This is a very comprehensive analysis tool that can perform multiple types of data analysis including statistical analysis, trend analysis, correlation analysis, regression analysis, time series analysis, and many other advanced analytical operations. It supports various data formats and can handle large datasets efficiently. The tool also provides visualization capabilities and can generate detailed reports with insights and recommendations based on the analysis results. It is designed to be user-friendly while maintaining high performance and accuracy in all analytical operations.",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "description": "The data to analyze"
+              },
+              "analysis_type": {
+                "type": "string",
+                "description": "Type of analysis to perform"
+              }
+            },
+            "required": [
+              "data",
+              "analysis_type"
+            ]
+          }
+        }
+      ],
+      "messages": [
+        {
+          "role": "user",
+          "content": "Please analyze this data for trends."
+        }
+      ]
+    },
+    "demo2Output": {
+      "conversationState": {
+        "chatTriggerType": "MANUAL",
+        "conversationId": "b33b27d2-b1da-48b3-9bed-07c3cc6a5184",
+        "currentMessage": {
+          "userInputMessage": {
+            "content": "Please analyze this data for trends.",
+            "modelId": "CLAUDE_SONNET_4_20250514_V1_0",
+            "origin": "AI_EDITOR",
+            "userInputMessageContext": {
+              "tools": [
+                {
+                  "toolSpecification": {
+                    "name": "complex_analysis_tool",
+                    "description": "This is a very comprehensive analysis tool that can perform multiple types of data analysis including statistical analysis, trend analysis, correlation analysis, regression analysis, time series analysis, and many other advanced analytical operations. It supports various data formats and can handle large datasets efficiently. The tool also provides visualization capabilities and can generate detailed reports with insights and recommendations based on the analysis results. It is designed to be user-friendly while maintaining high performance and accuracy in all analytical operations.",
+                    "inputSchema": {
+                      "json": {
+                        "properties": {
+                          "analysis_type": {
+                            "description": "Type of analysis to perform",
+                            "type": "string"
+                          },
+                          "data": {
+                            "description": "The data to analyze",
+                            "type": "array"
+                          }
+                        },
+                        "required": [
+                          "data",
+                          "analysis_type"
+                        ],
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "history": null
+      },
+      "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+    },
+    "timestamp": "2025-08-04T05:46:35.210Z"
+  }
+]

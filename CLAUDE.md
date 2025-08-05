@@ -70,8 +70,16 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 2. **方案制定** → 参考现有记忆中的解决方案
 3. **架构变更** → 变更前调用记忆专家总结
 4. **执行完成** → 成功/失败经验必须保存到记忆
-5. **🆕 总结创建** → 调用 project-memory-manager agent 保存总结到项目记忆目录
+5. **🆕 总结创建** → 根据AI类型选择记忆保存方式：
+   - **Claude Code用户**: 调用 `project-memory-manager` agent 保存总结到项目记忆目录
+   - **其他AI**: 直接总结当前发现和细节为有条理的记忆，用一句话总结+日期时间命名保存到项目记忆目录
 6. **文档更新** → 更新架构相关文档
+
+#### 📝 记忆保存格式规范 (MEMORY SAVING FORMAT)
+- **文件命名**: `YYYYMMDD-HHMMSS-[descriptive-english-id].md`
+- **一句话总结**: 文件开头必须包含问题/解决方案的一句话总结
+- **时间戳**: 创建时间必须在文件名和内容中体现
+- **结构化内容**: 包含问题背景、解决方案、技术细节、关键经验
 
 ## 🏗️ 项目架构概览 (Project Architecture)
 
@@ -187,6 +195,7 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 | **问题疑惑** | [📁 项目记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 相关经验查阅 | **强制记忆优先** |
 | **长任务执行** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) | 任务记忆管理 | **要求记忆跟踪** |
 | **服务管理** | [📄 服务管理重要规则](#️-服务管理重要规则-critical-service-management-rules) | rcc start/code区分、配置只读检查 | **阻止破坏性操作** |
+| **补丁系统** | [📄 补丁系统架构](.claude/project-details/patch-system-architecture.md) + [📁 src/patches/](src/patches/) | 非侵入式修复、条件匹配验证 | **拒绝硬编码修复** |
 
 ### 🚫 违规处理程序 (VIOLATION HANDLING)
 1. **发现违规** → 立即停止当前操作
@@ -377,14 +386,22 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 - ✅ **企业级监控**: 生产级错误捕获系统，100%工具调用错误监控
 - ✅ **架构统一**: 简化OpenAI Provider路由，统一使用EnhancedOpenAIClient
 - ✅ **用户体验**: 清洁日志界面，移除verbose输出，保持强大调试能力
+- ✅ **🩹 补丁系统**: 非侵入式模型兼容性修复，支持Anthropic、OpenAI、Gemini格式差异处理
 
 ### v2.7.0 重大特性
 - **企业级错误监控**: 实时工具调用错误检测与捕获系统
 - **架构统一优化**: OpenAI Provider路由简化，消除冗余实现
 - **日志系统优化**: 移除噪音日志，保持清洁用户界面
 - **稳定性大幅提升**: 工具调用成功率提升至99.9%+
+- **🩹 补丁系统架构**: 非侵入式模型兼容性修复方案，四层补丁架构设计
+  - **AnthropicToolCallTextFixPatch**: 修复ZhipuAI/GLM-4.5文本格式tool call问题
+  - **OpenAIToolFormatFixPatch**: 标准化OpenAI兼容服务工具调用格式
+  - **GeminiResponseFormatFixPatch**: 统一Gemini API响应格式
+  - **精确条件匹配**: 支持Provider、Model、Version多维度匹配
+  - **性能监控**: 应用统计、超时保护、错误隔离机制
 
 ### 近期重大修复
+- **2025-08-05**: 🩹 补丁系统架构完整优化，建立非侵入式模型兼容性修复方案，解决5508/5509端口tool call解析问题
 - **2025-08-02**: 修复并发流式响应的竞态条件问题，通过引入`hasToolUse`状态锁存器，确保非阻塞模式下工具调用的稳定性和可靠性。
 - **2025-08-02**: v2.7.0 企业级错误监控系统和架构统一优化
 - **2025-07-28**: 完整路由架构重构，消除硬编码模型映射

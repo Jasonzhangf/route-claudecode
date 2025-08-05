@@ -415,13 +415,16 @@ function convertBufferedResponseToAnthropicStream(bufferedResponse: OpenAIBuffer
     });
   });
 
-  // 4. message_delta event (with stop reason)
+  // 4. message_delta event (with stop reason) - 简化逻辑
+  const hasToolCalls = bufferedResponse.content.some(block => block.type === 'tool_use');
+  const finishReason = hasToolCalls ? 'tool_use' : 'end_turn';
+  
   events.push({
     event: 'message_delta',
     data: {
       type: 'message_delta',
       delta: {
-        stop_reason: 'end_turn',
+        stop_reason: finishReason,
         stop_sequence: null
       },
       usage: {
@@ -430,13 +433,15 @@ function convertBufferedResponseToAnthropicStream(bufferedResponse: OpenAIBuffer
     }
   });
 
-  // 5. message_stop event
-  events.push({
-    event: 'message_stop',
-    data: {
-      type: 'message_stop'
-    }
-  });
+  // 5. message_stop event - 只有非工具调用场景才发送
+  if (finishReason !== 'tool_use') {
+    events.push({
+      event: 'message_stop',
+      data: {
+        type: 'message_stop'
+      }
+    });
+  }
 
   logger.info('Anthropic stream events generated from OpenAI buffered response', {
     totalEvents: events.length,

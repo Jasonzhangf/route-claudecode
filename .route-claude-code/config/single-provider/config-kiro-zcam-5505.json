@@ -1,0 +1,42 @@
+{
+  "providers": {
+    "kiro-zcam": {
+      "type": "kiro",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com/generateAssistantResponse",
+      "authentication": {
+        "type": "token_file",
+        "tokenFilePath": "~/.aws/sso/cache/kiro-auth-token_zcam.json",
+        "profileArn": "arn:aws:iam::891377274455:role/KiroZcamRole"
+      },
+      "settings": {
+        "timeout": 300000,
+        "maxRetries": 3
+      },
+      "modelMap": {
+        "claude-sonnet-4-20250514": "CLAUDE_SONNET_4_20250514_V1_0",
+        "claude-3-5-sonnet-20241022": "CLAUDE_3_5_SONNET_20241022_V2_0"
+      }
+    }
+  },
+  "routing": {
+    "default": {
+      "provider": "kiro-zcam",
+      "model": "claude-sonnet-4-20250514"
+    },
+    "background": {
+      "provider": "kiro-zcam",
+      "model": "claude-3-5-sonnet-20241022"
+    }
+  },
+  "server": {
+    "port": 5505,
+    "host": "127.0.0.1"
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "~/.route-claude-code/logs/port-5505"
+  }
+}

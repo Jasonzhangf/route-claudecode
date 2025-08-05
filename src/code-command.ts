@@ -4,6 +4,7 @@
  */
 
 import chalk from 'chalk';
+import { quickLog } from './logging';
 import { join } from 'path';
 import { existsSync, readFileSync } from 'fs';
 import { RouterConfig } from './types';
@@ -15,7 +16,7 @@ import { getConfigPaths, resolvePath } from './utils';
 function loadConfig(configPath: string): RouterConfig {
   try {
     if (!existsSync(configPath)) {
-      console.log(chalk.yellow(`⚠️  Config file not found at ${configPath}`));
+      quickLog(chalk.yellow(`⚠️  Config file not found at ${configPath}`));
       process.exit(1);
     }
 
@@ -25,7 +26,7 @@ function loadConfig(configPath: string): RouterConfig {
     // No defaults - user must provide complete configuration
     return config;
   } catch (error) {
-    console.error(chalk.red('❌ Failed to load configuration:'), error instanceof Error ? error.message : error);
+    quickLog(chalk.red('❌ Failed to load configuration:'), error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }
@@ -49,7 +50,7 @@ export async function executeCodeCommand(args: string[], options: any) {
     if (options.port) {
       port = options.port;
       host = options.host || '127.0.0.1';
-      console.log(chalk.blue(`🎯 Direct connection mode: targeting ${host}:${port}`));
+      quickLog(chalk.blue(`🎯 Direct connection mode: targeting ${host}:${port}`));
     } else {
       // Load configuration only when not using --port
       const configPath = resolvePath(options.config);
@@ -139,22 +140,22 @@ export async function executeCodeCommand(args: string[], options: any) {
       return new Promise((resolve) => {
         const http = require('http');
         const url = `http://${checkHost}:${checkPort}/status`;
-        console.log(chalk.gray(`   Testing: ${url}`));
+        quickLog(chalk.gray(`   Testing: ${url}`));
         
         const req = http.get(url, (res: any) => {
           const isOk = res.statusCode >= 200 && res.statusCode < 300;
-          console.log(chalk.gray(`   Result: ${isOk ? '✅' : '❌'} (${res.statusCode})`));
+          quickLog(chalk.gray(`   Result: ${isOk ? '✅' : '❌'} (${res.statusCode})`));
           resolve(isOk);
           res.resume(); // Consume response to free up memory
         });
         
         req.on('error', (error: any) => {
-          console.log(chalk.gray(`   Error: ${error.message}`));
+          quickLog(chalk.gray(`   Error: ${error.message}`));
           resolve(false);
         });
         
         req.setTimeout(5000, () => {
-          console.log(chalk.gray(`   Error: Timeout`));
+          quickLog(chalk.gray(`   Error: Timeout`));
           req.destroy();
           resolve(false);
         });
@@ -162,7 +163,7 @@ export async function executeCodeCommand(args: string[], options: any) {
     }
 
     function startBackgroundService(): void {
-      console.log(chalk.blue('🚀 Starting Claude Code Router service...'));
+      quickLog(chalk.blue('🚀 Starting Claude Code Router service...'));
       
       // Use the built dist/cli.js for starting service
       const cliPath = path.join(__dirname, 'cli.js');
@@ -195,9 +196,9 @@ export async function executeCodeCommand(args: string[], options: any) {
         API_TIMEOUT_MS: '600000' // 10 minutes
       };
 
-      console.log(chalk.green('🔧 Environment configured for Claude Code routing'));
-      console.log(chalk.blue(`🤖 Launching Claude Code${claudeArgs.length ? ` with args: ${Array.isArray(claudeArgs) ? claudeArgs.join(' ') : claudeArgs}` : ''}...`));
-      console.log(chalk.cyan('===============================================\n'));
+      quickLog(chalk.green('🔧 Environment configured for Claude Code routing'));
+      quickLog(chalk.blue(`🤖 Launching Claude Code${claudeArgs.length ? ` with args: ${Array.isArray(claudeArgs) ? claudeArgs.join(' ') : claudeArgs}` : ''}...`));
+      quickLog(chalk.cyan('===============================================\n'));
 
       const claudePath = process.env.CLAUDE_PATH || 'claude';
       // Ensure claudeArgs is an array
@@ -210,11 +211,11 @@ export async function executeCodeCommand(args: string[], options: any) {
 
       // Handle normal exit
       claudeProcess.on('close', (code: number) => {
-        console.log(chalk.cyan(`\n🏁 Claude Code session ended (exit code: ${code})`));
+        quickLog(chalk.cyan(`\n🏁 Claude Code session ended (exit code: ${code})`));
         const refCount = decrementReferenceCount();
         
         if (refCount === 0) {
-          console.log(chalk.green('✅ No more Claude Code instances, router will stay running'));
+          quickLog(chalk.green('✅ No more Claude Code instances, router will stay running'));
         }
         
         process.exit(code || 0);
@@ -225,10 +226,10 @@ export async function executeCodeCommand(args: string[], options: any) {
         decrementReferenceCount();
         
         if (error.message.includes('ENOENT')) {
-          console.error(chalk.red('❌ Claude Code not found'));
-          console.log(chalk.yellow('💡 Install Claude Code: npm install -g @anthropic-ai/claude-code'));
+          quickLog(chalk.red('❌ Claude Code not found'));
+          quickLog(chalk.yellow('💡 Install Claude Code: npm install -g @anthropic-ai/claude-code'));
         } else {
-          console.error(chalk.red('❌ Failed to launch Claude Code:'), error.message);
+          quickLog(chalk.red('❌ Failed to launch Claude Code:'), error.message);
         }
         
         process.exit(1);
@@ -250,7 +251,7 @@ export async function executeCodeCommand(args: string[], options: any) {
     // Main logic implementation
     if (options.port) {
       // Mode 1: Port specified - only check connection, don't start service
-      console.log(chalk.blue(`🔍 Checking for service on specified port ${port}...`));
+      quickLog(chalk.blue(`🔍 Checking for service on specified port ${port}...`));
       
       // Try common hosts when port is specified: 127.0.0.1 and 0.0.0.0
       // If other IP needed, must use --host explicitly
@@ -267,54 +268,54 @@ export async function executeCodeCommand(args: string[], options: any) {
       }
       
       if (serviceFound) {
-        console.log(chalk.green(`✅ Router service found on ${workingHost}:${port}!`));
+        quickLog(chalk.green(`✅ Router service found on ${workingHost}:${port}!`));
         await executeClaudeCode(args, workingHost);
       } else {
-        console.error(chalk.red(`❌ No service found on port ${port}`));
-        console.log(chalk.gray(`   Tried hosts: ${hostsToTry.join(', ')}`));
-        console.log(chalk.yellow('💡 Make sure the service is running on the specified port first'));
+        quickLog(chalk.red(`❌ No service found on port ${port}`));
+        quickLog(chalk.gray(`   Tried hosts: ${hostsToTry.join(', ')}`));
+        quickLog(chalk.yellow('💡 Make sure the service is running on the specified port first'));
         process.exit(1);
       }
     } else if (config && options.config && options.config !== configPaths.configFile) {
       // Mode 2: Config specified - start service for this specific config
-      console.log(chalk.blue(`🎯 Starting service with specified config: ${options.config}`));
+      quickLog(chalk.blue(`🎯 Starting service with specified config: ${options.config}`));
       
       if (!isServiceRunning()) {
         startBackgroundService();
         
         if (await waitForService()) {
-          console.log(chalk.green('✅ Router service is ready!'));
+          quickLog(chalk.green('✅ Router service is ready!'));
           await executeClaudeCode(args);
         } else {
-          console.error(chalk.red('❌ Failed to start router service'));
+          quickLog(chalk.red('❌ Failed to start router service'));
           process.exit(1);
         }
       } else {
-        console.log(chalk.green('✅ Router service already running'));
+        quickLog(chalk.green('✅ Router service already running'));
         await executeClaudeCode(args);
       }
     } else {
       // Mode 3: Default mode - intelligent config detection and service startup
-      console.log(chalk.blue('🎯 Default mode: Intelligent configuration detection'));
+      quickLog(chalk.blue('🎯 Default mode: Intelligent configuration detection'));
       
       if (!isServiceRunning()) {
         startBackgroundService();
         
         if (await waitForService()) {
-          console.log(chalk.green('✅ Router service is ready!'));
+          quickLog(chalk.green('✅ Router service is ready!'));
           await executeClaudeCode(args);
         } else {
-          console.error(chalk.red('❌ Failed to start router service'));
+          quickLog(chalk.red('❌ Failed to start router service'));
           process.exit(1);
         }
       } else {
-        console.log(chalk.green('✅ Router service already running'));
+        quickLog(chalk.green('✅ Router service already running'));
         await executeClaudeCode(args);
       }
     }
 
   } catch (error) {
-    console.error(chalk.red('❌ Failed to execute code command:'), error instanceof Error ? error.message : error);
+    quickLog(chalk.red('❌ Failed to execute code command:'), error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }

@@ -18,6 +18,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",
+    "downlevelIteration": true,
     "baseUrl": "./src",
     "paths": {
       "@/*": ["*"],

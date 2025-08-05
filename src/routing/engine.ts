@@ -223,17 +223,21 @@ export class RoutingEngine {
 
   /**
    * Check if provider is healthy using simple provider manager
+   * Now supports model-specific blacklisting
    */
-  private isProviderHealthy(providerId: string): boolean {
+  private isProviderHealthy(providerId: string, model?: string): boolean {
     // 🚫 临时禁用检查 - 最高优先级
     if (this.temporarilyDisabledProviders.has(providerId)) {
       logger.debug(`Provider ${providerId} is temporarily disabled via user control`);
       return false;
     }
     
-    // Use simple provider manager blacklist check
-    if (this.simpleProviderManager.isBlacklisted(providerId)) {
-      logger.debug(`Provider ${providerId} is blacklisted by simple provider manager`);
+    // Use simple provider manager blacklist check (now supports model-specific)
+    if (this.simpleProviderManager.isBlacklisted(providerId, model)) {
+      logger.debug(`Provider ${providerId} is blacklisted by simple provider manager`, {
+        model: model || 'all-models',
+        scope: model ? 'model-specific' : 'provider-wide'
+      });
       return false;
     }
     
@@ -346,6 +350,9 @@ export class RoutingEngine {
         health.nextRetryTime = undefined;
       }
       
+      // Report success to simple provider manager for blacklist recovery
+      this.simpleProviderManager.reportSuccess(providerId, model);
+      
       // 记录成功响应统计
       if (model) {
         responseStatsManager.recordSuccess(providerId, model, responseTimeMs || 0, isStreaming);
@@ -378,8 +385,8 @@ export class RoutingEngine {
         health.errorHistory = health.errorHistory.slice(-10);
       }
       
-      // Report failure to simple provider manager
-      this.simpleProviderManager.reportFailure(providerId, error || 'Unknown error', httpCode);
+      // Report failure to simple provider manager with model-specific blacklisting
+      this.simpleProviderManager.reportFailure(providerId, error || 'Unknown error', httpCode, model);
       
       // 🚨 APPLY INTELLIGENT FAILOVER LOGIC
       this.applyIntelligentFailover(health, failureCategory, error, httpCode);

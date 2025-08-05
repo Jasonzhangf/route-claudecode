@@ -8,6 +8,7 @@ import { logger } from '@/utils/logger';
 
 export interface SimpleProviderBlacklist {
   providerId: string;
+  model?: string; // Optional model specification for model-specific blacklisting
   blacklistedUntil: Date;
   reason: 'rate_limit' | 'auth_failure' | 'network_error' | 'server_error';
   errorCount: number;
@@ -15,7 +16,7 @@ export interface SimpleProviderBlacklist {
 
 export class SimpleProviderManager {
   private roundRobinIndex: Map<string, number> = new Map();
-  private blacklist: Map<string, SimpleProviderBlacklist> = new Map();
+  private blacklist: Map<string, SimpleProviderBlacklist> = new Map(); // Key format: 'providerId' or 'providerId:model'
   
   // Blacklist durations in seconds
   private readonly RATE_LIMIT_BLACKLIST_DURATION = 60; // 1 minute for 429 errors
@@ -71,40 +72,45 @@ export class SimpleProviderManager {
 
   /**
    * Report provider failure and apply blacklisting if needed
+   * Now supports model-specific blacklisting when model is provided
    */
-  reportFailure(providerId: string, error: string, httpCode?: number): void {
+  reportFailure(providerId: string, error: string, httpCode?: number, model?: string): void {
     const failureType = this.categorizeFailure(error, httpCode);
-    const existing = this.blacklist.get(providerId);
+    // Create composite key for model-specific blacklisting when model is provided
+    const blacklistKey = model ? `${providerId}:${model}` : providerId;
+    const existing = this.blacklist.get(blacklistKey);
     
     logger.info('Provider failure reported', {
       providerId,
+      model: model || 'all-models',
       failureType,
       error: error.substring(0, 100), // Truncate long errors
       httpCode,
-      existingErrorCount: existing?.errorCount || 0
+      existingErrorCount: existing?.errorCount || 0,
+      blacklistScope: model ? 'model-specific' : 'provider-wide'
     });
     
     switch (failureType) {
       case 'rate_limit':
-        this.blacklistProvider(providerId, failureType, this.RATE_LIMIT_BLACKLIST_DURATION);
+        this.blacklistProvider(blacklistKey, providerId, failureType, this.RATE_LIMIT_BLACKLIST_DURATION, model);
         break;
         
       case 'auth_failure':
         const authErrorCount = (existing?.errorCount || 0) + 1;
         if (authErrorCount >= 3) {
           // Permanent-like blacklisting for repeated auth failures (very long duration)
-          this.blacklistProvider(providerId, failureType, 3600); // 1 hour
+          this.blacklistProvider(blacklistKey, providerId, failureType, 3600, model); // 1 hour
         } else {
-          this.blacklistProvider(providerId, failureType, this.AUTH_FAILURE_BLACKLIST_DURATION);
+          this.blacklistProvider(blacklistKey, providerId, failureType, this.AUTH_FAILURE_BLACKLIST_DURATION, model);
         }
         break;
         
       case 'network_error':
-        this.blacklistProvider(providerId, failureType, this.NETWORK_ERROR_BLACKLIST_DURATION);
+        this.blacklistProvider(blacklistKey, providerId, failureType, this.NETWORK_ERROR_BLACKLIST_DURATION, model);
         break;
         
       case 'server_error':
-        this.blacklistProvider(providerId, failureType, this.SERVER_ERROR_BLACKLIST_DURATION);
+        this.blacklistProvider(blacklistKey, providerId, failureType, this.SERVER_ERROR_BLACKLIST_DURATION, model);
         break;
         
       default:
@@ -116,38 +122,59 @@ export class SimpleProviderManager {
 
   /**
    * Report provider success (removes from blacklist if temporary)
+   * Now supports model-specific recovery
    */
-  reportSuccess(providerId: string): void {
-    const blacklisted = this.blacklist.get(providerId);
-    if (blacklisted && blacklisted.reason !== 'auth_failure') {
-      // Remove from blacklist on success (except for auth failures which need time-based recovery)
-      this.blacklist.delete(providerId);
-      logger.info('Provider recovered from blacklist after success', { providerId });
+  reportSuccess(providerId: string, model?: string): void {
+    // Check both model-specific and provider-wide blacklists
+    const keys = model ? [`${providerId}:${model}`, providerId] : [providerId];
+    
+    for (const key of keys) {
+      const blacklisted = this.blacklist.get(key);
+      if (blacklisted && blacklisted.reason !== 'auth_failure') {
+        // Remove from blacklist on success (except for auth failures which need time-based recovery)
+        this.blacklist.delete(key);
+        logger.info('Provider recovered from blacklist after success', { 
+          providerId, 
+          model: model || 'all-models',
+          blacklistKey: key
+        });
+      }
     }
   }
 
   /**
    * Check if provider is currently blacklisted
+   * Now supports model-specific blacklisting
    */
-  isBlacklisted(providerId: string): boolean {
-    const blacklisted = this.blacklist.get(providerId);
-    if (!blacklisted) {
-      return false;
+  isBlacklisted(providerId: string, model?: string): boolean {
+    // Check model-specific blacklist first, then provider-wide blacklist
+    const keys = model ? [`${providerId}:${model}`, providerId] : [providerId];
+    
+    for (const key of keys) {
+      const blacklisted = this.blacklist.get(key);
+      if (!blacklisted) {
+        continue;
+      }
+    
+      const now = new Date();
+      if (now >= blacklisted.blacklistedUntil) {
+        // Blacklist expired, remove it
+        this.blacklist.delete(key);
+        logger.info('Provider blacklist expired', { 
+          providerId, 
+          model: blacklisted.model || 'all-models',
+          reason: blacklisted.reason,
+          blacklistKey: key,
+          duration: Math.round((now.getTime() - (blacklisted.blacklistedUntil.getTime() - this.getBlacklistDuration(blacklisted.reason) * 1000)) / 1000)
+        });
+        continue;
+      }
+      
+      // Found active blacklist
+      return true;
     }
     
-    const now = new Date();
-    if (now >= blacklisted.blacklistedUntil) {
-      // Blacklist expired, remove it
-      this.blacklist.delete(providerId);
-      logger.info('Provider blacklist expired', { 
-        providerId, 
-        reason: blacklisted.reason,
-        duration: Math.round((now.getTime() - (blacklisted.blacklistedUntil.getTime() - this.getBlacklistDuration(blacklisted.reason) * 1000)) / 1000)
-      });
-      return false;
-    }
-    
-    return true;
+    return false;
   }
 
   /**
@@ -194,15 +221,16 @@ export class SimpleProviderManager {
 
   // Private methods
 
-  private blacklistProvider(providerId: string, reason: SimpleProviderBlacklist['reason'], durationSeconds: number): void {
+  private blacklistProvider(blacklistKey: string, providerId: string, reason: SimpleProviderBlacklist['reason'], durationSeconds: number, model?: string): void {
     const now = new Date();
     const blacklistedUntil = new Date(now.getTime() + (durationSeconds * 1000));
     
-    const existing = this.blacklist.get(providerId);
+    const existing = this.blacklist.get(blacklistKey);
     const errorCount = (existing?.errorCount || 0) + 1;
     
-    this.blacklist.set(providerId, {
+    this.blacklist.set(blacklistKey, {
       providerId,
+      model,
       blacklistedUntil,
       reason,
       errorCount
@@ -210,11 +238,14 @@ export class SimpleProviderManager {
     
     logger.warn('Provider blacklisted', {
       providerId,
+      model: model || 'all-models',
       reason,
       durationSeconds,
       blacklistedUntil: blacklistedUntil.toISOString(),
       errorCount,
-      isRecurring: !!existing
+      isRecurring: !!existing,
+      blacklistKey,
+      scope: model ? 'model-specific' : 'provider-wide'
     });
   }
 

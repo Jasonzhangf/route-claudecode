@@ -209,7 +209,7 @@ export class AnthropicTransformer implements MessageTransformer {
     }
 
     if (chunk.type === 'message_delta' && chunk.delta?.stop_reason) {
-      // 移除stop_reason，保证停止的权力在模型这边
+      // 保留stop_reason，传递给下游处理
       return {
         id: `chatcmpl-${Date.now()}`,
         object: 'chat.completion.chunk',
@@ -218,7 +218,7 @@ export class AnthropicTransformer implements MessageTransformer {
         choices: [{
           index: 0,
           delta: {},
-          // 完全移除finish_reason，而不是设置为null
+          finish_reason: chunk.delta.stop_reason // 保留finish_reason传递给下游
         }]
       };
     }
