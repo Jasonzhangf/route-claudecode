@@ -707,30 +707,44 @@ export class RouterServer {
           }
         }
         
+        // 如果原始finish reason是unknown，则不发送stop reason给Anthropic
+        let convertedStopReason = stopReason;
+        if (originalFinishReason === 'unknown') {
+          convertedStopReason = undefined; // 不发送stop reason
+        }
+        
         // 使用双重记录记录stop reason
         this.logger.logDualFinishReason(
           originalFinishReason, // 原始服务器返回的finish reason
-          stopReason, // 转换后的stop reason
+          convertedStopReason || 'undefined', // 转换后的stop reason（可能为undefined）
           providerId,
           {
             model: targetModel,
-            responseType: 'non-streaming'
+            responseType: 'non-streaming',
+            note: originalFinishReason === 'unknown' ? 'Original finish reason is unknown, not sending stop_reason to Anthropic' : 'Normal conversion'
           },
           requestId,
           'server-final-response'
         );
         
+        // 更新finalResponse中的stop_reason
+        if (originalFinishReason === 'unknown') {
+          delete (finalResponse as any).stop_reason;
+        }
+        
         // 同时记录到调试日志系统
         const { logFinishReasonDebug } = await import('./utils/finish-reason-debug');
         logFinishReasonDebug(
           requestId,
-          stopReason,
+          convertedStopReason || 'undefined',
           providerId,
           targetModel || 'unknown',
           this.config.server.port,
           {
             responseType: 'non-streaming',
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            originalFinishReason,
+            note: originalFinishReason === 'unknown' ? 'Original finish reason is unknown, not sending stop_reason to Anthropic' : 'Normal conversion'
           }
         );
       }

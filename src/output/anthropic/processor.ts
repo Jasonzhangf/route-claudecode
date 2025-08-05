@@ -132,11 +132,17 @@ export class AnthropicOutputProcessor implements OutputProcessor {
         model: originalRequest.metadata?.originalModel || originalRequest.model,
         responseType: 'non-streaming',
         context: 'validateAndNormalize',
-        usage: normalized.usage
+        usage: normalized.usage,
+        note: originalStopReason === 'unknown' ? 'Original stop reason is unknown, not sending stop_reason to Anthropic' : 'Normal conversion'
       },
       requestId,
       'dual-reason-validate'
     );
+    
+    // 如果原始stop reason是unknown，则删除stop_reason属性
+    if (originalStopReason === 'unknown') {
+      delete (normalized as any).stop_reason;
+    }
 
     logger.debug('Normalized Anthropic response', {
       id: normalized.id,
@@ -189,14 +195,20 @@ export class AnthropicOutputProcessor implements OutputProcessor {
 
     const content = this.convertOpenAIMessageToContent(choice.message);
     const originalFinishReason = choice.finish_reason;
-    const convertedStopReason = this.mapOpenAIFinishReason(originalFinishReason);
+    let convertedStopReason = this.mapOpenAIFinishReason(originalFinishReason);
+    
+    // 如果原始finish reason是unknown，则不设置stop_reason
+    if (originalFinishReason === 'unknown') {
+      convertedStopReason = undefined;
+    }
 
     const anthropicResponse: AnthropicResponse = {
       content: content,
       id: response.id || `msg_${uuidv4().replace(/-/g, '')}`,
       model: originalRequest.metadata?.originalModel || originalRequest.model, // Use original model name, not internal mapped name
       role: 'assistant',
-      stop_reason: convertedStopReason,
+      // 只有当convertedStopReason不为undefined时才设置stop_reason属性
+      ...(convertedStopReason !== undefined && { stop_reason: convertedStopReason }),
       stop_sequence: undefined,
       type: 'message',
       usage: {
@@ -208,14 +220,15 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     // 🆕 记录原始OpenAI和转换后的Anthropic finish reason
     logger.logDualFinishReason(
       originalFinishReason || 'unknown',
-      convertedStopReason,
+      convertedStopReason || 'undefined', // 显示为'undefined'而不是实际的undefined值
       originalRequest.metadata?.targetProvider || 'unknown',
       {
         model: originalRequest.metadata?.originalModel || originalRequest.model,
         responseType: 'non-streaming',
         context: 'convertFromOpenAI',
         usage: anthropicResponse.usage,
-        conversionMethod: 'mapOpenAIFinishReason'
+        conversionMethod: 'mapOpenAIFinishReason',
+        note: originalFinishReason === 'unknown' ? 'Original finish reason is unknown, not sending stop_reason to Anthropic' : 'Normal conversion'
       },
       requestId,
       'dual-reason-openai-convert'
