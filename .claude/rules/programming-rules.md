@@ -38,9 +38,34 @@ if (!request.model) {
 // 明确的错误处理和失败报告
 ```
 
+### 3. 🚫 零沉默失败原则 (NO SILENT FAILURES)
+- **绝对禁止**：任何错误被隐藏或不向客户端正确报告的情况
+- **实现要求**：所有错误必须返回正确的HTTP状态码（非200）
+- **特别重视**：流式请求在provider错误时不能返回HTTP 200状态码
+- **错误可见性**：所有错误必须有console输出和日志记录
+
+**❌ 违例示例：**
+```typescript
+// 🚨 最严重的沉默失败：HTTP 200但包含错误内容
+reply.raw.writeHead(200, { ... }); // 设置状态码太早！
+// ... provider请求失败但状态码已经是200
+```
+
+**✅ 正确示例：**
+```typescript
+// 先验证请求有效性，再设置HTTP状态码
+const streamIterator = provider.sendStreamRequest(request);
+const firstChunk = await streamIterator.next();
+if (firstChunk.done && !firstChunk.value) {
+  throw new Error('Streaming request failed'); // 抛出错误，不设置200状态
+}
+// 只有确认成功后才设置200状态码
+reply.raw.writeHead(200, { ... });
+```
+
 ## 🎯 架构原则优先级 (Architecture Priority)
 
-1. **最高优先级**: 零硬编码 + 零Fallback
+1. **最高优先级**: 零硬编码 + 零Fallback + 零沉默失败
 2. **高优先级**: 模块化、自包含、可测试
 3. **中优先级**: 性能优化、用户体验
 4. **低优先级**: 代码风格、注释完整性

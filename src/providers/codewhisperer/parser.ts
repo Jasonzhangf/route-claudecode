@@ -299,7 +299,7 @@ export class CodeWhispererParser {
           
           if (index === 1) {
             // 标记工具调用完成
-            for (const [toolId, toolData] of toolCallBuffer) {
+            for (const [toolId, toolData] of Array.from(toolCallBuffer.entries())) {
               if (!toolData.isComplete) {
                 toolData.isComplete = true;
                 logger.debug('工具调用标记完成', { toolId });
@@ -320,7 +320,7 @@ export class CodeWhispererParser {
     }
 
     // 第二阶段：处理完整的工具调用缓冲区
-    for (const [toolId, toolData] of toolCallBuffer) {
+    for (const [toolId, toolData] of Array.from(toolCallBuffer.entries())) {
       if (toolData.isComplete && toolData.jsonFragments.length > 0) {
         const completeJsonStr = toolData.jsonFragments.join('');
         logger.debug('合并JSON片段', { 

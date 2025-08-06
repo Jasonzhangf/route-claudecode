@@ -28,16 +28,18 @@ export class AnthropicToolCallTextFixPatch implements ResponsePatch {
   };
 
   shouldApply(context: PatchContext, data: any): boolean {
-    // 检查是否是 Anthropic 响应且包含可能的 tool call 文本
+    // 对所有OpenAI兼容输入都执行监测，避免准入条件太严格
     if (!data || typeof data !== 'object') {
       return false;
     }
 
-    // 检查响应中是否有文本内容包含 tool call 结构
+    // 🎯 宽松准入策略：只要有文本内容就检测，不要求缺少tool_use
+    // 这确保滑动窗口检测覆盖所有可能的样本
     const hasTextContent = this.hasTextContentWithToolCall(data);
-    const missingToolUse = !this.hasProperToolUse(data);
-
-    return hasTextContent && missingToolUse;
+    
+    // 即使已经有tool_use块，也可能需要从文本中提取更多工具调用
+    // 因为某些模型可能混合返回格式
+    return hasTextContent;
   }
 
   async apply(context: PatchContext, data: any): Promise<PatchResult> {
@@ -157,17 +159,65 @@ export class AnthropicToolCallTextFixPatch implements ResponsePatch {
     const textParts: string[] = [];
     const toolCalls: any[] = [];
     
-    // 首先尝试解析 "Tool call: FunctionName({...})" 格式
-    const toolCallMatches = text.matchAll(/Tool\s+call:\s*(\w+)\s*\((\{[^}]*(?:\{[^}]*\}[^}]*)*\})\)/gi);
+    // 处理GLM-4.5特有的 "Tool call: FunctionName({...})" 格式
+    // 使用更精确的方法来提取完整的JSON对象
+    const toolCallPattern = /Tool\s+call:\s*(\w+)\s*\(/gi;
+    let match;
     let processedRanges: Array<{start: number, end: number}> = [];
     
-    for (const match of toolCallMatches) {
-      if (match.index !== undefined) {
-        const toolName = match[1];
-        const argsStr = match[2];
+    while ((match = toolCallPattern.exec(text)) !== null) {
+      const toolName = match[1];
+      const openParenIndex = match.index + match[0].length - 1; // 获取开括号位置
+      
+      // 从开括号后查找JSON对象
+      let braceCount = 0;
+      let jsonStart = -1;
+      let jsonEnd = -1;
+      let inString = false;
+      let escaped = false;
+      
+      for (let i = openParenIndex + 1; i < text.length; i++) {
+        const char = text[i];
+        
+        if (escaped) {
+          escaped = false;
+          continue;
+        }
+        
+        if (char === '\\') {
+          escaped = true;
+          continue;
+        }
+        
+        if (char === '"') {
+          inString = !inString;
+          continue;
+        }
+        
+        if (!inString) {
+          if (char === '{') {
+            if (jsonStart === -1) {
+              jsonStart = i;
+            }
+            braceCount++;
+          } else if (char === '}') {
+            braceCount--;
+            if (braceCount === 0 && jsonStart !== -1) {
+              jsonEnd = i + 1;
+              break;
+            }
+          } else if (char === ')' && braceCount === 0 && jsonStart !== -1) {
+            // 找到闭括号，结束搜索
+            break;
+          }
+        }
+      }
+      
+      if (jsonStart !== -1 && jsonEnd !== -1) {
+        const jsonStr = text.slice(jsonStart, jsonEnd);
         
         try {
-          const args = JSON.parse(argsStr);
+          const args = JSON.parse(jsonStr);
           const toolCall = {
             type: 'tool_use',
             id: `toolu_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
@@ -176,14 +226,23 @@ export class AnthropicToolCallTextFixPatch implements ResponsePatch {
           };
           toolCalls.push(toolCall);
           
-          // 记录已处理的范围
+          // 记录已处理的范围（从Tool call开始到闭括号结束）
+          let endIndex = jsonEnd;
+          while (endIndex < text.length && text[endIndex] !== ')') {
+            endIndex++;
+          }
+          if (endIndex < text.length) {
+            endIndex++; // 包含闭括号
+          }
+          
           processedRanges.push({
             start: match.index,
-            end: match.index + match[0].length
+            end: endIndex
           });
+          
+          console.log('✅ GLM-4.5 Tool call extracted:', { name: toolName, inputKeys: Object.keys(args) });
         } catch (error) {
-          // JSON解析失败，继续处理其他格式
-          console.warn('Failed to parse tool call arguments:', argsStr);
+          console.warn('❌ Failed to parse GLM-4.5 tool call JSON:', jsonStr.substring(0, 100) + '...');
         }
       }
     }

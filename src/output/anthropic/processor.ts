@@ -195,7 +195,7 @@ export class AnthropicOutputProcessor implements OutputProcessor {
 
     const content = this.convertOpenAIMessageToContent(choice.message);
     const originalFinishReason = choice.finish_reason;
-    let convertedStopReason = this.mapOpenAIFinishReason(originalFinishReason);
+    let convertedStopReason: string | undefined = this.mapOpenAIFinishReason(originalFinishReason);
     
     // 如果原始finish reason是unknown，则不设置stop_reason
     if (originalFinishReason === 'unknown') {

@@ -18,6 +18,17 @@ import { sessionManager } from './session/manager';
 import { ProviderExpander, ProviderExpansionResult } from './routing/provider-expander';
 import { v4 as uuidv4 } from 'uuid';
 import { createPatchManager } from './patches';
+import { ResponsePipeline } from './pipeline/response-pipeline';
+import { transformationManager } from './transformers/manager';
+import { getUnifiedPatchPreprocessor } from './preprocessing/unified-patch-preprocessor';
+import { 
+  UnifiedErrorHandler, 
+  handleProviderError, 
+  handleStreamingError, 
+  handleRoutingError, 
+  handleInputError, 
+  handleOutputError 
+} from './utils/error-handler';
 import { MaxTokensErrorHandler } from './utils/max-tokens-error-handler';
 // Debug hooks temporarily removed
 
@@ -33,6 +44,8 @@ export class RouterServer {
   private requestTracker: any;
   private errorTracker: any;
   private patchManager: ReturnType<typeof createPatchManager>;
+  private responsePipeline: ResponsePipeline;
+  private unifiedPreprocessor: ReturnType<typeof getUnifiedPatchPreprocessor>;
 
   constructor(config: RouterConfig, serverType?: string) {
     this.config = config;
@@ -44,6 +57,16 @@ export class RouterServer {
     this.requestTracker = createRequestTracker(config.server.port);
     this.errorTracker = createErrorTracker(config.server.port);
     this.patchManager = createPatchManager(config.server.port);
+    
+    // 🆕 初始化统一预处理器 - 集中管理所有补丁逻辑
+    this.unifiedPreprocessor = getUnifiedPatchPreprocessor(config.server.port);
+    
+    // 初始化响应处理流水线
+    this.responsePipeline = new ResponsePipeline(
+      this.patchManager,
+      transformationManager,
+      config.server.port
+    );
     
     this.fastify = Fastify({
       logger: config.debug.enabled ? {
@@ -192,6 +215,41 @@ export class RouterServer {
     const hash = requestId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const index = hash % providers.length;
     return providers[index];
+  }
+
+  /**
+   * 生成健康建议
+   */
+  private generateHealthRecommendations(stats: any): string[] {
+    const recommendations = [];
+
+    if (stats.silentFailureRate > 15) {
+      recommendations.push('Critical: High silent failure rate detected. Review error handling logic immediately.');
+    } else if (stats.silentFailureRate > 5) {
+      recommendations.push('Warning: Elevated silent failure rate. Monitor error handling closely.');
+    }
+
+    if (stats.errorsByPort[6689] > 0) {
+      recommendations.push('Port 6689 showing errors. Check provider configuration and endpoint availability.');
+    }
+
+    if (stats.errorsByType['http_404'] > stats.totalErrors * 0.3) {
+      recommendations.push('High rate of 404 errors. Verify model names and endpoint configurations.');
+    }
+
+    if (stats.errorsByType['network_ECONNREFUSED'] > 0) {
+      recommendations.push('Connection refused errors detected. Check if all provider services are running.');
+    }
+
+    if (stats.recentSilentFailures.length > 0) {
+      recommendations.push(`${stats.recentSilentFailures.length} recent silent failures detected. Review error handling for affected requests.`);
+    }
+
+    if (recommendations.length === 0) {
+      recommendations.push('Error system is functioning normally. Continue monitoring.');
+    }
+
+    return recommendations;
   }
 
   /**
@@ -504,6 +562,32 @@ export class RouterServer {
       return this.handleCountTokensRequest(request, reply);
     });
 
+    // Error diagnostics API endpoint
+    this.fastify.get('/api/error-diagnostics', async (request, reply) => {
+      try {
+        const { ErrorSystemDiagnostics } = await import('./utils/error-system-diagnostics');
+        const stats = ErrorSystemDiagnostics.getDiagnosticsStats();
+        
+        reply.send({
+          ...stats,
+          port: this.config.server.port,
+          timestamp: new Date().toISOString(),
+          systemHealth: {
+            silentFailureRate: stats.silentFailureRate,
+            healthStatus: stats.silentFailureRate < 5 ? 'healthy' : 
+                         stats.silentFailureRate < 15 ? 'warning' : 'critical',
+            recommendations: this.generateHealthRecommendations(stats)
+          }
+        });
+      } catch (error) {
+        this.logger.error('Failed to get error diagnostics', error);
+        reply.status(500).send({
+          error: 'Failed to get error diagnostics',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    });
+
     // Catch-all for other paths
     this.fastify.setNotFoundHandler((request, reply) => {
       reply.code(404).send({
@@ -567,16 +651,52 @@ export class RouterServer {
 
       // Step 1: Process input
       if (!this.inputProcessor.canProcess(request.body)) {
-        return reply.code(400).send({
-          error: {
-            type: 'invalid_request_error',
-            message: 'Request format not supported'
-          }
-        });
+        // 检查是否为流式请求并使用统一错误处理
+        const isStreamingRequest = !!(request.body as any)?.stream;
+        const error = new Error('Request format not supported');
+        
+        if (isStreamingRequest) {
+          // 流式请求使用SSE错误格式
+          handleStreamingError(error, reply, {
+            requestId,
+            providerId: 'unknown',
+            model: 'unknown'
+          });
+        } else {
+          // 非流式请求使用JSON错误格式
+          handleInputError(error, reply, {
+            requestId,
+            providerId: 'unknown',
+            model: 'unknown'
+          });
+        }
+        return;
       }
 
-      baseRequest = await this.inputProcessor.process(request.body);
-      this.logger.logPipeline('input-processed', 'Input processing completed', { baseRequest }, requestId);
+      try {
+        baseRequest = await this.inputProcessor.process(request.body);
+        this.logger.logPipeline('input-processed', 'Input processing completed', { baseRequest }, requestId);
+      } catch (inputError) {
+        // 检查是否为流式请求并使用统一错误处理
+        const isStreamingRequest = !!(request.body as any)?.stream;
+        
+        if (isStreamingRequest) {
+          // 流式请求使用SSE错误格式
+          handleStreamingError(inputError, reply, {
+            requestId,
+            providerId: 'unknown',
+            model: (request.body as any)?.model || 'unknown'
+          });
+        } else {
+          // 非流式请求使用JSON错误格式
+          handleInputError(inputError, reply, {
+            requestId,
+            providerId: 'unknown',
+            model: (request.body as any)?.model || 'unknown'
+          });
+        }
+        return;
+      }
       
       // Debug Hook: Trace input processing
       if (this.config.debug.enabled) {
@@ -645,7 +765,29 @@ export class RouterServer {
       }
 
       // Step 2: Route request
-      providerId = await this.routingEngine.route(baseRequest, requestId);
+      try {
+        providerId = await this.routingEngine.route(baseRequest, requestId);
+      } catch (routingError) {
+        // 检查是否为流式请求并使用统一错误处理
+        const isStreamingRequest = baseRequest.stream;
+        
+        if (isStreamingRequest) {
+          // 流式请求使用SSE错误格式
+          handleStreamingError(routingError, reply, {
+            requestId,
+            providerId: 'unknown',
+            model: baseRequest.model
+          });
+        } else {
+          // 非流式请求使用JSON错误格式
+          handleRoutingError(routingError, reply, {
+            requestId,
+            providerId: 'unknown',
+            model: baseRequest.model
+          });
+        }
+        return;
+      }
       this.logger.debug('Routing completed', { 
         providerId, 
         targetModel: baseRequest.metadata?.targetModel,
@@ -672,22 +814,48 @@ export class RouterServer {
         }
         
         providerResponse = await provider.sendRequest(baseRequest);
-        this.logger.logPipeline('provider-response', 'Provider response received', { providerResponse }, requestId);
+        
+        // 🆕 统一预处理：对Provider响应应用补丁系统
+        const preprocessedResponse = await this.unifiedPreprocessor.preprocessResponse(
+          providerResponse,
+          providerId as any, // Cast to Provider type
+          targetModel || baseRequest.model,
+          requestId
+        );
+        
+        this.logger.logPipeline('provider-response', 'Provider response received and preprocessed', { 
+          originalResponse: providerResponse,
+          preprocessedResponse,
+          preprocessingApplied: preprocessedResponse !== providerResponse
+        }, requestId);
         
         // Debug Hook: Trace provider response
         if (this.config.debug.enabled) {
           // Debug trace removed
         }
         
-        // 添加详细日志记录，查看原始响应内容
-        this.logger.debug('Raw provider response', {
+        // 使用预处理后的响应
+        providerResponse = preprocessedResponse;
+        
+        // 添加详细日志记录，查看预处理后的响应内容
+        this.logger.debug('Preprocessed provider response', {
           providerResponse: JSON.stringify(providerResponse, null, 2)
         }, requestId, 'server');
       }
 
-      // Step 4: Process output (patches are now applied inside providers)
-      const finalResponse = await this.outputProcessor.process(providerResponse, baseRequest);
-      this.logger.logPipeline('output-processed', 'Output processing completed', { finalResponse }, requestId);
+      // Step 4: Process output through unified response pipeline
+      // 模型响应 -> 预处理 -> 流式/非流式响应 -> 格式转换 -> 后处理 -> 客户端
+      const pipelineContext = {
+        requestId,
+        provider: providerId,
+        model: targetModel || baseRequest.model,
+        isStreaming: false,
+        timestamp: Date.now()
+      };
+      
+      const pipelineResponse = await this.responsePipeline.process(providerResponse, pipelineContext);
+      const finalResponse = await this.outputProcessor.process(pipelineResponse, baseRequest);
+      this.logger.logPipeline('output-processed', 'Response pipeline and output processing completed', { finalResponse }, requestId);
       
       // Debug Hook: Trace output processing
       if (this.config.debug.enabled) {
@@ -799,58 +967,15 @@ export class RouterServer {
       return cleanResponse;
 
     } catch (error) {
-      // Enhanced failure logging with model info and error details
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const httpCode = error instanceof ProviderError ? error.statusCode : 500;
-      
-      this.logger.error('sendRequest failed', {
-        error: errorMessage,
-        httpCode,
-        provider: providerId || 'unknown',
-        model: targetModel || baseRequest?.model || 'unknown',
-        originalModel: baseRequest?.model || 'unknown',
-        routingCategory: baseRequest?.metadata?.routingCategory || 'unknown',
-        requestId,
-        stack: error instanceof Error ? error.stack : undefined
-      }, requestId, 'server');
-      
-      // 记录失败的统计信息 - 增强错误信息记录
+      // 记录失败的统计信息
       if (providerId && targetModel) {
-        // 记录详细的provider失败信息
-        this.logger.warn(`Provider failure reported`, {
-          providerId,
-          model: targetModel,
-          originalModel: baseRequest?.model || 'unknown',
-          errorMessage,
-          httpCode,
-          routingCategory: baseRequest?.metadata?.routingCategory || 'unknown',
-          requestId,
-          timestamp: new Date().toISOString()
-        }, requestId, 'provider');
-        
         this.routingEngine.recordProviderResult(
           providerId, 
           false, 
-          errorMessage, 
-          httpCode, 
+          error instanceof Error ? error.message : 'Unknown error', 
+          error instanceof ProviderError ? error.statusCode : 500, 
           targetModel
         );
-
-        // 记录详细的失败日志 (临时注释掉，稍后修复接口匹配)
-        /*await this.pipelineDebugger.logFailure({
-          timestamp: new Date().toISOString(),
-          requestId,
-          providerId,
-          model: targetModel,
-          originalModel: baseRequest?.model || 'unknown',
-          error: errorMessage,
-          httpCode,
-          errorType: this.categorizeError(errorMessage, httpCode),
-          requestDuration: Date.now() - startTime,
-          routingCategory: baseRequest?.metadata?.routingCategory,
-          sessionId: sessionManager.extractSessionId(request.headers as Record<string, string>),
-          userAgent: (request.headers as any)['user-agent']
-        });*/
       }
       
       // 🚨 Special handling for MaxTokensError
@@ -865,22 +990,19 @@ export class RouterServer {
         return reply.code(500).send(MaxTokensErrorHandler.formatErrorResponse(error as any));
       }
       
-      // For ProviderError, preserve the original status code (especially 429)
-      if (error instanceof ProviderError) {
-        return reply.code(error.statusCode).send({
-          error: {
-            type: 'api_error',
-            message: error.message
-          }
-        });
-      }
+      // 使用统一错误处理系统
+      handleProviderError(error, reply, {
+        requestId,
+        providerId: providerId || 'unknown',
+        model: targetModel || baseRequest?.model || 'unknown'
+      });
       
-      const serverErrorMessage = error instanceof Error ? error.message : 'Internal server error';
-      return reply.code(500).send({
-        error: {
-          type: 'api_error',
-          message: serverErrorMessage
-        }
+      // 确保错误处理正确执行
+      UnifiedErrorHandler.validateErrorHandling(error, reply, {
+        requestId,
+        providerId: providerId || 'unknown',
+        model: targetModel || baseRequest?.model || 'unknown',
+        stage: 'provider'
       });
     }
   }
@@ -935,14 +1057,30 @@ export class RouterServer {
     reply: FastifyReply,
     requestId: string
   ): Promise<void> {
+    // 声明变量在函数顶部，以便catch块可以访问
+    let outputTokens = 0;
+    let chunkCount = 0;
+    let streamInitialized = false;
+    
     try {
-      // Set SSE headers
+      // 🔧 修复核心沉默失败：先获取流并验证第一个块，确保请求有效性后再设置HTTP状态码
+      const streamIterable = provider.sendStreamRequest(request);
+      const streamIterator = streamIterable[Symbol.asyncIterator]();
+      const firstChunk = await streamIterator.next();
+      
+      // 如果第一个块就失败了，说明请求无效，直接抛出错误而不设置200状态码
+      if (firstChunk.done && !firstChunk.value) {
+        throw new Error('Streaming request failed: No valid response from provider');
+      }
+      
+      // 只有确认流式响应有效后，才设置200状态码和SSE头
       reply.raw.writeHead(200, {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
         'Access-Control-Allow-Origin': '*'
       });
+      streamInitialized = true;
 
       // Generate message ID
       const messageId = `msg_${Date.now()}`;
@@ -997,8 +1135,6 @@ export class RouterServer {
       });
 
       // Stream from provider
-      let outputTokens = 0;
-      let chunkCount = 0;
       
       // Debug Hook: Trace provider streaming request
       if (this.config.debug.enabled) {
@@ -1017,24 +1153,71 @@ export class RouterServer {
         }, 30000); // Send a ping every 30 seconds
       }
 
-      for await (const chunk of provider.sendStreamRequest(request)) {
+      // 🔧 流处理修复：首先处理已验证的第一个块，然后处理剩余的流
+      let currentChunk = firstChunk.value;
+      let isDone = firstChunk.done;
+
+      while (!isDone) {
         chunkCount++;
-        // 只在trace级别记录chunk详情，避免刷屏
-        this.logger.trace(`Streaming chunk ${chunkCount}`, { 
-          event: chunk.event, 
-          hasData: !!chunk.data,
-          dataType: typeof chunk.data 
+        // 只在debug级别记录chunk详情，避免刷屏
+        this.logger.debug(`Streaming chunk ${chunkCount}`, { 
+          event: currentChunk.event, 
+          hasData: !!currentChunk.data,
+          dataType: typeof currentChunk.data 
         }, requestId, 'streaming');
         
+        // 🎯 通过响应流水线处理流式数据块
+        const pipelineContext = {
+          requestId,
+          provider: provider.name || 'unknown',
+          model: request.metadata?.targetModel || request.model,
+          isStreaming: true,
+          timestamp: Date.now()
+        };
+        
+        let processedChunk = currentChunk;
+        try {
+          // 🆕 统一预处理：先对流式数据块应用补丁系统
+          const preprocessedChunk = await this.unifiedPreprocessor.preprocessStreaming(
+            currentChunk,
+            pipelineContext.provider as any,
+            pipelineContext.model,
+            requestId
+          );
+          
+          // 🔧 然后应用响应流水线处理（如果chunk.data存在）
+          if (preprocessedChunk.data) {
+            const processedData = await this.responsePipeline.process(preprocessedChunk.data, pipelineContext);
+            processedChunk = { ...preprocessedChunk, data: processedData };
+          } else {
+            processedChunk = preprocessedChunk;
+          }
+          
+          this.logger.debug('Streaming chunk processed through unified preprocessing and pipeline', {
+            originalChunk: currentChunk.event,
+            preprocessingApplied: preprocessedChunk !== currentChunk,
+            pipelineApplied: !!preprocessedChunk.data,
+            finalEvent: processedChunk.event
+          }, requestId, 'streaming-preprocessing');
+          
+        } catch (error) {
+          this.logger.warn('Unified preprocessing or pipeline processing failed for streaming chunk, using original', {
+            error: error instanceof Error ? error.message : String(error),
+            chunkEvent: currentChunk.event
+          }, requestId, 'streaming-pipeline');
+          // 使用原始chunk继续处理
+          processedChunk = currentChunk;
+        }
+        
         // 智能停止信号处理：保留工具调用stop_reason，移除其他stop_reason
-        if (chunk.event === 'message_delta' && chunk.data?.delta?.stop_reason) {
-          const stopReason = chunk.data.delta.stop_reason;
+        if (processedChunk.event === 'message_delta' && processedChunk.data?.delta?.stop_reason) {
+          const stopReason = processedChunk.data.delta.stop_reason;
           const isToolUse = stopReason === 'tool_use';
           
           if (isToolUse) {
             hasToolUse = true;
             // 工具调用完成 - 保留stop_reason以触发继续对话
-            this.sendSSEEvent(reply, chunk.event, chunk.data);
+            this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
             this.logger.logFinishReason(stopReason, {
               provider: provider.name,
               model: request.model,
@@ -1058,52 +1241,56 @@ export class RouterServer {
             );
           } else {
             // 非工具调用 - 移除stop_reason防止会话终止
-            const filteredData = { ...chunk.data };
+            const filteredData = { ...processedChunk.data };
             if (filteredData.delta) {
               filteredData.delta = { ...filteredData.delta };
               delete filteredData.delta.stop_reason;
               delete filteredData.delta.stop_sequence;
             }
-            this.sendSSEEvent(reply, chunk.event, filteredData);
+            this.sendSSEEvent(reply, processedChunk.event, filteredData);
             this.logger.debug(`Removed non-tool stop_reason to prevent early termination: ${stopReason}`, {}, requestId, 'server');
           }
-        } else if (chunk.event === 'message_stop') {
+        } else if (processedChunk.event === 'message_stop') {
           // message_stop事件处理：只有工具调用时才发送
           if (hasToolUse) {
-            this.sendSSEEvent(reply, chunk.event, chunk.data);
+            this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
             this.logger.debug('Allowed message_stop event for proper tool calling workflow', {}, requestId, 'server');
           } else {
             this.logger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
           }
         } else {
           // 正常转发其他事件（包括工具调用相关事件）
-          this.sendSSEEvent(reply, chunk.event, chunk.data);
+          this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
         }
         
         // 计算输出tokens - 包括文本和工具调用内容
-        if (chunk.event === 'content_block_delta') {
-          if (chunk.data?.delta?.text) {
+        if (processedChunk.event === 'content_block_delta') {
+          if (processedChunk.data?.delta?.text) {
             // 文本内容
-            const textLength = chunk.data.delta.text.length;
+            const textLength = processedChunk.data.delta.text.length;
             outputTokens += Math.ceil(textLength / 4);
             // 移除刷屏的token计算日志
-            // this.logger.trace(`Token calculation - text: "${chunk.data.delta.text}" (${textLength} chars = ${Math.ceil(textLength / 4)} tokens)`, {}, requestId, 'server');
-          } else if (chunk.data?.delta?.type === 'input_json_delta' && chunk.data?.delta?.partial_json) {
+            // this.logger.trace(`Token calculation - text: "${processedChunk.data.delta.text}" (${textLength} chars = ${Math.ceil(textLength / 4)} tokens)`, {}, requestId, 'server');
+          } else if (processedChunk.data?.delta?.type === 'input_json_delta' && processedChunk.data?.delta?.partial_json) {
             // 工具调用的JSON输入内容
-            const jsonLength = chunk.data.delta.partial_json.length;
+            const jsonLength = processedChunk.data.delta.partial_json.length;
             outputTokens += Math.ceil(jsonLength / 4);
             // 移除刷屏的token计算日志
-            // this.logger.trace(`Token calculation - tool JSON: "${chunk.data.delta.partial_json}" (${jsonLength} chars = ${Math.ceil(jsonLength / 4)} tokens)`, {}, requestId, 'server');
+            // this.logger.trace(`Token calculation - tool JSON: "${processedChunk.data.delta.partial_json}" (${jsonLength} chars = ${Math.ceil(jsonLength / 4)} tokens)`, {}, requestId, 'server');
           }
-        } else if (chunk.event === 'content_block_start' && chunk.data?.content_block?.type === 'tool_use') {
+        } else if (processedChunk.event === 'content_block_start' && processedChunk.data?.content_block?.type === 'tool_use') {
           // 工具调用开始 - 计算工具名称的token
-          const toolName = chunk.data.content_block.name || '';
+          const toolName = processedChunk.data.content_block.name || '';
           const nameLength = toolName.length;
           outputTokens += Math.ceil(nameLength / 4);
           // 移除刷屏的token计算日志
           // this.logger.trace(`Token calculation - tool name: "${toolName}" (${nameLength} chars = ${Math.ceil(nameLength / 4)} tokens)`, {}, requestId, 'server');
         }
         
+        // 🔧 获取下一个数据块继续处理流
+        const nextResult = await streamIterator.next();
+        currentChunk = nextResult.value;
+        isDone = nextResult.done;
       }
 
       // 保留content_block_stop事件，这对工具调用完整性是必需的
@@ -1151,31 +1338,66 @@ export class RouterServer {
       }, requestId, 'server');
 
     } catch (error) {
-      this.logger.error('Streaming request failed', error, requestId, 'server');
-      
       const errorMessage = error instanceof Error ? error.message : 'Stream processing failed';
-      // Re-enable comprehensive failure logging (临时注释掉，稍后修复接口匹配)
-        /*const failureData = {
-          timestamp: new Date().toISOString(),
-          requestId: requestId,
-          port: this.config.server.port,
-          provider: provider.name || 'unknown',
-          model: request.metadata?.targetModel || request.model,
-          key: 'streaming_key_not_available',
-          errorCode: (error as any)?.response?.status || 500,
-          reason: errorMessage
-        };
-        this.pipelineDebugger.logFailure(failureData);*/
-      // Send error event
-      this.sendSSEEvent(reply, 'error', {
-        type: 'error',
-        error: {
-          type: 'overloaded_error',
-          message: errorMessage
+      const errorCode = (error as any)?.response?.status || 500;
+      const providerName = provider.name || 'unknown';
+      const modelName = request.metadata?.targetModel || request.model || 'unknown';
+      
+      // 🚨 Enhanced streaming failure logging with detailed information
+      const failureData = {
+        timestamp: new Date().toISOString(),
+        requestId: requestId,
+        port: this.config.server.port,
+        provider: providerName,
+        model: modelName,
+        originalModel: request.model,
+        routingCategory: request.metadata?.routingCategory || 'unknown',
+        errorCode: errorCode,
+        reason: errorMessage,
+        stage: 'streaming',
+        chunkCount: chunkCount,
+        outputTokens: outputTokens,
+        errorType: error instanceof Error ? error.name : 'UnknownError',
+        stack: error instanceof Error ? error.stack : undefined,
+        requestMetadata: {
+          sessionId: request.metadata?.sessionId,
+          conversationId: request.metadata?.conversationId,
+          userId: request.metadata?.user_id,
+          isStreaming: true,
+          targetProvider: request.metadata?.targetProvider
         }
+      };
+      
+      // 详细的failure logging
+      this.logger.error('Streaming request failed with detailed context', failureData, requestId, 'streaming-failure');
+      
+      // 强制控制台输出详细错误信息（确保用户能看到）
+      console.error(`🚨 [STREAMING FAILURE] Request ${requestId}`);
+      console.error(`   Provider: ${providerName}`);
+      console.error(`   Model: ${modelName} (original: ${request.model})`);
+      console.error(`   Error Code: ${errorCode}`);
+      console.error(`   Error Message: ${errorMessage}`);
+      console.error(`   Chunks Processed: ${chunkCount}`);
+      console.error(`   Output Tokens: ${outputTokens}`);
+      console.error(`   Port: ${this.config.server.port}`);
+      console.error(`   Stage: streaming`);
+      console.error(`   Service Status: UNAVAILABLE`);
+      
+      // 使用统一错误处理系统处理streaming错误
+      handleStreamingError(error, reply, {
+        requestId,
+        providerId: providerName,
+        model: modelName
       });
       
-      reply.raw.end();
+      // 确保错误处理正确执行
+      UnifiedErrorHandler.validateErrorHandling(error, reply, {
+        requestId,
+        providerId: providerName,
+        model: modelName,
+        stage: 'streaming',
+        isStreaming: true
+      });
     }
   }
 

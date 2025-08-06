@@ -6,7 +6,8 @@
 import { InputProcessor, AnthropicRequest, BaseRequest, ValidationError } from '@/types';
 import { validateAnthropicRequest } from './validator';
 import { logger } from '@/utils/logger';
-
+import { optimizedToolCallDetector } from '@/utils/optimized-tool-call-detector';
+import { getUnifiedPatchPreprocessor } from '../../preprocessing/unified-patch-preprocessor';
 export class AnthropicInputProcessor implements InputProcessor {
   public readonly name = 'anthropic';
 
@@ -42,33 +43,69 @@ export class AnthropicInputProcessor implements InputProcessor {
       }
 
       const anthropicRequest = request as AnthropicRequest;
+      const requestId = anthropicRequest.metadata?.requestId || 'temp-id';
       
-      // Normalize the request to our internal format
+      // 🎯 统一预处理：应用补丁系统到输入数据
+      // 这将替代原本分散的工具调用检测和修复逻辑
+      const preprocessor = getUnifiedPatchPreprocessor();
+      const preprocessedRequest = await preprocessor.preprocessInput(
+        anthropicRequest,
+        'anthropic',
+        anthropicRequest.model,
+        requestId
+      );
+      
+      // 🎯 保留优化的工具调用检测，但作为补充验证
+      const toolDetectionResult = optimizedToolCallDetector.detectInRequest(preprocessedRequest, requestId);
+      
+      logger.debug('Input processed through unified preprocessing and tool detection', {
+        requestId,
+        hasToolCalls: toolDetectionResult.hasToolCalls,
+        detectedPatterns: toolDetectionResult.detectedPatterns,
+        confidence: toolDetectionResult.confidence,
+        needsBuffering: toolDetectionResult.needsBuffering,
+        extractedCount: toolDetectionResult.extractedToolCalls?.length || 0,
+        detectionMethod: toolDetectionResult.detectionMethod,
+        preprocessingApplied: preprocessedRequest !== anthropicRequest
+      }, requestId, 'input-processor');
+      
+      // Normalize the preprocessed request to our internal format
       const baseRequest: BaseRequest = {
-        model: anthropicRequest.model,
-        messages: this.normalizeMessages(anthropicRequest.messages),
-        stream: anthropicRequest.stream || false,
-        max_tokens: anthropicRequest.max_tokens || 131072,
-        temperature: anthropicRequest.temperature,
+        model: preprocessedRequest.model,
+        messages: this.normalizeMessages(preprocessedRequest.messages),
+        stream: preprocessedRequest.stream || false,
+        max_tokens: preprocessedRequest.max_tokens || 131072,
+        temperature: preprocessedRequest.temperature,
         // 🔧 FIX: Store tools at top level for Provider access
-        tools: anthropicRequest.tools,
+        tools: preprocessedRequest.tools,
         metadata: {
           requestId: '',  // Will be set by server
-          ...anthropicRequest.metadata,
+          ...preprocessedRequest.metadata,
           originalFormat: 'anthropic',
-          system: anthropicRequest.system,
-          tools: anthropicRequest.tools,  // Keep copy in metadata for session management
-          thinking: anthropicRequest.thinking || false
+          system: preprocessedRequest.system,
+          tools: preprocessedRequest.tools,  // Keep copy in metadata for session management
+          thinking: preprocessedRequest.thinking || false,
+          // 🎯 添加工具调用检测结果到metadata
+          toolDetection: toolDetectionResult,
+          // 🆕 添加预处理信息
+          preprocessing: {
+            applied: preprocessedRequest !== anthropicRequest,
+            timestamp: Date.now()
+          }
         }
       };
 
-      logger.debug('Processed Anthropic request:', {
+      logger.debug('Processed Anthropic request through unified preprocessing:', {
         requestId: baseRequest.metadata?.requestId,
         model: baseRequest.model,
         messageCount: baseRequest.messages.length,
-        hasTools: !!anthropicRequest.tools?.length,
-        hasSystem: !!anthropicRequest.system?.length,
-        isThinking: !!anthropicRequest.thinking
+        hasTools: !!preprocessedRequest.tools?.length,
+        hasSystem: !!preprocessedRequest.system?.length,
+        isThinking: !!preprocessedRequest.thinking,
+        toolDetectionConfidence: toolDetectionResult.confidence,
+        needsBuffering: toolDetectionResult.needsBuffering,
+        detectionMethod: toolDetectionResult.detectionMethod,
+        preprocessingApplied: baseRequest.metadata?.preprocessing.applied
       });
 
       return baseRequest;

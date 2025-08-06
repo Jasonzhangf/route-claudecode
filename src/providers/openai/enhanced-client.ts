@@ -35,84 +35,7 @@ export class EnhancedOpenAIClient implements Provider {
   private readonly isLmStudio: boolean;
   private patchManager = createPatchManager();
 
-  /**
-   * Detect if text content contains tool call patterns that need patching
-   */
-  private detectToolCallInText(text: string): boolean {
-    if (!text || typeof text !== 'string') {
-      return false;
-    }
-
-    // Check for tool call patterns that indicate need for patch processing
-    const toolCallPatterns = [
-      /\{\s*"type"\s*:\s*"tool_use"\s*,/i,
-      /\{\s*"id"\s*:\s*"toolu_[^"]+"\s*,/i,
-      /"name"\s*:\s*"[^"]+"\s*,\s*"input"\s*:\s*\{/i,
-      /Tool call:/i,
-      /"tool_calls"\s*:/i,
-      // 更积极的检测模式
-      /\{\s*"name"\s*:\s*"[^"]+"/i, // JSON with name field
-      /\{\s*"todos"\s*:/i, // Common tool input patterns
-      /\{\s*"task"\s*:/i,
-      /\{\s*"query"\s*:/i
-    ];
-
-    return toolCallPatterns.some(pattern => pattern.test(text));
-  }
-
-  /**
-   * 移动窗口检测工具调用特征
-   */
-  private detectToolCallInSlidingWindow(window: string): boolean {
-    if (!window || typeof window !== 'string') {
-      return false;
-    }
-
-    // 工具调用特征模式 - 更精确的检测
-    const toolCallPatterns = [
-      // Anthropic格式的tool_use
-      /\{\s*"type"\s*:\s*"tool_use"\s*,/i,
-      /\{\s*"id"\s*:\s*"toolu_[^"]+"\s*,/i,
-      /"name"\s*:\s*"[^"]+"\s*,\s*"input"\s*:\s*\{/i,
-      
-      // 文本格式的工具调用
-      /Tool call:\s*\w+\s*\(/i,
-      
-      // OpenAI格式的tool_calls
-      /"tool_calls"\s*:\s*\[/i,
-      
-      // JSON中的工具调用标识
-      /"function"\s*:\s*\{.*"name"\s*:/i,
-      
-      // 其他可能的工具调用格式
-      /\w+\s*\(\s*\{.*"task"\s*:/i, // 如 TodoWrite({"task": ...})
-      
-      // 跨chunk的部分匹配
-      /\{\s*"name"\s*:\s*"[^"]*$/i, // JSON开始但未完成
-      /Tool\s+call\s*:?\s*$/i, // "Tool call:" 被截断
-    ];
-
-    return toolCallPatterns.some(pattern => pattern.test(window));
-  }
-
-  /**
-   * 更新移动窗口并检测工具调用
-   */
-  private updateSlidingWindow(newContent: string, window: string, windowSize: number): { 
-    newWindow: string, 
-    needsBuffering: boolean 
-  } {
-    // 更新窗口内容
-    const combined = window + newContent;
-    const newWindow = combined.length > windowSize 
-      ? combined.slice(-windowSize) 
-      : combined;
-    
-    // 检测是否需要缓冲
-    const needsBuffering = this.detectToolCallInSlidingWindow(newWindow);
-    
-    return { newWindow, needsBuffering };
-  }
+  // 工具调用检测逻辑已移至统一响应流水线 (src/pipeline/response-pipeline.ts)
 
   /**
    * 检查缓冲区是否包含完整的工具调用
@@ -453,13 +376,29 @@ export class EnhancedOpenAIClient implements Provider {
       }
       
       // 确保OpenAI的所有错误都返回给客户端，不静默失败
+      const httpStatus = (error as any)?.response?.status || (error as any)?.status || 500;
+      const requestErrorMessage = error instanceof Error ? error.message : String(error);
+      
+      // Enhanced console error output for immediate visibility
+      console.error(`🚨 [${this.name}] REQUEST FAILED AFTER RETRIES - NO SILENT FAILURE:`);
+      console.error(`   Status: ${httpStatus}`);
+      console.error(`   Error: ${requestErrorMessage}`);
+      console.error(`   Provider: ${this.name}`);
+      console.error(`   Request ID: ${requestId}`);
+      console.error(`   Model: ${request.model || 'unknown'}`);
+      console.error(`   Total Retries: ${this.maxRetries}`);
+      console.error(`   Endpoint: ${this.endpoint}`);
+      console.error(`   RESULT: Throwing ProviderError with status ${httpStatus}`);
+      
       logger.error(`${this.name} request failed after retries`, {
         provider: this.name,
         model: request.model || 'unknown',
         totalRetries: this.maxRetries,
-        httpCode: (error as any)?.response?.status || (error as any)?.status,
-        errorType: (error as any)?.response?.status === 429 ? 'rate_limit' : 'api_error',
-        error: error instanceof Error ? error.message : String(error)
+        httpCode: httpStatus,
+        errorType: 'max_retries_exceeded',
+        error: requestErrorMessage,
+        endpoint: this.endpoint,
+        noSilentFailure: true
       }, requestId, 'provider');
       
       // 错误已经通过 captureError 记录了
@@ -478,11 +417,11 @@ export class EnhancedOpenAIClient implements Provider {
         );
       }
       
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      // CRITICAL: Always throw error for multiple retry failures - NO SILENT FAILURES
       throw new ProviderError(
-        `${this.name} request failed: ${errorMessage}`,
+        `${this.name} request failed after ${this.maxRetries} retries (${httpStatus}): ${requestErrorMessage}`,
         this.name,
-        500,
+        httpStatus,
         error
       );
     }
@@ -595,7 +534,39 @@ export class EnhancedOpenAIClient implements Provider {
         }
         
         if (!this.isRetryableError(error)) {
-          break; // Non-retryable error, break immediately
+          // Non-retryable error (like 404, 401, 400), should fail immediately
+          const httpStatus = (error as any)?.response?.status || (error as any)?.status || 500;
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          
+          // Enhanced console error output for immediate visibility
+          console.error(`🚨 [${this.name}] CRITICAL STREAMING API ERROR - Non-retryable failure:`);
+          console.error(`   Status: ${httpStatus}`);
+          console.error(`   Error: ${errorMessage}`);
+          console.error(`   Provider: ${this.name}`);
+          console.error(`   Request ID: ${requestId}`);
+          console.error(`   Model: ${request.model}`);
+          console.error(`   Endpoint: ${this.endpoint}`);
+          console.error(`   Attempt: ${attempt + 1}/${this.maxRetries}`);
+          
+          // Log detailed error
+          logger.error(`${this.name} non-retryable streaming error`, {
+            httpStatus,
+            errorMessage,
+            provider: this.name,
+            model: request.model,
+            endpoint: this.endpoint,
+            errorType: 'non_retryable_streaming_api_error',
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries
+          }, requestId, 'provider');
+          
+          // Throw immediately for non-retryable errors - NO SILENT FAILURES
+          throw new ProviderError(
+            `${this.name} Streaming API Error (${httpStatus}): ${errorMessage}`,
+            this.name,
+            httpStatus,
+            error
+          );
         }
         
         // For retryable errors, continue to next iteration which will get a fresh available key
@@ -606,27 +577,49 @@ export class EnhancedOpenAIClient implements Provider {
     }
     
     // 确保OpenAI的所有错误都返回给客户端，不静默失败
-    // All retries failed
+    // All retries failed - CRITICAL: Must throw error, no silent failures allowed
+    const finalHttpStatus = (lastError as any)?.response?.status || (lastError as any)?.status || 500;
+    const finalErrorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    
+    // Enhanced console error output for final failure
+    console.error(`🚨 [${this.name}] STREAMING REQUEST FAILED AFTER ALL RETRIES - NO SILENT FAILURE:`);
+    console.error(`   Status: ${finalHttpStatus}`);
+    console.error(`   Error: ${finalErrorMessage}`);
+    console.error(`   Provider: ${this.name}`);
+    console.error(`   Request ID: ${requestId}`);
+    console.error(`   Model: ${(request as any)?.model || 'unknown'}`);
+    console.error(`   Total Retries: ${this.maxRetries}`);
+    console.error(`   Endpoint: ${this.endpoint}`);
+    console.error(`   RESULT: Throwing ProviderError with status ${finalHttpStatus}`);
+    
     logger.error(`${this.name} streaming request failed after all retries`, {
       provider: this.name,
       model: (request as any)?.model || 'unknown',
       totalRetries: this.maxRetries,
-      httpCode: (lastError as any)?.response?.status || (lastError as any)?.status,
-      errorType: (lastError as any)?.response?.status === 429 ? 'rate_limit' : 'api_error',
-      error: lastError instanceof Error ? lastError.message : String(lastError)
+      httpCode: finalHttpStatus,
+      errorType: 'max_retries_exceeded',
+      error: finalErrorMessage,
+      endpoint: this.endpoint,
+      noSilentFailure: true
     }, requestId, 'provider');
     
     // 错误已经通过 captureError 记录了
     
     if (lastError instanceof ProviderError) {
-      throw lastError;
+      // Re-throw with retry context
+      throw new ProviderError(
+        `${lastError.message} (after ${this.maxRetries} retries)`,
+        lastError.provider,
+        lastError.statusCode,
+        lastError.details
+      );
     }
     
-    const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    // CRITICAL: Always throw error for multiple retry failures - NO SILENT FAILURES
     throw new ProviderError(
-      `${this.name} streaming request failed: ${errorMessage}`,
+      `${this.name} streaming request failed after ${this.maxRetries} retries (${finalHttpStatus}): ${finalErrorMessage}`,
       this.name,
-      500,
+      finalHttpStatus,
       lastError
     );
   }
@@ -645,12 +638,7 @@ export class EnhancedOpenAIClient implements Provider {
     let isInToolCall = false;
     let outputTokens = 0;
     
-    // 移动窗口检测策略
-    let slidingWindow = ''; // 移动窗口，用于跨chunk检测
-    let windowSize = 500; // 窗口大小，足够包含工具调用特征
-    let contentBuffer = ''; // 内容缓冲区
-    let needsPatchProcessing = false;
-    let isBuffering = false;
+    // 工具调用检测现在由响应流水线统一处理
     
     logger.debug('Starting smart cached stream processing', {
       strategy: 'cache_tools_stream_text'
@@ -728,62 +716,34 @@ export class EnhancedOpenAIClient implements Provider {
               const choice = parsed.choices?.[0];
               if (!choice?.delta) continue;
 
-              // Handle text content - 移动窗口检测策略
+              // Handle text content - 工具调用检测现在由响应流水线统一处理
               if (choice.delta.content !== undefined) {
                 const currentContent = choice.delta.content || '';
                 
-                // 更新移动窗口并检测工具调用
-                const windowResult = this.updateSlidingWindow(currentContent, slidingWindow, windowSize);
-                slidingWindow = windowResult.newWindow;
-                
-                // 如果检测到需要缓冲且当前不在缓冲模式
-                if (windowResult.needsBuffering && !isBuffering) {
-                  isBuffering = true;
-                  needsPatchProcessing = true;
-                  
-                  logger.debug('Sliding window detected tool call pattern, switching to buffer mode', {
-                    windowPreview: slidingWindow.substring(Math.max(0, slidingWindow.length - 100)),
-                    contentPreview: currentContent.substring(0, 50)
-                  }, requestId, 'provider');
-                  
-                  // 开始缓冲当前内容
-                  contentBuffer = currentContent;
-                } else if (isBuffering) {
-                  // 已在缓冲模式，继续缓冲
-                  contentBuffer += currentContent;
-                  
-                  // 可选：检查是否有完整的工具调用可以立即处理
-                  if (this.hasCompleteToolCall && this.hasCompleteToolCall(contentBuffer)) {
-                    logger.debug('Complete tool call detected in buffer', {
-                      bufferLength: contentBuffer.length
-                    }, requestId, 'provider');
-                  }
-                } else {
-                  // 正常流式模式 - 立即输出
-                  if (!hasContentBlock && !isInToolCall) {
-                    yield {
-                      event: 'content_block_start',
-                      data: {
-                        type: 'content_block_start',
-                        index: 0,
-                        content_block: { type: 'text', text: '' }
-                      }
-                    };
-                    hasContentBlock = true;
-                  }
+                // 直接输出内容，不再在此处进行工具调用检测
+                if (!hasContentBlock && !isInToolCall) {
+                  yield {
+                    event: 'content_block_start',
+                    data: {
+                      type: 'content_block_start',
+                      index: 0,
+                      content_block: { type: 'text', text: '' }
+                    }
+                  };
+                  hasContentBlock = true;
+                }
 
-                  // 立即流式输出内容
-                  if (currentContent.length > 0 && !isInToolCall) {
-                    yield {
-                      event: 'content_block_delta',
-                      data: {
-                        type: 'content_block_delta',
-                        index: 0,
-                        delta: { type: 'text_delta', text: currentContent }
-                      }
-                    };
-                    outputTokens += Math.ceil(currentContent.length / 4);
-                  }
+                // 立即流式输出内容
+                if (currentContent.length > 0 && !isInToolCall) {
+                  yield {
+                    event: 'content_block_delta',
+                    data: {
+                      type: 'content_block_delta',
+                      index: 0,
+                      delta: { type: 'text_delta', text: currentContent }
+                    }
+                  };
+                  outputTokens += Math.ceil(currentContent.length / 4);
                 }
               }
 
@@ -928,77 +888,10 @@ export class EnhancedOpenAIClient implements Provider {
           };
         }
 
-        // Apply patches if needed - 处理缓冲的内容
-        if (needsPatchProcessing && contentBuffer) {
-          logger.debug('Processing buffered content with sliding window detection', {
-            bufferLength: contentBuffer.length,
-            windowLength: slidingWindow.length
-          }, requestId, 'provider');
-          
-          try {
-            // Create a mock response structure for patch processing
-            const mockResponse = {
-              choices: [{
-                message: {
-                  content: contentBuffer,
-                  role: 'assistant'
-                }
-              }]
-            };
-            
-            // Apply patches to extract tool calls
-            const patchedResponse = await this.patchManager.applyResponsePatches(
-              mockResponse,
-              'openai',
-              request.model,
-              requestId
-            );
-            
-            // Convert patched response to Anthropic format
-            const baseResponse = this.convertFromOpenAI(patchedResponse, request);
-            
-            // Only send NEW tool_use blocks (not text content)
-            if (baseResponse.content && Array.isArray(baseResponse.content)) {
-              const toolUseBlocks = baseResponse.content.filter(block => block.type === 'tool_use');
-              
-              if (toolUseBlocks.length > 0) {
-                logger.debug('Extracted tool calls from buffered content', {
-                  toolCallCount: toolUseBlocks.length
-                }, requestId, 'provider');
-                
-                // Send each tool call as a separate content block
-                for (let i = 0; i < toolUseBlocks.length; i++) {
-                  const block = toolUseBlocks[i];
-                  const blockIndex = hasContentBlock ? toolCallBuffer.size + i + 1 : i;
-                  
-                  yield {
-                    event: 'content_block_start',
-                    data: {
-                      type: 'content_block_start',
-                      index: blockIndex,
-                      content_block: block
-                    }
-                  };
-                  
-                  // Tool use blocks are complete, no delta needed
-                  
-                  yield {
-                    event: 'content_block_stop',
-                    data: { type: 'content_block_stop', index: blockIndex }
-                  };
-                }
-              } else {
-                logger.debug('No tool calls found in buffered content after patch processing', {}, requestId, 'provider');
-              }
-            }
-          } catch (patchError) {
-            logger.error('Failed to extract tool calls from buffered content', patchError, requestId, 'provider');
-            // Don't send anything if patch processing fails - better than sending broken content
-          }
-        }
+        // 补丁处理现在由响应流水线统一处理
 
         // 简化逻辑：根据工具调用决定finish reason
-        const hasToolCalls = toolCallBuffer.size > 0 || (needsPatchProcessing && contentBuffer.includes('tool_use'));
+        const hasToolCalls = toolCallBuffer.size > 0;
         const openaiFinishReason = hasToolCalls ? 'tool_calls' : 'stop';
         const finishReason = mapFinishReason(openaiFinishReason);
         

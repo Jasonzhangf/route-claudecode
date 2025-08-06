@@ -136,7 +136,7 @@ export async function executeCodeCommand(args: string[], options: any) {
       return false;
     }
 
-    async function checkServiceOnPort(checkPort: number, checkHost: string = host): Promise<boolean> {
+    async function checkServiceOnPort(checkPort: number, checkHost: string = host): Promise<{ success: boolean; error?: string }> {
       return new Promise((resolve) => {
         const http = require('http');
         const url = `http://${checkHost}:${checkPort}/status`;
@@ -145,19 +145,19 @@ export async function executeCodeCommand(args: string[], options: any) {
         const req = http.get(url, (res: any) => {
           const isOk = res.statusCode >= 200 && res.statusCode < 300;
           quickLog(chalk.gray(`   Result: ${isOk ? '✅' : '❌'} (${res.statusCode})`));
-          resolve(isOk);
+          resolve({ success: isOk });
           res.resume(); // Consume response to free up memory
         });
         
         req.on('error', (error: any) => {
           quickLog(chalk.gray(`   Error: ${error.message}`));
-          resolve(false);
+          resolve({ success: false, error: error.code || error.message });
         });
         
         req.setTimeout(5000, () => {
           quickLog(chalk.gray(`   Error: Timeout`));
           req.destroy();
-          resolve(false);
+          resolve({ success: false, error: 'ETIMEDOUT' });
         });
       });
     }
@@ -253,27 +253,33 @@ export async function executeCodeCommand(args: string[], options: any) {
       // Mode 1: Port specified - only check connection, don't start service
       quickLog(chalk.blue(`🔍 Checking for service on specified port ${port}...`));
       
-      // Try common hosts when port is specified: 127.0.0.1 and 0.0.0.0
-      // If other IP needed, must use --host explicitly
       const hostsToTry = options.host ? [host] : ['127.0.0.1', '0.0.0.0'];
       let serviceFound = false;
       let workingHost = '';
-      
+      const connectionErrors: string[] = [];
+
       for (const hostToTry of hostsToTry) {
-        if (await checkServiceOnPort(port, hostToTry)) {
+        const result = await checkServiceOnPort(port, hostToTry);
+        if (result.success) {
           serviceFound = true;
           workingHost = hostToTry;
           break;
+        } else if (result.error) {
+            connectionErrors.push(`${hostToTry}: ${result.error}`);
         }
       }
-      
+
       if (serviceFound) {
         quickLog(chalk.green(`✅ Router service found on ${workingHost}:${port}!`));
         await executeClaudeCode(args, workingHost);
       } else {
-        quickLog(chalk.red(`❌ No service found on port ${port}`));
+        quickLog(chalk.red(`❌ API 500 Connection Error: No service found on port ${port}`));
         quickLog(chalk.gray(`   Tried hosts: ${hostsToTry.join(', ')}`));
-        quickLog(chalk.yellow('💡 Make sure the service is running on the specified port first'));
+        if (connectionErrors.length > 0) {
+            quickLog(chalk.red('   Connection attempts failed with the following errors:'));
+            connectionErrors.forEach(err => quickLog(chalk.red(`     - ${err}`)));
+        }
+        quickLog(chalk.yellow('💡 Make sure the service is running on the specified port first. Use ' + chalk.bold('rcc start --config <config_path>') + ' to start it.'));
         process.exit(1);
       }
     } else if (config && options.config && options.config !== configPaths.configFile) {

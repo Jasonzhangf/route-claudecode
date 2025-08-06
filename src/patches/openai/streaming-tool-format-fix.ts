@@ -209,8 +209,61 @@ export class OpenAIStreamingToolFormatFixPatch implements StreamingPatch {
    * 修复Qwen模型的工具格式
    */
   private fixQwenToolFormat(data: string): string {
-    // Qwen可能返回特殊格式，这里添加具体的修复逻辑
-    return data;
+    // Qwen模型可能返回工具调用的特殊格式
+    // 例如: {"name": "Task", "arguments": "{\n  \"description\": \"检查补丁系统\"}
+    try {
+      // 尝试解析数据
+      const parsed = JSON.parse(data);
+      
+      // 如果有name和arguments字段，这可能是一个工具调用
+      if (parsed.name && parsed.arguments) {
+        // 构造标准的工具调用格式
+        const toolCall = {
+          function: {
+            name: parsed.name,
+            arguments: typeof parsed.arguments === 'string' 
+              ? parsed.arguments 
+              : JSON.stringify(parsed.arguments)
+          }
+        };
+        return JSON.stringify(toolCall);
+      }
+      
+      return data;
+    } catch (error) {
+      // 如果不是有效的JSON，尝试其他修复方法
+      
+      // 处理可能的工具调用格式，例如:
+      // Task({"description": "检查补丁系统", ...})
+      const functionCallMatch = data.match(/(\w+)\((\{.*\})\)/s);
+      if (functionCallMatch) {
+        const [, functionName, args] = functionCallMatch;
+        try {
+          // 验证参数是有效的JSON
+          JSON.parse(args);
+          return JSON.stringify({
+            function: {
+              name: functionName,
+              arguments: args
+            }
+          });
+        } catch (e) {
+          // 参数不是有效的JSON，保持原样
+          return data;
+        }
+      }
+      
+      // 尝试修复常见的JSON格式问题
+      let fixed = data;
+      
+      // 修复属性名缺少引号的问题
+      fixed = fixed.replace(/(\w+)(?=\s*:)/g, '"$1"');
+      
+      // 修复多余的逗号
+      fixed = fixed.replace(/,(?=\s*[}\]])/g, '');
+      
+      return fixed;
+    }
   }
 
   /**
