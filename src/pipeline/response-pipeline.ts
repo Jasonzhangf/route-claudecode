@@ -37,7 +37,7 @@ export class PreprocessingStage implements PipelineStage {
   private logger: ReturnType<typeof getLogger>;
 
   constructor(port?: number) {
-    this.toolCallDetector = new UnifiedToolCallDetector();
+    this.toolCallDetector = new UnifiedToolCallDetector(port);
     this.logger = getLogger(port);
   }
 
@@ -45,10 +45,15 @@ export class PreprocessingStage implements PipelineStage {
     const startTime = Date.now();
     
     try {
+      // 🔍 追踪工具调用 - 处理前
+      const toolCountBefore = this.countToolCalls(data);
       this.logger.debug('Preprocessing stage started', {
         dataType: typeof data,
         hasContent: !!data?.content,
-        isStreaming: context.isStreaming
+        isStreaming: context.isStreaming,
+        toolCallsBefore: toolCountBefore,
+        contentBlocks: data?.content?.length || 0,
+        contentTypes: data?.content?.map((b: any) => b.type) || []
       }, context.requestId, 'pipeline-preprocessing');
 
       // 🎯 统一工具调用检测 - 对所有OpenAI兼容输入都执行监测
@@ -63,11 +68,27 @@ export class PreprocessingStage implements PipelineStage {
       const cleanedData = this.cleanAndValidateData(processedData, context);
 
       const duration = Date.now() - startTime;
+      const toolCountAfter = this.countToolCalls(cleanedData);
+      const toolCountProcessed = this.countToolCalls(processedData);
+      
       this.logger.debug('Preprocessing stage completed', {
         duration: `${duration}ms`,
         hasChanges: processedData !== data,
-        toolCallsDetected: this.countToolCalls(processedData)
+        toolCallsBefore: toolCountBefore,
+        toolCallsAfterDetection: toolCountProcessed,
+        toolCallsAfterCleaning: toolCountAfter,
+        contentBlocksAfter: cleanedData?.content?.length || 0,
+        contentTypesAfter: cleanedData?.content?.map((b: any) => b.type) || []
       }, context.requestId, 'pipeline-preprocessing');
+      
+      // 🚨 检查工具调用是否丢失
+      if (toolCountProcessed > toolCountAfter) {
+        this.logger.warn('🚨 Tool calls lost during cleaning stage', {
+          beforeCleaning: toolCountProcessed,
+          afterCleaning: toolCountAfter,
+          lostCount: toolCountProcessed - toolCountAfter
+        }, context.requestId, 'pipeline-tool-loss');
+      }
 
       return cleanedData;
 
@@ -109,6 +130,8 @@ export class PreprocessingStage implements PipelineStage {
     }
     return data.content.filter((block: any) => block.type === 'tool_use').length;
   }
+
+
 }
 
 /**

@@ -204,22 +204,27 @@ export class SlidingWindowDetector {
       try {
         const functionName = match[1];
         const argsStr = match[2];
-        const args = JSON.parse(argsStr);
         
-        detections.push({
-          type: 'tool_use',
-          id: `toolu_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
-          name: functionName,
-          input: args,
-          textRange: {
-            start: offset + match.index,
-            end: offset + match.index + match[0].length
-          },
-          detectionMethod: 'text-pattern',
-          originalText: match[0]
-        });
+        // 🔧 改进JSON解析：处理控制字符
+        const args = this.parseToolCallJSON(argsStr, functionName);
+        
+        if (args !== null) {
+          detections.push({
+            type: 'tool_use',
+            id: `toolu_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`,
+            name: functionName,
+            input: args,
+            textRange: {
+              start: offset + match.index,
+              end: offset + match.index + match[0].length
+            },
+            detectionMethod: 'text-pattern',
+            originalText: match[0]
+          });
+        }
       } catch (error) {
         // 参数解析失败，继续下一个匹配
+        console.warn(`Tool call JSON parsing failed for ${match[1]}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -437,6 +442,48 @@ export class SlidingWindowDetector {
 
     return Math.min(totalConfidence / detections.length, 1.0);
   }
+
+  /**
+   * 🔧 改进的工具调用JSON解析
+   * 处理大文本中的控制字符和转义问题
+   */
+  private parseToolCallJSON(jsonStr: string, functionName: string): any | null {
+    try {
+      // 方法1: 直接解析
+      return JSON.parse(jsonStr);
+    } catch (error1) {
+      try {
+        // 方法2: 清理控制字符后解析
+        const cleanedJson = this.cleanJSONString(jsonStr);
+        return JSON.parse(cleanedJson);
+      } catch (error2) {
+        // 记录详细错误信息
+        this.logger.warn(`JSON parsing failed for ${functionName}:`, {
+          originalError: (error1 as Error).message,
+          cleanedError: (error2 as Error).message,
+          jsonPreview: jsonStr.substring(0, 100) + '...'
+        });
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * 清理JSON字符串中的控制字符
+   */
+  private cleanJSONString(jsonStr: string): string {
+    return jsonStr
+      // 处理换行符 - 这是主要问题
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t')
+      // 处理其他控制字符
+      .replace(/[\x00-\x1F\x7F]/g, (match) => {
+        const code = match.charCodeAt(0);
+        return `\\u${code.toString(16).padStart(4, '0')}`;
+      });
+  }
 }
 
 /**
@@ -581,6 +628,48 @@ export class UnifiedToolCallDetector {
       return 0;
     }
     return data.content.length;
+  }
+
+  /**
+   * 🔧 改进的工具调用JSON解析
+   * 处理大文本中的控制字符和转义问题
+   */
+  private parseToolCallJSON(jsonStr: string, functionName: string): any | null {
+    try {
+      // 方法1: 直接解析
+      return JSON.parse(jsonStr);
+    } catch (error1) {
+      try {
+        // 方法2: 清理控制字符后解析
+        const cleanedJson = this.cleanJSONString(jsonStr);
+        return JSON.parse(cleanedJson);
+      } catch (error2) {
+        // 记录详细错误信息
+        console.warn(`JSON parsing failed for ${functionName}:`, {
+          originalError: (error1 as Error).message,
+          cleanedError: (error2 as Error).message,
+          jsonPreview: jsonStr.substring(0, 100) + '...'
+        });
+      }
+    }
+    
+    return null;
+  }
+  
+  /**
+   * 清理JSON字符串中的控制字符
+   */
+  private cleanJSONString(jsonStr: string): string {
+    return jsonStr
+      // 处理换行符 - 这是主要问题
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t')
+      // 处理其他控制字符
+      .replace(/[\x00-\x1F\x7F]/g, (match) => {
+        const code = match.charCodeAt(0);
+        return `\\u${code.toString(16).padStart(4, '0')}`;
+      });
   }
 
   /**

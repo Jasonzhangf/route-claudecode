@@ -8,7 +8,7 @@ import { AnthropicInputProcessor } from './input/anthropic';
 import { RoutingEngine } from './routing';
 import { AnthropicOutputProcessor } from './output/anthropic';
 import { CodeWhispererProvider } from './providers/codewhisperer';
-import { EnhancedOpenAIClient } from './providers/openai';
+import { createOpenAIClient } from './providers/openai/client-factory';
 import { AnthropicProvider } from './providers/anthropic';
 import { GeminiProvider } from './providers/gemini';
 import { LMStudioClient } from './providers/lmstudio';
@@ -59,7 +59,8 @@ export class RouterServer {
     this.patchManager = createPatchManager(config.server.port);
     
     // 🆕 初始化统一预处理器 - 集中管理所有补丁逻辑
-    this.unifiedPreprocessor = getUnifiedPatchPreprocessor(config.server.port);
+    const preprocessingConfig = (config as any).preprocessing || {};
+    this.unifiedPreprocessor = getUnifiedPatchPreprocessor(config.server.port, preprocessingConfig);
     
     // 初始化响应处理流水线
     this.responsePipeline = new ResponsePipeline(
@@ -122,8 +123,8 @@ export class RouterServer {
         if (providerConfig.type === 'codewhisperer') {
           client = new CodeWhispererProvider(expandedProviderId);
         } else if (providerConfig.type === 'openai') {
-          // Generic OpenAI-compatible client (works for Shuaihong, etc.)
-          client = new EnhancedOpenAIClient(providerConfig, expandedProviderId);
+          // OpenAI-compatible client (SDK implementation)
+          client = createOpenAIClient(providerConfig, expandedProviderId, this.config);
         } else if (providerConfig.type === 'anthropic') {
           // Direct Anthropic API client
           client = new AnthropicProvider(providerConfig);
@@ -305,6 +306,25 @@ export class RouterServer {
         temporarilyDisabledProviders: this.routingEngine.getTemporarilyDisabledProviders(),
         debug: this.config.debug.enabled
       });
+    });
+
+    // OpenAI Client Status API endpoint
+    this.fastify.get('/api/openai-client-status', async (request, reply) => {
+      try {
+        const { OpenAIClientFactory } = await import('./providers/openai/client-factory');
+        const clientStatus = OpenAIClientFactory.getAllClientStatus();
+        
+        reply.send({
+          timestamp: new Date().toISOString(),
+          clientStatus,
+          totalClients: Object.keys(clientStatus).length
+        });
+      } catch (error) {
+        reply.status(500).send({
+          error: 'Failed to get OpenAI client status',
+          message: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
     });
 
     // Statistics API endpoint
@@ -862,60 +882,9 @@ export class RouterServer {
         // Debug trace removed
       }
       
-      // Keep stop_reason for proper conversation flow control
-      if (finalResponse && 'stop_reason' in finalResponse) {
-        const stopReason = (finalResponse as any).stop_reason;
-        // 尝试从原始响应中提取原始finish reason
-        let originalFinishReason = 'unknown';
-        if (providerResponse && typeof providerResponse === 'object' && 'choices' in providerResponse) {
-          // OpenAI格式响应
-          const choices = (providerResponse as any).choices;
-          if (Array.isArray(choices) && choices.length > 0) {
-            originalFinishReason = choices[0].finish_reason || 'unknown';
-          }
-        }
-        
-        // 如果原始finish reason是unknown，则不发送stop reason给Anthropic
-        let convertedStopReason = stopReason;
-        if (originalFinishReason === 'unknown') {
-          convertedStopReason = undefined; // 不发送stop reason
-        }
-        
-        // 使用双重记录记录stop reason
-        this.logger.logDualFinishReason(
-          originalFinishReason, // 原始服务器返回的finish reason
-          convertedStopReason || 'undefined', // 转换后的stop reason（可能为undefined）
-          providerId,
-          {
-            model: targetModel,
-            responseType: 'non-streaming',
-            note: originalFinishReason === 'unknown' ? 'Original finish reason is unknown, not sending stop_reason to Anthropic' : 'Normal conversion'
-          },
-          requestId,
-          'server-final-response'
-        );
-        
-        // 更新finalResponse中的stop_reason
-        if (originalFinishReason === 'unknown') {
-          delete (finalResponse as any).stop_reason;
-        }
-        
-        // 同时记录到调试日志系统
-        const { logFinishReasonDebug } = await import('./utils/finish-reason-debug');
-        logFinishReasonDebug(
-          requestId,
-          convertedStopReason || 'undefined',
-          providerId,
-          targetModel || 'unknown',
-          this.config.server.port,
-          {
-            responseType: 'non-streaming',
-            timestamp: new Date().toISOString(),
-            originalFinishReason,
-            note: originalFinishReason === 'unknown' ? 'Original finish reason is unknown, not sending stop_reason to Anthropic' : 'Normal conversion'
-          }
-        );
-      }
+      // 🏗️ 架构一致性修复：完全移除server层的finish_reason检查
+      // 根据架构设计原则，所有finish_reason检查都在provider层和预处理层完成
+      // server层只负责流式传输已经验证过的响应，不再进行重复检查
 
       // Store assistant response in session
       if (finalResponse && finalResponse.content) {
@@ -1240,23 +1209,26 @@ export class RouterServer {
               }
             );
           } else {
-            // 非工具调用 - 移除stop_reason防止会话终止
-            const filteredData = { ...processedChunk.data };
-            if (filteredData.delta) {
-              filteredData.delta = { ...filteredData.delta };
-              delete filteredData.delta.stop_reason;
-              delete filteredData.delta.stop_sequence;
-            }
-            this.sendSSEEvent(reply, processedChunk.event, filteredData);
-            this.logger.debug(`Removed non-tool stop_reason to prevent early termination: ${stopReason}`, {}, requestId, 'server');
+            // 🔧 修复：预处理器已经正确处理了stop_reason，直接发送
+            // 不再移除stop_reason，因为预处理器已经确保了正确的值
+            this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
+            this.logger.debug(`Sent message_delta with stop_reason: ${stopReason} (preprocessor handled)`, {
+              stopReason,
+              requestId
+            }, requestId, 'server');
           }
         } else if (processedChunk.event === 'message_stop') {
-          // message_stop事件处理：只有工具调用时才发送
+          // 🔧 修复：工具调用场景下不发送message_stop，保持对话开放
           if (hasToolUse) {
-            this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
-            this.logger.debug('Allowed message_stop event for proper tool calling workflow', {}, requestId, 'server');
+            this.logger.debug('Skipping message_stop for tool_use scenario to keep conversation open', { 
+              requestId, 
+              hasToolUse 
+            }, requestId, 'server');
+            // 不发送message_stop，让对话保持开放状态等待工具执行结果
           } else {
-            this.logger.debug('Filtered out message_stop event to allow conversation continuation', {}, requestId, 'server');
+            // 非工具调用场景正常发送message_stop
+            this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
+            this.logger.debug('Sent message_stop event for non-tool scenario', { requestId }, requestId, 'server');
           }
         } else {
           // 正常转发其他事件（包括工具调用相关事件）
