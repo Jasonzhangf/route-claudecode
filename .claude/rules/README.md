@@ -10,6 +10,7 @@
 ├── programming-rules.md        # 🔥 核心编程规范
 ├── architecture-rules.md       # 🏗️ 架构设计规则  
 ├── testing-system-rules.md     # 🧪 测试框架规范
+├── testing-tools-rules.md      # 🔧 测试工具规则 (⭐ NEW)
 ├── file-structure-rules.md     # 📁 文件组织规范
 ├── deployment-rules.md         # 🚀 部署发布规则
 ├── configuration-management-rules.md # ⚙️ 配置管理规则
@@ -77,6 +78,7 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 | **编写代码** | [📄 核心编程规范](programming-rules.md) | 零硬编码、细菌式编程检查 | **立即拒绝执行** |
 | **架构设计** | [📄 架构设计规则](architecture-rules.md) | 四层架构、Provider规范验证 | **强制重新设计** |
 | **测试开发** | [📄 测试框架规范](testing-system-rules.md) | STD-6-STEP-PIPELINE执行 | **拒绝无测试代码** |
+| **工具开发** | [📄 测试工具规则](testing-tools-rules.md) | 工具统一管理、数据格式标准 | **拒绝非标准工具** |
 | **文件操作** | [📄 文件组织规范](file-structure-rules.md) | 目录结构、命名规范检查 | **拒绝错误命名** |
 | **构建部署** | [📄 部署发布规则](deployment-rules.md) | 构建验证、用户确认检查 | **阻止自动发布** |
 | **配置管理** | [📄 配置管理规则](configuration-management-rules.md) | 配置路径、命名规范、安全检查 | **拒绝无效配置** |
@@ -98,7 +100,8 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 |---------|---------|---------|
 | **硬编码问题** | 零硬编码原则 | programming-rules.md → 最高优先级禁令 |
 | **架构设计** | 四层架构、Provider规范 | architecture-rules.md → 四层架构设计 |
-| **测试失败** | STD-6-STEP-PIPELINE | testing-system-rules.md → 标准六步测试 |
+| **测试失败** | STD-8-STEP-PIPELINE | testing-system-rules.md → 标准八步测试 |
+| **工具开发** | 工具统一管理、数据格式 | testing-tools-rules.md → 核心工具规范 |
 | **文件混乱** | 目录结构标准 | file-structure-rules.md → 项目目录结构 |
 | **构建错误** | 构建规则、依赖管理 | deployment-rules.md → 构建规则 |
 | **知识遗失** | 记忆系统、ADR记录 | memory-system-rules.md → 记忆系统规则 |
@@ -147,10 +150,17 @@ flowchart TD
 - **负载均衡架构**: Round Robin和健康监控机制
 
 ### 🧪 [测试框架规范](testing-system-rules.md)
-**核心内容**: 测试脚本化、STD-6-STEP-PIPELINE、文档同步
+**核心内容**: 测试脚本化、STD-8-STEP-PIPELINE、文档同步
 - **四大核心原则**: 测试必须遵循的基本原则
-- **标准六步测试**: 新功能和问题调试的标准流程
+- **标准八步测试**: 新功能和问题调试的标准流程
 - **测试文档规范**: 测试文档的标准格式和维护要求
+
+### 🔧 [测试工具规则](testing-tools-rules.md) ⭐ **NEW**
+**核心内容**: 工具统一管理、日志解析数据库、时序图生成
+- **工具目录规范**: ./tools目录下的统一管理标准
+- **日志解析工具**: 从3456端口日志提取Provider分类数据
+- **时序图生成器**: HTML格式请求-响应时序可视化
+- **数据存储规范**: ~/.route-claude-code/providers数据组织
 
 ### 📁 [文件组织规范](file-structure-rules.md)
 **核心内容**: 目录结构标准、命名规范、文件创建规则

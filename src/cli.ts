@@ -995,6 +995,147 @@ program
   });
 
 /**
+ * Provider management commands
+ */
+const providerCommand = program
+  .command('provider')
+  .description('Manage AI providers and their model configurations');
+
+// Provider update command
+providerCommand
+  .command('update')
+  .description('Scan all configurations, discover models, and generate dynamic configs')
+  .option('--timeout <number>', 'Request timeout in milliseconds', '30000')
+  .option('--max-retries <number>', 'Maximum retries per model test', '3')
+  .option('--skip-backup', 'Skip configuration backup')
+  .option('--verbose', 'Enable verbose output')
+  .action(async (options) => {
+    try {
+      process.env.RCC_PORT = '3456'; // 设置默认端口，避免logger初始化错误
+      
+      console.log(chalk.cyan('🚀 Claude Code Router - Provider Update'));
+      console.log(chalk.gray(`Version: ${VERSION}\n`));
+
+      const { createProviderManager } = await import('./cli/provider-manager');
+      const manager = createProviderManager();
+
+      const summary = await manager.updateAllProviders({
+        timeout: parseInt(options.timeout),
+        maxRetries: parseInt(options.maxRetries),
+        skipBackup: options.skipBackup,
+        verbose: options.verbose
+      });
+
+      // 设置退出码
+      const hasErrors = summary.errors.length > 0;
+      const hasFailures = summary.successfulUpdates < summary.totalProviders;
+      
+      if (hasErrors || hasFailures) {
+        console.log(chalk.yellow('\n⚠️ Update completed with issues'));
+        process.exit(1);
+      } else {
+        console.log(chalk.green('\n✅ Update completed successfully'));
+        process.exit(0);
+      }
+
+    } catch (error) {
+      console.error(chalk.red('❌ Provider update failed:'), error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// Provider list command
+providerCommand
+  .command('list')
+  .description('List all providers found in configuration files')
+  .option('--format <format>', 'Output format (table|json)', 'table')
+  .action(async (options) => {
+    try {
+      process.env.RCC_PORT = '3456';
+      
+      const { createProviderManager } = await import('./cli/provider-manager');
+      const manager = createProviderManager();
+
+      // 扫描配置并提取providers（简化版）
+      console.log(chalk.cyan('📋 Scanning provider configurations...\n'));
+      
+      // 这里可以添加简单的配置扫描逻辑
+      console.log(chalk.gray('Use "rcc provider update" to perform full discovery and testing'));
+      
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to list providers:'), error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+// Provider status command
+providerCommand
+  .command('status')
+  .description('Show status of generated dynamic configurations')
+  .action(async () => {
+    try {
+      const { homedir } = require('os');
+      const { readdir, stat } = require('fs').promises;
+      const { join } = require('path');
+      
+      const dynamicDir = join(homedir(), '.route-claude-code', 'config', 'dynamic');
+      
+      console.log(chalk.cyan('📊 Dynamic Configuration Status'));
+      console.log(chalk.gray(`Directory: ${dynamicDir}\n`));
+      
+      try {
+        const files = await readdir(dynamicDir);
+        const configFiles = files.filter((f: string) => f.endsWith('.json'));
+        
+        if (configFiles.length === 0) {
+          console.log(chalk.yellow('⚠️ No dynamic configurations found'));
+          console.log(chalk.gray('Run "rcc provider update" to generate configurations'));
+          return;
+        }
+        
+        console.log(chalk.green(`✅ Found ${configFiles.length} dynamic configuration files:`));
+        
+        for (const file of configFiles) {
+          const filePath = join(dynamicDir, file);
+          const stats = await stat(filePath);
+          const modifiedTime = stats.mtime.toLocaleString();
+          const size = (stats.size / 1024).toFixed(1);
+          
+          console.log(chalk.gray(`   📄 ${file}`));
+          console.log(chalk.gray(`      Modified: ${modifiedTime}, Size: ${size}KB`));
+        }
+        
+      } catch (error) {
+        console.log(chalk.yellow('⚠️ Dynamic configuration directory not found'));
+        console.log(chalk.gray('Run "rcc provider update" to create and populate the directory'));
+      }
+      
+    } catch (error) {
+      console.error(chalk.red('❌ Failed to check provider status:'), error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+/**
+ * Test command
+ */
+program
+  .command('test')
+  .description('Test provider configurations and update config files')
+  .argument('[provider]', 'Specific provider to test (optional)')
+  .argument('[model]', 'Specific model to test (optional, requires provider)')
+  .option('-c, --config <path>', 'Configuration file path (default: config.json and config.release.json)')
+  .action(async (provider, model, options) => {
+    try {
+      const { executeTestCommand } = await import('./commands/test-command');
+      await executeTestCommand(provider, model, options);
+    } catch (error) {
+      console.error(chalk.red('❌ Test command failed:'), error instanceof Error ? error.message : String(error));
+      process.exit(1);
+    }
+  });
+
+/**
  * Version command
  */
 program

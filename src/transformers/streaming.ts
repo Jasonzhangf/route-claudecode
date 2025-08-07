@@ -27,6 +27,12 @@ export class StreamingTransformer {
   private hasStarted = false;
   private isCompleted = false;
   private pipelineDebugger: PipelineDebugger;
+  
+  // 🔄 二次工具调用处理机制
+  private needsReprocessing = false;
+  private reprocessBuffer: string[] = [];
+  private toolCallDetectionAttempts = 0;
+  private maxDetectionAttempts = 2;
 
   constructor(
     private sourceTransformer: MessageTransformer,
@@ -37,7 +43,11 @@ export class StreamingTransformer {
     // Use the model from options (should be the targetModel from routing)
     this.model = options.model || 'unknown';
     this.requestId = options.requestId || 'unknown';
-    this.pipelineDebugger = new PipelineDebugger(options.port || 3456);
+    // 🔧 修复硬编码：必须从选项中获取端口
+    if (!options.port) {
+      throw new Error('StreamingTransformer requires explicit port specification - no hardcoded defaults allowed');
+    }
+    this.pipelineDebugger = new PipelineDebugger(options.port);
     
     logger.debug('StreamingTransformer initialized', {
       model: this.model,
@@ -361,30 +371,27 @@ export class StreamingTransformer {
           console.error('Failed to log tool call finish reason debug:', error);
         }
 
-        // 只有在非tool_use场景才发送message_stop，工具调用需要保持对话开放
-        const actualStopReason = stopReason || 'tool_use';
-        if (actualStopReason !== 'tool_use') {
-          const messageStopEvent = this.createAnthropicEvent('message_stop', {
-            type: 'message_stop'
-          });
-          if (messageStopEvent) {
-            yield messageStopEvent;
+        // 🔄 二次工具调用处理检查
+        const shouldReprocess = await this.checkForReprocessing(stopReason);
+        if (shouldReprocess) {
+          const reprocessedResult = await this.reprocessForToolCalls();
+          if (reprocessedResult.hasToolCalls) {
+            // 发送reprocessed工具调用事件
+            for (const toolEvent of reprocessedResult.toolEvents) {
+              yield toolEvent;
+            }
+            // 更新停止原因
+            stopReason = 'tool_use';
           }
         }
-      } else {
-        // 非工具调用 - 移除stop signals保持对话开放
-        const messageDeltaEvent = this.createAnthropicEvent('message_delta', {
-          type: 'message_delta',
-          delta: { 
-            // Empty delta - no stop signals to keep conversation alive
-          },
-          usage: { output_tokens: outputTokens }
+
+        // 🔧 修复：始终发送message_stop事件，不再根据工具调用状态过滤
+        const messageStopEvent = this.createAnthropicEvent('message_stop', {
+          type: 'message_stop'
         });
-        if (messageDeltaEvent) {
-          yield messageDeltaEvent;
+        if (messageStopEvent) {
+          yield messageStopEvent;
         }
-        
-        // 不发送message_stop事件，避免会话终止
       }
 
     } catch (error) {
@@ -693,6 +700,174 @@ export class StreamingTransformer {
 
     // Only trigger if both conditions are met: parse error AND actual tool structure
     return isParseError && ultraStrictToolCallPatterns.some(pattern => pattern.test(rawChunk));
+  }
+
+  /**
+   * 🔄 检查是否需要二次处理 - 错误判断工具调用的情况
+   */
+  private async checkForReprocessing(currentStopReason?: string): Promise<boolean> {
+    // 如果已经尝试过太多次，停止reprocessing
+    if (this.toolCallDetectionAttempts >= this.maxDetectionAttempts) {
+      return false;
+    }
+
+    // 如果已经检测到工具调用，通常不需要reprocessing
+    if (currentStopReason === 'tool_use' && this.toolCallMap.size > 0) {
+      return false;
+    }
+
+    // 检查reprocess buffer中是否有工具调用特征
+    const bufferContent = this.reprocessBuffer.join(' ');
+    const hasToolCallPatterns = this.detectToolCallPatterns(bufferContent);
+
+    // 如果当前stop reason不是tool_use但buffer中有工具调用模式，需要reprocess
+    if (currentStopReason !== 'tool_use' && hasToolCallPatterns) {
+      this.needsReprocessing = true;
+      this.toolCallDetectionAttempts++;
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 🔄 执行二次工具调用处理
+   */
+  private async reprocessForToolCalls(): Promise<{
+    hasToolCalls: boolean;
+    toolEvents: any[];
+  }> {
+    const toolEvents: any[] = [];
+    let hasToolCalls = false;
+
+    try {
+      const bufferContent = this.reprocessBuffer.join(' ');
+      const extractedTools = this.extractToolCallsFromBuffer(bufferContent);
+
+      if (extractedTools.length > 0) {
+        hasToolCalls = true;
+
+        // 为每个提取的工具调用创建事件
+        for (let i = 0; i < extractedTools.length; i++) {
+          const tool = extractedTools[i];
+          const blockIndex = this.contentBlockIndex + i;
+
+          // 创建工具调用开始事件
+          const toolStartEvent = this.createAnthropicEvent('content_block_start', {
+            type: 'content_block_start',
+            index: blockIndex,
+            content_block: {
+              type: 'tool_use',
+              id: tool.id,
+              name: tool.name,
+              input: {}
+            }
+          });
+
+          if (toolStartEvent) {
+            toolEvents.push(toolStartEvent);
+          }
+
+          // 创建工具调用输入事件
+          const toolInputEvent = this.createAnthropicEvent('content_block_delta', {
+            type: 'content_block_delta',
+            index: blockIndex,
+            delta: {
+              type: 'input_json_delta',
+              partial_json: JSON.stringify(tool.input)
+            }
+          });
+
+          if (toolInputEvent) {
+            toolEvents.push(toolInputEvent);
+          }
+
+          // 创建工具调用停止事件
+          const toolStopEvent = this.createAnthropicEvent('content_block_stop', {
+            type: 'content_block_stop',
+            index: blockIndex
+          });
+
+          if (toolStopEvent) {
+            toolEvents.push(toolStopEvent);
+          }
+
+          console.log(`🔄 [REPROCESS] Extracted tool call: ${tool.name}`);
+        }
+
+        this.contentBlockIndex += extractedTools.length;
+      }
+
+      // 清空buffer
+      this.reprocessBuffer = [];
+
+    } catch (error) {
+      console.error('🔄 [REPROCESS] Failed to reprocess for tool calls:', error);
+    }
+
+    return { hasToolCalls, toolEvents };
+  }
+
+  /**
+   * 检测buffer内容中的工具调用模式
+   */
+  private detectToolCallPatterns(content: string): boolean {
+    if (!content || content.trim().length === 0) {
+      return false;
+    }
+
+    // 检测各种工具调用模式
+    const patterns = [
+      /Tool\s+call:\s*\w+\s*\([^)]*\)/i,                    // GLM格式
+      /\{\s*"type"\s*:\s*"tool_use"[^}]*\}/i,               // JSON格式
+      /\w+\s*\(\s*\{[^}]*"[^"]*"\s*:[^}]*\}/i,             // 函数调用格式
+      /"function_call"\s*:\s*\{[^}]*"name"\s*:/i            // OpenAI格式
+    ];
+
+    return patterns.some(pattern => pattern.test(content));
+  }
+
+  /**
+   * 从buffer中提取工具调用
+   */
+  private extractToolCallsFromBuffer(content: string): any[] {
+    const tools: any[] = [];
+
+    // GLM格式提取
+    const glmPattern = /Tool\s+call:\s*(\w+)\s*\((\{[^}]*\})\)/gi;
+    let match;
+    while ((match = glmPattern.exec(content)) !== null) {
+      try {
+        const toolName = match[1];
+        const args = JSON.parse(match[2]);
+        tools.push({
+          id: `toolu_reprocess_${Date.now()}_${tools.length}`,
+          name: toolName,
+          input: args
+        });
+      } catch (error) {
+        console.warn('🔄 [REPROCESS] Failed to parse GLM tool call:', match[0]);
+      }
+    }
+
+    // JSON格式提取
+    const jsonPattern = /\{\s*"type"\s*:\s*"tool_use"[^}]*\}/gi;
+    while ((match = jsonPattern.exec(content)) !== null) {
+      try {
+        const toolObj = JSON.parse(match[0]);
+        if (toolObj.name && toolObj.input) {
+          tools.push({
+            id: toolObj.id || `toolu_reprocess_json_${Date.now()}_${tools.length}`,
+            name: toolObj.name,
+            input: toolObj.input
+          });
+        }
+      } catch (error) {
+        console.warn('🔄 [REPROCESS] Failed to parse JSON tool call:', match[0]);
+      }
+    }
+
+    return tools;
   }
 
   /**

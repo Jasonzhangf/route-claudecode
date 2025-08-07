@@ -30,6 +30,7 @@ import {
   handleOutputError 
 } from './utils/error-handler';
 import { MaxTokensErrorHandler } from './utils/max-tokens-error-handler';
+import { getConversationQueueManager } from './session/conversation-queue-manager';
 // Debug hooks temporarily removed
 
 export class RouterServer {
@@ -46,6 +47,7 @@ export class RouterServer {
   private patchManager: ReturnType<typeof createPatchManager>;
   private responsePipeline: ResponsePipeline;
   private unifiedPreprocessor: ReturnType<typeof getUnifiedPatchPreprocessor>;
+  private queueManager: ReturnType<typeof getConversationQueueManager>;
 
   constructor(config: RouterConfig, serverType?: string) {
     this.config = config;
@@ -53,6 +55,7 @@ export class RouterServer {
     // 设置默认端口并初始化统一日志系统
     setDefaultPort(config.server.port);
     process.env.RCC_PORT = config.server.port.toString(); // 设置环境变量供兼容性logger使用
+    this.queueManager = getConversationQueueManager(config.server.port || 3000);
     this.logger = getLogger(config.server.port);
     this.requestTracker = createRequestTracker(config.server.port);
     this.errorTracker = createErrorTracker(config.server.port);
@@ -1218,17 +1221,24 @@ export class RouterServer {
             }, requestId, 'server');
           }
         } else if (processedChunk.event === 'message_stop') {
-          // 🔧 修复：工具调用场景下不发送message_stop，保持对话开放
+          // 🔧 修复：工具调用场景下不发送message_stop，但要通知队列管理器完成
           if (hasToolUse) {
-            this.logger.debug('Skipping message_stop for tool_use scenario to keep conversation open', { 
+            this.logger.debug('Skipping message_stop for tool_use scenario, but notifying queue completion', { 
               requestId, 
               hasToolUse 
             }, requestId, 'server');
+            
+            // 通知队列管理器请求完成（即使不发送message_stop）
+            this.queueManager.completeRequest(requestId, 'tool_use');
+            
             // 不发送message_stop，让对话保持开放状态等待工具执行结果
           } else {
-            // 非工具调用场景正常发送message_stop
+            // 非工具调用场景正常发送message_stop并通知队列完成
             this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
             this.logger.debug('Sent message_stop event for non-tool scenario', { requestId }, requestId, 'server');
+            
+            // 通知队列管理器请求完成
+            this.queueManager.completeRequest(requestId, 'end_turn');
           }
         } else {
           // 正常转发其他事件（包括工具调用相关事件）

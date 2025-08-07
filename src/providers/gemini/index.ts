@@ -58,11 +58,36 @@ export class GeminiProvider implements Provider {
 
       return response;
     } catch (error) {
+      const isRateLimited = (error as any)?.status === 429 || 
+                           (error as any)?.message?.includes('429') ||
+                           (error as any)?.message?.includes('RESOURCE_EXHAUSTED') ||
+                           (error as any)?.message?.includes('quota');
+      
+      // 获取当前使用的key信息（如果可用）
+      const currentKeyInfo = this.client?.getCurrentKeyInfo?.() || {};
+      
+      // 强制控制台输出429错误，包含详细的key信息
+      if (isRateLimited) {
+        console.error(`🚨 [429 RATE LIMIT] Gemini API quota exhausted:`);
+        console.error(`   Provider: ${this.name}`);
+        console.error(`   Model: ${request.model}`);
+        console.error(`   Request ID: ${request.metadata?.requestId}`);
+        console.error(`   Current Key: ${currentKeyInfo.keyIndex !== undefined ? `key-${currentKeyInfo.keyIndex + 1}` : 'unknown'}`);
+        console.error(`   Key Suffix: ${currentKeyInfo.keySuffix || 'unknown'}`);
+        console.error(`   Total Keys: ${currentKeyInfo.totalKeys || 'unknown'}`);
+        console.error(`   Error Details: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`   Next Key Available: ${currentKeyInfo.nextKeyIndex !== undefined ? `key-${currentKeyInfo.nextKeyIndex + 1}` : 'checking...'}`);
+      }
+      
       logger.error('Gemini API request failed', {
         provider: this.name,
         model: request.model,
         requestId: request.metadata?.requestId,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
+        isRateLimited,
+        keyInfo: currentKeyInfo,
+        httpStatus: (error as any)?.status,
+        errorCode: (error as any)?.code
       });
       throw error;
     }

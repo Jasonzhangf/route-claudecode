@@ -1,8 +1,14 @@
 /**
  * OpenAI-Compatible Provider Module
- * Generic implementation for OpenAI-compatible APIs
+ * SDK-only implementation for OpenAI-compatible APIs
  */
 
-export { EnhancedOpenAIClient } from './enhanced-client';
-// Legacy client deprecated in favor of EnhancedOpenAIClient
-// export { OpenAICompatibleClient } from './client';
+export { OpenAISDKClient, OpenAISDKConfig } from './sdk-client';
+export { 
+  OpenAIClientFactory, 
+  OpenAIClientConfig, 
+  ClientType,
+  createOpenAIClient 
+} from './client-factory';
+
+// EnhancedOpenAIClient removed - using SDK-only architecture

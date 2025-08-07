@@ -8,6 +8,7 @@ import { BaseRequest, BaseResponse, ProviderConfig, ProviderError } from '../../
 import { logger } from '../../utils/logger';
 import { processGeminiResponse } from './universal-gemini-parser';
 import { EnhancedRateLimitManager } from './enhanced-rate-limit-manager';
+import { GoogleGenAI } from '@google/genai';
 
 export class GeminiClient {
   public readonly name: string;
@@ -20,6 +21,9 @@ export class GeminiClient {
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
   private readonly requestTimeout = 60000; // 60 seconds timeout
+  private genAIClients: GoogleGenAI[] = [];
+
+  private currentKeyIndex = 0; // 跟踪当前使用的key索引
 
   constructor(private config: ProviderConfig, providerId?: string) {
     this.name = providerId || 'gemini-client';
@@ -38,11 +42,15 @@ export class GeminiClient {
       
       this.apiKey = ''; // Will be set dynamically per request
       
-      logger.info('Initialized Enhanced Gemini Rate Limit Manager', {
+      // Initialize GoogleGenAI clients for each API key
+      this.genAIClients = apiKey.map(key => new GoogleGenAI({ apiKey: key }));
+      
+      logger.info('Initialized Enhanced Gemini Rate Limit Manager with official SDK', {
         providerId: this.name,
         keyCount: apiKey.length,
         strategy: 'rpm_tpm_rpd_aware_with_model_fallback',
-        fallbackSupported: true
+        fallbackSupported: true,
+        sdkType: 'official_google_genai'
       });
     } else {
       // Single API key - traditional approach
@@ -52,38 +60,51 @@ export class GeminiClient {
       if (!this.apiKey) {
         throw new Error('Gemini API key is required');
       }
+      
+      // Initialize single GoogleGenAI client
+      this.genAIClients = [new GoogleGenAI({ apiKey: this.apiKey })];
     }
 
     this.baseUrl = config.endpoint || 'https://generativelanguage.googleapis.com';
-    logger.info('Gemini client initialized', {
+    logger.info('Gemini client initialized with official SDK', {
       endpoint: this.baseUrl,
       hasApiKey: !!this.apiKey || !!this.enhancedRateLimitManager,
-      keyRotationEnabled: !!this.enhancedRateLimitManager
+      keyRotationEnabled: !!this.enhancedRateLimitManager,
+      sdkType: 'official_google_genai',
+      clientCount: this.genAIClients.length
     });
   }
 
   async healthCheck(): Promise<boolean> {
     try {
-      // Use the first API key for the health check
-      const apiKey = this.apiKeys[0];
+      // Use the first GenAI client for health check
+      const genAI = this.genAIClients[0];
       
-      // Check if we can list models (lightweight health check)
-      const response = await fetch(`${this.baseUrl}/v1beta/models?key=${apiKey}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+      if (!genAI) {
+        logger.error('No GenAI client available for health check');
+        return false;
+      }
+      
+      // Simple health check: try to generate content with a minimal request
+      const testResponse = await genAI.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{
+          role: 'user',
+          parts: [{ text: 'Hi' }]
+        }]
       });
-
-      const success = response.ok;
+      
+      const success = !!(testResponse && testResponse.candidates && testResponse.candidates.length > 0);
       
       if (success) {
+        logger.debug('Gemini health check succeeded with official SDK');
       } else {
+        logger.warn('Gemini health check returned no response');
       }
       
       return success;
     } catch (error) {
-      logger.error('Gemini health check failed', {
+      logger.error('Gemini health check failed with official SDK', {
         error: error instanceof Error ? error.message : String(error)
       });
       return false;
@@ -92,83 +113,68 @@ export class GeminiClient {
 
   async createCompletion(request: BaseRequest): Promise<BaseResponse> {
     const requestId = request.metadata?.requestId || 'unknown';
-    let geminiRequest = this.convertToGeminiFormat(request);
     let modelName = this.extractModelName(request.model);
     
-    logger.info('Sending non-streaming request to Gemini API', {
+    logger.info('Sending non-streaming request to Gemini API with official SDK', {
       model: modelName,
-      messageCount: geminiRequest.contents?.length || 0,
-      hasTools: !!geminiRequest.tools,
-      maxTokens: geminiRequest.generationConfig?.maxOutputTokens
+      messageCount: request.messages?.length || 0,
+      hasTools: !!request.tools,
+      maxTokens: request.max_tokens
     }, requestId, 'gemini-provider');
 
     // Execute with retry logic and key rotation
-    const response = await this.executeWithRetry(
-      async (apiKey: string, model: string) => {
-        const url = `${this.baseUrl}/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const geminiResponse = await this.executeWithRetrySdk(
+      async (genAI: GoogleGenAI, model: string) => {
+        // Convert request to Gemini SDK format
+        const generateContentRequest = this.convertToGeminiSdkFormat(request);
         
-        // Create AbortController for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-        
-        try {
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(geminiRequest),
-            signal: controller.signal
-          });
-
-          clearTimeout(timeoutId);
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            const error = new Error(`Gemini API error (${response.status}): ${errorText}`) as any;
-            error.status = response.status;
-            error.responseText = errorText;
-            throw error;
-          }
-          
-          return response;
-        } catch (error) {
-          clearTimeout(timeoutId);
-          
-          if ((error as any).name === 'AbortError') {
-            throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
-          }
-          throw error;
-        }
+        // Use timeout wrapper
+        return Promise.race([
+          genAI.models.generateContent({
+            model: model,
+            ...generateContentRequest
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Gemini SDK timeout after ${this.requestTimeout}ms`)), this.requestTimeout)
+          )
+        ]) as Promise<any>;
       },
       modelName,
       'createCompletion',
       requestId
     );
-
-    const geminiResponse = await response.json();
     
-    // 🔧 Capture raw response for debugging empty response issues
-    if (process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development') {
+    // 🔧 Enhanced debugging for empty response issues - ALWAYS capture for tool calls
+    const hasToolsInRequest = !!(request.tools || request.metadata?.tools);
+    if (process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development' || hasToolsInRequest) {
       try {
-        const debugFile = `/tmp/gemini-raw-response-${Date.now()}-${requestId}.json`;
+        const debugFile = `/tmp/gemini-sdk-response-${Date.now()}-${requestId}.json`;
         require('fs').writeFileSync(debugFile, JSON.stringify({
-          request: geminiRequest,
+          request: {
+            model: modelName,
+            messages: request.messages,
+            tools: request.tools || request.metadata?.tools,
+            hasTools: hasToolsInRequest
+          },
           response: geminiResponse,
           actualModel: modelName,
           timestamp: new Date().toISOString(),
-          requestId
+          requestId,
+          sdkType: 'official_google_genai'
         }, null, 2));
-        logger.debug('Raw Gemini response captured for debugging', { 
+        logger.info('Raw Gemini SDK response captured for debugging', { 
           debugFile, 
-          actualModel: modelName 
+          actualModel: modelName,
+          hasToolsInRequest,
+          candidatesCount: geminiResponse?.candidates?.length,
+          hasParts: geminiResponse?.candidates?.[0]?.content?.parts?.length || 0
         });
       } catch (err) {
-        logger.warn('Failed to capture raw response', { error: err instanceof Error ? err.message : String(err) });
+        logger.warn('Failed to capture raw SDK response', { error: err instanceof Error ? err.message : String(err) });
       }
     }
     
-    const finalResponse = this.convertFromGeminiFormat(geminiResponse, request);
+    const finalResponse = this.convertFromGeminiSdkFormat(geminiResponse, request);
     
     // Update response model to reflect actual model used
     finalResponse.model = modelName;
@@ -180,28 +186,38 @@ export class GeminiClient {
     const requestId = request.metadata?.requestId || 'unknown';
     let lastError: any;
     let modelName = this.extractModelName(request.model);
+    const usedKeyIndices = new Set<number>(); // 追踪已使用的key索引
+    
+    logger.info('Starting Gemini streaming with official SDK', {
+      model: modelName,
+      messageCount: request.messages?.length || 0,
+      hasTools: !!request.tools,
+      totalKeys: this.genAIClients.length
+    }, requestId, 'gemini-provider');
     
     // Retry streaming requests with key rotation for initial connection failures
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
-      let currentApiKey: string;
+      let genAIClient: GoogleGenAI;
       let keyIndex = 0;
       let fallbackApplied = false;
       let fallbackReason: string | undefined;
       let currentModel = modelName;
+      let actualApiKey: string;
       
       try {
         // Get a fresh available key and model for each attempt
         if (this.enhancedRateLimitManager) {
           const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
 
-          currentApiKey = this.apiKeys[keyAndModel.keyIndex];
+          genAIClient = this.genAIClients[keyAndModel.keyIndex];
           keyIndex = keyAndModel.keyIndex;
           currentModel = keyAndModel.model;
           fallbackApplied = keyAndModel.fallbackApplied;
           fallbackReason = keyAndModel.fallbackReason;
+          actualApiKey = this.apiKeys[keyIndex];
           
           if (fallbackApplied) {
-            logger.info('Applied Gemini streaming model fallback due to rate limits', {
+            logger.info('Applied Gemini SDK streaming model fallback due to rate limits', {
               originalModel: modelName,
               fallbackModel: currentModel,
               reason: fallbackReason,
@@ -210,75 +226,60 @@ export class GeminiClient {
             }, requestId, 'gemini-provider');
           }
         } else {
-          currentApiKey = this.apiKeys[0];
+          // Simple round-robin for single key or no rate limit manager
+          keyIndex = attempt % this.genAIClients.length;
+          genAIClient = this.genAIClients[keyIndex];
+          actualApiKey = this.apiKeys[keyIndex];
         }
+        
+        // 避免重复使用相同的key
+        if (usedKeyIndices.has(keyIndex) && this.genAIClients.length > 1) {
+          // 找一个未使用的key
+          for (let i = 0; i < this.genAIClients.length; i++) {
+            if (!usedKeyIndices.has(i)) {
+              keyIndex = i;
+              genAIClient = this.genAIClients[i];
+              actualApiKey = this.apiKeys[i];
+              break;
+            }
+          }
+        }
+        
+        usedKeyIndices.add(keyIndex);
+        // 更新当前key索引用于日志显示
+        this.currentKeyIndex = keyIndex;
       } catch (keyError) {
         // All keys are rate-limited or blacklisted
-        logger.error(`No available keys for streaming request to ${this.name}`, keyError, requestId, 'gemini-provider');
+        logger.error(`No available keys for SDK streaming request to ${this.name}`, keyError, requestId, 'gemini-provider');
         throw keyError;
       }
 
       try {
-        let geminiRequest = {
-          ...this.convertToGeminiFormat(request)
-        };
+        const generateContentRequest = this.convertToGeminiSdkFormat(request);
 
-        logger.info('Starting optimized Gemini streaming request', {
+        logger.info('Starting optimized Gemini SDK streaming request', {
           model: currentModel,
           originalModel: modelName,
-          messageCount: geminiRequest.contents?.length || 0,
-          strategy: 'enhanced-rate-limit-aware',
+          messageCount: request.messages?.length || 0,
+          strategy: 'official_sdk_streaming',
           fallbackApplied,
           fallbackReason,
           attempt: attempt + 1
         }, requestId, 'gemini-provider');
         
-        const url = `${this.baseUrl}/v1beta/models/${currentModel}:streamGenerateContent?key=${currentApiKey}`;
+        // Use timeout wrapper for SDK streaming
+        const streamPromise = genAIClient.models.generateContentStream({
+          model: currentModel,
+          ...generateContentRequest
+        });
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error(`Gemini SDK streaming timeout after ${this.requestTimeout}ms`)), this.requestTimeout)
+        );
         
-        // Create AbortController for timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), this.requestTimeout);
-        
-        let response: Response;
-        try {
-          response = await fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(geminiRequest),
-            signal: controller.signal
-          });
-          
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            const errorText = await response.text();
-            const error = new Error(`Gemini API error (${response.status}): ${errorText}`) as any;
-            error.status = response.status;
-            error.responseText = errorText;
-            throw error;
-          }
-        } catch (error) {
-          clearTimeout(timeoutId);
-          
-          if ((error as any).name === 'AbortError') {
-            throw new Error(`Gemini API request timeout after ${this.requestTimeout}ms`);
-          }
-          throw error;
-        }
+        const streamResult = await Promise.race([streamPromise, timeoutPromise]) as any;
 
-        if (!response.body) {
-          throw new Error('No response body for streaming request');
-        }
-
-        // SMART CACHING STRATEGY: Only cache tool calls, stream text transparently
-        logger.info('Starting Gemini smart caching strategy', {
-          responseStatus: response.status,
-          strategy: 'cache_tools_stream_text'
-        }, requestId, 'gemini-provider');
-
-        yield* this.processSmartCachedGeminiStream(response.body, request, requestId);
+        // Process SDK stream and convert to our format
+        yield* this.processGeminiSdkStream(streamResult, request, requestId);
         
         // Report success to enhanced rate limit manager
         if (this.enhancedRateLimitManager) {
@@ -288,10 +289,12 @@ export class GeminiClient {
         
       } catch (error) {
         lastError = error;
-        const isRateLimited = (error as any)?.status === 429;
+        const isRateLimited = (error as any)?.message?.includes('quota') || 
+                             (error as any)?.message?.includes('rate') ||
+                             (error as any)?.status === 429;
 
-        logger.warn(`${this.name} streaming request failed on key`, {
-            key: `***${currentApiKey.slice(-4)}`,
+        logger.warn(`${this.name} SDK streaming request failed`, {
+            keyIndex,
             model: currentModel,
             attempt: attempt + 1,
             maxRetries: this.maxRetries,
@@ -318,10 +321,272 @@ export class GeminiClient {
     }
     
     // All retries failed
-    logger.error(`${this.name} streaming request failed after all retries`, lastError, requestId, 'gemini-provider');
+    logger.error(`${this.name} SDK streaming request failed after all retries`, lastError, requestId, 'gemini-provider');
     
     const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
-    throw new Error(`${this.name} streaming request failed: ${errorMessage}`);
+    throw new Error(`${this.name} SDK streaming request failed: ${errorMessage}`);
+  }
+
+  /**
+   * Process Gemini SDK stream and convert to Anthropic format
+   * 修复流式响应处理错误
+   */
+  private async *processGeminiSdkStream(streamResult: any, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    const messageId = `msg_${Date.now()}`;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let contentIndex = 0;
+    let hasToolCalls = false;
+    let textContent = '';
+    const toolCalls: any[] = [];
+
+    logger.info('Processing Gemini SDK stream', {
+      strategy: 'sdk_stream_processing',
+      streamResultType: typeof streamResult,
+      hasStream: !!(streamResult && streamResult.stream)
+    }, requestId, 'gemini-provider');
+
+    try {
+      // Send message_start
+      yield {
+        event: 'message_start',
+        data: {
+          type: 'message_start',
+          message: {
+            id: messageId,
+            type: 'message',
+            role: 'assistant',
+            content: [],
+            model: request.model,
+            stop_reason: null,
+            stop_sequence: null,
+            usage: { input_tokens: 0, output_tokens: 0 }
+          }
+        }
+      };
+
+      // Send ping
+      yield {
+        event: 'ping',
+        data: { type: 'ping' }
+      };
+
+      let currentTextBlockStarted = false;
+      
+      // 检查streamResult是否是异步迭代器
+      if (!streamResult || !streamResult[Symbol.asyncIterator]) {
+        logger.error('Invalid stream result: not an async iterator', {
+          streamResultType: typeof streamResult,
+          hasAsyncIterator: !!(streamResult && streamResult[Symbol.asyncIterator]),
+          streamResultKeys: streamResult ? Object.keys(streamResult) : null
+        }, requestId, 'gemini-provider');
+        throw new Error('Invalid stream result: not an async iterator');
+      }
+      
+      // Process stream chunks - streamResult is directly the async iterator
+      let finalStopReason = 'end_turn';
+      let finalFinishReason: string | null = null;
+      
+      try {
+        for await (const chunk of streamResult) {
+          const candidate = chunk.candidates?.[0];
+          const parts = candidate?.content?.parts || [];
+          
+          // 捕获finishReason
+          if (candidate?.finishReason) {
+            finalFinishReason = candidate.finishReason;
+            // Convert Gemini finishReason to Anthropic stop_reason
+            switch (candidate.finishReason) {
+              case 'STOP':
+                finalStopReason = hasToolCalls ? 'tool_use' : 'end_turn';
+                break;
+              case 'MAX_TOKENS':
+                finalStopReason = 'max_tokens';
+                break;
+              case 'SAFETY':
+                finalStopReason = 'stop_sequence';
+                break;
+              case 'RECITATION':
+                finalStopReason = 'stop_sequence';
+                break;
+              case 'OTHER':
+                finalStopReason = hasToolCalls ? 'tool_use' : 'end_turn';
+                break;
+              default:
+                finalStopReason = hasToolCalls ? 'tool_use' : 'end_turn';
+            }
+          }
+          
+          for (const part of parts) {
+            if (part.text) {
+              // Handle text content
+              if (!currentTextBlockStarted) {
+                // Start text block
+                yield {
+                  event: 'content_block_start',
+                  data: {
+                    type: 'content_block_start',
+                    index: contentIndex,
+                    content_block: { type: 'text', text: '' }
+                  }
+                };
+                currentTextBlockStarted = true;
+              }
+              
+              // Send text delta
+              const chunkSize = 10;
+              for (let i = 0; i < part.text.length; i += chunkSize) {
+                const textChunk = part.text.slice(i, i + chunkSize);
+                yield {
+                  event: 'content_block_delta',
+                  data: {
+                    type: 'content_block_delta',
+                    index: contentIndex,
+                    delta: {
+                      type: 'text_delta',
+                      text: textChunk
+                    }
+                  }
+                };
+                
+                // Add small delay for better UX
+                if (i > 0) {
+                  await new Promise(resolve => setTimeout(resolve, 10));
+                }
+              }
+              
+              textContent += part.text;
+            } else if (part.functionCall) {
+              // Handle tool calls
+              hasToolCalls = true;
+              
+              // End current text block if it was started
+              if (currentTextBlockStarted) {
+                yield {
+                  event: 'content_block_stop',
+                  data: {
+                    type: 'content_block_stop',
+                    index: contentIndex
+                  }
+                };
+                contentIndex++;
+                currentTextBlockStarted = false;
+              }
+              
+              const toolUse = {
+                type: 'tool_use',
+                id: `toolu_${Date.now()}_${contentIndex}`,
+                name: part.functionCall.name,
+                input: part.functionCall.args || {}
+              };
+              
+              toolCalls.push(toolUse);
+              
+              // Send tool use block
+              yield {
+                event: 'content_block_start',
+                data: {
+                  type: 'content_block_start',
+                  index: contentIndex,
+                  content_block: toolUse
+                }
+              };
+              
+              yield {
+                event: 'content_block_stop',
+                data: {
+                  type: 'content_block_stop',
+                  index: contentIndex
+                }
+              };
+              
+              contentIndex++;
+              
+              logger.debug('Converted Gemini SDK functionCall to tool_use', {
+                functionName: part.functionCall.name,
+                toolId: toolUse.id
+              }, requestId, 'gemini-provider');
+            }
+          }
+          
+          // Extract usage metadata
+          if (chunk.usageMetadata) {
+            inputTokens = Math.max(inputTokens, chunk.usageMetadata.promptTokenCount || 0);
+            outputTokens += chunk.usageMetadata.candidatesTokenCount || 0;
+          }
+        }
+      } catch (iteratorError) {
+        logger.error('Error iterating over stream', {
+          error: iteratorError instanceof Error ? iteratorError.message : String(iteratorError),
+          errorType: iteratorError?.constructor?.name
+        }, requestId, 'gemini-provider');
+        throw iteratorError;
+      }
+      
+      // End current text block if it was started
+      if (currentTextBlockStarted) {
+        yield {
+          event: 'content_block_stop',
+          data: {
+            type: 'content_block_stop',
+            index: contentIndex
+          }
+        };
+      }
+      
+      // Estimate tokens if not provided
+      if (outputTokens === 0) {
+        outputTokens = Math.ceil((textContent.length + toolCalls.length * 50) / 4);
+      }
+      
+      // Send message_delta with usage
+      yield {
+        event: 'message_delta',
+        data: {
+          type: 'message_delta',
+          delta: {},
+          usage: {
+            output_tokens: outputTokens
+          }
+        }
+      };
+
+      // 确定最终的stop_reason
+      let actualStopReason = finalStopReason;
+      if (hasToolCalls && finalFinishReason === 'STOP') {
+        actualStopReason = 'tool_use';
+      } else if (finalFinishReason === 'MAX_TOKENS') {
+        actualStopReason = 'max_tokens';
+      } else if (finalFinishReason && finalFinishReason !== 'STOP') {
+        actualStopReason = 'stop_sequence';
+      } else {
+        actualStopReason = 'end_turn';
+      }
+
+      // Send message_stop with proper stop_reason
+      yield {
+        event: 'message_stop',
+        data: {
+          type: 'message_stop',
+          stop_reason: actualStopReason,
+          stop_sequence: null
+        }
+      };
+      
+      logger.info('Gemini SDK stream processing completed', {
+        textLength: textContent.length,
+        toolCallCount: toolCalls.length,
+        outputTokens,
+        hasToolCalls
+      }, requestId, 'gemini-provider');
+      
+    } catch (error) {
+      logger.error('Failed to process Gemini SDK stream', {
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error?.constructor?.name
+      }, requestId, 'gemini-provider');
+      throw error;
+    }
   }
 
   private extractModelName(model: string): string {
@@ -334,6 +599,391 @@ export class GeminiClient {
     };
 
     return modelMappings[model] || model;
+  }
+
+  /**
+   * Convert request to Gemini SDK format
+   */
+  private convertToGeminiSdkFormat(request: BaseRequest): any {
+    const contents: any[] = [];
+    
+    for (const message of request.messages || []) {
+      if (message.role === 'system') {
+        // System messages are treated as user messages in Gemini
+        const textContent = this.extractTextContent(message.content);
+        contents.push({
+          role: 'user',
+          parts: [{ text: textContent }]
+        });
+      } else if (message.role === 'user') {
+        const textContent = this.extractTextContent(message.content);
+        contents.push({
+          role: 'user',
+          parts: [{ text: textContent }]
+        });
+      } else if (message.role === 'assistant') {
+        // Handle assistant messages with tool_use and text content
+        const parts = this.convertAssistantContent(message.content);
+        if (parts.length > 0) {
+          contents.push({
+            role: 'model',
+            parts: parts
+          });
+        }
+      } else if (message.role === 'tool') {
+        // Handle tool result messages for conversation history
+        const toolContent = this.convertToolResultContent(message);
+        contents.push({
+          role: 'user',
+          parts: [{ text: toolContent }]
+        });
+      }
+    }
+
+    const generateContentRequest: any = {
+      contents: contents
+    };
+
+    // Add generation config
+    const generationConfig: any = {};
+    if (request.max_tokens) {
+      generationConfig.maxOutputTokens = request.max_tokens;
+    }
+    if (request.temperature !== undefined) {
+      generationConfig.temperature = request.temperature;
+    }
+    if (Object.keys(generationConfig).length > 0) {
+      generateContentRequest.generationConfig = generationConfig;
+    }
+
+    // Handle tools if present
+    const tools = request.tools || request.metadata?.tools;
+    if (tools && Array.isArray(tools) && tools.length > 0) {
+      generateContentRequest.tools = [this.convertTools(tools)];
+      
+      // 🔧 Critical Fix: Add toolConfig to enable tool calling
+      // Based on OpenAI's successful approach - they use tool_choice, we use functionCallingConfig
+      generateContentRequest.toolConfig = {
+        functionCallingConfig: {
+          mode: "AUTO"  // Let Gemini decide when to call tools, similar to OpenAI's tool_choice: "auto"
+          // 🎯 Note: allowedFunctionNames removed as it was causing issues - Gemini should auto-discover from functionDeclarations
+        }
+      };
+      
+      logger.debug('Converted tools for Gemini SDK request with enhanced toolConfig', {
+        toolCount: tools.length,
+        toolNames: tools.map((t: any) => t.name || t.function?.name),
+        toolConfigMode: 'AUTO',
+        functionDeclarations: generateContentRequest.tools[0].functionDeclarations?.map((f: any) => f.name)
+      });
+    }
+
+    return generateContentRequest;
+  }
+
+  /**
+   * Convert Gemini SDK response to BaseResponse format
+   */
+  private convertFromGeminiSdkFormat(geminiResponse: any, originalRequest: BaseRequest): BaseResponse {
+    const requestId = originalRequest.metadata?.requestId || 'unknown';
+    
+    // 检查响应结构
+    if (!geminiResponse) {
+      logger.error('Empty Gemini SDK response', {}, requestId, 'gemini-provider');
+      throw new Error('Empty response from Gemini SDK');
+    }
+
+    // 记录原始响应结构以便调试
+    logger.debug('Raw Gemini SDK response structure', {
+      hasResponse: !!geminiResponse,
+      hasCandidates: !!geminiResponse.candidates,
+      candidatesCount: geminiResponse.candidates?.length || 0,
+      hasUsageMetadata: !!geminiResponse.usageMetadata,
+      responseKeys: Object.keys(geminiResponse || {}),
+      firstCandidate: geminiResponse.candidates?.[0] ? {
+        hasContent: !!geminiResponse.candidates[0].content,
+        finishReason: geminiResponse.candidates[0].finishReason,
+        contentParts: geminiResponse.candidates[0].content?.parts?.length || 0
+      } : null
+    }, requestId, 'gemini-provider');
+    
+    const candidate = geminiResponse.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    
+    logger.debug('Converting Gemini SDK response to BaseResponse format', {
+      candidatesCount: geminiResponse.candidates?.length || 0,
+      partsCount: parts.length,
+      finishReason: candidate?.finishReason,
+      hasUsageMetadata: !!geminiResponse.usageMetadata
+    }, requestId, 'gemini-provider');
+    
+    // Extract usage information
+    const usageMetadata = geminiResponse.usageMetadata || {};
+    
+    // Convert parts to Anthropic content format
+    const content: any[] = [];
+    
+    for (const part of parts) {
+      if (part.text) {
+        // Text content
+        content.push({
+          type: 'text',
+          text: part.text
+        });
+      } else if (part.functionCall) {
+        // Tool use content - convert Gemini functionCall to Anthropic tool_use
+        content.push({
+          type: 'tool_use',
+          id: `toolu_${Date.now()}_${content.length}`,
+          name: part.functionCall.name,
+          input: part.functionCall.args || {}
+        });
+      }
+    }
+    
+    // If no content found, try to handle UNEXPECTED_TOOL_CALL specifically
+    if (content.length === 0) {
+      logger.warn('No content found in Gemini response', {
+        candidatesCount: geminiResponse.candidates?.length || 0,
+        hasCandidate: !!candidate,
+        finishReason: candidate?.finishReason,
+        hasTools: !!(originalRequest.tools || originalRequest.metadata?.tools)
+      }, requestId, 'gemini-provider');
+      
+      // If this was a tool call request and we got UNEXPECTED_TOOL_CALL, try to diagnose
+      const hasToolsInRequest = !!(originalRequest.tools || originalRequest.metadata?.tools);
+      if (hasToolsInRequest && candidate?.finishReason === 'UNEXPECTED_TOOL_CALL') {
+        logger.error('Gemini returned UNEXPECTED_TOOL_CALL for tool request - possible tool format issue', {
+          finishReason: candidate.finishReason,
+          toolCount: (originalRequest.tools || originalRequest.metadata?.tools)?.length || 0,
+          modelUsed: originalRequest.model
+        }, requestId, 'gemini-provider');
+        
+        // Instead of generic message, try to provide a tool call manually
+        const tools = originalRequest.tools || originalRequest.metadata?.tools;
+        if (tools && tools.length > 0) {
+          const firstTool = tools[0];
+          const toolName = firstTool.name || firstTool.function?.name;
+          
+          // Extract likely parameters from the user message
+          const userMessage = originalRequest.messages?.find(m => m.role === 'user')?.content || '';
+          
+          // Try to create a tool call based on the request
+          if (toolName && userMessage.includes(toolName)) {
+            logger.info('Attempting to create manual tool call based on user request', {
+              toolName,
+              userMessage: userMessage.substring(0, 100)
+            }, requestId, 'gemini-provider');
+            
+            // Create a basic tool call
+            content.push({
+              type: 'tool_use',
+              id: `toolu_manual_${Date.now()}`,
+              name: toolName,
+              input: this.extractToolInputFromMessage(userMessage, firstTool)
+            });
+          } else {
+            content.push({
+              type: 'text',
+              text: `I understand you want me to use the ${toolName} tool, but I encountered a technical issue. The tool is available but I cannot execute it right now due to API limitations.`
+            });
+          }
+        } else {
+          content.push({
+            type: 'text',
+            text: 'I apologize, but I cannot provide a response at the moment. This may be due to content filtering, API limitations, or quota restrictions. Please try rephrasing your question or try again later.'
+          });
+        }
+      } else {
+        content.push({
+          type: 'text',
+          text: 'I apologize, but I cannot provide a response at the moment. This may be due to content filtering, API limitations, or quota restrictions. Please try rephrasing your question or try again later.'
+        });
+      }
+    }
+    
+    // 🔧 Critical Fix: Determine stop_reason based on content type, like OpenAI does
+    const hasToolCalls = content.some(c => c.type === 'tool_use');
+    let stopReason: string;
+    
+    if (hasToolCalls) {
+      // If we have tool calls, set stop_reason to 'tool_use' regardless of Gemini's finishReason
+      stopReason = 'tool_use';
+      logger.debug('Setting stop_reason to tool_use due to function calls', {
+        toolCallCount: content.filter(c => c.type === 'tool_use').length,
+        originalFinishReason: candidate?.finishReason
+      }, requestId, 'gemini-provider');
+    } else {
+      // No tool calls, map Gemini's finishReason normally
+      stopReason = this.mapFinishReason(candidate?.finishReason);
+    }
+    
+    // 🚨 架构一致性检查：像OpenAI那样在预处理阶段检查finish_reason
+    if (stopReason === 'unknown') {
+      const error = new Error(`Provider returned unknown finish reason. Provider: google-gemini, Model: ${originalRequest.model}`);
+      logger.error('Unknown finish reason in Gemini provider response', {
+        error: error.message,
+        provider: 'google-gemini',
+        model: originalRequest.model,
+        originalFinishReason: candidate?.finishReason,
+        requestId: requestId
+      }, requestId, 'provider');
+      throw error;
+    }
+    
+    logger.debug('Gemini SDK response conversion completed', {
+      contentBlocks: content.length,
+      textBlocks: content.filter(c => c.type === 'text').length,
+      toolBlocks: content.filter(c => c.type === 'tool_use').length,
+      stopReason,
+      originalFinishReason: candidate?.finishReason
+    }, requestId, 'gemini-provider');
+    
+    // 🏗️ 返回符合架构一致性的响应格式，包含choices字段供server.ts检查
+    return {
+      id: `gemini_sdk_${Date.now()}`,
+      type: 'message',
+      model: originalRequest.model,
+      role: 'assistant',
+      content: content,
+      stop_reason: stopReason,
+      stop_sequence: null,
+      usage: {
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0
+      },
+      // 🔄 添加choices字段以保持与OpenAI架构一致性
+      choices: [{
+        message: {
+          role: 'assistant',
+          content: content
+        },
+        finish_reason: stopReason,
+        index: 0
+      }]
+    };
+  }
+
+  /**
+   * Execute request with retry logic and SDK client rotation
+   * 使用轮询策略避免重复使用同一个key
+   */
+  private async executeWithRetrySdk<T>(
+    requestFn: (genAI: GoogleGenAI, model: string) => Promise<T>,
+    modelName: string,
+    operation: string,
+    requestId: string
+  ): Promise<T> {
+    let lastError: any;
+    const usedKeyIndices = new Set<number>(); // 追踪已使用的key索引
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      let genAIClient: GoogleGenAI;
+      let keyIndex = 0;
+      let fallbackApplied = false;
+      let fallbackReason: string | undefined;
+      let currentModel = modelName;
+      let actualApiKey: string;
+      
+      try {
+        // Get a fresh available key and model for each attempt
+        if (this.enhancedRateLimitManager) {
+          const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+          
+          genAIClient = this.genAIClients[keyAndModel.keyIndex];
+          keyIndex = keyAndModel.keyIndex;
+          currentModel = keyAndModel.model;
+          fallbackApplied = keyAndModel.fallbackApplied;
+          fallbackReason = keyAndModel.fallbackReason;
+          actualApiKey = this.apiKeys[keyIndex];
+          
+          if (fallbackApplied) {
+            logger.info('Applied Gemini SDK model fallback due to rate limits', {
+              originalModel: modelName,
+              fallbackModel: currentModel,
+              reason: fallbackReason,
+              keyIndex,
+              attempt: attempt + 1
+            }, requestId, 'gemini-provider');
+          }
+        } else {
+          // Simple round-robin for single key or no rate limit manager
+          keyIndex = attempt % this.genAIClients.length;
+          genAIClient = this.genAIClients[keyIndex];
+          actualApiKey = this.apiKeys[keyIndex];
+        }
+        
+        // 避免重复使用相同的key
+        if (usedKeyIndices.has(keyIndex) && this.genAIClients.length > 1) {
+          // 找一个未使用的key
+          for (let i = 0; i < this.genAIClients.length; i++) {
+            if (!usedKeyIndices.has(i)) {
+              keyIndex = i;
+              genAIClient = this.genAIClients[i];
+              actualApiKey = this.apiKeys[i];
+              break;
+            }
+          }
+        }
+        
+        usedKeyIndices.add(keyIndex);
+        // 更新当前key索引用于日志显示
+        this.currentKeyIndex = keyIndex;
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for ${operation}`, keyError, requestId, 'gemini-provider');
+        throw keyError;
+      }
+
+      try {
+        const result = await requestFn(genAIClient, currentModel);
+        
+        // Report success to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          // Success is automatically tracked by the rate limit manager
+        }
+        
+        logger.debug(`${operation} succeeded with SDK client`, {
+          keyIndex,
+          model: currentModel,
+          attempt: attempt + 1
+        }, requestId, 'gemini-provider');
+        
+        return result;
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.message?.includes('quota') || 
+                             (error as any)?.message?.includes('rate') ||
+                             (error as any)?.message?.includes('RESOURCE_EXHAUSTED') ||
+                             (error as any)?.status === 429;
+
+        logger.warn(`${operation} failed with SDK client`, {
+            keyIndex,
+            model: currentModel,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'gemini-provider');
+
+        // Report error to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          if (isRateLimited) {
+            this.enhancedRateLimitManager.report429Error(keyIndex, currentModel, requestId);
+          }
+        }
+
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
+        }
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
+      }
+    }
+    throw lastError; // Throw last error if all retries fail
   }
 
   private convertToGeminiFormat(request: BaseRequest): any {
@@ -476,16 +1126,33 @@ export class GeminiClient {
     // Convert Anthropic/OpenAI tools to Gemini function declarations
     // Gemini expects: { functionDeclarations: [...] } (single object, not array)
     const functionDeclarations = tools.map(tool => {
-      // Handle both Anthropic format (tool.input_schema) and OpenAI format (tool.function.parameters)
-      const rawParameters = tool.input_schema || tool.function?.parameters || {};
+      // 🎯 Enhanced tool format handling - support multiple input formats like OpenAI does
+      let name: string;
+      let description: string;
+      let rawParameters: any;
+      
+      if (tool.type === 'function' && tool.function) {
+        // OpenAI format: { type: 'function', function: { name, description, parameters } }
+        name = tool.function.name;
+        description = tool.function.description || '';
+        rawParameters = tool.function.parameters || {};
+      } else if (tool.name) {
+        // Anthropic format: { name, description, input_schema }
+        name = tool.name;
+        description = tool.description || '';
+        rawParameters = tool.input_schema || {};
+      } else {
+        logger.error('Invalid tool format - missing name', { tool });
+        throw new Error(`Invalid tool format: ${JSON.stringify(tool)}`);
+      }
       
       // 🔧 Critical Fix: Clean JSON Schema for Gemini API compatibility
       // Gemini API doesn't support additionalProperties, $schema, and other JSON Schema metadata
       const parameters = this.cleanJsonSchemaForGemini(rawParameters);
       
       return {
-        name: tool.name,
-        description: tool.description || tool.function?.description || '',
+        name: name,
+        description: description,
         parameters: parameters
       };
     });
@@ -600,16 +1267,91 @@ export class GeminiClient {
     };
   }
 
+  /**
+   * Extract tool input parameters from user message
+   * This is a fallback when Gemini doesn't properly call tools
+   */
+  private extractToolInputFromMessage(userMessage: string, tool: any): any {
+    // Basic parameter extraction for common tools
+    const toolName = tool.name || tool.function?.name;
+    const schema = tool.input_schema || tool.function?.parameters;
+    
+    if (!schema || !schema.properties) {
+      return {};
+    }
+    
+    const input: any = {};
+    
+    // Extract parameters based on schema
+    Object.keys(schema.properties).forEach(paramName => {
+      const paramInfo = schema.properties[paramName];
+      
+      // Simple extraction patterns
+      if (paramInfo.type === 'string') {
+        // For location/city parameters
+        if (paramName.toLowerCase().includes('location') || paramName.toLowerCase().includes('city')) {
+          const cityMatch = userMessage.match(/(?:in|for|at)\s+([A-Za-z\u4e00-\u9fff]+)/i);
+          if (cityMatch) {
+            input[paramName] = cityMatch[1];
+          }
+        }
+        // For general string parameters, try to extract quoted or capitalized words
+        else {
+          const wordMatch = userMessage.match(/["']([^"']+)["']/) || userMessage.match(/([A-Z][a-z]+)/);
+          if (wordMatch) {
+            input[paramName] = wordMatch[1];
+          }
+        }
+      }
+    });
+    
+    // If required parameters are missing, add defaults
+    if (schema.required) {
+      schema.required.forEach((requiredParam: string) => {
+        if (!input[requiredParam]) {
+          if (requiredParam.toLowerCase().includes('city') || requiredParam.toLowerCase().includes('location')) {
+            input[requiredParam] = 'unknown location';
+          } else {
+            input[requiredParam] = 'unknown';
+          }
+        }
+      });
+    }
+    
+    return input;
+  }
+
   private mapFinishReason(finishReason?: string): string {
     const reasonMap: Record<string, string> = {
       'STOP': 'end_turn',
       'MAX_TOKENS': 'max_tokens',
       'SAFETY': 'stop_sequence',
       'RECITATION': 'stop_sequence',
-      'OTHER': 'end_turn'
+      'OTHER': 'end_turn',
+      // 🔧 Critical Fix: Handle tool call related finish reasons
+      'UNEXPECTED_TOOL_CALL': 'tool_use',
+      'FUNCTION_CALL': 'tool_use',
+      // Gemini SDK可能返回的其他值
+      'FINISH_REASON_STOP': 'end_turn',
+      'FINISH_REASON_MAX_TOKENS': 'max_tokens',
+      'FINISH_REASON_SAFETY': 'stop_sequence',
+      'FINISH_REASON_RECITATION': 'stop_sequence',
+      'FINISH_REASON_OTHER': 'end_turn'
     };
 
-    return reasonMap[finishReason || 'OTHER'] || 'end_turn';
+    // 如果没有finishReason，返回end_turn
+    if (!finishReason) {
+      return 'end_turn';
+    }
+
+    const mappedReason = reasonMap[finishReason] || reasonMap[finishReason.toUpperCase()];
+    
+    logger.debug('Mapped Gemini finish reason', {
+      original: finishReason,
+      mapped: mappedReason || 'end_turn'
+    });
+
+    return mappedReason || 'end_turn';
   }
 
   /**
@@ -677,14 +1419,33 @@ export class GeminiClient {
    */
 
   /**
-   * Check if error is retryable (429, 502, 503, 504)
+   * Check if error is retryable (429, 502, 503, 504, quota errors)
    */
   private isRetryableError(error: any): boolean {
     const status = error?.status || error?.response?.status;
+    const message = error?.message || '';
+    
+    // HTTP status code based retries
     if (status) {
-      return status === 429 || status === 502 || status === 503 || status === 504;
+      const retryableStatuses = [429, 502, 503, 504];
+      if (retryableStatuses.includes(status)) {
+        return true;
+      }
     }
-    return false;
+    
+    // Gemini specific error patterns
+    const retryablePatterns = [
+      'quota',
+      'rate',
+      'RESOURCE_EXHAUSTED',
+      'Too Many Requests',
+      'temporarily unavailable',
+      'service unavailable'
+    ];
+    
+    return retryablePatterns.some(pattern => 
+      message.toLowerCase().includes(pattern.toLowerCase())
+    );
   }
 
   /**
@@ -1590,5 +2351,18 @@ export class GeminiClient {
     } finally {
       reader.releaseLock();
     }
+  }
+
+  /**
+   * 获取当前key信息，用于详细的429错误日志
+   */
+  getCurrentKeyInfo(): any {
+    return {
+      keyIndex: this.currentKeyIndex,
+      keySuffix: this.apiKeys[this.currentKeyIndex]?.slice(-8) || 'unknown',
+      totalKeys: this.apiKeys.length,
+      nextKeyIndex: (this.currentKeyIndex + 1) % this.apiKeys.length,
+      enhancedManagerEnabled: !!this.enhancedRateLimitManager
+    };
   }
 }

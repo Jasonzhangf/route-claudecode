@@ -39,7 +39,7 @@ export class UnifiedErrorHandler {
     // 🔍 Step 1: 诊断错误处理是否正确
     const diagnostics = ErrorSystemDiagnostics.diagnoseError(error, reply, {
       requestId: context.requestId,
-      port: process.env.RCC_PORT ? parseInt(process.env.RCC_PORT) : 3456,
+      port: process.env.RCC_PORT ? parseInt(process.env.RCC_PORT) : 0, // 🔧 修复硬编码：0表示端口未知
       stage: context.stage,
       providerId: context.providerId,
       isStreaming: context.isStreaming

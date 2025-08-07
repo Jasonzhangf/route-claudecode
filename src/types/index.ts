@@ -54,6 +54,7 @@ export interface BaseResponse {
     input_tokens: number;
     output_tokens: number;
   };
+  choices?: any[]; // For OpenAI compatibility
 }
 
 export interface AnthropicResponse extends BaseResponse {
@@ -172,6 +173,8 @@ export interface ProviderConfig {
     credentials?: Record<string, string | string[]>; // 支持多个API keys，none类型时可选
   };
   settings: Record<string, any>;
+  models?: string[];
+  defaultModel?: string;
   healthCheck?: {
     endpoint: string;
     interval: number;
@@ -259,6 +262,11 @@ export interface RouterConfig {
     traceRequests: boolean;
     saveRequests: boolean;
     logDir: string;
+  };
+  concurrency?: {
+    enabled: boolean;
+    queueManagement: boolean;
+    sequenceTracking: boolean;
   };
   hooks: Hook[];
 }

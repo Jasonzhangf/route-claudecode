@@ -11,8 +11,11 @@ let compatLogger: ReturnType<typeof getLogger> | null = null;
 
 function getCompatLogger() {
   if (!compatLogger) {
-    // 尝试从环境变量或进程参数中获取端口
-    const portFromEnv = process.env.RCC_PORT ? parseInt(process.env.RCC_PORT) : undefined;
+    // 🔧 修复硬编码：优先从环境变量获取端口，必须明确指定
+    const portFromEnv = process.env.RCC_PORT ? parseInt(process.env.RCC_PORT) : null;
+    if (!portFromEnv) {
+      throw new Error('RCC_PORT environment variable must be set for logger initialization - no hardcoded defaults allowed');
+    }
     compatLogger = getLogger(portFromEnv);
   }
   return compatLogger;
@@ -57,7 +60,7 @@ export class PipelineDebugger {
   private requestTracker: ReturnType<typeof createRequestTracker>;
   private logger: ReturnType<typeof getLogger>;
 
-  constructor(port: number = 3456) {
+  constructor(port: number) {
     this.errorTracker = createErrorTracker(port);
     this.requestTracker = createRequestTracker(port);
     this.logger = getLogger(port);
@@ -95,7 +98,7 @@ export class PipelineDebugger {
       model: failureData.model || 'unknown',
       errorCode: failureData.errorCode || 'PIPELINE_FAILURE',
       key: failureData.key || 'unknown',
-      port: failureData.port || 3456
+      port: failureData.port // 🔧 移除fallback：必须明确指定端口
     });
   }
 }
@@ -117,7 +120,7 @@ export class ToolCallErrorClass implements ToolCallError {
     provider: string = 'unknown',
     model: string = 'unknown',
     context: any = {},
-    port: number = 3456
+    port: number
   ) {
     this.requestId = requestId;
     this.errorMessage = errorMessage;

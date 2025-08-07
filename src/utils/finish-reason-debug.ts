@@ -14,7 +14,7 @@ import { homedir } from 'os';
  * 获取调试日志目录路径 - 按端口号分组
  * @param port 端口号，默认为 3456
  */
-export function getDebugLogDir(port: number = 3456): string {
+export function getDebugLogDir(port: number): string {
   return join(homedir(), '.route-claude-code', 'logs', `port-${port}`);
 }
 
@@ -22,7 +22,7 @@ export function getDebugLogDir(port: number = 3456): string {
  * 确保调试日志目录存在 - 按端口号创建
  * @param port 端口号，默认为 3456
  */
-function ensureDebugLogDir(port: number = 3456) {
+function ensureDebugLogDir(port: number) {
   const debugLogDir = getDebugLogDir(port);
   if (!existsSync(debugLogDir)) {
     mkdirSync(debugLogDir, { recursive: true });
@@ -43,7 +43,7 @@ export function logFinishReasonDebug(
   finishReason: string,
   provider: string,
   model: string,
-  port: number = 3456,
+  port: number,
   additionalData?: any
 ) {
   try {
@@ -83,7 +83,7 @@ export function logStopReasonDebug(
   stopReason: string,
   provider: string,
   model: string,
-  port: number = 3456,
+  port: number,
   additionalData?: any
 ) {
   try {
@@ -114,7 +114,8 @@ export function logStopReasonDebug(
  * @deprecated 请使用 getDebugLogDir(port)
  */
 export function getDebugLogDirLegacy(): string {
-  return getDebugLogDir(3456);
+  // 🔧 修复硬编码：需要明确指定端口
+  throw new Error('Port must be explicitly specified for getDefaultFinishReasonDir() - no hardcoded defaults allowed');
 }
 
 /**
@@ -129,7 +130,7 @@ export function logToolCallCompletion(
   requestId: string,
   toolCallId: string,
   status: 'success' | 'error' | 'pending',
-  port: number = 3456,
+  port: number,
   result?: any
 ) {
   try {
@@ -166,7 +167,7 @@ export function logApiError(
   requestId: string,
   provider: string,
   error: any,
-  port: number = 3456,
+  port: number,
   retryCount: number = 0
 ) {
   try {
@@ -208,7 +209,7 @@ export function logPollingRetry(
   provider: string,
   attempt: number,
   reason: string,
-  port: number = 3456
+  port: number
 ) {
   try {
     ensureDebugLogDir(port);
@@ -237,7 +238,7 @@ export function logPollingRetry(
  * @param port 端口号，默认为 3456
  * @param maxAge 最大保留时间，默认为7天
  */
-export function cleanupDebugLogs(port: number = 3456, maxAge: number = 7 * 24 * 60 * 60 * 1000) {
+export function cleanupDebugLogs(port: number, maxAge: number = 7 * 24 * 60 * 60 * 1000) {
   try {
     const debugLogDir = getDebugLogDir(port);
     if (!existsSync(debugLogDir)) {
@@ -266,7 +267,7 @@ export function cleanupDebugLogs(port: number = 3456, maxAge: number = 7 * 24 * 
  * @param port 端口号，默认为 3456
  * @param limit 读取条数限制
  */
-export function readDebugLogs(logType: 'finish-reason' | 'stop-reason' = 'finish-reason', port: number = 3456, limit?: number): any[] {
+export function readDebugLogs(logType: 'finish-reason' | 'stop-reason' = 'finish-reason', port: number, limit?: number): any[] {
   try {
     ensureDebugLogDir(port);
     

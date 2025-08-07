@@ -84,57 +84,6 @@ export class OpenAIToolFormatFixPatch implements BasePatch {
   }
 
   /**
-   * 修复请求格式 - 确保工具调用格式正确
-   */
-  async patchRequest(request: any, context: any): Promise<any> {
-    // 如果没有工具调用，直接返回
-    if (!request.tools || request.tools.length === 0) {
-      return request;
-    }
-
-    const patchedRequest = { ...request };
-    
-    // 修复工具定义格式
-    if (patchedRequest.tools) {
-      patchedRequest.tools = patchedRequest.tools.map((tool: any) => {
-        if (tool.type === 'function' && tool.function) {
-          return {
-            type: 'function',
-            function: {
-              name: tool.function.name,
-              description: tool.function.description || '',
-              parameters: tool.function.parameters || { type: 'object', properties: {} }
-            }
-          };
-        }
-        return tool;
-      });
-    }
-
-    // 确保模型名称符合OpenAI格式
-    if (!patchedRequest.model || patchedRequest.model === 'default') {
-      patchedRequest.model = 'gpt-3.5-turbo';
-    }
-
-    // 确保必要的参数
-    if (!patchedRequest.max_tokens) {
-      patchedRequest.max_tokens = 2000;
-    }
-
-    if (typeof patchedRequest.temperature === 'undefined') {
-      patchedRequest.temperature = 0.7;
-    }
-
-    this.logPatchApplied('request', {
-      originalToolsCount: request.tools?.length || 0,
-      patchedToolsCount: patchedRequest.tools?.length || 0,
-      modelFixed: request.model !== patchedRequest.model
-    });
-
-    return patchedRequest;
-  }
-
-  /**
    * 修复响应格式 - 确保工具调用响应格式正确
    */
   async patchResponse(response: any, context: any): Promise<any> {
@@ -149,17 +98,6 @@ export class OpenAIToolFormatFixPatch implements BasePatch {
       if (!choice.message) return choice;
 
       const message = { ...choice.message };
-      
-      // 对于Qwen模型，检查content中是否包含工具调用
-      if (context.model?.includes('qwen') || context.model?.includes('Qwen')) {
-        message.content = this.fixQwenToolContent(message.content);
-        
-        // 如果content包含工具调用，提取为tool_calls
-        const extractedTools = this.extractToolsFromQwenContent(message.content);
-        if (extractedTools.length > 0) {
-          message.tool_calls = extractedTools;
-        }
-      }
       
       // 修复工具调用格式
       if (message.tool_calls) {
@@ -190,10 +128,8 @@ export class OpenAIToolFormatFixPatch implements BasePatch {
 
           return toolCall;
         });
-      }
 
-      // 如果有工具调用，确保finish_reason正确
-      if (message.tool_calls && message.tool_calls.length > 0) {
+        // 🎯 如果有工具调用，设置正确的OpenAI格式finish_reason
         choice.finish_reason = 'tool_calls';
       }
 
@@ -206,49 +142,6 @@ export class OpenAIToolFormatFixPatch implements BasePatch {
     });
 
     return patchedResponse;
-  }
-
-  /**
-   * 修复流式响应 - 确保流式工具调用格式正确
-   */
-  async patchStreamingChunk(chunk: any, context: any): Promise<any> {
-    if (!chunk || !chunk.choices) {
-      return chunk;
-    }
-
-    const patchedChunk = { ...chunk };
-    
-    patchedChunk.choices = patchedChunk.choices.map((choice: any) => {
-      if (!choice.delta) return choice;
-
-      const delta = { ...choice.delta };
-      
-      // 修复流式工具调用
-      if (delta.tool_calls) {
-        delta.tool_calls = delta.tool_calls.map((toolCall: any) => {
-          // 确保工具调用有正确的索引
-          if (typeof toolCall.index === 'undefined') {
-            toolCall.index = 0;
-          }
-
-          // 确保工具调用有ID
-          if (!toolCall.id && toolCall.function?.name) {
-            toolCall.id = `call_${Math.random().toString(36).substr(2, 9)}`;
-          }
-
-          return toolCall;
-        });
-      }
-
-      // 如果有工具调用增量，设置正确的finish_reason
-      if (delta.tool_calls && choice.finish_reason === null) {
-        choice.finish_reason = 'tool_calls';
-      }
-
-      return { ...choice, delta };
-    });
-
-    return patchedChunk;
   }
 
   /**
@@ -272,114 +165,6 @@ export class OpenAIToolFormatFixPatch implements BasePatch {
       // 如果无法修复，返回空对象
       return '{}';
     }
-  }
-
-  /**
-   * 修复Qwen模型的内容格式
-   */
-  private fixQwenToolContent(content: any): any {
-    if (typeof content !== 'string') {
-      return content;
-    }
-
-    // 尝试修复Qwen可能返回的工具调用格式
-    try {
-      // 查找类似 {"name": "Task", "arguments": {...}} 的模式
-      const toolCallPattern = /{[^{]*"name"\s*:\s*"[^"]*"[^{]*"arguments"\s*:\s*{[^}]*}[^}]*}/g;
-      const matches = content.match(toolCallPattern);
-      
-      if (matches) {
-        // 替换为标准格式
-        let fixedContent = content;
-        for (const match of matches) {
-          try {
-            const toolCall = JSON.parse(match);
-            if (toolCall.name && toolCall.arguments) {
-              // 构造标准工具调用格式
-              const standardCall = {
-                function: {
-                  name: toolCall.name,
-                  arguments: typeof toolCall.arguments === 'object' 
-                    ? JSON.stringify(toolCall.arguments)
-                    : toolCall.arguments
-                }
-              };
-              fixedContent = fixedContent.replace(match, JSON.stringify(standardCall));
-            }
-          } catch (e) {
-            // 解析失败，跳过
-            continue;
-          }
-        }
-        return fixedContent;
-      }
-    } catch (e) {
-      // 修复失败，返回原始内容
-    }
-    
-    return content;
-  }
-
-  /**
-   * 从Qwen内容中提取工具调用
-   */
-  private extractToolsFromQwenContent(content: any): any[] {
-    if (typeof content !== 'string') {
-      return [];
-    }
-
-    const toolCalls: any[] = [];
-    
-    try {
-      // 查找可能的工具调用格式
-      // 格式1: 直接的JSON对象 {"name": "Task", "arguments": {...}}
-      const directToolPattern = /{"name"\s*:\s*"[^"]*"[^}]*"arguments"\s*:\s*{[^}]*}}/g;
-      let match;
-      while ((match = directToolPattern.exec(content)) !== null) {
-        try {
-          const toolCall = JSON.parse(match[0]);
-          if (toolCall.name && toolCall.arguments) {
-            toolCalls.push({
-              id: `call_${Math.random().toString(36).substr(2, 9)}`,
-              type: 'function',
-              function: {
-                name: toolCall.name,
-                arguments: typeof toolCall.arguments === 'object' 
-                  ? JSON.stringify(toolCall.arguments)
-                  : toolCall.arguments
-              }
-            });
-          }
-        } catch (e) {
-          // 解析失败，跳过
-        }
-      }
-      
-      // 格式2: 函数调用格式 Task({...})
-      const functionCallPattern = /(\w+)\s*\(({[^}]*})\)/g;
-      while ((match = functionCallPattern.exec(content)) !== null) {
-        try {
-          const [, functionName, args] = match;
-          // 验证参数是有效的JSON
-          JSON.parse(args);
-          
-          toolCalls.push({
-            id: `call_${Math.random().toString(36).substr(2, 9)}`,
-            type: 'function',
-            function: {
-              name: functionName,
-              arguments: args
-            }
-          });
-        } catch (e) {
-          // 解析失败，跳过
-        }
-      }
-    } catch (e) {
-      // 提取失败
-    }
-    
-    return toolCalls;
   }
 
   /**

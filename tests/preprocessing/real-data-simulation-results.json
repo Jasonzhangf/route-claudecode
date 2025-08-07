@@ -1,0 +1,627 @@
+{
+  "timestamp": "2025-08-07T03:45:06.670Z",
+  "summary": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "successRate": "100.0%",
+    "issueTypesCovered": [
+      "other",
+      "error_handling"
+    ]
+  },
+  "productionSamples": [
+    "openai_3456_tool_call_error",
+    "modelscope_5507_missing_finish",
+    "glm_text_tool_undetected",
+    "anthropic_text_tool_issue",
+    "gemini_function_call_error",
+    "streaming_tool_call_issue",
+    "complex_nested_tool_calls",
+    "empty_response_error",
+    "rate_limit_error",
+    "connection_timeout_error"
+  ],
+  "results": [
+    {
+      "sampleName": "openai_3456_tool_call_error",
+      "source": "Production Issue - Port 3456",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalResponse": {
+          "id": "chatcmpl-AcBdEfGhIjKlMnOp",
+          "object": "chat.completion",
+          "created": 1704621000,
+          "model": "gpt-4-turbo-preview",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_AcBdEfGhIjKlMnOp",
+                    "type": "function",
+                    "function": {
+                      "name": "search_web",
+                      "arguments": "{\"query\": \"latest AI developments 2024\", \"num_results\": 5}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "end_turn"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 89,
+            "completion_tokens": 45,
+            "total_tokens": 134
+          }
+        },
+        "processedResponse": {
+          "id": "chatcmpl-AcBdEfGhIjKlMnOp",
+          "object": "chat.completion",
+          "created": 1704621000,
+          "model": "gpt-4-turbo-preview",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_AcBdEfGhIjKlMnOp",
+                    "type": "function",
+                    "function": {
+                      "name": "search_web",
+                      "arguments": "{\"query\": \"latest AI developments 2024\", \"num_results\": 5}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 89,
+            "completion_tokens": 45,
+            "total_tokens": 134
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "methods": [
+            "openai-tool_calls"
+          ]
+        },
+        "summary": {
+          "toolsDetected": true,
+          "toolCount": 1,
+          "detectionMethods": [
+            "openai-tool_calls"
+          ],
+          "modificationsApplied": [
+            {
+              "type": "finish_reason",
+              "from": "end_turn",
+              "to": "tool_calls"
+            }
+          ],
+          "processingStage": "preprocessing"
+        }
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具: 1个, 方法: 1种, 修改: 1项",
+        "error": ""
+      },
+      "issueType": "other"
+    },
+    {
+      "sampleName": "modelscope_5507_missing_finish",
+      "source": "Production Issue - Port 5507",
+      "passed": true,
+      "duration": 1,
+      "error": "ModelScope provider missing finish_reason field",
+      "errorType": "missing_finish_reason",
+      "issueType": "other"
+    },
+    {
+      "sampleName": "glm_text_tool_undetected",
+      "source": "Production Issue - GLM-4.5",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalResponse": {
+          "id": "chatcmpl-GLM123456",
+          "object": "chat.completion",
+          "created": 1704625200,
+          "model": "glm-4-plus",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "好的，我来为您计算这个复杂的数学表达式。\n\nTool call: calculate_expression({\"expression\": \"(2^3 + 4*5) / (3-1)\", \"precision\": 4})\n\n计算过程如下：\n1. 首先计算括号内的表达式\n2. 然后进行除法运算\n3. 保留4位小数精度\n\n结果将在下面显示。"
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 45,
+            "completion_tokens": 78,
+            "total_tokens": 123
+          }
+        },
+        "processedResponse": {
+          "id": "chatcmpl-GLM123456",
+          "object": "chat.completion",
+          "created": 1704625200,
+          "model": "glm-4-plus",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "好的，我来为您计算这个复杂的数学表达式。\n\nTool call: calculate_expression({\"expression\": \"(2^3 + 4*5) / (3-1)\", \"precision\": 4})\n\n计算过程如下：\n1. 首先计算括号内的表达式\n2. 然后进行除法运算\n3. 保留4位小数精度\n\n结果将在下面显示。"
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 45,
+            "completion_tokens": 78,
+            "total_tokens": 123
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "methods": [
+            "pattern-tool-call"
+          ]
+        },
+        "summary": {
+          "toolsDetected": true,
+          "toolCount": 1,
+          "detectionMethods": [
+            "pattern-tool-call"
+          ],
+          "modificationsApplied": [
+            {
+              "type": "finish_reason",
+              "from": "stop",
+              "to": "tool_calls"
+            }
+          ],
+          "processingStage": "preprocessing"
+        }
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具: 1个, 方法: 1种, 修改: 1项",
+        "error": ""
+      },
+      "issueType": "other"
+    },
+    {
+      "sampleName": "anthropic_text_tool_issue",
+      "source": "Production Issue - Claude",
+      "passed": true,
+      "duration": 1,
+      "result": {
+        "originalResponse": {
+          "id": "msg_AnthropicTest123",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "我需要查询数据库来获取这些信息。让我调用相应的工具。\n\nTool call: query_database({\"database\": \"inventory\", \"table\": \"products\", \"filters\": {\"category\": \"electronics\", \"in_stock\": true}, \"limit\": 20})\n\n查询正在执行中，请稍候..."
+            }
+          ],
+          "model": "claude-3-sonnet-20240229",
+          "stop_reason": "end_turn",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 56,
+            "output_tokens": 89
+          }
+        },
+        "processedResponse": {
+          "id": "msg_AnthropicTest123",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "我需要查询数据库来获取这些信息。让我调用相应的工具。\n\nTool call: query_database({\"database\": \"inventory\", \"table\": \"products\", \"filters\": {\"category\": \"electronics\", \"in_stock\": true}, \"limit\": 20})\n\n查询正在执行中，请稍候..."
+            }
+          ],
+          "model": "claude-3-sonnet-20240229",
+          "stop_reason": "tool_use",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 56,
+            "output_tokens": 89
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "methods": [
+            "pattern-tool-call"
+          ]
+        },
+        "summary": {
+          "toolsDetected": true,
+          "toolCount": 1,
+          "detectionMethods": [
+            "pattern-tool-call"
+          ],
+          "modificationsApplied": [
+            {
+              "type": "stop_reason",
+              "from": "end_turn",
+              "to": "tool_use"
+            }
+          ],
+          "processingStage": "preprocessing"
+        }
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具: 1个, 方法: 1种, 修改: 1项",
+        "error": ""
+      },
+      "issueType": "other"
+    },
+    {
+      "sampleName": "gemini_function_call_error",
+      "source": "Production Issue - Gemini",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalResponse": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "get_stock_price",
+                      "args": {
+                        "symbol": "AAPL",
+                        "exchange": "NASDAQ",
+                        "currency": "USD"
+                      }
+                    }
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0,
+              "safetyRatings": [
+                {
+                  "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                  "probability": "NEGLIGIBLE"
+                }
+              ]
+            }
+          ],
+          "promptFeedback": {
+            "safetyRatings": []
+          }
+        },
+        "processedResponse": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "get_stock_price",
+                      "args": {
+                        "symbol": "AAPL",
+                        "exchange": "NASDAQ",
+                        "currency": "USD"
+                      }
+                    }
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "FUNCTION_CALL",
+              "index": 0,
+              "safetyRatings": [
+                {
+                  "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                  "probability": "NEGLIGIBLE"
+                }
+              ]
+            }
+          ],
+          "promptFeedback": {
+            "safetyRatings": []
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "methods": [
+            "gemini-function-call"
+          ]
+        },
+        "summary": {
+          "toolsDetected": true,
+          "toolCount": 1,
+          "detectionMethods": [
+            "gemini-function-call"
+          ],
+          "modificationsApplied": [
+            {
+              "type": "finishReason",
+              "from": "STOP",
+              "to": "FUNCTION_CALL"
+            }
+          ],
+          "processingStage": "preprocessing"
+        }
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具: 1个, 方法: 1种, 修改: 1项",
+        "error": ""
+      },
+      "issueType": "other"
+    },
+    {
+      "sampleName": "streaming_tool_call_issue",
+      "source": "Production Issue - Streaming",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalResponse": {
+          "id": "chatcmpl-StreamTest789",
+          "object": "chat.completion.chunk",
+          "created": 1704631200,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "id": "call_StreamTool123",
+                    "type": "function",
+                    "function": {
+                      "name": "analyze_sentiment",
+                      "arguments": "{\"text\": \"This product is amazing! I love the quality and design.\", \"language\": \"en\", \"detailed\": true}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "length"
+            }
+          ]
+        },
+        "processedResponse": {
+          "id": "chatcmpl-StreamTest789",
+          "object": "chat.completion.chunk",
+          "created": 1704631200,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "id": "call_StreamTool123",
+                    "type": "function",
+                    "function": {
+                      "name": "analyze_sentiment",
+                      "arguments": "{\"text\": \"This product is amazing! I love the quality and design.\", \"language\": \"en\", \"detailed\": true}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ]
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "methods": [
+            "openai-streaming-tool_calls"
+          ]
+        },
+        "summary": {
+          "toolsDetected": true,
+          "toolCount": 1,
+          "detectionMethods": [
+            "openai-streaming-tool_calls"
+          ],
+          "modificationsApplied": [
+            {
+              "type": "finish_reason",
+              "from": "length",
+              "to": "tool_calls"
+            }
+          ],
+          "processingStage": "preprocessing"
+        }
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具: 1个, 方法: 1种, 修改: 1项",
+        "error": ""
+      },
+      "issueType": "other"
+    },
+    {
+      "sampleName": "complex_nested_tool_calls",
+      "source": "Production Issue - Complex Tools",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalResponse": {
+          "id": "chatcmpl-ComplexTools456",
+          "object": "chat.completion",
+          "created": 1704633600,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_Tool1_ABC",
+                    "type": "function",
+                    "function": {
+                      "name": "fetch_user_data",
+                      "arguments": "{\"user_id\": \"12345\", \"include_preferences\": true}"
+                    }
+                  },
+                  {
+                    "id": "call_Tool2_DEF",
+                    "type": "function",
+                    "function": {
+                      "name": "calculate_recommendations",
+                      "arguments": "{\"user_data\": \"{{call_Tool1_ABC}}\", \"algorithm\": \"collaborative_filtering\", \"max_results\": 10}"
+                    }
+                  },
+                  {
+                    "id": "call_Tool3_GHI",
+                    "type": "function",
+                    "function": {
+                      "name": "format_response",
+                      "arguments": "{\"recommendations\": \"{{call_Tool2_DEF}}\", \"format\": \"json\", \"include_metadata\": true}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 123,
+            "completion_tokens": 89,
+            "total_tokens": 212
+          }
+        },
+        "processedResponse": {
+          "id": "chatcmpl-ComplexTools456",
+          "object": "chat.completion",
+          "created": 1704633600,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_Tool1_ABC",
+                    "type": "function",
+                    "function": {
+                      "name": "fetch_user_data",
+                      "arguments": "{\"user_id\": \"12345\", \"include_preferences\": true}"
+                    }
+                  },
+                  {
+                    "id": "call_Tool2_DEF",
+                    "type": "function",
+                    "function": {
+                      "name": "calculate_recommendations",
+                      "arguments": "{\"user_data\": \"{{call_Tool1_ABC}}\", \"algorithm\": \"collaborative_filtering\", \"max_results\": 10}"
+                    }
+                  },
+                  {
+                    "id": "call_Tool3_GHI",
+                    "type": "function",
+                    "function": {
+                      "name": "format_response",
+                      "arguments": "{\"recommendations\": \"{{call_Tool2_DEF}}\", \"format\": \"json\", \"include_metadata\": true}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 123,
+            "completion_tokens": 89,
+            "total_tokens": 212
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 3,
+          "methods": [
+            "openai-tool_calls"
+          ]
+        },
+        "summary": {
+          "toolsDetected": true,
+          "toolCount": 3,
+          "detectionMethods": [
+            "openai-tool_calls"
+          ],
+          "modificationsApplied": [
+            {
+              "type": "finish_reason",
+              "from": "stop",
+              "to": "tool_calls"
+            }
+          ],
+          "processingStage": "preprocessing"
+        }
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具: 3个, 方法: 1种, 修改: 1项",
+        "error": ""
+      },
+      "issueType": "other"
+    },
+    {
+      "sampleName": "empty_response_error",
+      "source": "Production Issue - Empty Response",
+      "passed": true,
+      "duration": 0,
+      "error": "Provider returned empty response",
+      "errorType": "empty_response",
+      "issueType": "error_handling"
+    },
+    {
+      "sampleName": "rate_limit_error",
+      "source": "Production Issue - Rate Limit",
+      "passed": true,
+      "duration": 0,
+      "error": "Provider returned HTTP error response",
+      "errorType": "http_error",
+      "issueType": "error_handling"
+    },
+    {
+      "sampleName": "connection_timeout_error",
+      "source": "Production Issue - Timeout",
+      "passed": true,
+      "duration": 0,
+      "error": "Provider connection or timeout error",
+      "errorType": "connection_error",
+      "issueType": "error_handling"
+    }
+  ]
+}

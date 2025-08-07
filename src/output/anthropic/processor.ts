@@ -10,13 +10,19 @@ import { mapFinishReason } from '@/utils/finish-reason-handler';
 import { MaxTokensErrorHandler } from '@/utils/max-tokens-error-handler';
 // import { PipelineDebugger } from '@/debug/pipeline-debugger'; // 已迁移到统一日志系统
 import { PipelineDebugger } from '@/utils/logger';
+import { getConsistencyValidator } from './consistency-validator';
 
 export class AnthropicOutputProcessor implements OutputProcessor {
   public readonly name = 'anthropic';
   private pipelineDebugger: PipelineDebugger;
+  private consistencyValidator: ReturnType<typeof getConsistencyValidator>;
+  private port: number;
 
-  constructor(port: number = 3456) {
+  constructor(port: number) {
+    // 🔧 修复硬编码：必须明确指定端口，不允许fallback
+    this.port = port;
     this.pipelineDebugger = new PipelineDebugger(port);
+    this.consistencyValidator = getConsistencyValidator(port);
   }
 
   /**
@@ -44,6 +50,29 @@ export class AnthropicOutputProcessor implements OutputProcessor {
         const result = this.validateAndNormalize(response, originalRequest, requestId);
         console.log(`🔍 [DEBUG-PROCESS] Final result stop_reason: "${result.stop_reason}"`);
         
+        // 🎯 最终一致性验证 - 输出前强制检查finish reason一致性
+        if (this.consistencyValidator.shouldValidate(result)) {
+          const validationResult = this.consistencyValidator.validateAndFix(result, requestId);
+          const finalResult = validationResult.response;
+          
+          if (validationResult.result.fixed) {
+            logger.info('🔧 [OUTPUT] Final consistency fix applied', {
+              report: this.consistencyValidator.generateValidationReport(validationResult.result),
+              requestId
+            }, requestId, 'output-consistency');
+          }
+          
+          // 🚨 检查max_tokens错误并抛出500错误
+          MaxTokensErrorHandler.checkAndThrowMaxTokensError(
+            finalResult,
+            originalRequest.metadata?.targetProvider || 'unknown',
+            originalRequest.metadata?.originalModel || originalRequest.model,
+            requestId
+          );
+          
+          return finalResult;
+        }
+        
         // 🚨 检查max_tokens错误并抛出500错误
         MaxTokensErrorHandler.checkAndThrowMaxTokensError(
           result,
@@ -59,6 +88,34 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       console.log(`🔍 [DEBUG-PROCESS] Taking convertToAnthropic path`);
       const anthropicResponse = await this.convertToAnthropic(response, originalRequest, requestId);
       console.log(`🔍 [DEBUG-PROCESS] Converted result stop_reason: "${anthropicResponse.stop_reason}"`);
+      
+      // 🎯 最终一致性验证 - 输出前强制检查finish reason一致性
+      if (this.consistencyValidator.shouldValidate(anthropicResponse)) {
+        const validationResult = this.consistencyValidator.validateAndFix(anthropicResponse, requestId);
+        const finalResponse = validationResult.response;
+        
+        if (validationResult.result.fixed) {
+          logger.info('🔧 [OUTPUT] Final consistency fix applied', {
+            report: this.consistencyValidator.generateValidationReport(validationResult.result),
+            requestId
+          }, requestId, 'output-consistency');
+        }
+        
+        // 🚨 检查max_tokens错误并抛出500错误
+        MaxTokensErrorHandler.checkAndThrowMaxTokensError(
+          finalResponse,
+          originalRequest.metadata?.targetProvider || 'unknown',
+          originalRequest.metadata?.originalModel || originalRequest.model,
+          requestId
+        );
+        
+        logger.trace(requestId, 'output', 'Response processed successfully', {
+          contentBlocks: finalResponse.content?.length || 0,
+          usage: finalResponse.usage
+        });
+
+        return finalResponse;
+      }
       
       // 🚨 检查max_tokens错误并抛出500错误
       MaxTokensErrorHandler.checkAndThrowMaxTokensError(
@@ -197,9 +254,18 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     const originalFinishReason = choice.finish_reason;
     let convertedStopReason: string | undefined = this.mapOpenAIFinishReason(originalFinishReason);
     
-    // 如果原始finish reason是unknown，则不设置stop_reason
+    // 如果原始finish reason是unknown，这表示提供商连接问题，应该抛出错误让系统重试
     if (originalFinishReason === 'unknown') {
-      convertedStopReason = undefined;
+      const error = new Error(`Provider returned unknown finish reason, indicating connection or API issue. Provider: ${originalRequest.metadata?.targetProvider || 'unknown'}, Model: ${originalRequest.model}`);
+      logger.error('Unknown finish reason detected - throwing error for retry', {
+        error: error.message,
+        provider: originalRequest.metadata?.targetProvider || 'unknown',
+        model: originalRequest.model,
+        originalFinishReason,
+        requestId: originalRequest.metadata?.requestId,
+        shouldRetry: true
+      }, originalRequest.metadata?.requestId, 'output-processor');
+      throw error;
     }
 
     const anthropicResponse: AnthropicResponse = {
@@ -436,22 +502,87 @@ export class AnthropicOutputProcessor implements OutputProcessor {
 
   /**
    * Convert OpenAI message to Anthropic content
+   * 🎯 修复：处理tool_calls转换为tool_use格式
    */
   private convertOpenAIMessageToContent(message: any): any[] {
-    if (typeof message.content === 'string') {
-      return [{ type: 'text', text: message.content }];
+    const content: any[] = [];
+
+    // 处理文本内容
+    if (typeof message.content === 'string' && message.content.trim()) {
+      content.push({ type: 'text', text: message.content });
+    } else if (Array.isArray(message.content)) {
+      message.content.forEach((block: any) => {
+        if (block.type === 'text') {
+          content.push({ type: 'text', text: block.text });
+        } else {
+          content.push(block); // Pass through other types
+        }
+      });
+    } else if (message.content && typeof message.content !== 'string') {
+      content.push({ type: 'text', text: String(message.content) });
     }
 
-    if (Array.isArray(message.content)) {
-      return message.content.map((block: any) => {
-        if (block.type === 'text') {
-          return { type: 'text', text: block.text };
+    // 🎯 关键修复：处理OpenAI tool_calls转换为Anthropic tool_use
+    if (message.tool_calls && Array.isArray(message.tool_calls)) {
+      logger.debug('Converting OpenAI tool_calls to Anthropic tool_use format', {
+        toolCallsCount: message.tool_calls.length,
+        tools: message.tool_calls.map((tc: any) => ({ id: tc.id, name: tc.function?.name }))
+      });
+
+      message.tool_calls.forEach((toolCall: any, index: number) => {
+        // 确保tool_call有必要的字段
+        if (!toolCall.function?.name) {
+          logger.warn('Skipping tool call without function name', { toolCall, index });
+          return;
         }
-        return block; // Pass through other types
+
+        let parsedInput = {};
+        
+        // 解析arguments字符串为对象
+        if (toolCall.function.arguments) {
+          try {
+            parsedInput = JSON.parse(toolCall.function.arguments);
+          } catch (error) {
+            logger.warn('Failed to parse tool call arguments, using as-is', {
+              toolName: toolCall.function.name,
+              arguments: toolCall.function.arguments,
+              error: error instanceof Error ? error.message : String(error)
+            });
+            parsedInput = { arguments: toolCall.function.arguments };
+          }
+        }
+
+        // 标准化工具ID格式（确保使用toolu_前缀）
+        let toolId = toolCall.id;
+        if (!toolId || !toolId.startsWith('toolu_')) {
+          // 生成标准的toolu_格式ID
+          const timestamp = Date.now();
+          const random = Math.random().toString(36).substr(2, 8);
+          toolId = `toolu_${timestamp}_${random}`;
+          
+          logger.debug('Standardized tool ID format', {
+            originalId: toolCall.id,
+            standardizedId: toolId,
+            toolName: toolCall.function.name
+          });
+        }
+
+        // 添加Anthropic格式的tool_use块
+        content.push({
+          type: 'tool_use',
+          id: toolId,
+          name: toolCall.function.name,
+          input: parsedInput
+        });
       });
     }
 
-    return [{ type: 'text', text: String(message.content || '') }];
+    // 如果没有任何内容，返回空文本块以避免空content数组
+    if (content.length === 0) {
+      return [{ type: 'text', text: '' }];
+    }
+
+    return content;
   }
 
   /**
@@ -525,5 +656,15 @@ export class AnthropicOutputProcessor implements OutputProcessor {
     } catch {
       return 50; // Fallback estimate
     }
+  }
+
+  /**
+   * 计算工具调用数量
+   */
+  private countToolCalls(data: any): number {
+    if (!data?.content || !Array.isArray(data.content)) {
+      return 0;
+    }
+    return data.content.filter((block: any) => block.type === 'tool_use').length;
   }
 }

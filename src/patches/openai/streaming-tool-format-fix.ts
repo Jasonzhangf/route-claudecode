@@ -4,6 +4,7 @@
  */
 
 import { StreamingPatch, PatchContext, PatchResult, Provider } from '../types';
+import { getLogger } from '../../logging';
 
 export class OpenAIStreamingToolFormatFixPatch implements StreamingPatch {
   name = 'openai-streaming-tool-format-fix';
@@ -273,4 +274,28 @@ export class OpenAIStreamingToolFormatFixPatch implements StreamingPatch {
     // DeepSeek可能返回特殊格式，这里添加具体的修复逻辑
     return data;
   }
+
+  /**
+   * 修正流式响应中的finish_reason
+   */
+  private correctStreamingFinishReason(chunk: any, hasToolCalls: boolean): any {
+    if (!chunk.choices?.[0]) return chunk;
+    
+    const choice = chunk.choices[0];
+    
+    // 如果有工具调用但finish_reason是stop，修正为tool_calls
+    if (hasToolCalls && choice.finish_reason === 'stop') {
+      choice.finish_reason = 'tool_calls';
+      
+      const logger = getLogger();
+      logger.debug('Corrected streaming finish_reason for tool calls', {
+        originalReason: 'stop',
+        correctedReason: 'tool_calls',
+        hasToolCalls
+      });
+    }
+    
+    return chunk;
+  }
+
 }

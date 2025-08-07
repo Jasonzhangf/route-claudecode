@@ -1,0 +1,227 @@
+{
+  "basic_conversion": [
+    {
+      "name": "simple-string-parameter",
+      "input": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      },
+      "expected_gemini_format": {
+        "name": "get_weather",
+        "description": "Get weather information",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string",
+              "description": "City name"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    },
+    {
+      "name": "complex-nested-parameters",
+      "input": {
+        "name": "LS",
+        "description": "List directory contents",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Directory path"
+            },
+            "ignore": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Patterns to ignore"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      },
+      "expected_gemini_format": {
+        "name": "LS",
+        "description": "List directory contents",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Directory path"
+            },
+            "ignore": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Patterns to ignore"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    }
+  ],
+  "schema_cleaning": [
+    {
+      "name": "remove-unsupported-fields",
+      "input": {
+        "name": "Read",
+        "description": "Read file contents",
+        "input_schema": {
+          "type": "object",
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "additionalProperties": false,
+          "properties": {
+            "file_path": {
+              "type": "string",
+              "description": "File path"
+            }
+          },
+          "required": [
+            "file_path"
+          ],
+          "minItems": 1,
+          "maxItems": 10
+        }
+      },
+      "expected_cleaned_schema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "File path"
+          }
+        },
+        "required": [
+          "file_path"
+        ]
+      }
+    }
+  ],
+  "tool_config": [
+    {
+      "name": "auto-mode-single-tool",
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Get weather info",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "city"
+            ]
+          }
+        }
+      ],
+      "expected_config": {
+        "functionCallingConfig": {
+          "mode": "AUTO"
+        }
+      }
+    },
+    {
+      "name": "auto-mode-multiple-tools",
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Weather",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "name": "LS",
+          "description": "List files",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        {
+          "name": "Read",
+          "description": "Read file",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "file_path": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ],
+      "expected_config": {
+        "functionCallingConfig": {
+          "mode": "AUTO"
+        }
+      }
+    }
+  ],
+  "api_request_format": [
+    {
+      "name": "complete-gemini-request",
+      "input_message": "What is the weather in Tokyo?",
+      "tools": [
+        {
+          "name": "get_weather",
+          "description": "Get weather information",
+          "input_schema": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "city"
+            ]
+          }
+        }
+      ],
+      "expected_structure": {
+        "contents": "array",
+        "tools": "array_with_functionDeclarations",
+        "toolConfig": "object_with_functionCallingConfig",
+        "generationConfig": "optional_object"
+      }
+    }
+  ]
+}

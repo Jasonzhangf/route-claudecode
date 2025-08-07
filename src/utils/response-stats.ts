@@ -57,7 +57,8 @@ export class ResponseStatsManager {
     // this.startPeriodicLogging();
     // Save stats on exit
     process.on('beforeExit', () => this.saveStats());
-    logger.info('ResponseStatsManager initialized');
+    // Use console.log instead of logger during initialization
+    console.log('ResponseStatsManager initialized');
   }
 
     /**
@@ -302,21 +303,24 @@ export class ResponseStatsManager {
       if (existsSync(this.statsFilePath)) {
         const data = readFileSync(this.statsFilePath, 'utf8');
         this.stats = JSON.parse(data);
-        logger.info('Response stats loaded from file');
+        // Use console.log instead of logger during initialization to avoid port dependency
+        console.log('Response stats loaded from file');
       } else {
-        logger.info('No existing response stats file found, starting fresh.');
+        console.log('No existing response stats file found, starting fresh.');
       }
     } catch (error) {
-      logger.error('Failed to load response stats', error);
+      // Use console.error instead of logger during initialization
+      console.error('Failed to load response stats:', error instanceof Error ? error.message : String(error));
     }
   }
 
   private saveStats(): void {
     try {
       writeFileSync(this.statsFilePath, JSON.stringify(this.stats, null, 2));
-      logger.info('Response stats saved to file');
+      // Use console.log for save operations to avoid logger dependency issues
+      console.log('Response stats saved to file');
     } catch (error) {
-      logger.error('Failed to save response stats', error);
+      console.error('Failed to save response stats:', error instanceof Error ? error.message : String(error));
     }
   }
   

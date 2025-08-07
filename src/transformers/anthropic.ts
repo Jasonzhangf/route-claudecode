@@ -173,16 +173,11 @@ export class AnthropicTransformer implements MessageTransformer {
       });
     }
 
-    // Map OpenAI finish_reason to Anthropic stop_reason
+    // Map OpenAI finish_reason to Anthropic stop_reason using centralized handler
     const mapFinishReason = (finishReason: string): string => {
-      const mapping: Record<string, string> = {
-        'stop': 'end_turn',
-        'length': 'max_tokens',
-        'function_call': 'tool_use',
-        'tool_calls': 'tool_use',
-        'content_filter': 'stop_sequence'
-      };
-      return mapping[finishReason] || 'end_turn';
+      // Import the centralized finish reason handler
+      const { mapFinishReason: centralizedMapper } = require('@/utils/finish-reason-handler');
+      return centralizedMapper(finishReason, 'transformer-context');
     };
 
     return {

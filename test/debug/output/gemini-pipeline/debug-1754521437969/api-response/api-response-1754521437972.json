@@ -1,0 +1,19 @@
+{
+  "stage": "api-response",
+  "timestamp": "2025-08-06T23:03:57.972Z",
+  "sessionId": "debug-1754521437969",
+  "data": {
+    "passed": true,
+    "finishReason": null,
+    "hasContent": false,
+    "errorType": null,
+    "issues": []
+  },
+  "metadata": {
+    "testType": "response_validation",
+    "finishReason": null,
+    "captureSize": 83,
+    "dataType": "object",
+    "isArray": false
+  }
+}

@@ -105,6 +105,8 @@ export class OpenAITransformer implements MessageTransformer {
    * Convert OpenAI response to unified format
    */
   transformResponseToUnified(response: any): UnifiedResponse {
+    
+    // finish_reason修正现在在预处理器中处理
     const choice = response.choices?.[0];
     if (!choice) {
       throw new Error('No choices in OpenAI response');
@@ -143,12 +145,22 @@ export class OpenAITransformer implements MessageTransformer {
    * Convert OpenAI streaming chunk to unified format
    * 保留finish_reason，传递给下游处理
    */
+  
+  /**
+   * Convert OpenAI streaming chunk to unified format
+   * 🔧 修复finish_reason映射，确保工具调用正确处理
+   */
   transformStreamChunk(chunk: any): StreamChunk | null {
     if (!chunk.choices?.[0]) {
       return null;
     }
 
     const choice = chunk.choices[0];
+    
+    // 🔧 修正finish_reason：如果有工具调用但finish_reason是stop，修正为tool_calls
+    if (choice.finish_reason === 'stop' && choice.delta?.tool_calls?.length > 0) {
+      choice.finish_reason = 'tool_calls';
+    }
     
     return {
       id: chunk.id,
@@ -158,7 +170,7 @@ export class OpenAITransformer implements MessageTransformer {
       choices: [{
         index: 0,
         delta: choice.delta,
-        finish_reason: choice.finish_reason // 保留finish_reason传递给下游
+        finish_reason: choice.finish_reason // 传递修正后的finish_reason
       }]
     };
   }

@@ -7,10 +7,14 @@ import { UnifiedLogger } from './unified-logger';
 
 class LoggerManager {
   private loggers: Map<number, UnifiedLogger> = new Map();
-  private defaultPort: number = 3456;
+  private defaultPort: number | null = null; // 🔧 修复硬编码：不设置默认端口，强制明确指定
 
   getLogger(port?: number): UnifiedLogger {
-    const targetPort = port || this.defaultPort;
+    // 🔧 零硬编码原则：必须明确指定端口，不允许fallback
+    if (!port && !this.defaultPort) {
+      throw new Error('Port must be explicitly specified - no hardcoded defaults allowed. Use setDefaultPort() first or provide port parameter.');
+    }
+    const targetPort = port || this.defaultPort!;
     
     if (!this.loggers.has(targetPort)) {
       // 环境变量和命令行参数控制的调试配置

@@ -4,11 +4,11 @@
  */
 
 import { BaseRequest } from '@/types';
-import { EnhancedOpenAIClient } from '../openai';
+import { OpenAISDKClient } from '../openai/sdk-client';
 import { ProviderConfig } from '@/types';
 import { logger } from '@/utils/logger';
 
-export class LMStudioClient extends EnhancedOpenAIClient {
+export class LMStudioClient extends OpenAISDKClient {
   constructor(config: ProviderConfig, providerId: string) {
     // Update the endpoint to the standard LM Studio endpoint if not already set
     const lmStudioConfig = { ...config };
@@ -31,11 +31,14 @@ export class LMStudioClient extends EnhancedOpenAIClient {
    */
   async isHealthy(): Promise<boolean> {
     try {
-      // For LM Studio, we test the /models endpoint to check if it's running
-      const response = await this.httpClient.get('/models');
-      return response.status === 200;
+      // For LM Studio, we test the models endpoint to check if it's running
+      const models = await this.openaiClient.models.list();
+      return models.data && models.data.length > 0;
     } catch (error) {
       // If we can't connect, LM Studio is not running
+      logger.debug('LM Studio health check failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
       return false;
     }
   }

@@ -18,14 +18,49 @@ const FINISH_REASON_MAPPING: Record<string, string> = {
 /**
  * 将OpenAI finish reason映射为Anthropic stop reason
  */
-export function mapFinishReason(finishReason: string): string {
+export function mapFinishReason(finishReason: string, requestId?: string, hasToolCall?: boolean): string {
   if (!finishReason) {
     return 'end_turn';
   }
 
+  // 🚨 紧急修复：如果检测到工具调用，优先返回tool_use
+  if (hasToolCall && (finishReason === 'length' || finishReason === 'max_tokens')) {
+    console.warn(`⚠️  Tool call detected with ${finishReason} finish_reason, mapping to tool_use`, { requestId });
+    return 'tool_use';
+  }
+
   const mappedReason = FINISH_REASON_MAPPING[finishReason];
   if (!mappedReason) {
-    throw new Error(`Unknown finish reason '${finishReason}'. Available: ${Object.keys(FINISH_REASON_MAPPING).join(', ')}`);
+    // 记录未知的finish reason但不抛出错误
+    console.warn(`⚠️  Unknown finish reason '${finishReason}' encountered. Available: ${Object.keys(FINISH_REASON_MAPPING).join(', ')}`);
+    if (requestId) {
+      console.warn(`   Request ID: ${requestId}`);
+    }
+    
+    // 根据finish reason的内容进行智能推断
+    const lowerReason = finishReason.toLowerCase();
+    
+    // 尝试智能映射
+    if (lowerReason.includes('stop') || lowerReason.includes('end') || lowerReason.includes('complete')) {
+      console.warn(`   Mapping '${finishReason}' to 'end_turn' (stop-like)`);
+      return 'end_turn';
+    }
+    if (lowerReason.includes('length') || lowerReason.includes('token') || lowerReason.includes('max')) {
+      console.warn(`   Mapping '${finishReason}' to 'max_tokens' (length-like)`);
+      return 'max_tokens';
+    }
+    if (lowerReason.includes('tool') || lowerReason.includes('function') || lowerReason.includes('call')) {
+      console.warn(`   Mapping '${finishReason}' to 'tool_use' (tool-like)`);
+      return 'tool_use';
+    }
+    if (lowerReason.includes('filter') || lowerReason.includes('content') || lowerReason.includes('safety')) {
+      console.warn(`   Mapping '${finishReason}' to 'stop_sequence' (filter-like)`);
+      return 'stop_sequence';
+    }
+    
+    // 默认映射到end_turn并记录
+    console.warn(`   Mapping unknown '${finishReason}' to 'end_turn' (default fallback)`);
+    return 'end_turn';
   }
 
   return mappedReason;

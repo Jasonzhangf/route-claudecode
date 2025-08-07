@@ -29,9 +29,8 @@ export class TransformationManager {
     this.transformers.set('openai', openaiTransformer);
     this.transformers.set('anthropic', anthropicTransformer);
 
-    logger.info('Transformation manager initialized', {
-      transformers: Array.from(this.transformers.keys())
-    });
+    // Use console.log instead of logger during initialization to avoid port dependency
+    console.log('Transformation manager initialized with transformers:', Array.from(this.transformers.keys()));
   }
 
   /**

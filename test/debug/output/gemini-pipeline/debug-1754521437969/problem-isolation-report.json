@@ -1,0 +1,38 @@
+{
+  "session_id": "debug-1754521437969",
+  "timestamp": "2025-08-06T23:03:57.973Z",
+  "pipeline_name": "gemini-tool-calling",
+  "captured_stages": [
+    "input-processing",
+    "schema-conversion",
+    "tool-config-setup",
+    "api-request",
+    "api-response"
+  ],
+  "total_captures": 5,
+  "analysis": {
+    "likely_root_causes": [
+      "Schema conversion from Anthropic input_schema to Gemini parameters format",
+      "Unsupported JSON Schema fields causing MALFORMED_FUNCTION_CALL",
+      "Tool configuration mismatch in functionCallingConfig",
+      "Missing or incorrect functionDeclarations structure"
+    ],
+    "recommended_fixes": [
+      "Verify cleanJsonSchemaForGemini removes all unsupported fields",
+      "Ensure parameters schema uses only: type, properties, required, items, description, enum",
+      "Validate toolConfig.functionCallingConfig.mode is set to AUTO",
+      "Check tools array contains single object with functionDeclarations array",
+      "Test schema conversion with real Gemini API validation endpoint"
+    ],
+    "validation_failures": [
+      {
+        "stage": "api-request",
+        "issues": [
+          "Missing required field: contents",
+          "tools[0] missing functionDeclarations"
+        ],
+        "timestamp": "2025-08-06T23:03:57.972Z"
+      }
+    ]
+  }
+}

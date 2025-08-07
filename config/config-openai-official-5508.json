@@ -1,0 +1,84 @@
+{
+  "server": {
+    "port": 5508,
+    "host": "localhost"
+  },
+  "providers": {
+    "openai-official": {
+      "type": "openai",
+      "endpoint": "https://api.openai.com/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "your-openai-api-key-here"
+        }
+      },
+      "models": [
+        "gpt-4o-mini",
+        "gpt-4o",
+        "gpt-4-turbo",
+        "gpt-3.5-turbo"
+      ],
+      "defaultModel": "gpt-4o-mini",
+      "maxTokens": {
+        "gpt-4o-mini": 128000,
+        "gpt-4o": 128000,
+        "gpt-4-turbo": 128000,
+        "gpt-3.5-turbo": 16385
+      },
+      "timeout": 60000,
+      "description": "Official OpenAI API with standard models",
+      "keyRotation": {
+        "strategy": "round_robin",
+        "cooldownMs": 1000,
+        "maxRetriesPerKey": 3,
+        "rateLimitCooldownMs": 60000
+      },
+      "preprocessing": {
+        "validateFinishReason": true,
+        "strictFinishReasonValidation": true
+      }
+    }
+  },
+  "routing": {
+    "default": {
+      "provider": "openai-official",
+      "model": "gpt-4o-mini"
+    },
+    "background": {
+      "provider": "openai-official",
+      "model": "gpt-4o-mini"
+    },
+    "thinking": {
+      "provider": "openai-official",
+      "model": "gpt-4o"
+    },
+    "longcontext": {
+      "provider": "openai-official",
+      "model": "gpt-4-turbo"
+    },
+    "search": {
+      "provider": "openai-official",
+      "model": "gpt-4o-mini"
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "traceRequests": true,
+    "saveRequests": false,
+    "logDir": "/tmp/rcc-openai-official-logs"
+  },
+  "concurrency": {
+    "enabled": false,
+    "queueManagement": false,
+    "sequenceTracking": false
+  },
+  "preprocessing": {
+    "enabled": true,
+    "debugMode": false,
+    "validateFinishReason": true,
+    "strictFinishReasonValidation": true
+  },
+  "hooks": []
+}

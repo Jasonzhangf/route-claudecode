@@ -14,13 +14,21 @@ import { RequestTracker } from './request-tracker';
 import { ErrorTracker } from './error-tracker';
 
 // 便捷函数 - 获取默认logger实例
-export function log() {
-  return getLogger();
+export function log(port?: number) {
+  // 🔧 修复硬编码：必须明确指定端口
+  if (!port) {
+    throw new Error('Port must be explicitly specified for log() function - no hardcoded defaults allowed');
+  }
+  return getLogger(port);
 }
 
 // 便捷函数 - 快速日志记录
-export function quickLog(message: string, data?: any, level: 'info' | 'warn' | 'error' | 'debug' = 'info') {
-  const logger = getLogger();
+export function quickLog(message: string, data?: any, level: 'info' | 'warn' | 'error' | 'debug' = 'info', port?: number) {
+  // 🔧 修复硬编码：必须明确指定端口
+  if (!port) {
+    throw new Error('Port must be explicitly specified for quickLog() function - no hardcoded defaults allowed');
+  }
+  const logger = getLogger(port);
   switch (level) {
     case 'error': logger.error(message, data); break;
     case 'warn': logger.warn(message, data); break;

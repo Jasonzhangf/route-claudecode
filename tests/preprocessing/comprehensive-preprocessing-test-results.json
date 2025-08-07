@@ -1,0 +1,417 @@
+{
+  "timestamp": "2025-08-07T03:45:06.639Z",
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0,
+    "successRate": "100.0%"
+  },
+  "results": [
+    {
+      "testCase": "OpenAI工具调用finish_reason修复",
+      "passed": true,
+      "duration": 1,
+      "result": {
+        "originalData": {
+          "id": "chatcmpl-test-123",
+          "object": "chat.completion",
+          "created": 1704067200,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_test_123",
+                    "type": "function",
+                    "function": {
+                      "name": "get_weather",
+                      "arguments": "{\"location\": \"Beijing\", \"unit\": \"celsius\"}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "end_turn"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 45,
+            "completion_tokens": 28,
+            "total_tokens": 73
+          }
+        },
+        "processedData": {
+          "id": "chatcmpl-test-123",
+          "object": "chat.completion",
+          "created": 1704067200,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_test_123",
+                    "type": "function",
+                    "function": {
+                      "name": "get_weather",
+                      "arguments": "{\"location\": \"Beijing\", \"unit\": \"celsius\"}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 45,
+            "completion_tokens": 28,
+            "total_tokens": 73
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "patterns": [
+            "openai-tool_calls"
+          ]
+        },
+        "modifications": [
+          {
+            "type": "finish_reason",
+            "from": "end_turn",
+            "to": "tool_calls"
+          }
+        ]
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具检测: 1个, 修改: 1项",
+        "error": ""
+      },
+      "error": ""
+    },
+    {
+      "testCase": "ModelScope缺失finish_reason处理",
+      "passed": true,
+      "duration": 1,
+      "error": "Silent failure detected and fixed",
+      "unexpected": false
+    },
+    {
+      "testCase": "Anthropic文本工具调用检测",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalData": {
+          "id": "msg_test_789",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "I'll help you check the weather. Let me call the weather function.\n\nTool call: get_weather({\"location\": \"Guangzhou\", \"unit\": \"celsius\"})\n\nThe function will return the current weather information."
+            }
+          ],
+          "model": "claude-3-sonnet-20240229",
+          "stop_reason": "end_turn",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 38,
+            "output_tokens": 52
+          }
+        },
+        "processedData": {
+          "id": "msg_test_789",
+          "type": "message",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "text",
+              "text": "I'll help you check the weather. Let me call the weather function.\n\nTool call: get_weather({\"location\": \"Guangzhou\", \"unit\": \"celsius\"})\n\nThe function will return the current weather information."
+            }
+          ],
+          "model": "claude-3-sonnet-20240229",
+          "stop_reason": "tool_use",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 38,
+            "output_tokens": 52
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 2,
+          "patterns": [
+            "text-tool-call",
+            "sliding-window-detection"
+          ]
+        },
+        "modifications": [
+          {
+            "type": "stop_reason",
+            "from": "end_turn",
+            "to": "tool_use"
+          }
+        ]
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具检测: 2个, 修改: 1项",
+        "error": ""
+      },
+      "error": ""
+    },
+    {
+      "testCase": "Gemini函数调用finish_reason修复",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalData": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "get_weather",
+                      "args": {
+                        "location": "Shenzhen",
+                        "unit": "celsius"
+                      }
+                    }
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "STOP",
+              "index": 0,
+              "safetyRatings": []
+            }
+          ],
+          "promptFeedback": {
+            "safetyRatings": []
+          }
+        },
+        "processedData": {
+          "candidates": [
+            {
+              "content": {
+                "parts": [
+                  {
+                    "functionCall": {
+                      "name": "get_weather",
+                      "args": {
+                        "location": "Shenzhen",
+                        "unit": "celsius"
+                      }
+                    }
+                  }
+                ],
+                "role": "model"
+              },
+              "finishReason": "FUNCTION_CALL",
+              "index": 0,
+              "safetyRatings": []
+            }
+          ],
+          "promptFeedback": {
+            "safetyRatings": []
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "patterns": [
+            "gemini-function-call"
+          ]
+        },
+        "modifications": [
+          {
+            "type": "finishReason",
+            "from": "STOP",
+            "to": "FUNCTION_CALL"
+          }
+        ]
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具检测: 1个, 修改: 1项",
+        "error": ""
+      },
+      "error": ""
+    },
+    {
+      "testCase": "OpenAI流式工具调用处理",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalData": {
+          "id": "chatcmpl-stream-999",
+          "object": "chat.completion.chunk",
+          "created": 1704067400,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "id": "call_stream_123",
+                    "type": "function",
+                    "function": {
+                      "name": "calculate_sum",
+                      "arguments": "{\"numbers\": [1, 2, 3, 4, 5]}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "stop"
+            }
+          ]
+        },
+        "processedData": {
+          "id": "chatcmpl-stream-999",
+          "object": "chat.completion.chunk",
+          "created": 1704067400,
+          "model": "gpt-4-turbo",
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "id": "call_stream_123",
+                    "type": "function",
+                    "function": {
+                      "name": "calculate_sum",
+                      "arguments": "{\"numbers\": [1, 2, 3, 4, 5]}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ]
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "patterns": [
+            "openai-streaming-tool_calls"
+          ]
+        },
+        "modifications": [
+          {
+            "type": "finish_reason",
+            "from": "stop",
+            "to": "tool_calls"
+          }
+        ]
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具检测: 1个, 修改: 1项",
+        "error": ""
+      },
+      "error": ""
+    },
+    {
+      "testCase": "GLM文本工具调用滑动窗口检测",
+      "passed": true,
+      "duration": 0,
+      "result": {
+        "originalData": {
+          "id": "chatcmpl-glm-555",
+          "object": "chat.completion",
+          "created": 1704067500,
+          "model": "glm-4-plus",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "我来帮您计算这个数学问题。\n\nTool call: calculate_math({\"expression\": \"2 + 3 * 4\", \"precision\": 2})\n\n计算结果将会显示在下面。"
+              },
+              "finish_reason": "length"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 25,
+            "completion_tokens": 48,
+            "total_tokens": 73
+          }
+        },
+        "processedData": {
+          "id": "chatcmpl-glm-555",
+          "object": "chat.completion",
+          "created": 1704067500,
+          "model": "glm-4-plus",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "我来帮您计算这个数学问题。\n\nTool call: calculate_math({\"expression\": \"2 + 3 * 4\", \"precision\": 2})\n\n计算结果将会显示在下面。"
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 25,
+            "completion_tokens": 48,
+            "total_tokens": 73
+          }
+        },
+        "toolDetection": {
+          "hasTools": true,
+          "toolCount": 1,
+          "patterns": [
+            "sliding-window-detection"
+          ]
+        },
+        "modifications": [
+          {
+            "type": "finish_reason",
+            "from": "length",
+            "to": "tool_calls"
+          }
+        ]
+      },
+      "validation": {
+        "passed": true,
+        "summary": "工具检测: 1个, 修改: 1项",
+        "error": ""
+      },
+      "error": ""
+    },
+    {
+      "testCase": "空响应异常处理",
+      "passed": true,
+      "duration": 0,
+      "error": "Provider returned empty response",
+      "unexpected": false
+    },
+    {
+      "testCase": "HTTP错误响应处理",
+      "passed": true,
+      "duration": 0,
+      "error": "Provider returned HTTP error response",
+      "unexpected": false
+    },
+    {
+      "testCase": "连接超时响应处理",
+      "passed": true,
+      "duration": 0,
+      "error": "Provider connection or timeout error",
+      "unexpected": false
+    }
+  ]
+}
