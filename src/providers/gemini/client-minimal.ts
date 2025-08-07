@@ -119,13 +119,13 @@ export class GeminiClient {
         // Convert request using modular converter
         const geminiRequest = GeminiRequestConverter.convertToGeminiFormat(request);
         
-        // Use timeout wrapper
-        // Create properly structured API request
+        // Create properly structured API request  
         const apiRequest = {
           ...geminiRequest,
           model: model
         };
         
+        // Use timeout wrapper
         return Promise.race([
           genAI.models.generateContent(apiRequest),
           new Promise((_, reject) => 

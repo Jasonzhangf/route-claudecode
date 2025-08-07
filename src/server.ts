@@ -4,7 +4,7 @@
  */
 
 import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { AnthropicInputProcessor } from './input/anthropic';
+import { UnifiedInputProcessor } from './input/unified-processor';
 import { RoutingEngine } from './routing';
 import { AnthropicOutputProcessor } from './output/anthropic';
 import { CodeWhispererProvider } from './providers/codewhisperer';
@@ -36,7 +36,7 @@ import { getConversationQueueManager } from './session/conversation-queue-manage
 export class RouterServer {
   private fastify: FastifyInstance;
   private config: RouterConfig;
-  private inputProcessor: AnthropicInputProcessor;
+  private inputProcessor: UnifiedInputProcessor;
   private routingEngine: RoutingEngine;
   private outputProcessor: AnthropicOutputProcessor;
   private providers: Map<string, Provider> = new Map();
@@ -88,7 +88,7 @@ export class RouterServer {
     );
     
     // Initialize components
-    this.inputProcessor = new AnthropicInputProcessor();
+    this.inputProcessor = new UnifiedInputProcessor();
     this.routingEngine = new RoutingEngine(
       expandedRouting as Record<RoutingCategory, CategoryRouting>
     );

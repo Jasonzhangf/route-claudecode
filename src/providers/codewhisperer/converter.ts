@@ -158,21 +158,23 @@ export class CodeWhispererConverter {
       };
     }
     
-    // 🚨 关键修复：按照demo3的条件检查逻辑设置工具字段
-    const contextData = {
-      tools: Object.keys(toolsContext).length > 0 ? toolsContext.tools : null,
-      toolResults: null  // demo3要求始终存在
-    };
+    // 🚨 关键修复：按照demo3的精确结构，只设置tools字段
+    // 根据对比测试发现，Demo3不包含toolResults字段，这是导致400错误的原因！
+    const contextData: any = {};
     
-    // 直接设置整个userInputMessageContext，避免类型问题
+    if (Object.keys(toolsContext).length > 0 && toolsContext.tools) {
+      contextData.tools = toolsContext.tools;
+    }
+    
+    // 直接设置整个userInputMessageContext，完全匹配demo3结构
     (cwReq.conversationState.currentMessage.userInputMessage as any).userInputMessageContext = contextData;
     
-    logger.debug('工具字段设置完成 (demo3精确兼容)', {
+    logger.debug('工具字段设置完成 (demo3精确结构匹配)', {
       hasTools: !!(anthropicReq.tools && anthropicReq.tools.length > 0),
       toolsContextKeys: Object.keys(toolsContext),
+      contextDataKeys: Object.keys(contextData),
       toolsFieldValue: contextData.tools,
-      toolResultsFieldValue: contextData.toolResults,
-      strategy: 'demo3-exact-match'
+      strategy: 'demo3-exact-structure-no-toolResults'
     });
 
     // 构建历史消息 - 优化版本
@@ -336,7 +338,8 @@ export class CodeWhispererConverter {
       contentLength: cwReq.conversationState.currentMessage.userInputMessage.content.length,
       historyLength: cwReq.conversationState.history.length,
       modelId: cwReq.conversationState.currentMessage.userInputMessage.modelId,
-      profileArn: cwReq.profileArn.substring(0, 50) + '...', // 只显示前50字符
+      // 🚨 关键修复：防止profileArn为undefined时调用substring导致错误
+      profileArn: cwReq.profileArn ? cwReq.profileArn.substring(0, 50) + '...' : 'N/A (authMethod!=social)',
     };
   }
 
@@ -383,9 +386,10 @@ export class CodeWhispererConverter {
    * 验证基本字段
    */
   private validateBasicFields(cwReq: CodeWhispererRequest, errors: string[]): void {
-    if (!cwReq.profileArn) {
-      errors.push('缺少profileArn');
-    }
+    // 🚨 关键修复：profileArn只在authMethod='social'时才需要，undefined是合法的
+    // 根据demo3逻辑，当authMethod != 'social'时，profileArn为undefined是正常状态
+    // 这里不再验证profileArn存在性，因为它是条件性字段
+    
     if (!cwReq.conversationState) {
       errors.push('缺少conversationState');
     }

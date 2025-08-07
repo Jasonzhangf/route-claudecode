@@ -1,0 +1,28 @@
+{
+  "status": 500,
+  "statusText": "Internal Server Error",
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "content-length": "308",
+    "date": "Thu, 07 Aug 2025 19:14:47 GMT",
+    "connection": "keep-alive",
+    "keep-alive": "timeout=72"
+  },
+  "data": {
+    "error": {
+      "type": "internal_server_error",
+      "message": "Request format not supported",
+      "code": "500",
+      "requestId": "305b678f-78c2-4380-8e3f-04f0f1371dfb",
+      "port": 5505,
+      "provider": "unknown",
+      "stage": "input-processing",
+      "timestamp": "2025-08-07T19:14:47.205Z",
+      "details": {
+        "diagnostics": "Silent failure detected and fixed"
+      }
+    }
+  },
+  "duration": 3,
+  "timestamp": "2025-08-07T19:14:47.206Z"
+}

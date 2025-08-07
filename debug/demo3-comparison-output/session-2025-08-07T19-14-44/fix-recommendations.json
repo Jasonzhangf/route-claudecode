@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-08-07T19:14:47.207Z",
+  "summary": {
+    "demo3Success": 0,
+    "ourSuccess": 1,
+    "totalTests": 2,
+    "differences": [
+      "simple-text: 状态码差异: Demo3=401, Ours=200",
+      "with-tools: 状态码差异: Demo3=401, Ours=500"
+    ]
+  },
+  "priorities": [],
+  "codeChanges": [],
+  "testingRequired": [
+    {
+      "testCase": "simple-text",
+      "focus": [
+        "状态码差异: Demo3=401, Ours=200",
+        "缺少字段: error",
+        "多余字段: content, id, model, role, type, usage, stop_reason"
+      ],
+      "recommendations": [
+        "添加缺少的响应字段: error"
+      ]
+    },
+    {
+      "testCase": "with-tools",
+      "focus": [
+        "状态码差异: Demo3=401, Ours=500"
+      ],
+      "recommendations": []
+    }
+  ]
+}

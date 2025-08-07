@@ -9,8 +9,8 @@
  * - 检测并报告异常响应
  */
 
-import { BaseResponse, AnthropicResponse } from '@/types';
-import { logger } from '@/utils/logger';
+import { BaseResponse, AnthropicResponse } from '../../../types';
+import { logger } from '../../../utils/logger';
 
 export interface GeminiApiRequest {
   model: string;
@@ -101,8 +101,26 @@ export class GeminiResponseConverter {
     // 转换内容
     const content = this.convertContent(firstCandidate, requestId);
     
-    // 转换finish reason
-    const stopReason = this.convertFinishReason(firstCandidate.finishReason, requestId);
+    // 🔧 Critical Fix: Use content-driven stop_reason determination (OpenAI success pattern)
+    // Check if there are any tool_use blocks in the converted content
+    const hasToolCalls = content.some(block => block.type === 'tool_use');
+    
+    let stopReason: string;
+    if (hasToolCalls) {
+      // Force tool_use if we have tool calls in content
+      stopReason = 'tool_use';
+      logger.debug('Stop reason determined by content analysis: tool_use', {
+        contentBlocks: content.length,
+        toolCallCount: content.filter(b => b.type === 'tool_use').length
+      }, requestId, 'gemini-response-converter');
+    } else {
+      // Use finish reason mapping only for non-tool scenarios
+      stopReason = this.convertFinishReason(firstCandidate.finishReason, requestId) || 'end_turn';
+      logger.debug('Stop reason determined by finish reason mapping', {
+        originalFinishReason: firstCandidate.finishReason,
+        mappedStopReason: stopReason
+      }, requestId, 'gemini-response-converter');
+    }
 
     // 处理使用统计
     const usage = this.convertUsage(geminiResponse.usageMetadata);
@@ -117,10 +135,8 @@ export class GeminiResponseConverter {
       usage: usage
     };
 
-    // 只有在有有效stopReason时才设置
-    if (stopReason) {
-      anthropicResponse.stop_reason = stopReason;
-    }
+    // Always set stop_reason (guaranteed to be valid from content-driven logic above)
+    anthropicResponse.stop_reason = stopReason;
 
     logger.debug('Converted Gemini response successfully', {
       contentBlocks: content.length,
@@ -228,13 +244,15 @@ export class GeminiResponseConverter {
 
     const mappedReason = reasonMapping[finishReason];
     if (!mappedReason) {
-      logger.warn(`Unknown Gemini finish reason: ${finishReason}`, { 
+      const error = new Error(`Unknown Gemini finish reason '${finishReason}'. Supported reasons: ${Object.keys(reasonMapping).join(', ')}`);
+      logger.error('Unknown Gemini finish reason - no fallback allowed', { 
         finishReason,
-        supportedReasons: Object.keys(reasonMapping)
+        supportedReasons: Object.keys(reasonMapping),
+        error: error.message
       }, requestId, 'gemini-response-converter');
       
-      // 严格验证finish reason，拒绝未知值
-      throw new Error(`GeminiResponseConverter: Unsupported finish reason '${finishReason}'. This indicates a potential API change or misconfiguration.`);
+      // Zero fallback principle: throw error instead of returning fallback
+      throw error;
     }
 
     logger.debug('Converted finish reason', {

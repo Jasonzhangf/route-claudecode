@@ -11,8 +11,8 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { ProviderConfig, ProviderError } from '@/types';
-import { logger } from '@/utils/logger';
+import { ProviderConfig, ProviderError } from '../../../types';
+import { logger } from '../../../utils/logger';
 import { GeminiApiRequest, GeminiApiResponse } from './response-converter';
 
 export interface ApiClientConfig {

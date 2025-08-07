@@ -9,7 +9,7 @@
 
 import Fastify, { FastifyInstance } from 'fastify';
 import { RouterConfig, RoutingCategory, CategoryRouting } from '@/types';
-import { AnthropicInputProcessor } from '@/input/anthropic';
+import { UnifiedInputProcessor } from '@/input/unified-processor';
 import { RoutingEngine } from '@/routing';
 import { AnthropicOutputProcessor } from '@/output/anthropic';
 import { getLogger, setDefaultPort, createRequestTracker, createErrorTracker } from '@/logging';
@@ -44,7 +44,7 @@ export class ModularRouterServer {
   private errorTracker: any;
   
   // 业务组件
-  private inputProcessor!: AnthropicInputProcessor;
+  private inputProcessor!: UnifiedInputProcessor;
   private routingEngine!: RoutingEngine;
   private outputProcessor!: AnthropicOutputProcessor;
   private patchManager!: ReturnType<typeof createPatchManager>;
@@ -95,7 +95,7 @@ export class ModularRouterServer {
    */
   private initializeBusinessComponents(): void {
     // 输入/输出处理器
-    this.inputProcessor = new AnthropicInputProcessor();
+    this.inputProcessor = new UnifiedInputProcessor();
     this.outputProcessor = new AnthropicOutputProcessor(this.config.server.port);
     
     // 路由引擎

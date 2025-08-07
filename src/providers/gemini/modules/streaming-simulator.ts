@@ -9,8 +9,8 @@
  * - 确保与真实流式响应格式一致
  */
 
-import { AnthropicResponse } from '@/types';
-import { logger } from '@/utils/logger';
+import { AnthropicResponse } from '../../../types';
+import { logger } from '../../../utils/logger';
 
 export interface StreamingEvent {
   event: string;
@@ -38,6 +38,222 @@ export class GeminiStreamingSimulator {
       ...defaultConfig,
       ...config
     };
+  }
+
+  /**
+   * 处理Gemini SDK的真实流式响应
+   */
+  async *processStream(
+    geminiStream: any,
+    originalRequest: any,
+    requestId: string
+  ): AsyncIterable<any> {
+    logger.info('Processing Gemini SDK stream with modular architecture', {
+      streamType: 'gemini-sdk-stream',
+      hasTools: !!originalRequest.tools
+    }, requestId, 'gemini-streaming-simulator');
+
+    let contentIndex = 0;
+    let hasToolCalls = false;
+    let textContent = '';
+    let toolCalls: any[] = [];
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let finalFinishReason = 'STOP';
+    let currentTextBlockStarted = false;
+
+    // Send message_start
+    yield {
+      event: 'message_start',
+      data: {
+        type: 'message_start',
+        message: {
+          id: `msg_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 8)}`,
+          type: 'message',
+          role: 'assistant',
+          model: originalRequest.model,
+          content: [],
+          usage: { input_tokens: 0, output_tokens: 0 }
+        }
+      }
+    };
+
+    try {
+      // Process the stream
+      for await (const chunk of geminiStream) {
+        if (!chunk.candidates || chunk.candidates.length === 0) continue;
+        
+        const candidate = chunk.candidates[0];
+        if (!candidate.content?.parts || candidate.content.parts.length === 0) continue;
+        
+        const parts = candidate.content.parts;
+        
+        // Update finish reason if provided
+        if (candidate.finishReason) {
+          finalFinishReason = candidate.finishReason;
+        }
+        
+        for (const part of parts) {
+          if (part.text) {
+            // Handle text content
+            if (!currentTextBlockStarted) {
+              yield {
+                event: 'content_block_start',
+                data: {
+                  type: 'content_block_start',
+                  index: contentIndex,
+                  content_block: { type: 'text', text: '' }
+                }
+              };
+              currentTextBlockStarted = true;
+            }
+            
+            // Send text in chunks for better UX
+            const chunkSize = this.config.textChunkSize;
+            for (let i = 0; i < part.text.length; i += chunkSize) {
+              const textChunk = part.text.slice(i, i + chunkSize);
+              yield {
+                event: 'content_block_delta',
+                data: {
+                  type: 'content_block_delta',
+                  index: contentIndex,
+                  delta: {
+                    type: 'text_delta',
+                    text: textChunk
+                  }
+                }
+              };
+              
+              if (i > 0) {
+                await this.sleep(this.config.chunkDelay);
+              }
+            }
+            
+            textContent += part.text;
+            
+          } else if (part.functionCall) {
+            // Handle tool calls
+            hasToolCalls = true;
+            
+            // End current text block if started
+            if (currentTextBlockStarted) {
+              yield {
+                event: 'content_block_stop',
+                data: {
+                  type: 'content_block_stop',
+                  index: contentIndex
+                }
+              };
+              contentIndex++;
+              currentTextBlockStarted = false;
+            }
+            
+            const toolUse = {
+              type: 'tool_use',
+              id: `toolu_${Date.now()}_${contentIndex}`,
+              name: part.functionCall.name,
+              input: part.functionCall.args || {}
+            };
+            
+            toolCalls.push(toolUse);
+            
+            // Send tool use block
+            yield {
+              event: 'content_block_start',
+              data: {
+                type: 'content_block_start',
+                index: contentIndex,
+                content_block: toolUse
+              }
+            };
+            
+            yield {
+              event: 'content_block_stop',
+              data: {
+                type: 'content_block_stop',
+                index: contentIndex
+              }
+            };
+            
+            contentIndex++;
+            
+            logger.debug('Converted Gemini SDK functionCall to tool_use', {
+              functionName: part.functionCall.name,
+              toolId: toolUse.id
+            }, requestId, 'gemini-streaming-simulator');
+          }
+        }
+        
+        // Extract usage metadata
+        if (chunk.usageMetadata) {
+          inputTokens = Math.max(inputTokens, chunk.usageMetadata.promptTokenCount || 0);
+          outputTokens += chunk.usageMetadata.candidatesTokenCount || 0;
+        }
+      }
+      
+      // End current text block if started
+      if (currentTextBlockStarted) {
+        yield {
+          event: 'content_block_stop',
+          data: {
+            type: 'content_block_stop',
+            index: contentIndex
+          }
+        };
+      }
+      
+      // Estimate tokens if not provided
+      if (outputTokens === 0) {
+        outputTokens = Math.ceil((textContent.length + toolCalls.length * 50) / 4);
+      }
+      
+      // Send message_delta with usage
+      yield {
+        event: 'message_delta',
+        data: {
+          type: 'message_delta',
+          delta: {},
+          usage: {
+            output_tokens: outputTokens
+          }
+        }
+      };
+
+      // 🔧 Critical Fix: Use content-driven stop_reason (OpenAI success pattern)
+      let actualStopReason = 'end_turn';
+      if (hasToolCalls) {
+        actualStopReason = 'tool_use'; // Force tool_use if we have tool calls
+      } else if (finalFinishReason === 'MAX_TOKENS') {
+        actualStopReason = 'max_tokens';
+      } else if (finalFinishReason && finalFinishReason !== 'STOP') {
+        actualStopReason = 'stop_sequence';
+      }
+
+      // Send message_stop with proper stop_reason
+      yield {
+        event: 'message_stop',
+        data: {
+          type: 'message_stop',
+          stop_reason: actualStopReason,
+          stop_sequence: null
+        }
+      };
+      
+      logger.info('Gemini SDK stream processing completed with modular architecture', {
+        textLength: textContent.length,
+        toolCallCount: toolCalls.length,
+        outputTokens,
+        hasToolCalls,
+        finalStopReason: actualStopReason
+      }, requestId, 'gemini-streaming-simulator');
+      
+    } catch (error) {
+      logger.error('Failed to process Gemini SDK stream', {
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error?.constructor?.name
+      }, requestId, 'gemini-streaming-simulator');
+      throw error;
+    }
   }
 
   /**

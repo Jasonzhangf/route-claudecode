@@ -1,0 +1,32 @@
+{
+  "model": "claude-3-sonnet-20240229",
+  "messages": [
+    {
+      "role": "user",
+      "content": "What is the weather like in New York?"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "get_weather",
+        "description": "Get current weather for a location",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "location": {
+              "type": "string",
+              "description": "The city name"
+            }
+          },
+          "required": [
+            "location"
+          ]
+        }
+      }
+    }
+  ],
+  "max_tokens": 1000,
+  "stream": false
+}

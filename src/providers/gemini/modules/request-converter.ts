@@ -8,8 +8,8 @@
  * - 严格验证请求格式
  */
 
-import { BaseRequest } from '@/types';
-import { logger } from '@/utils/logger';
+import { BaseRequest } from '../../../types';
+import { logger } from '../../../utils/logger';
 
 export interface GeminiApiRequest {
   model: string;
@@ -106,16 +106,25 @@ export class GeminiRequestConverter {
       throw new Error('GeminiRequestConverter: model is required');
     }
 
-    // 移除可能的前缀，保留Gemini原生模型名
-    const cleanModel = model.replace(/^(gemini-|google\/)/, '');
+    // 🔧 修复：正确处理Gemini模型名验证
+    // 先检查原始模型名，再进行清理
+    const allowedPatterns = [
+      /^gemini-1\./,
+      /^gemini-2\./,
+      /^gemini-pro/,
+      /^gemini-ultra/,
+      /^gemini-nano/,
+      /^gemini-flash/
+    ];
     
-    // 使用配置驱动的模型验证（不再硬编码）
-    const allowedPrefixes = ['gemini-1.', 'gemini-2.', 'gemini-pro', 'gemini-ultra', 'gemini-nano', 'gemini-flash'];
-    const isValidModel = allowedPrefixes.some(prefix => cleanModel.startsWith(prefix));
+    const isValidModel = allowedPatterns.some(pattern => pattern.test(model));
     if (!isValidModel) {
-      throw new Error(`GeminiRequestConverter: Unsupported model '${model}'. Supported prefixes: ${allowedPrefixes.join(', ')}`);
+      throw new Error(`GeminiRequestConverter: Unsupported model '${model}'. Expected patterns: gemini-1.x, gemini-2.x, gemini-pro, gemini-ultra, gemini-nano, gemini-flash`);
     }
 
+    // 移除可能的前缀，保留Gemini原生模型名 (但只移除google/前缀)
+    const cleanModel = model.replace(/^google\//, '');
+    
     return cleanModel;
   }
 

@@ -64,7 +64,7 @@ export class GeminiProvider implements Provider {
                            (error as any)?.message?.includes('quota');
       
       // 获取当前使用的key信息（如果可用）
-      const currentKeyInfo = this.client?.getCurrentKeyInfo?.() || {};
+      const currentKeyInfo = this.client?.getRotationStats?.() || {};
       
       // 强制控制台输出429错误，包含详细的key信息
       if (isRateLimited) {

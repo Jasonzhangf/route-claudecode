@@ -1,0 +1,11 @@
+{
+  "model": "claude-3-sonnet-20240229",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, how are you?"
+    }
+  ],
+  "max_tokens": 1000,
+  "stream": false
+}

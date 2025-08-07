@@ -7,7 +7,7 @@
 
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { BaseRequest, Provider, ProviderError } from '@/types';
-import { AnthropicInputProcessor } from '@/input/anthropic';
+import { UnifiedInputProcessor } from '@/input/unified-processor';
 import { RoutingEngine } from '@/routing';
 import { AnthropicOutputProcessor } from '@/output/anthropic';
 import { v4 as uuidv4 } from 'uuid';
@@ -15,7 +15,7 @@ import { handleInputError, handleRoutingError, handleProviderError, handleOutput
 import { StreamingHandler } from './streaming-handler';
 
 export interface MessagesHandlerDependencies {
-  inputProcessor: AnthropicInputProcessor;
+  inputProcessor: UnifiedInputProcessor;
   routingEngine: RoutingEngine;
   outputProcessor: AnthropicOutputProcessor;
   streamingHandler: StreamingHandler;

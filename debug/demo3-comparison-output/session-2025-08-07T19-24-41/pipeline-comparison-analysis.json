@@ -1,0 +1,42 @@
+{
+  "timestamp": "2025-08-07T19:24:46.092Z",
+  "testCases": {
+    "simple-text": {
+      "testCase": "simple-text",
+      "demo3Status": 401,
+      "ourStatus": 200,
+      "statusMatch": false,
+      "differences": [
+        "状态码差异: Demo3=401, Ours=200",
+        "缺少字段: error",
+        "多余字段: content, id, model, role, type, usage, stop_reason"
+      ],
+      "recommendations": [
+        "添加缺少的响应字段: error"
+      ]
+    },
+    "with-tools": {
+      "testCase": "with-tools",
+      "demo3Status": 401,
+      "ourStatus": 200,
+      "statusMatch": false,
+      "differences": [
+        "状态码差异: Demo3=401, Ours=200",
+        "缺少字段: error",
+        "多余字段: content, id, model, role, type, usage, stop_reason"
+      ],
+      "recommendations": [
+        "添加缺少的响应字段: error"
+      ]
+    }
+  },
+  "summary": {
+    "demo3Success": 0,
+    "ourSuccess": 2,
+    "totalTests": 2,
+    "differences": [
+      "simple-text: 状态码差异: Demo3=401, Ours=200",
+      "with-tools: 状态码差异: Demo3=401, Ours=200"
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "simple-text": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "349",
+      "date": "Thu, 07 Aug 2025 19:24:45 GMT",
+      "connection": "keep-alive",
+      "keep-alive": "timeout=72"
+    },
+    "data": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! I'm doing well, thank you for asking. I'm here and ready to help with whatever you'd like to discuss or work on. How are you doing today?"
+        }
+      ],
+      "id": "msg_1754594684991",
+      "model": "claude-3-sonnet-20240229",
+      "role": "assistant",
+      "type": "message",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 1
+      },
+      "stop_reason": "end_turn"
+    },
+    "duration": 1592,
+    "timestamp": "2025-08-07T19:24:45.371Z"
+  },
+  "with-tools": {
+    "status": 200,
+    "statusText": "OK",
+    "headers": {
+      "content-type": "application/json; charset=utf-8",
+      "content-length": "288",
+      "date": "Thu, 07 Aug 2025 19:24:46 GMT",
+      "connection": "keep-alive",
+      "keep-alive": "timeout=72"
+    },
+    "data": {
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_1754594685888_3rub5b1d",
+          "name": "get_weather",
+          "input": {
+            "location": "New York"
+          }
+        }
+      ],
+      "id": "msg_1754594685888",
+      "model": "claude-3-sonnet-20240229",
+      "role": "assistant",
+      "type": "message",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 1
+      },
+      "stop_reason": "tool_use"
+    },
+    "duration": 719,
+    "timestamp": "2025-08-07T19:24:46.091Z"
+  }
+}
