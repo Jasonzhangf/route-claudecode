@@ -8,7 +8,7 @@ import { logger } from '@/utils/logger';
 // import { PipelineDebugger, ToolCallError } from '@/debug/pipeline-debugger'; // 已迁移到统一日志系统
 import { ErrorTracker, ToolCallError } from '../logging';
 import { PipelineDebugger, ToolCallErrorClass } from '@/utils/logger';
-import { mapFinishReason, mapStopReason } from '@/utils/finish-reason-handler';
+import { mapFinishReasonStrict, mapStopReasonStrict } from './response-converter';
 
 export interface StreamTransformOptions {
   sourceFormat: 'openai' | 'anthropic';
@@ -227,19 +227,19 @@ export class StreamingTransformer {
               if (choice.finish_reason) {
                 handledChunk = true;
                 const originalFinishReason = choice.finish_reason;
-                stopReason = mapFinishReason(originalFinishReason);
+                stopReason = mapFinishReasonStrict(originalFinishReason);
                 
                 // 🆕 记录原始OpenAI和转换后的Anthropic finish reason
                 logger.logDualFinishReason(
                   originalFinishReason,
-                  stopReason,
+                  stopReason || 'undefined',
                   this.options.sourceFormat,
                   {
                     model: this.model,
                     responseType: 'streaming',
                     context: 'streaming-openai-to-anthropic',
                     chunkData: choice,
-                    conversionMethod: 'mapFinishReason'
+                    conversionMethod: 'mapFinishReasonStrict'
                   },
                   this.requestId,
                   'dual-reason-streaming'
@@ -322,16 +322,16 @@ export class StreamingTransformer {
         }
       }
 
-      // Send message delta with usage - 智能处理stop_reason
+      // Send message delta with usage - 只有在有有效stopReason时才发送
       const hasToolCalls = this.toolCallMap.size > 0;
-      const shouldIncludeStopReason = stopReason === 'tool_use' || hasToolCalls;
+      const shouldIncludeStopReason = stopReason && (stopReason === 'tool_use' || hasToolCalls);
       
-      if (shouldIncludeStopReason) {
+      if (shouldIncludeStopReason && stopReason) {
         // 工具调用完成 - 需要发送stop_reason以触发下一轮
         const messageDeltaEvent = this.createAnthropicEvent('message_delta', {
           type: 'message_delta',
           delta: { 
-            stop_reason: stopReason || 'tool_use',
+            stop_reason: stopReason,
             stop_sequence: null
           },
           usage: { output_tokens: outputTokens }
@@ -531,19 +531,19 @@ export class StreamingTransformer {
               // Handle message completion
               if (event.type === 'message_delta' && event.delta?.stop_reason) {
                 const originalStopReason = event.delta.stop_reason;
-                const mappedFinishReason = mapStopReason(originalStopReason);
+                const mappedFinishReason = mapStopReasonStrict(originalStopReason);
                 
                 // 🆕 记录原始Anthropic和转换后的OpenAI finish reason
                 logger.logDualFinishReason(
                   originalStopReason,
-                  mappedFinishReason,
+                  mappedFinishReason || 'undefined',
                   this.options.sourceFormat,
                   {
                     model: this.model,
                     responseType: 'streaming',
                     context: 'streaming-anthropic-to-openai',
                     eventData: event,
-                    conversionMethod: 'mapStopReason'
+                    conversionMethod: 'mapStopReasonStrict'
                   },
                   this.requestId,
                   'dual-reason-anthropic-streaming'
@@ -568,13 +568,24 @@ export class StreamingTransformer {
                   console.error('Failed to log stop reason debug:', error);
                 }
                 
-                yield this.createOpenAIChunk({
-                  choices: [{
-                    index: 0,
-                    delta: {},
-                    finish_reason: mappedFinishReason
-                  }]
-                });
+                // 只有在成功映射时才发送finish_reason
+                if (mappedFinishReason) {
+                  yield this.createOpenAIChunk({
+                    choices: [{
+                      index: 0,
+                      delta: {},
+                      finish_reason: mappedFinishReason
+                    }]
+                  });
+                } else {
+                  // 如果无法映射，发送没有finish_reason的chunk
+                  yield this.createOpenAIChunk({
+                    choices: [{
+                      index: 0,
+                      delta: {}
+                    }]
+                  });
+                }
               }
 
             } catch (error) {

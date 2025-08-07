@@ -27,6 +27,20 @@ export interface ErrorResponse {
   };
 }
 
+export class ValidationError extends Error {
+  public readonly field: string;
+  public readonly value: any;
+  public readonly constraint: string;
+
+  constructor(message: string, field: string, value: any, constraint: string) {
+    super(message);
+    this.name = 'ValidationError';
+    this.field = field;
+    this.value = value;
+    this.constraint = constraint;
+  }
+}
+
 export class UnifiedErrorHandler {
   /**
    * 处理所有类型的错误，确保返回适当的HTTP状态码

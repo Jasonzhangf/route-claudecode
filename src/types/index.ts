@@ -11,6 +11,8 @@ export interface BaseRequest {
   temperature?: number;
   system?: any; // Support system messages
   tools?: any[]; // Support tools for compatibility
+  contents?: any[]; // For Gemini format
+  systemInstruction?: any; // For Gemini format
   metadata?: {
     requestId: string;
     sessionId?: string;
@@ -53,8 +55,12 @@ export interface BaseResponse {
   usage?: {
     input_tokens: number;
     output_tokens: number;
+    total_tokens?: number; // For OpenAI compatibility
   };
   choices?: any[]; // For OpenAI compatibility
+  metadata?: {
+    [key: string]: any;
+  };
 }
 
 export interface AnthropicResponse extends BaseResponse {

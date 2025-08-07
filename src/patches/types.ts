@@ -4,7 +4,7 @@
  */
 
 export type PatchType = 'request' | 'response' | 'streaming' | 'error';
-export type Provider = 'anthropic' | 'openai' | 'gemini' | 'codewhisperer';
+export type Provider = 'anthropic' | 'openai' | 'gemini' | 'codewhisperer' | 'unknown';
 
 export interface PatchContext {
   provider: Provider;

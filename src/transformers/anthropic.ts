@@ -122,7 +122,18 @@ export class AnthropicTransformer implements MessageTransformer {
       }
     }));
 
-    // 移除stop_reason，保证停止的权力在模型这边
+    // 直接映射stop_reason为finish_reason，保持原始性
+    let finishReason: string | undefined = undefined;
+    if (response.stop_reason) {
+      const stopReasonMapping: Record<string, string> = {
+        'end_turn': 'stop',
+        'max_tokens': 'length', 
+        'tool_use': 'tool_calls',
+        'stop_sequence': 'stop'
+      };
+      finishReason = stopReasonMapping[response.stop_reason] || response.stop_reason;
+    }
+
     return {
       id: response.id || `chatcmpl-${Date.now()}`,
       object: 'chat.completion',
@@ -135,8 +146,8 @@ export class AnthropicTransformer implements MessageTransformer {
           content: textContent?.text || null,
           tool_calls: toolCalls.length > 0 ? toolCalls : undefined
         },
-        // 设置为null而不是完全移除，以满足类型要求
-        finish_reason: null as any
+        // 只有在有原始finish_reason时才设置，否则为undefined
+        finish_reason: finishReason as any
       }],
       usage: {
         prompt_tokens: response.usage?.input_tokens || 0,
@@ -173,26 +184,38 @@ export class AnthropicTransformer implements MessageTransformer {
       });
     }
 
-    // Map OpenAI finish_reason to Anthropic stop_reason using centralized handler
-    const mapFinishReason = (finishReason: string): string => {
-      // Import the centralized finish reason handler
-      const { mapFinishReason: centralizedMapper } = require('@/utils/finish-reason-handler');
-      return centralizedMapper(finishReason, 'transformer-context');
-    };
+    // 直接映射finish_reason为stop_reason，不使用外部处理器
+    let stopReason: string | undefined = undefined;
+    if (choice.finish_reason) {
+      const finishReasonMapping: Record<string, string> = {
+        'stop': 'end_turn',
+        'length': 'max_tokens',
+        'tool_calls': 'tool_use',
+        'function_call': 'tool_use',
+        'content_filter': 'stop_sequence'
+      };
+      stopReason = finishReasonMapping[choice.finish_reason] || choice.finish_reason;
+    }
 
-    return {
+    const result: any = {
       id: response.id,
       type: 'message',
       role: 'assistant',
       content,
       model: response.model,
-      stop_reason: mapFinishReason(choice.finish_reason || 'stop'),
       stop_sequence: null,
       usage: {
         input_tokens: response.usage.prompt_tokens,
         output_tokens: response.usage.completion_tokens
       }
     };
+
+    // 只有在有映射结果时才设置stop_reason
+    if (stopReason) {
+      result.stop_reason = stopReason;
+    }
+
+    return result;
   }
 
   /**
@@ -444,39 +467,6 @@ export class AnthropicTransformer implements MessageTransformer {
     return processed;
   }
 
-  /**
-   * Map Anthropic stop reason to OpenAI finish reason
-   */
-  private mapStopReason(stopReason: string): string {
-    const mapping: Record<string, string> = {
-      'end_turn': 'stop',
-      'max_tokens': 'length',
-      'tool_use': 'tool_calls',
-      'stop_sequence': 'stop'
-    };
-    const result = mapping[stopReason];
-    if (!result) {
-      throw new Error(`Unknown stop reason '${stopReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
-    }
-    return result;
-  }
-
-  /**
-   * Map OpenAI finish reason to Anthropic stop reason
-   */
-  private mapFinishReason(finishReason: string): string {
-    const mapping: Record<string, string> = {
-      'stop': 'end_turn',
-      'length': 'max_tokens',
-      'tool_calls': 'tool_use',
-      'function_call': 'tool_use'
-    };
-    const result = mapping[finishReason];
-    if (!result) {
-      throw new Error(`Unknown finish reason '${finishReason}' - no mapping found and fallback disabled. Available reasons: ${Object.keys(mapping).join(', ')}`);
-    }
-    return result;
-  }
 }
 
 /**
