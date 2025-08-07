@@ -131,7 +131,6 @@ export class PreprocessingStage implements PipelineStage {
     return data.content.filter((block: any) => block.type === 'tool_use').length;
   }
 
-
 }
 
 /**
@@ -226,11 +225,8 @@ export class TransformationStage implements PipelineStage {
           targetProvider: 'anthropic' // 转换为Anthropic格式作为统一格式
         }, context.requestId);
       } else if (context.provider.includes('gemini')) {
-        // Gemini格式转换 - 暂时跳过，因为transformers不支持gemini
-        // transformedData = this.transformationManager.transformResponse(data, {
-        //   sourceProvider: 'gemini',
-        //   targetProvider: 'anthropic'
-        // }, context.requestId);
+        // 🔧 修复：Gemini格式转换到Anthropic格式
+        transformedData = this.convertGeminiToAnthropic(data, context);
       }
       // Anthropic格式保持不变
 
@@ -251,6 +247,117 @@ export class TransformationStage implements PipelineStage {
       
       return data;
     }
+  }
+
+  /**
+   * 转换Gemini响应到Anthropic格式
+   * 🔧 修复：确保工具调用正确转换和stop_reason设置
+   */
+  private convertGeminiToAnthropic(data: any, context: PipelineContext): any {
+    const startTime = Date.now();
+    
+    try {
+      this.logger.debug('Converting Gemini response to Anthropic format', {
+        hasContent: !!data?.content,
+        stopReason: data?.stop_reason,
+        hasChoices: !!data?.choices
+      }, context.requestId, 'pipeline-gemini-conversion');
+
+      // 如果已经是Anthropic格式，直接返回
+      if (data && Array.isArray(data.content) && data.role === 'assistant' && data.type === 'message') {
+        return data;
+      }
+
+      // 如果有choices字段(类似OpenAI格式)，提取message
+      let sourceData = data;
+      if (data.choices && Array.isArray(data.choices) && data.choices[0]) {
+        sourceData = {
+          ...data,
+          ...data.choices[0].message,
+          stop_reason: this.mapGeminiStopReason(data.choices[0].finish_reason),
+          usage: data.usage
+        };
+      }
+
+      // 确保content是数组格式
+      let content: any[] = [];
+      if (Array.isArray(sourceData.content)) {
+        content = sourceData.content;
+      } else if (typeof sourceData.content === 'string' && sourceData.content.trim()) {
+        content = [{ type: 'text', text: sourceData.content }];
+      } else if (sourceData.content && typeof sourceData.content === 'object') {
+        content = [{ type: 'text', text: JSON.stringify(sourceData.content) }];
+      }
+
+      // 🎯 关键修复：检查并修正工具调用的stop_reason
+      const hasToolCalls = content.some(block => block.type === 'tool_use');
+      let finalStopReason = sourceData.stop_reason;
+      
+      if (hasToolCalls && (finalStopReason === 'end_turn' || finalStopReason === 'stop' || !finalStopReason)) {
+        finalStopReason = 'tool_use';
+        this.logger.debug('🔧 Fixed stop_reason for tool calls', {
+          originalStopReason: sourceData.stop_reason,
+          correctedStopReason: finalStopReason,
+          toolCallCount: content.filter(b => b.type === 'tool_use').length
+        }, context.requestId, 'pipeline-gemini-conversion');
+      }
+
+      const anthropicData = {
+        id: sourceData.id || `msg_${Date.now()}`,
+        type: 'message',
+        role: 'assistant',
+        content: content,
+        stop_reason: finalStopReason,
+        stop_sequence: sourceData.stop_sequence || null,
+        usage: {
+          input_tokens: sourceData.usage?.input_tokens || sourceData.usage?.prompt_tokens || 0,
+          output_tokens: sourceData.usage?.output_tokens || sourceData.usage?.completion_tokens || 0
+        },
+        model: context.model
+      };
+
+      const duration = Date.now() - startTime;
+      this.logger.debug('Gemini to Anthropic conversion completed', {
+        duration: `${duration}ms`,
+        contentBlocks: anthropicData.content.length,
+        textBlocks: anthropicData.content.filter(b => b.type === 'text').length,
+        toolBlocks: anthropicData.content.filter(b => b.type === 'tool_use').length,
+        finalStopReason: anthropicData.stop_reason,
+        originalStopReason: sourceData.stop_reason
+      }, context.requestId, 'pipeline-gemini-conversion');
+
+      return anthropicData;
+
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.error('Gemini to Anthropic conversion failed', {
+        error: error instanceof Error ? error.message : String(error),
+        duration: `${duration}ms`
+      }, context.requestId, 'pipeline-gemini-conversion');
+      
+      // 转换失败时返回原始数据
+      return data;
+    }
+  }
+
+  /**
+   * 映射Gemini停止原因到Anthropic格式
+   */
+  private mapGeminiStopReason(geminiReason?: string): string {
+    if (!geminiReason) return 'end_turn';
+    
+    const mapping: Record<string, string> = {
+      'STOP': 'end_turn',
+      'MAX_TOKENS': 'max_tokens',
+      'SAFETY': 'stop_sequence',
+      'RECITATION': 'stop_sequence',
+      'OTHER': 'end_turn',
+      'stop': 'end_turn',
+      'length': 'max_tokens',
+      'content_filter': 'stop_sequence'
+    };
+
+    return mapping[geminiReason] || 'end_turn';
   }
 }
 
