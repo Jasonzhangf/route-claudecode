@@ -1235,12 +1235,9 @@ export class GeminiClient {
       }
     }
     
-    // If no content found, add helpful default response instead of empty text
+    // 🔧 Critical Fix: NO SILENT FAILURES - 空响应必须抛出错误
     if (content.length === 0) {
-      content.push({
-        type: 'text',
-        text: 'I apologize, but I cannot provide a response at the moment. This may be due to content filtering, API limitations, or quota restrictions. Please try rephrasing your question or try again later.'
-      });
+      throw new Error('Empty response from Gemini API - no content generated. This indicates an API issue or content filtering.');
     }
     
     // 🔧 Log conversion results for debugging
@@ -1268,10 +1265,12 @@ export class GeminiClient {
   }
 
   /**
-   * Extract tool input parameters from user message
-   * This is a fallback when Gemini doesn't properly call tools
+   * 🔧 DEPRECATED: Removed fallback tool parameter extraction
+   * If Gemini doesn't call tools properly, we should fail explicitly
    */
   private extractToolInputFromMessage(userMessage: string, tool: any): any {
+    // 🔧 Critical Fix: NO FALLBACK - 如果Gemini不能正确调用工具，必须明确失败
+    throw new Error('Tool parameter extraction fallback is disabled - Gemini must call tools properly or fail explicitly');
     // Basic parameter extraction for common tools
     const toolName = tool.name || tool.function?.name;
     const schema = tool.input_schema || tool.function?.parameters;
@@ -1328,8 +1327,7 @@ export class GeminiClient {
       'SAFETY': 'stop_sequence',
       'RECITATION': 'stop_sequence',
       'OTHER': 'end_turn',
-      // 🔧 Critical Fix: Handle tool call related finish reasons
-      'UNEXPECTED_TOOL_CALL': 'tool_use',
+      // 🔧 Removed UNEXPECTED_TOOL_CALL mapping - should be handled properly by Gemini API
       'FUNCTION_CALL': 'tool_use',
       // Gemini SDK可能返回的其他值
       'FINISH_REASON_STOP': 'end_turn',
@@ -1351,7 +1349,11 @@ export class GeminiClient {
       mapped: mappedReason || 'end_turn'
     });
 
-    return mappedReason || 'end_turn';
+    // 🔧 Critical Fix: NO FALLBACK - 未知finish_reason必须抛出错误
+    if (!mappedReason) {
+      throw new Error(`Unknown Gemini finish reason '${finishReason}' - no mapping found. Available mappings: ${Object.keys(reasonMap).join(', ')}`);
+    }
+    return mappedReason;
   }
 
   /**
@@ -2001,6 +2003,7 @@ export class GeminiClient {
   private convertToOpenAIEvents(bufferedResponse: any, requestId: string): any[] {
     const content = bufferedResponse.choices?.[0]?.message?.content || '';
     const usage = bufferedResponse.usage || {};
+    const candidate = bufferedResponse.choices?.[0]; // 🔧 提取candidate用于finish_reason映射
     
     // Create OpenAI streaming events similar to real OpenAI API
     const events: any[] = [];
@@ -2033,7 +2036,7 @@ export class GeminiClient {
       choices: [{
         index: 0,
         delta: {},
-        finish_reason: 'stop'
+        finish_reason: this.mapFinishReason(candidate?.finishReason || 'STOP')
       }],
       usage: usage
     });
