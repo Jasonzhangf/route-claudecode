@@ -38,13 +38,17 @@ export class GeminiClient {
     
     if (Array.isArray(apiKey) && apiKey.length > 1) {
       this.apiKeys = apiKey;
-      this.enhancedRateLimitManager = new EnhancedRateLimitManager(apiKey, this.name);
+      
+      // Extract modelFallback config if available
+      const modelFallbackConfig = (config as any).modelFallback;
+      this.enhancedRateLimitManager = new EnhancedRateLimitManager(apiKey, this.name, modelFallbackConfig);
       this.apiKey = '';
       this.genAIClients = apiKey.map(key => new GoogleGenAI({ apiKey: key }));
       
       logger.info('Initialized Enhanced Gemini Rate Limit Manager', {
         providerId: this.name,
-        keyCount: apiKey.length
+        keyCount: apiKey.length,
+        modelFallbackEnabled: !!modelFallbackConfig?.enabled
       });
     } else {
       this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
@@ -290,6 +294,17 @@ export class GeminiClient {
           genAIClient = this.genAIClients[keyAndModel.keyIndex];
           keyIndex = keyAndModel.keyIndex;
           currentModel = keyAndModel.model;
+          
+          // Log model fallback if applied
+          if (keyAndModel.fallbackApplied) {
+            logger.info(`Model fallback applied: ${modelName} → ${currentModel}`, {
+              originalModel: modelName,
+              fallbackModel: currentModel,
+              keyIndex: keyIndex + 1,
+              reason: keyAndModel.fallbackReason,
+              operation
+            }, requestId, 'gemini-provider');
+          }
         } else {
           keyIndex = attempt % this.genAIClients.length;
           genAIClient = this.genAIClients[keyIndex];

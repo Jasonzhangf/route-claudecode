@@ -1,14 +1,14 @@
 {
-  "timestamp": "2025-08-08T11:39:28.223Z",
+  "timestamp": "2025-08-08T12:21:04.244Z",
   "results": {
     "input-processing": {
-      "success": true,
+      "success": false,
       "duration": 44,
-      "message": "模块测试完成: 4/4 用例通过",
+      "message": "模块测试完成: 2/4 用例通过",
       "testCases": {
         "anthropic-format-validation": {
           "success": true,
-          "duration": 137.99567548274607,
+          "duration": 57.21688156794511,
           "message": "测试用例通过",
           "details": {
             "moduleId": "input-processing",
@@ -17,9 +17,9 @@
           }
         },
         "openai-format-conversion": {
-          "success": true,
-          "duration": 67.89415663105376,
-          "message": "测试用例通过",
+          "success": false,
+          "duration": 97.86075867661091,
+          "message": "测试用例失败",
           "details": {
             "moduleId": "input-processing",
             "testCase": "openai-format-conversion",
@@ -27,9 +27,9 @@
           }
         },
         "tool-definition-parsing": {
-          "success": true,
-          "duration": 143.77142684887002,
-          "message": "测试用例通过",
+          "success": false,
+          "duration": 136.91261572323515,
+          "message": "测试用例失败",
           "details": {
             "moduleId": "input-processing",
             "testCase": "tool-definition-parsing",
@@ -38,7 +38,7 @@
         },
         "message-validation": {
           "success": true,
-          "duration": 133.72082339583724,
+          "duration": 54.94750341604404,
           "message": "测试用例通过",
           "details": {
             "moduleId": "input-processing",
@@ -50,13 +50,13 @@
     },
     "routing-logic": {
       "success": false,
-      "duration": 45,
+      "duration": 43,
       "message": "模块测试完成: 3/4 用例通过",
       "testCases": {
         "provider-selection": {
-          "success": false,
-          "duration": 75.49844518274259,
-          "message": "测试用例失败",
+          "success": true,
+          "duration": 98.42122246800767,
+          "message": "测试用例通过",
           "details": {
             "moduleId": "routing-logic",
             "testCase": "provider-selection",
@@ -64,9 +64,9 @@
           }
         },
         "model-mapping": {
-          "success": true,
-          "duration": 144.47068462113614,
-          "message": "测试用例通过",
+          "success": false,
+          "duration": 142.8362203460127,
+          "message": "测试用例失败",
           "details": {
             "moduleId": "routing-logic",
             "testCase": "model-mapping",
@@ -75,7 +75,7 @@
         },
         "load-balancing": {
           "success": true,
-          "duration": 85.49878736949555,
+          "duration": 113.03784194239853,
           "message": "测试用例通过",
           "details": {
             "moduleId": "routing-logic",
@@ -85,7 +85,7 @@
         },
         "failover-handling": {
           "success": true,
-          "duration": 73.76835241862356,
+          "duration": 130.93399565811382,
           "message": "测试用例通过",
           "details": {
             "moduleId": "routing-logic",
@@ -96,13 +96,13 @@
       }
     },
     "transformation": {
-      "success": false,
+      "success": true,
       "duration": 44,
-      "message": "模块测试完成: 3/4 用例通过",
+      "message": "模块测试完成: 4/4 用例通过",
       "testCases": {
         "anthropic-to-provider": {
           "success": true,
-          "duration": 90.55907402300454,
+          "duration": 91.96259763589785,
           "message": "测试用例通过",
           "details": {
             "moduleId": "transformation",
@@ -112,7 +112,7 @@
         },
         "provider-to-anthropic": {
           "success": true,
-          "duration": 92.16515291221901,
+          "duration": 113.08053864514329,
           "message": "测试用例通过",
           "details": {
             "moduleId": "transformation",
@@ -121,9 +121,9 @@
           }
         },
         "tool-format-conversion": {
-          "success": false,
-          "duration": 102.10812062070389,
-          "message": "测试用例失败",
+          "success": true,
+          "duration": 77.3198374196804,
+          "message": "测试用例通过",
           "details": {
             "moduleId": "transformation",
             "testCase": "tool-format-conversion",
@@ -132,7 +132,7 @@
         },
         "streaming-conversion": {
           "success": true,
-          "duration": 94.37598308095826,
+          "duration": 53.354560426409094,
           "message": "测试用例通过",
           "details": {
             "moduleId": "transformation",
@@ -143,13 +143,13 @@
       }
     },
     "api-interaction": {
-      "success": false,
+      "success": true,
       "duration": 44,
-      "message": "模块测试完成: 3/4 用例通过",
+      "message": "模块测试完成: 4/4 用例通过",
       "testCases": {
         "successful-request": {
           "success": true,
-          "duration": 121.83215453671261,
+          "duration": 81.57692889824384,
           "message": "测试用例通过",
           "details": {
             "moduleId": "api-interaction",
@@ -158,9 +158,9 @@
           }
         },
         "rate-limit-handling": {
-          "success": false,
-          "duration": 71.63684997754827,
-          "message": "测试用例失败",
+          "success": true,
+          "duration": 111.43336076729706,
+          "message": "测试用例通过",
           "details": {
             "moduleId": "api-interaction",
             "testCase": "rate-limit-handling",
@@ -169,7 +169,7 @@
         },
         "timeout-handling": {
           "success": true,
-          "duration": 112.57616038796507,
+          "duration": 115.74777261071037,
           "message": "测试用例通过",
           "details": {
             "moduleId": "api-interaction",
@@ -179,7 +179,7 @@
         },
         "error-recovery": {
           "success": true,
-          "duration": 67.83342396130949,
+          "duration": 62.22686606961159,
           "message": "测试用例通过",
           "details": {
             "moduleId": "api-interaction",
@@ -192,7 +192,7 @@
   },
   "summary": {
     "totalModules": 4,
-    "passedModules": 1,
-    "failedModules": 3
+    "passedModules": 2,
+    "failedModules": 2
   }
 }

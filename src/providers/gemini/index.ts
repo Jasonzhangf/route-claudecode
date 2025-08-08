@@ -66,16 +66,24 @@ export class GeminiProvider implements Provider {
       // 获取当前使用的key信息（如果可用）
       const currentKeyInfo = this.client?.getRotationStats?.() || {};
       
-      // 强制控制台输出429错误，包含详细的key信息
+      // 强制控制台输出429错误，包含详细的key和模型降级信息
       if (isRateLimited) {
         console.error(`🚨 [429 RATE LIMIT] Gemini API quota exhausted:`);
         console.error(`   Provider: ${this.name}`);
-        console.error(`   Model: ${request.model}`);
+        console.error(`   Requested Model: ${request.model}`);
         console.error(`   Request ID: ${request.metadata?.requestId}`);
         console.error(`   Current Key: ${currentKeyInfo.keyIndex !== undefined ? `key-${currentKeyInfo.keyIndex + 1}` : 'unknown'}`);
         console.error(`   Key Suffix: ${currentKeyInfo.keySuffix || 'unknown'}`);
         console.error(`   Total Keys: ${currentKeyInfo.totalKeys || 'unknown'}`);
         console.error(`   Error Details: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`   Model Fallback: ${currentKeyInfo.fallbackConfig?.enabled ? 'enabled' : 'disabled'}`);
+        
+        // 显示可用的降级选项
+        if (currentKeyInfo.modelHierarchy && currentKeyInfo.modelHierarchy[request.model]) {
+          const fallbackChain = currentKeyInfo.modelHierarchy[request.model];
+          console.error(`   Fallback Chain: ${request.model} → ${fallbackChain.fallbackModels?.join(' → ') || 'none'}`);
+        }
+        
         console.error(`   Next Key Available: ${currentKeyInfo.nextKeyIndex !== undefined ? `key-${currentKeyInfo.nextKeyIndex + 1}` : 'checking...'}`);
       }
       

@@ -1,0 +1,175 @@
+{
+  "name": "Pipeline Test Configuration - ShuaiHong Primary",
+  "description": "专门用于流水线测试的配置，优先使用ShuaiHong provider，降低token限制以避免API错误",
+  "server": {
+    "port": 3457,
+    "host": "0.0.0.0"
+  },
+  "providers": {
+    "shuaihong-openai": {
+      "type": "openai",
+      "clientType": "sdk",
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": [
+            "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl"
+          ]
+        }
+      },
+      "models": [
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "glm-4.5",
+        "gpt-4o-mini",
+        "DeepSeek-V3"
+      ],
+      "defaultModel": "gemini-2.5-flash",
+      "maxTokens": {
+        "gemini-2.5-pro": 4096,
+        "gemini-2.5-flash": 2048,
+        "glm-4.5": 2048,
+        "gpt-4o-mini": 2048,
+        "DeepSeek-V3": 4096
+      },
+      "timeout": 60000,
+      "description": "ShuaiHong OpenAI Compatible - 用于流水线测试的稳定provider",
+      "keyRotation": {
+        "enabled": false
+      }
+    }
+  },
+  "routing": {
+    "default": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-flash",
+          "weight": 100
+        }
+      ],
+      "loadBalancing": {
+        "enabled": false
+      },
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "http_status",
+            "codes": [429, 500, 502, 503, 504],
+            "blacklistDuration": 60
+          }
+        ]
+      }
+    },
+    "background": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "glm-4.5",
+          "weight": 100
+        }
+      ],
+      "loadBalancing": {
+        "enabled": false
+      }
+    },
+    "thinking": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-flash",
+          "weight": 100
+        }
+      ]
+    },
+    "longcontext": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-pro",
+          "weight": 80
+        },
+        {
+          "provider": "shuaihong-openai",
+          "model": "DeepSeek-V3",
+          "weight": 20
+        }
+      ],
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "health_based"
+      },
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "http_status",
+            "codes": [429, 500, 502, 503, 504],
+            "blacklistDuration": 60
+          }
+        ]
+      }
+    },
+    "search": {
+      "providers": [
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-flash",
+          "weight": 100
+        }
+      ]
+    }
+  },
+  "loadBalancing": {
+    "enabled": true,
+    "strategy": "health_based",
+    "healthCheck": {
+      "enabled": true,
+      "interval": 30000,
+      "timeout": 5000,
+      "retryCount": 2
+    }
+  },
+  "failover": {
+    "enabled": true,
+    "globalFallback": {
+      "provider": "shuaihong-openai",
+      "model": "gpt-4o-mini"
+    },
+    "triggers": [
+      {
+        "type": "http_status",
+        "codes": [429, 500, 502, 503, 504],
+        "blacklistDuration": 60
+      },
+      {
+        "type": "timeout",
+        "blacklistDuration": 30
+      }
+    ]
+  },
+  "concurrency": {
+    "enabled": false,
+    "queueManagement": false,
+    "sequenceTracking": false
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "traceRequests": true,
+    "saveRequests": false,
+    "logDir": "/Users/fanzhang/.route-claude-code/logs"
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics": {
+      "responseTime": true,
+      "errorRate": true,
+      "throughput": true,
+      "providerHealth": true
+    }
+  },
+  "hooks": []
+}

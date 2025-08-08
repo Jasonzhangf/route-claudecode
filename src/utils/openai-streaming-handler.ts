@@ -55,7 +55,10 @@ export class OpenAIAPIHandler {
       }, requestId, 'api-handler');
 
       // 🎯 纯粹的非流式OpenAI API调用
-      const response = await this.config.openaiClient.chat.completions.create(openaiRequest);
+      const rawResponse = await this.config.openaiClient.chat.completions.create(openaiRequest);
+
+      // 🔧 CRITICAL FIX: 在transformer之前应用格式兼容性修复
+      const response = await this.applyResponseFormatFix(rawResponse, request);
 
       // 🔄 使用transformer转换响应（统一逻辑，包含所有工具转换）
       const baseResponse = this.transformer.transformOpenAIResponseToBase(response, request);
@@ -74,15 +77,61 @@ export class OpenAIAPIHandler {
       return baseResponse;
 
     } catch (error) {
+      // 检查是否是超时错误
+      const isTimeoutError = this.isTimeoutError(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
       logger.error('OpenAI API call failed', {
-        error: error instanceof Error ? error.message : String(error),
+        error: errorMessage,
+        isTimeout: isTimeoutError,
         provider: this.config.providerName,
         model: request.model,
         requestId
       }, requestId, 'api-handler');
 
+      // 如果是超时错误，抛出明确的超时错误而不是静默失败
+      if (isTimeoutError) {
+        const timeoutError = new Error(`API_TIMEOUT: ${this.config.providerName} API request timed out`);
+        (timeoutError as any).type = 'api_timeout';
+        (timeoutError as any).provider = this.config.providerName;
+        (timeoutError as any).originalError = error;
+        throw timeoutError;
+      }
+
       throw error;
     }
+  }
+
+  /**
+   * 检查是否是超时错误
+   */
+  private isTimeoutError(error: any): boolean {
+    if (!error) return false;
+    
+    // 检查错误消息
+    const errorMessage = error.message || error.toString().toLowerCase();
+    const timeoutKeywords = [
+      'timeout', 
+      'timed out', 
+      'request timed out',
+      'connection timeout',
+      'etimedout',
+      'esockettimedout'
+    ];
+    
+    const hasTimeoutMessage = timeoutKeywords.some(keyword => 
+      errorMessage.toLowerCase().includes(keyword)
+    );
+    
+    // 检查错误类型或代码
+    const isTimeoutType = 
+      error.code === 'ETIMEDOUT' ||
+      error.code === 'ESOCKETTIMEDOUT' ||
+      error.name === 'TimeoutError' ||
+      error.name === 'APIConnectionTimeoutError' ||
+      error.type === 'timeout';
+    
+    return hasTimeoutMessage || isTimeoutType;
   }
 
   /**
@@ -90,6 +139,146 @@ export class OpenAIAPIHandler {
    */
   get providerName(): string {
     return this.config.providerName;
+  }
+
+  /**
+   * 🔧 CRITICAL FIX: 应用响应格式兼容性修复
+   * 解决ModelScope/ShuaiHong等非标准API的格式问题
+   */
+  private async applyResponseFormatFix(response: any, originalRequest: BaseRequest): Promise<any> {
+    // 如果响应格式正常，直接返回
+    if (response && response.choices && Array.isArray(response.choices) && response.choices.length > 0) {
+      return response;
+    }
+
+    // 获取模型和Provider信息用于匹配
+    const modelName = originalRequest.metadata?.originalModel || originalRequest.model || 'unknown';
+    const providerId = this.config.providerName;
+
+    console.log(`🔧 [FORMAT-FIX] Checking response format for ${modelName} on ${providerId}`);
+
+    // 基于模型匹配的目标列表
+    const targetModels = [
+      'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-pro', 'gemini-flash',
+      'glm-4.5', 'glm-4-plus', 'glm-4', 
+      'DeepSeek-V3', 'deepseek-v3',
+      'claude-4-sonnet', 'claude-3-sonnet',
+      'ZhipuAI/GLM-4.5', 'Qwen/Qwen3-Coder-480B-A35B-Instruct'
+    ];
+    
+    // 检查是否需要修复
+    const needsFix = targetModels.some(model => 
+      modelName.toLowerCase().includes(model.toLowerCase()) ||
+      model.toLowerCase().includes(modelName.toLowerCase())
+    ) || providerId.includes('modelscope') || providerId.includes('shuaihong');
+
+    if (!needsFix) {
+      console.log(`⏭️  [FORMAT-FIX] Skipping fix for ${modelName} on ${providerId}`);
+      return response;
+    }
+
+    console.log(`🔧 [FORMAT-FIX] Applying format fix for ${modelName} on ${providerId}`);
+    
+    // 构造标准OpenAI格式响应
+    const fixedResponse = {
+      id: response?.id || `msg_${Date.now()}_fix`,
+      object: 'chat.completion',
+      created: response?.created || Math.floor(Date.now() / 1000),
+      model: modelName,
+      choices: [{
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: this.extractContent(response) || '',
+          tool_calls: this.extractToolCalls(response) || null
+        },
+        finish_reason: this.extractFinishReason(response) || 'stop'
+      }],
+      usage: response?.usage || {
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0
+      }
+    };
+
+    // 如果有工具调用但没有内容，设置content为null
+    if (fixedResponse.choices[0].message.tool_calls && !fixedResponse.choices[0].message.content) {
+      (fixedResponse.choices[0].message as any).content = null;
+    }
+
+    console.log(`✅ [FORMAT-FIX] Successfully fixed response format for ${modelName}`);
+    return fixedResponse;
+  }
+
+  /**
+   * 从非标准响应中提取内容
+   */
+  private extractContent(data: any): string | null {
+    if (!data) return null;
+    
+    // 尝试多种可能的内容字段
+    if (data.content) return data.content;
+    if (data.message && typeof data.message === 'string') return data.message;
+    if (data.text) return data.text;
+    if (data.response) return data.response;
+    if (data.output) return data.output;
+    
+    // 尝试从嵌套对象中提取
+    if (data.result && data.result.content) return data.result.content;
+    if (data.data && data.data.content) return data.data.content;
+    
+    return null;
+  }
+
+  /**
+   * 从非标准响应中提取工具调用
+   */
+  private extractToolCalls(data: any): any[] | null {
+    if (!data) return null;
+    
+    // 检查标准位置
+    if (data.tool_calls && Array.isArray(data.tool_calls)) {
+      return data.tool_calls;
+    }
+    
+    // 检查嵌套位置
+    if (data.message && data.message.tool_calls) {
+      return data.message.tool_calls;
+    }
+    
+    // 检查其他可能的位置
+    if (data.function_calls) {
+      return data.function_calls;
+    }
+    
+    return null;
+  }
+
+  /**
+   * 从非标准响应中提取finish_reason
+   */
+  private extractFinishReason(data: any): string {
+    if (!data) return 'stop';
+    
+    // 尝试多种可能的finish_reason字段
+    if (data.finish_reason) return data.finish_reason;
+    if (data.stop_reason) return data.stop_reason;
+    if (data.finishReason) return data.finishReason;
+    if (data.status) return data.status;
+    
+    // 检查嵌套位置
+    if (data.result && data.result.finish_reason) return data.result.finish_reason;
+    if (data.choices && data.choices[0] && data.choices[0].finish_reason) {
+      return data.choices[0].finish_reason;
+    }
+    
+    // 如果有工具调用相关内容，返回tool_calls
+    if (this.extractToolCalls(data)) {
+      return 'tool_calls';
+    }
+    
+    // 默认为stop
+    return 'stop';
   }
 }
 

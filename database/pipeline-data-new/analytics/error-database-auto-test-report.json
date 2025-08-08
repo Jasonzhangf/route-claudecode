@@ -1,0 +1,85 @@
+{
+  "executedAt": "2025-08-08T14:29:15.114Z",
+  "summary": {
+    "totalSamples": 1087,
+    "totalTestCases": 3,
+    "passed": 0,
+    "failed": 3,
+    "successRate": "0.0%"
+  },
+  "errorPatterns": {
+    "max_tokens_exceeded": 21,
+    "unknown_error": 907,
+    "openai_missing_choices": 159
+  },
+  "testResults": [
+    {
+      "errorType": "max_tokens_exceeded",
+      "sampleCount": 21,
+      "testStrategy": "token_limit_validation",
+      "success": false,
+      "message": "Max tokens error reproduced - preprocessing not applied",
+      "recommendation": "Check preprocessing strategy configuration",
+      "duration": 2586
+    },
+    {
+      "errorType": "unknown_error",
+      "sampleCount": 907,
+      "testStrategy": "generic_error_test",
+      "success": false,
+      "message": "Generic error test - manual analysis required",
+      "duration": 0
+    },
+    {
+      "errorType": "openai_missing_choices",
+      "sampleCount": 159,
+      "testStrategy": "mock_response_format_fix",
+      "success": false,
+      "message": "Different error occurred",
+      "duration": 3
+    }
+  ],
+  "criticalIssues": [
+    {
+      "errorType": "max_tokens_exceeded",
+      "issue": "Max tokens error reproduced - preprocessing not applied",
+      "recommendation": "Check preprocessing strategy configuration",
+      "affectedSamples": 21
+    },
+    {
+      "errorType": "unknown_error",
+      "issue": "Generic error test - manual analysis required",
+      "affectedSamples": 907
+    },
+    {
+      "errorType": "openai_missing_choices",
+      "issue": "Different error occurred",
+      "affectedSamples": 159
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "MEDIUM",
+      "issue": "Token preprocessing not applied consistently",
+      "solution": "Ensure preprocessing strategies are enabled and properly configured",
+      "implementation": "Check configuration in test-pipeline-config.json and verify preprocessing manager integration",
+      "affectedModels": [
+        "auto",
+        "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "ZhipuAI/GLM-4.5"
+      ]
+    },
+    {
+      "priority": "HIGH",
+      "issue": "ModelScope API response format incompatibility",
+      "solution": "Implement ModelScope response format patch in unified-patch-preprocessor.ts",
+      "implementation": "Add patch to convert ModelScope response format to OpenAI-compatible format before transformer processing",
+      "affectedProviders": [
+        "modelscope-openai-key1",
+        "modelscope-openai-key2",
+        "modelscope-openai-key3",
+        "modelscope-openai-key4"
+      ]
+    }
+  ]
+}

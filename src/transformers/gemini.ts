@@ -106,11 +106,17 @@ export class GeminiTransformer implements MessageTransformer {
     // 处理工具调用
     if (request.tools && request.tools.length > 0) {
       geminiRequest.tools = this.convertAnthropicToolsToGemini(request.tools, requestId);
-      geminiRequest.functionCallingConfig = { mode: 'AUTO' };
       
-      logger.debug('Added tools to Gemini request', {
+      // 使用更强制的工具调用配置
+      geminiRequest.functionCallingConfig = { 
+        mode: 'ANY'  // 改为ANY模式，更容易触发工具调用
+        // 注意: allowedFunctionNames在某些SDK版本中可能不支持
+      } as any;
+      
+      logger.debug('Added tools to Gemini request with ANY mode', {
         toolCount: request.tools.length,
-        toolNames: request.tools.map(t => t.function?.name).filter(Boolean)
+        toolNames: request.tools.map(t => t.function?.name || t.name).filter(Boolean),
+        functionCallingMode: 'ANY'
       }, requestId, 'gemini-transformer');
     }
 
@@ -136,7 +142,31 @@ export class GeminiTransformer implements MessageTransformer {
 
     const candidate = geminiResponse.candidates[0];
     if (!candidate.content || !candidate.content.parts) {
-      throw new Error('GeminiTransformer: Gemini candidate has no content parts');
+      // 处理某些情况下Gemini响应缺失content的问题
+      logger.warn('GeminiTransformer: Gemini candidate missing content/parts', {
+        hasContent: !!candidate.content,
+        hasParts: !!candidate.content?.parts,
+        finishReason: candidate.finishReason,
+        candidateKeys: Object.keys(candidate)
+      }, requestId, 'gemini-transformer');
+      
+      // 尝试创建空的文本响应而不是抛出错误
+      const content = [{
+        type: 'text' as const,
+        text: 'Response generated but content format was unexpected.'
+      }];
+      
+      const response: BaseResponse = {
+        id: `msg_${Date.now()}`,
+        content,
+        model: originalModel,
+        role: 'assistant',
+        stop_reason: 'end_turn',
+        stop_sequence: null,
+        usage: { input_tokens: 0, output_tokens: 0 }
+      };
+      
+      return response;
     }
 
     // 转换内容块

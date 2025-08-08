@@ -285,8 +285,12 @@ export class UnifiedPatchPreprocessor {
         }
       }
 
-      // 3. 强制所有输入进入检查
-      if (this.config.forceAllInputs || this.shouldProcess(data, context)) {
+      // 3. 放宽准入条件 - 强制所有响应都进入预处理
+      const shouldProcess = this.config.forceAllInputs || 
+                           context.stage === 'response' ||  // 所有响应都进入预处理 
+                           this.shouldProcess(data, context);
+      
+      if (shouldProcess) {
         // 构建补丁上下文
         const patchContext: PatchContext = {
           provider: context.provider,
@@ -305,6 +309,9 @@ export class UnifiedPatchPreprocessor {
             context.model
           );
         } else if (context.stage === 'response') {
+          // 🔧 CRITICAL FIX: ShuaiHong/ModelScope格式兼容性补丁
+          data = await this.applyShuaiHongFormatPatch(data, context);
+          
           // 🎯 强制工具调用检测和finish reason覆盖
           const toolDetectionResult = await this.forceToolCallDetection(data, context);
           
@@ -476,6 +483,184 @@ export class UnifiedPatchPreprocessor {
     ];
 
     return simpleToolPatterns.some(pattern => pattern.test(text));
+  }
+
+  /**
+   * 🔧 CRITICAL FIX: ShuaiHong/ModelScope格式兼容性补丁
+   * 解决 "OpenAI response missing choices" 错误
+   */
+  private async applyShuaiHongFormatPatch(
+    data: any, 
+    context: PreprocessingContext
+  ): Promise<any> {
+    // 基于模型匹配而不是Provider，更精确
+    const targetModels = [
+      'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-pro', 'gemini-flash',
+      'glm-4.5', 'glm-4-plus', 'glm-4', 
+      'DeepSeek-V3', 'deepseek-v3',
+      'claude-4-sonnet', 'claude-3-sonnet',
+      'ZhipuAI/GLM-4.5', 'Qwen/Qwen3-Coder-480B-A35B-Instruct'
+    ];
+    
+    // 检查模型名称是否匹配
+    const isTargetModel = targetModels.some(model => 
+      context.model.toLowerCase().includes(model.toLowerCase()) ||
+      model.toLowerCase().includes(context.model.toLowerCase())
+    );
+    
+    if (!isTargetModel) {
+      // 对于非OpenAI原生Provider，也可能需要格式修复，放宽检查
+      const isOpenAICompatible = context.provider.includes('openai') && 
+                                !context.provider.includes('anthropic');
+      
+      if (!isOpenAICompatible) {
+        return data;
+      }
+    }
+
+    // 检查是否缺少choices字段（核心问题）
+    if (data && typeof data === 'object' && !data.choices) {
+      const originalData = JSON.stringify(data).substring(0, 200);
+      
+      console.log(`🔧 [PREPROCESSING] Applying format patch for missing choices field`);
+      console.log(`📍 [MODEL-MATCH] ${context.model} on ${context.provider}`);
+      
+      this.logger.info('OpenAI format compatibility patch applied', {
+        provider: context.provider,
+        model: context.model,
+        requestId: context.requestId,
+        originalDataPreview: originalData,
+        issue: 'missing_choices_field',
+        patchType: 'openai_compatibility_fix'
+      });
+
+      // 构造标准OpenAI格式响应
+      const fixedData = {
+        id: data.id || `msg_${Date.now()}_${context.requestId.slice(-8)}`,
+        object: 'chat.completion',
+        created: data.created || Math.floor(Date.now() / 1000),
+        model: context.model,
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: this.extractContent(data) || '',
+            tool_calls: this.extractToolCalls(data) || null
+          },
+          finish_reason: this.extractFinishReason(data) || 'stop'
+        }],
+        usage: data.usage || {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0
+        }
+      };
+
+      // 如果有工具调用但没有内容，设置content为null
+      if (fixedData.choices[0].message.tool_calls && !fixedData.choices[0].message.content) {
+        (fixedData.choices[0].message as any).content = null;
+      }
+
+      console.log(`✅ [PREPROCESSING] ShuaiHong format patch applied successfully`);
+      return fixedData;
+    }
+
+    // 检查choices存在但格式不完整的情况
+    if (data && data.choices && Array.isArray(data.choices)) {
+      let needsFix = false;
+      const fixedChoices = data.choices.map((choice: any) => {
+        if (!choice.message) {
+          needsFix = true;
+          return {
+            ...choice,
+            index: choice.index || 0,
+            message: {
+              role: 'assistant',
+              content: choice.content || choice.text || '',
+              tool_calls: choice.tool_calls || null
+            },
+            finish_reason: choice.finish_reason || 'stop'
+          };
+        }
+        return choice;
+      });
+
+      if (needsFix) {
+        console.log(`🔧 [PREPROCESSING] Fixing incomplete choices format for ${context.provider}`);
+        return {
+          ...data,
+          choices: fixedChoices
+        };
+      }
+    }
+
+    // 数据格式正常，直接返回
+    return data;
+  }
+
+  /**
+   * 从非标准响应中提取内容
+   */
+  private extractContent(data: any): string | null {
+    // 尝试多种可能的内容字段
+    if (data.content) return data.content;
+    if (data.message && typeof data.message === 'string') return data.message;
+    if (data.text) return data.text;
+    if (data.response) return data.response;
+    if (data.output) return data.output;
+    
+    // 尝试从嵌套对象中提取
+    if (data.result && data.result.content) return data.result.content;
+    if (data.data && data.data.content) return data.data.content;
+    
+    return null;
+  }
+
+  /**
+   * 从非标准响应中提取工具调用
+   */
+  private extractToolCalls(data: any): any[] | null {
+    // 检查标准位置
+    if (data.tool_calls && Array.isArray(data.tool_calls)) {
+      return data.tool_calls;
+    }
+    
+    // 检查嵌套位置
+    if (data.message && data.message.tool_calls) {
+      return data.message.tool_calls;
+    }
+    
+    // 检查其他可能的位置
+    if (data.function_calls) {
+      return data.function_calls;
+    }
+    
+    return null;
+  }
+
+  /**
+   * 从非标准响应中提取finish_reason
+   */
+  private extractFinishReason(data: any): string {
+    // 尝试多种可能的finish_reason字段
+    if (data.finish_reason) return data.finish_reason;
+    if (data.stop_reason) return data.stop_reason;
+    if (data.finishReason) return data.finishReason;
+    if (data.status) return data.status;
+    
+    // 检查嵌套位置
+    if (data.result && data.result.finish_reason) return data.result.finish_reason;
+    if (data.choices && data.choices[0] && data.choices[0].finish_reason) {
+      return data.choices[0].finish_reason;
+    }
+    
+    // 如果有工具调用相关内容，返回tool_calls
+    if (this.extractToolCalls(data)) {
+      return 'tool_calls';
+    }
+    
+    // 默认为stop
+    return 'stop';
   }
 
   /**

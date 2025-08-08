@@ -1,0 +1,29 @@
+{
+  "testSuite": "Complete Pipeline Test with Fixed Configuration",
+  "executedAt": "2025-08-08T12:08:21.480Z",
+  "summary": {
+    "totalTests": 0,
+    "successfulTests": 0,
+    "failedTests": 0,
+    "successRate": 0,
+    "avgResponseTime": 0,
+    "totalErrors": 0
+  },
+  "testResults": [],
+  "errorAnalysis": {
+    "totalErrors": 0,
+    "errorsByType": {},
+    "detailedErrors": []
+  },
+  "systemValidation": {
+    "serverConnectivity": false,
+    "multiModelSupport": false,
+    "multiProviderSupport": false,
+    "errorHandlingWorking": false
+  },
+  "performance": {
+    "fastestResponse": null,
+    "slowestResponse": null,
+    "avgResponseTime": 0
+  }
+}

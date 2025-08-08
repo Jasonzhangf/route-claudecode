@@ -1,11 +1,11 @@
 {
   "testingSystem": "STD-PIPELINE-TESTING-FLOW",
   "version": "2.0.0",
-  "executedAt": "2025-08-08T11:39:28.224Z",
+  "executedAt": "2025-08-08T12:21:04.245Z",
   "overallResults": {
-    "startTime": 1754653168036,
-    "endTime": 1754653168224,
-    "duration": 188,
+    "startTime": 1754655664056,
+    "endTime": 1754655664245,
+    "duration": 189,
     "success": false,
     "completedPhases": 3,
     "totalPhases": 6,
@@ -25,7 +25,7 @@
       "duration": 1,
       "message": "数据捕获系统启动成功",
       "details": {
-        "instanceId": "capture-1754653168039",
+        "instanceId": "capture-1754655664059",
         "directoriesCreated": 8
       }
     },
@@ -46,7 +46,7 @@
     },
     "4-individual-module-logic-tests": {
       "success": false,
-      "duration": 178,
+      "duration": 180,
       "error": "部分模块逻辑测试失败，无法继续流水线测试"
     }
   },

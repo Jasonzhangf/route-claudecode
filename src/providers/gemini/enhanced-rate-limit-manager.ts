@@ -20,6 +20,23 @@ interface KeyRotationResult {
   fallbackReason?: string;
 }
 
+interface ModelFallbackConfig {
+  enabled: boolean;
+  cooldownMs: number;
+  fallbackChains: Record<string, {
+    fallbackModels: string[];
+    maxFallbacks: number;
+    resetAfterSuccess: boolean;
+    description?: string;
+  }>;
+  globalSettings: {
+    trackFallbackUsage: boolean;
+    logFallbackDecisions: boolean;
+    maxFallbackDepth: number;
+    fallbackResetInterval: number;
+  };
+}
+
 /**
  * Enhanced Gemini Rate Limit Manager - v2
  * 
@@ -34,24 +51,27 @@ export class EnhancedRateLimitManager {
   // Key: `key-${keyIndex}:${modelName}`, e.g., 'key-0:gemini-2.5-pro'
   private keyModelState: Map<string, KeyModelState> = new Map();
   private providerId: string;
+  private modelFallbackConfig: ModelFallbackConfig | null = null;
   
-  // Model fallback hierarchy
-  private readonly modelFallbackHierarchy: Record<string, string[]> = {
+  // Default model fallback hierarchy (fallback if no config provided)
+  private readonly defaultModelFallbackHierarchy: Record<string, string[]> = {
     'gemini-2.5-pro': ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-8b'],
     'gemini-2.5-flash': ['gemini-2.0-flash', 'gemini-1.5-flash-8b'],
     'gemini-2.0-flash': ['gemini-1.5-flash-8b'],
     'gemini-1.5-flash-8b': [] // No further fallback
   };
 
-  constructor(apiKeys: string[], providerId: string = 'gemini') {
+  constructor(apiKeys: string[], providerId: string = 'gemini', modelFallbackConfig?: ModelFallbackConfig) {
     this.apiKeys = apiKeys.filter(key => key && key.trim());
     this.providerId = providerId;
+    this.modelFallbackConfig = modelFallbackConfig || null;
     
     if (this.apiKeys.length === 0) {
       throw new Error('At least one API key is required for Enhanced Rate Limit Manager');
     }
     
-    console.log(`🔧 Enhanced Rate Limit Manager (v2) initialized with ${this.apiKeys.length} keys`);
+    const fallbackEnabled = this.modelFallbackConfig?.enabled ? 'enabled' : 'using default hierarchy';
+    console.log(`🔧 Enhanced Rate Limit Manager (v3) initialized with ${this.apiKeys.length} keys, model fallback ${fallbackEnabled}`);
   }
 
   /**
@@ -78,7 +98,12 @@ export class EnhancedRateLimitManager {
     }
 
     // --- Stage 2: If all keys are unavailable for the requested model, try fallbacks ---
-    const fallbackModels = this.modelFallbackHierarchy[requestedModel] || [];
+    const fallbackModels = this.getFallbackModels(requestedModel);
+    
+    if (this.modelFallbackConfig?.globalSettings?.logFallbackDecisions) {
+      console.log(`📋 Checking fallback options for ${requestedModel}:`, fallbackModels, { requestId });
+    }
+    
     for (const fallbackModel of fallbackModels) {
       for (let keyIndex = 0; keyIndex < this.apiKeys.length; keyIndex++) {
         const modelStateKey = `key-${keyIndex}:${fallbackModel}`;
@@ -86,17 +111,24 @@ export class EnhancedRateLimitManager {
 
         if (!state || (!state.permanentlyDowngraded && now >= state.cooldownUntil)) {
           // Found an available fallback combination
-          console.log(`🔄 Falling back to model ${fallbackModel} with key ${keyIndex + 1}.`, {
-            originalModel: requestedModel,
-            reason: `All keys for ${requestedModel} are in cooldown or downgraded.`,
-            requestId
-          });
+          const fallbackReason = `All keys for ${requestedModel} are currently rate-limited`;
+          
+          if (this.modelFallbackConfig?.globalSettings?.logFallbackDecisions) {
+            console.log(`🔄 Model fallback activated: ${requestedModel} → ${fallbackModel} (key ${keyIndex + 1})`, {
+              originalModel: requestedModel,
+              fallbackModel,
+              keyIndex: keyIndex + 1,
+              reason: fallbackReason,
+              requestId
+            });
+          }
+          
           return {
             apiKey: this.apiKeys[keyIndex],
             model: fallbackModel,
             keyIndex,
             fallbackApplied: true,
-            fallbackReason: `All keys for ${requestedModel} are currently rate-limited.`
+            fallbackReason
           };
         }
       }
@@ -152,15 +184,28 @@ export class EnhancedRateLimitManager {
   }
 
   /**
+   * Get fallback models for a given model based on configuration
+   */
+  private getFallbackModels(model: string): string[] {
+    if (this.modelFallbackConfig?.enabled && this.modelFallbackConfig.fallbackChains[model]) {
+      return this.modelFallbackConfig.fallbackChains[model].fallbackModels;
+    }
+    return this.defaultModelFallbackHierarchy[model] || [];
+  }
+
+  /**
    * Get current rate limit status for all keys
    */
   getStatus(): Record<string, any> {
     const now = Date.now();
     const keyStatus: any = {};
+    const hierarchyToUse = this.modelFallbackConfig?.enabled ? 
+      Object.keys(this.modelFallbackConfig.fallbackChains) : 
+      Object.keys(this.defaultModelFallbackHierarchy);
 
     this.apiKeys.forEach((_, keyIndex) => {
       const models: any = {};
-      for (const model in this.modelFallbackHierarchy) {
+      for (const model of hierarchyToUse) {
         const modelStateKey = `key-${keyIndex}:${model}`;
         const state = this.keyModelState.get(modelStateKey);
         if (state) {
@@ -178,7 +223,13 @@ export class EnhancedRateLimitManager {
       totalKeys: this.apiKeys.length,
       providerId: this.providerId,
       status: keyStatus,
-      modelHierarchy: this.modelFallbackHierarchy,
+      modelHierarchy: this.modelFallbackConfig?.enabled ? 
+        this.modelFallbackConfig.fallbackChains : 
+        this.defaultModelFallbackHierarchy,
+      fallbackConfig: this.modelFallbackConfig ? {
+        enabled: this.modelFallbackConfig.enabled,
+        cooldownMs: this.modelFallbackConfig.cooldownMs
+      } : null
     };
   }
 

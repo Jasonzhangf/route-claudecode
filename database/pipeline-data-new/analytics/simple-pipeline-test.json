@@ -1,0 +1,40 @@
+{
+  "testSuite": "Simple Pipeline Direct API Test",
+  "executedAt": "2025-08-08T12:11:02.453Z",
+  "port": 5508,
+  "summary": {
+    "totalTests": 3,
+    "successful": 0,
+    "failed": 3,
+    "successRate": 0
+  },
+  "results": [
+    {
+      "testName": "Basic Text Generation",
+      "success": false,
+      "statusCode": 0,
+      "data": null,
+      "error": "Request timeout",
+      "port": 5508,
+      "timestamp": "2025-08-08T12:10:28.444Z"
+    },
+    {
+      "testName": "Model Routing Test",
+      "success": false,
+      "statusCode": 0,
+      "data": null,
+      "error": "Request timeout",
+      "port": 5508,
+      "timestamp": "2025-08-08T12:10:45.449Z"
+    },
+    {
+      "testName": "Low Token Test",
+      "success": false,
+      "statusCode": 0,
+      "data": null,
+      "error": "Request timeout",
+      "port": 5508,
+      "timestamp": "2025-08-08T12:11:02.453Z"
+    }
+  ]
+}

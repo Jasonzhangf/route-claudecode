@@ -18,7 +18,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step1-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step1-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -37,22 +37,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664060,
+            "endTime": 1754655664110,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step2-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step2-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -75,22 +75,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664160,
+            "endTime": 1754655664210,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step3-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step3-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -111,22 +111,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664260,
+            "endTime": 1754655664310,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step4-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step4-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -138,22 +138,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664360,
+            "endTime": 1754655664410,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step5-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step5-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -165,22 +165,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664460,
+            "endTime": 1754655664510,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step6-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step6-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -192,22 +192,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664560,
+            "endTime": 1754655664610,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step7-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step7-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -219,22 +219,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664660,
+            "endTime": 1754655664710,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-codewhisperer-basic-text-response-step8-1754653168041",
+          "captureId": "mock-codewhisperer-basic-text-response-step8-1754655664060",
           "entityId": "mock-entity-codewhisperer-basic-text-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -248,38 +248,38 @@
             "minLength": 10
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664760,
+            "endTime": 1754655664810,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-codewhisperer-basic-text-response-1754653168041",
+        "flowId": "mock-flow-codewhisperer-basic-text-response-1754655664060",
         "entityId": "mock-entity-codewhisperer-basic-text-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664060,
+        "endTime": 1754655664860,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-codewhisperer-basic-text-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664060",
           "provider": "codewhisperer",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-codewhisperer.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.060Z"
       }
     },
     "tool-call-response": {
@@ -316,7 +316,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step1-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step1-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -351,22 +351,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step2-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step2-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -405,22 +405,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step3-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step3-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -457,22 +457,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step4-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step4-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -484,22 +484,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step5-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step5-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -511,22 +511,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step6-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step6-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -538,22 +538,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step7-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step7-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -565,22 +565,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-tool-call-response-step8-1754653168041",
+          "captureId": "mock-codewhisperer-tool-call-response-step8-1754655664061",
           "entityId": "mock-entity-codewhisperer-tool-call-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -594,38 +594,38 @@
             "hasToolCalls": true
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-codewhisperer-tool-call-response-1754653168041",
+        "flowId": "mock-flow-codewhisperer-tool-call-response-1754655664061",
         "entityId": "mock-entity-codewhisperer-tool-call-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-codewhisperer-tool-call-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664061",
           "provider": "codewhisperer",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-codewhisperer.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "streaming-response": {
@@ -652,7 +652,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-codewhisperer-streaming-response-step1-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step1-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -671,22 +671,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-streaming-response-step2-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step2-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -709,22 +709,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-streaming-response-step3-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step3-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -745,22 +745,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-streaming-response-step4-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step4-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -772,22 +772,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-streaming-response-step5-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step5-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -799,22 +799,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-streaming-response-step6-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step6-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -826,22 +826,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-streaming-response-step7-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step7-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -853,22 +853,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-streaming-response-step8-1754653168042",
+          "captureId": "mock-codewhisperer-streaming-response-step8-1754655664061",
           "entityId": "mock-entity-codewhisperer-streaming-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -888,38 +888,38 @@
             "finalStopReason": "end_turn"
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-codewhisperer-streaming-response-1754653168042",
+        "flowId": "mock-flow-codewhisperer-streaming-response-1754655664061",
         "entityId": "mock-entity-codewhisperer-streaming-response",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-codewhisperer-streaming-response",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "codewhisperer",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-codewhisperer.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "error-handling": {
@@ -942,7 +942,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-codewhisperer-error-handling-step1-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step1-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -960,22 +960,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-error-handling-step2-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step2-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -997,22 +997,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-error-handling-step3-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step3-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -1032,22 +1032,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-error-handling-step4-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step4-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -1059,22 +1059,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-error-handling-step5-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step5-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -1086,22 +1086,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-error-handling-step6-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step6-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -1113,22 +1113,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-error-handling-step7-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step7-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -1140,22 +1140,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-codewhisperer-error-handling-step8-1754653168042",
+          "captureId": "mock-codewhisperer-error-handling-step8-1754655664061",
           "entityId": "mock-entity-codewhisperer-error-handling",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -1172,38 +1172,38 @@
             ]
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-codewhisperer-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-codewhisperer.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-codewhisperer-error-handling-1754653168042",
+        "flowId": "mock-flow-codewhisperer-error-handling-1754655664061",
         "entityId": "mock-entity-codewhisperer-error-handling",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-codewhisperer-error-handling",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "codewhisperer",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-codewhisperer.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     }
   },
@@ -1226,7 +1226,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-openai-basic-text-response-step1-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step1-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -1245,22 +1245,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664060,
+            "endTime": 1754655664110,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-openai-basic-text-response-step2-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step2-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -1283,22 +1283,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664160,
+            "endTime": 1754655664210,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-openai-basic-text-response-step3-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step3-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -1319,22 +1319,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664260,
+            "endTime": 1754655664310,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-openai-basic-text-response-step4-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step4-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -1346,22 +1346,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664360,
+            "endTime": 1754655664410,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-openai-basic-text-response-step5-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step5-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -1373,22 +1373,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664460,
+            "endTime": 1754655664510,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-openai-basic-text-response-step6-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step6-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -1400,22 +1400,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664560,
+            "endTime": 1754655664610,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-openai-basic-text-response-step7-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step7-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -1427,22 +1427,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664660,
+            "endTime": 1754655664710,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-openai-basic-text-response-step8-1754653168041",
+          "captureId": "mock-openai-basic-text-response-step8-1754655664060",
           "entityId": "mock-entity-openai-basic-text-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -1456,38 +1456,38 @@
             "minLength": 10
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664760,
+            "endTime": 1754655664810,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-openai-basic-text-response-1754653168041",
+        "flowId": "mock-flow-openai-basic-text-response-1754655664060",
         "entityId": "mock-entity-openai-basic-text-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664060,
+        "endTime": 1754655664860,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-openai-basic-text-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664060",
           "provider": "openai",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-openai.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.060Z"
       }
     },
     "tool-call-response": {
@@ -1524,7 +1524,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-openai-tool-call-response-step1-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step1-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -1559,22 +1559,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-tool-call-response-step2-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step2-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -1613,22 +1613,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-tool-call-response-step3-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step3-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -1665,22 +1665,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-tool-call-response-step4-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step4-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -1692,22 +1692,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-tool-call-response-step5-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step5-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -1719,22 +1719,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-tool-call-response-step6-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step6-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -1746,22 +1746,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-tool-call-response-step7-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step7-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -1773,22 +1773,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-tool-call-response-step8-1754653168041",
+          "captureId": "mock-openai-tool-call-response-step8-1754655664061",
           "entityId": "mock-entity-openai-tool-call-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -1802,38 +1802,38 @@
             "hasToolCalls": true
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-openai-tool-call-response-1754653168041",
+        "flowId": "mock-flow-openai-tool-call-response-1754655664061",
         "entityId": "mock-entity-openai-tool-call-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-openai-tool-call-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664061",
           "provider": "openai",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-openai.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "streaming-response": {
@@ -1860,7 +1860,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-openai-streaming-response-step1-1754653168042",
+          "captureId": "mock-openai-streaming-response-step1-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -1879,22 +1879,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-streaming-response-step2-1754653168042",
+          "captureId": "mock-openai-streaming-response-step2-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -1917,22 +1917,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-streaming-response-step3-1754653168042",
+          "captureId": "mock-openai-streaming-response-step3-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -1953,22 +1953,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-streaming-response-step4-1754653168042",
+          "captureId": "mock-openai-streaming-response-step4-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -1980,22 +1980,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-streaming-response-step5-1754653168042",
+          "captureId": "mock-openai-streaming-response-step5-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -2007,22 +2007,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-streaming-response-step6-1754653168042",
+          "captureId": "mock-openai-streaming-response-step6-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -2034,22 +2034,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-streaming-response-step7-1754653168042",
+          "captureId": "mock-openai-streaming-response-step7-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -2061,22 +2061,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-streaming-response-step8-1754653168042",
+          "captureId": "mock-openai-streaming-response-step8-1754655664061",
           "entityId": "mock-entity-openai-streaming-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -2096,38 +2096,38 @@
             "finalStopReason": "end_turn"
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-openai-streaming-response-1754653168042",
+        "flowId": "mock-flow-openai-streaming-response-1754655664061",
         "entityId": "mock-entity-openai-streaming-response",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-openai-streaming-response",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "openai",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-openai.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "error-handling": {
@@ -2150,7 +2150,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-openai-error-handling-step1-1754653168042",
+          "captureId": "mock-openai-error-handling-step1-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -2168,22 +2168,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-error-handling-step2-1754653168042",
+          "captureId": "mock-openai-error-handling-step2-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -2205,22 +2205,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-error-handling-step3-1754653168042",
+          "captureId": "mock-openai-error-handling-step3-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -2240,22 +2240,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-error-handling-step4-1754653168042",
+          "captureId": "mock-openai-error-handling-step4-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -2267,22 +2267,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-error-handling-step5-1754653168042",
+          "captureId": "mock-openai-error-handling-step5-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -2294,22 +2294,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-error-handling-step6-1754653168042",
+          "captureId": "mock-openai-error-handling-step6-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -2321,22 +2321,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-error-handling-step7-1754653168042",
+          "captureId": "mock-openai-error-handling-step7-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -2348,22 +2348,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-openai-error-handling-step8-1754653168042",
+          "captureId": "mock-openai-error-handling-step8-1754655664061",
           "entityId": "mock-entity-openai-error-handling",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -2380,38 +2380,38 @@
             ]
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-openai-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-openai.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-openai-error-handling-1754653168042",
+        "flowId": "mock-flow-openai-error-handling-1754655664061",
         "entityId": "mock-entity-openai-error-handling",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-openai-error-handling",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "openai",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-openai.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     }
   },
@@ -2434,7 +2434,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-gemini-basic-text-response-step1-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step1-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -2453,22 +2453,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664060,
+            "endTime": 1754655664110,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-gemini-basic-text-response-step2-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step2-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -2491,22 +2491,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664160,
+            "endTime": 1754655664210,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-gemini-basic-text-response-step3-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step3-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -2527,22 +2527,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664260,
+            "endTime": 1754655664310,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-gemini-basic-text-response-step4-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step4-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -2554,22 +2554,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664360,
+            "endTime": 1754655664410,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-gemini-basic-text-response-step5-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step5-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -2581,22 +2581,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664460,
+            "endTime": 1754655664510,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-gemini-basic-text-response-step6-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step6-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -2608,22 +2608,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664560,
+            "endTime": 1754655664610,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-gemini-basic-text-response-step7-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step7-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -2635,22 +2635,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664660,
+            "endTime": 1754655664710,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-gemini-basic-text-response-step8-1754653168041",
+          "captureId": "mock-gemini-basic-text-response-step8-1754655664060",
           "entityId": "mock-entity-gemini-basic-text-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -2664,38 +2664,38 @@
             "minLength": 10
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664760,
+            "endTime": 1754655664810,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-gemini-basic-text-response-1754653168041",
+        "flowId": "mock-flow-gemini-basic-text-response-1754655664060",
         "entityId": "mock-entity-gemini-basic-text-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664060,
+        "endTime": 1754655664860,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-gemini-basic-text-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664060",
           "provider": "gemini",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-gemini.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.060Z"
       }
     },
     "tool-call-response": {
@@ -2732,7 +2732,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-gemini-tool-call-response-step1-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step1-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -2767,22 +2767,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-tool-call-response-step2-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step2-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -2821,22 +2821,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-tool-call-response-step3-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step3-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -2873,22 +2873,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-tool-call-response-step4-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step4-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -2900,22 +2900,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-tool-call-response-step5-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step5-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -2927,22 +2927,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-tool-call-response-step6-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step6-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -2954,22 +2954,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-tool-call-response-step7-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step7-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -2981,22 +2981,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-tool-call-response-step8-1754653168041",
+          "captureId": "mock-gemini-tool-call-response-step8-1754655664061",
           "entityId": "mock-entity-gemini-tool-call-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -3010,38 +3010,38 @@
             "hasToolCalls": true
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-gemini-tool-call-response-1754653168041",
+        "flowId": "mock-flow-gemini-tool-call-response-1754655664061",
         "entityId": "mock-entity-gemini-tool-call-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-gemini-tool-call-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664061",
           "provider": "gemini",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-gemini.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "streaming-response": {
@@ -3068,7 +3068,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-gemini-streaming-response-step1-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step1-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -3087,22 +3087,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-streaming-response-step2-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step2-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -3125,22 +3125,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-streaming-response-step3-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step3-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -3161,22 +3161,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-streaming-response-step4-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step4-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -3188,22 +3188,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-streaming-response-step5-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step5-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -3215,22 +3215,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-streaming-response-step6-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step6-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -3242,22 +3242,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-streaming-response-step7-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step7-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -3269,22 +3269,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-streaming-response-step8-1754653168042",
+          "captureId": "mock-gemini-streaming-response-step8-1754655664061",
           "entityId": "mock-entity-gemini-streaming-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -3304,38 +3304,38 @@
             "finalStopReason": "end_turn"
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-gemini-streaming-response-1754653168042",
+        "flowId": "mock-flow-gemini-streaming-response-1754655664061",
         "entityId": "mock-entity-gemini-streaming-response",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-gemini-streaming-response",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "gemini",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-gemini.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "error-handling": {
@@ -3358,7 +3358,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-gemini-error-handling-step1-1754653168042",
+          "captureId": "mock-gemini-error-handling-step1-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -3376,22 +3376,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-error-handling-step2-1754653168042",
+          "captureId": "mock-gemini-error-handling-step2-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -3413,22 +3413,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-error-handling-step3-1754653168042",
+          "captureId": "mock-gemini-error-handling-step3-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -3448,22 +3448,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-error-handling-step4-1754653168042",
+          "captureId": "mock-gemini-error-handling-step4-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -3475,22 +3475,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-error-handling-step5-1754653168042",
+          "captureId": "mock-gemini-error-handling-step5-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -3502,22 +3502,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-error-handling-step6-1754653168042",
+          "captureId": "mock-gemini-error-handling-step6-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -3529,22 +3529,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-error-handling-step7-1754653168042",
+          "captureId": "mock-gemini-error-handling-step7-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -3556,22 +3556,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-gemini-error-handling-step8-1754653168042",
+          "captureId": "mock-gemini-error-handling-step8-1754655664061",
           "entityId": "mock-entity-gemini-error-handling",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -3588,38 +3588,38 @@
             ]
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-gemini-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-gemini.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-gemini-error-handling-1754653168042",
+        "flowId": "mock-flow-gemini-error-handling-1754655664061",
         "entityId": "mock-entity-gemini-error-handling",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-gemini-error-handling",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "gemini",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-gemini.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     }
   },
@@ -3642,7 +3642,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-anthropic-basic-text-response-step1-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step1-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -3661,22 +3661,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664060,
+            "endTime": 1754655664110,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-anthropic-basic-text-response-step2-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step2-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -3699,22 +3699,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664160,
+            "endTime": 1754655664210,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-anthropic-basic-text-response-step3-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step3-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -3735,22 +3735,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664260,
+            "endTime": 1754655664310,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-anthropic-basic-text-response-step4-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step4-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -3762,22 +3762,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664360,
+            "endTime": 1754655664410,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-anthropic-basic-text-response-step5-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step5-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -3789,22 +3789,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664460,
+            "endTime": 1754655664510,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-anthropic-basic-text-response-step6-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step6-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -3816,22 +3816,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664560,
+            "endTime": 1754655664610,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-anthropic-basic-text-response-step7-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step7-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -3843,22 +3843,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664660,
+            "endTime": 1754655664710,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         },
         {
-          "captureId": "mock-anthropic-basic-text-response-step8-1754653168041",
+          "captureId": "mock-anthropic-basic-text-response-step8-1754655664060",
           "entityId": "mock-entity-anthropic-basic-text-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -3872,38 +3872,38 @@
             "minLength": 10
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664760,
+            "endTime": 1754655664810,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-basic-text-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664060",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.060Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-anthropic-basic-text-response-1754653168041",
+        "flowId": "mock-flow-anthropic-basic-text-response-1754655664060",
         "entityId": "mock-entity-anthropic-basic-text-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664060,
+        "endTime": 1754655664860,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-anthropic-basic-text-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664060",
           "provider": "anthropic",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-anthropic.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.060Z"
       }
     },
     "tool-call-response": {
@@ -3940,7 +3940,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-anthropic-tool-call-response-step1-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step1-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -3975,22 +3975,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168041,
-            "endTime": 1754653168091,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-tool-call-response-step2-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step2-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -4029,22 +4029,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168141,
-            "endTime": 1754653168191,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-tool-call-response-step3-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step3-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -4081,22 +4081,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168241,
-            "endTime": 1754653168291,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-tool-call-response-step4-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step4-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -4108,22 +4108,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168341,
-            "endTime": 1754653168391,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-tool-call-response-step5-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step5-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -4135,22 +4135,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168441,
-            "endTime": 1754653168491,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-tool-call-response-step6-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step6-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -4162,22 +4162,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168541,
-            "endTime": 1754653168591,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-tool-call-response-step7-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step7-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -4189,22 +4189,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168641,
-            "endTime": 1754653168691,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-tool-call-response-step8-1754653168041",
+          "captureId": "mock-anthropic-tool-call-response-step8-1754655664061",
           "entityId": "mock-entity-anthropic-tool-call-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -4218,38 +4218,38 @@
             "hasToolCalls": true
           },
           "timing": {
-            "startTime": 1754653168741,
-            "endTime": 1754653168791,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-tool-call-response",
-            "sessionId": "mock-session-1754653168041",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.041Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-anthropic-tool-call-response-1754653168041",
+        "flowId": "mock-flow-anthropic-tool-call-response-1754655664061",
         "entityId": "mock-entity-anthropic-tool-call-response",
-        "startTime": 1754653168041,
-        "endTime": 1754653168841,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-anthropic-tool-call-response",
-          "sessionId": "mock-session-1754653168041",
+          "sessionId": "mock-session-1754655664061",
           "provider": "anthropic",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-anthropic.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.041Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "streaming-response": {
@@ -4276,7 +4276,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-anthropic-streaming-response-step1-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step1-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -4295,22 +4295,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-streaming-response-step2-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step2-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -4333,22 +4333,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-streaming-response-step3-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step3-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -4369,22 +4369,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-streaming-response-step4-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step4-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -4396,22 +4396,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-streaming-response-step5-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step5-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -4423,22 +4423,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-streaming-response-step6-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step6-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -4450,22 +4450,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-streaming-response-step7-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step7-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -4477,22 +4477,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-streaming-response-step8-1754653168042",
+          "captureId": "mock-anthropic-streaming-response-step8-1754655664061",
           "entityId": "mock-entity-anthropic-streaming-response",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -4512,38 +4512,38 @@
             "finalStopReason": "end_turn"
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-streaming-response",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-anthropic-streaming-response-1754653168042",
+        "flowId": "mock-flow-anthropic-streaming-response-1754655664061",
         "entityId": "mock-entity-anthropic-streaming-response",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-anthropic-streaming-response",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "anthropic",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-anthropic.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     },
     "error-handling": {
@@ -4566,7 +4566,7 @@
       },
       "mockDataPoints": [
         {
-          "captureId": "mock-anthropic-error-handling-step1-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step1-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 1,
           "stepName": "input-processing",
@@ -4584,22 +4584,22 @@
             "validatedRequest": "mock-validated"
           },
           "timing": {
-            "startTime": 1754653168042,
-            "endTime": 1754653168092,
+            "startTime": 1754655664061,
+            "endTime": 1754655664111,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-error-handling-step2-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step2-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 2,
           "stepName": "routing-logic",
@@ -4621,22 +4621,22 @@
             "selectedModel": "mock-model"
           },
           "timing": {
-            "startTime": 1754653168142,
-            "endTime": 1754653168192,
+            "startTime": 1754655664161,
+            "endTime": 1754655664211,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-error-handling-step3-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step3-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 3,
           "stepName": "transformation-to-provider",
@@ -4656,22 +4656,22 @@
             "providerFormatRequest": "mock-transformed"
           },
           "timing": {
-            "startTime": 1754653168242,
-            "endTime": 1754653168292,
+            "startTime": 1754655664261,
+            "endTime": 1754655664311,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-error-handling-step4-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step4-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 4,
           "stepName": "api-interaction",
@@ -4683,22 +4683,22 @@
             "providerResponse": "mock-response"
           },
           "timing": {
-            "startTime": 1754653168342,
-            "endTime": 1754653168392,
+            "startTime": 1754655664361,
+            "endTime": 1754655664411,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-error-handling-step5-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step5-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 5,
           "stepName": "response-processing",
@@ -4710,22 +4710,22 @@
             "stepOutput": "mock-response-processing-output"
           },
           "timing": {
-            "startTime": 1754653168442,
-            "endTime": 1754653168492,
+            "startTime": 1754655664461,
+            "endTime": 1754655664511,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-error-handling-step6-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step6-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 6,
           "stepName": "transformation-to-anthropic",
@@ -4737,22 +4737,22 @@
             "stepOutput": "mock-transformation-to-anthropic-output"
           },
           "timing": {
-            "startTime": 1754653168542,
-            "endTime": 1754653168592,
+            "startTime": 1754655664561,
+            "endTime": 1754655664611,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-error-handling-step7-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step7-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 7,
           "stepName": "output-formatting",
@@ -4764,22 +4764,22 @@
             "stepOutput": "mock-output-formatting-output"
           },
           "timing": {
-            "startTime": 1754653168642,
-            "endTime": 1754653168692,
+            "startTime": 1754655664661,
+            "endTime": 1754655664711,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         },
         {
-          "captureId": "mock-anthropic-error-handling-step8-1754653168042",
+          "captureId": "mock-anthropic-error-handling-step8-1754655664061",
           "entityId": "mock-entity-anthropic-error-handling",
           "stepNumber": 8,
           "stepName": "final-validation",
@@ -4796,38 +4796,38 @@
             ]
           },
           "timing": {
-            "startTime": 1754653168742,
-            "endTime": 1754653168792,
+            "startTime": 1754655664761,
+            "endTime": 1754655664811,
             "duration": 50
           },
           "metadata": {
             "requestId": "mock-req-anthropic-error-handling",
-            "sessionId": "mock-session-1754653168042",
+            "sessionId": "mock-session-1754655664061",
             "model": "mock-model",
             "category": "simulation",
             "configPath": "mock-config-anthropic.json"
           },
           "errors": [],
-          "capturedAt": "2025-08-08T11:39:28.042Z"
+          "capturedAt": "2025-08-08T12:21:04.061Z"
         }
       ],
       "simulatedFlow": {
-        "flowId": "mock-flow-anthropic-error-handling-1754653168042",
+        "flowId": "mock-flow-anthropic-error-handling-1754655664061",
         "entityId": "mock-entity-anthropic-error-handling",
-        "startTime": 1754653168042,
-        "endTime": 1754653168842,
+        "startTime": 1754655664061,
+        "endTime": 1754655664861,
         "totalDuration": 800,
         "status": "success",
         "dataPoints": [],
         "metadata": {
           "requestId": "mock-req-anthropic-error-handling",
-          "sessionId": "mock-session-1754653168042",
+          "sessionId": "mock-session-1754655664061",
           "provider": "anthropic",
           "model": "mock-model",
           "category": "simulation",
           "configPath": "mock-config-anthropic.json"
         },
-        "capturedAt": "2025-08-08T11:39:28.042Z"
+        "capturedAt": "2025-08-08T12:21:04.061Z"
       }
     }
   }
