@@ -115,8 +115,8 @@ export interface MessageTransformer {
 }
 
 export interface TransformationContext {
-  sourceProvider: 'openai' | 'anthropic' | 'unified';
-  targetProvider: 'openai' | 'anthropic' | 'unified';
+  sourceProvider: 'openai' | 'anthropic' | 'unified' | 'codewhisperer';
+  targetProvider: 'openai' | 'anthropic' | 'unified' | 'codewhisperer';
   preserveToolCalls?: boolean;
   preserveSystemMessages?: boolean;
 }

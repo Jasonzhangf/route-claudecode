@@ -9,6 +9,7 @@ import { MessageTransformer, UnifiedRequest, UnifiedResponse, TransformationCont
 export { TransformationContext } from './types';
 import { OpenAITransformer, createOpenAITransformer } from './openai';
 import { AnthropicTransformer, createAnthropicTransformer } from './anthropic';
+import { CodeWhispererTransformer, createCodeWhispererTransformer } from './codewhisperer';
 import { StreamingTransformer, createStreamingTransformer, StreamTransformOptions } from './streaming';
 import { logger } from '@/utils/logger';
 
@@ -25,9 +26,11 @@ export class TransformationManager {
   private initializeTransformers(): void {
     const openaiTransformer = createOpenAITransformer();
     const anthropicTransformer = createAnthropicTransformer();
+    const codewhispererTransformer = createCodeWhispererTransformer();
 
     this.transformers.set('openai', openaiTransformer);
     this.transformers.set('anthropic', anthropicTransformer);
+    this.transformers.set('codewhisperer', codewhispererTransformer);
 
     // Use console.log instead of logger during initialization to avoid port dependency
     console.log('Transformation manager initialized with transformers:', Array.from(this.transformers.keys()));

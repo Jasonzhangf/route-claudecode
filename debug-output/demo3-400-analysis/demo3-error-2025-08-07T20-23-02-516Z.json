@@ -1,0 +1,45 @@
+{
+  "request": {
+    "model": "CLAUDE_SONNET_4_20250514_V1_0",
+    "max_tokens": 1000,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, can you help me with a simple task?"
+      }
+    ],
+    "tools": [
+      {
+        "name": "get_current_time",
+        "description": "Get the current time",
+        "input_schema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    ]
+  },
+  "error": {
+    "message": "Request failed with status code 500",
+    "status": 500,
+    "data": {
+      "error": {
+        "message": "Server error occurred. This is usually temporary.",
+        "code": 500,
+        "suggestions": [
+          "The request has been automatically retried",
+          "If the issue persists, try again in a few minutes",
+          "Check Google Cloud status page for service outages"
+        ]
+      }
+    },
+    "headers": {
+      "content-type": "application/json",
+      "date": "Thu, 07 Aug 2025 20:23:05 GMT",
+      "connection": "keep-alive",
+      "keep-alive": "timeout=5",
+      "transfer-encoding": "chunked"
+    }
+  },
+  "timestamp": "2025-08-07T20:23:05.537Z"
+}

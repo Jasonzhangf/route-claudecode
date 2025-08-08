@@ -9,6 +9,7 @@ export * from './types';
 // Individual transformers
 export * from './openai';
 export * from './anthropic';
+export * from './gemini';
 export * from './streaming';
 
 // Transformation manager
@@ -22,3 +23,10 @@ export {
   transformOpenAIResponseToAnthropic,
   transformAnthropicResponseToOpenAI
 } from './manager';
+
+// Re-export Gemini transformers
+export {
+  transformAnthropicToGemini,
+  transformGeminiToAnthropic,
+  GeminiTransformer
+} from './gemini';

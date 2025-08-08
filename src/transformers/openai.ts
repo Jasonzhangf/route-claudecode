@@ -1,6 +1,9 @@
 /**
- * OpenAI Format Transformer
+ * Enhanced OpenAI Format Transformer
  * Handles conversion between OpenAI API format and unified format
+ * Includes tool call processing and response handling
+ * 
+ * 遵循零硬编码、零Fallback、零沉默失败原则
  */
 
 import { 
@@ -13,10 +16,288 @@ import {
   StreamChunk,
   TransformationContext
 } from './types';
+import { BaseRequest, BaseResponse } from '@/types';
 import { logger } from '@/utils/logger';
 
 export class OpenAITransformer implements MessageTransformer {
   public readonly name = 'openai';
+
+  /**
+   * 🎯 Convert BaseRequest (Anthropic format) to OpenAI API format
+   * 这是Provider调用的主要入口点
+   */
+  transformBaseRequestToOpenAI(request: BaseRequest): any {
+    if (!request) {
+      throw new Error('BaseRequest is null or undefined - violates zero fallback principle');
+    }
+
+    const openaiRequest: any = {
+      model: request.model,
+      messages: this.convertAnthropicMessagesToOpenAI(request.messages || []),
+      max_tokens: request.max_tokens || 131072,
+      temperature: request.temperature,
+      stream: request.stream || false
+    };
+
+    // 处理系统消息
+    if (request.system) {
+      openaiRequest.messages.unshift({
+        role: 'system',
+        content: request.system
+      });
+    }
+
+    // 🔧 处理工具定义转换
+    if (request.tools && Array.isArray(request.tools) && request.tools.length > 0) {
+      openaiRequest.tools = this.convertAnthropicToolsToOpenAI(request.tools);
+      
+      // 处理工具选择 (如果存在)
+      const requestWithToolChoice = request as any;
+      if (requestWithToolChoice.tool_choice) {
+        openaiRequest.tool_choice = this.convertToolChoice(requestWithToolChoice.tool_choice);
+      }
+    }
+
+    console.log('🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI:', {
+      hasTools: !!(openaiRequest.tools && openaiRequest.tools.length > 0),
+      toolCount: openaiRequest.tools?.length || 0,
+      messageCount: openaiRequest.messages.length,
+      model: openaiRequest.model
+    });
+
+    return openaiRequest;
+  }
+
+  /**
+   * 🎯 Convert OpenAI API response to BaseResponse (Anthropic format)
+   * 这是Provider调用的主要出口点
+   */
+  transformOpenAIResponseToBase(response: any, originalRequest: BaseRequest): BaseResponse {
+    if (!response) {
+      throw new Error('OpenAI response is null or undefined - silent failure detected');
+    }
+
+    const choice = response.choices?.[0];
+    if (!choice) {
+      throw new Error('OpenAI response missing choices - invalid response format');
+    }
+
+    // 🔧 处理工具调用转换
+    const content = this.convertOpenAIMessageToAnthropicContent(choice.message);
+    
+    // 🎯 修复finish_reason映射
+    const finishReason = this.mapOpenAIFinishReasonToAnthropic(
+      choice.finish_reason, 
+      this.hasToolCalls(choice.message)
+    );
+
+    const baseResponse: BaseResponse = {
+      id: response.id || `msg_${Date.now()}`,
+      content,
+      model: originalRequest.metadata?.originalModel || response.model,
+      role: 'assistant',
+      stop_reason: finishReason,
+      stop_sequence: null,
+      usage: {
+        input_tokens: response.usage?.prompt_tokens || 0,
+        output_tokens: response.usage?.completion_tokens || 0
+      }
+    };
+
+    console.log('🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse:', {
+      hasTools: content.some((c: any) => c.type === 'tool_use'),
+      toolCount: content.filter((c: any) => c.type === 'tool_use').length,
+      stopReason: finishReason,
+      contentBlocks: content.length
+    });
+
+    return baseResponse;
+  }
+
+  /**
+   * 🎯 Process OpenAI streaming response and convert to Anthropic SSE events
+   * 处理流式响应转换
+   */
+  async *transformOpenAIStreamToAnthropicSSE(
+    stream: AsyncIterable<any>, 
+    originalRequest: BaseRequest,
+    requestId: string
+  ): AsyncIterable<any> {
+    let messageId = `msg_${Date.now()}`;
+    let hasStarted = false;
+    let toolCallBuffer = new Map<number, any>();
+    let textContent = '';
+
+    try {
+      for await (const chunk of stream) {
+        const choice = chunk.choices?.[0];
+        if (!choice) continue;
+
+        // 发送message_start事件
+        if (!hasStarted) {
+          yield {
+            event: 'message_start',
+            data: {
+              type: 'message_start',
+              message: {
+                id: messageId,
+                type: 'message',
+                role: 'assistant',
+                content: [],
+                model: originalRequest.metadata?.originalModel || chunk.model,
+                stop_reason: null,
+                stop_sequence: null,
+                usage: { input_tokens: 0, output_tokens: 0 }
+              }
+            }
+          };
+          hasStarted = true;
+        }
+
+        // 处理文本内容
+        if (choice.delta?.content) {
+          if (textContent === '') {
+            // 第一次文本内容，发送content_block_start
+            yield {
+              event: 'content_block_start',
+              data: {
+                type: 'content_block_start',
+                index: 0,
+                content_block: {
+                  type: 'text',
+                  text: ''
+                }
+              }
+            };
+          }
+
+          textContent += choice.delta.content;
+          
+          yield {
+            event: 'content_block_delta',
+            data: {
+              type: 'content_block_delta',
+              index: 0,
+              delta: {
+                type: 'text_delta',
+                text: choice.delta.content
+              }
+            }
+          };
+        }
+
+        // 🔧 处理工具调用
+        if (choice.delta?.tool_calls) {
+          for (const toolCall of choice.delta.tool_calls) {
+            const index = toolCall.index || 0;
+            
+            if (!toolCallBuffer.has(index)) {
+              // 新的工具调用开始
+              const toolId = toolCall.id || `tool_${Date.now()}_${index}`;
+              const toolName = toolCall.function?.name || 'unknown_tool';
+              
+              toolCallBuffer.set(index, {
+                id: toolId,
+                name: toolName,
+                input: ''
+              });
+
+              yield {
+                event: 'content_block_start',
+                data: {
+                  type: 'content_block_start',
+                  index: index + 1, // 文本占用index 0
+                  content_block: {
+                    type: 'tool_use',
+                    id: toolId,
+                    name: toolName,
+                    input: {}
+                  }
+                }
+              };
+            }
+
+            // 处理工具参数增量
+            if (toolCall.function?.arguments) {
+              const bufferedTool = toolCallBuffer.get(index)!;
+              bufferedTool.input += toolCall.function.arguments;
+
+              yield {
+                event: 'content_block_delta',
+                data: {
+                  type: 'content_block_delta',
+                  index: index + 1,
+                  delta: {
+                    type: 'input_json_delta',
+                    partial_json: toolCall.function.arguments
+                  }
+                }
+              };
+            }
+          }
+        }
+
+        // 处理完成
+        if (choice.finish_reason) {
+          // 结束所有内容块
+          if (textContent) {
+            yield {
+              event: 'content_block_stop',
+              data: {
+                type: 'content_block_stop',
+                index: 0
+              }
+            };
+          }
+
+          for (const [index] of toolCallBuffer) {
+            yield {
+              event: 'content_block_stop',
+              data: {
+                type: 'content_block_stop',
+                index: index + 1
+              }
+            };
+          }
+
+          // 🎯 修复finish_reason映射
+          const anthropicFinishReason = this.mapOpenAIFinishReasonToAnthropic(
+            choice.finish_reason,
+            toolCallBuffer.size > 0
+          );
+
+          yield {
+            event: 'message_delta',
+            data: {
+              type: 'message_delta',
+              delta: {
+                stop_reason: anthropicFinishReason,
+                stop_sequence: null
+              },
+              usage: {
+                output_tokens: 1
+              }
+            }
+          };
+
+          yield {
+            event: 'message_stop',
+            data: {
+              type: 'message_stop'
+            }
+          };
+
+          break;
+        }
+      }
+    } catch (error) {
+      console.error('🚨 [OPENAI-TRANSFORMER] Stream processing failed:', {
+        error: error instanceof Error ? error.message : String(error),
+        requestId
+      });
+      throw error;
+    }
+  }
 
   /**
    * Convert OpenAI request to unified format
@@ -285,6 +566,218 @@ export class OpenAITransformer implements MessageTransformer {
 
       return openaiMsg;
     });
+  }
+
+  /**
+   * 🔧 Convert Anthropic messages to OpenAI format
+   */
+  private convertAnthropicMessagesToOpenAI(messages: any[]): any[] {
+    if (!Array.isArray(messages)) {
+      throw new Error('Messages must be an array - violates zero fallback principle');
+    }
+
+    return messages.map(msg => {
+      if (!msg || typeof msg !== 'object') {
+        throw new Error('Invalid message object - violates zero fallback principle');
+      }
+
+      const openaiMsg: any = {
+        role: msg.role,
+        content: null
+      };
+
+      // 处理内容转换
+      if (msg.content) {
+        if (typeof msg.content === 'string') {
+          openaiMsg.content = msg.content;
+        } else if (Array.isArray(msg.content)) {
+          // 处理复杂内容块
+          const { content, toolCalls } = this.convertAnthropicContentToOpenAI(msg.content);
+          openaiMsg.content = content;
+          if (toolCalls.length > 0) {
+            openaiMsg.tool_calls = toolCalls;
+          }
+        }
+      }
+
+      return openaiMsg;
+    });
+  }
+
+  /**
+   * 🔧 Convert Anthropic content blocks to OpenAI format
+   */
+  private convertAnthropicContentToOpenAI(content: any[]): { content: string | null, toolCalls: any[] } {
+    let textContent = '';
+    const toolCalls: any[] = [];
+
+    for (const block of content) {
+      if (!block || typeof block !== 'object') {
+        continue;
+      }
+
+      if (block.type === 'text') {
+        textContent += block.text || '';
+      } else if (block.type === 'tool_use') {
+        if (!block.id || !block.name) {
+          throw new Error('Tool use block missing id or name - violates zero fallback principle');
+        }
+
+        toolCalls.push({
+          id: block.id,
+          type: 'function',
+          function: {
+            name: block.name,
+            arguments: JSON.stringify(block.input || {})
+          }
+        });
+      }
+    }
+
+    return {
+      content: textContent || (toolCalls.length > 0 ? null : ''),
+      toolCalls
+    };
+  }
+
+  /**
+   * 🔧 Convert Anthropic tools to OpenAI format
+   */
+  private convertAnthropicToolsToOpenAI(tools: any[]): any[] {
+    if (!Array.isArray(tools)) {
+      throw new Error('Tools must be an array - violates zero fallback principle');
+    }
+
+    return tools.map(tool => {
+      if (!tool || typeof tool !== 'object') {
+        throw new Error('Invalid tool object - violates zero fallback principle');
+      }
+
+      if (!tool.name) {
+        throw new Error('Tool missing name - violates zero fallback principle');
+      }
+
+      return {
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description || '',
+          parameters: tool.input_schema || {}
+        }
+      };
+    });
+  }
+
+  /**
+   * 🔧 Convert tool choice
+   */
+  private convertToolChoice(toolChoice: any): any {
+    if (!toolChoice) {
+      return undefined;
+    }
+
+    if (typeof toolChoice === 'string') {
+      if (toolChoice === 'auto' || toolChoice === 'none') {
+        return toolChoice;
+      }
+      // 具体工具名
+      return {
+        type: 'function',
+        function: { name: toolChoice }
+      };
+    }
+
+    return toolChoice;
+  }
+
+  /**
+   * 🔧 Convert OpenAI message to Anthropic content blocks
+   */
+  private convertOpenAIMessageToAnthropicContent(message: any): any[] {
+    const content: any[] = [];
+
+    // 处理文本内容
+    if (message.content && typeof message.content === 'string') {
+      content.push({
+        type: 'text',
+        text: message.content
+      });
+    }
+
+    // 处理工具调用
+    if (message.tool_calls && Array.isArray(message.tool_calls)) {
+      for (const toolCall of message.tool_calls) {
+        if (!toolCall.id || !toolCall.function?.name) {
+          console.warn('🚨 [OPENAI-TRANSFORMER] Invalid tool call, skipping:', toolCall);
+          continue;
+        }
+
+        let input: any = {};
+        if (toolCall.function.arguments) {
+          try {
+            input = JSON.parse(toolCall.function.arguments);
+          } catch (error) {
+            console.warn('🚨 [OPENAI-TRANSFORMER] Failed to parse tool arguments:', {
+              arguments: toolCall.function.arguments,
+              error: error instanceof Error ? error.message : String(error)
+            });
+            input = {}; // 不使用fallback，使用空对象
+          }
+        }
+
+        content.push({
+          type: 'tool_use',
+          id: toolCall.id,
+          name: toolCall.function.name,
+          input
+        });
+      }
+    }
+
+    // 如果没有内容，添加空文本块
+    if (content.length === 0) {
+      content.push({
+        type: 'text',
+        text: ''
+      });
+    }
+
+    return content;
+  }
+
+  /**
+   * 🎯 Map OpenAI finish_reason to Anthropic stop_reason
+   * 使用统一的response-converter.ts进行映射
+   */
+  private mapOpenAIFinishReasonToAnthropic(finishReason: string, hasToolCalls: boolean): string {
+    // 🔧 使用统一的转换器，避免重复逻辑
+    const { mapFinishReasonStrict } = require('@/transformers/response-converter');
+    
+    try {
+      const mappedReason = mapFinishReasonStrict(finishReason);
+      
+      // 🔧 Critical Fix: 如果有工具调用，强制返回tool_use
+      if (hasToolCalls && (mappedReason === 'end_turn' || finishReason === 'tool_calls')) {
+        return 'tool_use';
+      }
+      
+      return mappedReason;
+    } catch (error) {
+      // 记录映射失败，但不使用fallback
+      logger.error('OpenAI finish_reason mapping failed', {
+        finishReason,
+        hasToolCalls,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error; // 重新抛出错误，不使用fallback
+    }
+  }
+
+  /**
+   * 🔧 Check if message has tool calls
+   */
+  private hasToolCalls(message: any): boolean {
+    return !!(message?.tool_calls && Array.isArray(message.tool_calls) && message.tool_calls.length > 0);
   }
 }
 

@@ -12,10 +12,11 @@
 import { Provider, ProviderConfig } from '@/types';
 import { logger } from '@/utils/logger';
 import { OpenAISDKClient, OpenAISDKConfig } from './sdk-client';
+import { PureOpenAIClient, PureOpenAIConfig } from './pure-client';
 
 export interface OpenAIClientConfig extends ProviderConfig {
   // 客户端选择配置
-  clientType?: 'enhanced' | 'sdk' | 'auto';
+  clientType?: 'pure' | 'sdk' | 'auto';
   
   // SDK特定配置
   sdkOptions?: {
@@ -41,7 +42,7 @@ export interface OpenAIClientConfig extends ProviderConfig {
  * 客户端类型枚举
  */
 export enum ClientType {
-  ENHANCED = 'enhanced',
+  PURE = 'pure',
   SDK = 'sdk'
 }
 
@@ -95,18 +96,36 @@ export class OpenAIClientFactory {
   }
 
   /**
-   * 确定客户端类型 - 强制使用SDK实现
-   * 为了向后兼容，接受所有配置类型，但总是返回SDK
+   * 确定客户端类型 - 优先使用Pure实现
+   * Pure客户端使用transformer处理所有转换逻辑
    */
   private static determineClientType(config: OpenAIClientConfig, providerId: string): ClientType {
-    // 强制使用SDK客户端，不管配置如何
-    logger.debug('Force-selecting OpenAI SDK client for all OpenAI providers', { 
-      providerId,
-      originalClientType: config.clientType || 'auto',
-      forcedClientType: 'sdk'
-    });
+    // 优先使用Pure客户端（架构重构后的推荐实现）
+    const clientType = config.clientType || 'pure';
     
-    return ClientType.SDK;
+    if (clientType === 'pure') {
+      logger.debug('Selected Pure OpenAI client (recommended)', { 
+        providerId,
+        clientType: 'pure',
+        reason: 'transformer-based architecture'
+      });
+      return ClientType.PURE;
+    } else if (clientType === 'sdk') {
+      logger.debug('Selected SDK OpenAI client (legacy)', { 
+        providerId,
+        clientType: 'sdk',
+        reason: 'explicit configuration'
+      });
+      return ClientType.SDK;
+    } else {
+      // 默认使用Pure客户端
+      logger.debug('Auto-selected Pure OpenAI client', { 
+        providerId,
+        originalClientType: clientType,
+        selectedClientType: 'pure'
+      });
+      return ClientType.PURE;
+    }
   }
 
   /**
@@ -118,14 +137,26 @@ export class OpenAIClientFactory {
     providerId: string,
     globalConfig?: any
   ): Provider {
-    // 强制使用SDK客户端，忽略clientType参数
-    logger.debug('Creating OpenAI SDK client', {
-      providerId,
-      requestedType: clientType,
-      actualType: 'SDK'
-    });
-    
-    return new OpenAISDKClient(config as OpenAISDKConfig, providerId);
+    switch (clientType) {
+      case ClientType.PURE:
+        logger.debug('Creating Pure OpenAI client', {
+          providerId,
+          clientType: 'pure',
+          architecture: 'transformer-based'
+        });
+        return new PureOpenAIClient(config as PureOpenAIConfig, providerId);
+        
+      case ClientType.SDK:
+        logger.debug('Creating SDK OpenAI client', {
+          providerId,
+          clientType: 'sdk',
+          architecture: 'legacy'
+        });
+        return new OpenAISDKClient(config as OpenAISDKConfig, providerId);
+        
+      default:
+        throw new Error(`Unsupported client type: ${clientType} - violates zero fallback principle`);
+    }
   }
 
   /**
@@ -259,7 +290,7 @@ export class OpenAIClientFactory {
     
     if (shouldSwitch) {
       const currentType = activeClient.type;
-      const newType = currentType === ClientType.ENHANCED ? ClientType.SDK : ClientType.ENHANCED;
+      const newType = currentType === ClientType.PURE ? ClientType.SDK : ClientType.PURE;
       
       logger.warn('Switching OpenAI client due to consecutive errors', {
         providerId,

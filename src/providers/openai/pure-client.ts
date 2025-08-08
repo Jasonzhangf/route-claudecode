@@ -1,12 +1,8 @@
 /**
- * OpenAI SDK Client - 并行模块
- * 使用官方OpenAI SDK实现，提供平滑切换选项
+ * Pure OpenAI Client - 纯粹的OpenAI逻辑 (重构版)
+ * 只负责与OpenAI API的通信，所有转换逻辑都在transformer中处理
  * 
- * 设计目标:
- * 1. 使用官方OpenAI SDK
- * 2. 保持与enhanced-client相同的接口
- * 3. 支持平滑切换
- * 4. 集成竞态控制系统
+ * 遵循零硬编码、零Fallback、零沉默失败原则
  */
 
 import OpenAI from 'openai';
@@ -18,7 +14,7 @@ import {
   validateNonStreamingResponse, 
   handleProviderError,
   isValidContentChunk,
-  extractFinishReasonFromChunk 
+  extractFinishReasonFromChunk
 } from '@/utils/response-validation';
 import { 
   validateProviderConfig, 
@@ -30,9 +26,7 @@ import {
   type OpenAIStreamingHandler 
 } from '@/utils/openai-streaming-handler';
 
-export interface OpenAISDKConfig extends ProviderConfig {
-  // 扩展配置选项
-  useOfficialSDK?: boolean;
+export interface PureOpenAIConfig extends ProviderConfig {
   sdkOptions?: {
     timeout?: number;
     maxRetries?: number;
@@ -41,27 +35,27 @@ export interface OpenAISDKConfig extends ProviderConfig {
 }
 
 /**
- * OpenAI SDK客户端 - 官方SDK实现
+ * 纯粹的OpenAI客户端 - 只做API调用 (重构版)
  */
-export class OpenAISDKClient implements Provider {
+export class PureOpenAIClient implements Provider {
   public readonly name: string;
-  public readonly type = 'openai-sdk';
-  public readonly config: OpenAISDKConfig;
+  public readonly type = 'openai-pure';
+  public readonly config: PureOpenAIConfig;
   
-  protected openaiClient: OpenAI;
+  private openaiClient: OpenAI;
   private validatedConfig: ValidatedConfig;
   private sessionManager: ReturnType<typeof getSimpleSessionManager>;
   private transformer = createOpenAITransformer();
   private apiHandler: OpenAIStreamingHandler;
 
-  constructor(config: OpenAISDKConfig, providerId: string) {
+  constructor(config: PureOpenAIConfig, providerId: string) {
     this.name = providerId;
     this.config = config;
     
     // 🚨 严格配置验证 - 零fallback原则
     this.validatedConfig = validateProviderConfig(config, providerId, config.sdkOptions);
 
-    // 初始化官方OpenAI SDK
+    // 初始化OpenAI SDK
     this.openaiClient = new OpenAI({
       apiKey: this.validatedConfig.apiKey,
       baseURL: this.validatedConfig.baseURL,
@@ -70,7 +64,7 @@ export class OpenAISDKClient implements Provider {
       defaultHeaders: this.validatedConfig.sdkOptions.defaultHeaders
     });
 
-    // 初始化会话管理系统
+    // 初始化会话管理
     this.sessionManager = getSimpleSessionManager(this.validatedConfig.port);
     
     // 初始化API处理器（统一非流式调用）
@@ -80,39 +74,14 @@ export class OpenAISDKClient implements Provider {
       transformer: this.transformer
     });
 
-    logger.info('OpenAI SDK Client initialized', {
+    logger.info('Pure OpenAI Client initialized', {
       providerId,
       baseURL: this.validatedConfig.baseURL,
       hasApiKey: true,
       port: this.validatedConfig.port,
-      defaultModel: this.validatedConfig.defaultModel,
       timeout: this.validatedConfig.sdkOptions.timeout,
-      maxRetries: this.validatedConfig.sdkOptions.maxRetries,
-      sessionTracking: true
+      maxRetries: this.validatedConfig.sdkOptions.maxRetries
     });
-  }
-
-  // 配置提取方法已移至统一验证模块
-
-  /**
-   * 健康检查
-   */
-  async isHealthy(): Promise<boolean> {
-    try {
-      // 使用官方SDK进行健康检查
-      const response = await this.openaiClient.chat.completions.create({
-        model: this.validatedConfig.defaultModel,
-        messages: [{ role: 'user', content: 'test' }],
-        max_tokens: 1
-      });
-      return !!response.id;
-    } catch (error) {
-      logger.warn('OpenAI SDK health check failed', {
-        error: error instanceof Error ? error.message : String(error),
-        provider: this.name
-      });
-      return false;
-    }
   }
 
   /**
@@ -184,7 +153,6 @@ export class OpenAISDKClient implements Provider {
       logger.debug('Streaming simulation completed successfully', {
         stopReason: baseResponse.stop_reason,
         hasTools: baseResponse.content.some((c: any) => c.type === 'tool_use'),
-        contentBlocks: baseResponse.content.length,
         requestId,
         provider: this.name
       }, requestId, 'provider');
@@ -200,11 +168,33 @@ export class OpenAISDKClient implements Provider {
     }
   }
 
+  /**
+   * 健康检查
+   */
+  async isHealthy(): Promise<boolean> {
+    try {
+      // 简单的健康检查请求
+      const testRequest = {
+        model: this.validatedConfig.defaultModel,
+        messages: [{ role: 'user' as const, content: 'test' }],
+        max_tokens: 1
+      };
+
+      await this.openaiClient.chat.completions.create(testRequest);
+      return true;
+    } catch (error) {
+      logger.warn('OpenAI health check failed', {
+        provider: this.name,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
 }
 
 /**
- * 创建OpenAI SDK客户端 - 重构后的简化版本
+ * 创建Pure OpenAI客户端 - 重构后的简化版本
  */
-export function createOpenAISDKClient(config: OpenAISDKConfig, providerId: string): OpenAISDKClient {
-  return new OpenAISDKClient(config, providerId);
+export function createPureOpenAIClient(config: PureOpenAIConfig, providerId: string): PureOpenAIClient {
+  return new PureOpenAIClient(config, providerId);
 }

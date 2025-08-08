@@ -1,0 +1,48 @@
+{
+  "request": {
+    "model": "CLAUDE_SONNET_4_20250514_V1_0",
+    "max_tokens": 1000,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, can you help me with a simple task?"
+      }
+    ],
+    "tools": [
+      {
+        "name": "get_current_time",
+        "description": "Get the current time",
+        "input_schema": {
+          "type": "object",
+          "properties": {}
+        }
+      }
+    ]
+  },
+  "response": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Of course! What task would you like help with?"
+      }
+    ],
+    "id": "msg_1754598185903",
+    "model": "CLAUDE_SONNET_4_20250514_V1_0",
+    "role": "assistant",
+    "type": "message",
+    "usage": {
+      "input_tokens": 0,
+      "output_tokens": 1
+    },
+    "stop_reason": "end_turn"
+  },
+  "headers": {
+    "content-type": "application/json; charset=utf-8",
+    "content-length": "256",
+    "date": "Thu, 07 Aug 2025 20:23:06 GMT",
+    "connection": "keep-alive",
+    "keep-alive": "timeout=72"
+  },
+  "status": 200,
+  "timestamp": "2025-08-07T20:23:06.056Z"
+}

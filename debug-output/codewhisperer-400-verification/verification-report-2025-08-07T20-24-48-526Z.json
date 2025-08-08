@@ -1,0 +1,242 @@
+{
+  "timestamp": "2025-08-07T20:24:48.526Z",
+  "tests": [
+    {
+      "name": "简单文本请求",
+      "description": "基础文本对话请求",
+      "request": {
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "max_tokens": 1000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hello, how are you?"
+          }
+        ]
+      },
+      "timestamp": "2025-08-07T20:24:48.528Z",
+      "success": true,
+      "status": 200,
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Hello! I'm doing well, thank you for asking. How can I assist you today?"
+          }
+        ],
+        "id": "msg_1754598289410",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "role": "assistant",
+        "type": "message",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 1
+        },
+        "stop_reason": "end_turn"
+      },
+      "error": null,
+      "duration": 1112
+    },
+    {
+      "name": "工具调用请求",
+      "description": "包含工具定义的请求",
+      "request": {
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "max_tokens": 1000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "What time is it now?"
+          }
+        ],
+        "tools": [
+          {
+            "name": "get_current_time",
+            "description": "Get the current date and time",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "timezone": {
+                  "type": "string",
+                  "description": "Timezone identifier"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-08-07T20:24:49.641Z",
+      "success": true,
+      "status": 200,
+      "response": {
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_1754598290428_30h7s0wt",
+            "name": "get_current_time",
+            "input": {}
+          }
+        ],
+        "id": "msg_1754598290428",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "role": "assistant",
+        "type": "message",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 1
+        },
+        "stop_reason": "tool_use"
+      },
+      "error": null,
+      "duration": 869
+    },
+    {
+      "name": "多轮对话请求",
+      "description": "包含历史消息的多轮对话",
+      "request": {
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "max_tokens": 1000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hello"
+          },
+          {
+            "role": "assistant",
+            "content": "Hi there! How can I help you?"
+          },
+          {
+            "role": "user",
+            "content": "Can you tell me a joke?"
+          }
+        ]
+      },
+      "timestamp": "2025-08-07T20:24:50.510Z",
+      "success": true,
+      "status": 200,
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Sure! Here's one for you:\n\nWhy don't scientists trust atoms?\n\nBecause they make up everything! 😄\n\nWant to hear another one?"
+          }
+        ],
+        "id": "msg_1754598291349",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "role": "assistant",
+        "type": "message",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 1
+        },
+        "stop_reason": "end_turn"
+      },
+      "error": null,
+      "duration": 1118
+    },
+    {
+      "name": "复杂工具调用请求",
+      "description": "多个工具定义和复杂schema",
+      "request": {
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "max_tokens": 1000,
+        "messages": [
+          {
+            "role": "user",
+            "content": "Help me plan a trip to Japan."
+          }
+        ],
+        "tools": [
+          {
+            "name": "search_flights",
+            "description": "Search for flight options",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "origin": {
+                  "type": "string",
+                  "description": "Origin airport code"
+                },
+                "destination": {
+                  "type": "string",
+                  "description": "Destination airport code"
+                },
+                "departure_date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "return_date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "required": [
+                "origin",
+                "destination",
+                "departure_date"
+              ]
+            }
+          },
+          {
+            "name": "get_weather",
+            "description": "Get weather information for a location",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "location": {
+                  "type": "string",
+                  "description": "City name or coordinates"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              },
+              "required": [
+                "location"
+              ]
+            }
+          }
+        ]
+      },
+      "timestamp": "2025-08-07T20:24:51.628Z",
+      "success": true,
+      "status": 200,
+      "response": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Planning a trip to Japan sounds exciting! To get started, we’ll need some details:\n\n1. **Travel Dates**: When are you planning to visit Japan? Please provide your departure and return dates.\n2. **Origin City**: From which city or airport will you be departing?\n3. **Destinations in Japan**: Do you have specific cities or regions in Japan you'd like to visit (e.g., Tokyo, Osaka, Kyoto)?\n4. **Interests**: Are you interested in cultural sites, food, nature, modern cities, or something else?\n5. **Budget**: Do you have a budget in mind?\n\nOnce I have this information, I can help search for flights, check the weather, and suggest an itinerary. Let me know!"
+          }
+        ],
+        "id": "msg_1754598292038",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "role": "assistant",
+        "type": "message",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 1
+        },
+        "stop_reason": "end_turn"
+      },
+      "error": null,
+      "duration": 4312
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "api400Count": 0
+  },
+  "metadata": {
+    "testType": "CodeWhisperer 400 Error Verification",
+    "profileArnFixApplied": true,
+    "testingObjective": "Verify that profileArn substring error fix resolves API 400 issues",
+    "testEnvironment": {
+      "port": 3456,
+      "provider": "codewhisperer",
+      "authMethod": "conditional-social-check"
+    }
+  }
+}

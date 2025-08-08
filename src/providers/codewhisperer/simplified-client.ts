@@ -1,0 +1,498 @@
+/**
+ * CodeWhisperer Simplified Client - Transformer架构实现
+ * 纯API调用客户端，格式转换由Transformer处理，会话管理由Session Manager处理
+ * 项目所有者: Jason Zhang
+ */
+
+import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
+import { logger } from '@/utils/logger';
+import { getSimpleSessionManager } from '@/session/simple-session-manager';
+import { transformationManager } from '@/transformers/manager';
+import { createCodeWhispererPreprocessor } from '@/preprocessing/codewhisperer-preprocessor';
+import { CodeWhispererAuth } from './auth';
+import { EnhancedCodeWhispererClient } from './enhanced-client';
+import { AuthMethod } from './enhanced-auth-config';
+
+export interface CodeWhispererSimplifiedConfig extends ProviderConfig {
+  // CodeWhisperer特定配置
+  region?: string;
+  profileArn?: string;
+  authMethod?: 'social' | 'builtin';
+}
+
+/**
+ * CodeWhisperer简化客户端 - 遵循Transformer架构
+ * 🎯 职责分离：
+ * - Provider: 纯API调用
+ * - Transformer: 格式转换
+ * - Preprocessor: 兼容性处理
+ * - Session Manager: 会话管理
+ */
+export class CodeWhispererSimplifiedClient implements Provider {
+  public readonly name: string;
+  public readonly type = 'codewhisperer';
+  
+  protected cwClient: EnhancedCodeWhispererClient;
+  public config: CodeWhispererSimplifiedConfig;
+  private sessionManager: ReturnType<typeof getSimpleSessionManager>;
+  private preprocessor = createCodeWhispererPreprocessor();
+
+  constructor(config: CodeWhispererSimplifiedConfig, providerId: string) {
+    this.name = providerId;
+    this.config = config;
+
+    // 初始化CodeWhisperer认证和客户端
+    this.cwClient = this.initializeCodeWhispererClient(config);
+
+    // 初始化会话管理
+    const port = this.extractPortFromConfig(config);
+    this.sessionManager = getSimpleSessionManager(port);
+
+    logger.info('CodeWhisperer Simplified Client initialized with transformer architecture', {
+      providerId,
+      region: config.region,
+      authMethod: config.authMethod,
+      hasProfileArn: !!config.profileArn,
+      sessionTracking: true,
+      transformerEnabled: true,
+      preprocessorEnabled: true
+    });
+  }
+
+  /**
+   * 初始化CodeWhisperer客户端
+   */
+  private initializeCodeWhispererClient(config: CodeWhispererSimplifiedConfig): EnhancedCodeWhispererClient {
+    // 构造兼容的配置对象
+    const kiroConfig = {
+      region: { region: config.region || 'us-east-1' },
+      profileArn: config.profileArn,
+      authMethod: config.authMethod === 'social' ? AuthMethod.SOCIAL : AuthMethod.IDC
+    };
+    
+    return new EnhancedCodeWhispererClient(kiroConfig);
+  }
+
+  /**
+   * 提取端口配置
+   */
+  private extractPortFromConfig(config: CodeWhispererSimplifiedConfig): number {
+    if (process.env.RCC_PORT) {
+      return parseInt(process.env.RCC_PORT, 10);
+    }
+    return 3456;
+  }
+
+  /**
+   * 健康检查
+   */
+  async isHealthy(): Promise<boolean> {
+    try {
+      const healthResult = await this.cwClient.healthCheck();
+      return healthResult.healthy;
+    } catch (error) {
+      logger.warn('CodeWhisperer health check failed', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: this.name
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 🚨 零静默失败：发送非流式请求
+   */
+  async sendRequest(request: BaseRequest): Promise<BaseResponse> {
+    const originalRequestId = request.metadata?.requestId || 'unknown';
+    const sessionId = request.metadata?.sessionId;
+    const conversationId = request.metadata?.conversationId;
+
+    // 生成请求ID并启用会话跟踪
+    if (sessionId && conversationId && this.sessionManager) {
+      const requestId = this.sessionManager.generateRequestId(
+        sessionId,
+        conversationId,
+        false // non-streaming
+      );
+
+      request.metadata = {
+        ...request.metadata,
+        requestId,
+        originalRequestId
+      };
+
+      logger.debug('Processing non-streaming CodeWhisperer request with session tracking', {
+        originalRequestId,
+        requestId,
+        sessionId,
+        conversationId,
+        provider: this.name
+      }, requestId, 'provider');
+
+      try {
+        const response = await this.processNonStreamingRequest(request);
+        
+        // 🚨 Critical: 验证响应完整性 - 零静默失败
+        this.validateNonStreamingResponse(response, requestId);
+        
+        this.sessionManager.completeRequest(requestId, response.stop_reason || 'unknown');
+        return response;
+
+      } catch (error) {
+        // 🚨 Critical: 确保无静默失败 - 所有错误必须抛出
+        console.error(`🚨 [${this.name}] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:`);
+        console.error(`   Request ID: ${requestId}`);
+        console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`   Provider: ${this.name}`);
+        console.error(`   RESULT: Throwing error to client`);
+        
+        this.sessionManager.failRequest(requestId, error);
+        throw error;
+      }
+    } else {
+      // 无会话信息的请求处理
+      try {
+        const response = await this.processNonStreamingRequest(request);
+        this.validateNonStreamingResponse(response, originalRequestId);
+        return response;
+      } catch (error) {
+        console.error(`🚨 [${this.name}] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:`);
+        console.error(`   Request ID: ${originalRequestId}`);
+        console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`   RESULT: Throwing error to client`);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * 处理非流式请求的内部逻辑
+   */
+  private async processNonStreamingRequest(request: BaseRequest): Promise<BaseResponse> {
+    const requestId = request.metadata?.requestId || 'unknown';
+
+    try {
+      // Step 1: 预处理 - 应用兼容性修复
+      let processedRequest = this.preprocessor.applyCompatibilityFixes(request);
+      
+      // Step 2: 验证请求完整性
+      this.preprocessor.validateRequest(processedRequest);
+
+      // Step 3: 转换为CodeWhisperer格式
+      const cwRequest = transformationManager.transformRequest(
+        processedRequest, 
+        {
+          sourceProvider: 'anthropic', // 输入格式假设为Anthropic
+          targetProvider: 'codewhisperer'
+        },
+        requestId
+      );
+
+      // Step 4: 发送API请求
+      logger.debug('Sending request to CodeWhisperer API', {
+        requestId,
+        model: cwRequest.model,
+        messageCount: cwRequest.messages.length,
+        hasTools: !!(cwRequest.tools && cwRequest.tools.length > 0)
+      });
+
+      const cwResponse = await this.cwClient.handleNonStreamRequest(cwRequest);
+
+      // Step 5: 转换响应格式
+      const unifiedResponse = transformationManager.transformResponse(
+        cwResponse,
+        {
+          sourceProvider: 'codewhisperer',
+          targetProvider: 'anthropic' // 输出格式为Anthropic
+        },
+        requestId
+      );
+
+      logger.debug('CodeWhisperer non-streaming request completed', {
+        requestId,
+        responseId: unifiedResponse.id,
+        contentBlocks: unifiedResponse.content.length,
+        stopReason: unifiedResponse.stop_reason
+      });
+
+      return unifiedResponse;
+
+    } catch (error) {
+      logger.error('CodeWhisperer non-streaming request failed', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: this.name,
+        requestId
+      }, requestId, 'provider');
+
+      // 包装为ProviderError以提供更多上下文
+      if (error instanceof Error) {
+        throw new ProviderError(
+          `CodeWhisperer Non-Streaming Error: ${error.message}`,
+          this.name,
+          500,
+          error
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 🚨 零静默失败：发送流式请求
+   */
+  async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
+    const originalRequestId = request.metadata?.requestId || 'unknown';
+    const sessionId = request.metadata?.sessionId;
+    const conversationId = request.metadata?.conversationId;
+
+    // 生成请求ID并启用会话跟踪
+    if (sessionId && conversationId && this.sessionManager) {
+      const requestId = this.sessionManager.generateRequestId(
+        sessionId,
+        conversationId,
+        true // streaming
+      );
+
+      request.metadata = {
+        ...request.metadata,
+        requestId,
+        originalRequestId
+      };
+
+      logger.debug('Processing streaming CodeWhisperer request with session tracking', {
+        originalRequestId,
+        requestId,
+        sessionId,
+        conversationId,
+        provider: this.name
+      }, requestId, 'provider');
+
+      let chunkCount = 0;
+      let hasValidContent = false;
+      let finishReason: string | undefined;
+      
+      try {
+        for await (const chunk of this.processStreamingRequest(request)) {
+          chunkCount++;
+          
+          // 🚨 Critical: 验证流式chunk - 零静默失败
+          this.validateStreamingChunk(chunk, requestId, chunkCount);
+          
+          // 跟踪有效内容
+          if (chunk?.event === 'content_block_delta' || 
+              chunk?.event === 'content_block_start' ||
+              chunk?.event === 'message_start') {
+            hasValidContent = true;
+          }
+          
+          // 提取finish reason
+          if (chunk?.event === 'message_delta' && chunk?.data?.delta?.stop_reason) {
+            finishReason = chunk.data.delta.stop_reason;
+          }
+          
+          yield chunk;
+        }
+        
+        // 🚨 Critical: 确保流式请求产生了有效内容
+        if (chunkCount === 0) {
+          const error = new Error('Streaming request produced no chunks - potential silent failure');
+          console.error(`🚨 [${this.name}] STREAMING SILENT FAILURE DETECTED:`);
+          console.error(`   Request ID: ${requestId}`);
+          console.error(`   Chunks: ${chunkCount}`);
+          console.error(`   Valid Content: ${hasValidContent}`);
+          console.error(`   RESULT: Throwing error to prevent silent failure`);
+          throw error;
+        }
+        
+        this.sessionManager.completeRequest(requestId, finishReason || 'stream_end');
+      } catch (error) {
+        console.error(`🚨 [${this.name}] STREAMING REQUEST FAILED - NO SILENT FAILURE:`);
+        console.error(`   Request ID: ${requestId}`);
+        console.error(`   Chunks Processed: ${chunkCount}`);
+        console.error(`   Had Valid Content: ${hasValidContent}`);
+        console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+        console.error(`   RESULT: Throwing error to client`);
+        
+        this.sessionManager.failRequest(requestId, error);
+        throw error;
+      }
+    } else {
+      // 无会话信息的流式请求处理
+      let chunkCount = 0;
+      let hasValidContent = false;
+      
+      try {
+        for await (const chunk of this.processStreamingRequest(request)) {
+          chunkCount++;
+          this.validateStreamingChunk(chunk, originalRequestId, chunkCount);
+          
+          if (chunk?.event === 'content_block_delta' || 
+              chunk?.event === 'content_block_start' ||
+              chunk?.event === 'message_start') {
+            hasValidContent = true;
+          }
+          
+          yield chunk;
+        }
+        
+        if (chunkCount === 0) {
+          const error = new Error('Streaming request produced no chunks - potential silent failure');
+          console.error(`🚨 [${this.name}] STREAMING SILENT FAILURE DETECTED:`);
+          console.error(`   Request ID: ${originalRequestId}`);
+          console.error(`   Chunks: ${chunkCount}`);
+          console.error(`   Valid Content: ${hasValidContent}`);
+          throw error;
+        }
+      } catch (error) {
+        console.error(`🚨 [${this.name}] STREAMING REQUEST FAILED - NO SILENT FAILURE:`);
+        console.error(`   Request ID: ${originalRequestId}`);
+        console.error(`   Chunks Processed: ${chunkCount}`);
+        console.error(`   Had Valid Content: ${hasValidContent}`);
+        console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * 处理流式请求的内部逻辑
+   */
+  private async *processStreamingRequest(request: BaseRequest): AsyncIterable<any> {
+    const requestId = request.metadata?.requestId || 'unknown';
+
+    try {
+      // Step 1: 预处理
+      let processedRequest = this.preprocessor.applyCompatibilityFixes(request);
+      this.preprocessor.validateRequest(processedRequest);
+
+      // Step 2: 转换为CodeWhisperer格式
+      const cwRequest = transformationManager.transformRequest(
+        processedRequest, 
+        {
+          sourceProvider: 'anthropic',
+          targetProvider: 'codewhisperer'
+        },
+        requestId
+      );
+
+      // Step 3: 处理流式请求
+      const events: any[] = [];
+      
+      await this.cwClient.handleStreamRequest(
+        cwRequest,
+        (event: string, data: any) => {
+          events.push({ event, data });
+        },
+        (message: string, error: Error) => {
+          throw new Error(`CodeWhisperer streaming error: ${message}`);
+        }
+      );
+
+      // Step 4: 转换并yield事件
+      for (const event of events) {
+        // 可以在这里添加事件格式转换逻辑
+        yield event;
+      }
+
+    } catch (error) {
+      logger.error('CodeWhisperer streaming request failed', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: this.name,
+        requestId
+      }, requestId, 'provider');
+
+      if (error instanceof Error) {
+        throw new ProviderError(
+          `CodeWhisperer Streaming Error: ${error.message}`,
+          this.name,
+          500,
+          error
+        );
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 🚨 Critical: 验证非流式响应完整性 - 零静默失败
+   */
+  private validateNonStreamingResponse(response: BaseResponse, requestId: string): void {
+    if (!response) {
+      const error = new Error('Response is null or undefined - silent failure detected');
+      console.error(`🚨 [${this.name}] SILENT FAILURE: Null response for ${requestId}`);
+      throw error;
+    }
+
+    if (!response.content || response.content.length === 0) {
+      const error = new Error('Response has no content - potential silent failure');
+      console.error(`🚨 [${this.name}] SILENT FAILURE: Empty content for ${requestId}`);
+      throw error;
+    }
+
+    if (!response.stop_reason) {
+      const error = new Error('Response missing stop_reason - potential silent failure');
+      console.error(`🚨 [${this.name}] SILENT FAILURE: Missing stop_reason for ${requestId}`);
+      throw error;
+    }
+
+    // 🚨 零Fallback原则：检查fallback值
+    if (response.stop_reason === 'unknown' || response.stop_reason === 'default') {
+      const error = new Error(`Response has fallback stop_reason: ${response.stop_reason} - violates zero fallback principle`);
+      console.error(`🚨 [${this.name}] FALLBACK VIOLATION: ${response.stop_reason} for ${requestId}`);
+      throw error;
+    }
+
+    logger.debug('Non-streaming response validation passed', {
+      requestId,
+      contentLength: response.content.length,
+      stopReason: response.stop_reason
+    });
+  }
+
+  /**
+   * 🚨 Critical: 验证流式chunk - 零静默失败
+   */
+  private validateStreamingChunk(chunk: any, requestId: string, chunkIndex: number): void {
+    if (!chunk) {
+      const error = new Error(`Streaming chunk ${chunkIndex} is null/undefined - silent failure detected`);
+      console.error(`🚨 [${this.name}] STREAMING SILENT FAILURE: Null chunk ${chunkIndex} for ${requestId}`);
+      throw error;
+    }
+
+    if (!chunk.event) {
+      const error = new Error(`Streaming chunk ${chunkIndex} missing event type - malformed chunk`);
+      console.error(`🚨 [${this.name}] STREAMING MALFORMED: Missing event in chunk ${chunkIndex} for ${requestId}`);
+      throw error;
+    }
+
+    // 🚨 零Fallback原则：检查fallback事件类型
+    if (chunk.event === 'unknown' || chunk.event === 'default' || chunk.event === 'fallback') {
+      const error = new Error(`Streaming chunk has fallback event: ${chunk.event} - violates zero fallback principle`);
+      console.error(`🚨 [${this.name}] STREAMING FALLBACK VIOLATION: ${chunk.event} in chunk ${chunkIndex} for ${requestId}`);
+      throw error;
+    }
+
+    // 验证chunk数据结构
+    if (chunk.event !== 'ping' && !chunk.data) {
+      const error = new Error(`Streaming chunk ${chunkIndex} missing data - malformed chunk`);
+      console.error(`🚨 [${this.name}] STREAMING MALFORMED: Missing data in chunk ${chunkIndex} for ${requestId}`);
+      throw error;
+    }
+
+    logger.trace(requestId, 'validation', 'Streaming chunk validation passed', {
+      chunkIndex,
+      event: chunk.event,
+      hasData: !!chunk.data
+    });
+  }
+}
+
+/**
+ * 创建CodeWhisperer简化客户端
+ */
+export function createCodeWhispererSimplifiedClient(
+  config: CodeWhispererSimplifiedConfig, 
+  providerId: string
+): CodeWhispererSimplifiedClient {
+  return new CodeWhispererSimplifiedClient(config, providerId);
+}

@@ -1,20 +1,20 @@
 /**
- * Gemini API Client - Minimal Working Version
+ * Gemini API Client - Pure API Client
  * Google Gemini API integration via Generative Language API
  * Project owner: Jason Zhang
  * 
- * Architecture: Follows four-layer design pattern with modular components
+ * Architecture: Pure API client following transformer architecture
  * - Zero hardcoding, zero fallback principles
- * - Focus on basic text functionality first
+ * - Provider only handles API calls, no format conversion
+ * - All transformations handled by transformer layer
  */
 
 import { BaseRequest, BaseResponse, ProviderConfig, ProviderError } from '../../types';
 import { logger } from '../../utils/logger';
 import { EnhancedRateLimitManager } from './enhanced-rate-limit-manager';
 import { GoogleGenAI } from '@google/genai';
-import { GeminiRequestConverter } from './modules/request-converter';
-import { GeminiResponseConverter } from './modules/response-converter';
-import { createPatchManager } from '../../patches/registry';
+import { transformAnthropicToGemini, transformGeminiToAnthropic, GeminiApiRequest, GeminiApiResponse } from '../../transformers/gemini';
+import { preprocessGeminiRequest } from '../../preprocessing/gemini-patch-preprocessor';
 
 export class GeminiClient {
   public readonly name: string;
@@ -28,7 +28,6 @@ export class GeminiClient {
   private readonly retryDelay = 1000;
   private readonly requestTimeout = 60000;
   private genAIClients: GoogleGenAI[] = [];
-  private patchManager = createPatchManager();
 
   constructor(private config: ProviderConfig, providerId?: string) {
     this.name = providerId || 'gemini-client';
@@ -76,6 +75,7 @@ export class GeminiClient {
         return false;
       }
       
+      // 使用简单的健康检查请求
       const testResponse = await genAI.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: [{
@@ -111,16 +111,15 @@ export class GeminiClient {
       maxTokens: request.max_tokens
     }, requestId, 'gemini-provider');
 
-    let modelName = request.model;
+    // 1. 预处理请求
+    const preprocessedRequest = await preprocessGeminiRequest(request);
     
-    // Execute with retry logic
+    // 2. 转换为Gemini格式
+    const geminiRequest = transformAnthropicToGemini(preprocessedRequest);
+    
+    // 3. 执行API调用
     const geminiResponse = await this.executeWithRetry(
       async (genAI: GoogleGenAI, model: string) => {
-        // Convert request using modular converter
-        const geminiRequest = GeminiRequestConverter.convertToGeminiFormat(request);
-        
-        // Use timeout wrapper
-        // Create properly structured API request
         const apiRequest = {
           ...geminiRequest,
           model: model
@@ -131,15 +130,15 @@ export class GeminiClient {
           new Promise((_, reject) => 
             setTimeout(() => reject(new Error(`Gemini SDK timeout after ${this.requestTimeout}ms`)), this.requestTimeout)
           )
-        ]) as Promise<any>;
+        ]) as Promise<GeminiApiResponse>;
       },
-      modelName,
+      preprocessedRequest.model,
       'createCompletion',
       requestId
     );
     
-    // Convert response using modular converter
-    const finalResponse = GeminiResponseConverter.convertToAnthropicFormat(
+    // 4. 转换响应为Anthropic格式
+    const finalResponse = transformGeminiToAnthropic(
       geminiResponse, 
       request.model, 
       requestId

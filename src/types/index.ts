@@ -174,6 +174,7 @@ export interface CategoryRouting {
 export interface ProviderConfig {
   type: 'codewhisperer' | 'shuaihong' | 'openai' | 'anthropic' | 'gemini' | 'lmstudio';
   endpoint: string;
+  port?: number; // 添加port属性
   authentication: {
     type: 'bearer' | 'api_key' | 'none';
     credentials?: Record<string, string | string[]>; // 支持多个API keys，none类型时可选

@@ -30,7 +30,7 @@ import {
   handleOutputError 
 } from './utils/error-handler';
 import { MaxTokensErrorHandler } from './utils/max-tokens-error-handler';
-import { getConversationQueueManager } from './session/conversation-queue-manager';
+
 // Debug hooks temporarily removed
 
 export class RouterServer {
@@ -47,7 +47,7 @@ export class RouterServer {
   private patchManager: ReturnType<typeof createPatchManager>;
   private responsePipeline: ResponsePipeline;
   private unifiedPreprocessor: ReturnType<typeof getUnifiedPatchPreprocessor>;
-  private queueManager: ReturnType<typeof getConversationQueueManager>;
+
 
   constructor(config: RouterConfig, serverType?: string) {
     this.config = config;
@@ -55,7 +55,7 @@ export class RouterServer {
     // 设置默认端口并初始化统一日志系统
     setDefaultPort(config.server.port);
     process.env.RCC_PORT = config.server.port.toString(); // 设置环境变量供兼容性logger使用
-    this.queueManager = getConversationQueueManager(config.server.port || 3000);
+
     this.logger = getLogger(config.server.port);
     this.requestTracker = createRequestTracker(config.server.port);
     this.errorTracker = createErrorTracker(config.server.port);
@@ -1228,8 +1228,7 @@ export class RouterServer {
               hasToolUse 
             }, requestId, 'server');
             
-            // 通知队列管理器请求完成（即使不发送message_stop）
-            this.queueManager.completeRequest(requestId, 'tool_use');
+            // 队列管理器已被移除，不再需要通知
             
             // 不发送message_stop，让对话保持开放状态等待工具执行结果
           } else {
@@ -1237,8 +1236,7 @@ export class RouterServer {
             this.sendSSEEvent(reply, processedChunk.event, processedChunk.data);
             this.logger.debug('Sent message_stop event for non-tool scenario', { requestId }, requestId, 'server');
             
-            // 通知队列管理器请求完成
-            this.queueManager.completeRequest(requestId, 'end_turn');
+            // 队列管理器已被移除，不再需要通知
           }
         } else {
           // 正常转发其他事件（包括工具调用相关事件）

@@ -1,0 +1,49 @@
+{
+  "beforeRotation": {
+    "phase": "before-rotation",
+    "success": true,
+    "status": 200,
+    "data": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! It seems like you're testing a request during a before-rotation phase. How can I assist you with this? Are you looking for help with a specific task or have any questions? \n\nBy the way, if you need to know the current time, I can help with that too. Just let me know!"
+        }
+      ],
+      "id": "msg_1754598186814",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0",
+      "role": "assistant",
+      "type": "message",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 1
+      },
+      "stop_reason": "end_turn"
+    },
+    "timestamp": "2025-08-07T20:23:07.562Z"
+  },
+  "afterRotation": {
+    "phase": "after-rotation",
+    "success": true,
+    "status": 200,
+    "data": {
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! It seems like you're testing a request during an after-rotation scenario. How can I assist you with this? Are you looking for specific information or help with a particular task? Let me know, and I'll do my best to support you. \n\nIf you have any specific questions or need guidance, feel free to ask. I'm here to help! \n\nAlso, if you're conducting tests, make sure to cover various scenarios to ensure everything works as expected. If you need any tools or resources, let me know! \n\nHope you're having a great day! 😊"
+        }
+      ],
+      "id": "msg_1754598188320",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0",
+      "role": "assistant",
+      "type": "message",
+      "usage": {
+        "input_tokens": 0,
+        "output_tokens": 1
+      },
+      "stop_reason": "end_turn"
+    },
+    "timestamp": "2025-08-07T20:23:09.893Z"
+  },
+  "still400": false
+}
