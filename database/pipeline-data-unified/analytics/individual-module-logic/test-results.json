@@ -1,0 +1,198 @@
+{
+  "timestamp": "2025-08-08T11:39:28.223Z",
+  "results": {
+    "input-processing": {
+      "success": true,
+      "duration": 44,
+      "message": "模块测试完成: 4/4 用例通过",
+      "testCases": {
+        "anthropic-format-validation": {
+          "success": true,
+          "duration": 137.99567548274607,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "input-processing",
+            "testCase": "anthropic-format-validation",
+            "moduleConfig": "InputProcessingStep"
+          }
+        },
+        "openai-format-conversion": {
+          "success": true,
+          "duration": 67.89415663105376,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "input-processing",
+            "testCase": "openai-format-conversion",
+            "moduleConfig": "InputProcessingStep"
+          }
+        },
+        "tool-definition-parsing": {
+          "success": true,
+          "duration": 143.77142684887002,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "input-processing",
+            "testCase": "tool-definition-parsing",
+            "moduleConfig": "InputProcessingStep"
+          }
+        },
+        "message-validation": {
+          "success": true,
+          "duration": 133.72082339583724,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "input-processing",
+            "testCase": "message-validation",
+            "moduleConfig": "InputProcessingStep"
+          }
+        }
+      }
+    },
+    "routing-logic": {
+      "success": false,
+      "duration": 45,
+      "message": "模块测试完成: 3/4 用例通过",
+      "testCases": {
+        "provider-selection": {
+          "success": false,
+          "duration": 75.49844518274259,
+          "message": "测试用例失败",
+          "details": {
+            "moduleId": "routing-logic",
+            "testCase": "provider-selection",
+            "moduleConfig": "RoutingStep"
+          }
+        },
+        "model-mapping": {
+          "success": true,
+          "duration": 144.47068462113614,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "routing-logic",
+            "testCase": "model-mapping",
+            "moduleConfig": "RoutingStep"
+          }
+        },
+        "load-balancing": {
+          "success": true,
+          "duration": 85.49878736949555,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "routing-logic",
+            "testCase": "load-balancing",
+            "moduleConfig": "RoutingStep"
+          }
+        },
+        "failover-handling": {
+          "success": true,
+          "duration": 73.76835241862356,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "routing-logic",
+            "testCase": "failover-handling",
+            "moduleConfig": "RoutingStep"
+          }
+        }
+      }
+    },
+    "transformation": {
+      "success": false,
+      "duration": 44,
+      "message": "模块测试完成: 3/4 用例通过",
+      "testCases": {
+        "anthropic-to-provider": {
+          "success": true,
+          "duration": 90.55907402300454,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "transformation",
+            "testCase": "anthropic-to-provider",
+            "moduleConfig": "TransformationStep"
+          }
+        },
+        "provider-to-anthropic": {
+          "success": true,
+          "duration": 92.16515291221901,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "transformation",
+            "testCase": "provider-to-anthropic",
+            "moduleConfig": "TransformationStep"
+          }
+        },
+        "tool-format-conversion": {
+          "success": false,
+          "duration": 102.10812062070389,
+          "message": "测试用例失败",
+          "details": {
+            "moduleId": "transformation",
+            "testCase": "tool-format-conversion",
+            "moduleConfig": "TransformationStep"
+          }
+        },
+        "streaming-conversion": {
+          "success": true,
+          "duration": 94.37598308095826,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "transformation",
+            "testCase": "streaming-conversion",
+            "moduleConfig": "TransformationStep"
+          }
+        }
+      }
+    },
+    "api-interaction": {
+      "success": false,
+      "duration": 44,
+      "message": "模块测试完成: 3/4 用例通过",
+      "testCases": {
+        "successful-request": {
+          "success": true,
+          "duration": 121.83215453671261,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "api-interaction",
+            "testCase": "successful-request",
+            "moduleConfig": "APIInteractionStep"
+          }
+        },
+        "rate-limit-handling": {
+          "success": false,
+          "duration": 71.63684997754827,
+          "message": "测试用例失败",
+          "details": {
+            "moduleId": "api-interaction",
+            "testCase": "rate-limit-handling",
+            "moduleConfig": "APIInteractionStep"
+          }
+        },
+        "timeout-handling": {
+          "success": true,
+          "duration": 112.57616038796507,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "api-interaction",
+            "testCase": "timeout-handling",
+            "moduleConfig": "APIInteractionStep"
+          }
+        },
+        "error-recovery": {
+          "success": true,
+          "duration": 67.83342396130949,
+          "message": "测试用例通过",
+          "details": {
+            "moduleId": "api-interaction",
+            "testCase": "error-recovery",
+            "moduleConfig": "APIInteractionStep"
+          }
+        }
+      }
+    }
+  },
+  "summary": {
+    "totalModules": 4,
+    "passedModules": 1,
+    "failedModules": 3
+  }
+}

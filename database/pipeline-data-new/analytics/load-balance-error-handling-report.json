@@ -1,0 +1,53 @@
+{
+  "testSuite": "Load Balance Error Handling Test",
+  "executedAt": "2025-08-08T11:45:51.822Z",
+  "summary": {
+    "totalRequests": 21,
+    "successfulRequests": 0,
+    "failedRequests": 21,
+    "totalErrors": 21,
+    "successRate": 0,
+    "errorRate": 1,
+    "avgResponseTime": 0
+  },
+  "errorAnalysis": {
+    "totalErrors": 21,
+    "errorTypes": {
+      "api_request_failed": 21
+    },
+    "providerErrors": {
+      "unknown": 21
+    },
+    "modelErrors": {
+      "unknown": 21
+    },
+    "errorRate": 1
+  },
+  "requestAnalysis": {
+    "totalRequests": 21,
+    "successfulRequests": 0,
+    "failedRequests": 21,
+    "successRate": 0,
+    "avgResponseTime": 0,
+    "providerStats": {
+      "unknown": {
+        "total": 21,
+        "success": 0,
+        "failed": 21,
+        "avgResponseTime": 0
+      }
+    },
+    "modelStats": {
+      "unknown": {
+        "total": 21,
+        "success": 0,
+        "failed": 21
+      }
+    }
+  },
+  "loadBalanceValidation": {
+    "multiProviderUsed": false,
+    "distributionWorking": false,
+    "errorHandlingWorking": true
+  }
+}

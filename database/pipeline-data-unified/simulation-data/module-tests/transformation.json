@@ -1,0 +1,17 @@
+{
+  "module": "TransformationStep",
+  "testType": "module-logic",
+  "description": "转换模块逻辑测试",
+  "testCases": [
+    "anthropic-to-provider",
+    "provider-to-anthropic",
+    "tool-format-conversion",
+    "streaming-conversion"
+  ],
+  "mockData": {
+    "anthropicRequest": true,
+    "providerResponse": true,
+    "toolCallData": true,
+    "streamingData": true
+  }
+}

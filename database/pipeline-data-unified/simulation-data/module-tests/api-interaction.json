@@ -1,0 +1,17 @@
+{
+  "module": "APIInteractionStep",
+  "testType": "module-logic",
+  "description": "API交互模块测试",
+  "testCases": [
+    "successful-request",
+    "rate-limit-handling",
+    "timeout-handling",
+    "error-recovery"
+  ],
+  "mockData": {
+    "successfulResponse": true,
+    "rateLimitError": true,
+    "timeoutError": true,
+    "networkError": true
+  }
+}

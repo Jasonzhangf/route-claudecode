@@ -18,7 +18,7 @@ import { sessionManager } from './session/manager';
 import { ProviderExpander, ProviderExpansionResult } from './routing/provider-expander';
 import { v4 as uuidv4 } from 'uuid';
 import { createPatchManager } from './patches';
-import { ResponsePipeline } from './pipeline/response-pipeline';
+// // import { ResponsePipeline } from './pipeline/response-pipeline';
 import { transformationManager } from './transformers/manager';
 import { getUnifiedPatchPreprocessor } from './preprocessing/unified-patch-preprocessor';
 import { 
@@ -45,7 +45,7 @@ export class RouterServer {
   private requestTracker: any;
   private errorTracker: any;
   private patchManager: ReturnType<typeof createPatchManager>;
-  private responsePipeline: ResponsePipeline;
+// //   private responsePipeline: ResponsePipeline;
   private unifiedPreprocessor: ReturnType<typeof getUnifiedPatchPreprocessor>;
 
 
@@ -66,11 +66,11 @@ export class RouterServer {
     this.unifiedPreprocessor = getUnifiedPatchPreprocessor(config.server.port, preprocessingConfig);
     
     // 初始化响应处理流水线
-    this.responsePipeline = new ResponsePipeline(
-      this.patchManager,
-      transformationManager,
-      config.server.port
-    );
+//     // this.responsePipeline = new ResponsePipeline(
+    //   this.patchManager,
+    //   transformationManager,
+    //   config.server.port
+    // );
     
     this.fastify = Fastify({
       logger: config.debug.enabled ? {
@@ -876,8 +876,8 @@ export class RouterServer {
         timestamp: Date.now()
       };
       
-      const pipelineResponse = await this.responsePipeline.process(providerResponse, pipelineContext);
-      const finalResponse = await this.outputProcessor.process(pipelineResponse, baseRequest);
+//       const pipelineResponse = await this.responsePipeline.process(providerResponse, pipelineContext);
+      const finalResponse = await this.outputProcessor.process(providerResponse, baseRequest);
       this.logger.logPipeline('output-processed', 'Response pipeline and output processing completed', { finalResponse }, requestId);
       
       // Debug Hook: Trace output processing
@@ -1159,8 +1159,8 @@ export class RouterServer {
           
           // 🔧 然后应用响应流水线处理（如果chunk.data存在）
           if (preprocessedChunk.data) {
-            const processedData = await this.responsePipeline.process(preprocessedChunk.data, pipelineContext);
-            processedChunk = { ...preprocessedChunk, data: processedData };
+//             // const processedData = await this.responsePipeline.process(preprocessedChunk.data, pipelineContext);
+            processedChunk = preprocessedChunk; // Use preprocessed chunk directly
           } else {
             processedChunk = preprocessedChunk;
           }

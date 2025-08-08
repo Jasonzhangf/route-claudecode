@@ -1,0 +1,68 @@
+{
+  "version": "2.0.0",
+  "created": "2025-08-08T11:35:20.023Z",
+  "testFlow": {
+    "phases": [
+      "1-database-cleanup",
+      "2-data-capture-system",
+      "3-module-data-simulation",
+      "4-individual-module-logic-tests",
+      "5-pipeline-simulation-tests",
+      "6-real-pipeline-tests"
+    ],
+    "dataCapture": {
+      "enabled": true,
+      "basePath": "./database/pipeline-data-unified",
+      "captureAllSteps": true,
+      "detailedMetrics": true
+    },
+    "simulation": {
+      "useRealData": true,
+      "mockExternalCalls": false,
+      "validateAllSteps": true
+    }
+  },
+  "providers": {
+    "codewhisperer": {
+      "testModels": [
+        "CLAUDE_SONNET_4_20250514_V1_0",
+        "CLAUDE_3_7_SONNET"
+      ],
+      "testEndpoints": [
+        5501,
+        5503,
+        5504,
+        5505
+      ]
+    },
+    "openai": {
+      "testModels": [
+        "qwen3-30b",
+        "glm-4.5-air"
+      ],
+      "testEndpoints": [
+        5506,
+        5507,
+        5508,
+        5509
+      ]
+    },
+    "gemini": {
+      "testModels": [
+        "gemini-2.5-pro",
+        "gemini-2.5-flash"
+      ],
+      "testEndpoints": [
+        5502
+      ]
+    },
+    "anthropic": {
+      "testModels": [
+        "claude-3-5-sonnet-20241022"
+      ],
+      "testEndpoints": [
+        3456
+      ]
+    }
+  }
+}

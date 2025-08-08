@@ -1,0 +1,15 @@
+{
+  "migratedAt": "2025-08-08T10:59:20.079Z",
+  "oldBasePath": "/Users/fanzhang/Documents/github/claude-code-router/database",
+  "newBasePath": "/Users/fanzhang/Documents/github/claude-code-router/database/pipeline-data-new",
+  "migrationVersion": "1.0.0",
+  "status": "completed",
+  "migratedFiles": 3,
+  "structure": [
+    "data-points",
+    "flows",
+    "analytics",
+    "exports",
+    "indexes"
+  ]
+}

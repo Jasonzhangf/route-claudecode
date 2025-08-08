@@ -1,0 +1,17 @@
+{
+  "module": "InputProcessingStep",
+  "testType": "module-logic",
+  "description": "输入处理模块逻辑测试",
+  "testCases": [
+    "anthropic-format-validation",
+    "openai-format-conversion",
+    "tool-definition-parsing",
+    "message-validation"
+  ],
+  "mockData": {
+    "validAnthropicRequest": true,
+    "validOpenAIRequest": true,
+    "invalidRequest": true,
+    "toolCallRequest": true
+  }
+}

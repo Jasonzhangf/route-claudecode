@@ -25,11 +25,14 @@ echo -e "${BLUE}📦 Step 2: Creating package...${NC}"
 PACKAGE_FILE=$(npm pack)
 echo -e "${GREEN}✅ Package created: $PACKAGE_FILE${NC}"
 
-# Step 3: Uninstall existing global version
-echo -e "${BLUE}🗑️  Step 3: Removing existing global installation...${NC}"
-npm uninstall -g route-claudecode 2>/dev/null || true
-npm uninstall -g claude-code-router 2>/dev/null || true
-echo -e "${GREEN}✅ Existing installation removed${NC}"
+# Step 3: Check if already installed globally
+echo -e "${BLUE}🔍 Step 3: Checking existing installation...${NC}"
+if npm list -g route-claudecode &>/dev/null; then
+    echo -e "${YELLOW}⚠️  route-claudecode already installed globally${NC}"
+    echo -e "${BLUE}📦 Updating existing installation...${NC}"
+else
+    echo -e "${GREEN}✅ No existing installation found${NC}"
+fi
 
 # Step 4: Install globally from local package
 echo -e "${BLUE}🌍 Step 4: Installing globally...${NC}"

@@ -1,0 +1,94 @@
+{
+  "instanceId": "capture-1754653168039",
+  "startedAt": "2025-08-08T11:39:28.039Z",
+  "config": {
+    "version": "2.0.0",
+    "created": "2025-08-08T11:36:48.233Z",
+    "enabled": true,
+    "basePath": "./database/pipeline-data-unified",
+    "retention": {
+      "days": 30,
+      "maxSizeMB": 500
+    },
+    "compression": true,
+    "validation": {
+      "strictMode": true,
+      "requiredFields": [
+        "requestId",
+        "sessionId",
+        "model",
+        "category",
+        "configPath"
+      ]
+    },
+    "capture": {
+      "dataPoints": {
+        "enabled": true,
+        "includeInputOutput": true,
+        "includeTiming": true,
+        "includeErrors": true
+      },
+      "flows": {
+        "enabled": true,
+        "includeMetadata": true,
+        "includePerformanceMetrics": true
+      },
+      "realTime": {
+        "enabled": true,
+        "flushInterval": 5000,
+        "batchSize": 100
+      }
+    },
+    "providers": {
+      "codewhisperer": {
+        "enabled": true,
+        "captureLevel": "detailed",
+        "endpoints": [
+          5501,
+          5503,
+          5504,
+          5505
+        ]
+      },
+      "openai": {
+        "enabled": true,
+        "captureLevel": "detailed",
+        "endpoints": [
+          5506,
+          5507,
+          5508,
+          5509
+        ]
+      },
+      "gemini": {
+        "enabled": true,
+        "captureLevel": "detailed",
+        "endpoints": [
+          5502
+        ]
+      },
+      "anthropic": {
+        "enabled": true,
+        "captureLevel": "detailed",
+        "endpoints": [
+          3456
+        ]
+      }
+    },
+    "monitoring": {
+      "performance": {
+        "trackResponseTimes": true,
+        "trackThroughput": true,
+        "trackErrorRates": true
+      },
+      "alerts": {
+        "slowRequests": 30000,
+        "errorThreshold": 0.05,
+        "diskUsageThreshold": 0.8
+      }
+    }
+  },
+  "status": "active",
+  "capturedDataPoints": 0,
+  "capturedFlows": 0
+}

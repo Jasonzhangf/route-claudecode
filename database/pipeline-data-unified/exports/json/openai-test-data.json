@@ -1,0 +1,298 @@
+{
+  "version": "1.0.0",
+  "created": "2025-08-08T08:38:31.441Z",
+  "testData": {
+    "transformer": {
+      "baseRequestToOpenAI": {
+        "input": {
+          "model": "claude-4-sonnet",
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Hello, world!"
+                }
+              ]
+            }
+          ],
+          "max_tokens": 1000,
+          "temperature": 0.7,
+          "system": "You are a helpful assistant.",
+          "tools": []
+        },
+        "expectedOutput": {
+          "model": "claude-4-sonnet",
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a helpful assistant."
+            },
+            {
+              "role": "user",
+              "content": "Hello, world!"
+            }
+          ],
+          "max_tokens": 1000,
+          "temperature": 0.7,
+          "stream": false
+        }
+      },
+      "toolCallsConversion": {
+        "input": {
+          "model": "claude-4-sonnet",
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "What is the weather like?"
+                }
+              ]
+            }
+          ],
+          "tools": [
+            {
+              "name": "get_weather",
+              "description": "Get current weather information",
+              "input_schema": {
+                "type": "object",
+                "properties": {
+                  "location": {
+                    "type": "string",
+                    "description": "City name"
+                  }
+                },
+                "required": [
+                  "location"
+                ]
+              }
+            }
+          ]
+        },
+        "expectedOutput": {
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "get_weather",
+                "description": "Get current weather information",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "location": {
+                      "type": "string",
+                      "description": "City name"
+                    }
+                  },
+                  "required": [
+                    "location"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      },
+      "openAIResponseToBase": {
+        "input": {
+          "id": "chatcmpl-123",
+          "object": "chat.completion",
+          "created": 1677652288,
+          "model": "gpt-4",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "Hello! How can I help you today?",
+                "tool_calls": null
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 20,
+            "total_tokens": 30
+          }
+        },
+        "expectedOutput": {
+          "id": "chatcmpl-123",
+          "content": [
+            {
+              "type": "text",
+              "text": "Hello! How can I help you today?"
+            }
+          ],
+          "model": "claude-4-sonnet",
+          "role": "assistant",
+          "stop_reason": "end_turn",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 10,
+            "output_tokens": 20
+          }
+        }
+      },
+      "toolCallResponse": {
+        "input": {
+          "id": "chatcmpl-456",
+          "object": "chat.completion",
+          "created": 1677652300,
+          "model": "gpt-4",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_abc123",
+                    "type": "function",
+                    "function": {
+                      "name": "get_weather",
+                      "arguments": "{\"location\":\"New York\"}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 15,
+            "completion_tokens": 25,
+            "total_tokens": 40
+          }
+        },
+        "expectedOutput": {
+          "id": "chatcmpl-456",
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "call_abc123",
+              "name": "get_weather",
+              "input": {
+                "location": "New York"
+              }
+            }
+          ],
+          "model": "claude-4-sonnet",
+          "role": "assistant",
+          "stop_reason": "tool_use",
+          "stop_sequence": null,
+          "usage": {
+            "input_tokens": 15,
+            "output_tokens": 25
+          }
+        }
+      }
+    },
+    "preprocess": {
+      "basicRequestPreprocessing": {
+        "input": {
+          "model": "gpt-4",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Hello world!"
+            }
+          ],
+          "max_tokens": 1000
+        },
+        "expectedOutput": {
+          "model": "gpt-4",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Hello world!"
+            }
+          ],
+          "max_tokens": 1000,
+          "metadata": {
+            "requestId": "unknown"
+          }
+        }
+      },
+      "streamDataParsing": {
+        "input": "data: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"Hello\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" world\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-123\",\"object\":\"chat.completion.chunk\",\"created\":1677652288,\"model\":\"gpt-3.5-turbo\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]",
+        "expectedOutput": [
+          {
+            "id": "chatcmpl-123",
+            "object": "chat.completion.chunk",
+            "created": 1677652288,
+            "model": "gpt-3.5-turbo",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": "Hello"
+                },
+                "finish_reason": null
+              }
+            ]
+          },
+          {
+            "id": "chatcmpl-123",
+            "object": "chat.completion.chunk",
+            "created": 1677652288,
+            "model": "gpt-3.5-turbo",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {
+                  "content": " world"
+                },
+                "finish_reason": null
+              }
+            ]
+          },
+          {
+            "id": "chatcmpl-123",
+            "object": "chat.completion.chunk",
+            "created": 1677652288,
+            "model": "gpt-3.5-turbo",
+            "choices": [
+              {
+                "index": 0,
+                "delta": {},
+                "finish_reason": "stop"
+              }
+            ]
+          }
+        ]
+      },
+      "toolCallStreamParsing": {
+        "input": "data: {\"id\":\"chatcmpl-tool\",\"object\":\"chat.completion.chunk\",\"created\":1677652300,\"model\":\"gpt-4\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_123\",\"type\":\"function\",\"function\":{\"name\":\"get_weather\",\"arguments\":\"{\\\"location\\\"\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-tool\",\"object\":\"chat.completion.chunk\",\"created\":1677652300,\"model\":\"gpt-4\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\": \\\"New York\\\"}\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-tool\",\"object\":\"chat.completion.chunk\",\"created\":1677652300,\"model\":\"gpt-4\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\ndata: [DONE]",
+        "expectedParsing": {
+          "eventCount": 3,
+          "hasToolCalls": true,
+          "toolCallFunction": "get_weather",
+          "finalFinishReason": "tool_calls"
+        }
+      }
+    },
+    "integration": {
+      "testSuites": [
+        "test-openai-transformer-comprehensive.js",
+        "test-openai-preprocess-comprehensive.js"
+      ],
+      "executionOrder": [
+        "transformer",
+        "preprocess"
+      ],
+      "dependencies": {
+        "transformer": [],
+        "preprocess": [
+          "transformer"
+        ]
+      }
+    }
+  },
+  "testRuns": [],
+  "lastUpdated": "2025-08-08T08:38:31.442Z"
+}

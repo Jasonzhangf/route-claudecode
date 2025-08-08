@@ -1,0 +1,284 @@
+{
+  "testSuite": "Pipeline Simulation Tests",
+  "executedAt": "2025-08-08T11:07:19.099Z",
+  "summary": {
+    "totalTests": 5,
+    "passedTests": 4,
+    "failedTests": 0,
+    "successRate": 0.8,
+    "overallSuccess": true
+  },
+  "pipelineResults": {
+    "openaiPipeline": {
+      "Standard Text Generation": {
+        "success": true,
+        "validation": {
+          "allStepsExecuted": true,
+          "correctStepOrder": true,
+          "dataFlowIntegrity": true,
+          "performanceAcceptable": true,
+          "noErrors": true,
+          "endToEndSuccess": true
+        },
+        "executedSteps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "totalDuration": 0,
+        "dataPoints": 8,
+        "errors": [],
+        "performance": {
+          "avgStepDuration": 180.875,
+          "dataPointsGenerated": 8,
+          "dataFlowIntegrityScore": 1
+        }
+      },
+      "Tool Calls Execution": {
+        "success": true,
+        "validation": {
+          "allStepsExecuted": true,
+          "correctStepOrder": true,
+          "dataFlowIntegrity": true,
+          "performanceAcceptable": true,
+          "noErrors": true,
+          "endToEndSuccess": true
+        },
+        "executedSteps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "totalDuration": 0,
+        "dataPoints": 8,
+        "errors": [],
+        "performance": {
+          "avgStepDuration": 150.375,
+          "dataPointsGenerated": 8,
+          "dataFlowIntegrityScore": 1
+        }
+      },
+      "Long Context Processing": {
+        "success": true,
+        "validation": {
+          "allStepsExecuted": true,
+          "correctStepOrder": true,
+          "dataFlowIntegrity": true,
+          "performanceAcceptable": true,
+          "noErrors": true,
+          "endToEndSuccess": true
+        },
+        "executedSteps": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "totalDuration": 0,
+        "dataPoints": 8,
+        "errors": [],
+        "performance": {
+          "avgStepDuration": 175.75,
+          "dataPointsGenerated": 8,
+          "dataFlowIntegrityScore": 1
+        }
+      }
+    },
+    "multiProvider": {
+      "OpenAI with GLM Model Pipeline": {
+        "success": true,
+        "validation": {
+          "providerRoutingCorrect": true,
+          "modelMappingApplied": true,
+          "patchesApplied": true,
+          "formatConversionCorrect": true,
+          "responseFormatValid": true,
+          "endToEndSuccess": true
+        },
+        "provider": "openai",
+        "appliedPatches": [
+          "AnthropicToolCallTextFixPatch",
+          "OpenAIToolFormatFixPatch"
+        ],
+        "totalDuration": 653,
+        "formatConversions": 0,
+        "performance": {
+          "routingLatency": 20,
+          "conversionLatency": 101,
+          "patchApplicationLatency": 30
+        }
+      },
+      "Gemini API Pipeline": {
+        "success": true,
+        "validation": {
+          "providerRoutingCorrect": true,
+          "modelMappingApplied": true,
+          "patchesApplied": true,
+          "formatConversionCorrect": true,
+          "responseFormatValid": true,
+          "endToEndSuccess": true
+        },
+        "provider": "gemini",
+        "appliedPatches": [
+          "GeminiResponseFormatFixPatch"
+        ],
+        "totalDuration": 696,
+        "formatConversions": 1,
+        "performance": {
+          "routingLatency": 16,
+          "conversionLatency": 73,
+          "patchApplicationLatency": 15
+        }
+      },
+      "CodeWhisperer Pipeline": {
+        "success": true,
+        "validation": {
+          "providerRoutingCorrect": true,
+          "modelMappingApplied": true,
+          "patchesApplied": true,
+          "formatConversionCorrect": true,
+          "responseFormatValid": true,
+          "endToEndSuccess": true
+        },
+        "provider": "codewhisperer",
+        "appliedPatches": [],
+        "totalDuration": 453,
+        "formatConversions": 1,
+        "performance": {
+          "routingLatency": 49,
+          "conversionLatency": 80,
+          "patchApplicationLatency": 0
+        }
+      }
+    },
+    "errorHandling": {
+      "API Rate Limit Recovery": {
+        "success": true,
+        "validation": {
+          "errorDetected": true,
+          "correctErrorType": true,
+          "recoveryAttempted": true,
+          "recoverySuccessful": true,
+          "pipelineContinued": true,
+          "noDataLoss": true
+        },
+        "errorType": "rate_limit",
+        "recoveryMethod": "retry_with_backoff",
+        "recoveryTime": 587,
+        "finalStatus": "recovered",
+        "dataIntegrity": 91
+      },
+      "Invalid Tool Call Format Recovery": {
+        "success": true,
+        "validation": {
+          "errorDetected": true,
+          "correctErrorType": true,
+          "recoveryAttempted": true,
+          "recoverySuccessful": true,
+          "pipelineContinued": true,
+          "noDataLoss": true
+        },
+        "errorType": "tool_call_format_error",
+        "recoveryMethod": "apply_patch_fix",
+        "recoveryTime": 267,
+        "finalStatus": "recovered",
+        "dataIntegrity": 96
+      },
+      "Network Timeout Recovery": {
+        "success": true,
+        "validation": {
+          "errorDetected": true,
+          "correctErrorType": true,
+          "recoveryAttempted": true,
+          "recoverySuccessful": true,
+          "pipelineContinued": true,
+          "noDataLoss": true
+        },
+        "errorType": "network_timeout",
+        "recoveryMethod": "timeout_retry",
+        "recoveryTime": 1178,
+        "finalStatus": "recovered",
+        "dataIntegrity": 99
+      }
+    }
+  },
+  "performanceMetrics": {
+    "Concurrent Pipeline Execution": {
+      "success": true,
+      "validation": {
+        "throughputAcceptable": true,
+        "avgLatencyAcceptable": true,
+        "memoryUsageStable": true,
+        "errorRateAcceptable": true,
+        "concurrencyHandled": true,
+        "resourcesCleanedUp": true
+      },
+      "throughput": 2.5816980690563653,
+      "avgLatency": 1484.0596250580818,
+      "maxConcurrency": 5,
+      "errorRate": 0.020003909147326176,
+      "memoryGrowth": 0.020171982944560185,
+      "resourceLeaks": 0
+    },
+    "High Throughput Tool Calls": {
+      "success": true,
+      "validation": {
+        "throughputAcceptable": true,
+        "avgLatencyAcceptable": true,
+        "memoryUsageStable": true,
+        "errorRateAcceptable": true,
+        "concurrencyHandled": true,
+        "resourcesCleanedUp": true
+      },
+      "throughput": 2.647475791495187,
+      "avgLatency": 1699.1436703932936,
+      "maxConcurrency": 3,
+      "errorRate": 0.02718207880234879,
+      "memoryGrowth": 0.022962771252249062,
+      "resourceLeaks": 0
+    },
+    "Memory Intensive Long Context": {
+      "success": true,
+      "validation": {
+        "throughputAcceptable": true,
+        "avgLatencyAcceptable": true,
+        "memoryUsageStable": true,
+        "errorRateAcceptable": true,
+        "concurrencyHandled": true,
+        "resourcesCleanedUp": true
+      },
+      "throughput": 1.9434273159504074,
+      "avgLatency": 2296.3795928400673,
+      "maxConcurrency": 2,
+      "errorRate": 0.014085307754840558,
+      "memoryGrowth": 0.09013686344833086,
+      "resourceLeaks": 0
+    }
+  },
+  "systemValidation": {
+    "endToEndPipelines": true,
+    "multiProviderSupport": true,
+    "errorRecovery": true,
+    "performanceScalability": true
+  },
+  "overallPerformance": {
+    "avgPipelineDuration": 600.6666666666666,
+    "totalDataPointsGenerated": 24,
+    "systemStabilityScore": 100,
+    "readinessForProduction": false
+  }
+}

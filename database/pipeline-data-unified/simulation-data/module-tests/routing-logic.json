@@ -1,0 +1,17 @@
+{
+  "module": "RoutingStep",
+  "testType": "module-logic",
+  "description": "路由逻辑模块测试",
+  "testCases": [
+    "provider-selection",
+    "model-mapping",
+    "load-balancing",
+    "failover-handling"
+  ],
+  "mockData": {
+    "multipleProviders": true,
+    "singleProvider": true,
+    "providerFailure": true,
+    "roundRobinScenario": true
+  }
+}

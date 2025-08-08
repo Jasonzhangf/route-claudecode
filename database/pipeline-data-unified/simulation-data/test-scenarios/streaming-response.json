@@ -1,0 +1,32 @@
+{
+  "scenarioId": "streaming-response",
+  "name": "流式响应测试",
+  "description": "测试流式响应处理和事件序列",
+  "providers": [
+    "codewhisperer",
+    "openai",
+    "gemini",
+    "anthropic"
+  ],
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Tell me a short story about a robot."
+      }
+    ],
+    "max_tokens": 200,
+    "stream": true
+  },
+  "expectedResponse": {
+    "streamingEvents": [
+      "message_start",
+      "content_block_start",
+      "content_block_delta",
+      "content_block_stop",
+      "message_delta",
+      "message_stop"
+    ],
+    "finalStopReason": "end_turn"
+  }
+}

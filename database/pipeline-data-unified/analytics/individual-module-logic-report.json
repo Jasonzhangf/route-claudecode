@@ -1,0 +1,208 @@
+{
+  "testSuite": "Individual Module Logic Tests",
+  "executedAt": "2025-08-08T11:03:41.469Z",
+  "summary": {
+    "totalTests": 5,
+    "passedTests": 4,
+    "failedTests": 0,
+    "successRate": 0.8,
+    "overallSuccess": true
+  },
+  "moduleResults": {
+    "inputProcessing": {
+      "Anthropic to OpenAI Format Conversion": {
+        "success": true,
+        "validationResults": {
+          "formatDetected": true,
+          "conversionApplied": true,
+          "validationPassed": true,
+          "metadataGenerated": true,
+          "timingRecorded": true
+        },
+        "processingTime": 9,
+        "metadata": {
+          "inputSize": 107,
+          "messageCount": 1,
+          "hasTools": false,
+          "detectedFormat": "anthropic"
+        }
+      },
+      "Tool Calls Input Processing": {
+        "success": true,
+        "validationResults": {
+          "formatDetected": true,
+          "conversionApplied": true,
+          "validationPassed": true,
+          "metadataGenerated": true,
+          "timingRecorded": true
+        },
+        "processingTime": 23,
+        "metadata": {
+          "inputSize": 162,
+          "messageCount": 1,
+          "hasTools": true,
+          "detectedFormat": "openai"
+        }
+      },
+      "Long Context Processing": {
+        "success": true,
+        "validationResults": {
+          "formatDetected": true,
+          "conversionApplied": true,
+          "validationPassed": true,
+          "metadataGenerated": true,
+          "timingRecorded": true
+        },
+        "processingTime": 35,
+        "metadata": {
+          "inputSize": 10081,
+          "messageCount": 1,
+          "hasTools": false,
+          "detectedFormat": "openai"
+        }
+      }
+    },
+    "inputPreprocessing": {
+      "Patch Detection and Application": {
+        "success": true,
+        "validationResults": {
+          "patchDetectionRan": true,
+          "correctPatchesIdentified": true,
+          "conditionalMatching": true,
+          "noHardcodedFallbacks": true,
+          "errorHandling": true
+        },
+        "appliedPatches": [
+          "AnthropicToolCallTextFixPatch",
+          "OpenAIToolFormatFixPatch"
+        ],
+        "processingTime": 26,
+        "conditionalMatches": {
+          "modelMatch": true,
+          "toolsPresent": true
+        }
+      },
+      "Gemini Response Format Preprocessing": {
+        "success": true,
+        "validationResults": {
+          "patchDetectionRan": true,
+          "correctPatchesIdentified": true,
+          "conditionalMatching": true,
+          "noHardcodedFallbacks": true,
+          "errorHandling": true
+        },
+        "appliedPatches": [
+          "GeminiResponseFormatFixPatch"
+        ],
+        "processingTime": 13,
+        "conditionalMatches": {
+          "providerMatch": true
+        }
+      },
+      "No Patches Required Scenario": {
+        "success": true,
+        "validationResults": {
+          "patchDetectionRan": true,
+          "correctPatchesIdentified": true,
+          "conditionalMatching": true,
+          "noHardcodedFallbacks": true,
+          "errorHandling": true
+        },
+        "appliedPatches": [],
+        "processingTime": 5,
+        "conditionalMatches": {}
+      }
+    },
+    "apiInteraction": {
+      "OpenAI Compatible API Call Logic": {
+        "success": true,
+        "validationResults": {
+          "requestPreparation": true,
+          "networkHandling": true,
+          "responseProcessing": true,
+          "errorHandling": true,
+          "performanceTracking": true
+        },
+        "networkLatency": 151,
+        "responseTime": 151,
+        "errorsCaught": 0
+      },
+      "Tool Call Response Processing": {
+        "success": true,
+        "validationResults": {
+          "requestPreparation": true,
+          "networkHandling": true,
+          "responseProcessing": true,
+          "errorHandling": true,
+          "performanceTracking": true
+        },
+        "networkLatency": 298,
+        "responseTime": 298,
+        "errorsCaught": 0
+      },
+      "Streaming Response Handling": {
+        "success": true,
+        "validationResults": {
+          "requestPreparation": true,
+          "networkHandling": true,
+          "responseProcessing": true,
+          "errorHandling": true,
+          "performanceTracking": true
+        },
+        "networkLatency": 187,
+        "responseTime": 187,
+        "errorsCaught": 0
+      }
+    },
+    "crossModuleIntegration": {
+      "Input Processing → Preprocessing Pipeline": {
+        "success": true,
+        "validationResults": {
+          "dataFlow": true,
+          "consistencyCheck": true,
+          "performanceImpact": true,
+          "errorHandling": true
+        },
+        "dataFlowLatency": 10,
+        "consistencyScore": 95
+      },
+      "Preprocessing → API Interaction Pipeline": {
+        "success": true,
+        "validationResults": {
+          "dataFlow": true,
+          "consistencyCheck": true,
+          "performanceImpact": true,
+          "errorHandling": true
+        },
+        "dataFlowLatency": 24,
+        "consistencyScore": 97
+      },
+      "End-to-End Data Integrity": {
+        "success": true,
+        "validationResults": {
+          "dataFlow": true,
+          "consistencyCheck": true,
+          "performanceImpact": true,
+          "errorHandling": true
+        },
+        "dataFlowLatency": 22,
+        "consistencyScore": 99
+      }
+    }
+  },
+  "logicValidation": {
+    "inputProcessingLogic": true,
+    "preprocessingLogic": true,
+    "apiInteractionLogic": true,
+    "crossModuleIntegration": true
+  },
+  "performance": {
+    "avgProcessingTimeByModule": {
+      "inputProcessing": 22.333333333333332,
+      "inputPreprocessing": 14.666666666666666,
+      "apiInteraction": 212
+    },
+    "totalLogicTests": 12,
+    "logicValidationRate": 1
+  }
+}

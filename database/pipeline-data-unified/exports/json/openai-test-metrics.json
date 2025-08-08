@@ -1,0 +1,21 @@
+{
+  "version": "1.0.0",
+  "created": "2025-08-08T08:38:31.442Z",
+  "totalRuns": 0,
+  "successfulRuns": 0,
+  "failedRuns": 0,
+  "averageExecutionTime": 0,
+  "lastRun": null,
+  "testCoverage": {
+    "transformer": {
+      "total": 7,
+      "implemented": 7,
+      "passed": 0
+    },
+    "preprocess": {
+      "total": 10,
+      "implemented": 10,
+      "passed": 0
+    }
+  }
+}

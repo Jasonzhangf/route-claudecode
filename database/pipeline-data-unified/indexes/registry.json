@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "created": "2025-08-08T11:36:48.234Z",
+  "indexes": [
+    "by-provider",
+    "by-date",
+    "by-request-id",
+    "by-step"
+  ],
+  "lastUpdated": "2025-08-08T11:36:48.234Z",
+  "totalEntries": 0
+}

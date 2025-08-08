@@ -1,0 +1,63 @@
+{
+  "version": "2.0.0",
+  "created": "2025-08-08T11:35:20.023Z",
+  "structure": {
+    "data-points": {
+      "codewhisperer": {},
+      "openai": {},
+      "gemini": {},
+      "anthropic": {}
+    },
+    "flows": {
+      "codewhisperer": {},
+      "openai": {},
+      "gemini": {},
+      "anthropic": {}
+    },
+    "analytics": {
+      "individual-module-logic": {},
+      "pipeline-simulation": {},
+      "real-pipeline-tests": {},
+      "performance-metrics": {}
+    },
+    "exports": {
+      "json": {},
+      "csv": {},
+      "reports": {}
+    },
+    "indexes": {
+      "by-provider": {},
+      "by-date": {},
+      "by-request-id": {},
+      "by-step": {}
+    },
+    "simulation-data": {
+      "module-tests": {},
+      "pipeline-mock-data": {},
+      "test-scenarios": {}
+    }
+  },
+  "retention": {
+    "days": 30,
+    "maxSizeMB": 500
+  },
+  "compression": true,
+  "validation": {
+    "strictMode": true,
+    "requiredFields": [
+      "requestId",
+      "sessionId",
+      "model",
+      "category",
+      "configPath"
+    ]
+  },
+  "paths": {
+    "dataPoints": "data-points",
+    "flows": "flows",
+    "analytics": "analytics",
+    "exports": "exports",
+    "indexes": "indexes",
+    "simulationData": "simulation-data"
+  }
+}

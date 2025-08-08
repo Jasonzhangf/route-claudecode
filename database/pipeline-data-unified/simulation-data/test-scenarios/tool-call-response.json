@@ -1,0 +1,42 @@
+{
+  "scenarioId": "tool-call-response",
+  "name": "工具调用响应测试",
+  "description": "测试工具调用功能和格式转换",
+  "providers": [
+    "codewhisperer",
+    "openai",
+    "gemini",
+    "anthropic"
+  ],
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "What time is it? Use the get_current_time tool."
+      }
+    ],
+    "tools": [
+      {
+        "function": {
+          "name": "get_current_time",
+          "description": "Get the current time",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "timezone": {
+                "type": "string",
+                "description": "The timezone"
+              }
+            }
+          }
+        }
+      }
+    ],
+    "max_tokens": 500
+  },
+  "expectedResponse": {
+    "contentType": "tool_use",
+    "stopReason": "tool_use",
+    "hasToolCalls": true
+  }
+}

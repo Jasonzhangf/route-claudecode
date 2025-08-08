@@ -1,0 +1,63 @@
+{
+  "testingSystem": "STD-PIPELINE-TESTING-FLOW",
+  "version": "2.0.0",
+  "executedAt": "2025-08-08T11:39:28.224Z",
+  "overallResults": {
+    "startTime": 1754653168036,
+    "endTime": 1754653168224,
+    "duration": 188,
+    "success": false,
+    "completedPhases": 3,
+    "totalPhases": 6,
+    "error": "部分模块逻辑测试失败，无法继续流水线测试"
+  },
+  "phaseResults": {
+    "1-database-cleanup": {
+      "success": true,
+      "duration": 0,
+      "message": "数据库结构验证通过",
+      "details": {
+        "validatedPaths": 6
+      }
+    },
+    "2-data-capture-system": {
+      "success": true,
+      "duration": 1,
+      "message": "数据捕获系统启动成功",
+      "details": {
+        "instanceId": "capture-1754653168039",
+        "directoriesCreated": 8
+      }
+    },
+    "3-module-data-simulation": {
+      "success": true,
+      "duration": 4,
+      "message": "模块数据模拟构建完成",
+      "details": {
+        "providers": [
+          "codewhisperer",
+          "openai",
+          "gemini",
+          "anthropic"
+        ],
+        "scenarios": 4,
+        "totalSimulations": 16
+      }
+    },
+    "4-individual-module-logic-tests": {
+      "success": false,
+      "duration": 178,
+      "error": "部分模块逻辑测试失败，无法继续流水线测试"
+    }
+  },
+  "recommendations": [
+    "❌ 测试流程中存在失败，需要进一步调试和修复",
+    "🔍 检查失败的阶段和具体错误信息",
+    "⚠️ 只完成了 3/6 个阶段，建议完成所有阶段"
+  ],
+  "nextSteps": [
+    "1. 分析失败原因并进行修复",
+    "2. 重新运行失败的测试阶段",
+    "3. 完善测试用例和模拟数据"
+  ]
+}

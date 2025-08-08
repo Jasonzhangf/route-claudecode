@@ -1,0 +1,26 @@
+{
+  "scenarioId": "basic-text-response",
+  "name": "基础文本响应测试",
+  "description": "测试基本的文本生成功能",
+  "providers": [
+    "codewhisperer",
+    "openai",
+    "gemini",
+    "anthropic"
+  ],
+  "request": {
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, how are you?"
+      }
+    ],
+    "max_tokens": 100,
+    "temperature": 0.7
+  },
+  "expectedResponse": {
+    "contentType": "text",
+    "stopReason": "end_turn",
+    "minLength": 10
+  }
+}
