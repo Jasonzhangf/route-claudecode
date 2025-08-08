@@ -275,25 +275,34 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 | **5509** | OpenAI Compatible | ModelScope GLM | `config-openai-modelscope-glm-5509.json` | ZhipuAI/GLM-4.5 |
 
 #### 🚀 调试使用示例
-```bash
-# 启动服务器的标准格式
-rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
 
-# 启动Claude Code连接到特定端口
+⚠️ **🔥 CRITICAL RULE - 绝对不可违反！**
+**ALL rcc start 命令必须包含 --config 参数！**
+**格式**: `rcc start --config <配置文件路径> --debug`
+**违反此规则将导致服务启动失败或配置错误！**
+
+```bash
+# ✅ 正确格式 - 启动服务器的标准格式
+rcc start --config ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+
+# ✅ 启动Claude Code连接到特定端口
 rcc code --port 5508
 
-# 具体启动命令示例:
+# ✅ 具体启动命令示例 (所有命令都包含--config):
 # 启动CodeWhisperer主账号服务 (端口5501)
-rcc start ~/.route-claude-code/config/single-provider/config-codewhisperer-primary-5501.json --debug
+rcc start --config ~/.route-claude-code/config/single-provider/config-codewhisperer-primary-5501.json --debug
 
 # 启动Gemini服务 (端口5502) 
-rcc start ~/.route-claude-code/config/single-provider/config-google-gemini-5502.json --debug
+rcc start --config ~/.route-claude-code/config/single-provider/config-google-gemini-5502.json --debug
 
 # 启动ModelScope GLM服务 (端口5509)
-rcc start ~/.route-claude-code/config/single-provider/config-openai-modelscope-glm-5509.json --debug
+rcc start --config ~/.route-claude-code/config/single-provider/config-openai-modelscope-glm-5509.json --debug
 
 # 启动ShuaiHong服务 (端口5508)
-rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+rcc start --config ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+
+# ❌ 错误示例 - 绝对不要这样写！
+# rcc start ~/.route-claude-code/config/single-provider/config-google-gemini-5502.json --debug
 
 # 检查特定端口服务状态
 curl http://localhost:5502/health

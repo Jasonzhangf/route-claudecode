@@ -325,11 +325,19 @@ export class GeminiTransformer implements MessageTransformer {
     }
 
     const functionDeclarations = tools.map((tool, index) => {
-      if (!tool.function) {
-        throw new Error(`GeminiTransformer: Invalid tool at index ${index}: missing function`);
+      // 支持多种工具定义格式
+      let func: any;
+      
+      if (tool.function) {
+        // 标准格式: { type: "function", function: { name, description, parameters } }
+        func = tool.function;
+      } else if (tool.name) {
+        // 简化格式: { name, description, parameters }
+        func = tool;
+      } else {
+        throw new Error(`GeminiTransformer: Invalid tool at index ${index}: missing function or name`);
       }
 
-      const func = tool.function;
       if (!func.name) {
         throw new Error(`GeminiTransformer: Invalid tool at index ${index}: missing function name`);
       }
