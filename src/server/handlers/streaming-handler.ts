@@ -8,13 +8,13 @@
 import { FastifyReply } from 'fastify';
 import { BaseRequest, Provider } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
-import { ResponsePipeline } from '@/pipeline/response-pipeline';
+// // import { ResponsePipeline } from '@/pipeline/response-pipeline';
 import { getUnifiedPatchPreprocessor } from '@/preprocessing/unified-patch-preprocessor';
 import { handleStreamingError, UnifiedErrorHandler } from '@/utils/error-handler';
 
 export interface StreamingHandlerDependencies {
   logger: any;
-  responsePipeline: ResponsePipeline;
+// //   responsePipeline: ResponsePipeline;
   unifiedPreprocessor: ReturnType<typeof getUnifiedPatchPreprocessor>;
   config: {
     debug: {
@@ -227,11 +227,11 @@ export class StreamingHandler {
           timestamp: Date.now()
         };
         
-        const processedData = await this.deps.responsePipeline.process(
-          preprocessedChunk.data,
-          pipelineContext
-        );
-        processedChunk = { ...preprocessedChunk, data: processedData };
+//         // const processedData = await this.deps.responsePipeline.process(
+//           preprocessedChunk.data,
+//           pipelineContext
+//         );
+        processedChunk = preprocessedChunk; // Use preprocessed chunk directly
       }
       
       // 处理停止信号和工具调用

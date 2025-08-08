@@ -13,7 +13,7 @@ import { AnthropicRequest, CodeWhispererRequest, HistoryUserMessage, HistoryAssi
 import { ICodeWhispererClient } from './client-interface';
 import { KiroAuthConfig, DEFAULT_REGION_CONFIG, DEFAULT_CREDENTIAL_CONFIG } from './enhanced-auth-config';
 import { CodeWhispererParser } from './parser';
-import { ResponsePipeline } from '@/pipeline/response-pipeline';
+// import { ResponsePipeline } from '@/pipeline/response-pipeline';
 
 export class EnhancedCodeWhispererClient implements ICodeWhispererClient {
   private auth: CodeWhispererAuth;

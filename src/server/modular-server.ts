@@ -16,7 +16,7 @@ import { getLogger, setDefaultPort, createRequestTracker, createErrorTracker } f
 import { sessionManager } from '@/session/manager';
 import { ProviderExpander } from '@/routing/provider-expander';
 import { createPatchManager } from '@/patches';
-import { ResponsePipeline } from '@/pipeline/response-pipeline';
+// // import { ResponsePipeline } from '@/pipeline/response-pipeline';
 import { transformationManager } from '@/transformers/manager';
 import { getUnifiedPatchPreprocessor } from '@/preprocessing/unified-patch-preprocessor';
 
@@ -48,7 +48,7 @@ export class ModularRouterServer {
   private routingEngine!: RoutingEngine;
   private outputProcessor!: AnthropicOutputProcessor;
   private patchManager!: ReturnType<typeof createPatchManager>;
-  private responsePipeline!: ResponsePipeline;
+// //   private responsePipeline!: ResponsePipeline;
   private unifiedPreprocessor!: ReturnType<typeof getUnifiedPatchPreprocessor>;
   
   // 模块化组件
@@ -103,7 +103,7 @@ export class ModularRouterServer {
     
     // 补丁和流水线系统
     this.patchManager = createPatchManager(this.config.server.port);
-    this.responsePipeline = new ResponsePipeline(this.patchManager, transformationManager, this.config.server.port);
+// //     this.responsePipeline = new ResponsePipeline(this.patchManager, transformationManager, this.config.server.port);
     this.unifiedPreprocessor = getUnifiedPatchPreprocessor(this.config.server.port);
     
     // 初始化变换管理器
@@ -143,7 +143,7 @@ export class ModularRouterServer {
     
     this.streamingHandler = createStreamingHandler({
       logger: this.logger,
-      responsePipeline: this.responsePipeline,
+//       responsePipeline: this.responsePipeline,
       unifiedPreprocessor: this.unifiedPreprocessor,
       config: this.config
     });
