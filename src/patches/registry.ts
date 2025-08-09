@@ -7,6 +7,7 @@ import { PatchManager } from './manager';
 import { AnthropicToolCallTextFixPatch } from './anthropic/tool-call-text-fix';
 import { OpenAIToolFormatFixPatch } from './openai/tool-format-fix';
 import { OpenAIStreamingToolFormatFixPatch } from './openai/streaming-tool-format-fix';
+import { ModelScopeFormatFixPatch } from './openai/modelscope-format-fix';
 import { GeminiResponseFormatFixPatch } from './gemini/response-format-fix';
 
 /**
@@ -21,6 +22,7 @@ export function createPatchManager(port?: number): PatchManager {
   // 注册 OpenAI-Compatible 补丁
   manager.registerPatch(new OpenAIToolFormatFixPatch());
   manager.registerPatch(new OpenAIStreamingToolFormatFixPatch());
+  manager.registerPatch(new ModelScopeFormatFixPatch());
 
   // 注册 Gemini 补丁
   manager.registerPatch(new GeminiResponseFormatFixPatch());
