@@ -7,7 +7,7 @@
   },
   "main": "./dist/cli.js",
   "scripts": {
-    "build": "tsc && esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --external:tiktoken --external:@anthropic-ai/sdk --external:@google/genai --banner:js='#!/usr/bin/env node' && esbuild src/cli/dynamic-model-cli.ts --bundle --platform=node --outfile=dist/dynamic-model-cli.js --external:tiktoken --external:@anthropic-ai/sdk --external:@google/genai --banner:js='#!/usr/bin/env node'",
+    "build": "tsc && esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js --external:tiktoken --external:@anthropic-ai/sdk --external:@google/genai --banner:js=\"#!/usr/bin/env node\" && esbuild src/cli/dynamic-model-cli.ts --bundle --platform=node --outfile=dist/dynamic-model-cli.js --external:tiktoken --external:@anthropic-ai/sdk --external:@google/genai --banner:js=\"#!/usr/bin/env node\"",
     "dev": "tsx src/cli.ts",
     "test": "jest",
     "test:watch": "jest --watch",

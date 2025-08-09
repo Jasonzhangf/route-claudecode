@@ -1011,7 +1011,10 @@ providerCommand
   .option('--verbose', 'Enable verbose output')
   .action(async (options) => {
     try {
-      process.env.RCC_PORT = '3456'; // 设置默认端口，避免logger初始化错误
+      // 确保RCC_PORT环境变量已设置，用于logger初始化
+      if (!process.env.RCC_PORT) {
+        process.env.RCC_PORT = '3456';
+      }
       
       console.log(chalk.cyan('🚀 Claude Code Router - Provider Update'));
       console.log(chalk.gray(`Version: ${VERSION}\n`));
@@ -1051,7 +1054,10 @@ providerCommand
   .option('--format <format>', 'Output format (table|json)', 'table')
   .action(async (options) => {
     try {
-      process.env.RCC_PORT = '3456';
+      // 确保RCC_PORT环境变量已设置，用于logger初始化
+      if (!process.env.RCC_PORT) {
+        process.env.RCC_PORT = '3456';
+      }
       
       const { createProviderManager } = await import('./cli/provider-manager');
       const manager = createProviderManager();

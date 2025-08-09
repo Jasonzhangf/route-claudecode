@@ -12,8 +12,8 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# Default values
-PORT=3456
+# Default values - 环境变量优先，避免硬编码
+PORT=${RCC_PORT:-3456}
 COMMAND="start"
 
 # Parse arguments
