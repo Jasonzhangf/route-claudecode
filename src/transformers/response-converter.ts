@@ -21,6 +21,11 @@ const STRICT_FINISH_REASON_MAPPING: Record<string, string> = {
   'tool_calls': 'tool_use',
   'function_call': 'tool_use',
   'content_filter': 'stop_sequence',
+  // LMStudio/ModelScope异常值支持 - 有些服务可能返回已转换后的值
+  'end_turn': 'end_turn',  // 直接透传已转换的值
+  'max_tokens': 'max_tokens',
+  'tool_use': 'tool_use',
+  'stop_sequence': 'stop_sequence',
 };
 
 /**

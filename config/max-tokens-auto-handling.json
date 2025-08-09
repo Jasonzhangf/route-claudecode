@@ -1,0 +1,43 @@
+{
+  "enableAutoHandling": true,
+  "triggerThresholdPercent": 90,
+  "strategies": {
+    "rolling_truncation": {
+      "enabled": true,
+      "priority": 1,
+      "historyRetentionPercent": 80,
+      "useSimplifiedPrompt": true,
+      "safetyMarginTokens": 500
+    },
+    "longcontext_compression": {
+      "enabled": false,
+      "priority": 2,
+      "recentHistoryPercent": 20,
+      "compressionModel": "claude-3-haiku",
+      "compressionEndpoint": "/v1/chat/completions"
+    }
+  },
+  "providerSettings": {
+    "lmstudio": {
+      "enableAutoHandling": true,
+      "enableToolCallParsing": true,
+      "maxRetryAttempts": 1
+    },
+    "openai": {
+      "enableAutoHandling": true,
+      "enableToolCallParsing": false,
+      "maxRetryAttempts": 1
+    },
+    "codewhisperer": {
+      "enableAutoHandling": true,
+      "enableToolCallParsing": false,
+      "maxRetryAttempts": 1
+    }
+  },
+  "logging": {
+    "logFailuresToDatabase": true,
+    "databasePath": "database/tool-parsing-failures.json",
+    "enableDetailedLogging": true,
+    "retainLogsForDays": 30
+  }
+}

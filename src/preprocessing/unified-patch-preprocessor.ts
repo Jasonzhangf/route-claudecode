@@ -499,7 +499,9 @@ export class UnifiedPatchPreprocessor {
       'glm-4.5', 'glm-4-plus', 'glm-4', 
       'DeepSeek-V3', 'deepseek-v3',
       'claude-4-sonnet', 'claude-3-sonnet',
-      'ZhipuAI/GLM-4.5', 'Qwen/Qwen3-Coder-480B-A35B-Instruct'
+      'ZhipuAI/GLM-4.5', 'Qwen/Qwen3-Coder-480B-A35B-Instruct',
+      'gpt-oss-20b-mlx', 'gpt-oss', 'qwen3-30b', 'glm-4.5-air', // LMStudio models
+      'unsloth', 'gguf', 'mlx' // LMStudio format indicators
     ];
     
     // 检查模型名称是否匹配
@@ -512,8 +514,9 @@ export class UnifiedPatchPreprocessor {
       // 对于非OpenAI原生Provider，也可能需要格式修复，放宽检查
       const isOpenAICompatible = context.provider.includes('openai') && 
                                 !context.provider.includes('anthropic');
+      const isLMStudio = context.provider.includes('lmstudio');
       
-      if (!isOpenAICompatible) {
+      if (!isOpenAICompatible && !isLMStudio) {
         return data;
       }
     }

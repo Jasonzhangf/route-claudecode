@@ -27,6 +27,12 @@ export class ConfigValidationError extends Error {
  * 🚨 严格验证API Key - 零fallback原则
  */
 export function validateApiKey(config: ProviderConfig, providerId: string): string {
+  // 检查认证类型，如果是none则不需要credentials
+  if (config.authentication?.type === 'none') {
+    logger.debug(`Provider ${providerId} uses no authentication`, { providerId });
+    return ''; // 返回空字符串表示不需要API key
+  }
+
   const credentials = config.authentication?.credentials;
   if (!credentials) {
     throw new ConfigValidationError(
@@ -55,10 +61,19 @@ export function validateApiKey(config: ProviderConfig, providerId: string): stri
     );
   }
 
-  // 验证API key格式（基本检查）
-  if (finalApiKey === 'dummy-key' || finalApiKey === 'test-key' || finalApiKey.length < 10) {
+  // 验证API key格式（基本检查）- 允许本地服务的简单key
+  if (finalApiKey === 'dummy-key' || finalApiKey === 'test-key') {
     throw new ConfigValidationError(
       `Provider ${providerId} has invalid or placeholder API key - violates zero fallback principle`,
+      providerId,
+      'apiKey'
+    );
+  }
+  
+  // 允许本地服务使用简单的API key
+  if (finalApiKey.length < 5) {
+    throw new ConfigValidationError(
+      `Provider ${providerId} API key too short - must be at least 5 characters`,
       providerId,
       'apiKey'
     );
