@@ -1,6 +1,6 @@
 /**
- * 统一预处理补丁系统
- * 将原本分散的补丁检测和应用统一到预处理阶段
+ * 统一Preprocessing补丁系统
+ * 将原本分散的补丁检测和应用统一到Preprocessing阶段
  * 确保所有输入都经过统一的补丁检测和处理，避免遗漏
  */
 
@@ -22,10 +22,10 @@ interface PreprocessingContext {
   metadata?: any;
 }
 
-interface UnifiedPatchPreprocessorConfig {
+export interface UnifiedPatchPreprocessorConfig {
   enabled: boolean;
   debugMode: boolean;
-  forceAllInputs: boolean; // 强制所有输入都进入预处理
+  forceAllInputs: boolean; // 强制所有输入都进入Preprocessing
   bypassConditions: string[]; // 可以绕过的特殊条件
   performanceTracking: boolean;
   cacheResults: boolean;
@@ -56,7 +56,7 @@ export class UnifiedPatchPreprocessor {
       bypassConditions: [],
       performanceTracking: true,
       cacheResults: process.env.RCC_CACHE_PREPROCESSING === 'true',
-      // 🎯 强化工具调用检测 - 不可配置关闭，强制启用
+      // 🎯 强化Tool call检测 - 不可配置关闭，强制启用
       validateFinishReason: true, // 强制启用，忽略环境变量
       strictFinishReasonValidation: process.env.RCC_STRICT_FINISH_REASON === 'true', // 默认关闭
       ...config
@@ -77,8 +77,8 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 统一预处理入口：处理输入阶段数据
-   * 所有API请求都必须经过此处理
+   * 统一Preprocessing入口：处理输入阶段数据
+   * 所有APIRequest都必须经过此处理
    */
   async preprocessInput(
     inputData: any,
@@ -99,8 +99,8 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 统一预处理入口：处理响应阶段数据
-   * 所有Provider响应都必须经过此处理
+   * 统一Preprocessing入口：处理Response阶段数据
+   * 所有ProviderResponse都必须经过此处理
    */
   async preprocessResponse(
     responseData: any,
@@ -120,8 +120,8 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 统一预处理入口：处理流式数据块
-   * 所有流式响应都必须经过此处理
+   * 统一Preprocessing入口：处理Streaming数据块
+   * 所有StreamingResponse都必须经过此处理
    */
   async preprocessStreaming(
     chunkData: any,
@@ -141,7 +141,7 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 🪟 滑动窗口工具调用检测 - 处理各种不规范格式
+   * 🪟 Sliding window tool call detection - Handle various non-standard formats
    */
   private async slidingWindowToolDetection(data: any, context: PreprocessingContext): Promise<{
     hasTools: boolean;
@@ -155,7 +155,7 @@ export class UnifiedPatchPreprocessor {
     const windowSize = 500; // 500字符窗口
     const overlap = 100;    // 100字符重叠
 
-    // 收集所有文本内容
+    // 收集所有文本Content
     let allText = '';
     if (data.content && Array.isArray(data.content)) {
       allText = data.content
@@ -200,7 +200,7 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 分析单个窗口中的工具调用
+   * Analyze tool calls in individual windows
    */
   private analyzeWindowForTools(window: string, offset: number): {
     toolCount: number;
@@ -209,7 +209,7 @@ export class UnifiedPatchPreprocessor {
     let toolCount = 0;
     const patterns: string[] = [];
 
-    // 检测模式1: GLM-4.5格式 "Tool call: FunctionName({...})"
+    // 检测模式1: GLM-4.5Format "Tool call: FunctionName({...})"
     const glmPattern = /Tool\s+call:\s*(\w+)\s*\((\{[^}]*\})\)/gi;
     let match;
     while ((match = glmPattern.exec(window)) !== null) {
@@ -217,17 +217,17 @@ export class UnifiedPatchPreprocessor {
       patterns.push(`GLM-${match[1]}@${offset + match.index}`);
     }
 
-    // 检测模式2: JSON格式 {"type": "tool_use", ...}
+    // 检测模式2: JSONFormat {"type": "tool_use", ...}
     const jsonPattern = /\{\s*"type"\s*:\s*"tool_use"[^}]*\}/gi;
     while ((match = jsonPattern.exec(window)) !== null) {
       toolCount++;
       patterns.push(`JSON-tool_use@${offset + match.index}`);
     }
 
-    // 检测模式3: 直接函数调用格式 "functionName({...})"
+    // 检测模式3: 直接函数调用Format "functionName({...})"
     const funcPattern = /(\w+)\s*\(\s*\{[^}]*"[^"]*"\s*:[^}]*\}/gi;
     while ((match = funcPattern.exec(window)) !== null) {
-      // 排除常见的非工具调用模式
+      // 排除常见的非Tool call模式
       const funcName = match[1].toLowerCase();
       if (!['console', 'json', 'object', 'array', 'string', 'math'].includes(funcName)) {
         toolCount++;
@@ -235,7 +235,7 @@ export class UnifiedPatchPreprocessor {
       }
     }
 
-    // 检测模式4: OpenAI函数调用格式
+    // 检测模式4: OpenAI函数调用Format
     const openaiPattern = /"function_call"\s*:\s*\{[^}]*"name"\s*:\s*"([^"]+)"/gi;
     while ((match = openaiPattern.exec(window)) !== null) {
       toolCount++;
@@ -262,7 +262,7 @@ export class UnifiedPatchPreprocessor {
         this.performanceMetrics.byStage[context.stage].count++;
       }
 
-      // 1. 预处理检查：是否启用
+      // 1. Preprocessing检查：是否启用
       if (!this.config.enabled) {
         if (this.config.debugMode) {
           this.logger.debug('UnifiedPatchPreprocessor disabled, skipping', {
@@ -285,9 +285,9 @@ export class UnifiedPatchPreprocessor {
         }
       }
 
-      // 3. 放宽准入条件 - 强制所有响应都进入预处理
+      // 3. 放宽准入条件 - 强制所有Response都进入Preprocessing
       const shouldProcess = this.config.forceAllInputs || 
-                           context.stage === 'response' ||  // 所有响应都进入预处理 
+                           context.stage === 'response' ||  // 所有Response都进入Preprocessing 
                            this.shouldProcess(data, context);
       
       if (shouldProcess) {
@@ -309,19 +309,19 @@ export class UnifiedPatchPreprocessor {
             context.model
           );
         } else if (context.stage === 'response') {
-          // 🔧 CRITICAL FIX: ShuaiHong/ModelScope格式兼容性补丁
+          // 🔧 CRITICAL FIX: ShuaiHong/ModelScope format compatibility patch
           data = await this.applyShuaiHongFormatPatch(data, context);
           
-          // 🎯 强制工具调用检测和finish reason覆盖
+          // 🎯 Force tool call detection and finish reason override
           const toolDetectionResult = await this.forceToolCallDetection(data, context);
           
           if (toolDetectionResult.hasTools) {
-            // 强制覆盖finish_reason
+            // Force override finish_reason
             data = this.forceFinishReasonOverride(data, 'tool_calls', context);
             console.log(`🔧 [PREPROCESSING] Forced finish_reason override for ${toolDetectionResult.toolCount} tools`);
           }
 
-          // 🚨 CRITICAL: 在预处理阶段检测unknown finish reason (强制启用)
+          // 🚨 CRITICAL: Detect unknown finish reason in preprocessing stage (强制启用)
           this.validateFinishReason(data, context);
           
           processedData = await this.patchManager.applyResponsePatches(
@@ -401,8 +401,8 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 🎯 强制工具调用检测 - 不可配置关闭
-   * 使用滑动窗口解析各种不规范格式
+   * 🎯 Force tool call detection - Cannot be disabled by configuration
+   * 使用滑动窗口解析各种不规范Format
    */
   private async forceToolCallDetection(data: any, context: PreprocessingContext): Promise<{
     hasTools: boolean;
@@ -411,7 +411,7 @@ export class UnifiedPatchPreprocessor {
     let hasTools = false;
     let toolCount = 0;
 
-    // 🪟 滑动窗口解析机制 - 检测各种不规范的工具调用格式
+    // 🪟 Sliding window parsing mechanism - 检测各种不规范的Tool callFormat
     if (data && typeof data === 'object') {
       const slidingWindowResult = await this.slidingWindowToolDetection(data, context);
       hasTools = slidingWindowResult.hasTools;
@@ -425,12 +425,12 @@ export class UnifiedPatchPreprocessor {
       }
     }
 
-    // 1. 检查Anthropic格式的工具调用
+    // 1. 检查AnthropicFormat的Tool call
     if (data.content && Array.isArray(data.content)) {
       const directToolCalls = data.content.filter((block: any) => block.type === 'tool_use');
       toolCount += directToolCalls.length;
 
-      // 检查文本格式的工具调用
+      // 检查Text format tool calls
       const textBlocks = data.content.filter((block: any) => block.type === 'text');
       for (const block of textBlocks) {
         if (block.text && this.hasTextToolCallsSimplified(block.text)) {
@@ -439,7 +439,7 @@ export class UnifiedPatchPreprocessor {
       }
     }
 
-    // 2. 检查OpenAI格式的工具调用
+    // 2. Check OpenAI format tool calls
     if (data.choices && Array.isArray(data.choices)) {
       for (const choice of data.choices) {
         if (choice.message?.tool_calls) {
@@ -451,7 +451,7 @@ export class UnifiedPatchPreprocessor {
       }
     }
 
-    // 3. 检查Gemini格式的工具调用
+    // 3. 检查GeminiFormat的Tool call
     if (data.candidates && Array.isArray(data.candidates)) {
       for (const candidate of data.candidates) {
         if (candidate.content?.parts) {
@@ -473,12 +473,12 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 简化的文本工具调用检测
+   * Simplified text tool call detection
    */
   private hasTextToolCallsSimplified(text: string): boolean {
     const simpleToolPatterns = [
-      /Tool\s+call:\s*\w+\s*\(/i,  // GLM-4.5格式
-      /"type"\s*:\s*"tool_use"/i,   // JSON格式
+      /Tool\s+call:\s*\w+\s*\(/i,  // GLM-4.5Format
+      /"type"\s*:\s*"tool_use"/i,   // JSONFormat
       /"name"\s*:\s*"\w+"/i         // 工具名称
     ];
 
@@ -486,149 +486,115 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 🔧 CRITICAL FIX: ShuaiHong/ModelScope格式兼容性补丁
-   * 解决 "OpenAI response missing choices" 错误
+   * Solve OpenAI response missing choices error and tool call parsing issue
    */
   private async applyShuaiHongFormatPatch(
     data: any, 
     context: PreprocessingContext
   ): Promise<any> {
-    // 基于模型匹配而不是Provider，更精确
-    const targetModels = [
-      'gemini-2.5-pro', 'gemini-2.5-flash', 'gemini-pro', 'gemini-flash',
-      'glm-4.5', 'glm-4-plus', 'glm-4', 
-      'DeepSeek-V3', 'deepseek-v3',
-      'claude-4-sonnet', 'claude-3-sonnet',
-      'ZhipuAI/GLM-4.5', 'Qwen/Qwen3-Coder-480B-A35B-Instruct',
-      'gpt-oss-20b-mlx', 'gpt-oss', 'qwen3-30b', 'glm-4.5-air', // LMStudio models
-      'unsloth', 'gguf', 'mlx' // LMStudio format indicators
-    ];
-    
-    // 检查模型名称是否匹配
-    const isTargetModel = targetModels.some(model => 
-      context.model.toLowerCase().includes(model.toLowerCase()) ||
-      model.toLowerCase().includes(context.model.toLowerCase())
-    );
-    
-    if (!isTargetModel) {
-      // 对于非OpenAI原生Provider，也可能需要格式修复，放宽检查
-      const isOpenAICompatible = context.provider.includes('openai') && 
-                                !context.provider.includes('anthropic');
-      const isLMStudio = context.provider.includes('lmstudio');
-      
-      if (!isOpenAICompatible && !isLMStudio) {
-        return data;
-      }
-    }
-
-    // 检查是否缺少choices字段（核心问题）
-    if (data && typeof data === 'object' && !data.choices) {
-      const originalData = JSON.stringify(data).substring(0, 200);
-      
-      console.log(`🔧 [PREPROCESSING] Applying format patch for missing choices field`);
-      console.log(`📍 [MODEL-MATCH] ${context.model} on ${context.provider}`);
-      
-      this.logger.info('OpenAI format compatibility patch applied', {
-        provider: context.provider,
-        model: context.model,
-        requestId: context.requestId,
-        originalDataPreview: originalData,
-        issue: 'missing_choices_field',
-        patchType: 'openai_compatibility_fix'
-      });
-
-      // 构造标准OpenAI格式响应
-      const fixedData = {
-        id: data.id || `msg_${Date.now()}_${context.requestId.slice(-8)}`,
-        object: 'chat.completion',
-        created: data.created || Math.floor(Date.now() / 1000),
-        model: context.model,
-        choices: [{
-          index: 0,
-          message: {
-            role: 'assistant',
-            content: this.extractContent(data) || '',
-            tool_calls: this.extractToolCalls(data) || null
-          },
-          finish_reason: this.extractFinishReason(data) || 'stop'
-        }],
-        usage: data.usage || {
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0
-        }
-      };
-
-      // 如果有工具调用但没有内容，设置content为null
-      if (fixedData.choices[0].message.tool_calls && !fixedData.choices[0].message.content) {
-        (fixedData.choices[0].message as any).content = null;
-      }
-
-      console.log(`✅ [PREPROCESSING] ShuaiHong format patch applied successfully`);
-      return fixedData;
-    }
-
-    // 检查choices存在但格式不完整的情况
-    if (data && data.choices && Array.isArray(data.choices)) {
-      let needsFix = false;
-      const fixedChoices = data.choices.map((choice: any) => {
-        if (!choice.message) {
-          needsFix = true;
-          return {
-            ...choice,
-            index: choice.index || 0,
-            message: {
-              role: 'assistant',
-              content: choice.content || choice.text || '',
-              tool_calls: choice.tool_calls || null
-            },
-            finish_reason: choice.finish_reason || 'stop'
-          };
-        }
-        return choice;
-      });
-
-      if (needsFix) {
-        console.log(`🔧 [PREPROCESSING] Fixing incomplete choices format for ${context.provider}`);
-        return {
-          ...data,
-          choices: fixedChoices
-        };
-      }
-    }
-
-    // 数据格式正常，直接返回
-    return data;
-  }
-
-  /**
-   * 从非标准响应中提取内容
-   */
-  private extractContent(data: any): string | null {
-    // 尝试多种可能的内容字段
-    if (data.content) return data.content;
+    // Handle ShuaiHong/ModelScope format responses
     if (data.message && typeof data.message === 'string') return data.message;
     if (data.text) return data.text;
     if (data.response) return data.response;
     if (data.output) return data.output;
     
-    // 尝试从嵌套对象中提取
+    // Try to extract from nested objects
     if (data.result && data.result.content) return data.result.content;
     if (data.data && data.data.content) return data.data.content;
     
-    return null;
+    // LM Studio special handling: Parse embedded tool calls in content
+    const isLMStudio = context.provider.includes('lmstudio') || context.provider.includes('LMStudio');
+    
+    if (isLMStudio) {
+      // Handle both OpenAI format (choices array) and Anthropic format (content array)
+      let textContent = '';
+      let isOpenAIFormat = false;
+      
+      // Check for OpenAI format first
+      if (data.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+        const choice = data.choices[0];
+        textContent = choice.message?.content;
+        isOpenAIFormat = true;
+      }
+      // Check for Anthropic format
+      else if (data.content && Array.isArray(data.content)) {
+        const textBlock = data.content.find((block: any) => block.type === 'text');
+        textContent = textBlock?.text;
+        isOpenAIFormat = false;
+      }
+      
+      if (typeof textContent === 'string' && textContent.length > 0) {
+        // Try to parse LM Studio format tool calls
+        const lmstudioToolCalls = this.parseLMStudioToolCalls(textContent, context);
+        
+        if (lmstudioToolCalls.length > 0) {
+          console.log(`🔧 [PREPROCESSING] Parsed ${lmstudioToolCalls.length} LM Studio tool calls (${isOpenAIFormat ? 'OpenAI' : 'Anthropic'} format)`);
+          
+          // Remove tool call markers from content
+          let newContent = textContent;
+          const lmstudioPattern = /<\|start\|>assistant<\|channel\|>commentary to=functions\.[^<]*\s*<\|constrain\|>[^<]*<\|message\|>\{[^}]*\}/g;
+          newContent = newContent.replace(lmstudioPattern, '').trim();
+          
+          if (isOpenAIFormat) {
+            // Return OpenAI format
+            const choice = data.choices[0];
+            const fixedData = {
+              ...data,
+              choices: [{
+                ...choice,
+                message: {
+                  ...choice.message,
+                  content: newContent || null,
+                  tool_calls: lmstudioToolCalls
+                },
+                finish_reason: 'tool_calls'
+              }]
+            };
+            
+            return fixedData;
+          } else {
+            // Return Anthropic format with tool_use blocks
+            const toolUseBlocks = lmstudioToolCalls.map(toolCall => ({
+              type: 'tool_use',
+              id: toolCall.id,
+              name: toolCall.function.name,
+              input: JSON.parse(toolCall.function.arguments)
+            }));
+            
+            const newContentBlocks = [];
+            if (newContent) {
+              newContentBlocks.push({
+                type: 'text',
+                text: newContent
+              });
+            }
+            newContentBlocks.push(...toolUseBlocks);
+            
+            const fixedData = {
+              ...data,
+              content: newContentBlocks,
+              stop_reason: 'tool_use'
+            };
+            
+            return fixedData;
+          }
+        }
+      }
+    }
+    
+    return data;
   }
 
   /**
-   * 从非标准响应中提取工具调用
+   * Extract tool calls from non-standard response
    */
   private extractToolCalls(data: any): any[] | null {
-    // 检查标准位置
+    // Check standard locations
     if (data.tool_calls && Array.isArray(data.tool_calls)) {
       return data.tool_calls;
     }
     
-    // 检查嵌套位置
+    // Check nested locations
     if (data.message && data.message.tool_calls) {
       return data.message.tool_calls;
     }
@@ -642,28 +608,76 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 从非标准响应中提取finish_reason
+   * Extract finish_reason from non-standard response
    */
   private extractFinishReason(data: any): string {
-    // 尝试多种可能的finish_reason字段
+    // Try multiple possible finish_reason fields
     if (data.finish_reason) return data.finish_reason;
     if (data.stop_reason) return data.stop_reason;
     if (data.finishReason) return data.finishReason;
     if (data.status) return data.status;
     
-    // 检查嵌套位置
+    // Check nested locations
     if (data.result && data.result.finish_reason) return data.result.finish_reason;
     if (data.choices && data.choices[0] && data.choices[0].finish_reason) {
       return data.choices[0].finish_reason;
     }
     
-    // 如果有工具调用相关内容，返回tool_calls
+    // 如果有Tool call相关Content，返回tool_calls
     if (this.extractToolCalls(data)) {
       return 'tool_calls';
     }
     
     // 默认为stop
     return 'stop';
+  }
+
+  /**
+   * 解析LM StudioFormat的Tool call
+   */
+  private parseLMStudioToolCalls(content: string, context: PreprocessingContext): any[] {
+    const toolCalls: any[] = [];
+    
+    // LM StudioFormat: <|start|>assistant<|channel|>commentary to=functions.FunctionName <|constrain|>JSON<|message|>{"param":"value"}
+    const lmstudioPattern = /<\|start\|>assistant<\|channel\|>commentary to=functions\.(\w+)\s*<\|constrain\|>(?:JSON|json)<\|message\|>(\{[^}]*\})/g;
+    
+    let match;
+    while ((match = lmstudioPattern.exec(content)) !== null) {
+      try {
+        const functionName = match[1];
+        const argsJson = match[2];
+        const args = JSON.parse(argsJson);
+        
+        const toolCall = {
+          id: `call_${Date.now()}_${toolCalls.length}`,
+          type: 'function',
+          function: {
+            name: functionName,
+            arguments: JSON.stringify(args)
+          }
+        };
+        
+        toolCalls.push(toolCall);
+        
+        this.logger.info('Parsed LM Studio tool call', {
+          functionName,
+          args,
+          provider: context.provider,
+          model: context.model,
+          requestId: context.requestId
+        }, context.requestId, 'preprocessing');
+      } catch (error) {
+        this.logger.error('Failed to parse LM Studio tool call', {
+          error: error instanceof Error ? error.message : String(error),
+          match: match[0],
+          provider: context.provider,
+          model: context.model,
+          requestId: context.requestId
+        }, context.requestId, 'preprocessing');
+      }
+    }
+    
+    return toolCalls;
   }
 
   /**
@@ -676,9 +690,9 @@ export class UnifiedPatchPreprocessor {
   ): any {
     const originalData = JSON.parse(JSON.stringify(data)); // 深拷贝
 
-    // 根据不同格式进行覆盖
+    // 根据不同Format进行覆盖
     if (data.choices && Array.isArray(data.choices)) {
-      // OpenAI格式
+      // OpenAIFormat
       for (const choice of data.choices) {
         const originalReason = choice.finish_reason;
         choice.finish_reason = targetReason;
@@ -687,7 +701,7 @@ export class UnifiedPatchPreprocessor {
     }
 
     if (data.stop_reason !== undefined) {
-      // Anthropic格式
+      // AnthropicFormat
       const originalReason = data.stop_reason;
       data.stop_reason = targetReason === 'tool_calls' ? 'tool_use' : targetReason;
       console.log(`🔧 [PREPROCESSING] Anthropic format stop_reason: ${originalReason} -> ${data.stop_reason}`);
@@ -697,15 +711,15 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 🚨 CRITICAL: 验证响应有效性 - 在预处理阶段捕获异常响应
-   * 按照用户要求：先检查是否为非正常响应，如果是则返回错误码和描述
-   * 只有HTTP 200等正常情况才进行finish_reason处理
+   * 🚨 CRITICAL: 验证Response有效性 - 在Preprocessing阶段捕获异常Response
+   * 按照用户要求：先检查是否为非Normal response，如果是则返回错误码和描述
+   * 只有Only process finish_reason for normal cases like HTTP 200
    */
   private validateFinishReason(data: any, context: PreprocessingContext): void {
-    // 1️⃣ 首先检查是否为非正常的API响应
+    // 1️⃣ 首先检查是否为非正常的APIResponse
     const abnormalResponse = this.detectAbnormalResponse(data, context);
     if (abnormalResponse) {
-      // 根据用户要求：非正常响应直接抛出API错误，包含错误码和500字以内描述
+      // 根据用户要求：Abnormal response directly throws API error，包含错误码和500字以内描述
       const errorCode = abnormalResponse.statusCode || 500;
       const errorMessage = this.generateErrorMessage(abnormalResponse, context);
       
@@ -740,8 +754,8 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 检测非正常的API响应
-   * 根据用户诊断结果：ModelScope不发送finish_reason字段的情况
+   * Detect abnormal API responses
+   * Based on user diagnosis: ModelScope not sending finish_reason field situation
    */
   private detectAbnormalResponse(data: any, context: PreprocessingContext): {
     type: string;
@@ -757,7 +771,7 @@ export class UnifiedPatchPreprocessor {
       };
     }
     
-    // 检查空响应或无效响应格式
+    // 检查空Response或无效ResponseFormat
     if (!data || (typeof data === 'object' && Object.keys(data).length === 0)) {
       return {
         type: 'empty_response',
@@ -766,7 +780,7 @@ export class UnifiedPatchPreprocessor {
       };
     }
     
-    // 检查HTTP错误响应
+    // 检查HTTP错误Response
     if (data.error || data.status >= 400) {
       return {
         type: 'http_error',
@@ -788,7 +802,7 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 检测是否为ModelScope类型的provider
+   * Detect if provider is ModelScope type
    */
   private isModelScopeProvider(provider: string): boolean {
     return Boolean(provider && (
@@ -799,11 +813,11 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 检测是否为流结束但缺少finish_reason的情况
+   * Detect if stream ends but finish_reason is missing
    * 基于诊断测试发现：ModelScope返回message_delta但delta为空对象
    */
   private isStreamingEndWithoutFinishReason(data: any, context: PreprocessingContext): boolean {
-    // 检查OpenAI格式响应中的空finish_reason
+    // 检查OpenAIFormatResponse中的空finish_reason
     if (data && typeof data === 'object' && 'choices' in data) {
       const choices = data.choices;
       if (Array.isArray(choices) && choices.length > 0) {
@@ -815,7 +829,7 @@ export class UnifiedPatchPreprocessor {
       }
     }
     
-    // 检查流事件格式：message_delta但delta为空
+    // 检查流事件Format：message_delta但delta为空
     if (data && data.type === 'message_delta' && data.delta && Object.keys(data.delta).length === 0) {
       return true;
     }
@@ -824,7 +838,7 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 生成友好的错误信息（限制500字以内）
+   * Generate friendly error message (limited to 500 characters)
    */
   private generateErrorMessage(abnormalResponse: any, context: PreprocessingContext): string {
     const baseMessage = `Provider returned unknown finish reason, indicating connection or API issue.`;
@@ -849,16 +863,16 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 验证正常响应中的finish_reason（原有逻辑保持不变）
+   * Validate finish_reason in normal response (original logic remains unchanged)
    */
   private validateNormalResponseFinishReason(data: any, context: PreprocessingContext): void {
-    // 检查OpenAI格式的响应
+    // 检查OpenAIFormat的Response
     if (data && typeof data === 'object' && 'choices' in data) {
       const choices = data.choices;
       if (Array.isArray(choices) && choices.length > 0) {
         const finishReason = choices[0].finish_reason;
         
-        // 记录原始finish reason
+        // Record original finish reason
         this.logger.info('🔍 [PREPROCESSING] Raw finish_reason detected', {
           originalFinishReason: finishReason,
           provider: context.provider,
@@ -868,7 +882,7 @@ export class UnifiedPatchPreprocessor {
           timestamp: new Date().toISOString()
         }, context.requestId, 'preprocessing');
         
-        // 对于正常响应，只有明确为'unknown'时才处理
+        // For normal responses, only process when explicitly "unknown"
         if (finishReason === 'unknown') {
           if (this.config.strictFinishReasonValidation) {
             const error = new Error(`Provider returned explicit unknown finish_reason. Provider: ${context.provider}, Model: ${context.model}`);
@@ -884,7 +898,7 @@ export class UnifiedPatchPreprocessor {
           }
         }
         
-        // 记录有效的finish reason
+        // Record valid finish reason
         this.logger.debug('✅ [PREPROCESSING] Valid finish_reason confirmed', {
           finishReason,
           provider: context.provider,
@@ -896,7 +910,7 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 智能检测：判断数据是否需要处理
+   * Smart detection: Determine if data needs processing
    */
   private shouldProcess(data: any, context: PreprocessingContext): boolean {
     // 如果强制处理所有输入，直接返回true
@@ -904,7 +918,7 @@ export class UnifiedPatchPreprocessor {
       return true;
     }
 
-    // 检查绕过条件
+    // Check bypass conditions
     for (const bypass of this.config.bypassConditions) {
       if (this.matchesCondition(data, context, bypass)) {
         return false;
@@ -912,9 +926,9 @@ export class UnifiedPatchPreprocessor {
     }
 
     // 基本检测规则：
-    // 1. 输入阶段：检查是否包含需要处理的格式
-    // 2. 响应阶段：检查是否包含工具调用或特殊格式
-    // 3. 流式阶段：检查是否包含需要修复的数据块
+    // 1. 输入阶段：检查是否包含需要处理的Format
+    // 2. Response阶段：检查是否包含Tool call或特殊Format
+    // 3. Streaming阶段：检查是否包含需要修复的数据块
 
     switch (context.stage) {
       case 'input':
@@ -929,17 +943,17 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 检测输入是否需要预处理
+   * Detect if input needs preprocessing
    */
   private detectInputProcessingNeeded(data: any, context: PreprocessingContext): boolean {
-    // 检查是否包含工具调用相关的内容
+    // 检查是否包含Tool call相关的Content
     if (data && typeof data === 'object') {
-      // 检查 tools 字段
+      // 检查 tools Field
       if (data.tools && Array.isArray(data.tools)) {
         return true;
       }
 
-      // 检查消息中是否包含工具调用内容
+      // Check if messages contain tool call content
       if (data.messages && Array.isArray(data.messages)) {
         return data.messages.some((msg: any) => {
           if (typeof msg.content === 'string') {
@@ -954,14 +968,14 @@ export class UnifiedPatchPreprocessor {
   }
 
   /**
-   * 检测响应是否需要预处理
+   * Detect if response needs preprocessing
    */
   private detectResponseProcessingNeeded(data: any, context: PreprocessingContext): boolean {
     if (!data || typeof data !== 'object') {
       return false;
     }
 
-    // 检查是否包含文本格式的工具调用
+    // Check if text format tool calls are included
     if (data.content && Array.isArray(data.content)) {
       return data.content.some((block: any) => {
         if (block.type === 'text' && typeof block.text === 'string') {
@@ -971,30 +985,30 @@ export class UnifiedPatchPreprocessor {
       });
     }
 
-    // 检查OpenAI格式的工具调用
+    // Check OpenAI format tool calls
     if (data.choices && Array.isArray(data.choices)) {
       return data.choices.some((choice: any) => {
         return choice.message && (choice.message.tool_calls || choice.message.function_call);
       });
     }
 
-    // 检查Gemini格式
+    // 检查GeminiFormat
     if (data.candidates && Array.isArray(data.candidates)) {
-      return true; // Gemini响应都需要格式修复
+      return true; // GeminiResponse都需要Format修复
     }
 
     return false;
   }
 
   /**
-   * 检测流式数据是否需要预处理
+   * Detect if streaming data needs preprocessing
    */
   private detectStreamingProcessingNeeded(data: any, context: PreprocessingContext): boolean {
     if (!data || typeof data !== 'object') {
       return false;
     }
 
-    // 检查流式事件中的工具调用
+    // Check tool calls in streaming events
     if (data.event && data.data) {
       const eventType = data.event;
       const eventData = data.data;
@@ -1097,11 +1111,11 @@ export class UnifiedPatchPreprocessor {
   }
 }
 
-// 单例模式：全局统一预处理器实例
+// 单例模式：全局统一Preprocessing器实例
 const preprocessorInstances = new Map<number | string, UnifiedPatchPreprocessor>();
 
 /**
- * 获取或创建统一预处理器实例
+ * 获取或创建统一Preprocessing器实例
  */
 export function getUnifiedPatchPreprocessor(
   port?: number, 
@@ -1117,7 +1131,7 @@ export function getUnifiedPatchPreprocessor(
 }
 
 /**
- * 创建新的统一预处理器实例
+ * 创建新的统一Preprocessing器实例
  */
 export function createUnifiedPatchPreprocessor(
   port?: number,
@@ -1130,7 +1144,7 @@ export function createUnifiedPatchPreprocessor(
 }
 
 /**
- * 重置统一预处理器实例
+ * 重置统一Preprocessing器实例
  */
 export function resetUnifiedPatchPreprocessor(port?: number) {
   const key = port || 'default';

@@ -9,7 +9,6 @@ import OpenAI from 'openai';
 import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
 import { logger } from '@/utils/logger';
 import { getSimpleSessionManager } from '@/session/simple-session-manager';
-import { createOpenAITransformer } from '@/transformers/openai';
 import { 
   validateNonStreamingResponse, 
   handleProviderError,
@@ -21,10 +20,9 @@ import {
   type ValidatedConfig 
 } from '@/utils/config-validation';
 import { 
-  createAPIHandler,
-  StreamingSimulator,
-  type OpenAIStreamingHandler 
-} from '@/utils/openai-streaming-handler';
+  createPureAPIHandler,
+  type PureOpenAIAPIHandler 
+} from '@/utils/pure-openai-api-handler';
 
 export interface PureOpenAIConfig extends ProviderConfig {
   sdkOptions?: {
@@ -45,8 +43,7 @@ export class PureOpenAIClient implements Provider {
   private openaiClient: OpenAI;
   private validatedConfig: ValidatedConfig;
   private sessionManager: ReturnType<typeof getSimpleSessionManager>;
-  private transformer = createOpenAITransformer();
-  private apiHandler: OpenAIStreamingHandler;
+  private apiHandler: PureOpenAIAPIHandler;
 
   constructor(config: PureOpenAIConfig, providerId: string) {
     this.name = providerId;
@@ -67,11 +64,10 @@ export class PureOpenAIClient implements Provider {
     // 初始化会话管理
     this.sessionManager = getSimpleSessionManager(this.validatedConfig.port);
     
-    // 初始化API处理器（统一非流式调用）
-    this.apiHandler = createAPIHandler({
+    // 初始化纯净API处理器（无transformer耦合）
+    this.apiHandler = createPureAPIHandler({
       providerName: this.name,
-      openaiClient: this.openaiClient,
-      transformer: this.transformer
+      openaiClient: this.openaiClient
     });
 
     logger.info('Pure OpenAI Client initialized', {
@@ -100,8 +96,14 @@ export class PureOpenAIClient implements Provider {
     }
 
     try {
-      // 🎯 统一使用非流式API调用（所有转换在transformer中完成）
-      const baseResponse = await this.apiHandler.callAPI(request);
+      // 🎯 预期 request.metadata.openaiRequest 包含已转换的OpenAI格式
+      const openaiRequest = request.metadata?.openaiRequest || this.extractOpenAIFormat(request);
+      
+      // 纯净的OpenAI API调用，不做任何转换
+      const rawResponse = await this.apiHandler.callAPI(openaiRequest, requestId);
+      
+      // 简单包装为BaseResponse格式，详细转换由外部Transformer处理
+      const baseResponse = this.wrapResponse(rawResponse, requestId);
 
       // 标记会话完成
       if (sessionId && conversationId) {
@@ -137,22 +139,28 @@ export class PureOpenAIClient implements Provider {
     }
 
     try {
-      // 🎯 1. 统一使用非流式API调用（所有转换在transformer中完成）
-      const baseResponse = await this.apiHandler.callAPI(request);
-
-      // 🎯 2. 将非流式响应转换为流式事件序列
-      for (const chunk of StreamingSimulator.simulateStreamingResponse(baseResponse, requestId)) {
+      // 🎯 预期 request.metadata.openaiRequest 包含已转换的OpenAI格式
+      const openaiRequest = request.metadata?.openaiRequest || this.extractOpenAIFormat(request);
+      
+      // 直接使用纯净的OpenAI流式 API
+      let finalResponse: any = null;
+      
+      for await (const chunk of this.apiHandler.callStreamingAPI(openaiRequest, requestId)) {
+        // 直接传递OpenAI原始 chunk，转换由外部处理
         yield chunk;
+        
+        // 记录最后的chunk用于会话管理
+        if (chunk.choices && chunk.choices[0]?.finish_reason) {
+          finalResponse = { stop_reason: chunk.choices[0].finish_reason };
+        }
       }
 
       // 标记会话完成
-      if (sessionId && conversationId) {
-        this.sessionManager.completeRequest(requestId, baseResponse.stop_reason);
+      if (sessionId && conversationId && finalResponse) {
+        this.sessionManager.completeRequest(requestId, finalResponse.stop_reason);
       }
 
-      logger.debug('Streaming simulation completed successfully', {
-        stopReason: baseResponse.stop_reason,
-        hasTools: baseResponse.content.some((c: any) => c.type === 'tool_use'),
+      logger.debug('Pure OpenAI streaming completed', {
         requestId,
         provider: this.name
       }, requestId, 'provider');
@@ -189,6 +197,44 @@ export class PureOpenAIClient implements Provider {
       });
       return false;
     }
+  }
+
+  /**
+   * 从 BaseRequest 提取 OpenAI 格式（备用方法）
+   * 预期外部 Transformer 已完成转换，这里只是简单提取
+   */
+  private extractOpenAIFormat(request: BaseRequest): any {
+    return {
+      model: request.model,
+      messages: request.messages,
+      max_tokens: request.max_tokens,
+      temperature: request.temperature,
+      top_p: (request as any).top_p,
+      tools: request.metadata?.tools,
+      tool_choice: request.metadata?.tool_choice,
+      stream: request.stream
+    };
+  }
+
+  /**
+   * 包装原始 OpenAI 响应为 BaseResponse 格式
+   * 最小包装，详细转换由外部 Transformer 处理
+   */
+  private wrapResponse(rawResponse: any, requestId: string): BaseResponse {
+    return {
+      id: rawResponse.id || `provider-${Date.now()}`,
+      model: rawResponse.model,
+      role: 'assistant',
+      content: rawResponse.choices?.[0]?.message?.content ? 
+        [{ type: 'text', text: rawResponse.choices[0].message.content }] : [],
+      stop_reason: rawResponse.choices?.[0]?.finish_reason || 'unknown',
+      usage: rawResponse.usage,
+      metadata: {
+        requestId,
+        provider: this.name,
+        rawResponse // 保留原始响应供外部转换使用
+      }
+    };
   }
 }
 
