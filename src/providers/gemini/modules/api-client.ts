@@ -6,8 +6,7 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { logger } from '@/utils/logger';
-import { GeminiApiRequest, GeminiApiResponse } from '@/transformers/gemini';
-
+import { GeminiApiRequest, GeminiApiResponse } from '@/types';
 export interface GeminiApiClientConfig {
   apiKey: string;
   baseUrl?: string;
@@ -32,7 +31,10 @@ export class GeminiApiClient {
       // Note: GoogleGenAI doesn't support custom baseUrl in constructor
       // Custom endpoint handling would need to be implemented differently
     });
-    this.timeout = config.timeout || 60000;
+    if (config.timeout === undefined) {
+      throw new Error('GeminiApiClient: timeout must be specified - no default fallback allowed');
+    }
+    this.timeout = config.timeout;
     
     logger.debug('Gemini API client initialized', {
       hasApiKey: !!config.apiKey,
@@ -57,7 +59,7 @@ export class GeminiApiClient {
     logger.debug('Executing Gemini API call', {
       model: request.model,
       hasContents: !!request.contents,
-      contentCount: request.contents?.length || 0,
+      contentCount: request.contents?.length ?? 0,
       hasTools: !!request.tools,
       timeout: this.timeout
     }, requestId, 'gemini-api-client');
@@ -65,7 +67,10 @@ export class GeminiApiClient {
     try {
       // 使用Promise.race实现超时控制
       const result = await Promise.race([
-        this.genAI.models.generateContent(request),
+        this.genAI.models.generateContent({
+          ...request,
+          model: request.model || 'gemini-1.5-pro'
+        }),
         new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error(`Gemini API timeout after ${this.timeout}ms`)), this.timeout)
         )
@@ -124,7 +129,7 @@ export class GeminiApiClient {
       
       logger.debug('Gemini API health check completed', {
         isHealthy,
-        candidatesCount: result?.candidates?.length || 0
+        candidatesCount: result?.candidates?.length ?? 0
       }, requestId, 'gemini-api-client');
       
       return isHealthy;

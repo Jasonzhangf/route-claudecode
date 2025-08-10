@@ -7,8 +7,6 @@
 import { InputProcessor, BaseRequest, ValidationError } from '@/types';
 import { logger } from '@/utils/logger';
 import { optimizedToolCallDetector } from '@/utils/optimized-tool-call-detector';
-import { getUnifiedPatchPreprocessor } from '../../preprocessing/unified-patch-preprocessor';
-
 export interface OpenAIRequest {
   model: string;
   messages: Array<{
@@ -39,6 +37,12 @@ export interface OpenAIRequest {
   metadata?: Record<string, any>;
 }
 
+
+/**
+ * Architecture Note: Preprocessing has been moved to the routing layer.
+ * Input layer now only handles basic format validation and parsing.
+ * All transformations and patches are handled by the Enhanced Routing Engine.
+ */
 export class OpenAIInputProcessor implements InputProcessor {
   public readonly name = 'openai';
 
@@ -79,17 +83,8 @@ export class OpenAIInputProcessor implements InputProcessor {
       // Convert OpenAI format to Anthropic-like format for internal processing
       const anthropicLikeRequest = this.convertToAnthropicFormat(openaiRequest);
       
-      // 🎯 统一预处理：应用补丁系统到输入数据
-      const preprocessor = getUnifiedPatchPreprocessor();
-      const preprocessedRequest = await preprocessor.preprocessInput(
-        anthropicLikeRequest,
-        'openai', // 原始格式
-        anthropicLikeRequest.model,
-        requestId
-      );
-      
       // 🎯 保留优化的工具调用检测，但作为补充验证
-      const toolDetectionResult = optimizedToolCallDetector.detectInRequest(preprocessedRequest, requestId);
+      const toolDetectionResult = optimizedToolCallDetector.detectInRequest(anthropicLikeRequest, requestId);
       
       logger.debug('OpenAI input processed through unified preprocessing and tool detection', {
         requestId,
@@ -99,31 +94,31 @@ export class OpenAIInputProcessor implements InputProcessor {
         needsBuffering: toolDetectionResult.needsBuffering,
         extractedCount: toolDetectionResult.extractedToolCalls?.length || 0,
         detectionMethod: toolDetectionResult.detectionMethod,
-        preprocessingApplied: preprocessedRequest !== anthropicLikeRequest,
+        preprocessingApplied: false,  // Preprocessing moved to routing layer
         originalFormat: 'openai'
       }, requestId, 'openai-input-processor');
       
       // Normalize to our internal format
       const baseRequest: BaseRequest = {
-        model: preprocessedRequest.model,
-        messages: this.normalizeMessages(preprocessedRequest.messages),
-        stream: preprocessedRequest.stream || false,
-        max_tokens: preprocessedRequest.max_tokens || 131072,
-        temperature: preprocessedRequest.temperature,
+        model: anthropicLikeRequest.model,
+        messages: this.normalizeMessages(anthropicLikeRequest.messages),
+        stream: anthropicLikeRequest.stream || false,
+        max_tokens: anthropicLikeRequest.max_tokens || 131072,
+        temperature: anthropicLikeRequest.temperature,
         // 🔧 Store tools at top level for Provider access
-        tools: preprocessedRequest.tools,
+        tools: anthropicLikeRequest.tools,
         metadata: {
           requestId: '',  // Will be set by server
-          ...preprocessedRequest.metadata,
+          ...anthropicLikeRequest.metadata,
           originalFormat: 'openai',
-          system: preprocessedRequest.system,
-          tools: preprocessedRequest.tools,  // Keep copy in metadata for session management
-          thinking: preprocessedRequest.thinking || false,
+          system: anthropicLikeRequest.system,
+          tools: anthropicLikeRequest.tools,  // Keep copy in metadata for session management
+          thinking: anthropicLikeRequest.thinking || false,
           // 🎯 添加工具调用检测结果到metadata
           toolDetection: toolDetectionResult,
           // 🆕 添加预处理信息
           preprocessing: {
-            applied: preprocessedRequest !== anthropicLikeRequest,
+            applied: false,  // Preprocessing moved to routing layer
             timestamp: Date.now()
           },
           // 保留原始OpenAI格式信息
@@ -135,13 +130,13 @@ export class OpenAIInputProcessor implements InputProcessor {
         }
       };
 
-      logger.debug('Processed OpenAI request through unified preprocessing:', {
+      logger.debug('Processed OpenAI request:', {
         requestId: baseRequest.metadata?.requestId,
         model: baseRequest.model,
         messageCount: baseRequest.messages.length,
-        hasTools: !!preprocessedRequest.tools?.length,
-        hasSystem: !!preprocessedRequest.system?.length,
-        isThinking: !!preprocessedRequest.thinking,
+        hasTools: !!anthropicLikeRequest.tools?.length,
+        hasSystem: !!anthropicLikeRequest.system?.length,
+        isThinking: !!anthropicLikeRequest.thinking,
         toolDetectionConfidence: toolDetectionResult.confidence,
         needsBuffering: toolDetectionResult.needsBuffering,
         detectionMethod: toolDetectionResult.detectionMethod,

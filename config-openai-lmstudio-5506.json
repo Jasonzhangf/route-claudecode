@@ -1,0 +1,37 @@
+{
+  "server": {
+    "port": 5506,
+    "host": "localhost"
+  },
+  "providers": {
+    "lmstudio": {
+      "type": "openai",
+      "endpoint": "http://localhost:1234/v1",
+      "clientType": "enhanced",
+      "authentication": {
+        "type": "none"
+      },
+      "models": [
+        "gpt-oss-20b-mlx",
+        "qwen3-30b",
+        "glm-4.5-air"
+      ],
+      "defaultModel": "gpt-oss-20b-mlx",
+      "description": "LM Studio local API using Enhanced client with tool parsing fixes"
+    }
+  },
+  "routing": {
+    "default": {
+      "provider": "lmstudio",
+      "model": "gpt-oss-20b-mlx"
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "/tmp/lmstudio-logs"
+  },
+  "hooks": []
+}

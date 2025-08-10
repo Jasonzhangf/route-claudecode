@@ -176,8 +176,8 @@ async function testModel(apiKey: string, endpoint: string, model: string, provid
     result.responseTime = Date.now() - startTime;
     result.finishReason = basicResponse.data.choices?.[0]?.finish_reason;
 
-    // 测试max_tokens限制
-    const tokenLimits = [1000, 10000, 32768, 65536, 131072, 262144];
+    // 测试max_tokens限制 - 扩展到长上下文模型支持
+    const tokenLimits = [1000, 10000, 32768, 65536, 131072, 262144, 524288, 1048576, 2097152];
     let maxValidTokens = 10;
 
     for (const tokens of tokenLimits) {
@@ -202,6 +202,21 @@ async function testModel(apiKey: string, endpoint: string, model: string, provid
     }
 
     result.maxTokens = maxValidTokens;
+
+    // 基于模型名称识别已知的长上下文模型并设置合理的maxTokens
+    const longContextModels: { [key: string]: number } = {
+      'Qwen/Qwen2.5-14B-Instruct-1M': 1048576,
+      'Qwen/Qwen2.5-7B-Instruct-1M': 1048576,
+      'Qwen/Qwen2.5-72B-Instruct': 131072,
+      'Qwen/Qwen3-235B-A22B': 131072,
+      'Qwen/Qwen3-235B-A22B-Instruct-2507': 131072,
+      'Qwen/Qwen3-Coder-480B-A35B-Instruct': 65536,
+      'Qwen/QVQ-72B-Preview': 131072
+    };
+
+    if (longContextModels[model]) {
+      result.maxTokens = Math.max(result.maxTokens, longContextModels[model]);
+    }
 
     // 测试流式支持
     try {

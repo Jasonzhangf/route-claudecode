@@ -15,7 +15,7 @@ import { AnthropicOutputProcessor } from '@/output/anthropic';
 import { getLogger, setDefaultPort, createRequestTracker, createErrorTracker } from '@/logging';
 import { sessionManager } from '@/session/manager';
 import { ProviderExpander } from '@/routing/provider-expander';
-import { createPatchManager } from '@/patches';
+// Patch system removed - now using unified compatibility preprocessor
 // // import { ResponsePipeline } from '@/pipeline/response-pipeline';
 import { transformationManager } from '@/transformers/manager';
 import { getUnifiedPatchPreprocessor } from '@/preprocessing/unified-patch-preprocessor';
@@ -47,7 +47,7 @@ export class ModularRouterServer {
   private inputProcessor!: UnifiedInputProcessor;
   private routingEngine!: RoutingEngine;
   private outputProcessor!: AnthropicOutputProcessor;
-  private patchManager!: ReturnType<typeof createPatchManager>;
+  // private patchManager: removed - using unified compatibility preprocessor
 // //   private responsePipeline!: ResponsePipeline;
   private unifiedPreprocessor!: ReturnType<typeof getUnifiedPatchPreprocessor>;
   
@@ -101,9 +101,9 @@ export class ModularRouterServer {
     // 路由引擎
     this.routingEngine = new RoutingEngine(this.config.routing as Record<RoutingCategory, CategoryRouting> || {} as Record<RoutingCategory, CategoryRouting>);
     
-    // 补丁和流水线系统
-    this.patchManager = createPatchManager(this.config.server.port);
-// //     this.responsePipeline = new ResponsePipeline(this.patchManager, transformationManager, this.config.server.port);
+    // 补丁和流水线系统 (补丁系统已移除)
+    // this.patchManager = removed - using unified compatibility preprocessor
+// //     this.responsePipeline = new ResponsePipeline(removed, transformationManager, this.config.server.port);
     this.unifiedPreprocessor = getUnifiedPatchPreprocessor(this.config.server.port);
     
     // 初始化变换管理器

@@ -31,12 +31,24 @@ export class OpenAITransformer implements MessageTransformer {
       throw new Error('BaseRequest is null or undefined - violates zero fallback principle');
     }
 
+    // 🔧 检查Provider配置中的forceNonStreaming设置
+    const providerConfig = request.metadata?.providerConfig;
+    const forceNonStreaming = providerConfig?.forceNonStreaming;
+    
+    if (forceNonStreaming) {
+      logger.info('🔧 [OPENAI-TRANSFORMER] forceNonStreaming enabled, setting stream: false', {
+        requestId: request.metadata?.requestId,
+        providerId: request.metadata?.providerId
+      });
+    }
+
     const openaiRequest: any = {
       model: request.model,
       messages: this.convertAnthropicMessagesToOpenAI(request.messages || []),
       max_tokens: request.max_tokens || 131072,
       temperature: request.temperature,
-      stream: request.stream || false
+      // 🔧 如果forceNonStreaming启用，强制设置为非流式
+      stream: forceNonStreaming ? false : (request.stream || false)
     };
 
     // 处理系统消息
@@ -77,8 +89,50 @@ export class OpenAITransformer implements MessageTransformer {
       throw new Error('OpenAI response is null or undefined - silent failure detected');
     }
 
+    // 🔍 [DEBUG] 详细记录transformer接收到的数据
+    const requestId = originalRequest.metadata?.requestId || 'unknown';
+    console.log('🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received:', {
+      requestId,
+      hasResponse: !!response,
+      responseType: typeof response,
+      responseKeys: response ? Object.keys(response) : null,
+      hasChoices: !!response?.choices,
+      choicesType: typeof response?.choices,
+      choicesLength: response?.choices?.length || 0,
+      responseObject: response?.object,
+      responseId: response?.id
+    });
+    
+    if (!response?.choices) {
+      console.log('🚨 [TRANSFORMER-DEBUG] Missing choices field, full response:', {
+        requestId,
+        fullResponse: JSON.stringify(response, null, 2)
+      });
+    }
+
     const choice = response.choices?.[0];
     if (!choice) {
+      // 🔧 [STREAMING-FIX] 对于流式响应，某些chunk可能没有choices字段
+      // 这是正常情况，不应该抛出错误，应该返回空响应或跳过
+      if (response.object === 'chat.completion.chunk') {
+        // 返回一个基本的空chunk响应
+        console.log('🔧 [TRANSFORMER-DEBUG] Returning empty chunk response for streaming', { requestId });
+        return {
+          id: response.id || `msg_${Date.now()}`,
+          content: [],
+          model: originalRequest.metadata?.originalModel || response.model || 'unknown',
+          role: 'assistant',
+          stop_reason: null as any,
+          stop_sequence: null as any,
+          usage: { input_tokens: 0, output_tokens: 0 },
+          type: 'message'
+        };
+      }
+      console.log('🚨 [TRANSFORMER-DEBUG] About to throw missing choices error', {
+        requestId,
+        responseObject: response?.object,
+        isStreamingChunk: response?.object === 'chat.completion.chunk'
+      });
       throw new Error('OpenAI response missing choices - invalid response format');
     }
 

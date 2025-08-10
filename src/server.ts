@@ -11,13 +11,12 @@ import { CodeWhispererProvider } from './providers/codewhisperer';
 import { createOpenAIClient } from './providers/openai/client-factory';
 import { AnthropicProvider } from './providers/anthropic';
 import { GeminiProvider } from './providers/gemini';
-import { LMStudioClient } from './providers/lmstudio';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from './types';
 import { getLogger, setDefaultPort, createRequestTracker, createErrorTracker } from './logging';
 import { sessionManager } from './session/manager';
 import { ProviderExpander, ProviderExpansionResult } from './routing/provider-expander';
 import { v4 as uuidv4 } from 'uuid';
-import { createPatchManager } from './patches';
+// Patch system removed - now using unified compatibility preprocessor
 // // import { ResponsePipeline } from './pipeline/response-pipeline';
 import { transformationManager } from './transformers/manager';
 import { getUnifiedPatchPreprocessor } from './preprocessing/unified-patch-preprocessor';
@@ -44,7 +43,7 @@ export class RouterServer {
   private logger: any;
   private requestTracker: any;
   private errorTracker: any;
-  private patchManager: ReturnType<typeof createPatchManager>;
+  // private patchManager: removed - using unified compatibility preprocessor
 // //   private responsePipeline: ResponsePipeline;
   private unifiedPreprocessor: ReturnType<typeof getUnifiedPatchPreprocessor>;
 
@@ -59,7 +58,7 @@ export class RouterServer {
     this.logger = getLogger(config.server.port);
     this.requestTracker = createRequestTracker(config.server.port);
     this.errorTracker = createErrorTracker(config.server.port);
-    this.patchManager = createPatchManager(config.server.port);
+    // this.patchManager = removed - using unified compatibility preprocessor
     
     // 🆕 初始化统一预处理器 - 集中管理所有补丁逻辑
     const preprocessingConfig = (config as any).preprocessing || {};
@@ -67,7 +66,7 @@ export class RouterServer {
     
     // 初始化响应处理流水线
 //     // this.responsePipeline = new ResponsePipeline(
-    //   this.patchManager,
+    //   // patchManager removed,
     //   transformationManager,
     //   config.server.port
     // );
@@ -135,8 +134,10 @@ export class RouterServer {
           // Google Gemini API client
           client = new GeminiProvider(providerConfig, expandedProviderId);
         } else if (providerConfig.type === 'lmstudio') {
-          // LM Studio local server client
-          client = new LMStudioClient(providerConfig, expandedProviderId);
+          // LM Studio as OpenAI-compatible client with preprocessing
+          console.log('🎯 [SERVER] Creating OpenAI client for LMStudio:', { providerId: expandedProviderId, type: providerConfig.type });
+          client = createOpenAIClient(providerConfig, expandedProviderId, this.config);
+          console.log('✅ [SERVER] OpenAI client for LMStudio created:', { providerId: expandedProviderId, name: client.name });
         } else {
           this.logger.warn(`Unsupported provider type: ${providerConfig.type}`, { providerId: expandedProviderId });
           continue;
@@ -831,12 +832,32 @@ export class RouterServer {
       if (baseRequest.stream) {
         return this.handleStreamingRequest(baseRequest, provider, reply, requestId);
       } else {
+        // 🆕 统一预处理：对Provider请求应用补丁系统和转换
+        const preprocessedRequest = await this.unifiedPreprocessor.preprocessInput(
+          baseRequest,
+          providerId as any, // Cast to Provider type  
+          targetModel || baseRequest.model,
+          requestId
+        );
+        
+        this.logger.logPipeline('request-preprocessing', 'Request preprocessing completed', {
+          originalRequest: baseRequest,
+          preprocessedRequest,
+          preprocessingApplied: preprocessedRequest !== baseRequest
+        }, requestId);
+        
         // Debug Hook: Trace provider request
         if (this.config.debug.enabled) {
           // Debug trace removed
         }
         
-        providerResponse = await provider.sendRequest(baseRequest);
+        // 🔄 根据Provider类型调用相应的Transformer转换请求
+        const transformedRequest = await this.applyRequestTransformation(preprocessedRequest, provider, providerId, requestId);
+        
+        providerResponse = await provider.sendRequest(transformedRequest);
+        
+        // 🔄 根据Provider类型调用相应的Transformer转换响应
+        providerResponse = await this.applyResponseTransformation(providerResponse, preprocessedRequest, provider, providerId, requestId);
         
         // 🆕 统一预处理：对Provider响应应用补丁系统
         const preprocessedResponse = await this.unifiedPreprocessor.preprocessResponse(
@@ -1035,8 +1056,22 @@ export class RouterServer {
     let streamInitialized = false;
     
     try {
+      // 🆕 统一预处理：对流式请求也应用预处理
+      const preprocessedRequest = await this.unifiedPreprocessor.preprocessInput(
+        request,
+        provider.name as any, // Cast to Provider type
+        request.model,
+        requestId
+      );
+      
+      this.logger.logPipeline('streaming-request-preprocessing', 'Streaming request preprocessing completed', {
+        originalRequest: request,
+        preprocessedRequest,
+        preprocessingApplied: preprocessedRequest !== request
+      }, requestId);
+      
       // 🔧 修复核心沉默失败：先获取流并验证第一个块，确保请求有效性后再设置HTTP状态码
-      const streamIterable = provider.sendStreamRequest(request);
+      const streamIterable = provider.sendStreamRequest(preprocessedRequest);
       const streamIterator = streamIterable[Symbol.asyncIterator]();
       const firstChunk = await streamIterator.next();
       
@@ -1515,5 +1550,82 @@ export class RouterServer {
     
     // 默认返回 anthropic（因为这是主要的用例）
     return 'anthropic';
+  }
+
+  /**
+   * 根据Provider类型应用请求转换 - 实现四层架构分离
+   */
+  private async applyRequestTransformation(
+    request: any, 
+    provider: Provider, 
+    providerId: string, 
+    requestId: string
+  ): Promise<any> {
+    const providerType = this.getProviderType(providerId);
+    
+    if (providerType === 'openai' || providerId.includes('lmstudio')) {
+      // OpenAI/LMStudio Provider需要Anthropic格式 -> OpenAI格式转换
+      const { createOpenAITransformer } = await import('./transformers/openai');
+      const transformer = createOpenAITransformer();
+      
+      const openaiRequest = transformer.transformBaseRequestToOpenAI(request);
+      
+      // 将转换后的OpenAI格式传递给Provider
+      request.metadata = { 
+        ...request.metadata, 
+        openaiRequest 
+      };
+      
+      this.logger.debug('Applied OpenAI request transformation', {
+        providerId,
+        hasTools: !!(openaiRequest.tools && openaiRequest.tools.length > 0),
+        requestId
+      }, requestId, 'transformer');
+      
+      return request;
+    }
+    
+    // 其他Provider类型不需要转换
+    return request;
+  }
+
+  /**
+   * 根据Provider类型应用响应转换 - 实现四层架构分离
+   */
+  private async applyResponseTransformation(
+    response: any, 
+    originalRequest: any, 
+    provider: Provider, 
+    providerId: string, 
+    requestId: string
+  ): Promise<any> {
+    const providerType = this.getProviderType(providerId);
+    
+    if (providerType === 'openai' || providerId.includes('lmstudio')) {
+      // OpenAI/LMStudio Provider需要OpenAI格式 -> BaseResponse格式转换
+      
+      // 检查是否已经是BaseResponse格式（为了兼容性）
+      if (response.metadata?.rawResponse) {
+        const { createOpenAITransformer } = await import('./transformers/openai');
+        const transformer = createOpenAITransformer();
+        
+        const transformedResponse = transformer.transformOpenAIResponseToBase(
+          response.metadata.rawResponse, 
+          originalRequest
+        );
+        
+        this.logger.debug('Applied OpenAI response transformation', {
+          providerId,
+          hasContent: !!(transformedResponse.content && transformedResponse.content.length > 0),
+          stopReason: transformedResponse.stop_reason,
+          requestId
+        }, requestId, 'transformer');
+        
+        return transformedResponse;
+      }
+    }
+    
+    // 其他Provider类型或已转换的响应
+    return response;
   }
 }

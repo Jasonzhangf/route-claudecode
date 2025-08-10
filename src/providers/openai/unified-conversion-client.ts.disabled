@@ -1,0 +1,647 @@
+/**
+ * 统一转换OpenAI Client
+ * 在OpenAI标准provider层面实现统一转换层：
+ * 1. 所有请求（流式/非流式）统一转为非流式发送到供应商
+ * 2. 集中模拟流式响应，与具体供应商无关
+ * 3. 统一finish reason记录点，避免重复记录
+ * 4. 完整记录转换路径（流水线每个模块一个记录点）
+ * 5. 实现transformer后的处理层guard机制
+ * Project owner: Jason Zhang
+ */
+
+import axios, { AxiosInstance } from 'axios';
+import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
+import { getLogger } from '@/logging';
+interface TransformationStep {
+  step: string;
+  timestamp: number;
+  data: any;
+  status: 'success' | 'error';
+  duration?: number;
+}
+
+interface ConversionContext {
+  requestId: string;
+  originalRequestType: 'streaming' | 'non-streaming';
+  transformationSteps: TransformationStep[];
+  startTime: number;
+}
+
+export class UnifiedConversionOpenAIClient implements Provider {
+  public readonly name: string;
+  public readonly type = 'openai';
+  
+  private httpClient: AxiosInstance;
+  private endpoint: string;
+  private apiKey: string;
+  private logger: ReturnType<typeof getLogger>;
+  private preprocessor: ReturnType<typeof getUnifiedPatchPreprocessor>;
+  private consistencyValidator: ReturnType<typeof getConsistencyValidator>;
+
+  constructor(public config: ProviderConfig, providerId: string, port?: number) {
+    this.name = providerId;
+    this.endpoint = config.endpoint;
+    
+    const credentials = config.authentication.credentials;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : '';
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
+    
+    if (!this.endpoint) {
+      throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
+    }
+
+    if (config.authentication.type !== 'none' && !this.apiKey) {
+      throw new Error(`OpenAI-compatible provider ${providerId} requires API key configuration`);
+    }
+
+    // 初始化组件
+    this.logger = getLogger(port);
+    this.preprocessor = getUnifiedPatchPreprocessor(port);
+    this.consistencyValidator = getConsistencyValidator(port);
+
+    this.httpClient = axios.create({
+      baseURL: this.endpoint,
+      timeout: 300000,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'claude-code-router/2.8.0',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
+    });
+  }
+
+  /**
+   * 🎯 核心统一转换方法：将所有请求转为非流式发送
+   * 无论原始请求是流式还是非流式，都统一转换为非流式发送
+   */
+  async sendRequest(request: BaseRequest): Promise<BaseResponse> {
+    const context = this.createConversionContext(request, 'non-streaming');
+    
+    try {
+      // 🔄 Step 1: 预处理转换
+      const preprocessedRequest = await this.applyPreprocessing(request, context);
+      
+      // 🔄 Step 2: 统一转换为非流式OpenAI格式
+      const openaiRequest = await this.convertToUnifiedNonStreaming(preprocessedRequest, context);
+      
+      // 🔄 Step 3: 发送非流式请求到供应商
+      const rawResponse = await this.sendNonStreamingRequest(openaiRequest, context);
+      
+      // 🔄 Step 4: Post-processing and consistency validation
+      const processedResponse = await this.applyPostprocessing(rawResponse, context);
+      
+      // 🔄 Step 5: 统一finish reason记录
+      this.recordUnifiedFinishReason(processedResponse, context);
+      
+      return processedResponse;
+
+    } catch (error) {
+      this.recordTransformationError(error, context);
+      throw error;
+    } finally {
+      this.logTransformationSummary(context);
+    }
+  }
+
+  /**
+   * 🎯 统一流式响应处理：集中模拟流式响应
+   * 将非流式响应模拟为流式响应，与具体供应商无关
+   */
+  async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
+    const context = this.createConversionContext(request, 'streaming');
+    
+    try {
+      // 🔄 Step 1: 统一转换 - 所有流式请求都转为非流式发送
+      const nonStreamingResponse = await this.sendRequest({
+        ...request,
+        stream: false // 强制转换为非流式
+      });
+      
+      // 🔄 Step 2: 集中模拟流式响应
+      yield* this.simulateStreamingResponse(nonStreamingResponse, context);
+      
+    } catch (error) {
+      this.recordTransformationError(error, context);
+      // 流式错误也要模拟为流式格式
+      yield this.createErrorStreamChunk(error, context);
+    } finally {
+      this.logTransformationSummary(context);
+    }
+  }
+
+  /**
+   * 创建转换上下文
+   */
+  private createConversionContext(request: BaseRequest, type: 'streaming' | 'non-streaming'): ConversionContext {
+    return {
+      requestId: request.metadata?.requestId || `req_${Date.now()}`,
+      originalRequestType: type,
+      transformationSteps: [],
+      startTime: Date.now()
+    };
+  }
+
+  /**
+   * 🔄 Step 1: 预处理转换
+   */
+  private async applyPreprocessing(request: BaseRequest, context: ConversionContext): Promise<BaseRequest> {
+    const stepStart = Date.now();
+    
+    try {
+      const preprocessedRequest = await this.preprocessor.preprocessInput(
+        request,
+        'openai-compatible' as any,
+        request.model,
+        context.requestId
+      );
+
+      this.recordTransformationStep(context, 'preprocessing', {
+        originalRequest: this.sanitizeForLog(request),
+        preprocessedRequest: this.sanitizeForLog(preprocessedRequest)
+      }, 'success', Date.now() - stepStart);
+
+      return preprocessedRequest;
+    } catch (error) {
+      this.recordTransformationStep(context, 'preprocessing', {
+        error: error instanceof Error ? error.message : String(error)
+      }, 'error', Date.now() - stepStart);
+      throw error;
+    }
+  }
+
+  /**
+   * 🔄 Step 2: 统一转换为非流式OpenAI格式
+   */
+  private async convertToUnifiedNonStreaming(request: BaseRequest, context: ConversionContext): Promise<any> {
+    const stepStart = Date.now();
+    
+    try {
+      const openaiRequest = {
+        model: request.model,
+        messages: this.convertMessages(request.messages),
+        max_tokens: request.max_tokens || 131072,
+        temperature: request.temperature,
+        stream: false // 🎯 核心：统一强制设置为非流式
+      };
+
+      // Add system message if present
+      if (request.system) {
+        const systemContent = Array.isArray(request.system) 
+          ? request.system.map((s: any) => s.text || s).join('\n')
+          : request.system;
+        openaiRequest.messages.unshift({
+          role: 'system',
+          content: systemContent
+        });
+      }
+
+      // Add tools if present - check multiple sources
+      const tools = request.tools || request.metadata?.tools;
+      if (tools && Array.isArray(tools)) {
+        (openaiRequest as any).tools = tools.map((tool: any) => ({
+          type: 'function',
+          function: {
+            name: tool.name,
+            description: tool.description,
+            parameters: tool.input_schema
+          }
+        }));
+        
+        this.logger.debug('🛠️ Tools converted for OpenAI', {
+          toolCount: tools.length,
+          toolNames: tools.map((t: any) => t.name),
+          requestId: context.requestId
+        });
+      } else {
+        this.logger.debug('🚫 No tools found in request', {
+          hasTools: !!request.tools,
+          hasMetadataTools: !!request.metadata?.tools,
+          requestId: context.requestId
+        });
+      }
+
+      this.recordTransformationStep(context, 'conversion', {
+        inputFormat: 'anthropic',
+        outputFormat: 'openai-non-streaming',
+        streamForced: false,
+        toolCount: tools?.length || 0,
+        hasTools: !!(tools && tools.length > 0)
+      }, 'success', Date.now() - stepStart);
+
+      return openaiRequest;
+    } catch (error) {
+      this.recordTransformationStep(context, 'conversion', {
+        error: error instanceof Error ? error.message : String(error)
+      }, 'error', Date.now() - stepStart);
+      throw error;
+    }
+  }
+
+  /**
+   * 🔄 Step 3: 发送非流式请求到供应商
+   */
+  private async sendNonStreamingRequest(openaiRequest: any, context: ConversionContext): Promise<any> {
+    const stepStart = Date.now();
+    
+    try {
+      this.logger.debug('📤 Sending request to provider', {
+        provider: this.name,
+        model: openaiRequest.model,
+        hasTools: !!openaiRequest.tools,
+        toolCount: openaiRequest.tools?.length || 0,
+        requestId: context.requestId
+      });
+
+      const response = await this.httpClient.post('', openaiRequest);
+      
+      // 详细检查响应
+      const responseData = response.data;
+      const firstChoice = responseData?.choices?.[0];
+      const hasToolCalls = !!(firstChoice?.message?.tool_calls);
+      
+      this.logger.debug('📥 Received response from provider', {
+        provider: this.name,
+        statusCode: response.status,
+        hasChoices: !!responseData?.choices,
+        choiceCount: responseData?.choices?.length || 0,
+        hasToolCalls,
+        toolCallCount: firstChoice?.message?.tool_calls?.length || 0,
+        finishReason: firstChoice?.finish_reason,
+        requestId: context.requestId
+      });
+      
+      // 🔍 Debug: 详细记录原始响应信息
+      this.logger.debug('🔍 Raw OpenAI response analysis', {
+        rawFinishReason: firstChoice?.finish_reason,
+        messageContent: firstChoice?.message?.content?.substring(0, 100),
+        toolCalls: firstChoice?.message?.tool_calls?.map((tc: any) => ({ 
+          id: tc.id, 
+          name: tc.function?.name, 
+          args_preview: tc.function?.arguments?.substring(0, 50) 
+        })),
+        requestId: context.requestId
+      });
+      
+      this.recordTransformationStep(context, 'provider-request', {
+        provider: this.name,
+        model: openaiRequest.model,
+        statusCode: response.status,
+        hasChoices: !!responseData?.choices,
+        choiceCount: responseData?.choices?.length || 0,
+        hasToolCalls,
+        toolCallCount: firstChoice?.message?.tool_calls?.length || 0,
+        finishReason: firstChoice?.finish_reason
+      }, 'success', Date.now() - stepStart);
+
+      return responseData;
+    } catch (error) {
+      this.recordTransformationStep(context, 'provider-request', {
+        provider: this.name,
+        error: error instanceof Error ? error.message : String(error),
+        status: (error as any)?.response?.status
+      }, 'error', Date.now() - stepStart);
+      throw error;
+    }
+  }
+
+   /**
+   * Step 4: Post-processing and consistency validation
+   */
+  private async applyPostprocessing(rawResponse: any, context: ConversionContext): Promise<BaseResponse> {
+    const stepStart = Date.now();
+    
+    // 只在这一个地方记录finish reason，避免重复记录
+    this.logger.logFinishReason(response.stop_reason || 'unknown', {
+      provider: this.name,
+      model: response.model || 'unknown',
+      responseType: context.originalRequestType,
+      transformationSteps: context.transformationSteps.length,
+      totalDuration: Date.now() - context.startTime,
+      action: 'unified-recording',
+      toolCount: this.countToolUse(response)
+    }, context.requestId, 'unified-conversion');
+
+    this.recordTransformationStep(context, 'finish-reason-recording', {
+      finishReason: response.stop_reason,
+      unifiedPoint: true,
+      avoidedDuplication: true
+    }, 'success', Date.now() - stepStart);
+  }
+
+  /**
+   * 🎯 集中模拟流式响应
+   */
+  private async *simulateStreamingResponse(response: BaseResponse, context: ConversionContext): AsyncIterable<any> {
+    const stepStart = Date.now();
+    
+    try {
+      // 发送开始事件
+      yield {
+        event: 'message_start',
+        data: {
+          type: 'message_start',
+          message: {
+            id: context.requestId,
+            type: 'message',
+            role: 'assistant',
+            content: [],
+            model: response.model,
+            stop_reason: null,
+            stop_sequence: null,
+            usage: response.usage
+          }
+        }
+      };
+
+      // 模拟内容块
+      if (response.content && Array.isArray(response.content)) {
+        for (let i = 0; i < response.content.length; i++) {
+          const block: any = response.content[i];
+          
+          // 内容块开始
+          yield {
+            event: 'content_block_start',
+            data: {
+              type: 'content_block_start',
+              index: i,
+              content_block: block
+            }
+          };
+
+          // 模拟文本增量
+          if (block.type === 'text' && block.text) {
+            const text = block.text;
+            const chunkSize = Math.max(1, Math.floor(text.length / 10)); // 分成10个块
+            
+            for (let j = 0; j < text.length; j += chunkSize) {
+              const chunk = text.slice(j, Math.min(j + chunkSize, text.length));
+              yield {
+                event: 'content_block_delta',
+                data: {
+                  type: 'content_block_delta',
+                  index: i,
+                  delta: { type: 'text_delta', text: chunk }
+                }
+              };
+              // 模拟网络延迟
+              await this.sleep(50);
+            }
+          }
+
+          // 内容块结束
+          yield {
+            event: 'content_block_stop',
+            data: {
+              type: 'content_block_stop',
+              index: i
+            }
+          };
+        }
+      }
+
+      // 发送结束事件
+      yield {
+        event: 'message_delta',
+        data: {
+          type: 'message_delta',
+          delta: { stop_reason: response.stop_reason },
+          usage: response.usage
+        }
+      };
+
+      yield {
+        event: 'message_stop',
+        data: { type: 'message_stop' }
+      };
+
+      this.recordTransformationStep(context, 'streaming-simulation', {
+        originalResponseType: 'non-streaming',
+        simulatedAsStreaming: true,
+        blockCount: response.content?.length || 0,
+        finalStopReason: response.stop_reason
+      }, 'success', Date.now() - stepStart);
+
+    } catch (error) {
+      this.recordTransformationStep(context, 'streaming-simulation', {
+        error: error instanceof Error ? error.message : String(error)
+      }, 'error', Date.now() - stepStart);
+      throw error;
+    }
+  }
+
+  /**
+   * 转换消息格式
+   */
+  private convertMessages(messages: any[]): any[] {
+    return messages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : 
+               Array.isArray(msg.content) ? msg.content.map((block: any) => 
+                 block.type === 'text' ? block.text : block
+               ).join('') : msg.content
+    }));
+  }
+
+  /**
+   * 转换为Anthropic响应格式
+   */
+  private convertToAnthropicResponse(openaiResponse: any, context: ConversionContext): any {
+    if (!openaiResponse.choices || !openaiResponse.choices[0]) {
+      throw new Error('Invalid OpenAI response: missing choices');
+    }
+
+    const choice = openaiResponse.choices[0];
+    const message = choice.message;
+
+    this.logger.debug('🔄 Converting OpenAI response to Anthropic format', {
+      hasContent: !!message.content,
+      hasToolCalls: !!message.tool_calls,
+      toolCallCount: message.tool_calls?.length || 0,
+      finishReason: choice.finish_reason,
+      requestId: context.requestId
+    });
+
+    // 构建内容块
+    const content: any[] = [];
+    
+    if (message.content) {
+      content.push({
+        type: 'text',
+        text: message.content
+      });
+      this.logger.debug('📄 Added text content block', {
+        textLength: message.content.length,
+        requestId: context.requestId
+      });
+    }
+
+    if (message.tool_calls) {
+      message.tool_calls.forEach((toolCall: any, index: number) => {
+        try {
+          const input = JSON.parse(toolCall.function.arguments || '{}');
+          content.push({
+            type: 'tool_use',
+            id: toolCall.id,
+            name: toolCall.function.name,
+            input: input
+          });
+          
+          this.logger.debug(`🛠️ Added tool_use block ${index + 1}`, {
+            toolName: toolCall.function.name,
+            toolId: toolCall.id,
+            hasArguments: !!toolCall.function.arguments,
+            requestId: context.requestId
+          });
+        } catch (parseError) {
+          this.logger.error('❌ Failed to parse tool arguments', {
+            toolName: toolCall.function.name,
+            toolId: toolCall.id,
+            arguments: toolCall.function.arguments,
+            error: parseError instanceof Error ? parseError.message : String(parseError),
+            requestId: context.requestId
+          });
+          
+          // 使用空对象作为fallback
+          content.push({
+            type: 'tool_use',
+            id: toolCall.id,
+            name: toolCall.function.name,
+            input: {}
+          });
+        }
+      });
+    }
+
+    return {
+      id: openaiResponse.id || context.requestId,
+      type: 'message',
+      role: 'assistant',
+      content,
+      model: openaiResponse.model || 'unknown',
+      stop_reason: this.preserveOriginalFinishReason(choice.finish_reason),
+      stop_sequence: null,
+      usage: {
+        input_tokens: openaiResponse.usage?.prompt_tokens || 0,
+        output_tokens: openaiResponse.usage?.completion_tokens || 0
+      }
+    };
+  }
+
+  /**
+   * 保持原始OpenAI finish_reason，让预处理器处理映射
+   * 🎯 关键修复：不在这里进行映射，避免与预处理器冲突
+   */
+  private preserveOriginalFinishReason(finishReason: string): string {
+    // 直接返回原始的finish_reason，让预处理器链处理转换
+    return finishReason;
+  }
+
+  /**
+   * 计算工具使用数量
+   */
+  private countToolUse(response: BaseResponse): number {
+    if (!response.content || !Array.isArray(response.content)) {
+      return 0;
+    }
+    return response.content.filter(block => block.type === 'tool_use').length;
+  }
+
+  /**
+   * 记录转换步骤
+   */
+  private recordTransformationStep(
+    context: ConversionContext,
+    step: string,
+    data: any,
+    status: 'success' | 'error',
+    duration?: number
+  ): void {
+    context.transformationSteps.push({
+      step,
+      timestamp: Date.now(),
+      data,
+      status,
+      duration
+    });
+  }
+
+  /**
+   * 记录转换错误
+   */
+  private recordTransformationError(error: any, context: ConversionContext): void {
+    this.logger.error(`Unified conversion error at step`, {
+      error: error instanceof Error ? error.message : String(error),
+      requestId: context.requestId,
+      step: context.transformationSteps.length + 1,
+      totalSteps: context.transformationSteps.length
+    }, context.requestId, 'unified-conversion');
+  }
+
+  /**
+   * 记录转换路径总结
+   */
+  private logTransformationSummary(context: ConversionContext): void {
+    const totalDuration = Date.now() - context.startTime;
+    const successSteps = context.transformationSteps.filter(s => s.status === 'success').length;
+    const errorSteps = context.transformationSteps.filter(s => s.status === 'error').length;
+
+    this.logger.info('🔄 Unified conversion pipeline completed', {
+      requestId: context.requestId,
+      originalType: context.originalRequestType,
+      totalDuration,
+      totalSteps: context.transformationSteps.length,
+      successSteps,
+      errorSteps,
+      pipeline: context.transformationSteps.map(s => ({
+        step: s.step,
+        status: s.status,
+        duration: s.duration
+      }))
+    }, context.requestId, 'unified-conversion-summary');
+  }
+
+  /**
+   * 创建错误流式块
+   */
+  private createErrorStreamChunk(error: any, context: ConversionContext): any {
+    return {
+      event: 'error',
+      data: {
+        type: 'error',
+        error: {
+          type: 'api_error',
+          message: error instanceof Error ? error.message : String(error)
+        }
+      }
+    };
+  }
+
+  /**
+   * 清理日志数据
+   */
+  private sanitizeForLog(data: any): any {
+    const sanitized = { ...data };
+    if (sanitized.metadata?.apiKey) delete sanitized.metadata.apiKey;
+    if (sanitized.apiKey) delete sanitized.apiKey;
+    return sanitized;
+  }
+
+  /**
+   * 睡眠工具函数
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * 健康检查
+   */
+  async isHealthy(): Promise<boolean> {
+    try {
+      const response = await this.httpClient.get('/models', { timeout: 5000 });
+      return response.status === 200;
+    } catch {
+      return false;
+    }
+  }
+}

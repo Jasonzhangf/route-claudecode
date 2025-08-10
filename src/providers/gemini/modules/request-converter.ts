@@ -4,123 +4,143 @@
  * Project owner: Jason Zhang
  */
 
-import { BaseRequest } from '@/types';
-import { GeminiApiRequest, GeminiTransformer } from '@/transformers/gemini';
+import { BaseRequest, GeminiApiRequest } from '@/types';
 import { logger } from '@/utils/logger';
+import { transformAnthropicToGemini } from '@/transformers/gemini';
 
 /**
- * Gemini请求转换器
- * 职责：BaseRequest -> GeminiApiRequest转换
+ * Gemini请求转换器类
  */
 export class GeminiRequestConverter {
-  private static transformer = new GeminiTransformer();
+  private requestId: string;
+
+  constructor(requestId: string = 'unknown') {
+    this.requestId = requestId;
+  }
 
   /**
-   * 转换BaseRequest为Gemini格式
-   * 🔧 Critical Fix: Add toolConfig to enable tool calling
+   * 转换Anthropic请求为Gemini API格式
    */
-  static convertToGeminiFormat(request: BaseRequest): GeminiApiRequest {
-    const requestId = request.metadata?.requestId || 'unknown';
-    
-    if (!request) {
-      throw new Error('GeminiRequestConverter: request is required');
-    }
-
-    logger.debug('Converting request to Gemini format', {
-      model: request.model,
-      messageCount: request.messages?.length || 0,
-      hasTools: !!request.tools,
-      toolCount: request.tools?.length || 0
-    }, requestId, 'gemini-request-converter');
-
+  convertRequest(request: BaseRequest, model: string): GeminiApiRequest {
     try {
-      // 使用transformer进行基础转换
-      const geminiRequest = this.transformer.transformAnthropicToGemini(request);
+      logger.debug('Converting Anthropic request to Gemini format', {
+        requestId: this.requestId,
+        model,
+        messageCount: request.messages?.length,
+        hasTools: !!request.tools?.length,
+        hasSystem: !!request.metadata?.system
+      });
+
+      // 使用统一的转换器
+      const { geminiRequest } = transformAnthropicToGemini(request);
       
-      // 🔧 Critical Fix: Ensure tool configuration is properly set
-      if (request.tools && Array.isArray(request.tools) && request.tools.length > 0) {
-        // 确保工具配置正确设置
-        geminiRequest.tools = this.transformer['convertAnthropicToolsToGemini'](request.tools, requestId);
-        geminiRequest.functionCallingConfig = {
-          mode: 'AUTO'  // 让Gemini自动决定何时调用工具
-        };
+      // 添加模型信息到转换结果
+      const requestWithModel: GeminiApiRequest = {
+        model,
+        ...geminiRequest
+      };
 
-        logger.debug('Tool configuration applied to Gemini request', {
-          toolCount: request.tools.length,
-          functionCallingMode: geminiRequest.functionCallingConfig.mode,
-          toolNames: request.tools.map(t => t.function?.name || t.name).filter(Boolean)
-        }, requestId, 'gemini-request-converter');
-      }
+      logger.debug('Successfully converted to Gemini format', {
+        requestId: this.requestId,
+        model: requestWithModel.model,
+        hasContents: !!requestWithModel.contents?.length,
+        hasTools: !!requestWithModel.tools?.length,
+        hasToolConfig: !!requestWithModel.toolConfig,
+        generationConfig: requestWithModel.generationConfig
+      });
 
-      // 验证转换结果
-      this.validateGeminiRequest(geminiRequest, requestId);
-
-      logger.debug('Request conversion to Gemini format completed', {
-        model: geminiRequest.model,
-        contentCount: geminiRequest.contents?.length || 0,
-        hasTools: !!geminiRequest.tools,
-        hasGenerationConfig: !!geminiRequest.generationConfig
-      }, requestId, 'gemini-request-converter');
-
-      return geminiRequest;
+      return requestWithModel;
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
       logger.error('Failed to convert request to Gemini format', {
-        error: errorMessage,
-        model: request.model,
-        messageCount: request.messages?.length || 0
-      }, requestId, 'gemini-request-converter');
-      
+        requestId: this.requestId,
+        error: (error as Error).message,
+        model,
+        originalModel: request.model
+      });
       throw error;
     }
   }
 
   /**
-   * 验证Gemini请求格式
-   * 🔧 Critical: Strict validation, no fallback
+   * 验证转换后的请求格式
    */
-  private static validateGeminiRequest(request: GeminiApiRequest, requestId: string): void {
-    if (!request.model) {
-      throw new Error('GeminiRequestConverter: model is required in converted request');
-    }
+  validateConvertedRequest(request: GeminiApiRequest): boolean {
+    try {
+      const isValid = (
+        request &&
+        typeof request.model === 'string' &&
+        Array.isArray(request.contents) &&
+        request.contents.length > 0 &&
+        request.contents.every(content => 
+          content && 
+          ['user', 'model'].includes(content.role) &&
+          Array.isArray(content.parts) &&
+          content.parts.length > 0
+        )
+      );
 
-    if (!request.contents || !Array.isArray(request.contents) || request.contents.length === 0) {
-      throw new Error('GeminiRequestConverter: contents must be a non-empty array');
-    }
-
-    // 验证每个content的格式
-    for (let i = 0; i < request.contents.length; i++) {
-      const content = request.contents[i];
-      
-      if (!content.role || !['user', 'model'].includes(content.role)) {
-        throw new Error(`GeminiRequestConverter: Invalid role '${content.role}' at content index ${i}`);
+      if (!isValid) {
+        logger.warn('Converted Gemini request validation failed', {
+          requestId: this.requestId,
+          hasModel: !!request?.model,
+          hasContents: !!request?.contents,
+          contentsLength: request?.contents?.length
+        });
       }
 
-      if (!content.parts || !Array.isArray(content.parts) || content.parts.length === 0) {
-        throw new Error(`GeminiRequestConverter: Invalid parts at content index ${i}`);
-      }
+      return isValid;
+    } catch (error) {
+      logger.error('Error validating converted request', {
+        requestId: this.requestId,
+        error: (error as Error).message
+      });
+      return false;
     }
-
-    // 验证工具配置
-    if (request.tools) {
-      if (!Array.isArray(request.tools)) {
-        throw new Error('GeminiRequestConverter: tools must be an array');
-      }
-
-      for (let i = 0; i < request.tools.length; i++) {
-        const tool = request.tools[i];
-        if (!tool.functionDeclarations || !Array.isArray(tool.functionDeclarations)) {
-          throw new Error(`GeminiRequestConverter: Invalid tool structure at index ${i}`);
-        }
-      }
-    }
-
-    logger.debug('Gemini request validation passed', {
-      model: request.model,
-      contentCount: request.contents.length,
-      toolCount: request.tools?.length || 0
-    }, requestId, 'gemini-request-converter');
   }
+
+  /**
+   * 创建包含调试信息的转换结果
+   */
+  createConversionResult(geminiRequest: GeminiApiRequest): {
+    request: GeminiApiRequest;
+    debug: {
+      requestId: string;
+      timestamp: number;
+      hasTools: boolean;
+      hasSystem: boolean;
+      contentCount: number;
+    };
+  } {
+    return {
+      request: geminiRequest,
+      debug: {
+        requestId: this.requestId,
+        timestamp: Date.now(),
+        hasTools: !!geminiRequest.tools?.length,
+        hasSystem: geminiRequest.contents?.some(c => 
+          c.parts?.some(p => p.text?.startsWith('System:'))
+        ) || false,
+        contentCount: geminiRequest.contents?.length || 0
+      }
+    };
+  }
+}
+
+/**
+ * 便捷函数：转换请求并返回验证结果
+ */
+export function convertAnthropicToGeminiRequest(
+  request: BaseRequest, 
+  model: string, 
+  requestId: string = 'unknown'
+): GeminiApiRequest {
+  const converter = new GeminiRequestConverter(requestId);
+  const geminiRequest = converter.convertRequest(request, model);
+  
+  if (!converter.validateConvertedRequest(geminiRequest)) {
+    throw new Error('Converted Gemini request failed validation');
+  }
+  
+  return geminiRequest;
 }

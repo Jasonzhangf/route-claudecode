@@ -1,0 +1,341 @@
+/**
+ * Clean Architecture HTTP Server for Claude Code Router
+ * 使用新的流水线架构：Input → Preprocessing → Transform → Provider → Response Transform → Output
+ * Project owner: Jason Zhang
+ * 
+ * Architecture Principles:
+ * 1. Single direction dependency: Input → Preprocessing → Transformer → Provider
+ * 2. No circular dependencies 
+ * 3. Pure format conversion in transformer layer
+ * 4. Service-specific logic in patches system only
+ */
+
+import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { BaseRequest, BaseResponse, RouterConfig, Provider } from './types';
+import { logger } from './utils/logger';
+import { EnhancedRoutingEngine, getEnhancedRoutingEngine } from './routing/enhanced-routing-engine';
+import { GeminiClient } from './providers/gemini/client';
+import { createOpenAIClient } from './providers/openai/client-factory';
+import { v4 as uuidv4 } from 'uuid';
+
+export class CleanArchitectureServer {
+  private fastify: FastifyInstance;
+  private config: RouterConfig;
+  private enhancedRoutingEngine: EnhancedRoutingEngine;
+  private providers: Map<string, Provider> = new Map();
+
+  constructor(config: RouterConfig) {
+    this.config = config;
+    
+    this.fastify = Fastify({
+      logger: config.debug.enabled ? {
+        level: config.debug.logLevel
+      } : false
+    });
+
+    // 初始化增强路由引擎（集成了Pipeline Coordinator）
+    this.enhancedRoutingEngine = getEnhancedRoutingEngine(
+      config.routing,
+      config.server.port
+    );
+
+    // 初始化Providers
+    this.initializeProviders();
+    
+    // 设置路由
+    this.setupRoutes();
+
+    logger.info('Clean Architecture Server initialized', {
+      port: config.server.port,
+      providersCount: this.providers.size,
+      routingCategories: Object.keys(config.routing)
+    });
+  }
+
+  /**
+   * 初始化所有Provider实例
+   * 每个Provider现在只负责纯API调用，不包含转换逻辑
+   */
+  private initializeProviders(): void {
+    for (const [providerId, providerConfig] of Object.entries(this.config.providers)) {
+      try {
+        let provider: Provider;
+
+        switch (providerConfig.type) {
+          case 'gemini':
+            provider = new GeminiClient(providerConfig, providerId);
+            break;
+          
+          case 'openai':
+            provider = createOpenAIClient(providerConfig, providerId);
+            break;
+          
+          default:
+            logger.warn(`Unknown provider type: ${providerConfig.type}`, { providerId });
+            continue;
+        }
+
+        this.providers.set(providerId, provider);
+        
+        logger.info('Provider initialized', {
+          providerId,
+          type: providerConfig.type,
+          hasAuthentication: !!providerConfig.authentication
+        });
+      } catch (error) {
+        logger.error('Failed to initialize provider', {
+          providerId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+    }
+  }
+
+  /**
+   * 设置HTTP路由
+   */
+  private setupRoutes(): void {
+    // 主要的聊天完成端点
+    this.fastify.post('/v1/chat/completions', async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = uuidv4();
+      const startTime = Date.now();
+
+      try {
+        logger.info('New chat completion request', {
+          requestId,
+          hasBody: !!request.body
+        });
+
+        // 1. 解析输入请求
+        const baseRequest = this.parseInputRequest(request.body as any, requestId);
+
+        // 2. 使用增强路由引擎进行路由和预处理
+        const routingResult = await this.enhancedRoutingEngine.routeAndPreprocess(
+          baseRequest,
+          requestId
+        );
+
+        // 3. 获取对应的Provider
+        const provider = this.providers.get(routingResult.provider);
+        if (!provider) {
+          throw new Error(`Provider not found: ${routingResult.provider}`);
+        }
+
+        // 4. 调用Provider的纯API方法
+        const providerResponse = await provider.createCompletion(routingResult.preprocessedRequest);
+
+        // 5. 使用增强路由引擎处理响应
+        const finalResponse = await this.enhancedRoutingEngine.processProviderResponse(
+          providerResponse,
+          routingResult.metadata
+        );
+
+        // 6. 返回最终响应
+        const duration = Date.now() - startTime;
+        logger.info('Chat completion request completed', {
+          requestId,
+          provider: routingResult.provider,
+          model: finalResponse.model,
+          duration: `${duration}ms`,
+          contentBlocks: finalResponse.content?.length || 0
+        });
+
+        reply.code(200).send(finalResponse);
+
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        logger.error('Chat completion request failed', {
+          requestId,
+          error: error instanceof Error ? error.message : String(error),
+          duration: `${duration}ms`
+        });
+
+        reply.code(500).send({
+          error: {
+            type: 'internal_error',
+            message: error instanceof Error ? error.message : 'Unknown error'
+          }
+        });
+      }
+    });
+
+    // 流式聊天完成端点
+    this.fastify.post('/v1/chat/completions/stream', async (request: FastifyRequest, reply: FastifyReply) => {
+      const requestId = uuidv4();
+
+      try {
+        logger.info('New streaming chat completion request', { requestId });
+
+        // 设置SSE响应头
+        reply.raw.setHeader('Content-Type', 'text/event-stream');
+        reply.raw.setHeader('Cache-Control', 'no-cache');
+        reply.raw.setHeader('Connection', 'keep-alive');
+
+        // 1. 解析输入请求
+        const baseRequest = this.parseInputRequest(request.body as any, requestId);
+
+        // 2. 路由和预处理
+        const routingResult = await this.enhancedRoutingEngine.routeAndPreprocess(
+          baseRequest,
+          requestId
+        );
+
+        // 3. 获取Provider并开始流式处理
+        const provider = this.providers.get(routingResult.provider);
+        if (!provider) {
+          throw new Error(`Provider not found: ${routingResult.provider}`);
+        }
+
+        // 4. 流式处理
+        const streamIterator = provider.streamCompletion(routingResult.preprocessedRequest);
+        
+        for await (const chunk of streamIterator) {
+          // 处理每个流式块
+          const processedChunk = await this.enhancedRoutingEngine.processProviderResponse(
+            chunk,
+            routingResult.metadata
+          );
+
+          // 发送SSE事件
+          reply.raw.write(`data: ${JSON.stringify(processedChunk)}\\n\\n`);
+        }
+
+        reply.raw.write('data: [DONE]\\n\\n');
+        reply.raw.end();
+
+        logger.info('Streaming chat completion completed', { requestId });
+
+      } catch (error) {
+        logger.error('Streaming chat completion failed', {
+          requestId,
+          error: error instanceof Error ? error.message : String(error)
+        });
+
+        reply.raw.write(`data: ${JSON.stringify({
+          error: {
+            type: 'internal_error',
+            message: error instanceof Error ? error.message : 'Unknown error'
+          }
+        })}\\n\\n`);
+        reply.raw.end();
+      }
+    });
+
+    // 健康检查端点
+    this.fastify.get('/health', async (request, reply) => {
+      const healthStatus = await this.getHealthStatus();
+      
+      if (healthStatus.overall === 'healthy') {
+        reply.code(200).send(healthStatus);
+      } else {
+        reply.code(503).send(healthStatus);
+      }
+    });
+
+    // 统计端点
+    this.fastify.get('/stats', async (request, reply) => {
+      const stats = this.enhancedRoutingEngine.getRoutingStats();
+      reply.code(200).send(stats);
+    });
+  }
+
+  /**
+   * 解析输入请求为统一的BaseRequest格式
+   */
+  private parseInputRequest(body: any, requestId: string): BaseRequest {
+    if (!body) {
+      throw new Error('Request body is required');
+    }
+
+    return {
+      model: body.model || 'default',
+      messages: body.messages || [],
+      tools: body.tools,
+      tool_choice: body.tool_choice,
+      max_tokens: body.max_tokens || 1000,
+      temperature: body.temperature || 0.7,
+      metadata: {
+        requestId,
+        timestamp: Date.now(),
+        originalBody: body
+      }
+    };
+  }
+
+  /**
+   * 获取健康状态
+   */
+  private async getHealthStatus(): Promise<any> {
+    const providerHealth: Record<string, any> = {};
+    let healthyCount = 0;
+
+    for (const [providerId, provider] of this.providers) {
+      try {
+        const isHealthy = await provider.healthCheck();
+        providerHealth[providerId] = {
+          status: isHealthy ? 'healthy' : 'unhealthy',
+          lastCheck: new Date().toISOString()
+        };
+        if (isHealthy) healthyCount++;
+      } catch (error) {
+        providerHealth[providerId] = {
+          status: 'error',
+          error: error instanceof Error ? error.message : String(error),
+          lastCheck: new Date().toISOString()
+        };
+      }
+    }
+
+    const totalProviders = this.providers.size;
+    const overall = healthyCount > 0 ? 'healthy' : 'unhealthy';
+
+    return {
+      overall,
+      healthy: healthyCount,
+      total: totalProviders,
+      providers: providerHealth,
+      architecture: 'clean-pipeline',
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * 启动服务器
+   */
+  async start(): Promise<void> {
+    try {
+      await this.fastify.listen({
+        port: this.config.server.port,
+        host: this.config.server.host || '0.0.0.0'
+      });
+
+      logger.info('Clean Architecture Server started successfully', {
+        port: this.config.server.port,
+        host: this.config.server.host || '0.0.0.0',
+        architecture: 'clean-pipeline'
+      });
+    } catch (error) {
+      logger.error('Failed to start server', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 停止服务器
+   */
+  async stop(): Promise<void> {
+    try {
+      await this.fastify.close();
+      logger.info('Clean Architecture Server stopped');
+    } catch (error) {
+      logger.error('Failed to stop server', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+}
+
+export default CleanArchitectureServer;

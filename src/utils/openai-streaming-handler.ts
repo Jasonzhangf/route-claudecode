@@ -56,9 +56,59 @@ export class OpenAIAPIHandler {
 
       // 🎯 纯粹的非流式OpenAI API调用
       const rawResponse = await this.config.openaiClient.chat.completions.create(openaiRequest);
+      
+      // 🔍 [CRITICAL-DEBUG] 检查OpenAI SDK返回的数据类型和结构
+      console.log('🔍 [CRITICAL-DEBUG] OpenAI SDK raw response analysis:', {
+        requestId,
+        rawResponseIsObject: typeof rawResponse === 'object',
+        rawResponseConstructor: rawResponse?.constructor?.name,
+        rawResponseProto: Object.getPrototypeOf(rawResponse)?.constructor?.name,
+        hasOwnChoices: Object.hasOwnProperty.call(rawResponse || {}, 'choices'),
+        choicesDescriptor: Object.getOwnPropertyDescriptor(rawResponse || {}, 'choices'),
+        rawResponseString: JSON.stringify(rawResponse),
+        directChoicesAccess: rawResponse?.choices
+      });
+
+      // 🔍 [SDK-DEBUG] 记录OpenAI SDK原始响应
+      console.log('🔍 [SDK-DEBUG] Raw OpenAI SDK response:', {
+        requestId,
+        hasRawResponse: !!rawResponse,
+        rawResponseType: typeof rawResponse,
+        rawResponseKeys: rawResponse ? Object.keys(rawResponse) : null,
+        hasChoices: !!rawResponse?.choices,
+        choicesType: typeof rawResponse?.choices,
+        choicesLength: rawResponse?.choices?.length || 0,
+        rawResponseId: rawResponse?.id,
+        rawResponseObject: rawResponse?.object
+      });
+
+      if (!rawResponse?.choices) {
+        console.log('🚨 [SDK-DEBUG] RAW RESPONSE MISSING CHOICES!', {
+          requestId,
+          fullRawResponse: JSON.stringify(rawResponse, null, 2)
+        });
+      }
 
       // 🔧 CRITICAL FIX: 在transformer之前应用格式兼容性修复
       const response = await this.applyResponseFormatFix(rawResponse, request);
+
+      // 🔍 [FORMAT-FIX-DEBUG] 记录格式修复后的响应
+      console.log('🔍 [FORMAT-FIX-DEBUG] Response after format fix:', {
+        requestId,
+        hasResponse: !!response,
+        responseType: typeof response,
+        responseKeys: response ? Object.keys(response) : null,
+        hasChoices: !!response?.choices,
+        choicesLength: response?.choices?.length || 0,
+        wasFixed: rawResponse !== response
+      });
+
+      if (!response?.choices) {
+        console.log('🚨 [FORMAT-FIX-DEBUG] RESPONSE MISSING CHOICES AFTER FORMAT FIX!', {
+          requestId,
+          fullResponse: JSON.stringify(response, null, 2)
+        });
+      }
 
       // 🔄 使用transformer转换响应（统一逻辑，包含所有工具转换）
       const baseResponse = this.transformer.transformOpenAIResponseToBase(response, request);

@@ -1,0 +1,216 @@
+[
+  {
+    "id": "sample_1",
+    "name": "创建文件工具调用",
+    "request": {
+      "model": "gpt-oss-20b-mlx",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Create a file named test.txt with content \"Hello World\""
+        }
+      ],
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "create_file",
+            "description": "Create a file with specified content",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "content": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "filename",
+                "content"
+              ]
+            }
+          }
+        }
+      ],
+      "stream": false,
+      "max_tokens": 500
+    },
+    "response": {
+      "id": "chatcmpl-ws8w3o12q4p6len4qfh1nt",
+      "object": "chat.completion",
+      "created": 1754798892,
+      "model": "gpt-oss-20b-mlx",
+      "choices": [
+        {
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "We need to call function create_file with filename and content.<|start|>assistant<|channel|>commentary to=functions.create_file <|constrain|>json<|message|>{\"filename\":\"test.txt\",\"content\":\"Hello World\"}"
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 136,
+        "completion_tokens": 37,
+        "total_tokens": 173
+      },
+      "stats": {},
+      "system_fingerprint": "gpt-oss-20b-mlx"
+    },
+    "timestamp": "2025-08-10T04:08:13.485Z",
+    "analysis": {
+      "hasChoices": true,
+      "choicesCount": 1,
+      "hasContent": true,
+      "contentLength": 203,
+      "finishReason": "stop",
+      "hasToolCalls": false,
+      "hasLMStudioFormat": false,
+      "otherToolFormats": []
+    }
+  },
+  {
+    "id": "sample_2",
+    "name": "读取文件工具调用",
+    "request": {
+      "model": "gpt-oss-20b-mlx",
+      "messages": [
+        {
+          "role": "user",
+          "content": "Read the contents of config.json file"
+        }
+      ],
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "read_file",
+            "description": "Read the contents of a file",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "filename": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "filename"
+              ]
+            }
+          }
+        }
+      ],
+      "stream": false,
+      "max_tokens": 300
+    },
+    "response": {
+      "id": "chatcmpl-2ie5wbpyuvqm4dy88zvvf",
+      "object": "chat.completion",
+      "created": 1754798895,
+      "model": "gpt-oss-20b-mlx",
+      "choices": [
+        {
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "We need to read a file using function. The tool is functions.read_file with filename argument. Output the content.<|start|>assistant<|channel|>commentary to=functions.read_file <|constrain|>json<|message|>{\"filename\":\"config.json\"}"
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 127,
+        "completion_tokens": 43,
+        "total_tokens": 170
+      },
+      "stats": {},
+      "system_fingerprint": "gpt-oss-20b-mlx"
+    },
+    "timestamp": "2025-08-10T04:08:16.240Z",
+    "analysis": {
+      "hasChoices": true,
+      "choicesCount": 1,
+      "hasContent": true,
+      "contentLength": 231,
+      "finishReason": "stop",
+      "hasToolCalls": false,
+      "hasLMStudioFormat": false,
+      "otherToolFormats": []
+    }
+  },
+  {
+    "id": "sample_3",
+    "name": "执行命令工具调用",
+    "request": {
+      "model": "gpt-oss-20b-mlx",
+      "messages": [
+        {
+          "role": "user",
+          "content": "List all files in the current directory"
+        }
+      ],
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "bash",
+            "description": "Execute a bash command",
+            "parameters": {
+              "type": "object",
+              "properties": {
+                "command": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "command"
+              ]
+            }
+          }
+        }
+      ],
+      "stream": false,
+      "max_tokens": 200
+    },
+    "response": {
+      "id": "chatcmpl-8xbbm572yzd6jgzb00ynfb",
+      "object": "chat.completion",
+      "created": 1754798898,
+      "model": "gpt-oss-20b-mlx",
+      "choices": [
+        {
+          "index": 0,
+          "logprobs": null,
+          "finish_reason": "stop",
+          "message": {
+            "role": "assistant",
+            "content": "User wants list of files. We need to execute bash command: ls -a maybe. Use functions.bash.<|start|>assistant<|channel|>commentary to=functions.bash <|constrain|>json<|message|>{\"command\":\"ls -la\"}"
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 124,
+        "completion_tokens": 44,
+        "total_tokens": 168
+      },
+      "stats": {},
+      "system_fingerprint": "gpt-oss-20b-mlx"
+    },
+    "timestamp": "2025-08-10T04:08:18.986Z",
+    "analysis": {
+      "hasChoices": true,
+      "choicesCount": 1,
+      "hasContent": true,
+      "contentLength": 197,
+      "finishReason": "stop",
+      "hasToolCalls": false,
+      "hasLMStudioFormat": false,
+      "otherToolFormats": []
+    }
+  }
+]

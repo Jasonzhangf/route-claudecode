@@ -1,300 +1,190 @@
 /**
- * Gemini Transformer
- * 统一的Gemini格式转换器，遵循transformer架构模式
+ * Gemini Transformer - 完整实现
+ * 基于项目记忆中的最佳实践，包含工具调用和内容驱动的stop_reason判断
  * Project owner: Jason Zhang
  */
 
-import { BaseRequest, BaseResponse } from '../types';
-import { logger } from '../utils/logger';
-import { MessageTransformer, UnifiedRequest, UnifiedResponse, StreamChunk } from './types';
-
-// Gemini API请求格式接口
-export interface GeminiApiRequest {
-  model: string;
-  contents: Array<{
-    role: 'user' | 'model';
-    parts: Array<{
-      text?: string;
-      functionCall?: {
-        name: string;
-        args: any;
-      };
-      functionResponse?: {
-        name: string;
-        response: any;
-      };
-    }>;
-  }>;
-  tools?: Array<{
-    functionDeclarations: Array<{
-      name: string;
-      description: string;
-      parameters: any;
-    }>;
-  }>;
-  generationConfig?: {
-    maxOutputTokens?: number;
-    temperature?: number;
-  };
-  functionCallingConfig?: {
-    mode: 'AUTO' | 'ANY' | 'NONE';
-  };
-}
-
-// Gemini API响应格式接口
-export interface GeminiApiResponse {
-  candidates: Array<{
-    content: {
-      parts: Array<{
-        text?: string;
-        functionCall?: {
-          name: string;
-          args: any;
-        };
-      }>;
-    };
-    finishReason: 'STOP' | 'MAX_TOKENS' | 'SAFETY' | 'RECITATION' | 'OTHER';
-  }>;
-  usageMetadata?: {
-    promptTokenCount: number;
-    candidatesTokenCount: number;
-    totalTokenCount: number;
-  };
-}
+import { BaseRequest, BaseResponse, GeminiApiRequest, GeminiApiResponse } from '@/types';
+import { logger } from '@/utils/logger';
 
 /**
- * Gemini消息转换器
- * 实现统一的Gemini ↔ Anthropic格式转换
+ * Gemini Transformer - 处理Anthropic与Gemini API格式转换
  */
-export class GeminiTransformer implements MessageTransformer {
-  public readonly name = 'gemini';
-
+export class GeminiTransformer {
   /**
-   * 将Anthropic格式转换为Gemini格式
+   * 转换Anthropic请求为Gemini格式
    */
-  transformAnthropicToGemini(request: BaseRequest): GeminiApiRequest {
+  transformAnthropicToGemini(request: BaseRequest): { geminiRequest: GeminiApiRequest; metadata: any } {
     const requestId = request.metadata?.requestId || 'unknown';
     
-    logger.debug('Converting Anthropic request to Gemini format', {
-      messageCount: request.messages?.length || 0,
-      hasTools: !!request.tools,
-      maxTokens: request.max_tokens
-    }, requestId, 'gemini-transformer');
+    try {
+      logger.debug('Starting Anthropic to Gemini transformation', {
+        requestId,
+        model: request.model,
+        messageCount: request.messages?.length,
+        hasTools: !!request.tools?.length,
+        hasSystem: !!request.metadata?.system
+      });
 
-    if (!request.messages || !Array.isArray(request.messages)) {
-      throw new Error('GeminiTransformer: request.messages must be a non-empty array');
-    }
-
-    const geminiRequest: GeminiApiRequest = {
-      model: this.extractModelName(request.model),
-      contents: this.convertAnthropicMessagesToGemini(request.messages, requestId),
-    };
-
-    // 添加生成配置
-    if (request.max_tokens || request.temperature !== undefined) {
-      geminiRequest.generationConfig = {};
-      
-      if (request.max_tokens) {
-        geminiRequest.generationConfig.maxOutputTokens = request.max_tokens;
-      }
-      
-      if (request.temperature !== undefined) {
-        geminiRequest.generationConfig.temperature = request.temperature;
-      }
-    }
-
-    // 处理工具调用
-    if (request.tools && request.tools.length > 0) {
-      geminiRequest.tools = this.convertAnthropicToolsToGemini(request.tools, requestId);
-      
-      // 使用更强制的工具调用配置
-      geminiRequest.functionCallingConfig = { 
-        mode: 'ANY'  // 改为ANY模式，更容易触发工具调用
-        // 注意: allowedFunctionNames在某些SDK版本中可能不支持
-      } as any;
-      
-      logger.debug('Added tools to Gemini request with ANY mode', {
-        toolCount: request.tools.length,
-        toolNames: request.tools.map(t => t.function?.name || t.name).filter(Boolean),
-        functionCallingMode: 'ANY'
-      }, requestId, 'gemini-transformer');
-    }
-
-    return geminiRequest;
-  }
-
-  /**
-   * 将Gemini响应转换为Anthropic格式
-   */
-  transformGeminiToAnthropic(
-    geminiResponse: GeminiApiResponse, 
-    originalModel: string, 
-    requestId: string = 'unknown'
-  ): BaseResponse {
-    logger.debug('Converting Gemini response to Anthropic format', {
-      candidatesCount: geminiResponse.candidates?.length || 0,
-      hasUsageMetadata: !!geminiResponse.usageMetadata
-    }, requestId, 'gemini-transformer');
-
-    if (!geminiResponse.candidates || geminiResponse.candidates.length === 0) {
-      throw new Error('GeminiTransformer: Gemini response has no candidates');
-    }
-
-    const candidate = geminiResponse.candidates[0];
-    if (!candidate.content || !candidate.content.parts) {
-      // 处理某些情况下Gemini响应缺失content的问题
-      logger.warn('GeminiTransformer: Gemini candidate missing content/parts', {
-        hasContent: !!candidate.content,
-        hasParts: !!candidate.content?.parts,
-        finishReason: candidate.finishReason,
-        candidateKeys: Object.keys(candidate)
-      }, requestId, 'gemini-transformer');
-      
-      // 尝试创建空的文本响应而不是抛出错误
-      const content = [{
-        type: 'text' as const,
-        text: 'Response generated but content format was unexpected.'
-      }];
-      
-      const response: BaseResponse = {
-        id: `msg_${Date.now()}`,
-        content,
-        model: originalModel,
-        role: 'assistant',
-        stop_reason: 'end_turn',
-        stop_sequence: null,
-        usage: { input_tokens: 0, output_tokens: 0 }
+      // 构建基础请求
+      const geminiRequest: GeminiApiRequest = {
+        contents: this.convertMessages(request.messages, request.metadata?.system),
+        generationConfig: {
+          temperature: request.temperature,
+          maxOutputTokens: request.max_tokens || 131072
+        }
       };
+
+      // 处理工具
+      if (request.tools && request.tools.length > 0) {
+        const { tools, toolConfig } = this.buildToolsAndConfig(request.tools, request.metadata?.tool_choice);
+        geminiRequest.tools = tools;
+        geminiRequest.toolConfig = toolConfig;
+
+        logger.debug('Added tools to Gemini request with dynamic toolConfig', {
+          requestId,
+          toolCount: tools.length,
+          functionCount: tools[0]?.functionDeclarations?.length,
+          toolConfig: toolConfig.functionCallingConfig
+        });
+      }
+
+      // 添加安全设置
+      geminiRequest.safetySettings = [
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+      ];
+
+      const metadata = {
+        requestId,
+        originalFormat: 'anthropic',
+        transformed: true,
+        toolsEnabled: !!geminiRequest.tools?.length,
+        timestamp: Date.now()
+      };
+
+      logger.debug('Completed Anthropic to Gemini transformation', {
+        requestId,
+        hasContents: !!geminiRequest.contents?.length,
+        hasTools: !!geminiRequest.tools?.length,
+        hasToolConfig: !!geminiRequest.toolConfig,
+        generationConfig: geminiRequest.generationConfig
+      });
+
+      return { geminiRequest, metadata };
+
+    } catch (error) {
+      logger.error('Error transforming Anthropic to Gemini', {
+        requestId,
+        error: (error as Error).message,
+        stack: (error as Error).stack
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 转换Gemini响应为Anthropic格式
+   */
+  transformGeminiToAnthropic(response: GeminiApiResponse, originalModel: string, requestId: string): BaseResponse {
+    try {
+      logger.debug('Starting Gemini to Anthropic response transformation', {
+        requestId,
+        candidateCount: response.candidates?.length,
+        hasUsage: !!response.usageMetadata
+      });
+
+      if (!response.candidates || response.candidates.length === 0) {
+        throw new Error('No candidates in Gemini response');
+      }
+
+      const candidate = response.candidates[0];
+      const content = this.convertResponseContent(candidate.content, requestId);
       
-      return response;
+      // 🎯 关键修复：内容驱动的stop_reason判断（基于OpenAI成功模式）
+      const stopReason = this.determineStopReason(content, candidate.finishReason);
+
+      const anthropicResponse: BaseResponse = {
+        id: requestId,
+        type: 'message',
+        role: 'assistant',
+        content: content,
+        model: originalModel,
+        stop_reason: stopReason,
+        usage: response.usageMetadata ? {
+          input_tokens: response.usageMetadata.promptTokenCount,
+          output_tokens: response.usageMetadata.candidatesTokenCount
+        } : undefined
+      };
+
+      logger.debug('Completed Gemini to Anthropic transformation', {
+        requestId,
+        contentBlockCount: content.length,
+        stopReason,
+        hasToolUse: content.some(block => block.type === 'tool_use'),
+        hasUsage: !!anthropicResponse.usage
+      });
+
+      return anthropicResponse;
+
+    } catch (error) {
+      logger.error('Error transforming Gemini to Anthropic', {
+        requestId,
+        error: (error as Error).message,
+        candidateCount: response.candidates?.length
+      });
+      throw error;
     }
-
-    // 转换内容块
-    const content = this.convertGeminiPartsToAnthropic(candidate.content.parts, requestId);
-    
-    // 转换停止原因
-    const stopReason = this.mapGeminiFinishReason(candidate.finishReason);
-    
-    // 转换使用统计
-    const usage = geminiResponse.usageMetadata ? {
-      input_tokens: geminiResponse.usageMetadata.promptTokenCount || 0,
-      output_tokens: geminiResponse.usageMetadata.candidatesTokenCount || 0
-    } : { input_tokens: 0, output_tokens: 0 };
-
-    const response: BaseResponse = {
-      id: `msg_${Date.now()}`,
-      content,
-      model: originalModel,
-      role: 'assistant',
-      stop_reason: stopReason,
-      stop_sequence: null,
-      usage
-    };
-
-    logger.debug('Converted Gemini response to Anthropic format', {
-      contentBlocks: content.length,
-      stopReason,
-      inputTokens: usage.input_tokens,
-      outputTokens: usage.output_tokens
-    }, requestId, 'gemini-transformer');
-
-    return response;
   }
 
   /**
-   * 提取模型名称
+   * 转换消息格式
    */
-  private extractModelName(model: string): string {
-    if (!model) {
-      throw new Error('GeminiTransformer: model is required');
-    }
-
-    const allowedPatterns = [
-      /^gemini-1\./,
-      /^gemini-2\./,
-      /^gemini-pro/,
-      /^gemini-ultra/,
-      /^gemini-nano/,
-      /^gemini-flash/
-    ];
-    
-    const isValidModel = allowedPatterns.some(pattern => pattern.test(model));
-    if (!isValidModel) {
-      throw new Error(`GeminiTransformer: Unsupported model '${model}'. Expected patterns: gemini-1.x, gemini-2.x, gemini-pro, gemini-ultra, gemini-nano, gemini-flash`);
-    }
-
-    // 移除google/前缀（如果存在）
-    return model.replace(/^google\//, '');
-  }
-
-  /**
-   * 转换Anthropic消息为Gemini格式
-   */
-  private convertAnthropicMessagesToGemini(messages: any[], requestId: string): GeminiApiRequest['contents'] {
+  private convertMessages(messages: any[], systemMessage?: any): GeminiApiRequest['contents'] {
     const contents: GeminiApiRequest['contents'] = [];
     
-    for (let i = 0; i < messages.length; i++) {
-      const message = messages[i];
+    // 添加系统消息（转换为第一个用户消息）
+    if (systemMessage) {
+      const systemText = Array.isArray(systemMessage) 
+        ? systemMessage.map(s => s.text || JSON.stringify(s)).join('\n')
+        : systemMessage;
       
-      if (!message || typeof message !== 'object') {
-        throw new Error(`GeminiTransformer: Invalid message at index ${i}`);
-      }
+      contents.push({
+        role: 'user',
+        parts: [{ text: `System: ${systemText}` }]
+      });
+    }
 
-      // 跳过系统消息（Gemini在contents中不支持system角色）
-      if (message.role === 'system') {
-        logger.debug('Skipping system message in Gemini contents', { index: i }, requestId, 'gemini-transformer');
-        continue;
-      }
-
-      // 转换角色映射
-      const role = this.mapAnthropicRoleToGemini(message.role);
-      const parts = this.convertAnthropicContentToGeminiParts(message, i, requestId);
-
+    // 转换对话消息
+    for (const message of messages) {
+      const role = message.role === 'assistant' ? 'model' : 'user';
+      const parts = this.convertMessageContent(message.content);
+      
       if (parts.length > 0) {
         contents.push({ role, parts });
       }
-    }
-
-    if (contents.length === 0) {
-      throw new Error('GeminiTransformer: No valid messages to convert');
     }
 
     return contents;
   }
 
   /**
-   * 映射Anthropic角色到Gemini角色
+   * 转换消息内容
    */
-  private mapAnthropicRoleToGemini(role: string): 'user' | 'model' {
-    switch (role) {
-      case 'user':
-        return 'user';
-      case 'assistant':
-        return 'model';
-      default:
-        throw new Error(`GeminiTransformer: Unsupported role: ${role}`);
+  private convertMessageContent(content: any): Array<any> {
+    if (typeof content === 'string') {
+      return [{ text: content }];
     }
-  }
 
-  /**
-   * 转换Anthropic消息内容为Gemini parts
-   */
-  private convertAnthropicContentToGeminiParts(message: any, index: number, requestId: string): any[] {
-    const parts: any[] = [];
-
-    // 处理字符串内容
-    if (typeof message.content === 'string') {
-      if (message.content.trim()) {
-        parts.push({ text: message.content });
-      }
-    }
-    // 处理数组内容
-    else if (Array.isArray(message.content)) {
-      for (const block of message.content) {
-        if (block.type === 'text' && block.text) {
+    if (Array.isArray(content)) {
+      const parts = [];
+      
+      for (const block of content) {
+        if (block.type === 'text') {
           parts.push({ text: block.text });
         } else if (block.type === 'tool_use') {
-          // 转换工具调用
           parts.push({
             functionCall: {
               name: block.name,
@@ -302,184 +192,182 @@ export class GeminiTransformer implements MessageTransformer {
             }
           });
         } else if (block.type === 'tool_result') {
-          // 处理工具结果 - 转换为Gemini functionResponse格式
           parts.push({
             functionResponse: {
-              name: block.tool_use_id || 'unknown_tool',
+              name: block.tool_use_id,
               response: {
-                name: block.tool_use_id || 'unknown_tool',
-                content: block.content || block.result || 'Tool execution completed'
+                name: block.tool_use_id,
+                content: block.content
               }
             }
           });
         }
       }
+      
+      return parts;
     }
 
-    // 处理OpenAI风格的工具调用（向后兼容）
-    if (message.tool_calls && Array.isArray(message.tool_calls)) {
-      message.tool_calls.forEach((toolCall: any, toolIndex: number) => {
-        if (!toolCall.function?.name) {
-          throw new Error(`GeminiTransformer: Invalid tool call at message ${index}, tool ${toolIndex}: missing function name`);
-        }
-
-        let args = {};
-        if (toolCall.function.arguments) {
-          try {
-            args = typeof toolCall.function.arguments === 'string' 
-              ? JSON.parse(toolCall.function.arguments) 
-              : toolCall.function.arguments;
-          } catch (error) {
-            throw new Error(`GeminiTransformer: Invalid tool call arguments for '${toolCall.function.name}': ${error instanceof Error ? error.message : String(error)}`);
-          }
-        }
-
-        parts.push({
-          functionCall: {
-            name: toolCall.function.name,
-            args: args
-          }
-        });
-      });
-    }
-
-    return parts;
+    return [{ text: JSON.stringify(content) }];
   }
 
   /**
-   * 转换Anthropic工具定义为Gemini格式
+   * 构建工具和配置
    */
-  private convertAnthropicToolsToGemini(tools: any[], requestId: string): GeminiApiRequest['tools'] {
-    if (!Array.isArray(tools)) {
-      throw new Error('GeminiTransformer: tools must be an array');
-    }
+  private buildToolsAndConfig(tools: any[], toolChoice?: any): { tools: any[]; toolConfig: any } {
+    // 转换工具定义
+    const functionDeclarations = tools.map(tool => {
+      // 🔧 修复：支持双格式工具（OpenAI和Anthropic）
+      const name = tool.name || tool.function?.name;
+      const description = tool.description || tool.function?.description;
+      const parameters = tool.input_schema || tool.parameters || tool.function?.parameters || {};
 
-    const functionDeclarations = tools.map((tool, index) => {
-      // 支持多种工具定义格式
-      let func: any;
-      
-      if (tool.function) {
-        // 标准格式: { type: "function", function: { name, description, parameters } }
-        func = tool.function;
-      } else if (tool.name) {
-        // 简化格式: { name, description, parameters }
-        func = tool;
-      } else {
-        throw new Error(`GeminiTransformer: Invalid tool at index ${index}: missing function or name`);
-      }
-
-      if (!func.name) {
-        throw new Error(`GeminiTransformer: Invalid tool at index ${index}: missing function name`);
+      if (!name || !description) {
+        throw new Error(`Invalid tool format: missing name or description in ${JSON.stringify(tool)}`);
       }
 
       return {
-        name: func.name,
-        description: func.description || '',
-        parameters: func.parameters || {}
+        name,
+        description,
+        parameters
       };
     });
 
-    logger.debug('Converted tools to Gemini format', {
-      originalCount: tools.length,
-      convertedCount: functionDeclarations.length,
-      toolNames: functionDeclarations.map(f => f.name)
-    }, requestId, 'gemini-transformer');
+    const geminiTools = [{
+      functionDeclarations
+    }];
 
-    return [{ functionDeclarations }];
+    // 构建工具配置
+    const allowedFunctionNames = functionDeclarations.map(func => func.name);
+    const toolConfig = this.buildToolConfig(toolChoice, allowedFunctionNames);
+
+    return { tools: geminiTools, toolConfig };
   }
 
   /**
-   * 转换Gemini parts为Anthropic内容块
+   * 构建工具配置（基于demo3的智能模式选择）
    */
-  private convertGeminiPartsToAnthropic(parts: any[], requestId: string): any[] {
-    const content: any[] = [];
-    let textParts: string[] = [];
-
-    for (const part of parts) {
-      if (part.text) {
-        textParts.push(part.text);
-      } else if (part.functionCall) {
-        // 如果有累积的文本，先添加文本块
-        if (textParts.length > 0) {
-          content.push({
-            type: 'text',
-            text: textParts.join('').trim()
-          });
-          textParts = [];
+  private buildToolConfig(toolChoice: any, allowedFunctionNames: string[]): any {
+    if (!toolChoice) {
+      return {
+        functionCallingConfig: {
+          mode: 'AUTO',
+          allowedFunctionNames: allowedFunctionNames
         }
+      };
+    }
 
-        // 添加工具调用块
-        content.push({
+    // 处理字符串格式的tool_choice
+    if (typeof toolChoice === 'string') {
+      if (toolChoice === 'auto') {
+        return {
+          functionCallingConfig: {
+            mode: 'AUTO',
+            allowedFunctionNames: allowedFunctionNames
+          }
+        };
+      } else if (toolChoice === 'none') {
+        return {
+          functionCallingConfig: {
+            mode: 'NONE'
+          }
+        };
+      } else {
+        // 指定特定工具名
+        return {
+          functionCallingConfig: {
+            mode: 'ANY',
+            allowedFunctionNames: [toolChoice]
+          }
+        };
+      }
+    }
+
+    // 处理对象格式的tool_choice
+    if (typeof toolChoice === 'object') {
+      if (toolChoice.type === 'auto') {
+        return {
+          functionCallingConfig: {
+            mode: 'AUTO',
+            allowedFunctionNames: allowedFunctionNames
+          }
+        };
+      } else if (toolChoice.type === 'tool' && toolChoice.name) {
+        return {
+          functionCallingConfig: {
+            mode: 'ANY',
+            allowedFunctionNames: [toolChoice.name]
+          }
+        };
+      }
+    }
+
+    // 默认使用AUTO模式
+    return {
+      functionCallingConfig: {
+        mode: 'AUTO',
+        allowedFunctionNames: allowedFunctionNames
+      }
+    };
+  }
+
+  /**
+   * 转换响应内容
+   */
+  private convertResponseContent(content: any, requestId: string): Array<any> {
+    const blocks = [];
+
+    if (!content || !content.parts) {
+      return [{ type: 'text', text: '' }];
+    }
+
+    for (const part of content.parts) {
+      if (part.text) {
+        blocks.push({
+          type: 'text',
+          text: part.text
+        });
+      } else if (part.functionCall) {
+        blocks.push({
           type: 'tool_use',
-          id: `toolu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: part.functionCall.name,
           input: part.functionCall.args || {}
         });
       }
     }
 
-    // 添加剩余的文本
-    if (textParts.length > 0) {
-      content.push({
-        type: 'text',
-        text: textParts.join('').trim()
-      });
-    }
-
-    if (content.length === 0) {
-      throw new Error('GeminiTransformer: No valid content parts to convert');
-    }
-
-    return content;
+    return blocks.length > 0 ? blocks : [{ type: 'text', text: '' }];
   }
 
   /**
-   * 映射Gemini结束原因到Anthropic格式
+   * 🎯 关键方法：内容驱动的stop_reason判断（基于OpenAI成功模式）
    */
-  private mapGeminiFinishReason(finishReason: string): string {
-    const mapping: Record<string, string> = {
-      'STOP': 'end_turn',
-      'MAX_TOKENS': 'max_tokens',
-      'SAFETY': 'stop_sequence',
-      'RECITATION': 'stop_sequence',
-      'OTHER': 'end_turn'
-    };
-
-    const mapped = mapping[finishReason];
-    if (!mapped) {
-      throw new Error(`GeminiTransformer: Unknown finish reason: ${finishReason}`);
+  private determineStopReason(content: Array<any>, finishReason: string): string {
+    // 优先基于转换后的content判断，而非原始finishReason
+    const hasToolUse = content.some(block => block.type === 'tool_use');
+    
+    if (hasToolUse) {
+      return 'tool_use';
     }
 
-    return mapped;
-  }
-
-  // MessageTransformer接口实现
-  transformRequestToUnified(request: any): UnifiedRequest {
-    throw new Error('GeminiTransformer: transformRequestToUnified not implemented - use direct methods');
-  }
-
-  transformRequestFromUnified(request: UnifiedRequest): any {
-    throw new Error('GeminiTransformer: transformRequestFromUnified not implemented - use direct methods');
-  }
-
-  transformResponseToUnified(response: any): UnifiedResponse {
-    throw new Error('GeminiTransformer: transformResponseToUnified not implemented - use direct methods');
-  }
-
-  transformResponseFromUnified(response: UnifiedResponse): any {
-    throw new Error('GeminiTransformer: transformResponseFromUnified not implemented - use direct methods');
-  }
-
-  transformStreamChunk(chunk: any): StreamChunk | null {
-    // Gemini流式处理通过模拟方式实现，这里暂时不需要实现
-    return null;
+    // 根据Gemini的finishReason映射
+    switch (finishReason) {
+      case 'STOP':
+        return 'end_turn';
+      case 'MAX_TOKENS':
+        return 'max_tokens';
+      case 'SAFETY':
+        return 'stop_sequence';
+      default:
+        return 'end_turn';
+    }
   }
 }
 
 /**
  * 便捷函数：转换Anthropic请求为Gemini格式
  */
-export function transformAnthropicToGemini(request: BaseRequest): GeminiApiRequest {
+export function transformAnthropicToGemini(request: BaseRequest): { geminiRequest: GeminiApiRequest; metadata: any } {
   const transformer = new GeminiTransformer();
   return transformer.transformAnthropicToGemini(request);
 }
@@ -490,8 +378,10 @@ export function transformAnthropicToGemini(request: BaseRequest): GeminiApiReque
 export function transformGeminiToAnthropic(
   response: GeminiApiResponse, 
   originalModel: string, 
-  requestId?: string
+  requestId: string
 ): BaseResponse {
   const transformer = new GeminiTransformer();
   return transformer.transformGeminiToAnthropic(response, originalModel, requestId);
 }
+
+// Types are exported from @/types

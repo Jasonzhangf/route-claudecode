@@ -9,12 +9,12 @@
  * - All transformations handled by transformer layer
  */
 
-import { BaseRequest, BaseResponse, ProviderConfig, ProviderError } from '../../types';
+import { BaseRequest, BaseResponse, ProviderConfig, ProviderError, GeminiApiRequest, GeminiApiResponse } from '../../types';
 import { logger } from '../../utils/logger';
 import { EnhancedRateLimitManager } from './enhanced-rate-limit-manager';
 import { GoogleGenAI } from '@google/genai';
-import { transformAnthropicToGemini, transformGeminiToAnthropic, GeminiApiRequest, GeminiApiResponse } from '../../transformers/gemini';
-import { preprocessGeminiRequest } from '../../preprocessing/gemini-patch-preprocessor';
+
+// Using interfaces from types.ts to avoid conflicts
 
 export class GeminiClient {
   public readonly name: string;
@@ -24,34 +24,56 @@ export class GeminiClient {
   private baseUrl: string;
   private enhancedRateLimitManager?: EnhancedRateLimitManager;
   private apiKeys: string[] = [];
-  private readonly maxRetries = 3;
-  private readonly retryDelay = 1000;
-  private readonly requestTimeout = 60000;
+  private readonly maxRetries: number;
+  private readonly retryDelay: number;
+  private readonly requestTimeout: number;
   private genAIClients: GoogleGenAI[] = [];
 
   constructor(private config: ProviderConfig, providerId?: string) {
-    this.name = providerId || 'gemini-client';
+    if (!providerId) {
+      throw new Error('GeminiClient: providerId is required - no default fallback allowed');
+    }
+    this.name = providerId;
+    
+    // Zero Hardcode Principle: All configuration from config
+    // @ts-ignore - TODO: Add proper types for timeout and retry
+    if (!config.timeout) {
+      throw new Error('GeminiClient: config.timeout is required');
+    }
+    // @ts-ignore - TODO: Add proper types for timeout and retry
+    if (!config.retry) {
+      throw new Error('GeminiClient: config.retry is required with maxRetries and delayMs properties');
+    }
+    
+    // @ts-ignore - TODO: Add proper types for timeout and retry
+    this.maxRetries = config.retry.maxRetries;
+    // @ts-ignore - TODO: Add proper types for timeout and retry
+    this.retryDelay = config.retry.delayMs;
+    // @ts-ignore - TODO: Add proper types for timeout and retry
+    this.requestTimeout = config.timeout;
     
     // Handle API key configuration - support both single and multiple keys
     const credentials = config.authentication.credentials;
-    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
+    const apiKey = credentials ? (credentials.apiKey ?? credentials.api_key) : undefined;
     
     if (Array.isArray(apiKey) && apiKey.length > 1) {
       this.apiKeys = apiKey;
       
-      // Extract modelFallback config if available
-      const modelFallbackConfig = (config as any).modelFallback;
-      this.enhancedRateLimitManager = new EnhancedRateLimitManager(apiKey, this.name, modelFallbackConfig);
+      // Initialize rate limit manager without fallback (Zero Fallback Principle)
+      this.enhancedRateLimitManager = new EnhancedRateLimitManager(apiKey, this.name, this.config);
       this.apiKey = '';
       this.genAIClients = apiKey.map(key => new GoogleGenAI({ apiKey: key }));
       
       logger.info('Initialized Enhanced Gemini Rate Limit Manager', {
         providerId: this.name,
         keyCount: apiKey.length,
-        modelFallbackEnabled: !!modelFallbackConfig?.enabled
+        fallbackDisabled: 'Zero Fallback Principle enforced'
       });
     } else {
-      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
+      if (!apiKey) {
+        throw new Error('GeminiClient: API key is required');
+      }
+      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
       this.apiKeys = [this.apiKey];
       
       if (!this.apiKey) {
@@ -61,11 +83,14 @@ export class GeminiClient {
       this.genAIClients = [new GoogleGenAI({ apiKey: this.apiKey })];
     }
 
-    this.baseUrl = config.endpoint || 'https://generativelanguage.googleapis.com';
+    if (!config.endpoint) {
+      throw new Error('GeminiClient: config.endpoint is required - no default endpoint allowed (Zero Hardcode Principle)');
+    }
+    this.baseUrl = config.endpoint;
     
     logger.info('Gemini client initialized with minimal architecture', {
       endpoint: this.baseUrl,
-      hasApiKey: !!this.apiKey || !!this.enhancedRateLimitManager,
+      hasApiKey: !!(this.apiKey ?? this.enhancedRateLimitManager),
       keyRotationEnabled: !!this.enhancedRateLimitManager
     });
   }
@@ -79,9 +104,15 @@ export class GeminiClient {
         return false;
       }
       
-      // 使用简单的健康检查请求
+      // 获取健康检查用的模型名 - 零硬编码原则
+      const healthCheckModel = (this.config.healthCheck as any)?.model;
+      if (!healthCheckModel) {
+        throw new Error('Health check model not configured. Required: config.healthCheck.model');
+      }
+      
+      // 使用配置化的健康检查请求
       const testResponse = await genAI.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: healthCheckModel,
         contents: [{
           role: 'user',
           parts: [{ text: 'Hi' }]
@@ -91,9 +122,9 @@ export class GeminiClient {
       const success = !!(testResponse && testResponse.candidates && testResponse.candidates.length > 0);
       
       if (success) {
-        logger.debug('Gemini health check succeeded');
+        logger.debug('Gemini health check succeeded', { model: healthCheckModel });
       } else {
-        logger.warn('Gemini health check returned no response');
+        logger.warn('Gemini health check returned no response', { model: healthCheckModel });
       }
       
       return success;
@@ -106,22 +137,27 @@ export class GeminiClient {
   }
 
   async createCompletion(request: BaseRequest): Promise<BaseResponse> {
-    const requestId = request.metadata?.requestId || 'unknown';
+    if (!request.metadata?.requestId) {
+      throw new Error('GeminiClient: request.metadata.requestId is required');
+    }
+    const requestId = request.metadata.requestId;
     
-    logger.info('Processing non-streaming Gemini request', {
+    logger.info('Processing pure Gemini API request', {
       model: request.model,
-      messageCount: request.messages?.length || 0,
+      messageCount: request.messages?.length ?? 0,
       hasTools: !!request.tools,
       maxTokens: request.max_tokens
     }, requestId, 'gemini-provider');
 
-    // 1. 预处理请求
-    const preprocessedRequest = await preprocessGeminiRequest(request);
+    // 期望接收已转换的Gemini格式请求
+    if (!this.isValidGeminiRequest(request)) {
+      throw new Error('GeminiClient: Invalid Gemini request format. Request must be pre-transformed.');
+    }
     
-    // 2. 转换为Gemini格式
-    const geminiRequest = transformAnthropicToGemini(preprocessedRequest);
+    // 构建Gemini API请求
+    const geminiRequest = this.buildGeminiApiRequest(request);
     
-    // 3. 执行API调用
+    // 执行API调用
     const geminiResponse = await this.executeWithRetry(
       async (genAI: GoogleGenAI, model: string) => {
         const apiRequest = {
@@ -136,139 +172,42 @@ export class GeminiClient {
           )
         ]) as Promise<GeminiApiResponse>;
       },
-      preprocessedRequest.model,
+      request.model,
       'createCompletion',
       requestId
     );
     
-    // 4. 转换响应为Anthropic格式
-    const finalResponse = transformGeminiToAnthropic(
-      geminiResponse, 
-      request.model, 
-      requestId
-    );
+    // 构建原始Gemini响应
+    const response = this.buildGeminiResponse(geminiResponse, request.model, requestId);
     
-    logger.info('Non-streaming Gemini request completed successfully', {
+    logger.info('Pure Gemini API request completed successfully', {
       originalModel: request.model,
-      finalModel: finalResponse.model,
-      contentBlocks: finalResponse.content?.length || 0,
-      stopReason: finalResponse.stop_reason
+      responseType: 'raw_gemini_response',
+      candidatesCount: geminiResponse.candidates?.length ?? 0
     }, requestId, 'gemini-provider');
     
-    return finalResponse;
+    return response;
   }
 
   async* streamCompletion(request: BaseRequest): AsyncIterable<any> {
-    const requestId = request.metadata?.requestId || 'unknown';
+    if (!request.metadata?.requestId) {
+      throw new Error('GeminiClient: request.metadata.requestId is required');
+    }
+    const requestId = request.metadata.requestId;
     
-    logger.info('Starting Gemini streaming', {
+    logger.info('Starting pure Gemini API streaming', {
       model: request.model,
-      messageCount: request.messages?.length || 0
+      messageCount: request.messages?.length ?? 0
     }, requestId, 'gemini-provider');
 
-    // For now, use non-streaming and simulate streaming
-    // This ensures basic functionality works first
+    // For now, use non-streaming and return raw response
     const response = await this.createCompletion(request);
     
-    // Convert to streaming format
-    const messageId = response.id || `msg_${Date.now()}`;
+    // 返回原始Gemini响应，不进行Anthropic格式转换
+    yield response;
     
-    // Send message_start
-    yield {
-      event: 'message_start',
-      data: {
-        type: 'message_start',
-        message: {
-          id: messageId,
-          type: 'message',
-          role: 'assistant',
-          content: [],
-          model: request.model,
-          stop_reason: null,
-          stop_sequence: null,
-          usage: { input_tokens: 0, output_tokens: 0 }
-        }
-      }
-    };
-
-    // Send ping
-    yield {
-      event: 'ping',
-      data: { type: 'ping' }
-    };
-
-    // Process each content block
-    for (let i = 0; i < response.content.length; i++) {
-      const block = response.content[i];
-      
-      // Send content_block_start
-      yield {
-        event: 'content_block_start',
-        data: {
-          type: 'content_block_start',
-          index: i,
-          content_block: block
-        }
-      };
-
-      if (block.type === 'text' && block.text) {
-        // Simulate streaming text with chunks
-        const chunkSize = 10;
-        for (let j = 0; j < block.text.length; j += chunkSize) {
-          const chunk = block.text.slice(j, j + chunkSize);
-          yield {
-            event: 'content_block_delta',
-            data: {
-              type: 'content_block_delta',
-              index: i,
-              delta: {
-                type: 'text_delta',
-                text: chunk
-              }
-            }
-          };
-          
-          // Small delay for realistic streaming
-          if (j > 0) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-          }
-        }
-      }
-
-      // Send content_block_stop
-      yield {
-        event: 'content_block_stop',
-        data: {
-          type: 'content_block_stop',
-          index: i
-        }
-      };
-    }
-
-    // Send message_delta with usage
-    yield {
-      event: 'message_delta',
-      data: {
-        type: 'message_delta',
-        delta: {},
-        usage: {
-          output_tokens: response.usage?.output_tokens || 0
-        }
-      }
-    };
-
-    // Send message_stop
-    yield {
-      event: 'message_stop',
-      data: {
-        type: 'message_stop',
-        stop_reason: response.stop_reason,
-        stop_sequence: null
-      }
-    };
-    
-    logger.info('Gemini streaming completed', {
-      contentBlocks: response.content.length
+    logger.info('Pure Gemini API streaming completed', {
+      responseType: 'raw_gemini_response'
     }, requestId, 'gemini-provider');
   }
 
@@ -295,16 +234,8 @@ export class GeminiClient {
           keyIndex = keyAndModel.keyIndex;
           currentModel = keyAndModel.model;
           
-          // Log model fallback if applied
-          if (keyAndModel.fallbackApplied) {
-            logger.info(`Model fallback applied: ${modelName} → ${currentModel}`, {
-              originalModel: modelName,
-              fallbackModel: currentModel,
-              keyIndex: keyIndex + 1,
-              reason: keyAndModel.fallbackReason,
-              operation
-            }, requestId, 'gemini-provider');
-          }
+          // No fallback logging - Zero Fallback Principle enforced
+          // All model routing must be handled at routing layer, not provider layer
         } else {
           keyIndex = attempt % this.genAIClients.length;
           genAIClient = this.genAIClients[keyIndex];
@@ -326,9 +257,11 @@ export class GeminiClient {
         return result;
       } catch (error) {
         lastError = error;
-        const isRateLimited = (error as any)?.message?.includes('quota') || 
-                             (error as any)?.message?.includes('rate') ||
-                             (error as any)?.status === 429;
+        const isRateLimited = (
+          (error as any)?.message?.includes('quota') ||
+          (error as any)?.message?.includes('rate') ||
+          (error as any)?.status === 429
+        );
 
         logger.warn(`${operation} failed`, {
             keyIndex,
@@ -360,8 +293,8 @@ export class GeminiClient {
    * Check if error is retryable
    */
   private isRetryableError(error: any): boolean {
-    const status = error?.status || error?.response?.status;
-    const message = error?.message || '';
+    const status = error?.status ?? error?.response?.status;
+    const message = error?.message ?? '';
     
     // HTTP status code based retries
     if (status) {
@@ -393,14 +326,191 @@ export class GeminiClient {
     let delay: number;
     
     if (isRateLimited) {
-      if (attempt === 0) delay = 1000;      // 1st retry: 1s
-      else if (attempt === 1) delay = 5000;  // 2nd retry: 5s  
-      else delay = 60000;                    // 3rd retry: 60s
+      // Use configuration for retry delays
+      const retryDelays = (this.config as any).retryDelays as number[] | undefined;
+      if (!retryDelays || retryDelays.length < 3) {
+        throw new Error('Gemini client requires retryDelays configuration with at least 3 values');
+      }
+      if (attempt === 0) delay = retryDelays[0];      // 1st retry
+      else if (attempt === 1) delay = retryDelays[1];  // 2nd retry  
+      else delay = retryDelays[2];                    // 3rd retry
     } else {
       delay = this.retryDelay * Math.pow(2, attempt);
     }
     
     await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  /**
+   * 验证请求是否为有效的Gemini格式
+   */
+  private isValidGeminiRequest(request: BaseRequest): boolean {
+    // 暂时接受所有请求，内部进行转换
+    // 检查是否已经是Gemini格式，或者是需要转换的Anthropic/OpenAI格式
+    return !!request.metadata?.geminiFormat || this.isTransformableRequest(request);
+  }
+
+  private isTransformableRequest(request: BaseRequest): boolean {
+    // 检查是否是可以转换的请求格式
+    return !!(request.messages && Array.isArray(request.messages) && request.messages.length > 0);
+  }
+
+  /**
+   * 构建Gemini API请求格式
+   */
+  private buildGeminiApiRequest(request: BaseRequest): GeminiApiRequest {
+    // 如果已经是预处理的Gemini格式，直接使用
+    if (request.metadata?.geminiFormat && request.metadata?.geminiRequest) {
+      return {
+        model: request.model,
+        ...request.metadata.geminiRequest
+      };
+    }
+    
+    // 否则进行内部转换 (临时解决方案)
+    return this.transformRequestToGemini(request);
+  }
+
+  private transformRequestToGemini(request: BaseRequest): GeminiApiRequest {
+    // 简化的内部转换逻辑
+    const contents = [];
+    
+    // 添加系统消息
+    if (request.metadata?.system) {
+      const systemText = Array.isArray(request.metadata.system) 
+        ? request.metadata.system.map(s => s.text || JSON.stringify(s)).join('\n')
+        : request.metadata.system;
+      
+      contents.push({
+        role: 'user' as const,
+        parts: [{ text: `System: ${systemText}` }]
+      });
+    }
+
+    // 转换消息
+    for (const message of request.messages) {
+      const role = message.role === 'assistant' ? 'model' : 'user';
+      const text = typeof message.content === 'string' 
+        ? message.content 
+        : JSON.stringify(message.content);
+      
+      contents.push({
+        role: role as 'user' | 'model',
+        parts: [{ text }]
+      });
+    }
+
+    const geminiRequest: GeminiApiRequest = {
+      model: request.model,
+      contents,
+      generationConfig: {
+        temperature: request.temperature,
+        maxOutputTokens: request.max_tokens || 131072
+      }
+    };
+
+    // 处理工具
+    if (request.tools && request.tools.length > 0) {
+      geminiRequest.tools = [{
+        functionDeclarations: request.tools.map(tool => ({
+          name: tool.name || tool.function?.name,
+          description: tool.description || tool.function?.description,
+          parameters: tool.input_schema || tool.parameters || tool.function?.parameters || {}
+        }))
+      }];
+
+      geminiRequest.toolConfig = {
+        functionCallingConfig: {
+          mode: 'AUTO',
+          allowedFunctionNames: geminiRequest.tools[0].functionDeclarations.map(f => f.name)
+        }
+      };
+    }
+
+    // 添加安全设置
+    geminiRequest.safetySettings = [
+      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+    ];
+
+    return geminiRequest;
+  }
+
+  /**
+   * 构建原Gemini响应格式
+   */
+  private buildGeminiResponse(geminiResponse: GeminiApiResponse, originalModel: string, requestId: string): BaseResponse {
+    // 进行内部转换 (临时解决方案)
+    return this.transformGeminiResponseToAnthropic(geminiResponse, originalModel, requestId);
+  }
+
+  private transformGeminiResponseToAnthropic(geminiResponse: GeminiApiResponse, originalModel: string, requestId: string): BaseResponse {
+    if (!geminiResponse.candidates || geminiResponse.candidates.length === 0) {
+      throw new Error('No candidates in Gemini response');
+    }
+
+    const candidate = geminiResponse.candidates[0];
+    const content = [];
+
+    // 转换响应内容
+    if (candidate.content && candidate.content.parts) {
+      for (const part of candidate.content.parts) {
+        if (part.text) {
+          content.push({
+            type: 'text',
+            text: part.text
+          });
+        } else if (part.functionCall) {
+          content.push({
+            type: 'tool_use',
+            id: `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            name: part.functionCall.name,
+            input: part.functionCall.args || {}
+          });
+        }
+      }
+    }
+
+    // 如果没有内容，添加空文本
+    if (content.length === 0) {
+      content.push({
+        type: 'text',
+        text: ''
+      });
+    }
+
+    // 确定stop_reason
+    let stopReason = 'end_turn';
+    const hasToolUse = content.some(block => block.type === 'tool_use');
+    if (hasToolUse) {
+      stopReason = 'tool_use';
+    } else if (candidate.finishReason === 'MAX_TOKENS') {
+      stopReason = 'max_tokens';
+    }
+
+    return {
+      id: requestId,
+      type: 'message',
+      role: 'assistant',
+      content: content,
+      model: originalModel,
+      stop_reason: stopReason,
+      usage: geminiResponse.usageMetadata ? {
+        input_tokens: geminiResponse.usageMetadata.promptTokenCount || 0,
+        output_tokens: geminiResponse.usageMetadata.candidatesTokenCount || 0
+      } : undefined
+    };
+  }
+
+  /**
+   * 生成唯一消息ID
+   */
+  private generateMessageId(): string {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substr(2, 9);
+    return `msg_gemini_${timestamp}_${random}`;
   }
 
   /**

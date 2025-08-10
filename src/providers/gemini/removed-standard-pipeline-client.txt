@@ -1,0 +1,15 @@
+# Standard Pipeline Client Removed
+
+File: standard-pipeline-client.ts (1257 lines)
+
+## Reason for Removal
+Violated bacterial programming principles:
+- Single file exceeded 500 line limit  
+- Over-engineered 11-module pipeline architecture
+- Excessive complexity for simple provider functionality
+
+## Replaced By
+The existing client.ts provides all necessary functionality following Zero Hardcode and Zero Fallback principles.
+
+## Date: 2025-08-10
+## Project Owner: Jason Zhang

@@ -8,7 +8,7 @@ claude-code-router/
 ├── .claude/                    # 规则管理系统
 │   ├── rules/                  # 分类规则文件
 │   └── project-details/        # 详细技术文档
-├── src/                        # 源代码 (四层架构)
+├── src/                        # 源代码 (六层架构)
 ├── test/                       # 测试系统 (按功能分类)
 ├── tools/                      # 长期维护测试工具 (⭐ NEW)
 ├── docs/                       # 项目文档
@@ -66,7 +66,7 @@ tools/
 - **标准化**: 每个工具都有独立目录和完整文档
 - **集成性**: 所有工具支持统一配置和调用方式
 
-## 🎯 四层架构源码组织 (Four-Layer Source Organization)
+## 🎯 六层架构源码组织 (Six-Layer Source Organization)
 
 ### src/ 目录结构
 ```

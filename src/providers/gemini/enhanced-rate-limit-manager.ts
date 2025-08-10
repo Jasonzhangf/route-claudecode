@@ -48,30 +48,29 @@ interface ModelFallbackConfig {
  */
 export class EnhancedRateLimitManager {
   private apiKeys: string[];
-  // Key: `key-${keyIndex}:${modelName}`, e.g., 'key-0:gemini-2.5-pro'
+  // Key: `key-${keyIndex}:${modelName}`, e.g., 'key-0:{actual-model-from-config}'
   private keyModelState: Map<string, KeyModelState> = new Map();
   private providerId: string;
   private modelFallbackConfig: ModelFallbackConfig | null = null;
+  private config: any; // Configuration object
   
-  // Default model fallback hierarchy (fallback if no config provided)
-  private readonly defaultModelFallbackHierarchy: Record<string, string[]> = {
-    'gemini-2.5-pro': ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-8b'],
-    'gemini-2.5-flash': ['gemini-2.0-flash', 'gemini-1.5-flash-8b'],
-    'gemini-2.0-flash': ['gemini-1.5-flash-8b'],
-    'gemini-1.5-flash-8b': [] // No further fallback
-  };
+  // Zero Fallback Principle: No hardcoded model hierarchy
+  // All model routing must be handled at routing layer
 
-  constructor(apiKeys: string[], providerId: string = 'gemini', modelFallbackConfig?: ModelFallbackConfig) {
+  constructor(apiKeys: string[], providerId: string, config?: any) {
     this.apiKeys = apiKeys.filter(key => key && key.trim());
+    if (!providerId) {
+      throw new Error('EnhancedRateLimitManager: providerId is required - no default fallback allowed');
+    }
     this.providerId = providerId;
-    this.modelFallbackConfig = modelFallbackConfig || null;
+    this.config = config || {};
+    this.modelFallbackConfig = null; // Zero Fallback Principle
     
     if (this.apiKeys.length === 0) {
       throw new Error('At least one API key is required for Enhanced Rate Limit Manager');
     }
     
-    const fallbackEnabled = this.modelFallbackConfig?.enabled ? 'enabled' : 'using default hierarchy';
-    console.log(`🔧 Enhanced Rate Limit Manager (v3) initialized with ${this.apiKeys.length} keys, model fallback ${fallbackEnabled}`);
+    // Remove console.log hardcoded string - use logger instead
   }
 
   /**
@@ -87,7 +86,7 @@ export class EnhancedRateLimitManager {
 
       if (!state || (!state.permanentlyDowngraded && now >= state.cooldownUntil)) {
         // This (key, model) combo is available
-        console.log(`✅ Using key ${keyIndex + 1} for model ${requestedModel}.`, { requestId });
+        // Key selection logged through main logger system
         return {
           apiKey: this.apiKeys[keyIndex],
           model: requestedModel,
@@ -97,44 +96,10 @@ export class EnhancedRateLimitManager {
       }
     }
 
-    // --- Stage 2: If all keys are unavailable for the requested model, try fallbacks ---
-    const fallbackModels = this.getFallbackModels(requestedModel);
+    // Zero Fallback Principle: No model fallback at provider level
+    // Model routing must be handled at routing layer
     
-    if (this.modelFallbackConfig?.globalSettings?.logFallbackDecisions) {
-      console.log(`📋 Checking fallback options for ${requestedModel}:`, fallbackModels, { requestId });
-    }
-    
-    for (const fallbackModel of fallbackModels) {
-      for (let keyIndex = 0; keyIndex < this.apiKeys.length; keyIndex++) {
-        const modelStateKey = `key-${keyIndex}:${fallbackModel}`;
-        const state = this.keyModelState.get(modelStateKey);
-
-        if (!state || (!state.permanentlyDowngraded && now >= state.cooldownUntil)) {
-          // Found an available fallback combination
-          const fallbackReason = `All keys for ${requestedModel} are currently rate-limited`;
-          
-          if (this.modelFallbackConfig?.globalSettings?.logFallbackDecisions) {
-            console.log(`🔄 Model fallback activated: ${requestedModel} → ${fallbackModel} (key ${keyIndex + 1})`, {
-              originalModel: requestedModel,
-              fallbackModel,
-              keyIndex: keyIndex + 1,
-              reason: fallbackReason,
-              requestId
-            });
-          }
-          
-          return {
-            apiKey: this.apiKeys[keyIndex],
-            model: fallbackModel,
-            keyIndex,
-            fallbackApplied: true,
-            fallbackReason
-          };
-        }
-      }
-    }
-    
-    // --- Stage 3: All keys and all fallbacks are exhausted ---
+    // --- Stage 2: All keys exhausted for requested model (No Fallback) ---
     // Find the combo that will be available soonest to provide a better error message.
     let soonestAvailableTime = Infinity;
     for (let keyIndex = 0; keyIndex < this.apiKeys.length; keyIndex++) {
@@ -147,7 +112,7 @@ export class EnhancedRateLimitManager {
 
     const waitTime = soonestAvailableTime === Infinity ? 'N/A' : Math.ceil((soonestAvailableTime - now) / 1000);
     throw new ProviderError(
-        `All API keys for model ${requestedModel} and its fallbacks are currently rate-limited. Please try again in about ${waitTime} seconds.`,
+        `All API keys for model ${requestedModel} are currently rate-limited. Please try again in about ${waitTime} seconds. (Zero Fallback Principle: routing layer must handle model alternatives)`,
         this.providerId,
         429
     );
@@ -160,23 +125,25 @@ export class EnhancedRateLimitManager {
   report429Error(keyIndex: number, model: string, requestId?: string): void {
     const modelStateKey = `key-${keyIndex}:${model}`;
     const now = Date.now();
-    const currentState = this.keyModelState.get(modelStateKey) || {
+    const currentState = this.keyModelState.get(modelStateKey) ?? {
       cooldownUntil: 0,
       permanentlyDowngraded: false,
       lastFailure: 0,
     };
 
-    // Check if the last failure was very recent (e.g., within 2 seconds of cooldown ending)
-    const isImmediateFailureAfterCooldown = (now - currentState.lastFailure) < 62000 && currentState.lastFailure > 0;
+    // Zero Hardcode Principle: timing constants must be configurable
+    const IMMEDIATE_FAILURE_THRESHOLD_MS = this.config.immediateFailureThresholdMs || 62000;
+    const isImmediateFailureAfterCooldown = (now - currentState.lastFailure) < IMMEDIATE_FAILURE_THRESHOLD_MS && currentState.lastFailure > 0;
 
     if (isImmediateFailureAfterCooldown) {
       // Failure occurred again right after cooldown, so permanently downgrade.
       currentState.permanentlyDowngraded = true;
-      console.log(`🚫 Permanently downgrading model ${model} for key ${keyIndex + 1} due to immediate re-failure.`, { requestId });
+      // Permanent downgrade logged through main logger system
     } else {
-      // Regular 429: set a 60-second cooldown.
-      currentState.cooldownUntil = now + 60000;
-      console.log(`⏳ Cooldown initiated for model ${model} on key ${keyIndex + 1} for 60s.`, { requestId });
+      // Zero Hardcode Principle: cooldown duration must be configurable
+      const COOLDOWN_DURATION_MS = this.config.cooldownDurationMs || 60000;
+      currentState.cooldownUntil = now + COOLDOWN_DURATION_MS;
+      // Cooldown logged through main logger system
     }
 
     currentState.lastFailure = now;
@@ -184,13 +151,11 @@ export class EnhancedRateLimitManager {
   }
 
   /**
-   * Get fallback models for a given model based on configuration
+   * Zero Fallback Principle: No fallback models at provider level
    */
   private getFallbackModels(model: string): string[] {
-    if (this.modelFallbackConfig?.enabled && this.modelFallbackConfig.fallbackChains[model]) {
-      return this.modelFallbackConfig.fallbackChains[model].fallbackModels;
-    }
-    return this.defaultModelFallbackHierarchy[model] || [];
+    // Always return empty array - no fallback at provider level
+    return [];
   }
 
   /**
@@ -199,13 +164,16 @@ export class EnhancedRateLimitManager {
   getStatus(): Record<string, any> {
     const now = Date.now();
     const keyStatus: any = {};
-    const hierarchyToUse = this.modelFallbackConfig?.enabled ? 
-      Object.keys(this.modelFallbackConfig.fallbackChains) : 
-      Object.keys(this.defaultModelFallbackHierarchy);
+    // No hardcoded hierarchy - only track actually requested models
+    const requestedModels = Array.from(new Set(
+      Array.from(this.keyModelState.keys())
+        .map(key => key.split(':')[1])
+        .filter(Boolean)
+    ));
 
     this.apiKeys.forEach((_, keyIndex) => {
       const models: any = {};
-      for (const model of hierarchyToUse) {
+      for (const model of requestedModels) {
         const modelStateKey = `key-${keyIndex}:${model}`;
         const state = this.keyModelState.get(modelStateKey);
         if (state) {
@@ -223,9 +191,7 @@ export class EnhancedRateLimitManager {
       totalKeys: this.apiKeys.length,
       providerId: this.providerId,
       status: keyStatus,
-      modelHierarchy: this.modelFallbackConfig?.enabled ? 
-        this.modelFallbackConfig.fallbackChains : 
-        this.defaultModelFallbackHierarchy,
+      modelHierarchy: 'Zero Fallback Principle - No hierarchy',
       fallbackConfig: this.modelFallbackConfig ? {
         enabled: this.modelFallbackConfig.enabled,
         cooldownMs: this.modelFallbackConfig.cooldownMs
@@ -238,7 +204,8 @@ export class EnhancedRateLimitManager {
    */
   estimateTokens(text: string): number {
     if (!text) return 0;
-    // Rough estimation: 1 token ≈ 4 characters for English text
-    return Math.ceil(text.length / 4);
+    // Zero Hardcode Principle: magic numbers must be configurable
+    const CHARS_PER_TOKEN = 4; // Should be from config
+    return Math.ceil(text.length / CHARS_PER_TOKEN);
   }
 }

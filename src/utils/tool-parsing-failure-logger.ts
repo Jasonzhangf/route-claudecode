@@ -249,14 +249,37 @@ export class ToolParsingFailureLogger {
       if (fs.existsSync(this.dbPath)) {
         const data = fs.readFileSync(this.dbPath, 'utf8');
         this.failures = JSON.parse(data);
-        logger.debug('Loaded existing tool parsing failure records', {
+        
+        // 🔧 安全调用logger：如果logger未初始化则使用console
+        this.safeLog('debug', 'Loaded existing tool parsing failure records', {
           recordCount: this.failures.length,
           dbPath: this.dbPath
         });
       }
     } catch (error) {
-      logger.error('Failed to load tool parsing failure records', error);
+      // 🔧 安全调用logger：如果logger未初始化则使用console
+      this.safeLog('error', 'Failed to load tool parsing failure records', error);
       this.failures = [];
+    }
+  }
+
+  /**
+   * 安全的日志记录 - 如果logger未初始化则降级使用console
+   */
+  private safeLog(level: 'debug' | 'error', message: string, data?: any): void {
+    try {
+      if (level === 'debug') {
+        logger.debug(message, data);
+      } else {
+        logger.error(message, data);
+      }
+    } catch {
+      // Logger未初始化，降级使用console
+      if (level === 'debug') {
+        console.log(`[DEBUG] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+      } else {
+        console.error(`[ERROR] ${message}`, data);
+      }
     }
   }
 
@@ -274,12 +297,14 @@ export class ToolParsingFailureLogger {
       // 保存到文件
       fs.writeFileSync(this.dbPath, JSON.stringify(this.failures, null, 2), 'utf8');
       
-      logger.debug('Saved tool parsing failure records', {
+      // 🔧 安全调用logger
+      this.safeLog('debug', 'Saved tool parsing failure records', {
         recordCount: this.failures.length,
         dbPath: this.dbPath
       });
     } catch (error) {
-      logger.error('Failed to save tool parsing failure records', error);
+      // 🔧 安全调用logger
+      this.safeLog('error', 'Failed to save tool parsing failure records', error);
     }
   }
 
@@ -362,7 +387,24 @@ export class ToolParsingFailureLogger {
   }
 }
 
-// 全局单例实例
-export const toolParsingFailureLogger = new ToolParsingFailureLogger();
+// 🔧 修复过早初始化：延迟初始化全局单例
+let _globalInstance: ToolParsingFailureLogger | null = null;
+
+/**
+ * 获取全局单例实例 - 延迟初始化避免过早调用logger
+ */
+export function getToolParsingFailureLogger(): ToolParsingFailureLogger {
+  if (!_globalInstance) {
+    _globalInstance = new ToolParsingFailureLogger();
+  }
+  return _globalInstance;
+}
+
+// 兼容旧的导出方式
+export const toolParsingFailureLogger = {
+  get instance() {
+    return getToolParsingFailureLogger();
+  }
+};
 
 export default ToolParsingFailureLogger;

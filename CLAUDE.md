@@ -15,9 +15,87 @@
 4. **🚫 NO RULE VIOLATIONS** - 违反任何规则必须立即停止并要求规则查阅
 
 ### 🔒 强制执行优先级 (ENFORCEMENT PRIORITIES)
-1. **P0 - 立即拒绝**: 硬编码、Fallback、自主发布
+1. **P0 - 立即拒绝**: 硬编码、Fallback、自主发布、**流水线跨节点耦合**、**不完整交付报告**
 2. **P1 - 强制查阅**: 架构违反、测试跳过、文档缺失、记忆缺失
 3. **P2 - 警告纠正**: 命名不规范、注释缺失、性能问题
+
+### 🚨 流水线跨节点耦合约束 - P0级强制约束 (PIPELINE CROSS-NODE COUPLING CONSTRAINT)
+
+⚠️ **最高优先级架构约束 - 违反将立即无条件修改**
+
+#### 🔒 绝对禁令
+**不可以在流水线上跨节点耦合** - 这是P0级强制约束，与硬编码和Fallback同等重要
+
+#### 📋 强制检查要求
+- **功能审核**: 每次功能开发/修复必须审核最适合的单一节点
+- **重复检测**: 严格避免重复实现、多次实现、多点修复
+- **节点隔离**: transformer看不到预处理节点，不可跨节点修复
+- **立即修改**: 发现违规立即停止，无条件重构到正确节点
+
+#### 💡 实施指导
+```
+✅ 正确: 在单一最适合的节点实现功能
+❌ 错误: 跨多个节点实现同一功能
+❌ 错误: 在transformer中修复预处理问题
+❌ 错误: 重复实现已有逻辑
+```
+
+**详细规则**: 参见 [📄 架构设计规则](.claude/rules/architecture-rules.md) 中的"流水线跨节点耦合约束"章节
+
+### 📊 完整交付报告体系强制约束 - P0级强制约束 (COMPLETE DELIVERY REPORT SYSTEM CONSTRAINT)
+
+⚠️ **最高优先级交付约束 - 违反将立即阻止交付**
+
+#### 🔒 绝对禁令
+**交付前必须有完整的交付报告体系** - 这是P0级强制约束，与硬编码和Fallback同等重要
+
+#### 📋 强制交付报告要求
+每次流水线交付必须包含以下完整报告体系：
+
+##### 🧪 1. 单元测试报告 (MANDATORY)
+- **输入层模块**: Anthropic/OpenAI处理器、请求验证、速率限制、认证验证
+- **路由层模块**: Provider选择、模型映射、负载均衡、健康检查、故障转移  
+- **预处理器模块**: 统一补丁系统、格式兼容性、条件匹配逻辑
+- **Transformer模块**: 协议转换器、响应转换器、流式处理器、工具调用处理器
+- **Provider模块**: 各Provider连接、工厂模式、连接管理
+- **输出层模块**: 响应格式化、错误处理、**Finish Reason完整路由**
+
+##### 🏗️ 2. 六层架构单层黑盒测试报告 (MANDATORY)  
+- **客户端接入层**: HTTP API、认证、速率限制、请求验证、错误响应
+- **路由决策层**: 类别路由、Provider选择、负载均衡、故障转移、模型映射
+- **预处理层**: 格式兼容性、补丁系统、模型特定修复、请求转换
+- **协议转换层**: OpenAI/Anthropic/Gemini协议、工具调用格式、流式协议
+- **Provider连接层**: 各Provider连接、连接池管理
+- **响应后处理层**: 响应格式、错误处理、Finish reason映射、Token计算
+
+##### 🌐 3. 端到端测试报告 (MANDATORY)
+- **简单对话**: 单轮对话、Provider切换、错误恢复、流式传输、性能基准
+- **工具调用**: 函数调用、工具定义传输、执行结果、错误处理、复杂场景  
+- **多轮多工具**: 多轮上下文、工具链执行、内存管理、会话持久化、复杂工作流
+
+#### 🚨 强制执行流程
+1. **交付前检查** → 必须先执行 `./cleanup-delivery-reports.sh --check`
+2. **报告生成** → 必须生成所有三类完整报告
+3. **报告验证** → 必须验证报告完整性和最新性  
+4. **交付批准** → 只有完整报告通过后才能交付
+
+#### ❌ 违反处理
+- **发现报告缺失** → 立即阻止交付，要求补全报告
+- **发现报告过时** → 立即要求重新生成最新报告
+- **发现报告不完整** → 立即要求按标准格式补全
+- **跳过报告生成** → 立即拒绝交付请求
+
+#### 💡 实施指导
+```
+✅ 正确: 交付前生成完整的三类测试报告
+✅ 正确: 报告内容反映当前版本最新状态  
+✅ 正确: 先清理旧报告再生成新报告
+❌ 错误: 交付时缺少任何一类测试报告
+❌ 错误: 使用过时或不完整的测试报告
+❌ 错误: 跳过报告清理和生成步骤
+```
+
+**详细规则**: 参见 [📄 交付测试规则](.claude/rules/delivery-testing-rules.md) 中的"完整交付报告体系"章节
 
 ### 🧠 MEMORY MANAGEMENT - 记忆管理强制规则 (MANDATORY MEMORY)
 
@@ -73,7 +151,11 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 5. **🆕 总结创建** → 根据AI类型选择记忆保存方式：
    - **Claude Code用户**: 调用 `project-memory-manager` agent 保存总结到项目记忆目录
    - **其他AI**: 直接总结当前发现和细节为有条理的记忆，用一句话总结+日期时间命名保存到项目记忆目录
-6. **文档更新** → 更新架构相关文档
+6. **🕒 记忆时效性管理** → 检查并处理记忆冲突：
+   - **时间优先原则**: 发现冲突记忆时，优先信任较新的记忆内容
+   - **自动清理过时记忆**: 创建新记忆时，如发现与旧记忆冲突且旧记忆已证明错误，必须删除过时记忆
+   - **记忆验证**: 每次使用记忆前验证其时效性和准确性
+7. **文档更新** → 更新架构相关文档
 
 #### 📝 记忆保存格式规范 (MEMORY SAVING FORMAT)
 - **文件命名**: `YYYYMMDD-HHMMSS-[descriptive-english-id].md`
@@ -84,26 +166,71 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 ## 🏗️ 项目架构概览 (Project Architecture)
 
 ### 基本信息
-- **项目名称**: Claude Code Output Router v2.7.0
+- **项目名称**: Claude Code Output Router v2.8.0
 - **核心功能**: 多AI提供商路由转换系统
-- **架构模式**: 四层模块化设计（输入-路由-输出-提供商）
+- **架构模式**: 六层清晰分离架构
 - **支持Provider**: Anthropic, CodeWhisperer, OpenAI-Compatible, Gemini
 
-### 四层架构设计
+### 六层清晰架构设计 (Final Clear Architecture)
 ```
-用户请求 → 输入层 → 路由层 → 输出层 → 提供商层 → AI服务
+客户端 ↔ 路由器 ↔ 后处理器 ↔ Transformer ↔ Provider ↔ 预处理器 ↔ 具体服务器
 ```
 
-- **输入层** (`src/input/`): 处理Anthropic、OpenAI、Gemini格式请求
-- **路由层** (`src/routing/`): 类别驱动的模型路由和Provider选择
-- **输出层** (`src/output/`): 格式转换和响应处理  
-- **提供商层** (`src/providers/`): 与实际AI服务的连接通信
+#### 🔄 各层职责精确定义
 
-### 路由机制核心
+1. **客户端 ↔ 路由器**: **请求路由和Provider选择**
+   - 类别驱动的模型路由 (default, background, thinking, longcontext, search)
+   - Round Robin负载均衡和健康状态管理
+   - **目录位置**: `src/routing/`, `src/server.ts`中的路由逻辑
+
+2. **路由器 ↔ 后处理器**: **响应后处理再发送到客户端**
+   - 统一响应格式和错误处理
+   - 日志记录和监控统计
+   - **目录位置**: `src/output/`, `src/server.ts`中的响应处理部分
+
+3. **后处理器 ↔ Transformer**: **协议转换层** 
+   - **Transformer负责协议转换** (Anthropic ↔ OpenAI ↔ Gemini等)
+   - 处理不同AI服务的协议标准化
+   - **目录位置**: `src/transformers/`
+   - **核心模块**: `openai.ts`, `gemini.ts`, `response-converter.ts`
+
+4. **Transformer ↔ Provider**: **统一转换到各个标准协议的连接**
+   - Provider与AI服务的直接连接和通信
+   - 统一的Provider接口标准
+   - **目录位置**: `src/providers/`
+   - **核心Provider**: `gemini/`, `openai/`, `codewhisperer/`, `anthropic/`
+
+5. **Provider ↔ 预处理器**: **标准协议和具体服务器的兼容处理**
+   - 处理标准协议和具体服务器的兼容性
+   - Patch系统和服务器特定修复
+   - **目录位置**: `src/preprocessing/`, `src/patches/`
+   - **核心模块**: `UnifiedPatchPreprocessor`, `PatchManager`
+
+### 🔀 路由机制核心
 - **类别驱动映射**: `category → {provider, model}`
 - **五种路由类别**: default, background, thinking, longcontext, search
 - **零硬编码**: 模型名在路由阶段直接替换 `request.model = targetModel`
 - **Round Robin**: 多Provider/多Account负载均衡
+
+### 🔄 数据流程详解
+
+#### 请求处理流程
+```
+1. 客户端请求 → 路由器 (类别判断 + Provider选择)
+2. 路由器 → 预处理器 (请求预处理 + Patch系统)
+3. 预处理器 → Transformer (协议转换)
+4. Transformer → Provider (统一协议连接)
+5. Provider → 具体服务器 (AI API调用)
+```
+
+#### 响应处理流程
+```
+1. 具体服务器 → Provider (原始响应接收)
+2. Provider → 预处理器 (响应预处理)
+3. 预处理器 → Transformer (协议转换回客户端格式)
+4. Transformer → 后处理器 (响帰格式化 + 错误处理)
+5. 后处理器 → 客户端 (最终响应)
+```
 
 ## 🔄 Refactor目录 - v3.0插件化架构重构 (Refactor Directory - v3.0 Plugin Architecture)
 
@@ -183,13 +310,13 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 | 操作类型 | **必须查阅的规则文件** | 验证检查点 | **违反后果** |
 |---------|---------------------|-----------|-------------|
 | **编写代码** | [📄 核心编程规范](.claude/rules/programming-rules.md) | 零硬编码、细菌式编程检查 | **立即拒绝执行** |
-| **架构设计** | [📄 架构设计规则](.claude/rules/architecture-rules.md) | 四层架构、Provider规范验证 | **强制重新设计** |
+| **架构设计** | [📄 架构设计规则](.claude/rules/architecture-rules.md) | 四层架构、Provider规范、**流水线跨节点耦合约束**验证 | **强制重新设计** |
 | **测试开发** | [📄 测试框架规范](.claude/rules/testing-system-rules.md) | STD-6-STEP-PIPELINE执行 | **拒绝无测试代码** |
 | **文件操作** | [📄 文件组织规范](.claude/rules/file-structure-rules.md) | 目录结构、命名规范检查 | **拒绝错误命名** |
 | **构建部署** | [📄 部署发布规则](.claude/rules/deployment-rules.md) | 构建验证、用户确认检查 | **阻止自动发布** |
 | **配置管理** | [📄 配置管理规则](.claude/rules/configuration-management-rules.md) | 配置路径、命名规范、安全检查 | **拒绝无效配置** |
 | **知识记录** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) | 经验记录、ADR完整性 | **要求补充文档** |
-| **交付测试** | [📄 交付测试标准](.claude/rules/delivery-testing-rules.md) | 5大核心标准验证 | **阻止未验证发布** |
+| **交付测试** | [📄 交付测试标准](.claude/rules/delivery-testing-rules.md) | **完整交付报告体系**验证 | **阻止未验证发布** |
 | **记忆查询** | [📁 项目记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 检查现有记忆文件 | **要求先查阅记忆** |
 | **架构变更** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) + [📁 记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 变更后记忆保存 | **拒绝无记忆变更** |
 | **问题疑惑** | [📁 项目记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 相关经验查阅 | **强制记忆优先** |
@@ -460,9 +587,11 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 - **[MANDATORY]** 违反规则时必须立即停止并报告
 - **[MANDATORY]** 在回应中必须引用具体规则章节和记忆文件
 - **[MANDATORY]** 架构变更前必须调用记忆专家保存经验
+- **[MANDATORY]** 记忆时效性管理：优先信任较新记忆，删除已证明错误的过时记忆
 - **[FORBIDDEN]** 忽略或跳过任何强制性检查步骤
 - **[REQUIRED]** 对用户请求进行规则合规性验证
 - **[REQUIRED]** 长任务执行必须进行记忆管理
+- **[REQUIRED]** 使用记忆前验证其时效性和准确性
 
 ---
 
@@ -490,6 +619,7 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 - [ ] **记忆优先检查** - 已查阅 [📁 项目记忆](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) 目录相关文件
 - [ ] **规则查阅完成** - 已查阅相关规则文件
 - [ ] **架构合规验证** - 符合四层架构要求
+- [ ] **🚨 流水线跨节点耦合检查** - **P0级**: 确认不存在跨节点耦合实现
 - [ ] **编码规范检查** - 零硬编码、零Fallback确认
 - [ ] **测试要求满足** - STD-6-STEP-PIPELINE或交付测试准备就绪
 - [ ] **记忆专家准备** - 架构变更时记忆专家调用计划确认
@@ -527,9 +657,10 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 **🧠 特别提醒**: 记忆优先原则 - 任何疑惑都必须先查阅项目记忆！
 
 ---
-**📊 项目版本**: v2.7.0  
-**🔒 规则架构**: v1.2.0 (记忆管理强化版)  
+**📊 项目版本**: v2.8.0  
+**🔒 规则架构**: v1.3.0 (流水线跨节点耦合约束版)  
 **👤 项目所有者**: Jason Zhang  
-**📅 最后更新**: 2025-08-02  
+**📅 最后更新**: 2025-08-10  
 **⚡ 强制执行**: ACTIVE - 所有规则均为强制性  
 **🧠 记忆管理**: ACTIVE - 记忆优先原则生效
+**🚨 架构约束**: ACTIVE - 流水线跨节点耦合零容忍

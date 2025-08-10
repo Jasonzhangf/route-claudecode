@@ -21,7 +21,7 @@ export class GeminiStreamingSimulator {
   static async *simulateStreamingResponse(
     response: BaseResponse, 
     originalRequest: any, 
-    requestId: string = 'unknown'
+    requestId: string
   ): AsyncIterable<any> {
     if (!response) {
       throw new Error('GeminiStreamingSimulator: response is required');
@@ -37,7 +37,10 @@ export class GeminiStreamingSimulator {
       stopReason: response.stop_reason
     }, requestId, 'gemini-streaming-simulator');
 
-    const messageId = response.id || `msg_${Date.now()}`;
+    if (!response.id) {
+      throw new Error('GeminiStreamingSimulator: response.id is required');
+    }
+    const messageId = response.id;
 
     try {
       // Send message_start event
@@ -103,13 +106,16 @@ export class GeminiStreamingSimulator {
           type: 'message_delta',
           delta: {},
           usage: {
-            output_tokens: response.usage?.output_tokens || 0
+            output_tokens: response.usage?.output_tokens ?? 0
           }
         }
       };
 
       // 🔧 Critical Fix: Use content-driven stop_reason (OpenAI success pattern)
-      let actualStopReason = response.stop_reason || 'end_turn';
+      if (!response.stop_reason) {
+        throw new Error('GeminiStreamingSimulator: response.stop_reason is required');
+      }
+      let actualStopReason = response.stop_reason;
       const hasToolCalls = response.content.some(block => block.type === 'tool_use');
       
       if (hasToolCalls) {
@@ -142,7 +148,7 @@ export class GeminiStreamingSimulator {
       logger.error('Streaming simulation failed', {
         error: errorMessage,
         responseId: response.id,
-        contentBlocks: response.content?.length || 0
+        contentBlocks: response.content?.length ?? 0
       }, requestId, 'gemini-streaming-simulator');
       
       throw error;

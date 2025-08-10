@@ -299,6 +299,10 @@ async function startDualConfigServers(options: any): Promise<void> {
   console.log(chalk.gray(`📁 Development logs: ${finalDevConfig.debug.logDir}`));
   console.log(chalk.gray(`📁 Release logs: ${finalReleaseConfig.debug.logDir}`));
   
+  // 🔧 修复RCC_PORT问题：在创建RouterServer之前设置环境变量  
+  // 对于dual-config模式，使用开发服务器的端口作为默认logger端口
+  process.env.RCC_PORT = finalDevConfig.server.port.toString();
+  
   // Create both servers with independent loggers
   const devServer = new RouterServer(finalDevConfig, 'dev');
   const releaseServer = new RouterServer(finalReleaseConfig, 'release');
@@ -501,6 +505,10 @@ program
         config.debug.traceRequests = true;
       }
       if (options.logLevel) config.debug.logLevel = options.logLevel;
+
+      // 🔧 修复RCC_PORT问题：在创建RouterServer之前设置环境变量
+      // 确保logger可以正确初始化
+      process.env.RCC_PORT = config.server.port.toString();
 
       // Note: Logger configuration is now handled by the unified logging system
       // in RouterServer constructor, no need for legacy setConfig call

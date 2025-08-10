@@ -73,13 +73,13 @@ export class AnthropicOutputProcessor implements OutputProcessor {
           }, requestId, 'output-consistency');
         }
         
-        // 🚨 检查max_tokens错误并抛出500错误
-        MaxTokensErrorHandler.checkAndThrowMaxTokensError(
-          finalResponse,
-          originalRequest.metadata?.targetProvider || 'unknown',
-          originalRequest.metadata?.originalModel || originalRequest.model,
-          requestId
-        );
+        // 🔧 [FIXED] 移除错误的max_tokens检查 - max_tokens是正常完成状态，不是错误
+        // MaxTokensErrorHandler.checkAndThrowMaxTokensError(
+        //   finalResponse,
+        //   originalRequest.metadata?.targetProvider || 'unknown',
+        //   originalRequest.metadata?.originalModel || originalRequest.model,
+        //   requestId
+        // );
         
         logger.trace(requestId, 'output', 'Response processed successfully', {
           contentBlocks: finalResponse.content?.length || 0,
@@ -89,13 +89,13 @@ export class AnthropicOutputProcessor implements OutputProcessor {
         return finalResponse;
       }
       
-      // 🚨 检查max_tokens错误并抛出500错误
-      MaxTokensErrorHandler.checkAndThrowMaxTokensError(
-        anthropicResponse,
-        originalRequest.metadata?.targetProvider || 'unknown',
-        originalRequest.metadata?.originalModel || originalRequest.model,
-        requestId
-      );
+      // 🔧 [FIXED] 移除错误的max_tokens检查 - max_tokens是正常完成状态，不是错误
+      // MaxTokensErrorHandler.checkAndThrowMaxTokensError(
+      //   anthropicResponse,
+      //   originalRequest.metadata?.targetProvider || 'unknown',
+      //   originalRequest.metadata?.originalModel || originalRequest.model,
+      //   requestId
+      // );
       
       logger.trace(requestId, 'output', 'Response processed successfully', {
         contentBlocks: anthropicResponse.content?.length || 0,

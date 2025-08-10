@@ -1,0 +1,14 @@
+{
+  "strategy": "rolling_truncation",
+  "rollingTruncation": {
+    "historyRetentionPercent": 80,
+    "useSimplifiedPrompt": true,
+    "simplifiedPromptPath": "config/simplified-system-prompt.json"
+  },
+  "longcontextCompression": {
+    "enabled": false,
+    "recentHistoryPercent": 20,
+    "compressionModel": "claude-3-haiku",
+    "compressionEndpoint": "/v1/chat/completions"
+  }
+}

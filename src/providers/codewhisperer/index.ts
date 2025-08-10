@@ -5,11 +5,11 @@
  */
 
 // 🎯 重构后的核心导出 - 遵循OpenAI架构模式
-export { 
-  CodeWhispererUnifiedClient, 
-  CodeWhispererUnifiedConfig,
-  createCodeWhispererUnifiedClient 
-} from './unified-client';
+// export { 
+//   CodeWhispererUnifiedClient, 
+//   CodeWhispererUnifiedConfig,
+//   createCodeWhispererUnifiedClient 
+// } from './unified-client';
 
 // 🔄 Transformer导出
 export { 

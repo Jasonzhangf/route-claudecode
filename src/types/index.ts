@@ -11,6 +11,7 @@ export interface BaseRequest {
   temperature?: number;
   system?: any; // Support system messages
   tools?: any[]; // Support tools for compatibility
+  tool_choice?: any; // Support tool_choice for tool calling strategy
   contents?: any[]; // For Gemini format
   systemInstruction?: any; // For Gemini format
   metadata?: {
@@ -41,6 +42,76 @@ export interface OpenAIRequest extends BaseRequest {
       parameters: Record<string, any>;
     };
   }>;
+}
+
+// Gemini API types
+export interface GeminiApiRequest {
+  model?: string;
+  contents: Array<{
+    role: 'user' | 'model';
+    parts: Array<{
+      text?: string;
+      functionCall?: {
+        name: string;
+        args: Record<string, any>;
+      };
+      functionResponse?: {
+        name: string;
+        response: {
+          name: string;
+          content: any;
+        };
+      };
+    }>;
+  }>;
+  tools?: Array<{
+    functionDeclarations: Array<{
+      name: string;
+      description: string;
+      parameters: Record<string, any>;
+    }>;
+  }>;
+  toolConfig?: {
+    functionCallingConfig: {
+      mode: 'AUTO' | 'ANY' | 'NONE';
+      allowedFunctionNames?: string[];
+    };
+  };
+  generationConfig?: {
+    temperature?: number;
+    maxOutputTokens?: number;
+    topP?: number;
+    topK?: number;
+  };
+  safetySettings?: Array<{
+    category: string;
+    threshold: string;
+  }>;
+}
+
+export interface GeminiApiResponse {
+  candidates: Array<{
+    content: {
+      parts: Array<{
+        text?: string;
+        functionCall?: {
+          name: string;
+          args: Record<string, any>;
+        };
+      }>;
+    };
+    finishReason: string;
+    index: number;
+    safetyRatings?: Array<{
+      category: string;
+      probability: string;
+    }>;
+  }>;
+  usageMetadata?: {
+    promptTokenCount: number;
+    candidatesTokenCount: number;
+    totalTokenCount: number;
+  };
 }
 
 // Response types

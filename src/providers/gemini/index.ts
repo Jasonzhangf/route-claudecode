@@ -10,13 +10,22 @@ import { GeminiClient } from './client';
 
 export class GeminiProvider implements Provider {
   public readonly name: string;
-  public readonly type = 'gemini';
+  public readonly type: string;
   private client: GeminiClient;
+  
+  private static readonly PROVIDER_TYPE = 'gemini';
 
   constructor(public readonly config: ProviderConfig, providerId?: string) {
-    this.name = providerId || 'gemini';
-    if (config.type !== 'gemini') {
-      throw new Error(`Invalid provider type: ${config.type}, expected 'gemini'`);
+    if (!providerId) {
+      throw new Error('GeminiProvider: providerId is required - no default fallback allowed');
+    }
+    this.name = providerId;
+    
+    // Zero Hardcode Principle: type from config or static constant
+    this.type = config.type || GeminiProvider.PROVIDER_TYPE;
+    
+    if (config.type !== GeminiProvider.PROVIDER_TYPE) {
+      throw new Error(`Invalid provider type: ${config.type}, expected '${GeminiProvider.PROVIDER_TYPE}'`);
     }
     
     this.client = new GeminiClient(config, this.name);
@@ -40,7 +49,10 @@ export class GeminiProvider implements Provider {
 
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
     try {
-      logger.trace(request.metadata?.requestId || 'unknown', 'provider', 'Sending request to Gemini', {
+      if (!request.metadata?.requestId) {
+        throw new Error('GeminiProvider: request.metadata.requestId is required');
+      }
+      logger.trace(request.metadata.requestId, 'provider', 'Sending request to Gemini', {
         provider: this.name,
         model: request.model,
         endpoint: this.config.endpoint
@@ -64,7 +76,7 @@ export class GeminiProvider implements Provider {
                            (error as any)?.message?.includes('quota');
       
       // 获取当前使用的key信息（如果可用）
-      const currentKeyInfo = this.client?.getRotationStats?.() || {};
+      const currentKeyInfo = this.client?.getRotationStats?.() ?? {};
       
       // 强制控制台输出429错误，包含详细的key和模型降级信息
       if (isRateLimited) {
@@ -73,16 +85,10 @@ export class GeminiProvider implements Provider {
         console.error(`   Requested Model: ${request.model}`);
         console.error(`   Request ID: ${request.metadata?.requestId}`);
         console.error(`   Current Key: ${currentKeyInfo.keyIndex !== undefined ? `key-${currentKeyInfo.keyIndex + 1}` : 'unknown'}`);
-        console.error(`   Key Suffix: ${currentKeyInfo.keySuffix || 'unknown'}`);
-        console.error(`   Total Keys: ${currentKeyInfo.totalKeys || 'unknown'}`);
+        console.error(`   Key Suffix: ${currentKeyInfo.keySuffix ?? 'unknown'}`);
+        console.error(`   Total Keys: ${currentKeyInfo.totalKeys ?? 'unknown'}`);
         console.error(`   Error Details: ${error instanceof Error ? error.message : String(error)}`);
-        console.error(`   Model Fallback: ${currentKeyInfo.fallbackConfig?.enabled ? 'enabled' : 'disabled'}`);
-        
-        // 显示可用的降级选项
-        if (currentKeyInfo.modelHierarchy && currentKeyInfo.modelHierarchy[request.model]) {
-          const fallbackChain = currentKeyInfo.modelHierarchy[request.model];
-          console.error(`   Fallback Chain: ${request.model} → ${fallbackChain.fallbackModels?.join(' → ') || 'none'}`);
-        }
+        console.error(`   Zero Fallback Principle: No model fallback - routing layer must handle alternatives`);
         
         console.error(`   Next Key Available: ${currentKeyInfo.nextKeyIndex !== undefined ? `key-${currentKeyInfo.nextKeyIndex + 1}` : 'checking...'}`);
       }

@@ -12,12 +12,13 @@ export {
   UnifiedPreprocessorConfig
 } from './unified-preprocessor';
 
-// Gemini专用预处理器
+// 统一兼容性预处理器 (替代所有patch系统)
 export {
-  GeminiPatchPreprocessor,
-  createGeminiPreprocessor,
-  preprocessGeminiRequest
-} from './gemini-patch-preprocessor';
+  UnifiedCompatibilityPreprocessor,
+  getUnifiedCompatibilityPreprocessor,
+  createUnifiedCompatibilityPreprocessor,
+  resetUnifiedCompatibilityPreprocessor
+} from './unified-compatibility-preprocessor';
 
 // 格式解析器
 export * from './parsers';

@@ -10,7 +10,6 @@ import { CodeWhispererProvider } from '@/providers/codewhisperer';
 import { createOpenAIClient } from '@/providers/openai/client-factory';
 import { AnthropicProvider } from '@/providers/anthropic';
 import { GeminiProvider } from '@/providers/gemini';
-import { LMStudioClient } from '@/providers/lmstudio';
 
 export interface ProviderManagerDependencies {
   config: RouterConfig;
@@ -73,7 +72,14 @@ export class ProviderManager {
       case 'gemini':
         return new GeminiProvider(commonConfig, providerId);
       case 'lmstudio':
-        return new LMStudioClient(commonConfig, providerId);
+        console.log('🎯 [PROVIDER-MANAGER] Creating OpenAI client for LMStudio:', { providerId, config: config.type });
+        const lmstudioClient = createOpenAIClient(commonConfig, providerId);
+        console.log('✅ [PROVIDER-MANAGER] OpenAI client for LMStudio created:', { 
+          providerId, 
+          clientName: lmstudioClient.name,
+          clientType: lmstudioClient.type 
+        });
+        return lmstudioClient;
       default:
         throw new Error(`Unsupported provider type: ${config.type}`);
     }
