@@ -76,7 +76,7 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 | 操作类型 | **必须查阅的规则文件** | 验证检查点 | **违反后果** |
 |---------|---------------------|-----------|-------------|
 | **编写代码** | [📄 核心编程规范](programming-rules.md) | 零硬编码、细菌式编程检查 | **立即拒绝执行** |
-| **架构设计** | [📄 架构设计规则](architecture-rules.md) | 四层架构、Provider规范验证 | **强制重新设计** |
+| **架构设计** | [📄 架构设计规则](architecture-rules.md) | 六层架构、Provider规范验证 | **强制重新设计** |
 | **测试开发** | [📄 测试框架规范](testing-system-rules.md) | STD-6-STEP-PIPELINE执行 | **拒绝无测试代码** |
 | **工具开发** | [📄 测试工具规则](testing-tools-rules.md) | 工具统一管理、数据格式标准 | **拒绝非标准工具** |
 | **文件操作** | [📄 文件组织规范](file-structure-rules.md) | 目录结构、命名规范检查 | **拒绝错误命名** |
@@ -99,7 +99,7 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 | 问题类型 | 解决规则 | 具体章节 |
 |---------|---------|---------|
 | **硬编码问题** | 零硬编码原则 | programming-rules.md → 最高优先级禁令 |
-| **架构设计** | 四层架构、Provider规范 | architecture-rules.md → 四层架构设计 |
+| **架构设计** | 六层架构、Provider规范 | architecture-rules.md → 六层架构设计 |
 | **测试失败** | STD-8-STEP-PIPELINE | testing-system-rules.md → 标准八步测试 |
 | **工具开发** | 工具统一管理、数据格式 | testing-tools-rules.md → 核心工具规范 |
 | **文件混乱** | 目录结构标准 | file-structure-rules.md → 项目目录结构 |
@@ -144,8 +144,8 @@ flowchart TD
 - **实现规范**: 具体的代码实现要求和检查清单
 
 ### 🏗️ [架构设计规则](architecture-rules.md)
-**核心内容**: 四层架构、Provider规范、路由机制
-- **四层架构设计**: 输入→路由→输出→提供商的完整架构
+**核心内容**: 六层架构、Provider规范、路由机制
+- **六层架构设计**: 客户端→路由器→后处理器→Transformer→Provider→预处理器→服务器的完整架构
 - **Provider架构规范**: 统一接口和实现要求
 - **负载均衡架构**: Round Robin和健康监控机制
 
@@ -165,7 +165,7 @@ flowchart TD
 ### 📁 [文件组织规范](file-structure-rules.md)
 **核心内容**: 目录结构标准、命名规范、文件创建规则
 - **项目目录结构**: 完整的项目组织架构
-- **四层架构源码**: src/目录的详细组织规范
+- **六层架构源码**: src/目录的详细组织规范
 - **测试目录规范**: test/目录的分类和命名标准
 
 ### 🚀 [部署发布规则](deployment-rules.md)
@@ -258,7 +258,7 @@ flowchart TD
 
 - [ ] **记忆优先检查** - 已查阅项目记忆目录相关文件
 - [ ] **规则查阅完成** - 已查阅相关规则文件
-- [ ] **架构合规验证** - 符合四层架构要求
+- [ ] **架构合规验证** - 符合六层架构要求
 - [ ] **编码规范检查** - 零硬编码、零Fallback确认
 - [ ] **测试要求满足** - STD-6-STEP-PIPELINE或交付测试准备就绪
 - [ ] **记忆专家准备** - 架构变更时记忆专家调用计划确认
