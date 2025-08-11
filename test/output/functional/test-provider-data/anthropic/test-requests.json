@@ -1,0 +1,36 @@
+[
+  {
+    "type": "structured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T05:20:25.644Z",
+    "data": {
+      "method": "POST",
+      "url": "/v1/messages",
+      "status": 200,
+      "duration": 1250
+    },
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "anthropic.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z",
+      "dataSize": 150
+    }
+  },
+  {
+    "type": "structured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T04:20:25.644Z",
+    "data": {
+      "method": "POST",
+      "url": "/v1/messages",
+      "status": 200,
+      "duration": 890
+    },
+    "metadata": {
+      "lineNumber": 2,
+      "fileName": "anthropic.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z",
+      "dataSize": 200
+    }
+  }
+]

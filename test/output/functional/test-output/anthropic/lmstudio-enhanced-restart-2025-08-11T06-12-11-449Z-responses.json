@@ -1,0 +1,362 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.446Z",
+    "data": {
+      "rawLine": "[16:21:22] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:1:1754814081203:0w6c] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 193,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.446Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.447Z",
+    "data": {
+      "rawLine": "[16:21:25] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:2:1754814083652:pvdz] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 332,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.447Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.447Z",
+    "data": {
+      "rawLine": "[16:21:28] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:3:1754814086970:ngxp] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 476,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.447Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.447Z",
+    "data": {
+      "rawLine": "[16:21:30] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:4:1754814090056:4b6b] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 615,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.447Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.447Z",
+    "data": {
+      "rawLine": "[16:21:34] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:5:1754814092466:olrg] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 748,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.447Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.447Z",
+    "data": {
+      "rawLine": "[16:21:37] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:6:1754814096244:r0f0] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 887,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.447Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.447Z",
+    "data": {
+      "rawLine": "[16:21:40] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:7:1754814098993:qdao] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1026,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.447Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.448Z",
+    "data": {
+      "rawLine": "[16:21:42] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:8:1754814101606:dbsg] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1165,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.448Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.448Z",
+    "data": {
+      "rawLine": "[16:21:45] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:9:1754814103825:pr9m] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1316,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.448Z",
+      "dataSize": 178
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.448Z",
+    "data": {
+      "rawLine": "[16:21:56] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:10:1754814106520:94rc] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1448,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.448Z",
+      "dataSize": 179
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.448Z",
+    "data": {
+      "rawLine": "[16:21:59] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:11:1754814118236:m3el] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1580,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.448Z",
+      "dataSize": 179
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.448Z",
+    "data": {
+      "rawLine": "[16:22:01] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:12:1754814120871:0cdm] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1719,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.448Z",
+      "dataSize": 179
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.448Z",
+    "data": {
+      "rawLine": "[16:22:04] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:13:1754814122957:as32] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1858,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.448Z",
+      "dataSize": 179
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.449Z",
+    "data": {
+      "rawLine": "[16:22:07] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:14:1754814125491:d0v8] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1990,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.449Z",
+      "dataSize": 179
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.449Z",
+    "data": {
+      "rawLine": "[16:22:10] [DEBUG] [system] [session_1754814081195_gh1e6cs5l:conv_1754814081195_i6o2sdwdg:15:1754814128521:ywo5] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2141,
+      "fileName": "lmstudio-enhanced-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.449Z",
+      "dataSize": 179
+    }
+  }
+]

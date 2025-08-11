@@ -1,0 +1,31 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.399Z",
+    "data": {
+      "rawLine": "[08:32:11] [DEBUG] [system] [8a44a42b-0beb-4f19-be33-aa43a73306fe] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 77,
+      "fileName": "rcc-log-monitor-1754872315.log",
+      "extractedAt": "2025-08-11T06:12:11.399Z",
+      "dataSize": 123
+    }
+  }
+]

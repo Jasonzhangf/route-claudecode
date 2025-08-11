@@ -1,0 +1,17 @@
+[
+  {
+    "type": "structured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T05:20:25.644Z",
+    "data": {
+      "status": 200,
+      "duration": 1250
+    },
+    "metadata": {
+      "lineNumber": 3,
+      "fileName": "anthropic.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z",
+      "dataSize": 1200
+    }
+  }
+]

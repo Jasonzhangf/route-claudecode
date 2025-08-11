@@ -1,0 +1,74 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "[08:44:32] [DEBUG] [system] [e9b8b233-63d6-438e-b026-6da52ba622ba] [provider] [TRACE] Sending request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 93,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 111
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "[08:44:32] [INFO] [system] [e9b8b233-63d6-438e-b026-6da52ba622ba] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 94,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "[08:44:37] [INFO] [system] [e9b8b233-63d6-438e-b026-6da52ba622ba] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 96,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 130
+    }
+  }
+]

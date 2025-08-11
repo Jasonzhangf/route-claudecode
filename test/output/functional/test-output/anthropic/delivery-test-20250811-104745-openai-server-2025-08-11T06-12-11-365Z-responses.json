@@ -1,0 +1,226 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 76,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 83
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 100,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 130,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 83
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 154,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 184,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 83
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 208,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:46] [WARN] [system] Failed response recorded: shuaihong-test/claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 238,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 83
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: shuaihong-test, Model: claude-4-sonnet",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 262,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 93
+    }
+  }
+]

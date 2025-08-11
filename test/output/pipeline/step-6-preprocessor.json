@@ -2,9 +2,11 @@
   "step": 6,
   "name": "Preprocessor Testing",
   "layer": "preprocessor",
-  "startTime": "2025-08-11T04:09:16.610Z",
+  "module": "src/preprocessor/index.js",
+  "startTime": "2025-08-11T05:53:30.633Z",
   "status": "passed",
   "mockupMode": true,
+  "realImplementation": false,
   "validations": [
     {
       "test": "Input Preprocessing",
@@ -25,7 +27,7 @@
   "output": {
     "layer": "preprocessor",
     "mockupData": {
-      "timestamp": "2025-08-11T04:09:16.610Z",
+      "timestamp": "2025-08-11T05:53:30.633Z",
       "inputData": {
         "mockInput": "sample-preprocessor-input"
       },
@@ -34,10 +36,11 @@
       },
       "metadata": {
         "version": "v3.0-mockup",
-        "processingTime": 69
+        "processingTime": 45
       }
     }
   },
   "duration": 0,
-  "endTime": "2025-08-11T04:09:16.610Z"
+  "errors": [],
+  "endTime": "2025-08-11T05:53:30.633Z"
 }

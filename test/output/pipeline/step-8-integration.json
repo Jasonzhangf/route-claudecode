@@ -2,9 +2,11 @@
   "step": 8,
   "name": "End-to-end Integration Testing",
   "layer": "integration",
-  "startTime": "2025-08-11T04:09:16.610Z",
+  "module": null,
+  "startTime": "2025-08-11T05:53:30.633Z",
   "status": "passed",
   "mockupMode": true,
+  "realImplementation": false,
   "validations": [
     {
       "test": "End-to-End Flow",
@@ -25,7 +27,7 @@
   "output": {
     "layer": "integration",
     "mockupData": {
-      "timestamp": "2025-08-11T04:09:16.610Z",
+      "timestamp": "2025-08-11T05:53:30.633Z",
       "inputData": {
         "mockInput": "sample-integration-input"
       },
@@ -34,10 +36,11 @@
       },
       "metadata": {
         "version": "v3.0-mockup",
-        "processingTime": 43
+        "processingTime": 89
       }
     }
   },
   "duration": 0,
-  "endTime": "2025-08-11T04:09:16.610Z"
+  "errors": [],
+  "endTime": "2025-08-11T05:53:30.633Z"
 }

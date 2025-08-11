@@ -27,10 +27,32 @@ export interface LayerCapabilities {
 }
 
 export interface ProviderClient {
+  // Core processing methods
   processRequest(request: AIRequest): Promise<AIResponse>;
   healthCheck(): Promise<ProviderHealth>;
   authenticate(): Promise<AuthResult>;
   getModels(): Promise<ModelInfo[]>;
+  
+  // Provider information
+  getName(): string;
+  getVersion(): string;
+  getEndpoint(): string;
+  
+  // Configuration and lifecycle
+  initialize(config: ProviderConfig): Promise<void>;
+  shutdown(): Promise<void>;
+  
+  // Token and authentication management
+  refreshToken(): Promise<AuthResult>;
+  validateToken(): Promise<boolean>;
+  
+  // Format conversion support
+  convertRequest(request: AIRequest, targetFormat: string): Promise<any>;
+  convertResponse(response: any, sourceFormat: string): Promise<AIResponse>;
+  
+  // Error handling and retry logic
+  handleError(error: any): ProviderError;
+  shouldRetry(error: ProviderError): boolean;
 }
 
 export interface AIRequest {
@@ -106,6 +128,37 @@ export interface ModelInfo {
   name: string;
   provider: string;
   capabilities: string[];
+  maxTokens?: number;
+  contextWindow?: number;
+  pricing?: {
+    inputTokens: number;
+    outputTokens: number;
+  };
+}
+
+export interface ProviderConfig {
+  name: string;
+  type: string;
+  endpoint: string;
+  apiKey?: string;
+  models: string[];
+  timeout?: number;
+  retryAttempts?: number;
+  healthCheckInterval?: number;
+  authentication?: {
+    type: 'api-key' | 'oauth' | 'bearer';
+    refreshUrl?: string;
+    tokenExpiry?: number;
+  };
+}
+
+export interface ProviderError {
+  code: string;
+  message: string;
+  type: 'authentication' | 'rate-limit' | 'network' | 'validation' | 'server' | 'unknown';
+  retryable: boolean;
+  retryAfter?: number;
+  originalError?: any;
 }
 
 export interface DebugRecorder {

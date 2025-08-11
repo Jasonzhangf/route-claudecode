@@ -1,0 +1,106 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "  \"message\": \"No choices in OpenAI response\",",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 530,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 45
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "   Error: No choices in OpenAI response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "   Error: No choices in OpenAI response",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 542,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 39
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "  \"message\": \"No choices in OpenAI response\",",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 595,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 45
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "   Error: No choices in OpenAI response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "   Error: No choices in OpenAI response",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 607,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 39
+    }
+  }
+]

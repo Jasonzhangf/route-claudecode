@@ -1,0 +1,86 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 116
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "[12:08:54] [INFO] [system] 🚀 Claude Code Router listening on http://0.0.0.0:5502",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "info",
+        "message": "[12:08:54] [INFO] [system] 🚀 Claude Code Router listening on http://0.0.0.0:5502",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 31,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "export ANTHROPIC_BASE_URL=\"http://0.0.0.0:5502\"",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "export ANTHROPIC_BASE_URL=\"http://0.0.0.0:5502\"",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 46,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 47
+    }
+  }
+]

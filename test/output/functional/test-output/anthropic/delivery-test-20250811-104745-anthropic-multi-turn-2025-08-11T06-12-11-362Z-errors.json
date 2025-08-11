@@ -1,0 +1,28 @@
+[
+  {
+    "type": "structured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "error": {
+        "type": "not_found",
+        "message": "Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+        "code": "404",
+        "requestId": "bb81c47d-b2f0-4dde-8a43-eecbab545417",
+        "port": 3461,
+        "provider": "anthropic-test",
+        "stage": "provider",
+        "timestamp": "2025-08-11T02:48:59.306Z",
+        "details": {
+          "diagnostics": "Silent failure detected and fixed"
+        }
+      }
+    },
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "delivery-test-20250811-104745-anthropic-multi-turn.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 381
+    }
+  }
+]

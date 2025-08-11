@@ -1,0 +1,56 @@
+{
+  "results": [
+    {
+      "id": "p6c3llvb",
+      "timestamp": "2025-08-11T07:01:29.496Z",
+      "provider": "openai",
+      "model": "unknown",
+      "finishReason": "error",
+      "category": "error",
+      "requestId": null,
+      "sessionId": null,
+      "duration": null,
+      "tokenCount": {
+        "input": null,
+        "output": null,
+        "total": null
+      },
+      "errorDetails": null,
+      "metadata": {
+        "userAgent": null,
+        "endpoint": null,
+        "method": null,
+        "status": null
+      },
+      "rawData": null
+    },
+    {
+      "id": "b6adp8q3",
+      "timestamp": "2025-08-11T07:01:29.495Z",
+      "provider": "anthropic",
+      "model": "unknown",
+      "finishReason": "stop",
+      "category": "stop",
+      "requestId": null,
+      "sessionId": null,
+      "duration": null,
+      "tokenCount": {
+        "input": null,
+        "output": null,
+        "total": null
+      },
+      "errorDetails": null,
+      "metadata": {
+        "userAgent": null,
+        "endpoint": null,
+        "method": null,
+        "status": null
+      },
+      "rawData": null
+    }
+  ],
+  "total": 2,
+  "offset": 0,
+  "limit": 100,
+  "query": {}
+}

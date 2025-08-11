@@ -2,9 +2,11 @@
   "step": 3,
   "name": "Post-processor Validation",
   "layer": "post-processor",
-  "startTime": "2025-08-11T04:09:16.609Z",
+  "module": "src/post-processor/index.js",
+  "startTime": "2025-08-11T05:53:30.632Z",
   "status": "passed",
   "mockupMode": true,
+  "realImplementation": false,
   "validations": [
     {
       "test": "Response Formatting",
@@ -25,7 +27,7 @@
   "output": {
     "layer": "post-processor",
     "mockupData": {
-      "timestamp": "2025-08-11T04:09:16.609Z",
+      "timestamp": "2025-08-11T05:53:30.632Z",
       "inputData": {
         "mockInput": "sample-post-processor-input"
       },
@@ -34,10 +36,11 @@
       },
       "metadata": {
         "version": "v3.0-mockup",
-        "processingTime": 60
+        "processingTime": 40
       }
     }
   },
   "duration": 0,
-  "endTime": "2025-08-11T04:09:16.609Z"
+  "errors": [],
+  "endTime": "2025-08-11T05:53:30.632Z"
 }

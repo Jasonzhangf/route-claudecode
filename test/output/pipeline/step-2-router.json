@@ -2,9 +2,11 @@
   "step": 2,
   "name": "Router Layer Testing",
   "layer": "router",
-  "startTime": "2025-08-11T04:09:16.609Z",
+  "module": "src/router/index.js",
+  "startTime": "2025-08-11T05:53:30.632Z",
   "status": "passed",
   "mockupMode": true,
+  "realImplementation": false,
   "validations": [
     {
       "test": "Route Resolution",
@@ -25,7 +27,7 @@
   "output": {
     "layer": "router",
     "mockupData": {
-      "timestamp": "2025-08-11T04:09:16.609Z",
+      "timestamp": "2025-08-11T05:53:30.632Z",
       "inputData": {
         "mockInput": "sample-router-input"
       },
@@ -34,10 +36,11 @@
       },
       "metadata": {
         "version": "v3.0-mockup",
-        "processingTime": 35
+        "processingTime": 61
       }
     }
   },
   "duration": 0,
-  "endTime": "2025-08-11T04:09:16.609Z"
+  "errors": [],
+  "endTime": "2025-08-11T05:53:30.632Z"
 }

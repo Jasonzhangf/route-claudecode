@@ -2,9 +2,11 @@
   "step": 7,
   "name": "Server Layer Validation",
   "layer": "server",
-  "startTime": "2025-08-11T04:09:16.610Z",
+  "module": "src/server/index.js",
+  "startTime": "2025-08-11T05:53:30.633Z",
   "status": "passed",
   "mockupMode": true,
+  "realImplementation": false,
   "validations": [
     {
       "test": "Server Health",
@@ -25,7 +27,7 @@
   "output": {
     "layer": "server",
     "mockupData": {
-      "timestamp": "2025-08-11T04:09:16.610Z",
+      "timestamp": "2025-08-11T05:53:30.633Z",
       "inputData": {
         "mockInput": "sample-server-input"
       },
@@ -34,10 +36,11 @@
       },
       "metadata": {
         "version": "v3.0-mockup",
-        "processingTime": 48
+        "processingTime": 51
       }
     }
   },
   "duration": 0,
-  "endTime": "2025-08-11T04:09:16.610Z"
+  "errors": [],
+  "endTime": "2025-08-11T05:53:30.633Z"
 }

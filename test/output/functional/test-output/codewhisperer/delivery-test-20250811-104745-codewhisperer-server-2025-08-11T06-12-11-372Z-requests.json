@@ -1,0 +1,74 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "codewhisperer",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "[10:47:57] [DEBUG] [system] Provider codewhisperer-primary request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 351,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "codewhisperer",
+    "timestamp": "2025-08-11T06:12:11.368Z",
+    "data": {
+      "rawLine": "[10:48:00] [DEBUG] [system] Provider codewhisperer-primary request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 596,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.368Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "codewhisperer",
+    "timestamp": "2025-08-11T06:12:11.372Z",
+    "data": {
+      "rawLine": "[10:48:41] [DEBUG] [system] Provider codewhisperer-primary request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4061,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.372Z",
+      "dataSize": 76
+    }
+  }
+]

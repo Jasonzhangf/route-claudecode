@@ -1,0 +1,186 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "rawLine": "[10:48:46] [ERROR] [error] Failed to initialize expanded provider: gemini-test",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:48:46] [ERROR] [error] Failed to initialize expanded provider: gemini-test",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 78
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 91,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [ERROR] [error] [73eb351d-a6f6-45ec-a0e1-474c196ec715] [server] Provider not found: gemini-test",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:48:51] [ERROR] [error] [73eb351d-a6f6-45ec-a0e1-474c196ec715] [server] Provider not found: gemini-test",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 123,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 106
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 145,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [ERROR] [error] [2be8c092-a497-40a6-8274-6926b7542c58] [server] Provider not found: gemini-test",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:48:51] [ERROR] [error] [2be8c092-a497-40a6-8274-6926b7542c58] [server] Provider not found: gemini-test",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 177,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 106
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 199,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [ERROR] [error] [3b1ecc13-ff9a-409f-8563-5e74a576c45b] [server] Provider not found: gemini-test",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:48:51] [ERROR] [error] [3b1ecc13-ff9a-409f-8563-5e74a576c45b] [server] Provider not found: gemini-test",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 231,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 106
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Provider not found: gemini-test. Available providers: ",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 253,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 93
+    }
+  }
+]

@@ -1,0 +1,30 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.265Z",
+    "data": {
+      "rawLine": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5,
+      "fileName": "rcc-final-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.265Z",
+      "dataSize": 116
+    }
+  }
+]

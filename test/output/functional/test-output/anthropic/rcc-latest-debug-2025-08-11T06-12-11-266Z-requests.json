@@ -1,0 +1,112 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.266Z",
+    "data": {
+      "rawLine": "[12:04:23] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 33,
+      "fileName": "rcc-latest-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.266Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.266Z",
+    "data": {
+      "rawLine": "[12:04:23] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 34,
+      "fileName": "rcc-latest-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.266Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.266Z",
+    "data": {
+      "rawLine": "[12:04:30] [DEBUG] [system] [39384bb9-bf19-45a5-a5ab-f6a4471396c4] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 118,
+      "fileName": "rcc-latest-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.266Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.266Z",
+    "data": {
+      "rawLine": "[12:04:30] [ERROR] [error] [39384bb9-bf19-45a5-a5ab-f6a4471396c4] [output] Failed to process response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[12:04:30] [ERROR] [error] [39384bb9-bf19-45a5-a5ab-f6a4471396c4] [output] Failed to process response to Anthropic format",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 133,
+      "fileName": "rcc-latest-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.266Z",
+      "dataSize": 121
+    }
+  }
+]

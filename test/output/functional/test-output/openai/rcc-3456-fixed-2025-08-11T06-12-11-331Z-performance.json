@@ -1,0 +1,1290 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.312Z",
+    "data": {
+      "rawLine": "🎯 [SERVER] Creating OpenAI client for LMStudio: { providerId: 'lmstudio', type: 'lmstudio' }",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 72,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.312Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.312Z",
+    "data": {
+      "rawLine": "✅ [SERVER] OpenAI client for LMStudio created: { providerId: 'lmstudio', name: 'lmstudio' }",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 80,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.312Z",
+      "dataSize": 91
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 189,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 292,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 442,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 706,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.314Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1159,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.314Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.315Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1737,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.315Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 2554,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 2806,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 2918,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 3148,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 3463,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 3658,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.319Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 4102,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.319Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.319Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 4312,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.319Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.320Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 4577,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.320Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.321Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key4\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5124,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.321Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6007,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6180,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6446,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key3\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6592,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6915,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7181,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7462,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7728,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7924,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8105,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8471,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8702,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key2\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9000,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key2\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9332,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9445,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-glm-key1\",\"isCompatible\":true,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9676,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 227
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9989,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key1\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10170,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10482,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10575,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10604,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10717,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10945,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11038,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11067,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11180,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11358,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11451,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11480,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11593,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11771,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-glm-key4\",\"isCompatible\":true,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11864,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 227
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11893,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12006,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12181,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12274,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12303,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12416,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 62
+    }
+  }
+]

@@ -1,0 +1,143 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "unknown",
+    "timestamp": "2025-08-11T06:12:11.246Z",
+    "data": {
+      "rawLine": "[LoggerManager] Creating logger for port 3456 (requested: 3456, default: 3456)",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.246Z",
+      "dataSize": 78
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "unknown",
+    "timestamp": "2025-08-11T06:12:11.252Z",
+    "data": {
+      "rawLine": "🚨 [SILENT FAILURE] Port 3456, Request ac267f4b-72ef-4998-bc17-39e46a674a6c",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [SILENT FAILURE] Port 3456, Request ac267f4b-72ef-4998-bc17-39e46a674a6c",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2006,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.252Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "unknown",
+    "timestamp": "2025-08-11T06:12:11.253Z",
+    "data": {
+      "rawLine": "🚨 [SILENT FAILURE] Port 3456, Request e6eddfd4-a0c1-446d-9043-d48bd41ac369",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [SILENT FAILURE] Port 3456, Request e6eddfd4-a0c1-446d-9043-d48bd41ac369",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2143,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.253Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "unknown",
+    "timestamp": "2025-08-11T06:12:11.255Z",
+    "data": {
+      "rawLine": "🚨 [SILENT FAILURE] Port 3456, Request 03cab451-6987-4312-a65b-2549a3570b2c",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [SILENT FAILURE] Port 3456, Request 03cab451-6987-4312-a65b-2549a3570b2c",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3240,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.255Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "unknown",
+    "timestamp": "2025-08-11T06:12:11.256Z",
+    "data": {
+      "rawLine": "🚨 [SILENT FAILURE] Port 3456, Request d4404f3f-2e37-43d3-b7e9-fedb7a0472ae",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🚨 [SILENT FAILURE] Port 3456, Request d4404f3f-2e37-43d3-b7e9-fedb7a0472ae",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3685,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.256Z",
+      "dataSize": 75
+    }
+  }
+]

@@ -1,0 +1,1750 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "[11:20:21] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:1:1754882417132:dcf6] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:20:21] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:1:1754882417132:dcf6] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 513,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "[11:20:23] [DEBUG] [system] [session_1754882423844_ba7errllm:conv_1754882423844_dkijngfed:1:1754882423851:r67i] [pure-api-handler] Pure OpenAI API call",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "debug",
+        "message": "[11:20:23] [DEBUG] [system] [session_1754882423844_ba7errllm:conv_1754882423844_dkijngfed:1:1754882423851:r67i] [pure-api-handler] Pure OpenAI API call",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 905,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 151
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.285Z",
+    "data": {
+      "rawLine": "[11:21:01] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:4:1754882458361:5ro5] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:21:01] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:4:1754882458361:5ro5] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1919,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.285Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.288Z",
+    "data": {
+      "rawLine": "[11:21:02] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:2:1754882456837:g8dq] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:21:02] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:2:1754882456837:g8dq] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3061,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.288Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.288Z",
+    "data": {
+      "rawLine": "[11:21:03] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:3:1754882458281:gb4s] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:21:03] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:3:1754882458281:gb4s] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3111,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.288Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.288Z",
+    "data": {
+      "rawLine": "[11:21:04] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:6:1754882464141:6yw7] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:21:04] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:6:1754882464141:6yw7] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3248,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.288Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.289Z",
+    "data": {
+      "rawLine": "[11:21:08] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:7:1754882468108:8awu] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:21:08] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:7:1754882468108:8awu] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3822,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.289Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.291Z",
+    "data": {
+      "rawLine": "[11:21:08] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:8:1754882468458:7ggm] [pure-api-handler] Pure OpenAI API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:21:08] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:8:1754882468458:7ggm] [pure-api-handler] Pure OpenAI API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4927,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.291Z",
+      "dataSize": 157
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "[11:21:48] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:9:1754882499975:a06k] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:21:48] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:9:1754882499975:a06k] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5331,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.293Z",
+    "data": {
+      "rawLine": "[11:22:36] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:10:1754882545862:jhh3] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:22:36] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:10:1754882545862:jhh3] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5744,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.293Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "[11:23:16] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:11:1754882588483:rl1x] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:23:16] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:11:1754882588483:rl1x] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6157,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "[11:23:23] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:12:1754882596069:g20j] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:23:23] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:12:1754882596069:g20j] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8331,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "[11:23:24] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:13:1754882603759:6h12] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:23:24] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:13:1754882603759:6h12] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10505,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10611,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10613,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10862,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10864,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11104,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11106,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "[11:23:32] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:14:1754882604369:u2ik] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:23:32] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:14:1754882604369:u2ik] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11305,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11411,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11413,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11662,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11664,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11904,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11906,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "[11:23:40] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:15:1754882613256:n5ks] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:23:40] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:15:1754882613256:n5ks] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12105,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12211,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12213,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12462,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12464,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12704,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12706,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "[11:23:47] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:16:1754882621727:ceva] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:23:47] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:16:1754882621727:ceva] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12905,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13011,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13013,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13262,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13264,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13504,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13506,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "[11:23:56] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:17:1754882630265:ww40] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:23:56] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:17:1754882630265:ww40] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13705,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13811,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13813,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14062,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14064,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14304,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14306,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "[11:24:08] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:18:1754882641391:4165] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:24:08] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:18:1754882641391:4165] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14505,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14611,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14613,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14862,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 14864,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15104,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15106,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "[11:24:26] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:19:1754882658752:tvp6] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:24:26] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:19:1754882658752:tvp6] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15305,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15410,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15412,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15661,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15663,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15903,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 15905,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "[11:24:53] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:20:1754882685791:gxwz] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:24:53] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:20:1754882685791:gxwz] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16104,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16209,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16211,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16460,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16462,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16702,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16704,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "[11:25:40] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:21:1754882730377:f7oq] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:25:40] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:21:1754882730377:f7oq] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16903,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17008,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17010,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17259,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17261,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '7. **Service Issues**: When testing, the service failed to initialize providers because it was trying to use the disabled `UnifiedConversionOpenAIClient`.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17501,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 166
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      '8. **Critical Discovery**: User pointed out that basic connections were failing, leading to the discovery that the current OpenAI implementations violate cross-node coupling constraints by directly embedding transformers within providers.\\n' +",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17503,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 250
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "[11:26:23] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:22:1754882774565:qytm] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[11:26:23] [ERROR] [error] [session_1754882417116_urxqkpjll:conv_1754882417116_sbrc5zvqw:22:1754882774565:qytm] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 17702,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 168
+    }
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.374Z",
+    "data": {
+      "rawLine": "- /Users/fanzhang/Documents/github/claude-code-router/dist/input/unified-processor.js",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Users/fanzhang/Documents/github/claude-code-router/dist/input/unified-processor.js",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7,
+      "fileName": "delivery-test-20250811-104053-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.374Z",
+      "dataSize": 85
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.374Z",
+    "data": {
+      "rawLine": "    at Object.<anonymous> (/Users/fanzhang/Documents/github/claude-code-router/dist/input/unified-processor.js:9:17)",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Users/fanzhang/Documents/github/claude-code-router/dist/input/unified-processor.js:9:17)",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 18,
+      "fileName": "delivery-test-20250811-104053-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.374Z",
+      "dataSize": 116
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.374Z",
+    "data": {
+      "rawLine": "    '/Users/fanzhang/Documents/github/claude-code-router/dist/input/unified-processor.js',",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Users/fanzhang/Documents/github/claude-code-router/dist/input/unified-processor.js',",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 22,
+      "fileName": "delivery-test-20250811-104053-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.374Z",
+      "dataSize": 90
+    }
+  }
+]

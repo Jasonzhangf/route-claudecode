@@ -1,0 +1,1313 @@
+{
+  "extractionInfo": {
+    "timestamp": "2025-08-11T06:12:11.456Z",
+    "version": "v3.0-production",
+    "totalFiles": 98,
+    "totalEntries": 12065,
+    "processingDuration": -1754892731240
+  },
+  "providerProtocolSummary": {
+    "anthropic": {
+      "files": 66,
+      "entries": 4707
+    },
+    "openai": {
+      "files": 51,
+      "entries": 5017
+    },
+    "gemini": {
+      "files": 38,
+      "entries": 2144
+    },
+    "codewhisperer": {
+      "files": 9,
+      "entries": 106
+    },
+    "unknown": {
+      "files": 7,
+      "entries": 91
+    }
+  },
+  "fileDetails": [
+    {
+      "file": "generic.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "anthropic-test.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "ccr-dev.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 1,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "codewhisperer-test.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "gemini-test.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 1,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "openai-test.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 1,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug.log",
+      "processed": true,
+      "entries": 838,
+      "providerBreakdown": {
+        "anthropic": 98,
+        "openai": 557,
+        "gemini": 174,
+        "codewhisperer": 1,
+        "unknown": 8
+      },
+      "processingTime": 14
+    },
+    {
+      "file": "rcc-server-debug.log",
+      "processed": true,
+      "entries": 69,
+      "providerBreakdown": {
+        "anthropic": 16,
+        "openai": 10,
+        "gemini": 43,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "rcc-handler-debug.log",
+      "processed": true,
+      "entries": 64,
+      "providerBreakdown": {
+        "anthropic": 16,
+        "openai": 9,
+        "gemini": 39,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "rcc-clean-debug.log",
+      "processed": true,
+      "entries": 132,
+      "providerBreakdown": {
+        "anthropic": 53,
+        "openai": 14,
+        "gemini": 65,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "rcc-final-debug.log",
+      "processed": true,
+      "entries": 15,
+      "providerBreakdown": {
+        "anthropic": 2,
+        "openai": 0,
+        "gemini": 13,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-latest-debug.log",
+      "processed": true,
+      "entries": 62,
+      "providerBreakdown": {
+        "anthropic": 16,
+        "openai": 9,
+        "gemini": 37,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-5502-debug.log",
+      "processed": true,
+      "entries": 98,
+      "providerBreakdown": {
+        "anthropic": 19,
+        "openai": 18,
+        "gemini": 61,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "rcc-gemini-detailed-debug.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "rcc-5502-fixed.log",
+      "processed": true,
+      "entries": 64,
+      "providerBreakdown": {
+        "anthropic": 15,
+        "openai": 9,
+        "gemini": 40,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "rcc-5502.log",
+      "processed": true,
+      "entries": 188,
+      "providerBreakdown": {
+        "anthropic": 58,
+        "openai": 22,
+        "gemini": 108,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 3
+    },
+    {
+      "file": "rcc-final-test.log",
+      "processed": true,
+      "entries": 886,
+      "providerBreakdown": {
+        "anthropic": 252,
+        "openai": 47,
+        "gemini": 587,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 8
+    },
+    {
+      "file": "rcc-3456-fixed-v2.log",
+      "processed": true,
+      "entries": 2866,
+      "providerBreakdown": {
+        "anthropic": 1376,
+        "openai": 1381,
+        "gemini": 78,
+        "codewhisperer": 4,
+        "unknown": 27
+      },
+      "processingTime": 30
+    },
+    {
+      "file": "rcc-3456-fixed.log",
+      "processed": true,
+      "entries": 1568,
+      "providerBreakdown": {
+        "anthropic": 663,
+        "openai": 827,
+        "gemini": 34,
+        "codewhisperer": 4,
+        "unknown": 40
+      },
+      "processingTime": 22
+    },
+    {
+      "file": "gemini-test.log",
+      "processed": true,
+      "entries": 15,
+      "providerBreakdown": {
+        "anthropic": 9,
+        "openai": 0,
+        "gemini": 6,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "rcc-5509-test.log",
+      "processed": true,
+      "entries": 79,
+      "providerBreakdown": {
+        "anthropic": 14,
+        "openai": 65,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "client-connection-test.log",
+      "processed": true,
+      "entries": 874,
+      "providerBreakdown": {
+        "anthropic": 374,
+        "openai": 412,
+        "gemini": 81,
+        "codewhisperer": 7,
+        "unknown": 0
+      },
+      "processingTime": 19
+    },
+    {
+      "file": "delivery-test-20250811-104745-e2e-client.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-master.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "delivery-test-20250811-104745-anthropic-long-response.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-anthropic-server.log",
+      "processed": true,
+      "entries": 134,
+      "providerBreakdown": {
+        "anthropic": 118,
+        "openai": 16,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 3
+    },
+    {
+      "file": "delivery-test-20250811-104745-anthropic-large-input.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-anthropic-multi-turn.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104745-anthropic-tool-calls.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-gemini-long-response.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 1,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-gemini-server.log",
+      "processed": true,
+      "entries": 76,
+      "providerBreakdown": {
+        "anthropic": 20,
+        "openai": 12,
+        "gemini": 44,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104745-gemini-large-input.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 1,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104745-gemini-multi-turn.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 1,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-gemini-tool-calls.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 1,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-openai-long-response.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-openai-server.log",
+      "processed": true,
+      "entries": 51,
+      "providerBreakdown": {
+        "anthropic": 36,
+        "openai": 15,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104745-openai-large-input.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-openai-multi-turn.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104745-openai-tool-calls.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-codewhisperer-long-response.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "processed": true,
+      "entries": 163,
+      "providerBreakdown": {
+        "anthropic": 56,
+        "openai": 23,
+        "gemini": 0,
+        "codewhisperer": 84,
+        "unknown": 0
+      },
+      "processingTime": 6
+    },
+    {
+      "file": "delivery-test-20250811-104745-codewhisperer-large-input.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104745-codewhisperer-multi-turn.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104745-codewhisperer-tool-calls.log",
+      "processed": true,
+      "entries": 1,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 1,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104053-master.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104053-e2e-client.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104053-anthropic-server.log",
+      "processed": true,
+      "entries": 7,
+      "providerBreakdown": {
+        "anthropic": 7,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104053-gemini-server.log",
+      "processed": true,
+      "entries": 7,
+      "providerBreakdown": {
+        "anthropic": 7,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-104053-openai-server.log",
+      "processed": true,
+      "entries": 7,
+      "providerBreakdown": {
+        "anthropic": 7,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-104053-codewhisperer-server.log",
+      "processed": true,
+      "entries": 7,
+      "providerBreakdown": {
+        "anthropic": 7,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "rcc-debug-content-fix.log",
+      "processed": true,
+      "entries": 7,
+      "providerBreakdown": {
+        "anthropic": 7,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-transformer.log",
+      "processed": true,
+      "entries": 108,
+      "providerBreakdown": {
+        "anthropic": 15,
+        "openai": 93,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-full.log",
+      "processed": true,
+      "entries": 7,
+      "providerBreakdown": {
+        "anthropic": 4,
+        "openai": 1,
+        "gemini": 1,
+        "codewhisperer": 1,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "delivery-test-20250811-103618-master.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103618-e2e-client.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "debug-content-fix.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103618-anthropic-server.log",
+      "processed": true,
+      "entries": 2,
+      "providerBreakdown": {
+        "anthropic": 2,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103618-gemini-server.log",
+      "processed": true,
+      "entries": 2,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 1,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103618-openai-server.log",
+      "processed": true,
+      "entries": 2,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 1,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103618-codewhisperer-server.log",
+      "processed": true,
+      "entries": 2,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 1,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "dry-run-test.log",
+      "processed": true,
+      "entries": 15,
+      "providerBreakdown": {
+        "anthropic": 6,
+        "openai": 3,
+        "gemini": 3,
+        "codewhisperer": 3,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103333-master.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103250-master.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "delivery-test-20250811-103156-master.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-local.log",
+      "processed": true,
+      "entries": 75,
+      "providerBreakdown": {
+        "anthropic": 13,
+        "openai": 62,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-final.log",
+      "processed": true,
+      "entries": 63,
+      "providerBreakdown": {
+        "anthropic": 13,
+        "openai": 50,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-5509-process-input.log",
+      "processed": true,
+      "entries": 63,
+      "providerBreakdown": {
+        "anthropic": 13,
+        "openai": 50,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-5509-provider-check.log",
+      "processed": true,
+      "entries": 63,
+      "providerBreakdown": {
+        "anthropic": 13,
+        "openai": 50,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-5509-stderr-test.log",
+      "processed": true,
+      "entries": 63,
+      "providerBreakdown": {
+        "anthropic": 13,
+        "openai": 50,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-5509-fixed.log",
+      "processed": true,
+      "entries": 63,
+      "providerBreakdown": {
+        "anthropic": 13,
+        "openai": 50,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-5509-new.log",
+      "processed": true,
+      "entries": 144,
+      "providerBreakdown": {
+        "anthropic": 41,
+        "openai": 103,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "mcp.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "neo4j.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "rcc-debug-5509.log",
+      "processed": true,
+      "entries": 63,
+      "providerBreakdown": {
+        "anthropic": 13,
+        "openai": 50,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-debug-startup.log",
+      "processed": true,
+      "entries": 50,
+      "providerBreakdown": {
+        "anthropic": 16,
+        "openai": 7,
+        "gemini": 27,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-fixed-startup.log",
+      "processed": true,
+      "entries": 51,
+      "providerBreakdown": {
+        "anthropic": 16,
+        "openai": 6,
+        "gemini": 29,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "rcc-monitor-20250811-083641.log",
+      "processed": true,
+      "entries": 27,
+      "providerBreakdown": {
+        "anthropic": 5,
+        "openai": 6,
+        "gemini": 16,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "rcc-startup-20250811-083633.log",
+      "processed": true,
+      "entries": 54,
+      "providerBreakdown": {
+        "anthropic": 16,
+        "openai": 6,
+        "gemini": 32,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-5502-startup.log",
+      "processed": true,
+      "entries": 51,
+      "providerBreakdown": {
+        "anthropic": 16,
+        "openai": 6,
+        "gemini": 29,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-e2e-test-1754872377.log",
+      "processed": true,
+      "entries": 100,
+      "providerBreakdown": {
+        "anthropic": 15,
+        "openai": 80,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 5
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-log-monitor-1754872390.log",
+      "processed": true,
+      "entries": 25,
+      "providerBreakdown": {
+        "anthropic": 5,
+        "openai": 17,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 3
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-e2e-test-1754872303.log",
+      "processed": true,
+      "entries": 101,
+      "providerBreakdown": {
+        "anthropic": 15,
+        "openai": 81,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 5
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "rcc-log-monitor-1754872315.log",
+      "processed": true,
+      "entries": 26,
+      "providerBreakdown": {
+        "anthropic": 5,
+        "openai": 18,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 3
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "test-gemini-service-debug.log",
+      "processed": true,
+      "entries": 51,
+      "providerBreakdown": {
+        "anthropic": 18,
+        "openai": 8,
+        "gemini": 25,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "server-startup.log",
+      "processed": true,
+      "entries": 776,
+      "providerBreakdown": {
+        "anthropic": 385,
+        "openai": 389,
+        "gemini": 2,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 26
+    },
+    {
+      "file": "test-gemini-service-fixed.log",
+      "processed": true,
+      "entries": 190,
+      "providerBreakdown": {
+        "anthropic": 58,
+        "openai": 8,
+        "gemini": 124,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "lmstudio-service.log",
+      "processed": true,
+      "entries": 230,
+      "providerBreakdown": {
+        "anthropic": 223,
+        "openai": 5,
+        "gemini": 2,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 4
+    },
+    {
+      "file": "test-gemini-service.log",
+      "processed": true,
+      "entries": 53,
+      "providerBreakdown": {
+        "anthropic": 17,
+        "openai": 8,
+        "gemini": 28,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "ccr-debug.log",
+      "processed": true,
+      "entries": 155,
+      "providerBreakdown": {
+        "anthropic": 53,
+        "openai": 16,
+        "gemini": 86,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    },
+    {
+      "file": "lmstudio-startup.log",
+      "processed": true,
+      "entries": 176,
+      "providerBreakdown": {
+        "anthropic": 102,
+        "openai": 71,
+        "gemini": 3,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 4
+    },
+    {
+      "file": "gemini-5502.log",
+      "processed": true,
+      "entries": 529,
+      "providerBreakdown": {
+        "anthropic": 166,
+        "openai": 48,
+        "gemini": 315,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 5
+    },
+    {
+      "file": "all-original-data-parsing-test.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "lmstudio-enhanced-restart.log",
+      "processed": true,
+      "entries": 264,
+      "providerBreakdown": {
+        "anthropic": 104,
+        "openai": 157,
+        "gemini": 3,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 4
+    },
+    {
+      "file": "lmstudio-fixed-restart.log",
+      "processed": true,
+      "entries": 126,
+      "providerBreakdown": {
+        "anthropic": 55,
+        "openai": 68,
+        "gemini": 3,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 3
+    },
+    {
+      "file": "realtime-parsing-debug.log",
+      "processed": true,
+      "entries": 2,
+      "providerBreakdown": {
+        "anthropic": 2,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "final-tool-parsing-test.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 1
+    },
+    {
+      "file": "comprehensive-grep-debug.log",
+      "processed": true,
+      "entries": 0,
+      "providerBreakdown": {
+        "anthropic": 0,
+        "openai": 0,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 0
+    },
+    {
+      "file": "grep-tool-debug.log",
+      "processed": true,
+      "entries": 2,
+      "providerBreakdown": {
+        "anthropic": 1,
+        "openai": 1,
+        "gemini": 0,
+        "codewhisperer": 0,
+        "unknown": 0
+      },
+      "processingTime": 2
+    }
+  ],
+  "dataCategories": {
+    "requests": 2376,
+    "responses": 808,
+    "errors": 262,
+    "performance": 367
+  }
+}

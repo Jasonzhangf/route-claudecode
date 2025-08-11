@@ -1,0 +1,25 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.380Z",
+    "data": {
+      "rawLine": "[10:26:14] [ERROR] [error] [session_1754879173919_y45nexolg:conv_1754879173919_gvy550w2e:1:1754879173922:d7rg] [pure-api-handler] Pure OpenAI API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:26:14] [ERROR] [error] [session_1754879173919_y45nexolg:conv_1754879173919_gvy550w2e:1:1754879173922:d7rg] [pure-api-handler] Pure OpenAI API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 189,
+      "fileName": "rcc-debug-local.log",
+      "extractedAt": "2025-08-11T06:12:11.380Z",
+      "dataSize": 157
+    }
+  }
+]

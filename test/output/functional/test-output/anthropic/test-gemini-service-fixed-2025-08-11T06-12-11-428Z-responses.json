@@ -1,0 +1,110 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 116
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:48:37] [INFO] [system] 🚀 Claude Code Router listening on http://0.0.0.0:5502",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "info",
+        "message": "[19:48:37] [INFO] [system] 🚀 Claude Code Router listening on http://0.0.0.0:5502",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 41,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "export ANTHROPIC_BASE_URL=\"http://0.0.0.0:5502\"",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "export ANTHROPIC_BASE_URL=\"http://0.0.0.0:5502\"",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 56,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 47
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:27] [DEBUG] [system] [ce158e42-592a-424c-a28e-92318be1063c] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 195,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 131
+    }
+  }
+]

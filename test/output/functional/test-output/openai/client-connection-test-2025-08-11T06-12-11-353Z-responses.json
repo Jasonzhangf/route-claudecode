@@ -1,0 +1,402 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:22.345Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:22.345Z] SERVER-OUT: [10:49:22] [DEBUG] [system] Unified OpenAI API response received",
+      "timestamp": "2025-08-11T02:49:22.345Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3088,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.341Z",
+      "dataSize": 103
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:22.345Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:22.345Z] SERVER-OUT: 🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": "2025-08-11T02:49:22.345Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3090,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.341Z",
+      "dataSize": 103
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:22.345Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:22.345Z] SERVER-OUT: 🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": "2025-08-11T02:49:22.345Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3102,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.341Z",
+      "dataSize": 88
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:22.345Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:22.345Z] SERVER-OUT: [10:49:22] [DEBUG] [system] [eafd3a0a-2e1f-426c-94bf-d02e0207a80e] [transformer] Applied OpenAI response transformation",
+      "timestamp": "2025-08-11T02:49:22.345Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3109,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.341Z",
+      "dataSize": 158
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:22.347Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:22.347Z] SERVER-OUT: [10:49:22] [DEBUG] [system] Response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:22.347Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3141,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.341Z",
+      "dataSize": 124
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:26.981Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:26.981Z] SERVER-OUT: [10:49:26] [DEBUG] [system] [af78c1b0-5025-4c06-a5d2-dc4c6ed6a3d0] [routing] Legacy round-robin provider selection: shuaihong-openai",
+      "timestamp": "2025-08-11T02:49:26.981Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "debug",
+        "message": "[2025-08-11T02:49:26.981Z] SERVER-OUT: [10:49:26] [DEBUG] [system] [af78c1b0-5025-4c06-a5d2-dc4c6ed6a3d0] [routing] Legacy round-robin provider selection: shuaihong-openai",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5021,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.345Z",
+      "dataSize": 171
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:26.981Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:26.981Z] SERVER-OUT: [10:49:26] [DEBUG] [system] [af78c1b0-5025-4c06-a5d2-dc4c6ed6a3d0] [routing] Routing background to shuaihong-openai",
+      "timestamp": "2025-08-11T02:49:26.981Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "debug",
+        "message": "[2025-08-11T02:49:26.981Z] SERVER-OUT: [10:49:26] [DEBUG] [system] [af78c1b0-5025-4c06-a5d2-dc4c6ed6a3d0] [routing] Routing background to shuaihong-openai",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5025,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.345Z",
+      "dataSize": 154
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:30.732Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:30.732Z] SERVER-ERR: [10:49:30] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:30.732Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[2025-08-11T02:49:30.732Z] SERVER-ERR: [10:49:30] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5633,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.345Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:30.733Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:30.733Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:30.733Z",
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "[2025-08-11T02:49:30.733Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5667,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.345Z",
+      "dataSize": 140
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:34.450Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:34.450Z] SERVER-ERR: [10:49:34] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:34.450Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[2025-08-11T02:49:34.450Z] SERVER-ERR: [10:49:34] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6763,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.348Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:34.451Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:34.451Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:34.451Z",
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "[2025-08-11T02:49:34.451Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6795,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.348Z",
+      "dataSize": 140
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.350Z",
+    "data": {
+      "rawLine": "[10:49:39] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:49:39] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8086,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.350Z",
+      "dataSize": 91
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:39.113Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:39.113Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:39.113Z",
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "[2025-08-11T02:49:39.113Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8126,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.350Z",
+      "dataSize": 140
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:44.815Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:44.815Z] SERVER-ERR: [10:49:44] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:44.815Z",
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[2025-08-11T02:49:44.815Z] SERVER-ERR: [10:49:44] [WARN] [system] Failed response recorded: shuaihong-openai/gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9419,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.353Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T02:49:44.815Z",
+    "data": {
+      "rawLine": "[2025-08-11T02:49:44.815Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+      "timestamp": "2025-08-11T02:49:44.815Z",
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "[2025-08-11T02:49:44.815Z] SERVER-ERR: 🔚 [REGULAR] Response sent with status 500 - Provider: shuaihong-openai, Model: gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9449,
+      "fileName": "client-connection-test.log",
+      "extractedAt": "2025-08-11T06:12:11.353Z",
+      "dataSize": 140
+    }
+  }
+]

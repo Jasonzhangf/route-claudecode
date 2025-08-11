@@ -33,7 +33,12 @@
   "author": "Claude Code Router Team",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "@anthropic-ai/sdk": "^0.24.3",
+    "openai": "^4.52.7",
+    "@google/generative-ai": "^0.15.0",
+    "@aws-sdk/client-codewhisperer": "^3.600.0",
+    "@aws-sdk/credential-providers": "^3.600.0"
   },
   "devDependencies": {
     "typescript": "^5.0.0",

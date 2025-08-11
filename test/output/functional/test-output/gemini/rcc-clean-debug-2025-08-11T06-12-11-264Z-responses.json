@@ -1,0 +1,210 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "🔍 [GEMINI-CLIENT-DEBUG] Response from buildGeminiResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 488,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 61
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:14] [DEBUG] [system] Received response from Gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 501,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 57
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:14] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-flash-lite",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[12:09:14] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 523,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 88
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-flash-lite",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-flash-lite",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 547,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 98
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "🔍 [GEMINI-CLIENT-DEBUG] Response from buildGeminiResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 553,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 61
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:18] [DEBUG] [system] Received response from Gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 566,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 57
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:18] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[12:09:18] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 588,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 612,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 91
+    }
+  }
+]

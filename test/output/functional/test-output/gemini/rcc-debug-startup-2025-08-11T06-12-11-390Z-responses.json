@@ -1,0 +1,178 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.390Z",
+    "data": {
+      "rawLine": "[08:52:33] [DEBUG] [system] [e1fe81d6-fddb-400f-9a31-cb3fe25d372e] [routing] Legacy round-robin provider selection: google-gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 71,
+      "fileName": "rcc-debug-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.390Z",
+      "dataSize": 129
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.390Z",
+    "data": {
+      "rawLine": "[08:52:33] [DEBUG] [system] [e1fe81d6-fddb-400f-9a31-cb3fe25d372e] [routing] Routing default to google-gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 73,
+      "fileName": "rcc-debug-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.390Z",
+      "dataSize": 109
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.390Z",
+    "data": {
+      "rawLine": "[08:52:33] [DEBUG] [system] [e1fe81d6-fddb-400f-9a31-cb3fe25d372e] [server] Dynamic provider selection: google-gemini-key1 for google-gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 75,
+      "fileName": "rcc-debug-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.390Z",
+      "dataSize": 140
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.390Z",
+    "data": {
+      "rawLine": "[08:52:51] [DEBUG] [system] [e1fe81d6-fddb-400f-9a31-cb3fe25d372e] [gemini-provider] createCompletion succeeded",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 79,
+      "fileName": "rcc-debug-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.390Z",
+      "dataSize": 111
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.390Z",
+    "data": {
+      "rawLine": "[08:52:51] [DEBUG] [system] Received response from Gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 81,
+      "fileName": "rcc-debug-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.390Z",
+      "dataSize": 57
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.390Z",
+    "data": {
+      "rawLine": "[08:52:51] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[08:52:51] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 99,
+      "fileName": "rcc-debug-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.390Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.390Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 123,
+      "fileName": "rcc-debug-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.390Z",
+      "dataSize": 91
+    }
+  }
+]

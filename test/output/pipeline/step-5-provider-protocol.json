@@ -1,0 +1,30 @@
+{
+  "step": 5,
+  "name": "Provider-Protocol Layer Validation",
+  "layer": "provider-protocol",
+  "module": "src/provider/index.js",
+  "startTime": "2025-08-11T05:53:30.633Z",
+  "status": "unknown",
+  "mockupMode": true,
+  "realImplementation": false,
+  "validations": [],
+  "output": {
+    "layer": "provider-protocol",
+    "mockupData": {
+      "timestamp": "2025-08-11T05:53:30.633Z",
+      "inputData": {
+        "mockInput": "sample-provider-protocol-input"
+      },
+      "processedData": {
+        "mockOutput": "sample-provider-protocol-output"
+      },
+      "metadata": {
+        "version": "v3.0-mockup",
+        "processingTime": 18
+      }
+    }
+  },
+  "duration": 0,
+  "errors": [],
+  "endTime": "2025-08-11T05:53:30.633Z"
+}

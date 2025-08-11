@@ -1,87 +1,277 @@
 /**
- * MOCKUP IMPLEMENTATION - Anthropic Response Parser
- * This is a placeholder implementation for Anthropic response parsing
- * All functionality is mocked and should be replaced with real implementations
+ * Anthropic Response Parser Implementation
+ * Real implementation of Anthropic response parsing and streaming
  */
 
-import { AIResponse } from '../../types/interfaces.js';
+import { AIResponse, Choice, Usage } from '../../types/interfaces.js';
+import { AnthropicResponse, AnthropicStreamChunk, AnthropicContent } from './types.js';
 
 export class AnthropicParser {
   constructor() {
-    console.log('🔧 MOCKUP: AnthropicParser initialized - placeholder implementation');
+    console.log('✅ AnthropicParser initialized');
   }
 
-  parseResponse(rawResponse: any): AIResponse {
-    console.log('🔧 MOCKUP: Parsing Anthropic response - placeholder implementation');
-    
-    return {
-      id: rawResponse.id || `anthropic-parsed-${Date.now()}`,
-      model: rawResponse.model || 'claude-3-mockup',
-      choices: [{
+  async parseResponse(rawResponse: AnthropicResponse): Promise<AIResponse> {
+    try {
+      const content = this.extractContent(rawResponse.content);
+      const toolCalls = this.extractToolCalls(rawResponse.content);
+      
+      const choice: Choice = {
         index: 0,
         message: {
           role: 'assistant',
-          content: this.extractContent(rawResponse),
+          content,
           metadata: {
-            mockup_indicator: 'ANTHROPIC_PARSED_RESPONSE'
+            toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+            stopReason: rawResponse.stop_reason,
+            stopSequence: rawResponse.stop_sequence
           }
         },
         finishReason: this.parseFinishReason(rawResponse.stop_reason)
-      }],
-      usage: this.parseUsage(rawResponse.usage),
-      metadata: {
-        timestamp: new Date(),
-        processingTime: 750,
-        provider: 'anthropic'
-      }
-    };
-  }
+      };
 
-  parseStreamingResponse(chunk: any): Partial<AIResponse> {
-    console.log('🔧 MOCKUP: Parsing Anthropic streaming chunk - placeholder implementation');
-    
-    return {
-      id: chunk.id || `anthropic-stream-${Date.now()}`,
-      choices: [{
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: chunk.delta?.text || '',
-          metadata: {
-            mockup_indicator: 'ANTHROPIC_STREAMING_CHUNK'
-          }
+      return {
+        id: rawResponse.id,
+        model: rawResponse.model,
+        choices: [choice],
+        usage: this.parseUsage(rawResponse.usage),
+        metadata: {
+          timestamp: new Date(),
+          processingTime: 0, // Would be calculated from request timing
+          provider: 'anthropic'
         }
-      }]
-    };
+      };
+    } catch (error) {
+      throw new Error(`Failed to parse Anthropic response: ${error.message}`);
+    }
   }
 
-  private extractContent(response: any): string {
-    if (response.content && Array.isArray(response.content)) {
-      return response.content
-        .filter((item: any) => item.type === 'text')
-        .map((item: any) => item.text)
-        .join('');
+  async parseStreamingResponse(chunk: AnthropicStreamChunk): Promise<Partial<AIResponse>> {
+    try {
+      switch (chunk.type) {
+        case 'message_start':
+          return {
+            id: chunk.message?.id,
+            model: chunk.message?.model,
+            choices: [{
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: ''
+              }
+            }]
+          };
+
+        case 'content_block_start':
+          return {
+            choices: [{
+              index: chunk.index || 0,
+              message: {
+                role: 'assistant',
+                content: ''
+              }
+            }]
+          };
+
+        case 'content_block_delta':
+          if (chunk.delta?.type === 'text_delta') {
+            return {
+              choices: [{
+                index: chunk.index || 0,
+                message: {
+                  role: 'assistant',
+                  content: chunk.delta.text || ''
+                }
+              }]
+            };
+          }
+          break;
+
+        case 'content_block_stop':
+          return {
+            choices: [{
+              index: chunk.index || 0,
+              message: {
+                role: 'assistant',
+                content: ''
+              }
+            }]
+          };
+
+        case 'message_delta':
+          if (chunk.delta?.stop_reason) {
+            return {
+              choices: [{
+                index: 0,
+                message: {
+                  role: 'assistant',
+                  content: ''
+                },
+                finishReason: this.parseFinishReason(chunk.delta.stop_reason)
+              }]
+            };
+          }
+          break;
+
+        case 'message_stop':
+          return {
+            choices: [{
+              index: 0,
+              message: {
+                role: 'assistant',
+                content: ''
+              },
+              finishReason: 'stop'
+            }]
+          };
+
+        default:
+          // Unknown chunk type, return empty partial response
+          return {};
+      }
+
+      return {};
+    } catch (error) {
+      throw new Error(`Failed to parse Anthropic streaming chunk: ${error.message}`);
     }
-    return 'Mockup Anthropic content';
+  }
+
+  private extractContent(content: AnthropicContent[]): string {
+    if (!Array.isArray(content)) {
+      return String(content);
+    }
+
+    return content
+      .filter(item => item.type === 'text')
+      .map(item => item.text || '')
+      .join('');
+  }
+
+  private extractToolCalls(content: AnthropicContent[]): any[] {
+    if (!Array.isArray(content)) {
+      return [];
+    }
+
+    return content
+      .filter(item => item.type === 'tool_use')
+      .map(item => ({
+        id: item.id,
+        type: 'function',
+        function: {
+          name: item.name,
+          arguments: JSON.stringify(item.input || {})
+        }
+      }));
   }
 
   private parseFinishReason(stopReason: string): string {
     const reasonMap: Record<string, string> = {
       'end_turn': 'stop',
       'max_tokens': 'length',
+      'stop_sequence': 'stop',
       'tool_use': 'tool_calls'
     };
     return reasonMap[stopReason] || 'stop';
   }
 
-  private parseUsage(usage: any): any {
+  private parseUsage(usage: any): Usage {
     return {
-      promptTokens: usage?.input_tokens || 10,
-      completionTokens: usage?.output_tokens || 15,
-      totalTokens: (usage?.input_tokens || 10) + (usage?.output_tokens || 15)
+      promptTokens: usage?.input_tokens || 0,
+      completionTokens: usage?.output_tokens || 0,
+      totalTokens: (usage?.input_tokens || 0) + (usage?.output_tokens || 0)
+    };
+  }
+
+  // Utility method to validate response format
+  validateResponse(response: any): boolean {
+    if (!response || typeof response !== 'object') {
+      return false;
+    }
+
+    // Check required fields
+    if (!response.id || !response.type || !response.role || !response.content) {
+      return false;
+    }
+
+    // Validate content array
+    if (!Array.isArray(response.content)) {
+      return false;
+    }
+
+    // Validate each content item
+    for (const item of response.content) {
+      if (!item.type || !['text', 'tool_use', 'tool_result'].includes(item.type)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Utility method to extract error information from response
+  extractError(response: any): { code: string; message: string } | null {
+    if (response.error) {
+      return {
+        code: response.error.type || 'unknown_error',
+        message: response.error.message || 'Unknown error occurred'
+      };
+    }
+
+    return null;
+  }
+
+  // Method to handle tool results in conversation
+  parseToolResult(toolResult: any): AnthropicContent {
+    return {
+      type: 'tool_result',
+      tool_use_id: toolResult.tool_use_id,
+      content: typeof toolResult.content === 'string' 
+        ? toolResult.content 
+        : JSON.stringify(toolResult.content)
+    };
+  }
+
+  // Method to format messages for conversation continuation
+  formatMessagesForContinuation(messages: any[], newContent: AnthropicContent[]): any[] {
+    const lastMessage = messages[messages.length - 1];
+    
+    if (lastMessage && lastMessage.role === 'assistant') {
+      // Append to existing assistant message
+      return [
+        ...messages.slice(0, -1),
+        {
+          ...lastMessage,
+          content: [...(Array.isArray(lastMessage.content) ? lastMessage.content : [lastMessage.content]), ...newContent]
+        }
+      ];
+    } else {
+      // Add new assistant message
+      return [
+        ...messages,
+        {
+          role: 'assistant',
+          content: newContent
+        }
+      ];
+    }
+  }
+
+  // Method to calculate response statistics
+  calculateResponseStats(response: AnthropicResponse): {
+    textLength: number;
+    toolCallCount: number;
+    contentBlocks: number;
+  } {
+    const textLength = this.extractContent(response.content).length;
+    const toolCallCount = this.extractToolCalls(response.content).length;
+    const contentBlocks = response.content.length;
+
+    return {
+      textLength,
+      toolCallCount,
+      contentBlocks
     };
   }
 }
 
-// MOCKUP INDICATOR
-console.log('🔧 MOCKUP: Anthropic parser loaded - placeholder implementation');
+console.log('✅ Anthropic parser loaded - real implementation');

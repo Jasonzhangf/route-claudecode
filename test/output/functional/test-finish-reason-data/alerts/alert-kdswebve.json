@@ -1,0 +1,13 @@
+{
+  "id": "kdswebve",
+  "type": "high_error_rate",
+  "timestamp": "2025-08-11T07:01:29.604Z",
+  "severity": "critical",
+  "data": {
+    "provider": "error-test-provider",
+    "errorRate": "66.67%",
+    "threshold": "20.00%",
+    "timeWindow": "1 hour"
+  },
+  "resolved": false
+}

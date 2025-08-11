@@ -1,0 +1,25 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.401Z",
+    "data": {
+      "rawLine": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-openai-lmstudio-5506.json",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.401Z",
+      "dataSize": 118
+    }
+  }
+]

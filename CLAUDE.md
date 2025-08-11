@@ -81,32 +81,72 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/ | tail -5
 - **时间戳**: 创建时间必须在文件名和内容中体现
 - **结构化内容**: 包含问题背景、解决方案、技术细节、关键经验
 
+## 🔗 重要命名规范说明 (IMPORTANT NAMING CONVENTION CLARIFICATION)
+
+### 📝 Provider vs Provider-Protocol 命名澄清
+
+⚠️ **重要架构概念区分**:
+
+- **Provider-Protocol (提供商协议)**: 
+  - 我们实现的协议处理逻辑 (如 `src/provider/anthropic/`, `src/provider/openai/`)
+  - 配置中的 `"type": "openai"` 字段指的是 Provider-Protocol 类型
+  - 负责与第三方服务通信的协议实现层
+  
+- **Provider (第三方服务提供商)**:
+  - 实际的AI服务提供商 (如 ShuaiHong, LM Studio, ModelScope, Google API等)
+  - 配置中的 `providers` 对象中的键名代表第三方Provider (如 `"shuaihong-openai"`)
+  - 提供实际AI模型服务的第三方服务器
+
+### 📋 配置示例说明
+```json
+{
+  "providers": {
+    "shuaihong-openai": {                    // ← 第三方Provider名称
+      "type": "openai",                      // ← Provider-Protocol类型
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions"
+    },
+    "google-gemini": {                       // ← 第三方Provider名称  
+      "type": "gemini",                      // ← Provider-Protocol类型
+      "endpoint": "https://generativelanguage.googleapis.com"
+    }
+  }
+}
+```
+
+### 🔄 架构关系图
+```
+第三方Provider (ShuaiHong) → Provider-Protocol (OpenAI协议) → 路由系统
+第三方Provider (Google API) → Provider-Protocol (Gemini协议) → 路由系统
+```
+
 ## 🏗️ 项目架构概览 (Project Architecture)
 
 ### 基本信息
 - **项目名称**: Claude Code Output Router v2.7.0 → v3.0 (重构进行中)
 - **核心功能**: 多AI提供商路由转换系统
 - **协作模式**: 与kiro共同开发项目
-- **当前架构**: v2.7.0四层模块化设计（输入-路由-输出-提供商）
-- **目标架构**: v3.0六层插件化架构（Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider ↔ Preprocessor ↔ Server）
-- **支持Provider**: Anthropic, CodeWhisperer, OpenAI-Compatible, Gemini
+- **当前架构**: v2.7.0四层模块化设计（输入-路由-输出-提供商协议）
+- **目标架构**: v3.0六层插件化架构（Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server）
+- **支持Provider-Protocol**: Anthropic, CodeWhisperer, OpenAI-Compatible, Gemini
+- **第三方Provider**: ShuaiHong, LM Studio, ModelScope, Google API等
 - **配置路径**: `~/.route-claudecode/` (新重构项目)
 
 ### 四层架构设计
 ```
-用户请求 → 输入层 → 路由层 → 输出层 → 提供商层 → AI服务
+用户请求 → 输入层 → 路由层 → 输出层 → 提供商协议层 → AI服务提供商(Provider)
 ```
 
 - **输入层** (`src/input/`): 处理Anthropic、OpenAI、Gemini格式请求
 - **路由层** (`src/routing/`): 类别驱动的模型路由和Provider选择
 - **输出层** (`src/output/`): 格式转换和响应处理  
-- **提供商层** (`src/providers/`): 与实际AI服务的连接通信
+- **提供商协议层** (`src/provider-protocol/`): 与实际AI服务提供商的连接通信协议
 
 ### 路由机制核心
 - **类别驱动映射**: `category → {provider, model}`
 - **五种路由类别**: default, background, thinking, longcontext, search
 - **零硬编码**: 模型名在路由阶段直接替换 `request.model = targetModel`
 - **Round Robin**: 多Provider/多Account负载均衡
+- **Provider-Protocol分离**: 配置中明确区分第三方Provider和Protocol实现
 
 ## 🤝 Kiro协作项目管理 (Kiro Collaboration Project Management)
 
@@ -329,7 +369,7 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 #### 🔧 Single-Provider配置端口映射表
 调试时使用以下端口和配置文件启动特定provider服务：
 
-| 端口 | Provider类型 | 账号/服务 | 配置文件 | 主要模型 |
+| 端口 | Provider-Protocol类型 | 第三方Provider | 配置文件 | 主要模型 |
 |------|-------------|-----------|----------|----------|
 | **5501** | CodeWhisperer | Primary Account | `config-codewhisperer-primary-5501.json` | CLAUDE_SONNET_4_20250514_V1_0 |
 | **5502** | Google Gemini | API Keys | `config-google-gemini-5502.json` | gemini-2.5-pro, gemini-2.5-flash |
@@ -371,8 +411,8 @@ rcc code --port 5508  # 连接到ShuaiHong服务
 ```
 
 #### 📁 配置文件位置
-- **单provider配置**: `~/.route-claude-code/config/single-provider/`
-- **多provider配置**: `~/.route-claude-code/config/load-balancing/`
+- **单Provider-Protocol配置**: `~/.route-claude-code/config/single-provider/`
+- **多Provider-Protocol配置**: `~/.route-claude-code/config/load-balancing/`
 - **生产环境配置**: `~/.route-claude-code/config/production-ready/`
 
 #### ⚠️ 服务管理重要规则 (CRITICAL SERVICE MANAGEMENT RULES)
@@ -420,7 +460,7 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 ```
 
 ##### 6. **调试和测试约束**
-- **测试隔离**: 调试单个provider时使用single-provider配置
+- **测试隔离**: 调试单个Provider-Protocol时使用single-provider配置
 - **配置不变**: 测试过程中不修改任何配置文件
 - **会话保护**: 调试期间保护用户的`rcc code`会话不被中断
 
@@ -445,13 +485,13 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 
 ### 当前版本: v2.7.0
 - ✅ **生产就绪**: 已发布npm，完整功能验证
-- ✅ **多Provider支持**: CodeWhisperer、OpenAI、Gemini、Anthropic
+- ✅ **多Provider-Protocol支持**: CodeWhisperer、OpenAI、Gemini、Anthropic协议实现
 - ✅ **Round Robin**: 多账号负载均衡和故障切换
 - ✅ **完整测试**: 174个测试文件，100%核心功能覆盖
 - ✅ **零硬编码**: 完全消除硬编码，配置驱动
-- ✅ **工具调用**: 100%修复率，所有Provider支持工具调用
+- ✅ **工具调用**: 100%修复率，所有Provider-Protocol支持工具调用
 - ✅ **企业级监控**: 生产级错误捕获系统，100%工具调用错误监控
-- ✅ **架构统一**: 简化OpenAI Provider路由，统一使用EnhancedOpenAIClient
+- ✅ **架构统一**: 简化OpenAI Provider-Protocol路由，统一使用EnhancedOpenAIClient
 - ✅ **用户体验**: 清洁日志界面，移除verbose输出，保持强大调试能力
 - ✅ **🩹 补丁系统**: 非侵入式模型兼容性修复，支持Anthropic、OpenAI、Gemini格式差异处理
 
@@ -464,7 +504,7 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
   - **AnthropicToolCallTextFixPatch**: 修复ZhipuAI/GLM-4.5文本格式tool call问题
   - **OpenAIToolFormatFixPatch**: 标准化OpenAI兼容服务工具调用格式
   - **GeminiResponseFormatFixPatch**: 统一Gemini API响应格式
-  - **精确条件匹配**: 支持Provider、Model、Version多维度匹配
+  - **精确条件匹配**: 支持Provider-Protocol、Model、Version多维度匹配
   - **性能监控**: 应用统计、超时保护、错误隔离机制
 
 ### 近期重大修复

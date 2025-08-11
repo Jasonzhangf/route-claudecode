@@ -15,7 +15,7 @@ The rebuild aims to create a production-ready, maintainable, and scalable AI rou
 #### Acceptance Criteria
 
 1. WHEN reorganizing the project THEN all existing source code SHALL be moved to OLD_implementation directory for reference
-2. WHEN establishing the new architecture THEN it SHALL create a clean six-layer structure: Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider ↔ Preprocessor ↔ Server
+2. WHEN establishing the new architecture THEN it SHALL create a clean six-layer structure: Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server
 3. WHEN implementing the architecture THEN each layer SHALL support dynamic registration and plugin-based extensibility
 4. WHEN processing requests THEN each layer SHALL have integrated I/O debugging capabilities that record to the debug system
 5. WHEN the architecture is established THEN it SHALL include comprehensive documentation in .claude/ProjectDesign directory
@@ -39,7 +39,7 @@ The rebuild aims to create a production-ready, maintainable, and scalable AI rou
 #### Acceptance Criteria
 
 1. WHEN the mock server is implemented THEN it SHALL serve data from ~/.route-claude-code/database directory
-2. WHEN replaying data THEN it SHALL support all provider types and maintain realistic response timing
+2. WHEN replaying data THEN it SHALL support all provider-protocol types and maintain realistic response timing
 3. WHEN running in mock mode THEN the system SHALL behave identically to production mode from the client perspective
 4. WHEN debugging with mock data THEN it SHALL support selective replay of specific scenarios and edge cases
 5. WHEN mock server is active THEN it SHALL provide a management interface for controlling replay scenarios
@@ -106,15 +106,15 @@ The rebuild aims to create a production-ready, maintainable, and scalable AI rou
 
 ### Requirement 9: Provider Architecture Standardization
 
-**User Story:** As a provider integration developer, I want all providers to follow a unified interface and implementation pattern, so that adding new providers is consistent and predictable.
+**User Story:** As a provider-protocol integration developer, I want all provider-protocols to follow a unified interface and implementation pattern, so that adding new provider-protocols is consistent and predictable.
 
 #### Acceptance Criteria
 
-1. WHEN implementing any provider THEN it SHALL include the standard files: index.ts, client.ts, auth.ts, converter.ts, parser.ts, and types.ts
-2. WHEN a provider processes requests THEN it SHALL implement the unified ProviderClient interface with processRequest, healthCheck, and authenticate methods
-3. WHEN providers handle authentication THEN they SHALL manage tokens independently with refresh capabilities
-4. WHEN providers convert formats THEN they SHALL support bidirectional transformation between Anthropic, OpenAI, and Gemini formats
-5. WHEN providers encounter errors THEN they SHALL classify errors appropriately and support fault tolerance mechanisms
+1. WHEN implementing any provider-protocol THEN it SHALL include the standard files: index.ts, client.ts, auth.ts, converter.ts, parser.ts, and types.ts
+2. WHEN a provider-protocol processes requests THEN it SHALL implement the unified ProviderClient interface with processRequest, healthCheck, and authenticate methods
+3. WHEN provider-protocols handle authentication THEN they SHALL manage tokens independently with refresh capabilities
+4. WHEN provider-protocols convert formats THEN they SHALL support bidirectional transformation between Anthropic, OpenAI, and Gemini formats
+5. WHEN provider-protocols encounter errors THEN they SHALL classify errors appropriately and support fault tolerance mechanisms
 
 ### Requirement 10: Configuration Management System
 

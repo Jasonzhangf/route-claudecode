@@ -1,0 +1,82 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "[08:44:37] [DEBUG] [system] Received response from Gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 97,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 57
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "[08:44:37] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[08:44:37] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 106,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 131,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 91
+    }
+  }
+]

@@ -4,7 +4,7 @@
 
 This design document outlines the complete architectural rebuild of the Claude Code Router project to create a production-ready, maintainable, and scalable AI routing system that strictly follows the .claude architecture principles. The rebuild involves moving existing implementation to OLD_implementation and creating a new clean implementation with a six-layer architecture, dynamic registration, comprehensive debugging systems, and integrated testing frameworks.
 
-The new architecture will serve as a reference implementation of the .claude architecture principles with full observability, mock capabilities, and zero hardcoding. The system will support multiple AI providers (Anthropic, OpenAI, Gemini, CodeWhisperer) with dynamic configuration management and real-time routing control.
+The new architecture will serve as a reference implementation of the .claude architecture principles with full observability, mock capabilities, and zero hardcoding. The system will support multiple AI provider-protocols (Anthropic, OpenAI, Gemini, CodeWhisperer) connecting to third-party providers with dynamic configuration management and real-time routing control.
 
 ## Architecture
 
@@ -13,7 +13,7 @@ The new architecture will serve as a reference implementation of the .claude arc
 The new architecture follows a strict six-layer pattern with clear separation of concerns and dynamic registration capabilities:
 
 ```
-Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider ↔ Preprocessor ↔ Server
+Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server
 ```
 
 #### Layer Responsibilities
@@ -22,8 +22,8 @@ Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider ↔ Preprocess
 2. **Router Layer**: Manages request routing based on dynamic configuration
 3. **Post-processor Layer**: Processes responses and applies transformations
 4. **Transformer Layer**: Converts between different AI provider formats
-5. **Provider Layer**: Interfaces with external AI services
-6. **Preprocessor Layer**: Prepares requests for provider-specific requirements
+5. **Provider-Protocol Layer**: Implements communication protocols for different AI service types
+6. **Preprocessor Layer**: Prepares requests for provider-protocol-specific requirements
 7. **Server Layer**: Core server infrastructure and service management
 
 #### Dynamic Registration System

@@ -1,0 +1,866 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:49:14] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 101,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:49:14] [INFO] [system] [1eeeaf70-ffd7-41bd-b645-5b57d7bc6c6f] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 103,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:14] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 131,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:14] [INFO] [system] [338545f9-2448-4145-9cb6-f3dfefd5a850] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 133,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:16] [INFO] [system] [1eeeaf70-ffd7-41bd-b645-5b57d7bc6c6f] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 135,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:16] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 141,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:17] [INFO] [system] [338545f9-2448-4145-9cb6-f3dfefd5a850] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 149,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:17] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 155,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:21] [DEBUG] [system] [ce158e42-592a-424c-a28e-92318be1063c] [provider] [TRACE] Sending request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 185,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 111
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:21] [INFO] [system] [ce158e42-592a-424c-a28e-92318be1063c] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 186,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:27] [INFO] [system] [ce158e42-592a-424c-a28e-92318be1063c] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 188,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:27] [DEBUG] [system] Provider google-gemini request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 204,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:29] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 238,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:29] [INFO] [system] [be1d1812-ad79-4613-b4a9-5c1d3ce310e7] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 240,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:31] [INFO] [system] [be1d1812-ad79-4613-b4a9-5c1d3ce310e7] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 242,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:31] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 248,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:31] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 281,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:31] [INFO] [system] [b78daf97-2a7a-47c6-814b-aa593a04e877] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 283,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:32] [INFO] [system] [b78daf97-2a7a-47c6-814b-aa593a04e877] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 285,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:32] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 291,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:32] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 324,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:32] [INFO] [system] [993317f0-0c03-4335-8590-80d084ddefb3] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 326,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:33] [INFO] [system] [993317f0-0c03-4335-8590-80d084ddefb3] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 328,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:33] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 334,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:33] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 367,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:33] [INFO] [system] [c5180f8b-7c8b-4e6f-aa4e-77d5b147fcce] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 369,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:34] [INFO] [system] [c5180f8b-7c8b-4e6f-aa4e-77d5b147fcce] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 371,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:34] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 377,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 410,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [INFO] [system] [99917dd1-68bf-4f23-ad77-0e2d62ca4f63] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 412,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [DEBUG] [system] Starting streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 440,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [INFO] [system] [9ad01e7e-55f5-4e48-90f5-274ec27c04d0] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 442,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:41] [INFO] [system] [99917dd1-68bf-4f23-ad77-0e2d62ca4f63] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 444,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:41] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 450,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:43] [INFO] [system] [9ad01e7e-55f5-4e48-90f5-274ec27c04d0] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 458,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:43] [DEBUG] [system] Completed streaming request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 464,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 65
+    }
+  }
+]

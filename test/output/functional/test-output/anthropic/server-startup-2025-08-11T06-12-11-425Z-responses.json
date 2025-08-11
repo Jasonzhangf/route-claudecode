@@ -1,0 +1,266 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:12:34] [DEBUG] [system] [session_1754831549130_2cislfxxq:conv_1754831549130_5d3tr8b9s:1:1754831549133:0vsr] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 129,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:18] [DEBUG] [system] [session_1754831717964_fhk8jwr6x:conv_1754831717964_wyu23zy9b:1:1754831717966:nv4w] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 212,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:19] [DEBUG] [system] [session_1754831717964_fhk8jwr6x:conv_1754831717964_wyu23zy9b:2:1754831718883:n693] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 292,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:31] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:1:1754832271376:tjfq] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 376,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:32] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:2:1754832271884:zmkh] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 488,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:27:39] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:3:1754832458803:rs7h] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 571,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:40] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:4:1754832459286:roho] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 651,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:41] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:5:1754832460347:g3qg] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 730,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.407Z",
+    "data": {
+      "rawLine": "[21:31:35] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:5:1754832657756:n4rg] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6616,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.407Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.412Z",
+    "data": {
+      "rawLine": "[21:33:01] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:4:1754832755093:wq0j] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12271,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.412Z",
+      "dataSize": 176
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.425Z",
+    "data": {
+      "rawLine": "[21:46:29] [DEBUG] [system] [session_1754833300168_ll0no3s2r:conv_1754833300168_34x5y64mi:1:1754833588052:x59h] [response-converter] Validated and normalized Anthropic response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 37196,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.425Z",
+      "dataSize": 176
+    }
+  }
+]
