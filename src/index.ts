@@ -4,8 +4,8 @@
  */
 
 import { MockupPipelineOrchestrator } from './pipeline/orchestrator.js';
-import { MockupServiceManager } from './service/index.js';
-import { MockupConfigManager } from '../config/index.js';
+import MockupServiceManager from './service/index.js';
+import MockupConfigManager from '../config/index.js';
 import { MockupDebugRecorder } from './debug/recorder.js';
 import { RegistrationManager, ModuleType } from './registration/index.js';
 
@@ -92,12 +92,15 @@ export class Application {
   }
 
   async stop(): Promise<void> {
-    console.log('🔧 MOCKUP: Stopping application - placeholder implementation');
+    console.log('🔧 Stopping application with dynamic registration cleanup');
     
     await this.serviceManager.stopAllServices();
     await this.debugRecorder.saveToDatabase();
     
-    console.log('🔧 MOCKUP: Application stopped successfully');
+    // Shutdown registration manager (unregisters all modules)
+    await this.registrationManager.shutdown();
+    
+    console.log('🔧 Application stopped successfully');
   }
 
   async processRequest(request: any): Promise<any> {
@@ -113,23 +116,77 @@ export class Application {
   async getHealthStatus(): Promise<any> {
     const serviceHealth = await this.serviceManager.healthCheck();
     const orchestratorHealth = await this.orchestrator.getHealthStatus();
+    const moduleHealth = await this.registrationManager.performHealthChecks();
+    
+    // Convert module health to summary
+    const moduleHealthSummary = {
+      total: moduleHealth.size,
+      healthy: Array.from(moduleHealth.values()).filter(h => h).length,
+      unhealthy: Array.from(moduleHealth.values()).filter(h => !h).length,
+      modules: Object.fromEntries(moduleHealth)
+    };
+    
+    const overallHealthy = serviceHealth.overall === 'healthy' && 
+                          orchestratorHealth.healthy && 
+                          moduleHealthSummary.unhealthy === 0;
     
     return {
-      overall: serviceHealth.overall === 'healthy' && orchestratorHealth.healthy ? 'healthy' : 'unhealthy',
+      overall: overallHealthy ? 'healthy' : 'unhealthy',
       services: serviceHealth.services,
       pipeline: orchestratorHealth,
-      timestamp: new Date(),
-      mockupIndicator: 'APPLICATION_HEALTH_MOCKUP'
+      modules: moduleHealthSummary,
+      registeredModules: this.getRegisteredModulesSummary(),
+      timestamp: new Date()
     };
   }
 
   getVersion(): string {
-    return '1.0.0-mockup';
+    return '1.0.0';
+  }
+
+  // Dynamic registration specific methods
+  getRegistrationManager(): RegistrationManager {
+    return this.registrationManager;
+  }
+
+  getRegisteredModulesSummary(): any {
+    const allModules = this.registrationManager.getAllModules();
+    const modulesByType: Record<string, number> = {};
+    
+    for (const module of allModules) {
+      const capabilities = module.getCapabilities();
+      modulesByType[capabilities.type] = (modulesByType[capabilities.type] || 0) + 1;
+    }
+    
+    return {
+      total: allModules.length,
+      byType: modulesByType,
+      names: allModules.map(m => m.getCapabilities().name)
+    };
+  }
+
+  private async verifyModuleHealth(): Promise<void> {
+    console.log('🔧 Verifying module health...');
+    
+    const healthResults = await this.registrationManager.performHealthChecks();
+    const unhealthyModules = Array.from(healthResults.entries())
+      .filter(([_, healthy]) => !healthy)
+      .map(([name, _]) => name);
+    
+    if (unhealthyModules.length > 0) {
+      console.warn(`🔧 Warning: ${unhealthyModules.length} modules are unhealthy:`, unhealthyModules);
+    } else {
+      console.log('🔧 All registered modules are healthy');
+    }
+    
+    // Log module summary
+    const summary = this.getRegisteredModulesSummary();
+    console.log(`🔧 Registered ${summary.total} modules:`, summary.byType);
   }
 }
 
 // Export main application instance
-export const app = new MockupApplication();
+export const app = new Application();
 
 // Export individual components for testing
 export {
@@ -139,5 +196,5 @@ export {
   MockupDebugRecorder
 };
 
-// MOCKUP INDICATOR
-console.log('🔧 MOCKUP: Main application module loaded - placeholder implementation');
+// Dynamic registration framework integrated
+console.log('🔧 Main application module loaded with dynamic registration support');

@@ -1,14 +1,16 @@
 /**
- * MOCKUP IMPLEMENTATION - Testing Configuration
- * This is a placeholder implementation for testing environment configuration
- * All functionality is mocked and should be replaced with real implementations
+ * Testing Environment Configuration
+ * Zero-hardcoding configuration for testing environment
+ * Uses mock values and in-memory storage for isolated testing
  */
 
-export const testingConfig = {
+import { Configuration } from '../../src/config/types.js';
+
+export const testingConfig: Configuration = {
   environment: 'testing',
   debug: true,
   server: {
-    port: 0, // Random port for testing
+    port: 3001, // Fixed port for testing (0 is invalid)
     host: 'localhost',
     cors: {
       enabled: true,
@@ -21,7 +23,11 @@ export const testingConfig = {
       apiKey: 'test-anthropic-key',
       baseURL: 'http://localhost:3001/mock-anthropic',
       timeout: 5000,
-      retries: 1
+      retries: 1,
+      rateLimits: {
+        requestsPerMinute: 1000,
+        tokensPerMinute: 1000000
+      }
     },
     openai: {
       enabled: true,
@@ -29,14 +35,22 @@ export const testingConfig = {
       organizationId: 'test-org',
       baseURL: 'http://localhost:3001/mock-openai',
       timeout: 5000,
-      retries: 1
+      retries: 1,
+      rateLimits: {
+        requestsPerMinute: 1000,
+        tokensPerMinute: 1000000
+      }
     },
     gemini: {
       enabled: true,
       apiKey: 'test-gemini-key',
       baseURL: 'http://localhost:3001/mock-gemini',
       timeout: 5000,
-      retries: 1
+      retries: 1,
+      rateLimits: {
+        requestsPerMinute: 1000,
+        tokensPerMinute: 1000000
+      }
     },
     codewhisperer: {
       enabled: true,
@@ -44,7 +58,11 @@ export const testingConfig = {
       secretAccessKey: 'test-secret-key',
       region: 'us-east-1',
       timeout: 5000,
-      retries: 1
+      retries: 1,
+      rateLimits: {
+        requestsPerMinute: 1000,
+        tokensPerMinute: 1000000
+      }
     }
   },
   database: {
@@ -73,11 +91,7 @@ export const testingConfig = {
     recordResponses: true,
     timeoutMultiplier: 0.1, // Faster timeouts for testing
     maxTestDuration: 30000 // 30 seconds max per test
-  },
-  mockupIndicator: 'TESTING_CONFIG_MOCKUP'
+  }
 };
 
 export default testingConfig;
-
-// MOCKUP INDICATOR
-console.log('🔧 MOCKUP: Testing configuration loaded - placeholder implementation');

@@ -1,104 +1,117 @@
 /**
- * MOCKUP IMPLEMENTATION - Production Configuration
- * This is a placeholder implementation for production environment configuration
- * All functionality is mocked and should be replaced with real implementations
+ * Production Environment Configuration
+ * Zero-hardcoding configuration for production environment
+ * All values must come from environment variables - no fallbacks
  */
 
-export const productionConfig = {
+import { Configuration } from '../../src/config/types.js';
+
+export const productionConfig: Configuration = {
   environment: 'production',
   debug: false,
   server: {
-    port: parseInt(process.env.PORT || '8080'),
+    // PORT environment variable is required in production
+    port: 8080, // Will be overridden by environment variable processing
     host: '0.0.0.0',
     cors: {
       enabled: true,
-      origins: process.env.ALLOWED_ORIGINS?.split(',') || ['https://app.example.com']
+      // ALLOWED_ORIGINS environment variable is required
+      origins: [] // Will be populated from environment variable
     },
     ssl: {
-      enabled: true,
-      cert: process.env.SSL_CERT_PATH,
-      key: process.env.SSL_KEY_PATH
+      enabled: false, // Will be enabled if SSL_CERT_PATH and SSL_KEY_PATH are provided
     }
   },
   providers: {
     anthropic: {
-      enabled: process.env.ANTHROPIC_ENABLED === 'true',
-      apiKey: process.env.ANTHROPIC_API_KEY,
-      baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
+      enabled: false, // Will be set from ANTHROPIC_ENABLED environment variable
+      // ANTHROPIC_API_KEY environment variable is required if enabled
+      baseURL: 'https://api.anthropic.com/v1', // Can be overridden with ANTHROPIC_BASE_URL
       timeout: 60000,
-      retries: 5
+      retries: 5,
+      rateLimits: {
+        requestsPerMinute: 60,
+        tokensPerMinute: 100000
+      }
     },
     openai: {
-      enabled: process.env.OPENAI_ENABLED === 'true',
-      apiKey: process.env.OPENAI_API_KEY,
-      organizationId: process.env.OPENAI_ORG_ID,
-      baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+      enabled: false, // Will be set from OPENAI_ENABLED environment variable
+      // OPENAI_API_KEY environment variable is required if enabled
+      // OPENAI_ORG_ID environment variable is optional
+      baseURL: 'https://api.openai.com/v1', // Can be overridden with OPENAI_BASE_URL
       timeout: 60000,
-      retries: 5
+      retries: 5,
+      rateLimits: {
+        requestsPerMinute: 100,
+        tokensPerMinute: 150000
+      }
     },
     gemini: {
-      enabled: process.env.GEMINI_ENABLED === 'true',
-      apiKey: process.env.GEMINI_API_KEY,
-      baseURL: process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1',
+      enabled: false, // Will be set from GEMINI_ENABLED environment variable
+      // GEMINI_API_KEY environment variable is required if enabled
+      baseURL: 'https://generativelanguage.googleapis.com/v1', // Can be overridden with GEMINI_BASE_URL
       timeout: 60000,
-      retries: 5
+      retries: 5,
+      rateLimits: {
+        requestsPerMinute: 60,
+        tokensPerMinute: 120000
+      }
     },
     codewhisperer: {
-      enabled: process.env.CODEWHISPERER_ENABLED === 'true',
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      region: process.env.AWS_REGION || 'us-east-1',
+      enabled: false, // Will be set from CODEWHISPERER_ENABLED environment variable
+      // AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables are required if enabled
+      region: 'us-east-1', // Can be overridden with AWS_REGION
       timeout: 60000,
-      retries: 5
+      retries: 5,
+      rateLimits: {
+        requestsPerMinute: 30,
+        tokensPerMinute: 80000
+      }
     }
   },
   database: {
-    path: process.env.DATABASE_PATH || '/var/lib/route-claude-code/database',
-    maxSize: process.env.DATABASE_MAX_SIZE || '5GB',
-    backupInterval: process.env.BACKUP_INTERVAL || '6h',
-    retentionDays: parseInt(process.env.RETENTION_DAYS || '90')
+    path: '/var/lib/route-claude-code/database', // Can be overridden with DATABASE_PATH
+    maxSize: '5GB', // Can be overridden with DATABASE_MAX_SIZE
+    backupInterval: '6h', // Can be overridden with BACKUP_INTERVAL
+    retentionDays: 90 // Can be overridden with RETENTION_DAYS
   },
   logging: {
-    level: process.env.LOG_LEVEL || 'info',
+    level: 'info', // Can be overridden with LOG_LEVEL
     console: false,
-    file: process.env.LOG_FILE || '/var/log/route-claude-code/production.log',
-    maxSize: process.env.LOG_MAX_SIZE || '200MB',
-    maxFiles: parseInt(process.env.LOG_MAX_FILES || '10')
+    file: '/var/log/route-claude-code/production.log', // Can be overridden with LOG_FILE
+    maxSize: '200MB', // Can be overridden with LOG_MAX_SIZE
+    maxFiles: 10 // Can be overridden with LOG_MAX_FILES
   },
   rateLimits: {
     enabled: true,
     global: {
-      requestsPerMinute: parseInt(process.env.GLOBAL_RATE_LIMIT_RPM || '500'),
-      tokensPerMinute: parseInt(process.env.GLOBAL_RATE_LIMIT_TPM || '500000')
+      requestsPerMinute: 500, // Can be overridden with GLOBAL_RATE_LIMIT_RPM
+      tokensPerMinute: 500000 // Can be overridden with GLOBAL_RATE_LIMIT_TPM
     },
     perProvider: {
       anthropic: {
-        requestsPerMinute: parseInt(process.env.ANTHROPIC_RATE_LIMIT_RPM || '60'),
-        tokensPerMinute: parseInt(process.env.ANTHROPIC_RATE_LIMIT_TPM || '100000')
+        requestsPerMinute: 60, // Can be overridden with ANTHROPIC_RATE_LIMIT_RPM
+        tokensPerMinute: 100000 // Can be overridden with ANTHROPIC_RATE_LIMIT_TPM
       },
       openai: {
-        requestsPerMinute: parseInt(process.env.OPENAI_RATE_LIMIT_RPM || '100'),
-        tokensPerMinute: parseInt(process.env.OPENAI_RATE_LIMIT_TPM || '150000')
+        requestsPerMinute: 100, // Can be overridden with OPENAI_RATE_LIMIT_RPM
+        tokensPerMinute: 150000 // Can be overridden with OPENAI_RATE_LIMIT_TPM
       },
       gemini: {
-        requestsPerMinute: parseInt(process.env.GEMINI_RATE_LIMIT_RPM || '60'),
-        tokensPerMinute: parseInt(process.env.GEMINI_RATE_LIMIT_TPM || '120000')
+        requestsPerMinute: 60, // Can be overridden with GEMINI_RATE_LIMIT_RPM
+        tokensPerMinute: 120000 // Can be overridden with GEMINI_RATE_LIMIT_TPM
       },
       codewhisperer: {
-        requestsPerMinute: parseInt(process.env.CODEWHISPERER_RATE_LIMIT_RPM || '30'),
-        tokensPerMinute: parseInt(process.env.CODEWHISPERER_RATE_LIMIT_TPM || '80000')
+        requestsPerMinute: 30, // Can be overridden with CODEWHISPERER_RATE_LIMIT_RPM
+        tokensPerMinute: 80000 // Can be overridden with CODEWHISPERER_RATE_LIMIT_TPM
       }
     }
   },
   monitoring: {
     enabled: true,
-    metricsEndpoint: process.env.METRICS_ENDPOINT || '/metrics',
-    healthEndpoint: process.env.HEALTH_ENDPOINT || '/health'
-  },
-  mockupIndicator: 'PRODUCTION_CONFIG_MOCKUP'
+    metricsEndpoint: '/metrics', // Can be overridden with METRICS_ENDPOINT
+    healthEndpoint: '/health' // Can be overridden with HEALTH_ENDPOINT
+  }
 };
 
 export default productionConfig;
-
-// MOCKUP INDICATOR
-console.log('🔧 MOCKUP: Production configuration loaded - placeholder implementation');

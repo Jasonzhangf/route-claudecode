@@ -1,0 +1,71 @@
+{
+  "sessionId": "debug-test-1754887724767",
+  "startTime": "2025-08-11T04:48:44.767Z",
+  "testSuite": "Debug Recording System",
+  "results": [
+    {
+      "testName": "Debug Recorder Functionality",
+      "status": "PASSED",
+      "message": "All debug recorder functions working correctly",
+      "timestamp": "2025-08-11T04:48:44.770Z",
+      "duration": 0
+    },
+    {
+      "testName": "Audit Trail System",
+      "status": "PASSED",
+      "message": "Audit trail system functioning correctly",
+      "timestamp": "2025-08-11T04:48:44.771Z",
+      "duration": 0
+    },
+    {
+      "testName": "Replay System",
+      "status": "FAILED",
+      "message": "Cannot read properties of undefined (reading 'description')",
+      "timestamp": "2025-08-11T04:48:44.772Z",
+      "duration": 0
+    },
+    {
+      "testName": "Performance Metrics Collection",
+      "status": "PASSED",
+      "message": "Performance metrics collection working correctly",
+      "timestamp": "2025-08-11T04:48:44.875Z",
+      "duration": 0
+    },
+    {
+      "testName": "Integrated Debug System",
+      "status": "FAILED",
+      "message": "Cannot read properties of undefined (reading 'description')",
+      "timestamp": "2025-08-11T04:48:44.876Z",
+      "duration": 0
+    },
+    {
+      "testName": "Layer Wrapping and Debug Integration",
+      "status": "FAILED",
+      "message": "Synchronous method wrapping failed",
+      "timestamp": "2025-08-11T04:48:44.929Z",
+      "duration": 0
+    },
+    {
+      "testName": "Scenario Creation and Replay",
+      "status": "PASSED",
+      "message": "Scenario creation working correctly (replay test skipped for mock)",
+      "timestamp": "2025-08-11T04:48:44.930Z",
+      "duration": 0
+    },
+    {
+      "testName": "Debug System Status and Reporting",
+      "status": "FAILED",
+      "message": "Cannot read properties of undefined (reading 'description')",
+      "timestamp": "2025-08-11T04:48:44.930Z",
+      "duration": 0
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 4,
+    "failed": 4,
+    "skipped": 0,
+    "successRate": "50.00"
+  },
+  "endTime": "2025-08-11T04:48:44.930Z"
+}

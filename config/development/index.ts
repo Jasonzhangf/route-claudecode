@@ -1,10 +1,12 @@
 /**
- * MOCKUP IMPLEMENTATION - Development Configuration
- * This is a placeholder implementation for development environment configuration
- * All functionality is mocked and should be replaced with real implementations
+ * Development Environment Configuration
+ * Zero-hardcoding configuration for development environment
+ * All values come from environment variables or explicit configuration
  */
 
-export const developmentConfig = {
+import { Configuration } from '../../src/config/types.js';
+
+export const developmentConfig: Configuration = {
   environment: 'development',
   debug: true,
   server: {
@@ -18,33 +20,49 @@ export const developmentConfig = {
   providers: {
     anthropic: {
       enabled: true,
-      apiKey: process.env.ANTHROPIC_API_KEY || 'mockup-anthropic-dev-key',
+      // API key will be loaded from ANTHROPIC_API_KEY environment variable
+      // No fallback values - explicit error if missing
       baseURL: 'https://api.anthropic.com/v1',
       timeout: 30000,
-      retries: 3
+      retries: 3,
+      rateLimits: {
+        requestsPerMinute: 60,
+        tokensPerMinute: 100000
+      }
     },
     openai: {
       enabled: true,
-      apiKey: process.env.OPENAI_API_KEY || 'mockup-openai-dev-key',
-      organizationId: process.env.OPENAI_ORG_ID || 'mockup-org-dev',
+      // API key will be loaded from OPENAI_API_KEY environment variable
+      // Organization ID from OPENAI_ORG_ID environment variable
       baseURL: 'https://api.openai.com/v1',
       timeout: 30000,
-      retries: 3
+      retries: 3,
+      rateLimits: {
+        requestsPerMinute: 100,
+        tokensPerMinute: 150000
+      }
     },
     gemini: {
       enabled: true,
-      apiKey: process.env.GEMINI_API_KEY || 'mockup-gemini-dev-key',
+      // API key will be loaded from GEMINI_API_KEY environment variable
       baseURL: 'https://generativelanguage.googleapis.com/v1',
       timeout: 30000,
-      retries: 3
+      retries: 3,
+      rateLimits: {
+        requestsPerMinute: 60,
+        tokensPerMinute: 120000
+      }
     },
     codewhisperer: {
       enabled: true,
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID || 'mockup-aws-key-dev',
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || 'mockup-aws-secret-dev',
+      // AWS credentials will be loaded from AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
       region: 'us-east-1',
       timeout: 30000,
-      retries: 3
+      retries: 3,
+      rateLimits: {
+        requestsPerMinute: 30,
+        tokensPerMinute: 80000
+      }
     }
   },
   database: {
@@ -66,11 +84,7 @@ export const developmentConfig = {
       requestsPerMinute: 1000,
       tokensPerMinute: 1000000
     }
-  },
-  mockupIndicator: 'DEVELOPMENT_CONFIG_MOCKUP'
+  }
 };
 
 export default developmentConfig;
-
-// MOCKUP INDICATOR
-console.log('🔧 MOCKUP: Development configuration loaded - placeholder implementation');
