@@ -1,0 +1,17 @@
+{
+  "id": "msg_1753502360821",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Router test successful! The Claude Code Router is working correctly."
+    }
+  ],
+  "model": "claude-sonnet-4-20250514",
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "output_tokens": 10
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "timestamp": "2025-07-31T15:03:42.092Z",
+  "testCase": "工具调用对比",
+  "ourImplementation": {
+    "success": true,
+    "duration": 4857,
+    "response": {
+      "type": "message",
+      "model": "claude-sonnet-4-20250514",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "我来帮您创建一个学习TypeScript的todo项目。"
+        }
+      ],
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 7,
+        "output_tokens": 7
+      }
+    }
+  },
+  "demo2Implementation": {
+    "success": true,
+    "duration": 5024,
+    "response": {
+      "content": [
+        {
+          "id": "tooluse_llMg38qmRpWhOM1PDco1nw",
+          "input": {
+            "todos": [
+              {
+                "content": "学习TypeScript",
+                "id": "learn-typescript-001",
+                "priority": "medium",
+                "status": "pending"
+              }
+            ]
+          },
+          "name": "TodoWrite",
+          "type": "tool_use"
+        }
+      ],
+      "model": "claude-sonnet-4-20250514",
+      "role": "assistant",
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+        "input_tokens": 50,
+        "output_tokens": 0
+      }
+    }
+  },
+  "toolCallRequest": {
+    "model": "claude-sonnet-4-20250514",
+    "max_tokens": 200,
+    "messages": [
+      {
+        "role": "user",
+        "content": "请帮我创建一个todo项目：学习TypeScript"
+      }
+    ],
+    "tools": [
+      {
+        "name": "TodoWrite",
+        "description": "创建和管理todo项目列表",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "todos": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "todo内容"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed"
+                    ],
+                    "description": "todo状态"
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "high",
+                      "medium",
+                      "low"
+                    ],
+                    "description": "优先级"
+                  },
+                  "id": {
+                    "type": "string",
+                    "description": "唯一标识符"
+                  }
+                },
+                "required": [
+                  "content",
+                  "status",
+                  "priority",
+                  "id"
+                ]
+              }
+            }
+          },
+          "required": [
+            "todos"
+          ]
+        }
+      }
+    ]
+  }
+}

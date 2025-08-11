@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-07-31T00:03:09.388Z",
+  "step": "step6-transformer-output",
+  "input": {
+    "transformerInput": {
+      "id": "chatcmpl-mock123",
+      "object": "chat.completion",
+      "created": 1753920185428,
+      "model": "gemini-2.5-flash",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "This is a mock response for testing transformer input processing."
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 15,
+        "completion_tokens": 12,
+        "total_tokens": 27
+      }
+    }
+  },
+  "output": {
+    "transformedResponse": {
+      "id": "chatcmpl-mock123",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "This is a mock response for testing transformer input processing."
+        }
+      ],
+      "stop_reason": "end_turn",
+      "usage": {
+        "input_tokens": 15,
+        "output_tokens": 12
+      }
+    },
+    "usingMockTransformer": true
+  },
+  "analysis": {
+    "output": {
+      "hasId": true,
+      "hasType": true,
+      "hasRole": true,
+      "hasContent": true,
+      "hasStopReason": true,
+      "hasUsage": true,
+      "contentCount": 1
+    },
+    "content": [
+      {
+        "index": 0,
+        "type": "text",
+        "hasText": true,
+        "textLength": 65,
+        "hasToolUse": false,
+        "toolName": null
+      }
+    ],
+    "transformationSuccess": true
+  },
+  "success": true
+}

@@ -1,0 +1,43 @@
+{
+  "step": 2,
+  "name": "Router Layer Testing",
+  "layer": "router",
+  "startTime": "2025-08-11T04:09:16.609Z",
+  "status": "passed",
+  "mockupMode": true,
+  "validations": [
+    {
+      "test": "Route Resolution",
+      "status": "passed",
+      "mockup": true
+    },
+    {
+      "test": "Provider Selection",
+      "status": "passed",
+      "mockup": true
+    },
+    {
+      "test": "Load Balancing",
+      "status": "passed",
+      "mockup": true
+    }
+  ],
+  "output": {
+    "layer": "router",
+    "mockupData": {
+      "timestamp": "2025-08-11T04:09:16.609Z",
+      "inputData": {
+        "mockInput": "sample-router-input"
+      },
+      "processedData": {
+        "mockOutput": "sample-router-output"
+      },
+      "metadata": {
+        "version": "v3.0-mockup",
+        "processingTime": 35
+      }
+    }
+  },
+  "duration": 0,
+  "endTime": "2025-08-11T04:09:16.609Z"
+}

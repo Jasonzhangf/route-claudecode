@@ -1,0 +1,28 @@
+{
+  "stage": "input-processing",
+  "timestamp": "2025-08-06T23:10:53.519Z",
+  "sessionId": "debug-1754521853517",
+  "data": {
+    "passed": true,
+    "issues": [],
+    "tools": [
+      {
+        "index": 0,
+        "name": "get_weather",
+        "issues": []
+      },
+      {
+        "index": 1,
+        "name": "LS",
+        "issues": []
+      }
+    ]
+  },
+  "metadata": {
+    "testType": "validation",
+    "toolCount": 2,
+    "captureSize": 118,
+    "dataType": "object",
+    "isArray": false
+  }
+}

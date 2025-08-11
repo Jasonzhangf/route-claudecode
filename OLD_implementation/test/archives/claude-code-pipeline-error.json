@@ -1,0 +1,18 @@
+{
+  "timestamp": "2025-07-26T03:58:43.504Z",
+  "phases": [
+    {
+      "phase": "Phase 1: Claude请求准备",
+      "success": true,
+      "duration": 0,
+      "data": {
+        "modelUsed": "claude-sonnet-4-20250514",
+        "messageCount": 1,
+        "streaming": true
+      }
+    }
+  ],
+  "success": false,
+  "totalDuration": 1,
+  "error": "Cannot find module '@/types'\nRequire stack:\n- /Users/fanzhang/Documents/github/claude-code-router/dist/input/anthropic/processor.js\n- /Users/fanzhang/Documents/github/claude-code-router/test/test-claude-code-pipeline.js"
+}

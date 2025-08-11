@@ -1,0 +1,110 @@
+{
+  "timestamp": "2025-07-31T11:40:30.832Z",
+  "test": "step1-basic-routing",
+  "summary": {
+    "total": 5,
+    "passed": 5,
+    "failed": 0,
+    "passRate": 100
+  },
+  "results": [
+    {
+      "name": "Default Category",
+      "expected": {
+        "category": "default",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "actual": {
+        "category": "default",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "passed": true
+    },
+    {
+      "name": "Background Category (Haiku Model)",
+      "expected": {
+        "category": "background",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "actual": {
+        "category": "background",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "passed": true
+    },
+    {
+      "name": "Thinking Category (Explicit)",
+      "expected": {
+        "category": "thinking",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "actual": {
+        "category": "thinking",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "passed": true
+    },
+    {
+      "name": "Long Context Category",
+      "expected": {
+        "category": "longcontext",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "actual": {
+        "category": "longcontext",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "passed": true
+    },
+    {
+      "name": "Search Category (With Tools)",
+      "expected": {
+        "category": "search",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "actual": {
+        "category": "search",
+        "provider": "codewhisperer-primary",
+        "targetModel": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "passed": true
+    }
+  ],
+  "config": {
+    "routing": {
+      "default": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "background": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "thinking": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "longcontext": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "search": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      }
+    },
+    "providers": [
+      "0",
+      "1"
+    ]
+  }
+}

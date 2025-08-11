@@ -1,0 +1,43 @@
+{
+  "step": 3,
+  "name": "Post-processor Validation",
+  "layer": "post-processor",
+  "startTime": "2025-08-11T04:09:16.609Z",
+  "status": "passed",
+  "mockupMode": true,
+  "validations": [
+    {
+      "test": "Response Formatting",
+      "status": "passed",
+      "mockup": true
+    },
+    {
+      "test": "Error Handling",
+      "status": "passed",
+      "mockup": true
+    },
+    {
+      "test": "Output Validation",
+      "status": "passed",
+      "mockup": true
+    }
+  ],
+  "output": {
+    "layer": "post-processor",
+    "mockupData": {
+      "timestamp": "2025-08-11T04:09:16.609Z",
+      "inputData": {
+        "mockInput": "sample-post-processor-input"
+      },
+      "processedData": {
+        "mockOutput": "sample-post-processor-output"
+      },
+      "metadata": {
+        "version": "v3.0-mockup",
+        "processingTime": 60
+      }
+    }
+  },
+  "duration": 0,
+  "endTime": "2025-08-11T04:09:16.609Z"
+}

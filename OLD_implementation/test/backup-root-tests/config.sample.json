@@ -1,0 +1,119 @@
+{
+  "server": {
+    "port": 3456,
+    "host": "127.0.0.1"
+  },
+  "providers": {
+    "codewhisperer-primary": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/your-auth-token.json"
+        }
+      },
+      "models": [
+        "CLAUDE_SONNET_4_20250514_V1_0",
+        "CLAUDE_3_7_SONNET_20250219_V1_0"
+      ],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0",
+      "maxTokens": {
+        "CLAUDE_SONNET_4_20250514_V1_0": 131072,
+        "CLAUDE_3_7_SONNET_20250219_V1_0": 131072
+      }
+    },
+    "openai-compatible": {
+      "type": "openai",
+      "endpoint": "https://api.openai.com/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "sk-your-openai-api-key-here"
+        }
+      },
+      "models": ["gpt-4o", "gpt-4o-mini", "claude-3-5-sonnet"],
+      "defaultModel": "gpt-4o",
+      "maxTokens": {
+        "gpt-4o": 128000,
+        "gpt-4o-mini": 128000,
+        "claude-3-5-sonnet": 200000
+      }
+    },
+    "anthropic-direct": {
+      "type": "anthropic",
+      "endpoint": "https://api.anthropic.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "sk-ant-your-anthropic-api-key-here"
+        }
+      },
+      "models": [
+        "claude-3-5-sonnet-20241022",
+        "claude-3-5-haiku-20241022",
+        "claude-3-opus-20240229"
+      ],
+      "defaultModel": "claude-3-5-sonnet-20241022",
+      "maxTokens": {
+        "claude-3-5-sonnet-20241022": 200000,
+        "claude-3-5-haiku-20241022": 200000,
+        "claude-3-opus-20240229": 200000
+      }
+    },
+    "gemini-direct": {
+      "type": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "your-gemini-api-key-here"
+        }
+      },
+      "models": [
+        "gemini-2.5-pro",
+        "gemini-2.5-flash",
+        "gemini-1.5-pro",
+        "gemini-1.5-flash"
+      ],
+      "defaultModel": "gemini-2.5-flash",
+      "maxTokens": {
+        "gemini-2.5-pro": 1048576,
+        "gemini-2.5-flash": 1048576,
+        "gemini-1.5-pro": 1048576,
+        "gemini-1.5-flash": 1048576
+      }
+    }
+  },
+  "routing": {
+    "default": {
+      "provider": "codewhisperer-primary",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "background": {
+      "provider": "gemini-direct",
+      "model": "gemini-2.5-flash"
+    },
+    "thinking": {
+      "provider": "anthropic-direct",
+      "model": "claude-3-5-sonnet-20241022"
+    },
+    "longcontext": {
+      "provider": "gemini-direct",
+      "model": "gemini-2.5-pro"
+    },
+    "search": {
+      "provider": "openai-compatible",
+      "model": "gpt-4o-mini"
+    }
+  },
+  "debug": {
+    "enabled": false,
+    "logLevel": "info",
+    "traceRequests": false,
+    "saveRequests": false,
+    "logDir": "~/.claude-code-router/logs",
+    "_comment": "On Windows: %USERPROFILE%\\.claude-code-router\\logs"
+  },
+  "hooks": []
+}

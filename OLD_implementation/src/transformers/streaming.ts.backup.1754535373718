@@ -1,0 +1,925 @@
+/**
+ * Streaming Response Transformer
+ * Handles real-time conversion of streaming responses between formats
+ */
+
+import { StreamChunk, MessageTransformer } from './types';
+import { logger } from '@/utils/logger';
+// import { PipelineDebugger, ToolCallError } from '@/debug/pipeline-debugger'; // 已迁移到统一日志系统
+import { ErrorTracker, ToolCallError } from '../logging';
+import { PipelineDebugger, ToolCallErrorClass } from '@/utils/logger';
+import { mapFinishReason, mapStopReason } from '@/utils/finish-reason-handler';
+
+export interface StreamTransformOptions {
+  sourceFormat: 'openai' | 'anthropic';
+  targetFormat: 'openai' | 'anthropic';
+  model?: string;
+  requestId?: string;
+  port?: number;
+}
+
+export class StreamingTransformer {
+  private messageId: string;
+  private model: string;
+  private requestId: string;
+  private toolCallMap: Map<number, any> = new Map();
+  private contentBlockIndex = 0;
+  private hasStarted = false;
+  private isCompleted = false;
+  private pipelineDebugger: PipelineDebugger;
+  
+  // 🔄 二次工具调用处理机制
+  private needsReprocessing = false;
+  private reprocessBuffer: string[] = [];
+  private toolCallDetectionAttempts = 0;
+  private maxDetectionAttempts = 2;
+
+  constructor(
+    private sourceTransformer: MessageTransformer,
+    private targetTransformer: MessageTransformer,
+    private options: StreamTransformOptions
+  ) {
+    this.messageId = `msg_${Date.now()}`;
+    // Use the model from options (should be the targetModel from routing)
+    this.model = options.model || 'unknown';
+    this.requestId = options.requestId || 'unknown';
+    // 🔧 修复硬编码：必须从选项中获取端口
+    if (!options.port) {
+      throw new Error('StreamingTransformer requires explicit port specification - no hardcoded defaults allowed');
+    }
+    this.pipelineDebugger = new PipelineDebugger(options.port);
+    
+    logger.debug('StreamingTransformer initialized', {
+      model: this.model,
+      sourceFormat: options.sourceFormat,
+      targetFormat: options.targetFormat,
+      requestId: this.requestId
+    });
+  }
+
+  /**
+   * Transform streaming response from OpenAI to Anthropic format
+   */
+  async *transformOpenAIToAnthropic(stream: ReadableStream): AsyncIterable<string> {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let outputTokens = 0;
+    let stopReason = undefined; // 移除默认停止原因
+
+    try {
+      // Send message start event
+      if (!this.hasStarted) {
+        const messageStartEvent = this.createAnthropicEvent('message_start', {
+          type: 'message_start',
+          message: {
+            id: this.messageId,
+            type: 'message',
+            role: 'assistant',
+            content: [],
+            model: this.model,
+            // 完全移除stop_reason，保证停止的权力在模型这边
+            // stop_reason: null,
+            stop_sequence: null,
+            usage: { input_tokens: 0, output_tokens: 0 }
+          }
+        });
+        if (messageStartEvent) {
+          yield messageStartEvent;
+        }
+
+        const pingEvent = this.createAnthropicEvent('ping', { type: 'ping' });
+        if (pingEvent) {
+          yield pingEvent;
+        }
+        this.hasStarted = true;
+      }
+
+      let hasContentBlock = false;
+
+      while (!this.isCompleted) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') {
+              this.isCompleted = true;
+              break;
+            }
+
+            try {
+              const chunk = JSON.parse(data);
+              const choice = chunk.choices?.[0];
+              if (!choice) continue;
+              
+              // Track if we handled this chunk
+              let handledChunk = false;
+
+              // Handle content deltas - with defensive programming like demo1
+              if (choice.delta?.content !== undefined) {
+                handledChunk = true;
+                
+                if (!hasContentBlock) {
+                  const startEvent = this.createAnthropicEvent('content_block_start', {
+                    type: 'content_block_start',
+                    index: 0,
+                    content_block: { type: 'text', text: '' }
+                  });
+                  if (startEvent) {
+                    yield startEvent;
+                    hasContentBlock = true;
+                  }
+                }
+
+                // Only yield content delta if there is actual non-empty content
+                if (choice.delta.content && choice.delta.content.length > 0) {
+                  // Check for tool calls appearing in text content (error condition)
+                  this.pipelineDebugger.detectToolCallError(
+                    choice.delta.content,
+                    this.requestId,
+                    'streaming-text-delta',
+                    'openai',
+                    this.model
+                  );
+                  
+                  const deltaEvent = this.createAnthropicEvent('content_block_delta', {
+                    type: 'content_block_delta',
+                    index: 0,
+                    delta: { type: 'text_delta', text: choice.delta.content }
+                  });
+                  if (deltaEvent) {
+                    yield deltaEvent;
+                    outputTokens += Math.ceil(choice.delta.content.length / 4);
+                  }
+                }
+                // Note: for empty content, we don't yield a delta but we still marked it as handled
+              }
+
+              // Handle tool calls
+              if (choice.delta?.tool_calls) {
+                handledChunk = true;
+                
+                for (const toolCall of choice.delta.tool_calls) {
+                  const index = toolCall.index ?? 0;
+                  
+                  if (!this.toolCallMap.has(index)) {
+                    // Close previous content block if exists
+                    if (hasContentBlock) {
+                      const stopEvent = this.createAnthropicEvent('content_block_stop', {
+                        type: 'content_block_stop',
+                        index: 0
+                      });
+                      if (stopEvent) {
+                        yield stopEvent;
+                      }
+                    }
+
+                    const blockIndex = hasContentBlock ? 1 : 0;
+                    this.toolCallMap.set(index, {
+                      id: toolCall.id || `call_${Date.now()}_${index}`,
+                      name: toolCall.function?.name || `tool_${index}`,
+                      arguments: '',
+                      blockIndex
+                    });
+
+                    const toolStartEvent = this.createAnthropicEvent('content_block_start', {
+                      type: 'content_block_start',
+                      index: blockIndex,
+                      content_block: {
+                        type: 'tool_use',
+                        id: this.toolCallMap.get(index).id,
+                        name: this.toolCallMap.get(index).name,
+                        input: {}
+                      }
+                    });
+                    if (toolStartEvent) {
+                      yield toolStartEvent;
+                    }
+                  }
+
+                  // Update tool call data
+                  const toolCallData = this.toolCallMap.get(index);
+                  if (toolCall.function?.arguments) {
+                    toolCallData.arguments += toolCall.function.arguments;
+                    
+                    const toolDeltaEvent = this.createAnthropicEvent('content_block_delta', {
+                      type: 'content_block_delta',
+                      index: toolCallData.blockIndex,
+                      delta: {
+                        type: 'input_json_delta',
+                        partial_json: toolCall.function.arguments
+                      }
+                    });
+                    if (toolDeltaEvent) {
+                      yield toolDeltaEvent;
+                    }
+                  }
+                }
+              }
+
+              // Handle finish reason
+              if (choice.finish_reason) {
+                handledChunk = true;
+                const originalFinishReason = choice.finish_reason;
+                stopReason = mapFinishReason(originalFinishReason);
+                
+                // 🆕 记录原始OpenAI和转换后的Anthropic finish reason
+                logger.logDualFinishReason(
+                  originalFinishReason,
+                  stopReason,
+                  this.options.sourceFormat,
+                  {
+                    model: this.model,
+                    responseType: 'streaming',
+                    context: 'streaming-openai-to-anthropic',
+                    chunkData: choice,
+                    conversionMethod: 'mapFinishReason'
+                  },
+                  this.requestId,
+                  'dual-reason-streaming'
+                );
+                
+                // 同时记录到调试日志系统
+                try {
+                  const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+                  logFinishReasonDebug(
+                    this.requestId,
+                    choice.finish_reason,
+                    this.options.sourceFormat,
+                    this.model,
+                    this.options.port || (this as any).port || (() => { 
+                      console.error('❌ CRITICAL: Port not provided to streaming transformer'); 
+                      throw new Error('Port must be provided to streaming transformer - no fallback allowed'); 
+                    })(),
+                    {
+                      mappedStopReason: stopReason,
+                      context: 'streaming-transformer',
+                      timestamp: new Date().toISOString()
+                    }
+                  );
+                } catch (error) {
+                  console.error('Failed to log finish reason debug:', error);
+                }
+              }
+              
+              // If we didn't handle this chunk, it means it's just a metadata chunk that doesn't need transformation
+              // This is normal and we should NOT yield anything for such chunks
+              if (!handledChunk) {
+                // This is expected for chunks like: {"delta": {"role": "assistant"}} or {"delta": {}}
+                // We simply skip them without yielding anything
+              }
+              
+            } catch (error) {
+              logger.debug('Failed to parse streaming chunk', error, this.requestId);
+              
+              // Check for tool call errors in the problematic chunk
+              if (this.isLikelyToolCallError(data, error)) {
+                this.pipelineDebugger.logToolCallError(
+                  new ToolCallErrorClass(
+                    'Tool call parsing error detected',
+                    this.requestId,
+                    'openai-to-anthropic',
+                    'openai',
+                    this.model,
+                    {
+                      rawChunk: data,
+                      error: (error as Error).message
+                    },
+                    this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })()
+                  )
+                );
+                              }
+            }
+          }
+        }
+      }
+
+      // Send completion events
+      if (hasContentBlock) {
+        const stopEvent = this.createAnthropicEvent('content_block_stop', {
+          type: 'content_block_stop',
+          index: 0
+        });
+        if (stopEvent) {
+          yield stopEvent;
+        }
+      }
+
+      // Close any open tool call blocks
+      for (const [index, toolCall] of this.toolCallMap.entries()) {
+        const toolStopEvent = this.createAnthropicEvent('content_block_stop', {
+          type: 'content_block_stop',
+          index: toolCall.blockIndex
+        });
+        if (toolStopEvent) {
+          yield toolStopEvent;
+        }
+      }
+
+      // Send message delta with usage - 智能处理stop_reason
+      const hasToolCalls = this.toolCallMap.size > 0;
+      const shouldIncludeStopReason = stopReason === 'tool_use' || hasToolCalls;
+      
+      if (shouldIncludeStopReason) {
+        // 工具调用完成 - 需要发送stop_reason以触发下一轮
+        const messageDeltaEvent = this.createAnthropicEvent('message_delta', {
+          type: 'message_delta',
+          delta: { 
+            stop_reason: stopReason || 'tool_use',
+            stop_sequence: null
+          },
+          usage: { output_tokens: outputTokens }
+        });
+        if (messageDeltaEvent) {
+          yield messageDeltaEvent;
+        }
+
+        // 强制记录工具调用finish reason - 核心功能，必须记录
+        const toolCallFinishReason = stopReason || 'tool_use';
+        logger.logFinishReason(toolCallFinishReason, {
+          provider: this.options.sourceFormat,
+          model: this.model,
+          responseType: 'streaming',
+          toolCallCount: this.toolCallMap.size,
+          context: 'tool-use-completion',
+          originalStopReason: stopReason
+        }, this.requestId, 'streaming-tool-use');
+        
+        // 同时记录到调试日志系统
+        try {
+          const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+          logFinishReasonDebug(
+            this.requestId,
+            toolCallFinishReason,
+            this.options.sourceFormat,
+            this.model,
+            this.options.port || (this as any).port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
+            {
+              toolCallCount: this.toolCallMap.size,
+              context: 'tool-use-completion',
+              originalStopReason: stopReason,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (error) {
+          console.error('Failed to log tool call finish reason debug:', error);
+        }
+
+        // 🔄 二次工具调用处理检查
+        const shouldReprocess = await this.checkForReprocessing(stopReason);
+        if (shouldReprocess) {
+          const reprocessedResult = await this.reprocessForToolCalls();
+          if (reprocessedResult.hasToolCalls) {
+            // 发送reprocessed工具调用事件
+            for (const toolEvent of reprocessedResult.toolEvents) {
+              yield toolEvent;
+            }
+            // 更新停止原因
+            stopReason = 'tool_use';
+          }
+        }
+
+        // 只有在非tool_use场景才发送message_stop，工具调用需要保持对话开放
+        const actualStopReason = stopReason || 'tool_use';
+        if (actualStopReason !== 'tool_use') {
+          const messageStopEvent = this.createAnthropicEvent('message_stop', {
+            type: 'message_stop'
+          });
+          if (messageStopEvent) {
+            yield messageStopEvent;
+          }
+        }
+      } else {
+        // 非工具调用 - 移除stop signals保持对话开放
+        const messageDeltaEvent = this.createAnthropicEvent('message_delta', {
+          type: 'message_delta',
+          delta: { 
+            // Empty delta - no stop signals to keep conversation alive
+          },
+          usage: { output_tokens: outputTokens }
+        });
+        if (messageDeltaEvent) {
+          yield messageDeltaEvent;
+        }
+        
+        // 不发送message_stop事件，避免会话终止
+      }
+
+    } catch (error) {
+      logger.error('Streaming transformation failed', error, this.requestId);
+      
+      // 即使在错误情况下也要记录finish reason - 核心功能不能缺失
+      try {
+        const errorFinishReason = 'error';
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.logFinishReason(errorFinishReason, {
+          provider: this.options.sourceFormat,
+          model: this.model,
+          responseType: 'streaming',
+          error: errorMessage,
+          context: 'streaming-error',
+          toolCallCount: this.toolCallMap.size
+        }, this.requestId, 'streaming-error');
+        
+        // 同时记录到调试日志系统
+        try {
+          const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+          logFinishReasonDebug(
+            this.requestId,
+            errorFinishReason,
+            this.options.sourceFormat,
+            this.model,
+            this.options.port || (this as any).port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
+            {
+              error: errorMessage,
+              context: 'streaming-error',
+              toolCallCount: this.toolCallMap.size,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (debugError) {
+          console.error('Failed to log error finish reason debug:', debugError);
+        }
+      } catch (logError) {
+        console.error('Failed to log error finish reason:', logError);
+      }
+      
+      throw error;
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
+   * Transform streaming response from Anthropic to OpenAI format
+   */
+  async *transformAnthropicToOpenAI(stream: ReadableStream): AsyncIterable<string> {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let toolCallIndex = 0;
+    let currentToolCalls: Map<number, any> = new Map();
+
+    try {
+      while (!this.isCompleted) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') {
+              this.isCompleted = true;
+              break;
+            }
+
+            try {
+              const event = JSON.parse(data);
+              
+              // Handle content block deltas
+              if (event.type === 'content_block_delta' && event.delta?.text) {
+                // Check for tool calls appearing in text content (error condition)
+                this.pipelineDebugger.detectToolCallError(
+                  event.delta.text,
+                  this.requestId,
+                  'streaming-anthropic-to-openai',
+                  'anthropic',
+                  this.model
+                );
+                
+                yield this.createOpenAIChunk({
+                  choices: [{
+                    index: 0,
+                    delta: { content: event.delta.text }
+                  }]
+                });
+              }
+
+              // Handle tool use blocks
+              if (event.type === 'content_block_start' && event.content_block?.type === 'tool_use') {
+                const toolCall = {
+                  index: toolCallIndex++,
+                  id: event.content_block.id,
+                  type: 'function',
+                  function: {
+                    name: event.content_block.name,
+                    arguments: ''
+                  }
+                };
+                
+                currentToolCalls.set(event.index, toolCall);
+                
+                yield this.createOpenAIChunk({
+                  choices: [{
+                    index: 0,
+                    delta: { tool_calls: [toolCall] }
+                  }]
+                });
+              }
+
+              // Handle tool input deltas
+              if (event.type === 'content_block_delta' && event.delta?.partial_json) {
+                const toolCall = currentToolCalls.get(event.index);
+                if (toolCall) {
+                  yield this.createOpenAIChunk({
+                    choices: [{
+                      index: 0,
+                      delta: {
+                        tool_calls: [{
+                          index: toolCall.index,
+                          function: { arguments: event.delta.partial_json }
+                        }]
+                      }
+                    }]
+                  });
+                }
+              }
+
+              // Handle message completion
+              if (event.type === 'message_delta' && event.delta?.stop_reason) {
+                const originalStopReason = event.delta.stop_reason;
+                const mappedFinishReason = mapStopReason(originalStopReason);
+                
+                // 🆕 记录原始Anthropic和转换后的OpenAI finish reason
+                logger.logDualFinishReason(
+                  originalStopReason,
+                  mappedFinishReason,
+                  this.options.sourceFormat,
+                  {
+                    model: this.model,
+                    responseType: 'streaming',
+                    context: 'streaming-anthropic-to-openai',
+                    eventData: event,
+                    conversionMethod: 'mapStopReason'
+                  },
+                  this.requestId,
+                  'dual-reason-anthropic-streaming'
+                );
+                
+                // 同时记录到调试日志系统
+                try {
+                  const { logStopReasonDebug } = await import('../utils/finish-reason-debug');
+                  logStopReasonDebug(
+                    this.requestId,
+                    originalStopReason,
+                    this.options.sourceFormat,
+                    this.model,
+                    this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
+                    {
+                      mappedFinishReason,
+                      context: 'streaming-transformer-anthropic-dual',
+                      timestamp: new Date().toISOString()
+                    }
+                  );
+                } catch (error) {
+                  console.error('Failed to log stop reason debug:', error);
+                }
+                
+                yield this.createOpenAIChunk({
+                  choices: [{
+                    index: 0,
+                    delta: {},
+                    finish_reason: mappedFinishReason
+                  }]
+                });
+              }
+
+            } catch (error) {
+              logger.debug('Failed to parse Anthropic streaming chunk', error, this.requestId);
+            }
+          }
+        }
+      }
+
+      // Send final [DONE] marker
+      yield 'data: [DONE]\n\n';
+
+    } catch (error) {
+      logger.error('Anthropic to OpenAI streaming transformation failed', error, this.requestId);
+      
+      // 即使在错误情况下也要记录finish reason - 核心功能不能缺失
+      try {
+        const errorFinishReason = 'error';
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        logger.logFinishReason(errorFinishReason, {
+          provider: this.options.sourceFormat,
+          model: this.model,
+          responseType: 'streaming',
+          error: errorMessage,
+          context: 'anthropic-streaming-error',
+          toolCallCount: this.toolCallMap.size
+        }, this.requestId, 'anthropic-streaming-error');
+        
+        // 同时记录到调试日志系统
+        try {
+          const { logFinishReasonDebug } = await import('../utils/finish-reason-debug');
+          logFinishReasonDebug(
+            this.requestId,
+            errorFinishReason,
+            this.options.sourceFormat,
+            this.model,
+            this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })(),
+            {
+              error: errorMessage,
+              context: 'anthropic-streaming-error',
+              toolCallCount: this.toolCallMap.size,
+              timestamp: new Date().toISOString()
+            }
+          );
+        } catch (debugError) {
+          console.error('Failed to log anthropic error finish reason debug:', debugError);
+        }
+      } catch (logError) {
+        console.error('Failed to log anthropic error finish reason:', logError);
+      }
+      
+      throw error;
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
+   * Create Anthropic SSE event - with defensive programming
+   */
+  private createAnthropicEvent(event: string, data: any): string | null {
+    try {
+      // Defensive checks like demo1
+      if (!event || event === undefined || event === null) {
+        return null;
+      }
+      if (!data || data === undefined || data === null) {
+        return null;
+      }
+      
+      const jsonString = JSON.stringify(data);
+      if (!jsonString || jsonString === 'null' || jsonString === 'undefined') {
+        return null;
+      }
+      
+      return `event: ${event}\ndata: ${jsonString}\n\n`;
+    } catch (error) {
+      // If JSON.stringify fails, return null instead of undefined
+      console.error('Failed to create Anthropic event:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create OpenAI streaming chunk
+   */
+  private createOpenAIChunk(chunkData: any): string {
+    const chunk = {
+      id: this.messageId,
+      object: 'chat.completion.chunk',
+      created: Math.floor(Date.now() / 1000),
+      model: this.model,
+      ...chunkData
+    };
+    return `data: ${JSON.stringify(chunk)}\n\n`;
+  }
+
+  /**
+   * Check if raw data contains tool call signatures
+   * Made more strict to avoid false positives from normal text
+   */
+  private isLikelyToolCallError(rawChunk: string, error: any): boolean {
+    // ULTRA STRICT: Only detect actual tool call structures in streaming context
+    // Avoid false positives from normal JSON content like {"isNew": false}
+    const ultraStrictToolCallPatterns = [
+      // Complete tool_use blocks (Anthropic format)
+      /\{\s*"type"\s*:\s*"tool_use"\s*,\s*"id"\s*:\s*"[^"]+"\s*,\s*"name"\s*:\s*"[^"]+"/i,
+      // Complete function call blocks (OpenAI format)  
+      /\{\s*"id"\s*:\s*"call_[a-zA-Z0-9_-]+"\s*,\s*"type"\s*:\s*"function"\s*,\s*"function"/i,
+      // Tool calls array context
+      /tool_calls":\s*\[\s*\{\s*"id"/i,
+      // Function arguments with tool context
+      /\{\s*"function"\s*:\s*\{\s*"name"\s*:\s*"[a-zA-Z_][a-zA-Z0-9_]*"\s*,\s*"arguments"/i
+    ];
+
+    // Additional context check: only flag if error is parse-related AND contains tool signatures
+    const isParseError = error && (
+      error.message?.includes('parse') ||
+      error.message?.includes('JSON') ||
+      error.message?.includes('tool') ||
+      error.message?.includes('function')
+    );
+
+    // Only trigger if both conditions are met: parse error AND actual tool structure
+    return isParseError && ultraStrictToolCallPatterns.some(pattern => pattern.test(rawChunk));
+  }
+
+  /**
+   * 🔄 检查是否需要二次处理 - 错误判断工具调用的情况
+   */
+  private async checkForReprocessing(currentStopReason?: string): Promise<boolean> {
+    // 如果已经尝试过太多次，停止reprocessing
+    if (this.toolCallDetectionAttempts >= this.maxDetectionAttempts) {
+      return false;
+    }
+
+    // 如果已经检测到工具调用，通常不需要reprocessing
+    if (currentStopReason === 'tool_use' && this.toolCallMap.size > 0) {
+      return false;
+    }
+
+    // 检查reprocess buffer中是否有工具调用特征
+    const bufferContent = this.reprocessBuffer.join(' ');
+    const hasToolCallPatterns = this.detectToolCallPatterns(bufferContent);
+
+    // 如果当前stop reason不是tool_use但buffer中有工具调用模式，需要reprocess
+    if (currentStopReason !== 'tool_use' && hasToolCallPatterns) {
+      this.needsReprocessing = true;
+      this.toolCallDetectionAttempts++;
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * 🔄 执行二次工具调用处理
+   */
+  private async reprocessForToolCalls(): Promise<{
+    hasToolCalls: boolean;
+    toolEvents: any[];
+  }> {
+    const toolEvents: any[] = [];
+    let hasToolCalls = false;
+
+    try {
+      const bufferContent = this.reprocessBuffer.join(' ');
+      const extractedTools = this.extractToolCallsFromBuffer(bufferContent);
+
+      if (extractedTools.length > 0) {
+        hasToolCalls = true;
+
+        // 为每个提取的工具调用创建事件
+        for (let i = 0; i < extractedTools.length; i++) {
+          const tool = extractedTools[i];
+          const blockIndex = this.contentBlockIndex + i;
+
+          // 创建工具调用开始事件
+          const toolStartEvent = this.createAnthropicEvent('content_block_start', {
+            type: 'content_block_start',
+            index: blockIndex,
+            content_block: {
+              type: 'tool_use',
+              id: tool.id,
+              name: tool.name,
+              input: {}
+            }
+          });
+
+          if (toolStartEvent) {
+            toolEvents.push(toolStartEvent);
+          }
+
+          // 创建工具调用输入事件
+          const toolInputEvent = this.createAnthropicEvent('content_block_delta', {
+            type: 'content_block_delta',
+            index: blockIndex,
+            delta: {
+              type: 'input_json_delta',
+              partial_json: JSON.stringify(tool.input)
+            }
+          });
+
+          if (toolInputEvent) {
+            toolEvents.push(toolInputEvent);
+          }
+
+          // 创建工具调用停止事件
+          const toolStopEvent = this.createAnthropicEvent('content_block_stop', {
+            type: 'content_block_stop',
+            index: blockIndex
+          });
+
+          if (toolStopEvent) {
+            toolEvents.push(toolStopEvent);
+          }
+
+          console.log(`🔄 [REPROCESS] Extracted tool call: ${tool.name}`);
+        }
+
+        this.contentBlockIndex += extractedTools.length;
+      }
+
+      // 清空buffer
+      this.reprocessBuffer = [];
+
+    } catch (error) {
+      console.error('🔄 [REPROCESS] Failed to reprocess for tool calls:', error);
+    }
+
+    return { hasToolCalls, toolEvents };
+  }
+
+  /**
+   * 检测buffer内容中的工具调用模式
+   */
+  private detectToolCallPatterns(content: string): boolean {
+    if (!content || content.trim().length === 0) {
+      return false;
+    }
+
+    // 检测各种工具调用模式
+    const patterns = [
+      /Tool\s+call:\s*\w+\s*\([^)]*\)/i,                    // GLM格式
+      /\{\s*"type"\s*:\s*"tool_use"[^}]*\}/i,               // JSON格式
+      /\w+\s*\(\s*\{[^}]*"[^"]*"\s*:[^}]*\}/i,             // 函数调用格式
+      /"function_call"\s*:\s*\{[^}]*"name"\s*:/i            // OpenAI格式
+    ];
+
+    return patterns.some(pattern => pattern.test(content));
+  }
+
+  /**
+   * 从buffer中提取工具调用
+   */
+  private extractToolCallsFromBuffer(content: string): any[] {
+    const tools: any[] = [];
+
+    // GLM格式提取
+    const glmPattern = /Tool\s+call:\s*(\w+)\s*\((\{[^}]*\})\)/gi;
+    let match;
+    while ((match = glmPattern.exec(content)) !== null) {
+      try {
+        const toolName = match[1];
+        const args = JSON.parse(match[2]);
+        tools.push({
+          id: `toolu_reprocess_${Date.now()}_${tools.length}`,
+          name: toolName,
+          input: args
+        });
+      } catch (error) {
+        console.warn('🔄 [REPROCESS] Failed to parse GLM tool call:', match[0]);
+      }
+    }
+
+    // JSON格式提取
+    const jsonPattern = /\{\s*"type"\s*:\s*"tool_use"[^}]*\}/gi;
+    while ((match = jsonPattern.exec(content)) !== null) {
+      try {
+        const toolObj = JSON.parse(match[0]);
+        if (toolObj.name && toolObj.input) {
+          tools.push({
+            id: toolObj.id || `toolu_reprocess_json_${Date.now()}_${tools.length}`,
+            name: toolObj.name,
+            input: toolObj.input
+          });
+        }
+      } catch (error) {
+        console.warn('🔄 [REPROCESS] Failed to parse JSON tool call:', match[0]);
+      }
+    }
+
+    return tools;
+  }
+
+  /**
+   * Save raw stream data for analysis
+   */
+  private saveRawStreamDataForAnalysis(rawStreamData: string[], transformationStage: string, error: any): void {
+    try {
+      this.pipelineDebugger.addRawStreamData(this.requestId, rawStreamData.join(''));
+      
+      // Log the error for analysis
+      this.pipelineDebugger.logToolCallError(new ToolCallErrorClass(
+        `Raw stream analysis error: ${error.message}`,
+        this.requestId,
+        transformationStage,
+        'openai',
+        this.model,
+        {
+          rawChunk: rawStreamData.slice(-5).join(''), // Last 5 chunks for context
+        },
+        this.options.port || (() => { console.error('❌ CRITICAL: Port not provided to streaming transformer'); throw new Error('Port must be provided to streaming transformer - no fallback allowed'); })()
+      ));
+    } catch (analysisError) {
+      console.error('Failed to prepare raw stream analysis data:', analysisError);
+    }
+  }
+
+}
+
+/**
+ * Create streaming transformer
+ */
+export function createStreamingTransformer(
+  sourceTransformer: MessageTransformer,
+  targetTransformer: MessageTransformer,
+  options: StreamTransformOptions
+): StreamingTransformer {
+  return new StreamingTransformer(sourceTransformer, targetTransformer, options);
+}

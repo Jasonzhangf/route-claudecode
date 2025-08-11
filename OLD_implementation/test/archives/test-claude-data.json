@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-07-26T03:11:47.562Z",
+  "headers": {
+    "content-type": "application/json",
+    "user-agent": "claude-code/1.0.0",
+    "authorization": "Bearer test-key"
+  },
+  "body": {
+    "model": "claude-sonnet-4-20250514",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello, can you help me test the router? Please respond with 'Router test successful'"
+      }
+    ],
+    "stream": true,
+    "max_tokens": 1024,
+    "temperature": 0.7
+  },
+  "url": "/v1/messages",
+  "method": "POST"
+}

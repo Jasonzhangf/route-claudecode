@@ -1,0 +1,46 @@
+{
+  "totalCategories": 6,
+  "totalTests": 12,
+  "totalPassed": 12,
+  "totalFailed": 0,
+  "totalDuration": 1301,
+  "mockupMode": true,
+  "categoryBreakdown": {
+    "functional": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration": 159
+    },
+    "integration": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration": 231
+    },
+    "pipeline": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration": 250
+    },
+    "performance": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration": 214
+    },
+    "unit": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration": 203
+    },
+    "debug": {
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "duration": 244
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "step": 6,
+  "name": "Preprocessor Testing",
+  "layer": "preprocessor",
+  "startTime": "2025-08-11T04:09:16.610Z",
+  "status": "passed",
+  "mockupMode": true,
+  "validations": [
+    {
+      "test": "Input Preprocessing",
+      "status": "passed",
+      "mockup": true
+    },
+    {
+      "test": "Request Sanitization",
+      "status": "passed",
+      "mockup": true
+    },
+    {
+      "test": "Context Preparation",
+      "status": "passed",
+      "mockup": true
+    }
+  ],
+  "output": {
+    "layer": "preprocessor",
+    "mockupData": {
+      "timestamp": "2025-08-11T04:09:16.610Z",
+      "inputData": {
+        "mockInput": "sample-preprocessor-input"
+      },
+      "processedData": {
+        "mockOutput": "sample-preprocessor-output"
+      },
+      "metadata": {
+        "version": "v3.0-mockup",
+        "processingTime": 69
+      }
+    }
+  },
+  "duration": 0,
+  "endTime": "2025-08-11T04:09:16.610Z"
+}

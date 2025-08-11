@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-07-31T11:40:34.414Z",
+  "test": "step3-live-api",
+  "prerequisites": {
+    "step1PassRate": 100,
+    "step2MappingPassRate": 100,
+    "step2EndToEndPassRate": 100
+  },
+  "apiTests": {
+    "total": 2,
+    "passed": 0,
+    "failed": 2,
+    "passRate": 0
+  },
+  "modelMapping": {
+    "total": 2,
+    "correct": 0,
+    "incorrect": 2,
+    "accuracy": 0
+  },
+  "results": [
+    {
+      "name": "Background Category API Test",
+      "expected": {
+        "category": "background",
+        "provider": "shuaihong-openai",
+        "responseModel": "gemini-2.5-flash",
+        "status": 200
+      },
+      "actual": {
+        "status": 200,
+        "duration": 735,
+        "responseModel": "claude-3-5-haiku-20241022",
+        "hasContent": true,
+        "success": false,
+        "modelMappingCorrect": false
+      }
+    },
+    {
+      "name": "Default Category API Test",
+      "expected": {
+        "category": "default",
+        "provider": "codewhisperer-primary",
+        "responseModel": "CLAUDE_SONNET_4_20250514_V1_0",
+        "status": [
+          200,
+          500
+        ]
+      },
+      "actual": {
+        "status": 200,
+        "duration": 583,
+        "responseModel": "claude-sonnet-4-20250514",
+        "hasContent": true,
+        "success": false,
+        "modelMappingCorrect": false
+      }
+    }
+  ]
+}

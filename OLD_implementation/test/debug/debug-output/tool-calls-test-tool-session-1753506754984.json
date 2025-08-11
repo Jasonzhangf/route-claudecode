@@ -1,0 +1,69 @@
+{
+  "timestamp": "2025-07-26T05:12:46.459Z",
+  "sessionId": "tool-session-1753506754984",
+  "totalTurns": 4,
+  "successfulTurns": 0,
+  "successRate": 0,
+  "totalToolCalls": 0,
+  "contextPreservation": true,
+  "tasks": [
+    {
+      "turn": 1,
+      "description": "创建项目文件",
+      "message": "请帮我创建一个名为 'project_info.txt' 的文件，内容包含项目名称 'MyProject' 和版本号 '1.0.0'。",
+      "response": "我来帮您创建一个包含项目信息的文件。",
+      "toolCalls": [],
+      "toolCallCount": 0,
+      "expectedTools": [
+        "create_file"
+      ],
+      "hasExpectedTools": false,
+      "validationPassed": false,
+      "success": false
+    },
+    {
+      "turn": 2,
+      "description": "读取并验证文件",
+      "message": "现在读取刚才创建的文件，确认内容是否正确。",
+      "response": "我来帮您创建文件并验证内容。",
+      "toolCalls": [],
+      "toolCallCount": 0,
+      "expectedTools": [
+        "read_file"
+      ],
+      "hasExpectedTools": false,
+      "validationPassed": false,
+      "success": false
+    },
+    {
+      "turn": 3,
+      "description": "基于文件内容计算",
+      "message": "根据刚才读取的版本号，计算下一个主版本号（加1），然后创建一个新文件 'next_version.txt' 包含计算结果。",
+      "response": "",
+      "toolCalls": [],
+      "toolCallCount": 0,
+      "expectedTools": [
+        "calculate",
+        "create_file"
+      ],
+      "hasExpectedTools": false,
+      "validationPassed": false,
+      "success": false
+    },
+    {
+      "turn": 4,
+      "description": "列出所有文件并总结",
+      "message": "列出目录中的所有文件，然后告诉我这个工作流程中我们总共创建了几个文件，分别是什么。",
+      "response": "",
+      "toolCalls": [],
+      "toolCallCount": 0,
+      "expectedTools": [
+        "list_files"
+      ],
+      "hasExpectedTools": false,
+      "validationPassed": false,
+      "success": false
+    }
+  ],
+  "overall": false
+}

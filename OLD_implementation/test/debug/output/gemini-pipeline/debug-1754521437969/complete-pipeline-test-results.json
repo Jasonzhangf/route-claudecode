@@ -1,0 +1,162 @@
+{
+  "stages": {
+    "input-processing": {
+      "passed": true,
+      "issues": [],
+      "tools": [
+        {
+          "index": 0,
+          "name": "get_weather",
+          "issues": []
+        },
+        {
+          "index": 1,
+          "name": "LS",
+          "issues": []
+        }
+      ]
+    },
+    "schema-conversion": {
+      "passed": true,
+      "conversions": [
+        {
+          "original": {
+            "name": "get_weather",
+            "description": "获取指定城市的天气信息",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string",
+                  "description": "城市名称"
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          "converted": {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "获取指定城市的天气信息",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string",
+                      "description": "城市名称"
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          },
+          "validation": {
+            "passed": true,
+            "message": "Schema validation passed"
+          }
+        },
+        {
+          "original": {
+            "name": "LS",
+            "description": "List files and directories",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Directory path"
+                },
+                "ignore": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "path"
+              ]
+            }
+          },
+          "converted": {
+            "functionDeclarations": [
+              {
+                "name": "LS",
+                "description": "List files and directories",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Directory path"
+                    },
+                    "ignore": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ]
+          },
+          "validation": {
+            "passed": true,
+            "message": "Schema validation passed"
+          }
+        }
+      ],
+      "errors": []
+    },
+    "tool-config-setup": {
+      "passed": true,
+      "config": {
+        "functionCallingConfig": {
+          "mode": "AUTO"
+        }
+      },
+      "issues": []
+    },
+    "api-request": {
+      "passed": false,
+      "structure": {
+        "tools": "object"
+      },
+      "issues": [
+        "Missing required field: contents",
+        "tools[0] missing functionDeclarations"
+      ]
+    },
+    "api-response": {
+      "passed": true,
+      "finishReason": null,
+      "hasContent": false,
+      "errorType": null,
+      "issues": []
+    },
+    "response-processing": {
+      "passed": false,
+      "message": "No validation implemented"
+    },
+    "output-transformation": {
+      "passed": false,
+      "message": "No validation implemented"
+    }
+  },
+  "overall_passed": false,
+  "critical_errors": [
+    "api-request: Validation failed",
+    "response-processing: No validation implemented",
+    "output-transformation: No validation implemented"
+  ]
+}

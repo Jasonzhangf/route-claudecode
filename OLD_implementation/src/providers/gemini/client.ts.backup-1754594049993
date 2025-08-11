@@ -1,0 +1,2412 @@
+/**
+ * Gemini API Client - v3.0 Modularized Architecture
+ * Google Gemini API integration via Generative Language API
+ * Project owner: Jason Zhang
+ * 
+ * Architecture: Follows four-layer design pattern
+ * - Clean separation between request/response conversion
+ * - Zero hardcoding, zero fallback principles
+ * - Modular components for maintainability
+ */
+
+import { BaseRequest, BaseResponse, ProviderConfig, ProviderError } from '../../types';
+import { logger } from '../../utils/logger';
+import { EnhancedRateLimitManager } from './enhanced-rate-limit-manager';
+import { GoogleGenAI } from '@google/genai';
+// Import modular components
+import { GeminiRequestConverter } from './modules/request-converter';
+import { GeminiResponseConverter } from './modules/response-converter';
+import { GeminiApiClient } from './modules/api-client';
+import { GeminiStreamingSimulator } from './modules/streaming-simulator';
+import { createPatchManager } from '../../patches/registry';
+
+export class GeminiClient {
+  public readonly name: string;
+  public readonly type = 'gemini';
+  
+  private apiKey: string;
+  private baseUrl: string;
+  private enhancedRateLimitManager?: EnhancedRateLimitManager;
+  private apiKeys: string[] = [];
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000;
+  private readonly requestTimeout = 60000; // 60 seconds timeout
+  private genAIClients: GoogleGenAI[] = [];
+  private patchManager = createPatchManager();
+
+  private currentKeyIndex = 0; // 跟踪当前使用的key索引
+  
+  // Modular components
+  private apiClient: GeminiApiClient;
+  private streamingSimulator: GeminiStreamingSimulator;
+
+  constructor(private config: ProviderConfig, providerId?: string) {
+    this.name = providerId || 'gemini-client';
+    
+    // Handle API key configuration - support both single and multiple keys
+    const credentials = config.authentication.credentials;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
+    
+    if (Array.isArray(apiKey) && apiKey.length > 1) {
+      // Multiple API keys - initialize enhanced rate limit manager
+      this.apiKeys = apiKey;
+      this.enhancedRateLimitManager = new EnhancedRateLimitManager(
+        apiKey,
+        this.name
+      );
+      
+      this.apiKey = ''; // Will be set dynamically per request
+      
+      // Initialize GoogleGenAI clients for each API key
+      this.genAIClients = apiKey.map(key => new GoogleGenAI({ apiKey: key }));
+      
+      logger.info('Initialized Enhanced Gemini Rate Limit Manager with official SDK', {
+        providerId: this.name,
+        keyCount: apiKey.length,
+        strategy: 'rpm_tpm_rpd_aware_with_model_fallback',
+        fallbackSupported: true,
+        sdkType: 'official_google_genai'
+      });
+    } else {
+      // Single API key - traditional approach
+      this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
+      this.apiKeys = [this.apiKey];
+      
+      if (!this.apiKey) {
+        throw new Error('Gemini API key is required');
+      }
+      
+      // Initialize single GoogleGenAI client
+      this.genAIClients = [new GoogleGenAI({ apiKey: this.apiKey })];
+    }
+
+    this.baseUrl = config.endpoint || 'https://generativelanguage.googleapis.com';
+    
+    // Initialize modular components
+    this.apiClient = new GeminiApiClient(config, this.name);
+    this.streamingSimulator = new GeminiStreamingSimulator();
+    
+    logger.info('Gemini client initialized with modular architecture', {
+      endpoint: this.baseUrl,
+      hasApiKey: !!this.apiKey || !!this.enhancedRateLimitManager,
+      keyRotationEnabled: !!this.enhancedRateLimitManager,
+      sdkType: 'official_google_genai_modular',
+      clientCount: this.genAIClients.length,
+      modulesLoaded: ['request-converter', 'response-converter', 'api-client', 'streaming-simulator']
+    });
+  }
+
+  async healthCheck(): Promise<boolean> {
+    try {
+      // Use the first GenAI client for health check
+      const genAI = this.genAIClients[0];
+      
+      if (!genAI) {
+        logger.error('No GenAI client available for health check');
+        return false;
+      }
+      
+      // Simple health check: try to generate content with a minimal request
+      const testResponse = await genAI.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [{
+          role: 'user',
+          parts: [{ text: 'Hi' }]
+        }]
+      });
+      
+      const success = !!(testResponse && testResponse.candidates && testResponse.candidates.length > 0);
+      
+      if (success) {
+        logger.debug('Gemini health check succeeded with official SDK');
+      } else {
+        logger.warn('Gemini health check returned no response');
+      }
+      
+      return success;
+    } catch (error) {
+      logger.error('Gemini health check failed with official SDK', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
+
+  async createCompletion(request: BaseRequest): Promise<BaseResponse> {
+    const requestId = request.metadata?.requestId || 'unknown';
+    
+    logger.info('Processing non-streaming Gemini request', {
+      model: request.model,
+      messageCount: request.messages?.length || 0,
+      hasTools: !!request.tools,
+      maxTokens: request.max_tokens
+    }, requestId, 'gemini-provider');
+
+    // Use the model directly - let Gemini SDK handle model validation
+    let modelName = request.model;
+    
+    // Execute with retry logic and key rotation
+    const geminiResponse = await this.executeWithRetrySdk(
+      async (genAI: GoogleGenAI, model: string) => {
+        // Convert request using modular converter
+        const geminiRequest = GeminiRequestConverter.convertToGeminiFormat(request);
+        
+        // Use timeout wrapper
+        return Promise.race([
+          genAI.models.generateContent({
+            model: model,
+            ...geminiRequest
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Gemini SDK timeout after ${this.requestTimeout}ms`)), this.requestTimeout)
+          )
+        ]) as Promise<any>;
+      },
+      modelName,
+      'createCompletion',
+      requestId
+    );
+    
+    // Debug capture for tool calls
+    const hasToolsInRequest = !!(request.tools || request.metadata?.tools);
+    if (process.env.DEBUG === 'true' || process.env.NODE_ENV === 'development' || hasToolsInRequest) {
+      this.captureDebugInfo(request, geminiResponse, requestId, 'non-streaming');
+    }
+    
+    // Convert response using modular converter
+    const finalResponse = GeminiResponseConverter.convertToAnthropicFormat(
+      geminiResponse, 
+      request.model, 
+      requestId
+    );
+    
+    logger.info('Non-streaming Gemini request completed successfully', {
+      originalModel: request.model,
+      finalModel: finalResponse.model,
+      contentBlocks: finalResponse.content?.length || 0,
+      stopReason: finalResponse.stop_reason
+    }, requestId, 'gemini-provider');
+    
+    return finalResponse;
+  }
+
+  /**
+   * 捕获调试信息 - 特别用于工具调用调试
+   */
+  private captureDebugInfo(request: BaseRequest, response: any, requestId: string, type: string): void {
+    try {
+      const debugFile = `/tmp/gemini-${type}-response-${Date.now()}-${requestId}.json`;
+      require('fs').writeFileSync(debugFile, JSON.stringify({
+        request: {
+          model: request.model,
+          messages: request.messages,
+          tools: request.tools || request.metadata?.tools,
+          hasTools: !!(request.tools || request.metadata?.tools)
+        },
+        response: response,
+        timestamp: new Date().toISOString(),
+        requestId,
+        type,
+        architecture: 'modular-v3'
+      }, null, 2));
+      
+      logger.info(`Gemini ${type} debug info captured`, { 
+        debugFile, 
+        model: request.model,
+        hasTools: !!(request.tools || request.metadata?.tools),
+        candidatesCount: response?.candidates?.length,
+        hasParts: response?.candidates?.[0]?.content?.parts?.length || 0
+      }, requestId, 'gemini-provider');
+    } catch (err) {
+      logger.warn('Failed to capture debug info', { 
+        error: err instanceof Error ? err.message : String(err) 
+      }, requestId, 'gemini-provider');
+    }
+  }
+
+  async* streamCompletion(request: BaseRequest): AsyncIterable<any> {
+    const requestId = request.metadata?.requestId || 'unknown';
+    
+    // Use the model directly for streaming
+    let modelName = request.model;
+    
+    logger.info('Starting Gemini streaming with modular architecture', {
+      model: modelName,
+      messageCount: request.messages?.length || 0,
+      hasTools: !!request.tools,
+      totalKeys: this.genAIClients.length
+    }, requestId, 'gemini-provider');
+
+    // Step 1: Convert request using modular converter
+    const geminiRequest = GeminiRequestConverter.convertToGeminiFormat(request);
+    
+    // Step 2: Use the converted request directly (patches can be added later)
+    const patchedRequest = geminiRequest;
+
+    let lastError: any;
+    const usedKeyIndices = new Set<number>(); // 追踪已使用的key索引
+    
+    // Retry streaming requests with key rotation for initial connection failures
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      let genAIClient: GoogleGenAI;
+      let keyIndex = 0;
+      let fallbackApplied = false;
+      let fallbackReason: string | undefined;
+      let currentModel = modelName;
+      let actualApiKey: string;
+      
+      try {
+        // Get a fresh available key and model for each attempt
+        if (this.enhancedRateLimitManager) {
+          const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+
+          genAIClient = this.genAIClients[keyAndModel.keyIndex];
+          keyIndex = keyAndModel.keyIndex;
+          currentModel = keyAndModel.model;
+          fallbackApplied = keyAndModel.fallbackApplied;
+          fallbackReason = keyAndModel.fallbackReason;
+          actualApiKey = this.apiKeys[keyIndex];
+          
+          if (fallbackApplied) {
+            logger.info('Applied Gemini SDK streaming model fallback due to rate limits', {
+              originalModel: modelName,
+              fallbackModel: currentModel,
+              reason: fallbackReason,
+              keyIndex,
+              attempt: attempt + 1
+            }, requestId, 'gemini-provider');
+          }
+        } else {
+          // Simple round-robin for single key or no rate limit manager
+          keyIndex = attempt % this.genAIClients.length;
+          genAIClient = this.genAIClients[keyIndex];
+          actualApiKey = this.apiKeys[keyIndex];
+        }
+        
+        // 避免重复使用相同的key
+        if (usedKeyIndices.has(keyIndex) && this.genAIClients.length > 1) {
+          // 找一个未使用的key
+          for (let i = 0; i < this.genAIClients.length; i++) {
+            if (!usedKeyIndices.has(i)) {
+              keyIndex = i;
+              genAIClient = this.genAIClients[i];
+              actualApiKey = this.apiKeys[i];
+              break;
+            }
+          }
+        }
+        
+        usedKeyIndices.add(keyIndex);
+        // 更新当前key索引用于日志显示
+        this.currentKeyIndex = keyIndex;
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for SDK streaming request to ${this.name}`, keyError, requestId, 'gemini-provider');
+        throw keyError;
+      }
+
+      try {
+        logger.info('Executing modular Gemini streaming request', {
+          model: currentModel,
+          originalModel: request.model,
+          messageCount: request.messages?.length || 0,
+          strategy: 'modular-streaming-v3',
+          fallbackApplied,
+          fallbackReason,
+          attempt: attempt + 1
+        }, requestId, 'gemini-provider');
+        
+        // Use timeout wrapper for SDK streaming
+        const streamPromise = genAIClient.models.generateContentStream({
+          model: currentModel,
+          ...patchedRequest
+        });
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error(`Gemini SDK streaming timeout after ${this.requestTimeout}ms`)), this.requestTimeout)
+        );
+        
+        const streamResult = await Promise.race([streamPromise, timeoutPromise]) as any;
+
+        // Process stream using modular streaming simulator
+        yield* this.streamingSimulator.processStream(streamResult, request, requestId);
+        
+        // Debug capture for tool calls
+        const hasToolsInRequest = !!(request.tools || request.metadata?.tools);
+        if (hasToolsInRequest) {
+          logger.info('Modular streaming completed with tool calls', {
+            model: currentModel,
+            hasTools: hasToolsInRequest
+          }, requestId, 'gemini-provider');
+        }
+        
+        return; // Success - exit retry loop
+        
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.message?.includes('quota') || 
+                             (error as any)?.message?.includes('rate') ||
+                             (error as any)?.status === 429;
+
+        logger.warn(`${this.name} SDK streaming request failed`, {
+            keyIndex,
+            model: currentModel,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'gemini-provider');
+
+        // Report error to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          if (isRateLimited) {
+            this.enhancedRateLimitManager.report429Error(keyIndex, currentModel, requestId);
+          }
+        }
+        
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
+        }
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
+      }
+    }
+    
+    // All retries failed
+    logger.error(`${this.name} SDK streaming request failed after all retries`, lastError, requestId, 'gemini-provider');
+    
+    const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+    throw new Error(`${this.name} SDK streaming request failed: ${errorMessage}`);
+  }
+
+  /**
+   * Process Gemini SDK stream and convert to Anthropic format
+   * 修复流式响应处理错误
+   */
+  private async *processGeminiSdkStream(streamResult: any, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    const messageId = `msg_${Date.now()}`;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let contentIndex = 0;
+    let hasToolCalls = false;
+    let textContent = '';
+    const toolCalls: any[] = [];
+
+    logger.info('Processing Gemini SDK stream', {
+      strategy: 'sdk_stream_processing',
+      streamResultType: typeof streamResult,
+      hasStream: !!(streamResult && streamResult.stream)
+    }, requestId, 'gemini-provider');
+
+    try {
+      // Send message_start
+      yield {
+        event: 'message_start',
+        data: {
+          type: 'message_start',
+          message: {
+            id: messageId,
+            type: 'message',
+            role: 'assistant',
+            content: [],
+            model: request.model,
+            stop_reason: null,
+            stop_sequence: null,
+            usage: { input_tokens: 0, output_tokens: 0 }
+          }
+        }
+      };
+
+      // Send ping
+      yield {
+        event: 'ping',
+        data: { type: 'ping' }
+      };
+
+      let currentTextBlockStarted = false;
+      
+      // 检查streamResult是否是异步迭代器
+      if (!streamResult || !streamResult[Symbol.asyncIterator]) {
+        logger.error('Invalid stream result: not an async iterator', {
+          streamResultType: typeof streamResult,
+          hasAsyncIterator: !!(streamResult && streamResult[Symbol.asyncIterator]),
+          streamResultKeys: streamResult ? Object.keys(streamResult) : null
+        }, requestId, 'gemini-provider');
+        throw new Error('Invalid stream result: not an async iterator');
+      }
+      
+      // Process stream chunks - streamResult is directly the async iterator
+      let finalStopReason = 'end_turn';
+      let finalFinishReason: string | null = null;
+      
+      try {
+        for await (const chunk of streamResult) {
+          const candidate = chunk.candidates?.[0];
+          const parts = candidate?.content?.parts || [];
+          
+          // 捕获finishReason
+          if (candidate?.finishReason) {
+            finalFinishReason = candidate.finishReason;
+            // Convert Gemini finishReason to Anthropic stop_reason
+            switch (candidate.finishReason) {
+              case 'STOP':
+                finalStopReason = hasToolCalls ? 'tool_use' : 'end_turn';
+                break;
+              case 'MAX_TOKENS':
+                finalStopReason = 'max_tokens';
+                break;
+              case 'SAFETY':
+                finalStopReason = 'stop_sequence';
+                break;
+              case 'RECITATION':
+                finalStopReason = 'stop_sequence';
+                break;
+              case 'OTHER':
+                finalStopReason = hasToolCalls ? 'tool_use' : 'end_turn';
+                break;
+              default:
+                finalStopReason = hasToolCalls ? 'tool_use' : 'end_turn';
+            }
+          }
+          
+          for (const part of parts) {
+            if (part.text) {
+              // Handle text content
+              if (!currentTextBlockStarted) {
+                // Start text block
+                yield {
+                  event: 'content_block_start',
+                  data: {
+                    type: 'content_block_start',
+                    index: contentIndex,
+                    content_block: { type: 'text', text: '' }
+                  }
+                };
+                currentTextBlockStarted = true;
+              }
+              
+              // Send text delta
+              const chunkSize = 10;
+              for (let i = 0; i < part.text.length; i += chunkSize) {
+                const textChunk = part.text.slice(i, i + chunkSize);
+                yield {
+                  event: 'content_block_delta',
+                  data: {
+                    type: 'content_block_delta',
+                    index: contentIndex,
+                    delta: {
+                      type: 'text_delta',
+                      text: textChunk
+                    }
+                  }
+                };
+                
+                // Add small delay for better UX
+                if (i > 0) {
+                  await new Promise(resolve => setTimeout(resolve, 10));
+                }
+              }
+              
+              textContent += part.text;
+            } else if (part.functionCall) {
+              // Handle tool calls
+              hasToolCalls = true;
+              
+              // End current text block if it was started
+              if (currentTextBlockStarted) {
+                yield {
+                  event: 'content_block_stop',
+                  data: {
+                    type: 'content_block_stop',
+                    index: contentIndex
+                  }
+                };
+                contentIndex++;
+                currentTextBlockStarted = false;
+              }
+              
+              const toolUse = {
+                type: 'tool_use',
+                id: `toolu_${Date.now()}_${contentIndex}`,
+                name: part.functionCall.name,
+                input: part.functionCall.args || {}
+              };
+              
+              toolCalls.push(toolUse);
+              
+              // Send tool use block
+              yield {
+                event: 'content_block_start',
+                data: {
+                  type: 'content_block_start',
+                  index: contentIndex,
+                  content_block: toolUse
+                }
+              };
+              
+              yield {
+                event: 'content_block_stop',
+                data: {
+                  type: 'content_block_stop',
+                  index: contentIndex
+                }
+              };
+              
+              contentIndex++;
+              
+              logger.debug('Converted Gemini SDK functionCall to tool_use', {
+                functionName: part.functionCall.name,
+                toolId: toolUse.id
+              }, requestId, 'gemini-provider');
+            }
+          }
+          
+          // Extract usage metadata
+          if (chunk.usageMetadata) {
+            inputTokens = Math.max(inputTokens, chunk.usageMetadata.promptTokenCount || 0);
+            outputTokens += chunk.usageMetadata.candidatesTokenCount || 0;
+          }
+        }
+      } catch (iteratorError) {
+        logger.error('Error iterating over stream', {
+          error: iteratorError instanceof Error ? iteratorError.message : String(iteratorError),
+          errorType: iteratorError?.constructor?.name
+        }, requestId, 'gemini-provider');
+        throw iteratorError;
+      }
+      
+      // End current text block if it was started
+      if (currentTextBlockStarted) {
+        yield {
+          event: 'content_block_stop',
+          data: {
+            type: 'content_block_stop',
+            index: contentIndex
+          }
+        };
+      }
+      
+      // Estimate tokens if not provided
+      if (outputTokens === 0) {
+        outputTokens = Math.ceil((textContent.length + toolCalls.length * 50) / 4);
+      }
+      
+      // Send message_delta with usage
+      yield {
+        event: 'message_delta',
+        data: {
+          type: 'message_delta',
+          delta: {},
+          usage: {
+            output_tokens: outputTokens
+          }
+        }
+      };
+
+      // 确定最终的stop_reason
+      let actualStopReason = finalStopReason;
+      if (hasToolCalls && finalFinishReason === 'STOP') {
+        actualStopReason = 'tool_use';
+      } else if (finalFinishReason === 'MAX_TOKENS') {
+        actualStopReason = 'max_tokens';
+      } else if (finalFinishReason && finalFinishReason !== 'STOP') {
+        actualStopReason = 'stop_sequence';
+      } else {
+        actualStopReason = 'end_turn';
+      }
+
+      // Send message_stop with proper stop_reason
+      yield {
+        event: 'message_stop',
+        data: {
+          type: 'message_stop',
+          stop_reason: actualStopReason,
+          stop_sequence: null
+        }
+      };
+      
+      logger.info('Gemini SDK stream processing completed', {
+        textLength: textContent.length,
+        toolCallCount: toolCalls.length,
+        outputTokens,
+        hasToolCalls
+      }, requestId, 'gemini-provider');
+      
+    } catch (error) {
+      logger.error('Failed to process Gemini SDK stream', {
+        error: error instanceof Error ? error.message : String(error),
+        errorType: error?.constructor?.name
+      }, requestId, 'gemini-provider');
+      throw error;
+    }
+  }
+
+  /**
+   * Convert request to Gemini SDK format (legacy method - use GeminiRequestConverter instead)
+   * @deprecated Use GeminiRequestConverter.convertToGeminiFormat instead
+   */
+  private convertToGeminiSdkFormat(request: BaseRequest): any {
+    const contents: any[] = [];
+    
+    for (const message of request.messages || []) {
+      if (message.role === 'system') {
+        // System messages are treated as user messages in Gemini
+        const textContent = this.extractTextContent(message.content);
+        contents.push({
+          role: 'user',
+          parts: [{ text: textContent }]
+        });
+      } else if (message.role === 'user') {
+        const textContent = this.extractTextContent(message.content);
+        contents.push({
+          role: 'user',
+          parts: [{ text: textContent }]
+        });
+      } else if (message.role === 'assistant') {
+        // Handle assistant messages with tool_use and text content
+        const parts = this.convertAssistantContent(message.content);
+        if (parts.length > 0) {
+          contents.push({
+            role: 'model',
+            parts: parts
+          });
+        }
+      } else if (message.role === 'tool') {
+        // Handle tool result messages for conversation history
+        const toolContent = this.convertToolResultContent(message);
+        contents.push({
+          role: 'user',
+          parts: [{ text: toolContent }]
+        });
+      }
+    }
+
+    const generateContentRequest: any = {
+      contents: contents
+    };
+
+    // Add generation config
+    const generationConfig: any = {};
+    if (request.max_tokens) {
+      generationConfig.maxOutputTokens = request.max_tokens;
+    }
+    if (request.temperature !== undefined) {
+      generationConfig.temperature = request.temperature;
+    }
+    if (Object.keys(generationConfig).length > 0) {
+      generateContentRequest.generationConfig = generationConfig;
+    }
+
+    // Handle tools if present
+    const tools = request.tools || request.metadata?.tools;
+    if (tools && Array.isArray(tools) && tools.length > 0) {
+      generateContentRequest.tools = [this.convertTools(tools)];
+      
+      // 🔧 Critical Fix: Add toolConfig to enable tool calling
+      // Based on OpenAI's successful approach - they use tool_choice, we use functionCallingConfig
+      generateContentRequest.toolConfig = {
+        functionCallingConfig: {
+          mode: "AUTO"  // Let Gemini decide when to call tools, similar to OpenAI's tool_choice: "auto"
+          // 🎯 Note: allowedFunctionNames removed as it was causing issues - Gemini should auto-discover from functionDeclarations
+        }
+      };
+      
+      logger.debug('Converted tools for Gemini SDK request with enhanced toolConfig', {
+        toolCount: tools.length,
+        toolNames: tools.map((t: any) => t.name || t.function?.name),
+        toolConfigMode: 'AUTO',
+        functionDeclarations: generateContentRequest.tools[0].functionDeclarations?.map((f: any) => f.name)
+      });
+    }
+
+    return generateContentRequest;
+  }
+
+  /**
+   * Convert Gemini SDK response to BaseResponse format
+   */
+  private convertFromGeminiSdkFormat(geminiResponse: any, originalRequest: BaseRequest): BaseResponse {
+    const requestId = originalRequest.metadata?.requestId || 'unknown';
+    
+    // 检查响应结构
+    if (!geminiResponse) {
+      logger.error('Empty Gemini SDK response', {}, requestId, 'gemini-provider');
+      throw new Error('Empty response from Gemini SDK');
+    }
+
+    // 记录原始响应结构以便调试
+    logger.debug('Raw Gemini SDK response structure', {
+      hasResponse: !!geminiResponse,
+      hasCandidates: !!geminiResponse.candidates,
+      candidatesCount: geminiResponse.candidates?.length || 0,
+      hasUsageMetadata: !!geminiResponse.usageMetadata,
+      responseKeys: Object.keys(geminiResponse || {}),
+      firstCandidate: geminiResponse.candidates?.[0] ? {
+        hasContent: !!geminiResponse.candidates[0].content,
+        finishReason: geminiResponse.candidates[0].finishReason,
+        contentParts: geminiResponse.candidates[0].content?.parts?.length || 0
+      } : null
+    }, requestId, 'gemini-provider');
+    
+    const candidate = geminiResponse.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    
+    logger.debug('Converting Gemini SDK response to BaseResponse format', {
+      candidatesCount: geminiResponse.candidates?.length || 0,
+      partsCount: parts.length,
+      finishReason: candidate?.finishReason,
+      hasUsageMetadata: !!geminiResponse.usageMetadata
+    }, requestId, 'gemini-provider');
+    
+    // Extract usage information
+    const usageMetadata = geminiResponse.usageMetadata || {};
+    
+    // Convert parts to Anthropic content format
+    const content: any[] = [];
+    
+    for (const part of parts) {
+      if (part.text) {
+        // Text content
+        content.push({
+          type: 'text',
+          text: part.text
+        });
+      } else if (part.functionCall) {
+        // Tool use content - convert Gemini functionCall to Anthropic tool_use
+        content.push({
+          type: 'tool_use',
+          id: `toolu_${Date.now()}_${content.length}`,
+          name: part.functionCall.name,
+          input: part.functionCall.args || {}
+        });
+      }
+    }
+    
+    // If no content found, try to handle UNEXPECTED_TOOL_CALL specifically
+    if (content.length === 0) {
+      logger.warn('No content found in Gemini response', {
+        candidatesCount: geminiResponse.candidates?.length || 0,
+        hasCandidate: !!candidate,
+        finishReason: candidate?.finishReason,
+        hasTools: !!(originalRequest.tools || originalRequest.metadata?.tools)
+      }, requestId, 'gemini-provider');
+      
+      // If this was a tool call request and we got UNEXPECTED_TOOL_CALL, try to diagnose
+      const hasToolsInRequest = !!(originalRequest.tools || originalRequest.metadata?.tools);
+      if (hasToolsInRequest && candidate?.finishReason === 'UNEXPECTED_TOOL_CALL') {
+        logger.error('Gemini returned UNEXPECTED_TOOL_CALL for tool request - possible tool format issue', {
+          finishReason: candidate.finishReason,
+          toolCount: (originalRequest.tools || originalRequest.metadata?.tools)?.length || 0,
+          modelUsed: originalRequest.model
+        }, requestId, 'gemini-provider');
+        
+        // Instead of generic message, try to provide a tool call manually
+        const tools = originalRequest.tools || originalRequest.metadata?.tools;
+        if (tools && tools.length > 0) {
+          const firstTool = tools[0];
+          const toolName = firstTool.name || firstTool.function?.name;
+          
+          // Extract likely parameters from the user message
+          const userMessage = originalRequest.messages?.find(m => m.role === 'user')?.content || '';
+          
+          // Try to create a tool call based on the request
+          if (toolName && userMessage.includes(toolName)) {
+            logger.info('Attempting to create manual tool call based on user request', {
+              toolName,
+              userMessage: userMessage.substring(0, 100)
+            }, requestId, 'gemini-provider');
+            
+            // Create a basic tool call
+            content.push({
+              type: 'tool_use',
+              id: `toolu_manual_${Date.now()}`,
+              name: toolName,
+              input: this.extractToolInputFromMessage(userMessage, firstTool)
+            });
+          } else {
+            content.push({
+              type: 'text',
+              text: `I understand you want me to use the ${toolName} tool, but I encountered a technical issue. The tool is available but I cannot execute it right now due to API limitations.`
+            });
+          }
+        } else {
+          content.push({
+            type: 'text',
+            text: 'I apologize, but I cannot provide a response at the moment. This may be due to content filtering, API limitations, or quota restrictions. Please try rephrasing your question or try again later.'
+          });
+        }
+      } else {
+        content.push({
+          type: 'text',
+          text: 'I apologize, but I cannot provide a response at the moment. This may be due to content filtering, API limitations, or quota restrictions. Please try rephrasing your question or try again later.'
+        });
+      }
+    }
+    
+    // 🔧 Critical Fix: Determine stop_reason based on content type, like OpenAI does
+    const hasToolCalls = content.some(c => c.type === 'tool_use');
+    let stopReason: string;
+    
+    if (hasToolCalls) {
+      // If we have tool calls, set stop_reason to 'tool_use' regardless of Gemini's finishReason
+      stopReason = 'tool_use';
+      logger.debug('Setting stop_reason to tool_use due to function calls', {
+        toolCallCount: content.filter(c => c.type === 'tool_use').length,
+        originalFinishReason: candidate?.finishReason
+      }, requestId, 'gemini-provider');
+    } else {
+      // No tool calls, map Gemini's finishReason normally
+      stopReason = this.mapFinishReason(candidate?.finishReason);
+    }
+    
+    // 🚨 架构一致性检查：像OpenAI那样在预处理阶段检查finish_reason
+    if (stopReason === 'unknown') {
+      const error = new Error(`Provider returned unknown finish reason. Provider: google-gemini, Model: ${originalRequest.model}`);
+      logger.error('Unknown finish reason in Gemini provider response', {
+        error: error.message,
+        provider: 'google-gemini',
+        model: originalRequest.model,
+        originalFinishReason: candidate?.finishReason,
+        requestId: requestId
+      }, requestId, 'provider');
+      throw error;
+    }
+    
+    logger.debug('Gemini SDK response conversion completed', {
+      contentBlocks: content.length,
+      textBlocks: content.filter(c => c.type === 'text').length,
+      toolBlocks: content.filter(c => c.type === 'tool_use').length,
+      stopReason,
+      originalFinishReason: candidate?.finishReason
+    }, requestId, 'gemini-provider');
+    
+    // 🏗️ 返回符合架构一致性的响应格式，包含choices字段供server.ts检查
+    return {
+      id: `gemini_sdk_${Date.now()}`,
+      type: 'message',
+      model: originalRequest.model,
+      role: 'assistant',
+      content: content,
+      stop_reason: stopReason,
+      stop_sequence: null,
+      usage: {
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0
+      },
+      // 🔄 添加choices字段以保持与OpenAI架构一致性
+      choices: [{
+        message: {
+          role: 'assistant',
+          content: content
+        },
+        finish_reason: stopReason,
+        index: 0
+      }]
+    };
+  }
+
+  /**
+   * Execute request with retry logic and SDK client rotation
+   * 使用轮询策略避免重复使用同一个key
+   */
+  private async executeWithRetrySdk<T>(
+    requestFn: (genAI: GoogleGenAI, model: string) => Promise<T>,
+    modelName: string,
+    operation: string,
+    requestId: string
+  ): Promise<T> {
+    let lastError: any;
+    const usedKeyIndices = new Set<number>(); // 追踪已使用的key索引
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      let genAIClient: GoogleGenAI;
+      let keyIndex = 0;
+      let fallbackApplied = false;
+      let fallbackReason: string | undefined;
+      let currentModel = modelName;
+      let actualApiKey: string;
+      
+      try {
+        // Get a fresh available key and model for each attempt
+        if (this.enhancedRateLimitManager) {
+          const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+          
+          genAIClient = this.genAIClients[keyAndModel.keyIndex];
+          keyIndex = keyAndModel.keyIndex;
+          currentModel = keyAndModel.model;
+          fallbackApplied = keyAndModel.fallbackApplied;
+          fallbackReason = keyAndModel.fallbackReason;
+          actualApiKey = this.apiKeys[keyIndex];
+          
+          if (fallbackApplied) {
+            logger.info('Applied Gemini SDK model fallback due to rate limits', {
+              originalModel: modelName,
+              fallbackModel: currentModel,
+              reason: fallbackReason,
+              keyIndex,
+              attempt: attempt + 1
+            }, requestId, 'gemini-provider');
+          }
+        } else {
+          // Simple round-robin for single key or no rate limit manager
+          keyIndex = attempt % this.genAIClients.length;
+          genAIClient = this.genAIClients[keyIndex];
+          actualApiKey = this.apiKeys[keyIndex];
+        }
+        
+        // 避免重复使用相同的key
+        if (usedKeyIndices.has(keyIndex) && this.genAIClients.length > 1) {
+          // 找一个未使用的key
+          for (let i = 0; i < this.genAIClients.length; i++) {
+            if (!usedKeyIndices.has(i)) {
+              keyIndex = i;
+              genAIClient = this.genAIClients[i];
+              actualApiKey = this.apiKeys[i];
+              break;
+            }
+          }
+        }
+        
+        usedKeyIndices.add(keyIndex);
+        // 更新当前key索引用于日志显示
+        this.currentKeyIndex = keyIndex;
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for ${operation}`, keyError, requestId, 'gemini-provider');
+        throw keyError;
+      }
+
+      try {
+        const result = await requestFn(genAIClient, currentModel);
+        
+        // Report success to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          // Success is automatically tracked by the rate limit manager
+        }
+        
+        logger.debug(`${operation} succeeded with SDK client`, {
+          keyIndex,
+          model: currentModel,
+          attempt: attempt + 1
+        }, requestId, 'gemini-provider');
+        
+        return result;
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.message?.includes('quota') || 
+                             (error as any)?.message?.includes('rate') ||
+                             (error as any)?.message?.includes('RESOURCE_EXHAUSTED') ||
+                             (error as any)?.status === 429;
+
+        logger.warn(`${operation} failed with SDK client`, {
+            keyIndex,
+            model: currentModel,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'gemini-provider');
+
+        // Report error to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          if (isRateLimited) {
+            this.enhancedRateLimitManager.report429Error(keyIndex, currentModel, requestId);
+          }
+        }
+
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
+        }
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
+      }
+    }
+    throw lastError; // Throw last error if all retries fail
+  }
+
+  private convertToGeminiFormat(request: BaseRequest): any {
+    const geminiRequest: any = {
+      contents: this.convertMessages(request.messages),
+      generationConfig: {
+        maxOutputTokens: request.max_tokens || 4096
+      }
+    };
+
+    // Add temperature if specified
+    if (request.temperature !== undefined) {
+      geminiRequest.generationConfig.temperature = request.temperature;
+    }
+
+    // Handle tools if present - Check both top-level and metadata
+    const tools = request.tools || request.metadata?.tools;
+    if (tools && Array.isArray(tools) && tools.length > 0) {
+      // 🔧 修复: Gemini API正确的工具格式是tools数组，不是单个对象
+      geminiRequest.tools = [this.convertTools(tools)];
+      logger.debug('Converted tools for Gemini request (fixed format)', {
+        toolCount: tools.length,
+        toolNames: tools.map((t: any) => t.name),
+        geminiToolsFormat: 'array with functionDeclarations object'
+      });
+    }
+
+    return geminiRequest;
+  }
+
+  private convertMessages(messages: Array<{ role: string; content: any }>): any[] {
+    const contents: any[] = [];
+    
+    for (const message of messages) {
+      if (message.role === 'system') {
+        // System messages are treated as user messages in Gemini
+        const textContent = this.extractTextContent(message.content);
+        contents.push({
+          role: 'user',
+          parts: [{ text: textContent }]
+        });
+      } else if (message.role === 'user') {
+        const textContent = this.extractTextContent(message.content);
+        contents.push({
+          role: 'user',
+          parts: [{ text: textContent }]
+        });
+      } else if (message.role === 'assistant') {
+        // 🔧 Fixed: Handle assistant messages with tool_use and text content
+        const parts = this.convertAssistantContent(message.content);
+        if (parts.length > 0) {
+          contents.push({
+            role: 'model',
+            parts: parts
+          });
+        }
+      } else if (message.role === 'tool') {
+        // 🔧 Fixed: Handle tool result messages for conversation history
+        const toolContent = this.convertToolResultContent(message);
+        contents.push({
+          role: 'user',
+          parts: [{ text: toolContent }]
+        });
+      }
+    }
+
+    return contents;
+  }
+
+  /**
+   * Extract text content from various content formats
+   */
+  private extractTextContent(content: any): string {
+    if (typeof content === 'string') {
+      return content;
+    } else if (Array.isArray(content)) {
+      // Anthropic格式：content是一个数组，提取text类型的内容
+      return content
+        .filter(block => block.type === 'text')
+        .map(block => block.text)
+        .join('\n');
+    } else if (content && typeof content === 'object') {
+      // 其他对象格式
+      return content.text || JSON.stringify(content);
+    } else {
+      return String(content || '');
+    }
+  }
+
+  /**
+   * Convert assistant content to Gemini parts format
+   * Handle both text and tool_use content blocks
+   */
+  private convertAssistantContent(content: any): any[] {
+    const parts: any[] = [];
+    
+    if (typeof content === 'string') {
+      // Simple text content
+      if (content.trim()) {
+        parts.push({ text: content });
+      }
+    } else if (Array.isArray(content)) {
+      // Anthropic format: array of content blocks
+      for (const block of content) {
+        if (block.type === 'text' && block.text) {
+          parts.push({ text: block.text });
+        } else if (block.type === 'tool_use') {
+          // 🔧 Convert tool_use to Gemini functionCall format
+          parts.push({
+            functionCall: {
+              name: block.name,
+              args: block.input || {}
+            }
+          });
+        }
+      }
+    } else if (content && typeof content === 'object') {
+      // Other object formats
+      const textContent = content.text || JSON.stringify(content);
+      if (textContent.trim()) {
+        parts.push({ text: textContent });
+      }
+    }
+
+    return parts;
+  }
+
+  /**
+   * Convert tool result message to text format for Gemini
+   */
+  private convertToolResultContent(message: any): string {
+    const toolCallId = message.tool_call_id || 'unknown';
+    const content = message.content || '';
+    
+    // Format tool result as readable text for conversation history
+    return `Tool "${toolCallId}" result: ${typeof content === 'string' ? content : JSON.stringify(content)}`;
+  }
+
+  private convertTools(tools: any[]): any {
+    // Convert Anthropic/OpenAI tools to Gemini function declarations
+    // Gemini expects: { functionDeclarations: [...] } (single object, not array)
+    const functionDeclarations = tools.map(tool => {
+      // 🎯 Enhanced tool format handling - support multiple input formats like OpenAI does
+      let name: string;
+      let description: string;
+      let rawParameters: any;
+      
+      if (tool.type === 'function' && tool.function) {
+        // OpenAI format: { type: 'function', function: { name, description, parameters } }
+        name = tool.function.name;
+        description = tool.function.description || '';
+        rawParameters = tool.function.parameters || {};
+      } else if (tool.name) {
+        // Anthropic format: { name, description, input_schema }
+        name = tool.name;
+        description = tool.description || '';
+        rawParameters = tool.input_schema || {};
+      } else {
+        logger.error('Invalid tool format - missing name', { tool });
+        throw new Error(`Invalid tool format: ${JSON.stringify(tool)}`);
+      }
+      
+      // 🔧 Critical Fix: Clean JSON Schema for Gemini API compatibility
+      // Gemini API doesn't support additionalProperties, $schema, and other JSON Schema metadata
+      const parameters = this.cleanJsonSchemaForGemini(rawParameters);
+      
+      return {
+        name: name,
+        description: description,
+        parameters: parameters
+      };
+    });
+    
+    return {
+      functionDeclarations: functionDeclarations
+    };
+  }
+
+  /**
+   * Clean JSON Schema object for Gemini API compatibility
+   * Removes fields that Gemini API doesn't support
+   */
+  private cleanJsonSchemaForGemini(schema: any): any {
+    if (!schema || typeof schema !== 'object') {
+      return schema;
+    }
+
+    const cleaned: any = {};
+    
+    // Gemini API supported fields for schema
+    const supportedFields = ['type', 'properties', 'required', 'items', 'description', 'enum'];
+    
+    for (const [key, value] of Object.entries(schema)) {
+      if (supportedFields.includes(key)) {
+        if (key === 'properties' && typeof value === 'object') {
+          // Recursively clean properties
+          cleaned[key] = {};
+          for (const [propKey, propValue] of Object.entries(value as any)) {
+            cleaned[key][propKey] = this.cleanJsonSchemaForGemini(propValue);
+          }
+        } else if (key === 'items' && typeof value === 'object') {
+          // Recursively clean array items schema
+          cleaned[key] = this.cleanJsonSchemaForGemini(value);
+        } else {
+          cleaned[key] = value;
+        }
+      }
+      // Skip unsupported fields like: additionalProperties, $schema, minItems, maxItems, etc.
+    }
+    
+    return cleaned;
+  }
+
+  private convertFromGeminiFormat(geminiResponse: any, originalRequest: BaseRequest): BaseResponse {
+    const candidate = geminiResponse.candidates?.[0];
+    const parts = candidate?.content?.parts || [];
+    
+    // 🔧 Enhanced debugging for empty response diagnosis
+    logger.debug('Converting Gemini response to Anthropic format', {
+      candidatesCount: geminiResponse.candidates?.length || 0,
+      partsCount: parts.length,
+      finishReason: candidate?.finishReason,
+      hasUsageMetadata: !!geminiResponse.usageMetadata,
+      safetyRatings: candidate?.safetyRatings,
+      requestId: originalRequest.metadata?.requestId || 'unknown'
+    });
+    
+    // Extract usage information
+    const usageMetadata = geminiResponse.usageMetadata || {};
+    
+    // Convert parts to Anthropic content format
+    const content: any[] = [];
+    
+    for (const part of parts) {
+      if (part.text) {
+        // Text content
+        content.push({
+          type: 'text',
+          text: part.text
+        });
+      } else if (part.functionCall) {
+        // Tool use content - convert Gemini functionCall to Anthropic tool_use
+        content.push({
+          type: 'tool_use',
+          id: `toolu_${Date.now()}_${content.length}`,
+          name: part.functionCall.name,
+          input: part.functionCall.args || {}
+        });
+      }
+    }
+    
+    // 🔧 Critical Fix: NO SILENT FAILURES - 空响应必须抛出错误
+    if (content.length === 0) {
+      throw new Error('Empty response from Gemini API - no content generated. This indicates an API issue or content filtering.');
+    }
+    
+    // 🔧 Log conversion results for debugging
+    logger.debug('Gemini response conversion completed', {
+      contentBlocks: content.length,
+      textBlocks: content.filter(c => c.type === 'text').length,
+      toolBlocks: content.filter(c => c.type === 'tool_use').length,
+      isEmpty: content.length === 1 && content[0].type === 'text' && (!content[0].text || content[0].text.trim() === ''),
+      requestId: originalRequest.metadata?.requestId || 'unknown'
+    });
+    
+    return {
+      id: `gemini_${Date.now()}`,
+      type: 'message',
+      model: originalRequest.model,
+      role: 'assistant',
+      content: content,
+      stop_reason: this.mapFinishReason(candidate?.finishReason),
+      stop_sequence: null,
+      usage: {
+        input_tokens: usageMetadata.promptTokenCount || 0,
+        output_tokens: usageMetadata.candidatesTokenCount || 0
+      }
+    };
+  }
+
+  /**
+   * 基本工具参数提取（临时应急方案）
+   * 🔧 注意：这是为了处理UNEXPECTED_TOOL_CALL的临时方案
+   */
+  private extractToolInputFromMessage(userMessage: string, tool: any): any {
+    // Basic parameter extraction for common tools
+    const toolName = tool.name || tool.function?.name;
+    const schema = tool.input_schema || tool.function?.parameters;
+    
+    if (!schema || !schema.properties) {
+      return {};
+    }
+    
+    const input: any = {};
+    
+    // Extract parameters based on schema
+    Object.keys(schema.properties).forEach(paramName => {
+      const paramInfo = schema.properties[paramName];
+      
+      // Simple extraction patterns
+      if (paramInfo.type === 'string') {
+        // For location/city parameters
+        if (paramName.toLowerCase().includes('location') || paramName.toLowerCase().includes('city')) {
+          const cityMatch = userMessage.match(/(?:in|for|at)\s+([A-Za-z\u4e00-\u9fff]+)/i);
+          if (cityMatch) {
+            input[paramName] = cityMatch[1];
+          }
+        }
+        // For general string parameters, try to extract quoted or capitalized words
+        else {
+          const wordMatch = userMessage.match(/["']([^"']+)["']/) || userMessage.match(/([A-Z][a-z]+)/);
+          if (wordMatch) {
+            input[paramName] = wordMatch[1];
+          }
+        }
+      }
+    });
+    
+    // If required parameters are missing, add defaults
+    if (schema.required) {
+      schema.required.forEach((requiredParam: string) => {
+        if (!input[requiredParam]) {
+          if (requiredParam.toLowerCase().includes('city') || requiredParam.toLowerCase().includes('location')) {
+            input[requiredParam] = 'unknown location';
+          } else {
+            input[requiredParam] = 'unknown';
+          }
+        }
+      });
+    }
+    
+    return input;
+  }
+
+  private mapFinishReason(finishReason?: string): string {
+    const reasonMap: Record<string, string> = {
+      'STOP': 'end_turn',
+      'MAX_TOKENS': 'max_tokens',
+      'SAFETY': 'stop_sequence',
+      'RECITATION': 'stop_sequence',
+      'OTHER': 'end_turn',
+      // 🔧 Removed UNEXPECTED_TOOL_CALL mapping - should be handled properly by Gemini API
+      'FUNCTION_CALL': 'tool_use',
+      // Gemini SDK可能返回的其他值
+      'FINISH_REASON_STOP': 'end_turn',
+      'FINISH_REASON_MAX_TOKENS': 'max_tokens',
+      'FINISH_REASON_SAFETY': 'stop_sequence',
+      'FINISH_REASON_RECITATION': 'stop_sequence',
+      'FINISH_REASON_OTHER': 'end_turn'
+    };
+
+    // 如果没有finishReason，返回end_turn
+    if (!finishReason) {
+      return 'end_turn';
+    }
+
+    const mappedReason = reasonMap[finishReason] || reasonMap[finishReason.toUpperCase()];
+    
+    logger.debug('Mapped Gemini finish reason', {
+      original: finishReason,
+      mapped: mappedReason || 'end_turn'
+    });
+
+    // 🔧 Critical Fix: NO FALLBACK - 未知finish_reason必须抛出错误
+    if (!mappedReason) {
+      throw new Error(`Unknown Gemini finish reason '${finishReason}' - no mapping found. Available mappings: ${Object.keys(reasonMap).join(', ')}`);
+    }
+    return mappedReason;
+  }
+
+  /**
+   * Detect if response was blocked by Content Safety
+   */
+  private detectContentSafetyBlock(geminiResponse: any): { blocked: boolean, reason?: string, details?: string } {
+    const candidate = geminiResponse.candidates?.[0];
+    
+    // Check finish reason
+    if (candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'RECITATION') {
+      return { blocked: true, reason: candidate.finishReason };
+    }
+    
+    // Check safety ratings
+    const blockedRatings = candidate?.safetyRatings?.filter((rating: any) => rating.blocked === true);
+    if (blockedRatings?.length > 0) {
+      return { 
+        blocked: true, 
+        reason: 'SAFETY_RATINGS',
+        details: blockedRatings.map((r: any) => r.category).join(', ')
+      };
+    }
+    
+    return { blocked: false };
+  }
+
+  /**
+   * Get current API key for request
+   */
+
+  /**
+   * Estimate token usage for a request (for rate limiting)
+   */
+  private estimateTokens(request: BaseRequest): number {
+    let totalTokens = 0;
+    
+    // Estimate based on message content
+    for (const message of request.messages || []) {
+      const textContent = this.extractTextContent(message.content);
+      totalTokens += Math.ceil(textContent.length / 4); // Rough estimation: 4 chars = 1 token
+    }
+    
+    // Add some buffer for tools and other metadata
+    if (request.tools && request.tools.length > 0) {
+      totalTokens += request.tools.length * 50; // Estimate 50 tokens per tool definition
+    }
+    
+    return Math.max(totalTokens, 100); // Minimum 100 tokens
+  }
+
+  /**
+   * Extract token usage from Gemini response
+   */
+  private extractTokenUsage(geminiResponse: any): number {
+    const usageMetadata = geminiResponse.usageMetadata || {};
+    return (usageMetadata.promptTokenCount || 0) + (usageMetadata.candidatesTokenCount || 0);
+  }
+
+  /**
+   * Report success to rotation manager
+   */
+
+  /**
+   * Report error to rotation manager
+   */
+
+  /**
+   * Check if error is retryable (429, 502, 503, 504, quota errors)
+   */
+  private isRetryableError(error: any): boolean {
+    const status = error?.status || error?.response?.status;
+    const message = error?.message || '';
+    
+    // HTTP status code based retries
+    if (status) {
+      const retryableStatuses = [429, 502, 503, 504];
+      if (retryableStatuses.includes(status)) {
+        return true;
+      }
+    }
+    
+    // Gemini specific error patterns
+    const retryablePatterns = [
+      'quota',
+      'rate',
+      'RESOURCE_EXHAUSTED',
+      'Too Many Requests',
+      'temporarily unavailable',
+      'service unavailable'
+    ];
+    
+    return retryablePatterns.some(pattern => 
+      message.toLowerCase().includes(pattern.toLowerCase())
+    );
+  }
+
+  /**
+   * Wait for retry delay - 429 specific: 3 retries with 60s wait on 3rd retry
+   */
+  private async waitForRetry(attempt: number, isRateLimited: boolean = false): Promise<void> {
+    let delay: number;
+    
+    if (isRateLimited) {
+      // For 429 errors: 1s, 5s, 60s delays
+      if (attempt === 0) delay = 1000;      // 1st retry: 1s
+      else if (attempt === 1) delay = 5000;  // 2nd retry: 5s  
+      else delay = 60000;                    // 3rd retry: 60s
+    } else {
+      // For other retryable errors: exponential backoff
+      delay = this.retryDelay * Math.pow(2, attempt);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  /**
+   * Execute request with retry logic and API key rotation
+   */
+  private async executeWithRetry<T>(
+    requestFn: (apiKey: string, model: string) => Promise<T>,
+    modelName: string,
+    operation: string,
+    requestId: string
+  ): Promise<T> {
+    let lastError: any;
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      let actualApiKey: string;
+      let keyIndex = 0;
+      let fallbackApplied = false;
+      let fallbackReason: string | undefined;
+      let currentModel = modelName;
+      
+      try {
+        // Get a fresh available key and model for each attempt
+        if (this.enhancedRateLimitManager) {
+          const keyAndModel = this.enhancedRateLimitManager.getAvailableKeyAndModel(modelName, requestId);
+          
+          actualApiKey = this.apiKeys[keyAndModel.keyIndex];
+          keyIndex = keyAndModel.keyIndex;
+          currentModel = keyAndModel.model;
+          fallbackApplied = keyAndModel.fallbackApplied;
+          fallbackReason = keyAndModel.fallbackReason;
+          
+          if (fallbackApplied) {
+            logger.info('Applied Gemini model fallback due to rate limits', {
+              originalModel: modelName,
+              fallbackModel: currentModel,
+              reason: fallbackReason,
+              keyIndex,
+              attempt: attempt + 1
+            }, requestId, 'gemini-provider');
+          }
+        } else {
+          actualApiKey = this.apiKeys[0];
+        }
+      } catch (keyError) {
+        // All keys are rate-limited or blacklisted
+        logger.error(`No available keys for ${operation}`, keyError, requestId, 'gemini-provider');
+        throw keyError;
+      }
+
+      try {
+        const result = await requestFn(actualApiKey, currentModel);
+        
+        // Report success to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          // Success is automatically tracked by the rate limit manager
+        }
+        
+        return result;
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.status === 429;
+
+        logger.warn(`${operation} failed on key`, {
+            key: `***${actualApiKey.slice(-4)}`,
+            model: currentModel,
+            attempt: attempt + 1,
+            maxRetries: this.maxRetries,
+            isRateLimited,
+            error: error instanceof Error ? error.message : String(error)
+        }, requestId, 'gemini-provider');
+
+        // Report error to enhanced rate limit manager
+        if (this.enhancedRateLimitManager) {
+          if (isRateLimited) {
+            this.enhancedRateLimitManager.report429Error(keyIndex, currentModel, requestId);
+          }
+        }
+
+        if (!this.isRetryableError(error)) {
+          break; // Non-retryable error, break immediately
+        }
+        
+        // For retryable errors, continue to next iteration which will get a fresh available key
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
+        }
+      }
+    }
+    throw lastError; // Throw last error if all retries fail
+  }
+
+  /**
+   * Execute request with retry logic and API key rotation
+   */
+
+  /**
+   * 处理包含工具调用的缓冲响应（直接Gemini到Anthropic转换）
+   */
+  private async *processBufferedToolResponse(fullResponseBuffer: string, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    logger.info('Processing Gemini tool response with direct Anthropic conversion', {
+      bufferLength: fullResponseBuffer.length
+    }, requestId, 'gemini-tool-processor');
+
+    try {
+      // 解析Gemini响应
+      const parsedContent = JSON.parse(fullResponseBuffer);
+      const geminiEvents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+
+      logger.debug('Parsed Gemini events for tool processing', {
+        eventCount: geminiEvents.length
+      }, requestId, 'gemini-tool-processor');
+
+      // 🔧 直接转换为Anthropic格式
+      const anthropicEvents = this.convertGeminiToAnthropicStream(geminiEvents, request, requestId);
+
+      logger.info('Direct Gemini to Anthropic conversion completed', {
+        streamEventCount: anthropicEvents.length,
+        strategy: 'direct-gemini-to-anthropic'
+      }, requestId, 'gemini-tool-processor');
+
+      // 输出所有事件
+      for (const streamEvent of anthropicEvents) {
+        yield streamEvent;
+      }
+
+    } catch (error) {
+      logger.error('Failed to process Gemini tool response', error, requestId, 'gemini-tool-processor');
+      throw error;
+    }
+  }
+
+  /**
+   * 直接将Gemini事件转换为Anthropic流式事件
+   * 🔧 处理文本和工具调用
+   */
+  private convertGeminiToAnthropicStream(geminiEvents: any[], request: BaseRequest, requestId: string): any[] {
+    const events: any[] = [];
+    const messageId = `msg_${Date.now()}`;
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let contentIndex = 0;
+
+    // 提取所有内容
+    const contentBlocks: any[] = [];
+    
+    for (const event of geminiEvents) {
+      if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+        const parts = event.candidates[0].content.parts || [];
+        
+        for (const part of parts) {
+          if (part.text) {
+            // 文本内容
+            contentBlocks.push({
+              type: 'text',
+              text: part.text
+            });
+          } else if (part.functionCall) {
+            // 🔧 工具调用转换
+            contentBlocks.push({
+              type: 'tool_use',
+              id: `toolu_${Date.now()}_${contentIndex++}`,
+              name: part.functionCall.name,
+              input: part.functionCall.args || {}
+            });
+            
+            logger.debug('Converted Gemini functionCall to Anthropic tool_use', {
+              functionName: part.functionCall.name,
+              args: part.functionCall.args
+            }, requestId, 'gemini-tool-processor');
+          }
+        }
+      }
+      
+      // 聚合token信息
+      if (event.usageMetadata) {
+        inputTokens = Math.max(inputTokens, event.usageMetadata.promptTokenCount || 0);
+        outputTokens += event.usageMetadata.candidatesTokenCount || 0;
+      }
+    }
+
+    // 估算tokens如果没有提供
+    if (outputTokens === 0) {
+      const textLength = contentBlocks
+        .filter(block => block.type === 'text')
+        .reduce((sum, block) => sum + (block.text?.length || 0), 0);
+      outputTokens = Math.ceil((textLength + contentBlocks.filter(b => b.type === 'tool_use').length * 50) / 4);
+    }
+
+    // 生成Anthropic流式事件
+    // 1. message_start
+    events.push({
+      event: 'message_start',
+      data: {
+        type: 'message_start',
+        message: {
+          id: messageId,
+          type: 'message',
+          role: 'assistant',
+          content: [],
+          model: request.model,
+          stop_reason: null,
+          stop_sequence: null,
+          usage: { input_tokens: inputTokens, output_tokens: 0 }
+        }
+      }
+    });
+
+    // 2. ping
+    events.push({
+      event: 'ping',
+      data: { type: 'ping' }
+    });
+
+    // 3. 为每个内容块生成事件
+    contentBlocks.forEach((block, index) => {
+      // content_block_start
+      events.push({
+        event: 'content_block_start',
+        data: {
+          type: 'content_block_start',
+          index: index,
+          content_block: block
+        }
+      });
+
+      if (block.type === 'text' && block.text) {
+        // 为文本生成delta事件
+        const chunkSize = 20;
+        for (let i = 0; i < block.text.length; i += chunkSize) {
+          const chunk = block.text.slice(i, i + chunkSize);
+          events.push({
+            event: 'content_block_delta',
+            data: {
+              type: 'content_block_delta',
+              index: index,
+              delta: {
+                type: 'text_delta',
+                text: chunk
+              }
+            }
+          });
+        }
+      }
+
+      // content_block_stop
+      events.push({
+        event: 'content_block_stop',
+        data: {
+          type: 'content_block_stop',
+          index: index
+        }
+      });
+    });
+
+    // 4. message_delta (with usage)
+    events.push({
+      event: 'message_delta',
+      data: {
+        type: 'message_delta',
+        delta: {},
+        usage: {
+          output_tokens: outputTokens
+        }
+      }
+    });
+
+    // 5. message_stop
+    events.push({
+      event: 'message_stop',
+      data: {
+        type: 'message_stop'
+      }
+    });
+
+    logger.debug('Generated Anthropic stream events', {
+      eventCount: events.length,
+      contentBlocks: contentBlocks.length,
+      textBlocks: contentBlocks.filter(b => b.type === 'text').length,
+      toolBlocks: contentBlocks.filter(b => b.type === 'tool_use').length,
+      outputTokens
+    }, requestId, 'gemini-tool-processor');
+
+    return events;
+  }
+
+  /**
+   * 处理纯文本响应（智能流式传输 - 学习OpenAI方式）
+   */
+  private async *processStreamingTextResponse(fullResponseBuffer: string, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    logger.info('Processing Gemini text response with smart streaming strategy (OpenAI-style)', {
+      bufferLength: fullResponseBuffer.length,
+      strategy: 'smart-text-streaming'
+    }, requestId, 'gemini-stream-processor');
+
+    try {
+      // 解析响应提取文本
+      const parsedContent = JSON.parse(fullResponseBuffer);
+      const geminiEvents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+      
+      // 提取所有文本内容
+      let fullText = '';
+      let inputTokens = 0;
+      let outputTokens = 0;
+      
+      for (const event of geminiEvents) {
+        if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+          const parts = event.candidates[0].content.parts || [];
+          for (const part of parts) {
+            if (part.text) {
+              fullText += part.text;
+            }
+          }
+        }
+        
+        // 聚合token信息
+        if (event.usageMetadata) {
+          inputTokens = Math.max(inputTokens, event.usageMetadata.promptTokenCount || 0);
+          outputTokens += event.usageMetadata.candidatesTokenCount || 0;
+        }
+      }
+
+      // 估算tokens（如果没有提供）
+      if (outputTokens === 0 && fullText) {
+        outputTokens = Math.ceil(fullText.length / 4);
+      }
+
+      logger.debug('Extracted text content for streaming', {
+        textLength: fullText.length,
+        inputTokens,
+        outputTokens,
+        estimatedTokens: outputTokens === Math.ceil(fullText.length / 4)
+      }, requestId, 'gemini-stream-processor');
+
+      // 🚀 智能流式事件生成 - 立即开始输出，避免等待
+      const messageId = `msg_${Date.now()}`;
+      
+      // 发送message_start
+      yield {
+        event: 'message_start',
+        data: {
+          type: 'message_start',
+          message: {
+            id: messageId,
+            type: 'message',
+            role: 'assistant',
+            content: [],
+            model: request.model,
+            stop_reason: null,
+            stop_sequence: null,
+            usage: { input_tokens: inputTokens, output_tokens: 0 }
+          }
+        }
+      };
+
+      // 发送ping
+      yield {
+        event: 'ping',
+        data: { type: 'ping' }
+      };
+
+      // 发送content_block_start
+      yield {
+        event: 'content_block_start',
+        data: {
+          type: 'content_block_start',
+          index: 0,
+          content_block: { type: 'text', text: '' }
+        }
+      };
+
+      // 🔥 智能分块策略：根据内容长度调整chunk大小和延迟
+      const contentLength = fullText.length;
+      let chunkSize: number;
+      let delayMs: number;
+      
+      if (contentLength > 10000) {
+        // 长内容：大块快速传输
+        chunkSize = 50;
+        delayMs = 5;
+      } else if (contentLength > 1000) {
+        // 中等内容：适中块适中延迟
+        chunkSize = 20;
+        delayMs = 8;
+      } else {
+        // 短内容：小块慢速传输（更好的用户体验）
+        chunkSize = 10;
+        delayMs = 15;
+      }
+      
+      logger.debug('Smart chunking strategy selected', {
+        contentLength,
+        chunkSize,
+        delayMs,
+        estimatedChunks: Math.ceil(contentLength / chunkSize)
+      }, requestId, 'gemini-stream-processor');
+
+      // 分块发送文本内容（智能流式体验）
+      let sentChunks = 0;
+      for (let i = 0; i < fullText.length; i += chunkSize) {
+        const chunk = fullText.slice(i, i + chunkSize);
+        sentChunks++;
+        
+        yield {
+          event: 'content_block_delta',
+          data: {
+            type: 'content_block_delta',
+            index: 0,
+            delta: {
+              type: 'text_delta',
+              text: chunk
+            }
+          }
+        };
+        
+        // 智能延迟：前几个块立即发送，后续添加延迟
+        if (sentChunks > 3) {
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+        }
+      }
+
+      // 发送结束事件
+      yield {
+        event: 'content_block_stop',
+        data: {
+          type: 'content_block_stop',
+          index: 0
+        }
+      };
+
+      yield {
+        event: 'message_delta',
+        data: {
+          type: 'message_delta',
+          delta: {},
+          usage: {
+            output_tokens: outputTokens
+          }
+        }
+      };
+
+      yield {
+        event: 'message_stop',
+        data: {
+          type: 'message_stop'
+        }
+      };
+
+      logger.info('Smart text streaming completed', {
+        textLength: fullText.length,
+        outputTokens: outputTokens,
+        totalChunks: sentChunks,
+        chunkSize,
+        delayMs,
+        strategy: 'smart-text-streaming'
+      }, requestId, 'gemini-stream-processor');
+
+    } catch (error) {
+      logger.error('Failed to process Gemini smart text response', error, requestId, 'gemini-stream-processor');
+      throw error;
+    }
+  }
+
+  /**
+   * 实时提取Gemini响应中的内容并生成流式事件
+   */
+  private extractAndYieldContent(buffer: string, currentTokens: number, requestId: string, isFinal: boolean = false): { events: any[], totalTokens: number } {
+    const events: any[] = [];
+    let totalTokens = currentTokens;
+    
+    try {
+      // 尝试解析JSON数组格式的Gemini响应
+      const parsedContent = JSON.parse(buffer);
+      const geminiEvents = Array.isArray(parsedContent) ? parsedContent : [parsedContent];
+      
+      // 提取新的文本内容
+      let newText = '';
+      for (const event of geminiEvents) {
+        if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+          const parts = event.candidates[0].content.parts || [];
+          for (const part of parts) {
+            if (part.text) {
+              newText += part.text;
+            }
+          }
+        }
+      }
+      
+      // 如果有新内容，生成content_block_delta事件
+      if (newText) {
+        // 按小块发送以模拟真实流式体验
+        const chunkSize = 20;
+        for (let i = 0; i < newText.length; i += chunkSize) {
+          const chunk = newText.slice(i, i + chunkSize);
+          events.push({
+            event: 'content_block_delta',
+            data: {
+              type: 'content_block_delta',
+              index: 0,
+              delta: {
+                type: 'text_delta',
+                text: chunk
+              }
+            }
+          });
+          
+          // 更新token计数（粗略估算：4字符=1token）
+          totalTokens += Math.ceil(chunk.length / 4);
+        }
+        
+        logger.debug('Extracted content from Gemini buffer', {
+          textLength: newText.length,
+          chunkCount: Math.ceil(newText.length / chunkSize),
+          newTokens: Math.ceil(newText.length / 4),
+          totalTokens
+        }, requestId, 'gemini-real-time');
+      }
+      
+    } catch (error) {
+      // 如果不是完整的JSON，只在最终处理时记录
+      if (isFinal) {
+        logger.debug('Buffer does not contain complete JSON, skipping extraction', {
+          bufferLength: buffer.length,
+          bufferPreview: buffer.slice(0, 100)
+        }, requestId, 'gemini-real-time');
+      }
+    }
+    
+    return { events, totalTokens };
+  }
+
+  /**
+   * Convert OpenAI buffered response to OpenAI streaming events format
+   */
+  private convertToOpenAIEvents(bufferedResponse: any, requestId: string): any[] {
+    const content = bufferedResponse.choices?.[0]?.message?.content || '';
+    const usage = bufferedResponse.usage || {};
+    const candidate = bufferedResponse.choices?.[0]; // 🔧 提取candidate用于finish_reason映射
+    
+    // Create OpenAI streaming events similar to real OpenAI API
+    const events: any[] = [];
+    
+    // Add chunks for content (simulate streaming)
+    const chunkSize = 10; // Characters per chunk to simulate realistic streaming
+    for (let i = 0; i < content.length; i += chunkSize) {
+      const chunk = content.slice(i, i + chunkSize);
+      events.push({
+        id: bufferedResponse.id,
+        object: 'chat.completion.chunk',
+        created: bufferedResponse.created,
+        model: bufferedResponse.model,
+        choices: [{
+          index: 0,
+          delta: {
+            content: chunk
+          },
+          finish_reason: null
+        }]
+      });
+    }
+    
+    // Add final event with finish reason and usage
+    events.push({
+      id: bufferedResponse.id,
+      object: 'chat.completion.chunk',
+      created: bufferedResponse.created,
+      model: bufferedResponse.model,
+      choices: [{
+        index: 0,
+        delta: {},
+        finish_reason: this.mapFinishReason(candidate?.finishReason || 'STOP')
+      }],
+      usage: usage
+    });
+    
+    logger.debug('Converted to OpenAI streaming events', {
+      originalLength: content.length,
+      eventCount: events.length,
+      chunkSize
+    }, requestId, 'gemini-buffered-processor');
+    
+    return events;
+  }
+
+  /**
+   * Convert Gemini events array to OpenAI buffered response format
+   * 🔧 Critical Fix: Handle both text and function calls from Gemini
+   */
+  private convertGeminiToOpenAIBuffered(geminiEvents: any[], requestId: string): any {
+    // Extract all content from Gemini events - both text and tool calls
+    let fullText = '';
+    const toolCalls: any[] = [];
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let toolCallIndex = 0;
+    
+    for (const event of geminiEvents) {
+      if (event.candidates && event.candidates[0] && event.candidates[0].content) {
+        const parts = event.candidates[0].content.parts || [];
+        for (const part of parts) {
+          // Handle text content
+          if (part.text) {
+            fullText += part.text;
+          }
+          
+          // 🔧 Critical Fix: Handle function calls from Gemini
+          if (part.functionCall) {
+            const toolCall = {
+              index: toolCallIndex++,
+              id: `call_${Date.now()}_${toolCallIndex}`,
+              type: 'function',
+              function: {
+                name: part.functionCall.name,
+                arguments: JSON.stringify(part.functionCall.args || {})
+              }
+            };
+            toolCalls.push(toolCall);
+            
+            logger.debug('Converted Gemini functionCall to OpenAI tool_call', {
+              functionName: part.functionCall.name,
+              args: part.functionCall.args,
+              toolCallId: toolCall.id
+            }, requestId, 'gemini-buffered-processor');
+          }
+        }
+      }
+      
+      // Aggregate usage metadata
+      if (event.usageMetadata) {
+        inputTokens = Math.max(inputTokens, event.usageMetadata.promptTokenCount || 0);
+        outputTokens += event.usageMetadata.candidatesTokenCount || 0;
+      }
+    }
+    
+    // Estimate tokens if not provided
+    if (outputTokens === 0 && (fullText || toolCalls.length > 0)) {
+      outputTokens = Math.ceil((fullText.length + toolCalls.length * 50) / 4); // Rough estimation
+    }
+    
+    logger.debug('Gemini to OpenAI conversion with tool calls', {
+      geminiEvents: geminiEvents.length,
+      fullTextLength: fullText.length,
+      toolCallCount: toolCalls.length,
+      inputTokens,
+      outputTokens
+    }, requestId, 'gemini-buffered-processor');
+    
+    // 🔧 Create OpenAI-compatible buffered response with tool calls
+    const message: any = {
+      role: 'assistant'
+    };
+
+    // OpenAI format: if there are tool calls, content should be null or empty
+    // If there's only text, content should be the text
+    if (toolCalls.length > 0) {
+      message.tool_calls = toolCalls;
+      message.content = fullText || null;
+    } else {
+      // Pure text response
+      message.content = fullText || '';
+    }
+    
+    return {
+      id: `chatcmpl-gemini-${Date.now()}`,
+      object: 'chat.completion',
+      created: Math.floor(Date.now() / 1000),
+      model: 'gemini-2.5-pro',
+      choices: [{
+        index: 0,
+        message: message,
+        finish_reason: 'stop'
+      }],
+      usage: {
+        prompt_tokens: inputTokens,
+        completion_tokens: outputTokens,
+        total_tokens: inputTokens + outputTokens
+      }
+    };
+  }
+
+  private convertStreamEvent(event: any): any {
+    // Convert Gemini streaming events to our standard format
+    const candidate = event.candidates?.[0];
+    const part = candidate?.content?.parts?.[0];
+    
+    return {
+      type: 'content_block_delta',
+      index: 0,
+      delta: {
+        type: 'text_delta',
+        text: part?.text || ''
+      },
+      content_block: candidate?.content,
+      usage: event.usageMetadata ? {
+        input_tokens: event.usageMetadata.promptTokenCount || 0,
+        output_tokens: event.usageMetadata.candidatesTokenCount || 0
+      } : undefined
+    };
+  }
+  
+  /**
+   * 将流式事件转换为非流式BaseResponse格式
+   * 用于统一所有请求都使用智能缓冲策略
+   */
+  private convertStreamEventsToBaseResponse(streamEvents: any[], originalRequest: BaseRequest, requestId: string): BaseResponse {
+    logger.debug('Converting stream events to BaseResponse', {
+      eventCount: streamEvents.length
+    }, requestId, 'gemini-provider');
+
+    // 提取关键信息
+    let messageId = '';
+    let content: any[] = [];
+    let stopReason = 'end_turn';
+    let inputTokens = 0;
+    let outputTokens = 0;
+    let currentTextBlock = '';
+
+    for (const event of streamEvents) {
+      const eventData = event.data || event;
+      
+      switch (eventData.type) {
+        case 'message_start':
+          messageId = eventData.message?.id || `gemini_${Date.now()}`;
+          if (eventData.message?.usage?.input_tokens) {
+            inputTokens = eventData.message.usage.input_tokens;
+          }
+          break;
+          
+        case 'content_block_start':
+          // 开始新的内容块
+          if (eventData.content_block?.type === 'text') {
+            currentTextBlock = '';
+          }
+          break;
+          
+        case 'content_block_delta':
+          // 累积文本内容
+          if (eventData.delta?.type === 'text_delta' && eventData.delta.text) {
+            currentTextBlock += eventData.delta.text;
+          }
+          break;
+          
+        case 'content_block_stop':
+          // 完成内容块
+          if (currentTextBlock) {
+            content.push({
+              type: 'text',
+              text: currentTextBlock
+            });
+            currentTextBlock = '';
+          }
+          break;
+          
+        case 'message_delta':
+          // 提取最终使用情况和停止原因
+          if (eventData.delta?.stop_reason) {
+            stopReason = eventData.delta.stop_reason;
+          }
+          if (eventData.usage?.output_tokens) {
+            outputTokens = eventData.usage.output_tokens;
+          }
+          break;
+          
+        case 'tool_use':
+          // 处理工具调用
+          if (eventData.id && eventData.name) {
+            content.push({
+              type: 'tool_use',
+              id: eventData.id,
+              name: eventData.name,
+              input: eventData.input || {}
+            });
+          }
+          break;
+      }
+    }
+
+    // 如果还有未完成的文本块，添加它
+    if (currentTextBlock) {
+      content.push({
+        type: 'text',
+        text: currentTextBlock
+      });
+    }
+
+    // 如果没有内容，创建空文本块
+    if (content.length === 0) {
+      content.push({
+        type: 'text',
+        text: ''
+      });
+    }
+
+    const response: BaseResponse = {
+      id: messageId || `gemini_${Date.now()}`,
+      model: originalRequest.model,
+      role: 'assistant',
+      content: content,
+      stop_reason: stopReason,
+      stop_sequence: null,
+      usage: {
+        input_tokens: inputTokens,
+        output_tokens: outputTokens
+      }
+    };
+
+    logger.debug('Stream to BaseResponse conversion completed', {
+      messageId: response.id,
+      contentBlocks: response.content.length,
+      totalTextLength: response.content
+        .filter(block => block.type === 'text')
+        .reduce((sum, block) => sum + (block.text?.length || 0), 0),
+      inputTokens: response.usage?.input_tokens || 0,
+      outputTokens: response.usage?.output_tokens || 0,
+      stopReason: response.stop_reason
+    }, requestId, 'gemini-provider');
+
+    return response;
+  }
+
+  /**
+   * Get API key rotation statistics
+   */
+  getRotationStats(): any {
+    if (this.enhancedRateLimitManager) {
+      return this.enhancedRateLimitManager.getStatus();
+    }
+    return {
+      providerId: this.name,
+      totalKeys: 1,
+      activeKeys: 1,
+      rotationEnabled: false
+    };
+  }
+
+  /**
+   * Smart caching strategy for Gemini: Only cache tool calls, stream text transparently
+   */
+  private async *processSmartCachedGeminiStream(responseBody: ReadableStream, request: BaseRequest, requestId: string): AsyncIterable<any> {
+    const reader = responseBody.getReader();
+    const decoder = new TextDecoder();
+    let fullResponseBuffer = '';
+    let hasToolCalls = false;
+
+    logger.debug('Starting Gemini smart cached stream processing', {
+      strategy: 'cache_tools_stream_text'
+    }, requestId, 'gemini-provider');
+
+    try {
+      // First pass: collect response and detect tool calls
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value, { stream: true });
+        fullResponseBuffer += chunk;
+        
+        // Quick tool call detection without full parsing
+        if (!hasToolCalls && (
+          fullResponseBuffer.includes('functionCall') || 
+          fullResponseBuffer.includes('function_call') ||
+          fullResponseBuffer.includes('tool_call') ||
+          fullResponseBuffer.includes('function_result')
+        )) {
+          hasToolCalls = true;
+          logger.debug('Tool calls detected in Gemini response', {}, requestId, 'gemini-provider');
+        }
+      }
+
+      logger.info('Gemini response analysis completed', {
+        responseLength: fullResponseBuffer.length,
+        hasToolCalls,
+        strategy: hasToolCalls ? 'buffered_tool_parsing' : 'direct_streaming'
+      }, requestId, 'gemini-provider');
+
+      if (hasToolCalls) {
+        // Tool calls detected: use buffered processing for reliability
+        logger.info('Using buffered processing for Gemini tool calls', {}, requestId, 'gemini-provider');
+        yield* this.processBufferedToolResponse(fullResponseBuffer, request, requestId);
+      } else {
+        // No tool calls: stream text content directly
+        logger.info('Using direct streaming for Gemini text-only response', {}, requestId, 'gemini-provider');
+        yield* this.processStreamingTextResponse(fullResponseBuffer, request, requestId);
+      }
+
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  /**
+   * 获取当前key信息，用于详细的429错误日志
+   */
+  getCurrentKeyInfo(): any {
+    return {
+      keyIndex: this.currentKeyIndex,
+      keySuffix: this.apiKeys[this.currentKeyIndex]?.slice(-8) || 'unknown',
+      totalKeys: this.apiKeys.length,
+      nextKeyIndex: (this.currentKeyIndex + 1) % this.apiKeys.length,
+      enhancedManagerEnabled: !!this.enhancedRateLimitManager
+    };
+  }
+}

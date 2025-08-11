@@ -1,0 +1,41 @@
+{
+  "testCase": "多轮对话",
+  "ourResult": {
+    "success": true,
+    "duration": 7529,
+    "response": {
+      "type": "message",
+      "model": "claude-sonnet-4-20250514",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "很好的选择！TypeScript是一门非常实用的语言。以下是我的学习建议：\n\n## 学习路径\n\n### 1. 先学JavaScript基础\n- TypeScript是JavaScript的超集，所以JavaScript基础很重要\n- 掌握变量、函数、对象、数组等基本概念\n- 了解ES6+的新特性（箭头函数、解构、模块等）\n\n### 2. TypeScript核心概念\n- **类型注解**：学会给变量、函数参数添加类型\n- **接口（Interface）**：定义对象的结构\n- **类型别名（Type Alias）**\n- **泛型（Generics）**：编写可重用的代码\n- **枚举（Enum）**\n\n### 3. 实践项目\n- 从简单的计算器开始\n- 做一个待办事项应用\n- 尝试使用React + TypeScript\n\n## 推荐资源\n\n- **官方文档**：TypeScript官网的handbook\n- **在线练习**：TypeScript Playground\n- **视频教程**：B站上有很多优质的TS教程\n\n## 学习建议\n\n1. **边学边练**：理论结合实践\n2. **多看报错信息**：TypeScript的错误提示很有帮助\n3. **循序渐进**：不要急于求成\n\n你目前有JavaScript基础吗？这样我可以给出更具体的建议。"
+        }
+      ],
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "usage": {
+        "input_tokens": 145,
+        "output_tokens": 145
+      }
+    }
+  },
+  "demo2Result": {
+    "success": true,
+    "duration": 7563,
+    "response": {
+      "content": [],
+      "model": "claude-sonnet-4-20250514",
+      "role": "assistant",
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "type": "message",
+      "usage": {
+        "input_tokens": 55,
+        "output_tokens": 1111
+      }
+    }
+  },
+  "timestamp": "2025-07-31T15:05:33.846Z"
+}

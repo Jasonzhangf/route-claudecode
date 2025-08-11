@@ -1,0 +1,256 @@
+{
+  "server": {
+    "port": 3456,
+    "host": "127.0.0.1",
+    "ports": {
+      "development": 3456,
+      "release": 3457
+    }
+  },
+  "providers": {
+    "codewhisperer-primary": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/kiro-auth-token.json"
+        }
+      },
+      "models": ["CLAUDE_SONNET_4_20250514_V1_0"],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "codewhisperer-backup": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "tokenPath": "~/.aws/sso/cache/backup-token.json"
+        }
+      },
+      "models": ["CLAUDE_SONNET_4_20250514_V1_0"],
+      "defaultModel": "CLAUDE_SONNET_4_20250514_V1_0"
+    },
+    "shuaihong-openai": {
+      "type": "openai",
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl"
+        }
+      },
+      "models": ["gemini-2.5-pro", "gemini-2.5-flash"],
+      "defaultModel": "gemini-2.5-pro"
+    },
+    "modelscope-anthropic": {
+      "type": "anthropic",
+      "endpoint": "https://api-inference.modelscope.cn",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": "ms-cc2f461b-8228-427f-99aa-1d44fab73e67"
+        }
+      },
+      "models": ["Qwen/Qwen3-Coder-480B-A35B-Instruct"],
+      "defaultModel": "Qwen/Qwen3-Coder-480B-A35B-Instruct"
+    }
+  },
+  "routing_with_backup": {
+    "default": {
+      "primary": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0",
+        "weight": 3
+      },
+      "backup": [
+        {
+          "provider": "codewhisperer-backup",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 2
+        },
+        {
+          "provider": "shuaihong-openai",
+          "model": "gemini-2.5-pro",
+          "weight": 1
+        }
+      ],
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 3,
+            "timeWindow": 300
+          },
+          {
+            "type": "token_expired",
+            "threshold": 1,
+            "timeWindow": 60
+          },
+          {
+            "type": "rate_limit",
+            "threshold": 2,
+            "timeWindow": 600
+          },
+          {
+            "type": "http_error",
+            "threshold": 5,
+            "timeWindow": 300,
+            "httpCodes": [500, 502, 503, 504]
+          }
+        ],
+        "strategy": "immediate",
+        "cooldown": 1800
+      },
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted",
+        "healthCheckInterval": 60,
+        "includeBackupInBalancing": true
+      }
+    },
+    "background": {
+      "primary": {
+        "provider": "shuaihong-openai",
+        "model": "gemini-2.5-flash",
+        "weight": 2
+      },
+      "backup": [
+        {
+          "provider": "modelscope-anthropic",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "weight": 1
+        },
+        {
+          "provider": "codewhisperer-primary",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 1
+        }
+      ],
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 2,
+            "timeWindow": 180
+          }
+        ],
+        "strategy": "gradual",
+        "cooldown": 900
+      },
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "round_robin",
+        "healthCheckInterval": 120,
+        "includeBackupInBalancing": true
+      }
+    },
+    "thinking": {
+      "primary": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "backup": [
+        {
+          "provider": "codewhisperer-backup",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0"
+        }
+      ],
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 2,
+            "timeWindow": 300
+          },
+          {
+            "type": "token_expired",
+            "threshold": 1,
+            "timeWindow": 60
+          }
+        ],
+        "strategy": "immediate",
+        "cooldown": 600
+      },
+      "loadBalancing": {
+        "enabled": false,
+        "strategy": "round_robin",
+        "includeBackupInBalancing": false
+      }
+    },
+    "longcontext": {
+      "primary": {
+        "provider": "shuaihong-openai",
+        "model": "gemini-2.5-pro"
+      },
+      "backup": [
+        {
+          "provider": "modelscope-anthropic",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct"
+        }
+      ],
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 3,
+            "timeWindow": 300
+          }
+        ],
+        "strategy": "immediate",
+        "cooldown": 1200
+      },
+      "loadBalancing": {
+        "enabled": false,
+        "strategy": "health_based",
+        "includeBackupInBalancing": false
+      }
+    },
+    "search": {
+      "primary": {
+        "provider": "shuaihong-openai",
+        "model": "gemini-2.5-flash"
+      },
+      "backup": [
+        {
+          "provider": "modelscope-anthropic",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct"
+        }
+      ],
+      "failover": {
+        "enabled": true,
+        "triggers": [
+          {
+            "type": "consecutive_errors",
+            "threshold": 3,
+            "timeWindow": 300
+          },
+          {
+            "type": "rate_limit",
+            "threshold": 1,
+            "timeWindow": 300
+          }
+        ],
+        "strategy": "immediate",
+        "cooldown": 600
+      },
+      "loadBalancing": {
+        "enabled": false,
+        "strategy": "round_robin",
+        "includeBackupInBalancing": false
+      }
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "/Users/fanzhang/.route-claude-code/logs"
+  }
+}
