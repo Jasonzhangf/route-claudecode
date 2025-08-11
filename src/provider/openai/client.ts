@@ -1,333 +1,407 @@
 /**
- * OpenAI Client Implementation
- * Real implementation using the official OpenAI SDK
+ * 简化的OpenAI-Compatible Client
+ * 移除多余的日志和复杂的判断逻辑
  */
 
-import OpenAI from 'openai';
-import { BaseProvider } from '../base-provider.js';
-import { AIRequest, AIResponse, ModelInfo, ProviderConfig, AuthResult } from '../../types/interfaces.js';
-import { OpenAIConverter } from './converter.js';
-import { OpenAIParser } from './parser.js';
-import { OpenAIAuth } from './auth.js';
+import axios, { AxiosInstance } from 'axios';
+import { BaseRequest, BaseResponse, Provider, ProviderConfig, ProviderError } from '@/types';
+import { mapFinishReason } from '@/utils/finish-reason-handler';
+import { logger } from '@/utils/logger';
 
-export class OpenAIClient extends BaseProvider {
-  private converter: OpenAIConverter;
-  private parser: OpenAIParser;
-  private auth: OpenAIAuth;
-  private openaiSDK?: OpenAI;
+export class OpenAICompatibleClient implements Provider {
+  public readonly name: string;
+  public readonly type = 'openai';
+  
+  protected httpClient: AxiosInstance;
+  private endpoint: string;
+  private apiKey: string;
+  private readonly maxRetries = 3;
+  private readonly retryDelay = 1000;
 
-  constructor() {
-    super('openai', '1.0.0');
-    this.converter = new OpenAIConverter();
-    this.parser = new OpenAIParser();
-    this.auth = new OpenAIAuth();
-  }
-
-  async initialize(config: ProviderConfig): Promise<void> {
-    await super.initialize(config);
+  constructor(public config: ProviderConfig, providerId: string) {
+    this.name = providerId;
+    this.endpoint = config.endpoint;
     
-    // Initialize OpenAI-specific authentication
-    await this.auth.initialize(config.apiKey || '');
+    const credentials = config.authentication.credentials;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : '';
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : apiKey;
     
-    // Initialize official OpenAI SDK
-    this.openaiSDK = new OpenAI({
-      apiKey: config.apiKey,
-      baseURL: config.endpoint || 'https://api.openai.com/v1',
-      timeout: config.timeout || 30000,
-      maxRetries: config.retryAttempts || 3
+    if (!this.endpoint) {
+      throw new Error(`OpenAI-compatible provider ${providerId} requires endpoint configuration`);
+    }
+
+    if (config.authentication.type !== 'none' && !this.apiKey) {
+      throw new Error(`OpenAI-compatible provider ${providerId} requires API key configuration`);
+    }
+
+    // 使用endpoint作为完整URL包括路径
+    this.httpClient = axios.create({
+      baseURL: this.endpoint,
+      timeout: 300000, // 5 minute timeout
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'claude-code-router/2.0.0',
+        'Authorization': `Bearer ${this.apiKey}`
+      }
     });
-
-    console.log('✅ OpenAI SDK initialized successfully');
   }
 
-  async processRequest(request: AIRequest): Promise<AIResponse> {
-    if (!this.openaiSDK) {
-      throw new Error('OpenAI SDK not initialized');
-    }
+  /**
+   * Check if provider is healthy
+   */
+  async isHealthy(): Promise<boolean> {
+    return !!(this.endpoint && this.apiKey);
+  }
 
-    try {
-      // Validate authentication
-      if (!await this.validateToken()) {
-        const authResult = await this.refreshToken();
-        if (!authResult.success) {
-          throw new Error('Authentication failed');
+  /**
+   * Execute request with retry logic
+   */
+  private async executeWithRetry<T>(
+    requestFn: () => Promise<T>,
+    operation: string,
+    requestId: string
+  ): Promise<T> {
+    let lastError: any;
+
+    for (let attempt = 0; attempt < this.maxRetries; attempt++) {
+      try {
+        return await requestFn();
+      } catch (error) {
+        lastError = error;
+        const isRateLimited = (error as any)?.response?.status === 429;
+
+        if (!this.isRetryableError(error)) {
+          break;
+        }
+        
+        if (attempt < this.maxRetries - 1) {
+          await this.waitForRetry(attempt, isRateLimited);
         }
       }
+    }
+    throw lastError;
+  }
 
-      // Convert request to OpenAI format
-      const openaiRequest = await this.converter.toOpenAIFormat(request);
-      
-      // Make API call using official SDK
-      let response;
-      if (request.stream) {
-        response = await this.handleStreamingRequest(openaiRequest);
-      } else {
-        response = await this.openaiSDK.chat.completions.create({
-          model: openaiRequest.model,
-          messages: openaiRequest.messages,
-          tools: openaiRequest.tools,
-          tool_choice: openaiRequest.tool_choice,
-          temperature: openaiRequest.temperature,
-          max_tokens: openaiRequest.max_tokens,
-          top_p: openaiRequest.top_p,
-          frequency_penalty: openaiRequest.frequency_penalty,
-          presence_penalty: openaiRequest.presence_penalty,
-          stop: openaiRequest.stop,
-          stream: false
-        });
-      }
+  /**
+   * Wait for retry delay
+   */
+  private async waitForRetry(attempt: number, isRateLimited: boolean = false): Promise<void> {
+    let delay: number;
+    
+    if (isRateLimited) {
+      if (attempt === 0) delay = 1000;
+      else if (attempt === 1) delay = 5000;
+      else delay = 60000;
+    } else {
+      delay = this.retryDelay * Math.pow(2, attempt);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
 
-      // Parse and convert response
-      return await this.parser.parseResponse(response);
-      
+  /**
+   * Check if error is retryable
+   */
+  private isRetryableError(error: any): boolean {
+    if (error.response?.status) {
+      const status = error.response.status;
+      return status === 429 || status === 502 || status === 503 || status === 504;
+    }
+    return false;
+  }
+
+  /**
+   * Send request to OpenAI-compatible API
+   */
+  async sendRequest(request: BaseRequest): Promise<BaseResponse> {
+    const requestId = request.metadata?.requestId || 'unknown';
+
+    try {
+      const openaiRequest = this.convertToOpenAI(request);
+
+      const response = await this.executeWithRetry(
+        () => this.httpClient.post(this.endpoint, openaiRequest),
+        `${this.name} sendRequest`,
+        requestId
+      );
+
+      return this.convertFromOpenAI(response.data, request);
     } catch (error) {
-      const providerError = this.handleSDKError(error);
-      
-      if (this.shouldRetry(providerError)) {
-        await this.delay(providerError.retryAfter || 1000);
-        return this.processRequest(request);
+      if (error instanceof ProviderError) {
+        throw error;
       }
       
-      throw providerError;
+      if ((error as any)?.response?.status === 429) {
+        throw new ProviderError(
+          `${this.name} rate limit exceeded`,
+          this.name,
+          429,
+          (error as any)?.response?.data
+        );
+      }
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ProviderError(
+        `${this.name} request failed: ${errorMessage}`,
+        this.name,
+        500,
+        error
+      );
     }
   }
 
-  private async handleStreamingRequest(openaiRequest: any): Promise<any> {
-    if (!this.openaiSDK) {
-      throw new Error('OpenAI SDK not initialized');
-    }
-
-    const stream = await this.openaiSDK.chat.completions.create({
-      ...openaiRequest,
-      stream: true
-    });
-
-    // Collect streaming response
-    let fullResponse = {
-      id: '',
-      object: 'chat.completion',
-      created: Date.now(),
-      model: openaiRequest.model,
-      choices: [{
-        index: 0,
-        message: {
-          role: 'assistant' as const,
-          content: ''
-        },
-        finish_reason: null
-      }],
-      usage: {
-        prompt_tokens: 0,
-        completion_tokens: 0,
-        total_tokens: 0
-      }
-    };
-
-    for await (const chunk of stream) {
-      if (chunk.choices[0]?.delta?.content) {
-        fullResponse.choices[0].message.content += chunk.choices[0].delta.content;
-      }
-      
-      if (chunk.choices[0]?.finish_reason) {
-        fullResponse.choices[0].finish_reason = chunk.choices[0].finish_reason;
-      }
-
-      if (chunk.id) {
-        fullResponse.id = chunk.id;
-      }
-
-      if (chunk.usage) {
-        fullResponse.usage = chunk.usage;
-      }
-    }
-
-    return fullResponse;
-  }
-
-  async getModels(): Promise<ModelInfo[]> {
-    if (!this.openaiSDK) {
-      // Return static list if SDK not initialized
-      return this.getStaticModelList();
-    }
+  /**
+   * Send streaming request
+   */
+  async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
+    const requestId = request.metadata?.requestId || 'unknown';
+    let lastFinishReason = mapFinishReason('stop');
 
     try {
-      const models = await this.openaiSDK.models.list();
-      
-      return models.data
-        .filter(model => model.id.includes('gpt'))
-        .map(model => ({
-          id: model.id,
-          name: this.getModelDisplayName(model.id),
-          provider: this.name,
-          capabilities: this.getModelCapabilities(model.id),
-          maxTokens: this.getModelMaxTokens(model.id),
-          contextWindow: this.getModelContextWindow(model.id),
-          pricing: this.getModelPricing(model.id)
-        }));
+      const openaiRequest = { ...this.convertToOpenAI(request), stream: true };
+
+      const response = await this.executeWithRetry(
+        () => this.httpClient.post('', openaiRequest, {
+          responseType: 'stream',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`
+          }
+        }),
+        `${this.name} sendStreamRequest`,
+        requestId
+      );
+
+      if (response.status < 200 || response.status >= 300) {
+        throw new ProviderError(
+          `${this.name} API returned status ${response.status}`,
+          this.name,
+          response.status
+        );
+      }
+
+      const decoder = new TextDecoder('utf-8', { fatal: false, ignoreBOM: true });
+      let buffer = '';
+      let messageId = `msg_${Date.now()}`;
+      let hasStarted = false;
+      let hasContentBlock = false;
+
+      // Send initial events
+      if (!hasStarted) {
+        yield {
+          event: 'message_start',
+          data: {
+            type: 'message_start',
+            message: {
+              id: messageId,
+              type: 'message',
+              role: 'assistant',
+              content: [],
+              model: request.model,
+              stop_reason: null,
+              stop_sequence: null,
+              usage: { input_tokens: 0, output_tokens: 0 }
+            }
+          }
+        };
+
+        yield {
+          event: 'ping',
+          data: { type: 'ping' }
+        };
+        hasStarted = true;
+      }
+
+      let streamEnded = false;
+      for await (const chunk of response.data) {
+        if (streamEnded) break;
+        
+        try {
+          const decodedChunk = decoder.decode(chunk, { stream: true });
+          buffer += decodedChunk;
+          
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6).trim();
+              if (data === '[DONE]') {
+                streamEnded = true;
+                break;
+              }
+
+              try {
+                const parsed = JSON.parse(data);
+                const choice = parsed.choices?.[0];
+                if (!choice?.delta) continue;
+
+                // Capture finish reason for final event
+                const finishReason = choice.finish_reason;
+                if (finishReason) {
+                  lastFinishReason = mapFinishReason(finishReason);
+                }
+                
+                const anthropicEvent = this.convertStreamChunkToAnthropic(parsed);
+                if (anthropicEvent) {
+                  yield anthropicEvent;
+                }
+
+              } catch (error) {
+                // Ignore parsing errors
+              }
+            }
+          }
+        } catch (decodeError) {
+          // Ignore decode errors
+        }
+      }
+
+      // Send completion events
+      if (hasContentBlock) {
+        yield {
+          event: 'content_block_stop',
+          data: { type: 'content_block_stop', index: 0 }
+        };
+      }
+
+      yield {
+        event: 'stream_complete',
+        data: {
+          type: 'stream_complete',
+          finish_reason: lastFinishReason
+        }
+      };
+
     } catch (error) {
-      console.warn('Failed to fetch models from OpenAI API, using static list:', error);
-      return this.getStaticModelList();
-    }
-  }
-
-  private getStaticModelList(): ModelInfo[] {
-    return [
-      {
-        id: 'gpt-4-turbo',
-        name: 'GPT-4 Turbo',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling', 'vision'],
-        maxTokens: 4096,
-        contextWindow: 128000,
-        pricing: {
-          inputTokens: 10.00,
-          outputTokens: 30.00
-        }
-      },
-      {
-        id: 'gpt-4',
-        name: 'GPT-4',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling'],
-        maxTokens: 4096,
-        contextWindow: 8192,
-        pricing: {
-          inputTokens: 30.00,
-          outputTokens: 60.00
-        }
-      },
-      {
-        id: 'gpt-3.5-turbo',
-        name: 'GPT-3.5 Turbo',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling'],
-        maxTokens: 4096,
-        contextWindow: 16385,
-        pricing: {
-          inputTokens: 0.50,
-          outputTokens: 1.50
-        }
+      if (error instanceof ProviderError) {
+        throw error;
       }
-    ];
-  }
-
-  private getModelDisplayName(modelId: string): string {
-    const nameMap: Record<string, string> = {
-      'gpt-4-turbo': 'GPT-4 Turbo',
-      'gpt-4': 'GPT-4',
-      'gpt-3.5-turbo': 'GPT-3.5 Turbo',
-      'gpt-4-vision-preview': 'GPT-4 Vision'
-    };
-    return nameMap[modelId] || modelId;
-  }
-
-  private getModelCapabilities(modelId: string): string[] {
-    if (modelId.includes('vision')) {
-      return ['text-generation', 'conversation', 'tool-calling', 'vision'];
+      
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new ProviderError(
+        `${this.name} streaming request failed: ${errorMessage}`,
+        this.name,
+        500,
+        error
+      );
     }
-    if (modelId.includes('gpt-4') || modelId.includes('gpt-3.5')) {
-      return ['text-generation', 'conversation', 'tool-calling'];
-    }
-    return ['text-generation', 'conversation'];
   }
 
-  private getModelMaxTokens(modelId: string): number {
-    return 4096; // Most OpenAI models support 4096 max tokens
-  }
-
-  private getModelContextWindow(modelId: string): number {
-    const contextMap: Record<string, number> = {
-      'gpt-4-turbo': 128000,
-      'gpt-4': 8192,
-      'gpt-3.5-turbo': 16385
+  /**
+   * Convert BaseRequest to OpenAI format
+   */
+  private convertToOpenAI(request: BaseRequest): any {
+    const anthropicRequest = {
+      model: request.model,
+      messages: this.convertMessages(request.messages),
+      max_tokens: request.max_tokens || 131072,
+      temperature: request.temperature,
+      stream: false
     };
-    return contextMap[modelId] || 4096;
-  }
 
-  private getModelPricing(modelId: string): { inputTokens: number; outputTokens: number } {
-    const pricingMap: Record<string, { inputTokens: number; outputTokens: number }> = {
-      'gpt-4-turbo': { inputTokens: 10.00, outputTokens: 30.00 },
-      'gpt-4': { inputTokens: 30.00, outputTokens: 60.00 },
-      'gpt-3.5-turbo': { inputTokens: 0.50, outputTokens: 1.50 }
-    };
-    return pricingMap[modelId] || { inputTokens: 0, outputTokens: 0 };
-  }
-
-  protected async performHealthCheck(): Promise<void> {
-    if (!this.openaiSDK) {
-      throw new Error('OpenAI SDK not initialized');
-    }
-
-    try {
-      // Make a simple request to verify API connectivity
-      await this.openaiSDK.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [{ role: 'user', content: 'ping' }],
-        max_tokens: 1
+    // Add system message if present
+    if (request.metadata?.system) {
+      const systemContent = Array.isArray(request.metadata.system) 
+        ? request.metadata.system.map((s: any) => s.text || s).join('\n')
+        : request.metadata.system;
+      anthropicRequest.messages.unshift({
+        role: 'system',
+        content: systemContent
       });
-    } catch (error) {
-      throw new Error(`OpenAI health check failed: ${error.message}`);
     }
-  }
 
-  protected async performAuthentication(): Promise<AuthResult> {
-    return await this.auth.authenticate();
-  }
-
-  protected async performTokenRefresh(): Promise<AuthResult> {
-    return await this.auth.refreshToken();
-  }
-
-  protected async performTokenValidation(): Promise<boolean> {
-    return this.auth.isTokenValid();
-  }
-
-  async convertRequest(request: AIRequest, targetFormat: string): Promise<any> {
-    if (targetFormat === 'openai') {
-      return await this.converter.toOpenAIFormat(request);
-    } else if (targetFormat === 'anthropic') {
-      return await this.converter.toAnthropicFormat(request);
-    } else if (targetFormat === 'gemini') {
-      return await this.converter.toGeminiFormat(request);
+    // Add tools if present
+    if (request.metadata?.tools) {
+      const tools = Array.isArray(request.metadata.tools) ? request.metadata.tools : [request.metadata.tools];
+      (anthropicRequest as any).tools = tools.map((tool: any) => ({
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.input_schema
+        }
+      }));
     }
-    
-    return super.convertRequest(request, targetFormat);
+
+    return anthropicRequest;
   }
 
-  async convertResponse(response: any, sourceFormat: string): Promise<AIResponse> {
-    if (sourceFormat === 'openai') {
-      return await this.parser.parseResponse(response);
+  /**
+   * Convert messages to OpenAI format
+   */
+  private convertMessages(messages: Array<{ role: string; content: any }>): any[] {
+    return messages.map(msg => ({
+      role: msg.role,
+      content: this.convertContent(msg.content)
+    }));
+  }
+
+  /**
+   * Convert content to OpenAI format
+   */
+  private convertContent(content: any): string {
+    if (typeof content === 'string') {
+      return content;
     }
-    
-    return super.convertResponse(response, sourceFormat);
+
+    if (Array.isArray(content)) {
+      return content.map(block => {
+        if (block.type === 'text') {
+          return block.text;
+        } else if (block.type === 'tool_result') {
+          return typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
+        }
+        return JSON.stringify(block);
+      }).join('\n');
+    }
+
+    return JSON.stringify(content);
   }
 
-  private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  /**
+   * Convert OpenAI response to BaseResponse
+   */
+  private convertFromOpenAI(response: any, originalRequest: BaseRequest): BaseResponse {
+    const choice = response.choices?.[0];
+    if (!choice) {
+      throw new Error('No choices in OpenAI response');
+    }
+
+    return {
+      id: response.id,
+      model: originalRequest.model,
+      role: 'assistant',
+      content: [{ type: 'text', text: choice.message.content }],
+      stop_reason: mapFinishReason(choice.finish_reason),
+      usage: {
+        input_tokens: response.usage?.prompt_tokens || 0,
+        output_tokens: response.usage?.completion_tokens || 0
+      }
+    };
   }
 
-  // Method to get SDK instance for advanced usage
-  getSDK(): OpenAI | undefined {
-    return this.openaiSDK;
-  }
+  /**
+   * Convert OpenAI streaming chunk to Anthropic format
+   */
+  private convertStreamChunkToAnthropic(chunk: any): any {
+    const choice = chunk.choices?.[0];
+    if (!choice) return null;
 
-  // Method to handle SDK-specific errors
-  protected handleSDKError(error: any): any {
-    if (error instanceof OpenAI.APIError) {
+    // Handle content deltas
+    if (choice.delta?.content) {
       return {
-        code: `OPENAI_API_ERROR_${error.status}`,
-        message: error.message,
-        type: error.status === 401 ? 'authentication' : 
-              error.status === 429 ? 'rate-limit' :
-              error.status >= 500 ? 'server' : 'validation',
-        retryable: error.status === 429 || error.status >= 500,
-        retryAfter: error.headers?.['retry-after'] ? parseInt(error.headers['retry-after']) * 1000 : undefined,
-        originalError: error
+        event: 'content_block_delta',
+        data: {
+          type: 'content_block_delta',
+          index: 0,
+          delta: {
+            type: 'text_delta',
+            text: choice.delta.content
+          }
+        }
       };
     }
 
-    return this.handleError(error);
+    return null;
   }
 }
-
-console.log('✅ OpenAI client loaded - using official SDK');

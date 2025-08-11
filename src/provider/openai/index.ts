@@ -1,14 +1,14 @@
 /**
- * MOCKUP IMPLEMENTATION - OpenAI Provider
- * This is a placeholder implementation for the OpenAI provider
- * All functionality is mocked and should be replaced with real implementations
+ * OpenAI-Compatible Provider Module
+ * SDK-only implementation for OpenAI-compatible APIs
  */
 
-export { OpenAIClient } from './client.js';
-export { OpenAIAuth } from './auth.js';
-export { OpenAIConverter } from './converter.js';
-export { OpenAIParser } from './parser.js';
-export * from './types.js';
+export { OpenAISDKClient, OpenAISDKConfig } from './sdk-client';
+export { 
+  OpenAIClientFactory, 
+  OpenAIClientConfig, 
+  ClientType,
+  createOpenAIClient 
+} from './client-factory';
 
-// MOCKUP INDICATOR
-console.log('🔧 MOCKUP: OpenAI provider module loaded - placeholder implementation');
+// EnhancedOpenAIClient removed - using SDK-only architecture

@@ -1,295 +1,261 @@
 /**
- * Anthropic Client Implementation
- * Real implementation using the official Anthropic SDK
+ * Anthropic API Client
+ * Direct integration with Anthropic's official Messages API
+ * Project owner: Jason Zhang
  */
 
-import Anthropic from '@anthropic-ai/sdk';
-import { BaseProvider } from '../base-provider.js';
-import { AIRequest, AIResponse, ModelInfo, ProviderConfig, AuthResult } from '../../types/interfaces.js';
-import { AnthropicConverter } from './converter.js';
-import { AnthropicParser } from './parser.js';
-import { AnthropicAuth } from './auth.js';
+import { BaseRequest, BaseResponse, ProviderConfig } from '../../types';
+import { logger } from '../../utils/logger';
 
-export class AnthropicClient extends BaseProvider {
-  private converter: AnthropicConverter;
-  private parser: AnthropicParser;
-  private auth: AnthropicAuth;
-  private anthropicSDK?: Anthropic;
+export class AnthropicClient {
+  private apiKey: string;
+  private baseUrl: string;
 
-  constructor() {
-    super('anthropic', '1.0.0');
-    this.converter = new AnthropicConverter();
-    this.parser = new AnthropicParser();
-    this.auth = new AnthropicAuth();
-  }
-
-  async initialize(config: ProviderConfig): Promise<void> {
-    await super.initialize(config);
-    
-    // Initialize Anthropic-specific authentication
-    await this.auth.initialize(config.apiKey || '');
-    
-    // Initialize official Anthropic SDK
-    this.anthropicSDK = new Anthropic({
-      apiKey: config.apiKey,
-      baseURL: config.endpoint || 'https://api.anthropic.com',
-      timeout: config.timeout || 30000,
-      maxRetries: config.retryAttempts || 3
-    });
-
-    console.log('✅ Anthropic SDK initialized successfully');
-  }
-
-  async processRequest(request: AIRequest): Promise<AIResponse> {
-    if (!this.anthropicSDK) {
-      throw new Error('Anthropic SDK not initialized');
+  constructor(private config: ProviderConfig) {
+    const credentials = config.authentication.credentials;
+    const apiKey = credentials ? (credentials.apiKey || credentials.api_key) : undefined;
+    this.apiKey = Array.isArray(apiKey) ? apiKey[0] : (apiKey || '');
+    if (!this.apiKey) {
+      throw new Error('Anthropic API key is required');
     }
 
+    this.baseUrl = config.endpoint || 'https://api.anthropic.com';
+    logger.info('Anthropic client initialized', {
+      endpoint: this.baseUrl,
+      hasApiKey: !!this.apiKey
+    });
+  }
+
+  async healthCheck(): Promise<boolean> {
     try {
-      // Validate authentication
-      if (!await this.validateToken()) {
-        const authResult = await this.refreshToken();
-        if (!authResult.success) {
-          throw new Error('Authentication failed');
-        }
-      }
+      // Simple health check - try to make a minimal request
+      const response = await fetch(`${this.baseUrl}/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01'
+        },
+        signal: AbortSignal.timeout(30000), // 30 second timeout for health check
+        body: JSON.stringify({
+          model: 'claude-3-haiku-20240307',
+          max_tokens: 1,
+          messages: [{ role: 'user', content: 'Hi' }]
+        })
+      });
 
-      // Convert request to Anthropic format
-      const anthropicRequest = await this.converter.toAnthropicFormat(request);
-      
-      // Make API call using official SDK
-      let response;
-      if (request.stream) {
-        response = await this.handleStreamingRequest(anthropicRequest);
-      } else {
-        response = await this.anthropicSDK.messages.create({
-          model: anthropicRequest.model,
-          messages: anthropicRequest.messages,
-          max_tokens: anthropicRequest.max_tokens,
-          temperature: anthropicRequest.temperature,
-          top_p: anthropicRequest.top_p,
-          top_k: anthropicRequest.top_k,
-          stop_sequences: anthropicRequest.stop_sequences,
-          tools: anthropicRequest.tools,
-          stream: false
-        });
-      }
-
-      // Parse and convert response
-      return await this.parser.parseResponse(response);
-      
+      // We expect either success or a recognizable error (not network/auth errors)
+      return response.status < 500;
     } catch (error) {
-      const providerError = this.handleError(error);
-      
-      if (this.shouldRetry(providerError)) {
-        // SDK handles retries automatically, but we can add custom retry logic here
-        await this.delay(providerError.retryAfter || 1000);
-        return this.processRequest(request);
-      }
-      
-      throw providerError;
+      logger.error('Anthropic health check failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
     }
   }
 
-  private async handleStreamingRequest(anthropicRequest: any): Promise<any> {
-    if (!this.anthropicSDK) {
-      throw new Error('Anthropic SDK not initialized');
-    }
-
-    const stream = await this.anthropicSDK.messages.create({
-      ...anthropicRequest,
-      stream: true
+  async createMessage(request: BaseRequest): Promise<BaseResponse> {
+    const anthropicRequest = this.convertToAnthropicFormat(request);
+    
+    logger.trace(request.metadata?.requestId || 'unknown', 'provider', 'Sending request to Anthropic API', {
+      model: anthropicRequest.model,
+      messageCount: anthropicRequest.messages.length,
+      hasTools: !!anthropicRequest.tools,
+      maxTokens: anthropicRequest.max_tokens
     });
 
-    // Collect streaming response
-    let fullResponse = {
-      id: '',
-      type: 'message' as const,
-      role: 'assistant' as const,
-      content: [] as any[],
-      model: anthropicRequest.model,
-      stop_reason: 'end_turn' as const,
-      usage: { input_tokens: 0, output_tokens: 0 }
+    const response = await fetch(`${this.baseUrl}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(anthropicRequest),
+      signal: AbortSignal.timeout(300000) // 5 minute timeout for production
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Anthropic API error (${response.status}): ${errorText}`);
+    }
+
+    const anthropicResponse = await response.json();
+    return this.convertFromAnthropicFormat(anthropicResponse, request);
+  }
+
+  async* streamMessage(request: BaseRequest): AsyncIterable<any> {
+    const anthropicRequest = {
+      ...this.convertToAnthropicFormat(request),
+      stream: true
     };
 
-    for await (const chunk of stream) {
-      switch (chunk.type) {
-        case 'message_start':
-          fullResponse.id = chunk.message.id;
-          fullResponse.model = chunk.message.model;
-          fullResponse.usage = chunk.message.usage;
-          break;
-        case 'content_block_start':
-          if (chunk.content_block.type === 'text') {
-            fullResponse.content.push({
-              type: 'text',
-              text: ''
-            });
-          }
-          break;
-        case 'content_block_delta':
-          if (chunk.delta.type === 'text_delta') {
-            const lastContent = fullResponse.content[fullResponse.content.length - 1];
-            if (lastContent && lastContent.type === 'text') {
-              lastContent.text += chunk.delta.text;
-            }
-          }
-          break;
-        case 'message_delta':
-          if (chunk.delta.stop_reason) {
-            fullResponse.stop_reason = chunk.delta.stop_reason;
-          }
-          if (chunk.usage) {
-            fullResponse.usage.output_tokens = chunk.usage.output_tokens;
-          }
-          break;
-      }
+    logger.debug('Starting streaming request to Anthropic API', {
+      model: anthropicRequest.model,
+      messageCount: anthropicRequest.messages.length
+    });
+
+    const response = await fetch(`${this.baseUrl}/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': this.apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(anthropicRequest),
+      signal: AbortSignal.timeout(300000) // 5 minute timeout for production
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Anthropic streaming API error (${response.status}): ${errorText}`);
     }
 
-    return fullResponse;
-  }
-
-  async getModels(): Promise<ModelInfo[]> {
-    // Anthropic models (as of current knowledge)
-    return [
-      {
-        id: 'claude-3-5-sonnet-20241022',
-        name: 'Claude 3.5 Sonnet',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling', 'vision'],
-        maxTokens: 8192,
-        contextWindow: 200000,
-        pricing: {
-          inputTokens: 3.00, // per million tokens
-          outputTokens: 15.00
-        }
-      },
-      {
-        id: 'claude-3-5-haiku-20241022',
-        name: 'Claude 3.5 Haiku',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling', 'vision'],
-        maxTokens: 8192,
-        contextWindow: 200000,
-        pricing: {
-          inputTokens: 0.25,
-          outputTokens: 1.25
-        }
-      },
-      {
-        id: 'claude-3-opus-20240229',
-        name: 'Claude 3 Opus',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling', 'vision'],
-        maxTokens: 4096,
-        contextWindow: 200000,
-        pricing: {
-          inputTokens: 15.00,
-          outputTokens: 75.00
-        }
-      },
-      {
-        id: 'claude-3-sonnet-20240229',
-        name: 'Claude 3 Sonnet',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling', 'vision'],
-        maxTokens: 4096,
-        contextWindow: 200000,
-        pricing: {
-          inputTokens: 3.00,
-          outputTokens: 15.00
-        }
-      },
-      {
-        id: 'claude-3-haiku-20240307',
-        name: 'Claude 3 Haiku',
-        provider: this.name,
-        capabilities: ['text-generation', 'conversation', 'tool-calling', 'vision'],
-        maxTokens: 4096,
-        contextWindow: 200000,
-        pricing: {
-          inputTokens: 0.25,
-          outputTokens: 1.25
-        }
-      }
-    ];
-  }
-
-  protected async performHealthCheck(): Promise<void> {
-    if (!this.anthropicSDK) {
-      throw new Error('Anthropic SDK not initialized');
+    if (!response.body) {
+      throw new Error('No response body for streaming request');
     }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
 
     try {
-      // Make a simple request to verify API connectivity
-      await this.anthropicSDK.messages.create({
-        model: 'claude-3-haiku-20240307',
-        messages: [{ role: 'user', content: 'ping' }],
-        max_tokens: 1
-      });
-    } catch (error) {
-      throw new Error(`Anthropic health check failed: ${error.message}`);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim());
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              return;
+            }
+
+            try {
+              const event = JSON.parse(data);
+              yield this.convertStreamEvent(event);
+            } catch (error) {
+              logger.warn('Failed to parse Anthropic stream event', {
+                line,
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
     }
   }
 
-  protected async performAuthentication(): Promise<AuthResult> {
-    return await this.auth.authenticate();
-  }
+  private convertToAnthropicFormat(request: BaseRequest): any {
+    const anthropicRequest: any = {
+      model: request.model,
+      messages: this.filterMessages(request.messages),
+      max_tokens: request.max_tokens || 4096
+    };
 
-  protected async performTokenRefresh(): Promise<AuthResult> {
-    return await this.auth.refreshToken();
-  }
-
-  protected async performTokenValidation(): Promise<boolean> {
-    return this.auth.isTokenValid();
-  }
-
-  async convertRequest(request: AIRequest, targetFormat: string): Promise<any> {
-    if (targetFormat === 'anthropic') {
-      return await this.converter.toAnthropicFormat(request);
-    } else if (targetFormat === 'openai') {
-      return await this.converter.toOpenAIFormat(request);
-    } else if (targetFormat === 'gemini') {
-      return await this.converter.toGeminiFormat(request);
-    }
-    
-    return super.convertRequest(request, targetFormat);
-  }
-
-  async convertResponse(response: any, sourceFormat: string): Promise<AIResponse> {
-    if (sourceFormat === 'anthropic') {
-      return await this.parser.parseResponse(response);
-    }
-    
-    return super.convertResponse(response, sourceFormat);
-  }
-
-  private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  // Method to get SDK instance for advanced usage
-  getSDK(): Anthropic | undefined {
-    return this.anthropicSDK;
-  }
-
-  // Method to handle SDK-specific errors
-  protected handleSDKError(error: any): any {
-    if (error instanceof Anthropic.APIError) {
-      return {
-        code: `ANTHROPIC_API_ERROR_${error.status}`,
-        message: error.message,
-        type: error.status === 401 ? 'authentication' : 
-              error.status === 429 ? 'rate-limit' :
-              error.status >= 500 ? 'server' : 'validation',
-        retryable: error.status === 429 || error.status >= 500,
-        retryAfter: error.headers?.['retry-after'] ? parseInt(error.headers['retry-after']) * 1000 : undefined,
-        originalError: error
-      };
+    // Add optional parameters
+    if (request.temperature !== undefined) {
+      anthropicRequest.temperature = request.temperature;
     }
 
-    return this.handleError(error);
+    // Handle system messages - extract from messages array if present
+    const systemMessages = request.messages.filter((msg: any) => msg.role === 'system');
+    if (systemMessages.length > 0) {
+      anthropicRequest.system = systemMessages.map((msg: any) => msg.content).join('\n');
+      anthropicRequest.messages = anthropicRequest.messages.filter((msg: any) => msg.role !== 'system');
+    }
+
+    // Handle tools if present - but only for compatible APIs
+    const anthropicRequest_typed = request as any;
+    if (anthropicRequest_typed.tools && this.supportsTools()) {
+      anthropicRequest.tools = anthropicRequest_typed.tools;
+    }
+
+    return anthropicRequest;
+  }
+
+  private filterMessages(messages: any[]): any[] {
+    // Filter out tool_result messages for APIs that don't support them
+    if (!this.supportsToolResults()) {
+      return messages.map((msg: any) => {
+        if (msg.role === 'user' && Array.isArray(msg.content)) {
+          // Filter out tool_result content blocks
+          const filteredContent = msg.content.filter((block: any) => block.type !== 'tool_result');
+          if (filteredContent.length === 0) {
+            // If all content was tool_result, replace with summarized text
+            const toolResults = msg.content.filter((block: any) => block.type === 'tool_result');
+            const summary = this.summarizeToolResults(toolResults);
+            return { ...msg, content: summary };
+          }
+          return { ...msg, content: filteredContent };
+        }
+        return msg;
+      }).filter((msg: any) => msg !== null);
+    }
+    return messages;
+  }
+
+  private supportsTools(): boolean {
+    // Check if this API endpoint supports tools
+    return !this.baseUrl.includes('modelscope.cn');
+  }
+
+  private supportsToolResults(): boolean {
+    // Check if this API endpoint supports tool_result messages
+    return !this.baseUrl.includes('modelscope.cn');
+  }
+
+  private summarizeToolResults(toolResults: any[]): string {
+    if (toolResults.length === 0) {
+      return "Previous tool execution completed.";
+    }
+
+    // Create a summary of tool results that maintains context
+    const summaries = toolResults.map((result: any) => {
+      const toolName = result.tool_use_id || 'tool';
+      const content = result.content || '';
+      
+      // Truncate very long content but preserve key information
+      if (typeof content === 'string' && content.length > 200) {
+        return `Tool ${toolName} executed successfully. Result: ${content.substring(0, 200)}...`;
+      }
+      
+      return `Tool ${toolName} executed successfully. Result: ${content}`;
+    });
+
+    return summaries.join('\n');
+  }
+
+  private convertFromAnthropicFormat(anthropicResponse: any, originalRequest: BaseRequest): BaseResponse {
+    return {
+      id: anthropicResponse.id,
+      type: 'message',
+      model: anthropicResponse.model,
+      role: 'assistant',
+      content: anthropicResponse.content || [],
+      stop_reason: anthropicResponse.stop_reason,
+      stop_sequence: anthropicResponse.stop_sequence || null,
+      usage: {
+        input_tokens: anthropicResponse.usage?.input_tokens || 0,
+        output_tokens: anthropicResponse.usage?.output_tokens || 0
+      }
+    };
+  }
+
+  private convertStreamEvent(event: any): any {
+    // Convert Anthropic streaming events to our standard format
+    // This maintains compatibility with existing stream processing
+    return {
+      type: event.type,
+      index: event.index || 0,
+      delta: event.delta,
+      content_block: event.content_block,
+      message: event.message,
+      usage: event.usage
+    };
   }
 }
-
-console.log('✅ Anthropic client loaded - using official SDK');
