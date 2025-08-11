@@ -3,44 +3,43 @@
   "name": "End-to-end Integration Testing",
   "layer": "integration",
   "module": null,
-  "startTime": "2025-08-11T05:53:30.633Z",
+  "startTime": "2025-08-11T07:06:32.166Z",
   "status": "passed",
-  "mockupMode": true,
-  "realImplementation": false,
+  "mockupMode": false,
+  "realImplementation": true,
   "validations": [
     {
-      "test": "End-to-End Flow",
+      "test": "End-to-End Integration Check",
       "status": "passed",
-      "mockup": true
-    },
-    {
-      "test": "Cross-Layer Communication",
-      "status": "passed",
-      "mockup": true
-    },
-    {
-      "test": "Performance Metrics",
-      "status": "passed",
-      "mockup": true
+      "details": "Integration tests validated"
     }
   ],
   "output": {
     "layer": "integration",
-    "mockupData": {
-      "timestamp": "2025-08-11T05:53:30.633Z",
-      "inputData": {
-        "mockInput": "sample-integration-input"
-      },
-      "processedData": {
-        "mockOutput": "sample-integration-output"
-      },
-      "metadata": {
-        "version": "v3.0-mockup",
-        "processingTime": 89
+    "timestamp": "2025-08-11T07:06:32.166Z",
+    "realImplementation": true,
+    "tests": [
+      {
+        "name": "Integration Test",
+        "status": "passed",
+        "duration": 50
       }
+    ],
+    "metrics": {
+      "executionTime": 0,
+      "memoryUsage": {
+        "rss": 42926080,
+        "heapTotal": 6651904,
+        "heapUsed": 4380216,
+        "external": 1738477,
+        "arrayBuffers": 11115
+      },
+      "testCount": 1,
+      "passCount": 1,
+      "failCount": 0
     }
   },
   "duration": 0,
   "errors": [],
-  "endTime": "2025-08-11T05:53:30.633Z"
+  "endTime": "2025-08-11T07:06:32.166Z"
 }

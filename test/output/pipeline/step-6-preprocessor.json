@@ -3,44 +3,48 @@
   "name": "Preprocessor Testing",
   "layer": "preprocessor",
   "module": "src/preprocessor/index.js",
-  "startTime": "2025-08-11T05:53:30.633Z",
-  "status": "passed",
-  "mockupMode": true,
-  "realImplementation": false,
+  "startTime": "2025-08-11T07:06:32.165Z",
+  "status": "failed",
+  "mockupMode": false,
+  "realImplementation": true,
   "validations": [
     {
-      "test": "Input Preprocessing",
-      "status": "passed",
-      "mockup": true
+      "test": "Module Exists",
+      "status": "failed",
+      "details": "Module not found at src/preprocessor/index.js"
     },
     {
-      "test": "Request Sanitization",
+      "test": "Preprocessor Chain Check",
       "status": "passed",
-      "mockup": true
-    },
-    {
-      "test": "Context Preparation",
-      "status": "passed",
-      "mockup": true
+      "details": "Preprocessor chain validated"
     }
   ],
   "output": {
     "layer": "preprocessor",
-    "mockupData": {
-      "timestamp": "2025-08-11T05:53:30.633Z",
-      "inputData": {
-        "mockInput": "sample-preprocessor-input"
-      },
-      "processedData": {
-        "mockOutput": "sample-preprocessor-output"
-      },
-      "metadata": {
-        "version": "v3.0-mockup",
-        "processingTime": 45
+    "timestamp": "2025-08-11T07:06:32.165Z",
+    "realImplementation": true,
+    "tests": [
+      {
+        "name": "Preprocessor Layer Test",
+        "status": "passed",
+        "duration": 8
       }
+    ],
+    "metrics": {
+      "executionTime": 0,
+      "memoryUsage": {
+        "rss": 42319872,
+        "heapTotal": 5603328,
+        "heapUsed": 4834392,
+        "external": 1766303,
+        "arrayBuffers": 38941
+      },
+      "testCount": 1,
+      "passCount": 1,
+      "failCount": 0
     }
   },
   "duration": 0,
   "errors": [],
-  "endTime": "2025-08-11T05:53:30.633Z"
+  "endTime": "2025-08-11T07:06:32.165Z"
 }

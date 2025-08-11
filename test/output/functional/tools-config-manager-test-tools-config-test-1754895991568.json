@@ -1,0 +1,399 @@
+{
+  "sessionId": "tools-config-test-1754895991568",
+  "startTime": "2025-08-11T07:06:31.568Z",
+  "tests": [
+    {
+      "name": "Configuration Validation System",
+      "startTime": "2025-08-11T07:06:31.571Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Configuration Validation Execution",
+          "status": "passed",
+          "details": "Validated 5 configurations"
+        },
+        {
+          "test": "Default Configurations Valid",
+          "status": "passed",
+          "details": "All default configurations are valid"
+        },
+        {
+          "test": "Invalid Configuration Rejection",
+          "status": "passed",
+          "details": "Invalid configuration properly rejected"
+        },
+        {
+          "test": "Validation Result Structure",
+          "status": "passed",
+          "details": "Validation results have proper structure"
+        }
+      ],
+      "duration": 6,
+      "endTime": "2025-08-11T07:06:31.577Z"
+    },
+    {
+      "name": "Tool Discovery and Registration",
+      "startTime": "2025-08-11T07:06:31.570Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Tool Discovery: log-parser",
+          "status": "passed",
+          "details": "Tool log-parser discovered: true"
+        },
+        {
+          "test": "Tool Info Completeness: log-parser",
+          "status": "passed",
+          "details": "log-parser has complete metadata"
+        },
+        {
+          "test": "Tool Discovery: timeline-visualizer",
+          "status": "passed",
+          "details": "Tool timeline-visualizer discovered: true"
+        },
+        {
+          "test": "Tool Info Completeness: timeline-visualizer",
+          "status": "passed",
+          "details": "timeline-visualizer has complete metadata"
+        },
+        {
+          "test": "Tool Discovery: finish-reason-tracker",
+          "status": "passed",
+          "details": "Tool finish-reason-tracker discovered: true"
+        },
+        {
+          "test": "Tool Info Completeness: finish-reason-tracker",
+          "status": "passed",
+          "details": "finish-reason-tracker has complete metadata"
+        },
+        {
+          "test": "Tool Discovery: dynamic-config-manager",
+          "status": "passed",
+          "details": "Tool dynamic-config-manager discovered: true"
+        },
+        {
+          "test": "Tool Info Completeness: dynamic-config-manager",
+          "status": "passed",
+          "details": "dynamic-config-manager has complete metadata"
+        },
+        {
+          "test": "Tool Discovery: configuration-dashboard",
+          "status": "passed",
+          "details": "Tool configuration-dashboard discovered: true"
+        },
+        {
+          "test": "Tool Info Completeness: configuration-dashboard",
+          "status": "passed",
+          "details": "configuration-dashboard has complete metadata"
+        },
+        {
+          "test": "Tool Categories",
+          "status": "passed",
+          "details": "Categories found: data-processing, visualization, monitoring, configuration"
+        },
+        {
+          "test": "Tool Data Structure",
+          "status": "passed",
+          "details": "Tool has required data structure"
+        }
+      ],
+      "duration": 7,
+      "endTime": "2025-08-11T07:06:31.577Z"
+    },
+    {
+      "name": "Manager Initialization and Setup",
+      "startTime": "2025-08-11T07:06:31.570Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Manager Initialization",
+          "status": "passed",
+          "details": "Initialization status: initialized"
+        },
+        {
+          "test": "Tools Discovery Count",
+          "status": "passed",
+          "details": "Tools discovered: 5"
+        },
+        {
+          "test": "Configurations Loading",
+          "status": "passed",
+          "details": "Configurations loaded: 5"
+        },
+        {
+          "test": "Base Directory Creation",
+          "status": "passed",
+          "details": "Base directory: /Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-tools-config-data"
+        },
+        {
+          "test": "Help Docs Directory",
+          "status": "passed",
+          "details": "Help documentation directory created"
+        },
+        {
+          "test": "Manager Ready State",
+          "status": "passed",
+          "details": "Manager marked as initialized"
+        }
+      ],
+      "manager": {
+        "_events": {},
+        "_eventsCount": 0,
+        "config": {
+          "baseDir": "/Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-tools-config-data",
+          "toolsConfigFile": "test-tools-config.json",
+          "helpDocsDir": "test-help-docs",
+          "toolsDirectory": "/Users/fanzhang/Documents/github/route-claudecode/src/v3/tools-ecosystem",
+          "toolPattern": "**/*-*.js",
+          "validateOnLoad": true,
+          "createDefaults": true,
+          "backupConfigs": true,
+          "helpFormat": "markdown",
+          "includeExamples": true,
+          "generateManPages": false
+        },
+        "tools": {},
+        "configurations": {},
+        "helpDocs": {},
+        "initialized": true
+      },
+      "duration": 7,
+      "endTime": "2025-08-11T07:06:31.577Z"
+    },
+    {
+      "name": "Configuration Management System",
+      "startTime": "2025-08-11T07:06:31.570Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Default Configuration Generation",
+          "status": "passed",
+          "details": "Default configuration created with enabled=true"
+        },
+        {
+          "test": "Configuration Schema Loading",
+          "status": "passed",
+          "details": "Configuration schema loaded correctly"
+        },
+        {
+          "test": "Default Values Application",
+          "status": "passed",
+          "details": "Default values applied from schema"
+        },
+        {
+          "test": "Configuration Persistence",
+          "status": "passed",
+          "details": "Configuration file saved: /Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-tools-config-data/test-tools-config.json"
+        },
+        {
+          "test": "Configuration File Structure",
+          "status": "passed",
+          "details": "Configuration file has proper structure"
+        },
+        {
+          "test": "All Tools in Configuration",
+          "status": "passed",
+          "details": "Configuration contains 5 tools"
+        }
+      ],
+      "duration": 8,
+      "endTime": "2025-08-11T07:06:31.578Z"
+    },
+    {
+      "name": "Help Documentation Generation",
+      "startTime": "2025-08-11T07:06:31.571Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Help Documentation Generation",
+          "status": "passed",
+          "details": "Help documents generated: 6"
+        },
+        {
+          "test": "Master Help Document",
+          "status": "passed",
+          "details": "Master help document contains expected content"
+        },
+        {
+          "test": "Individual Tool Help",
+          "status": "passed",
+          "details": "Individual tool help contains expected sections"
+        },
+        {
+          "test": "Help File Persistence",
+          "status": "passed",
+          "details": "Help files created: 6"
+        },
+        {
+          "test": "Help Content Quality",
+          "status": "passed",
+          "details": "Help content includes all required sections"
+        }
+      ],
+      "duration": 7,
+      "endTime": "2025-08-11T07:06:31.578Z"
+    },
+    {
+      "name": "CLI Interface Validation",
+      "startTime": "2025-08-11T07:06:31.571Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "List Command",
+          "status": "passed",
+          "details": "List command returned 5 tools"
+        },
+        {
+          "test": "Config Command",
+          "status": "passed",
+          "details": "Config command returned configuration and schema"
+        },
+        {
+          "test": "Update Config Command",
+          "status": "passed",
+          "details": "Update config command successfully updated value"
+        },
+        {
+          "test": "Generate Docs Command",
+          "status": "passed",
+          "details": "Generate docs command processed 5 tools"
+        },
+        {
+          "test": "Validate Command",
+          "status": "passed",
+          "details": "Validate command checked configurations: 5 valid"
+        },
+        {
+          "test": "Help Command",
+          "status": "failed",
+          "details": "Help command executed successfully"
+        },
+        {
+          "test": "Tool-Specific Help",
+          "status": "passed",
+          "details": "Tool-specific help returned correctly"
+        }
+      ],
+      "duration": 8,
+      "endTime": "2025-08-11T07:06:31.579Z"
+    },
+    {
+      "name": "Configuration Updates and Persistence",
+      "startTime": "2025-08-11T07:06:31.571Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Configuration Update Success",
+          "status": "passed",
+          "details": "Configuration updated successfully"
+        },
+        {
+          "test": "Configuration Timestamp Update",
+          "status": "passed",
+          "details": "Configuration timestamp updated"
+        },
+        {
+          "test": "Configuration Persistence",
+          "status": "failed",
+          "details": "Updated configuration persisted correctly"
+        },
+        {
+          "test": "Configuration Backup Creation",
+          "status": "passed",
+          "details": "Backup files created: 5"
+        },
+        {
+          "test": "Complex Configuration Updates",
+          "status": "passed",
+          "details": "Complex nested configuration updates work"
+        }
+      ],
+      "duration": 9,
+      "endTime": "2025-08-11T07:06:31.580Z"
+    },
+    {
+      "name": "Persistence and Recovery System",
+      "startTime": "2025-08-11T07:06:31.571Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Configuration Persistence",
+          "status": "failed",
+          "details": "Log parser configuration persisted correctly"
+        },
+        {
+          "test": "Configuration Recovery",
+          "status": "failed",
+          "details": "Timeline visualizer configuration recovered correctly"
+        },
+        {
+          "test": "Help Documentation Persistence",
+          "status": "passed",
+          "details": "Help documentation files persisted"
+        },
+        {
+          "test": "Configuration File Integrity",
+          "status": "failed",
+          "details": "Configuration file maintains integrity"
+        },
+        {
+          "test": "Backup Files Creation",
+          "status": "passed",
+          "details": "Backup files created: 5"
+        }
+      ],
+      "duration": 9,
+      "endTime": "2025-08-11T07:06:31.580Z"
+    },
+    {
+      "name": "Comprehensive System Integration",
+      "startTime": "2025-08-11T07:06:31.571Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Full Tool Discovery",
+          "status": "passed",
+          "details": "Discovered 5 tools in ecosystem"
+        },
+        {
+          "test": "Universal Configuration Management",
+          "status": "passed",
+          "details": "Configurations managed for all 5 tools"
+        },
+        {
+          "test": "Comprehensive Help System",
+          "status": "passed",
+          "details": "Help generated for 5/5 tools"
+        },
+        {
+          "test": "CLI Integration",
+          "status": "passed",
+          "details": "3/3 CLI commands successful"
+        },
+        {
+          "test": "System Validation and Integrity",
+          "status": "passed",
+          "details": "5/5 configurations valid"
+        },
+        {
+          "test": "End-to-End Configuration Workflow",
+          "status": "failed",
+          "details": "Full configuration lifecycle working correctly"
+        },
+        {
+          "test": "File System Integration",
+          "status": "passed",
+          "details": "3/3 expected files created"
+        }
+      ],
+      "duration": 10,
+      "endTime": "2025-08-11T07:06:31.581Z"
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0
+  },
+  "endTime": "2025-08-11T07:06:31.581Z"
+}

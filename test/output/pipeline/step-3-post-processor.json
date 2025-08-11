@@ -3,44 +3,48 @@
   "name": "Post-processor Validation",
   "layer": "post-processor",
   "module": "src/post-processor/index.js",
-  "startTime": "2025-08-11T05:53:30.632Z",
-  "status": "passed",
-  "mockupMode": true,
-  "realImplementation": false,
+  "startTime": "2025-08-11T07:06:32.164Z",
+  "status": "failed",
+  "mockupMode": false,
+  "realImplementation": true,
   "validations": [
     {
-      "test": "Response Formatting",
-      "status": "passed",
-      "mockup": true
+      "test": "Module Exists",
+      "status": "failed",
+      "details": "Module not found at src/post-processor/index.js"
     },
     {
-      "test": "Error Handling",
+      "test": "Post-processor Pipeline Check",
       "status": "passed",
-      "mockup": true
-    },
-    {
-      "test": "Output Validation",
-      "status": "passed",
-      "mockup": true
+      "details": "Post-processor pipeline validated"
     }
   ],
   "output": {
     "layer": "post-processor",
-    "mockupData": {
-      "timestamp": "2025-08-11T05:53:30.632Z",
-      "inputData": {
-        "mockInput": "sample-post-processor-input"
-      },
-      "processedData": {
-        "mockOutput": "sample-post-processor-output"
-      },
-      "metadata": {
-        "version": "v3.0-mockup",
-        "processingTime": 40
+    "timestamp": "2025-08-11T07:06:32.164Z",
+    "realImplementation": true,
+    "tests": [
+      {
+        "name": "Post-processor Layer Test",
+        "status": "passed",
+        "duration": 12
       }
+    ],
+    "metrics": {
+      "executionTime": 0,
+      "memoryUsage": {
+        "rss": 41926656,
+        "heapTotal": 5603328,
+        "heapUsed": 4703864,
+        "external": 1764303,
+        "arrayBuffers": 36941
+      },
+      "testCount": 1,
+      "passCount": 1,
+      "failCount": 0
     }
   },
   "duration": 0,
   "errors": [],
-  "endTime": "2025-08-11T05:53:30.632Z"
+  "endTime": "2025-08-11T07:06:32.164Z"
 }

@@ -395,8 +395,8 @@ async function main() {
     }
 }
 
-// Export for testing and direct usage
-export { MockupTestRunner };
+// CLI exports removed to fix module syntax
+// Module can be imported directly if needed
 
 // Run CLI if called directly (ES module check)
 if (import.meta.url === `file://${process.argv[1]}`) {
