@@ -22,7 +22,7 @@
 ### 🧠 MEMORY MANAGEMENT - 记忆管理强制规则 (MANDATORY MEMORY)
 
 ⚠️ **AI记忆强制执行指令**:
-- **MUST CHECK MEMORY FIRST**: 每次遇到问题必须先查阅 [📁 项目记忆](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) 目录
+- **MUST CHECK MEMORY FIRST**: 每次遇到问题必须先查阅 [📁 项目记忆](~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/) 目录
 - **MUST SAVE ARCHITECTURE CHANGES**: 架构变更后必须调用记忆专家保存经验
 - **MUST TRACK LONG TASKS**: 长任务执行必须有记忆保存和提取机制
 - **MUST UPDATE DOCS AFTER CHANGES**: 架构变更后必须更新相关文档
@@ -40,7 +40,7 @@
 - `v2.7.0版本增强错误捕获系统和日志优化带来显著稳定性提升.md` - v2.7.0版本优化经验
 
 #### 📁 项目记忆目录路径
-- **主路径**: `~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/`
+- **主路径**: `~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/`
 - **正确路径格式**: `~/.claudecode/Users-{username}-{project-directory}/`
 - **命名约定**: `YYYYMMDD-HHMMSS-[descriptive-english-id].md`
 - **重要提醒**: 所有项目记忆都必须存储在此路径下，严禁在其他位置创建记忆文件
@@ -54,15 +54,15 @@
 - ❌ `.claude/memory/` - 规则目录路径
 - ❌ `~/Documents/` - 用户文档路径
 
-**唯一正确的路径**: ✅ `~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/`
+**唯一正确的路径**: ✅ `~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/`
 
 **路径验证命令**:
 ```bash
 # 验证记忆目录是否存在
-ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/
+ls -la ~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/
 
 # 检查最新记忆文件
-ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail -5
+ls -la ~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/ | tail -5
 ```
 
 #### 🔄 强制记忆工作流 (MANDATORY MEMORY WORKFLOW)
@@ -84,10 +84,13 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 ## 🏗️ 项目架构概览 (Project Architecture)
 
 ### 基本信息
-- **项目名称**: Claude Code Output Router v2.7.0
+- **项目名称**: Claude Code Output Router v2.7.0 → v3.0 (重构进行中)
 - **核心功能**: 多AI提供商路由转换系统
-- **架构模式**: 四层模块化设计（输入-路由-输出-提供商）
+- **协作模式**: 与kiro共同开发项目
+- **当前架构**: v2.7.0四层模块化设计（输入-路由-输出-提供商）
+- **目标架构**: v3.0六层插件化架构（Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider ↔ Preprocessor ↔ Server）
 - **支持Provider**: Anthropic, CodeWhisperer, OpenAI-Compatible, Gemini
+- **配置路径**: `~/.route-claudecode/` (新重构项目)
 
 ### 四层架构设计
 ```
@@ -104,6 +107,70 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail 
 - **五种路由类别**: default, background, thinking, longcontext, search
 - **零硬编码**: 模型名在路由阶段直接替换 `request.model = targetModel`
 - **Round Robin**: 多Provider/多Account负载均衡
+
+## 🤝 Kiro协作项目管理 (Kiro Collaboration Project Management)
+
+### 📁 Kiro项目管理文件 (MANDATORY KIRO PROJECT FILES)
+
+⚠️ **协作项目强制执行指令**:
+- **MUST CHECK KIRO FILES FIRST**: 每次执行新任务前必须先查阅`.kiro`目录下的三个关键文件
+- **MUST UPDATE TASK PROGRESS**: 每次任务执行完成后必须更新tasks.md中的进度状态
+- **MUST FOLLOW REQUIREMENTS**: 所有开发必须严格遵循requirements.md中的需求规范
+- **MUST COMPLY WITH DESIGN**: 所有架构决策必须符合design.md中的设计标准
+
+### 🔍 强制查阅的Kiro文件 (MANDATORY KIRO REFERENCE TABLE)
+| 文件名 | **文件路径** | 用途描述 | **使用时机** |
+|--------|-------------|----------|-------------|
+| **需求文档** | `.kiro/specs/claude-architecture-refactor/requirements.md` | 14项重构需求规范 | **开发任何新功能前必须查阅** |
+| **设计文档** | `.kiro/specs/claude-architecture-refactor/design.md` | 六层架构设计规范 | **架构设计和接口定义时必须查阅** |
+| **任务进度** | `.kiro/specs/claude-architecture-refactor/tasks.md` | 15项主要任务进度跟踪 | **任务执行前后必须查阅和更新** |
+| **项目规则** | `.kiro/steering/project-rules.md` | 项目协作规则总览 | **项目管理和规则执行时查阅** |
+
+### 📋 v3.0重构任务进度总览 (V3.0 REFACTOR TASK OVERVIEW)
+
+#### 当前任务状态 (Current Task Status)
+- **总任务数**: 15个主要任务，部分包含子任务
+- **当前状态**: 任务1已开始 ([-] 标记)，其余待开始 ([ ] 标记)
+- **重构方式**: 完全重构 - 现有代码移动到OLD_implementation，重新构建
+
+#### 主要任务分类 (Major Task Categories)
+1. **📁 基础设施 (Tasks 1-5)**: Mockup实现、测试系统、动态注册、调试系统、配置管理
+2. **🔌 Provider标准化 (Task 6)**: 统一接口、认证管理、格式转换 (4个子任务)
+3. **🎭 Mock服务器 (Task 7)**: 数据重放、管理界面 (2个子任务)
+4. **🧪 测试增强 (Task 8)**: 文档系统、8步流水线 (2个子任务)
+5. **⚙️ 运行时管理 (Task 9)**: 配置界面、动态更新 (2个子任务)
+6. **🛠️ 工具生态 (Task 10)**: 日志解析、可视化、告警 (4个子任务)
+7. **📊 服务管理 (Task 11)**: 进程控制、配置隔离 (2个子任务)
+8. **🧠 知识系统 (Task 12)**: 记忆架构、文档同步 (2个子任务)
+9. **📚 文档架构 (Task 13)**: 综合架构文档
+10. **🚀 构建部署 (Task 14)**: 零fallback构建、部署流水线 (2个子任务)
+11. **✅ 系统验证 (Task 15)**: 集成测试和系统验证
+
+### 🔄 Kiro协作工作流 (MANDATORY KIRO WORKFLOW)
+
+#### 🚨 任务执行前强制检查 (PRE-TASK MANDATORY CHECK)
+1. **查阅任务状态** → 检查 `.kiro/specs/claude-architecture-refactor/tasks.md` 当前任务完成度
+2. **确认需求合规** → 查阅 `.kiro/specs/claude-architecture-refactor/requirements.md` 相关需求
+3. **验证设计规范** → 查阅 `.kiro/specs/claude-architecture-refactor/design.md` 架构标准
+4. **选择新任务** → 基于当前进度选择下一个适合的任务
+
+#### 🎯 任务执行中规范 (IN-TASK COMPLIANCE)
+1. **严格需求遵循** → 每个实现细节必须符合requirements.md的acceptance criteria
+2. **设计标准检查** → 所有架构决策必须符合design.md的设计原则
+3. **接口标准化** → 所有接口定义必须遵循design.md的Interface规范
+4. **测试驱动开发** → 按照requirements.md的TDD要求先写测试文档
+
+#### ✅ 任务完成后强制更新 (POST-TASK MANDATORY UPDATE)
+1. **更新任务状态** → 将tasks.md中对应任务标记为完成 [x] 或进行中 [-]
+2. **记录实现细节** → 调用project-memory-manager记录实现经验和决策
+3. **验证需求满足** → 确认所有requirements.md的acceptance criteria都已满足
+4. **文档同步更新** → 更新相关设计文档和接口说明
+
+### ⚠️ Kiro协作违规处理 (KIRO VIOLATION HANDLING)
+- **跳过Kiro文件查阅** → 立即停止，要求先查阅对应文件
+- **未更新任务进度** → 拒绝继续新任务，要求先更新tasks.md
+- **违反需求规范** → 要求重新设计以符合requirements.md
+- **偏离设计标准** → 要求重新实现以符合design.md标准
 
 ## 🔄 Refactor目录 - v3.0插件化架构重构 (Refactor Directory - v3.0 Plugin Architecture)
 
@@ -257,7 +324,7 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 #### 🌐 主服务端口
 - **Development**: 3456 (开发环境)
 - **Production**: 3457 (生产环境)
-- **日志监控**: `~/.route-claude-code/logs/ccr-*.log`
+- **日志监控**: `~/.route-claudecode/logs/ccr-*.log`
 
 #### 🔧 Single-Provider配置端口映射表
 调试时使用以下端口和配置文件启动特定provider服务：
@@ -486,7 +553,7 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 - [ ] **记忆专家准备** - 架构变更时记忆专家调用计划确认
 
 ## 🧠 项目记忆存储路径
-- **主路径**: `~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/`
+- **主路径**: `~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/`
 - **正确路径格式**: `~/.claudecode/Users-{username}-{project-directory}/`
 - **命名约定**: `YYYYMMDD-HHMMSS-[descriptive-english-id].md`
 - **重要提醒**: 所有项目记忆都必须存储在此路径下，严禁在其他位置创建记忆文件
@@ -500,15 +567,15 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 - ❌ `.claude/memory/` - 规则目录路径
 - ❌ `~/Documents/` - 用户文档路径
 
-**唯一正确的路径**: ✅ `~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/`
+**唯一正确的路径**: ✅ `~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/`
 
 **路径验证命令**:
 ```bash
 # 验证记忆目录是否存在
-ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/
+ls -la ~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/
 
 # 检查最新记忆文件
-ls -la ~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/ | tail -5
+ls -la ~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/ | tail -5
 ```
 - [ ] **文档更新计划** - 架构变更后文档更新方案确认
 - [ ] **长任务记忆管理** - 长任务的记忆保存和提取机制确认
