@@ -1,7 +1,6 @@
 /**
- * V3.0 Real OpenAI Client Factory
- * Creates and manages OpenAI-compatible clients using real API calls
- * Based on demo3 pattern with axios for HTTP requests
+ * V3.0 Real OpenAI Client Factory - Fixed Streaming Architecture
+ * 强制转换流式请求为非流式请求到Provider，然后模拟流式响应返回
  * 
  * Project owner: Jason Zhang
  */
@@ -41,19 +40,12 @@ export function createOpenAIClient(config: any, id: string): Provider {
           model: request.metadata?.targetModel || request.model,
           messages: request.messages,
           max_tokens: request.max_tokens,
-          stream: request.stream || false
+          stream: false // Force non-streaming for regular requests
         };
 
-        // Add tools if present - LM Studio requires type to be 'function'
+        // Add tools if present - assume they are already in OpenAI format from preprocessor
         if (request.tools?.length > 0) {
-          openAIRequest.tools = request.tools.map(tool => ({
-            type: 'function',  // LM Studio requires this to be exactly 'function'
-            function: {
-              name: tool.name || tool.function?.name,
-              description: tool.description || tool.function?.description,
-              parameters: tool.input_schema || tool.function?.parameters
-            }
-          }));
+          openAIRequest.tools = request.tools;
         }
 
         console.log(`🔧 OpenAI request to ${id}:`, JSON.stringify(openAIRequest, null, 2));
@@ -88,11 +80,13 @@ export function createOpenAIClient(config: any, id: string): Provider {
         // Convert OpenAI format back to Anthropic format
         const content: any[] = [];
         
-        // Handle text response
-        if (data.choices?.[0]?.message?.content) {
+        // Handle text response - LM Studio may put content in reasoning field
+        const textContent = data.choices?.[0]?.message?.content || 
+                           data.choices?.[0]?.message?.reasoning || '';
+        if (textContent) {
           content.push({
             type: 'text',
-            text: data.choices[0].message.content
+            text: textContent
           });
         }
         
@@ -142,8 +136,138 @@ export function createOpenAIClient(config: any, id: string): Provider {
           }
         };
       }
+    },
+
+    async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
+      const openAIRequest: any = {
+        model: request.metadata?.targetModel || request.model,
+        messages: request.messages,
+        max_tokens: request.max_tokens,
+        stream: true // Force streaming for stream requests
+      };
+
+      // Add tools if present - assume they are already in OpenAI format from preprocessor
+      if (request.tools?.length > 0) {
+        openAIRequest.tools = request.tools;
+      }
+
+      console.log(`🔧 OpenAI streaming request to ${id}:`, JSON.stringify(openAIRequest, null, 2));
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+
+      if (config.authentication?.type === 'bearer' && config.authentication?.credentials?.apiKey) {
+        headers['Authorization'] = `Bearer ${config.authentication.credentials.apiKey}`;
+      }
+
+      const timeoutMs = config.timeout || 120000;
+      const response = await fetch(config.endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(openAIRequest),
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`❌ OpenAI streaming API error for ${id}: ${response.status} ${response.statusText}`);
+        console.error(`❌ Error response: ${errorText}`);
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
+      }
+
+      yield* streamingParser(response, id);
     }
   };
+}
+
+async function* streamingParser(response: Response, id: string): AsyncIterable<any> {
+  if (!response.body) {
+    throw new Error('No response body for streaming');
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      
+      if (done) break;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+        
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(trimmed.slice(6));
+            
+            // Convert OpenAI streaming format to Anthropic format
+            if (data.choices?.[0]?.delta) {
+              const delta = data.choices[0].delta;
+              
+              if (delta.content) {
+                yield {
+                  type: 'content_block_delta',
+                  index: 0,
+                  delta: {
+                    type: 'text_delta',
+                    text: delta.content
+                  }
+                };
+              }
+              
+              if (delta.tool_calls) {
+                for (const toolCall of delta.tool_calls) {
+                  if (toolCall.function?.name) {
+                    yield {
+                      type: 'content_block_start',
+                      index: 0,
+                      content_block: {
+                        type: 'tool_use',
+                        id: toolCall.id,
+                        name: toolCall.function.name
+                      }
+                    };
+                  }
+                  
+                  if (toolCall.function?.arguments) {
+                    yield {
+                      type: 'content_block_delta',
+                      index: 0,
+                      delta: {
+                        type: 'input_json_delta',
+                        partial_json: toolCall.function.arguments
+                      }
+                    };
+                  }
+                }
+              }
+            }
+            
+            if (data.choices?.[0]?.finish_reason) {
+              yield {
+                type: 'message_delta',
+                delta: {
+                  stop_reason: mapFinishReason(data.choices[0].finish_reason)
+                }
+              };
+            }
+          } catch (parseError) {
+            console.error(`Failed to parse streaming data for ${id}:`, parseError);
+          }
+        }
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
 }
 
 function mapFinishReason(openAIReason: string | undefined): string {
