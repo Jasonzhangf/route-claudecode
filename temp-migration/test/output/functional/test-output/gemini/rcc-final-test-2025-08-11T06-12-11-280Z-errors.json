@@ -1,0 +1,52 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.278Z",
+    "data": {
+      "rawLine": "[11:17:03] [WARN] [system] [7d48a821-1f6a-4f10-a26b-9301b9bbaf38] [gemini-provider] createCompletion failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "warn",
+        "message": "[11:17:03] [WARN] [system] [7d48a821-1f6a-4f10-a26b-9301b9bbaf38] [gemini-provider] createCompletion failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1816,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.278Z",
+      "dataSize": 107
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.278Z",
+    "data": {
+      "rawLine": "   Error Message: Gemini SDK timeout after 60000ms",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error Message: Gemini SDK timeout after 60000ms",
+        "stack": null
+      },
+      "performance": {
+        "duration": 60000,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1823,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.278Z",
+      "dataSize": 50
+    }
+  }
+]

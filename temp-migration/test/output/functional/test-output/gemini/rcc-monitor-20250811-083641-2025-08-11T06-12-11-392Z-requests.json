@@ -1,0 +1,74 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.392Z",
+    "data": {
+      "rawLine": "[08:44:32] [08:44:32] [DEBUG] [system] [e9b8b233-63d6-438e-b026-6da52ba622ba] [provider] [TRACE] Sending request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 38,
+      "fileName": "rcc-monitor-20250811-083641.log",
+      "extractedAt": "2025-08-11T06:12:11.392Z",
+      "dataSize": 122
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.392Z",
+    "data": {
+      "rawLine": "[08:44:32] [08:44:32] [INFO] [system] [e9b8b233-63d6-438e-b026-6da52ba622ba] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 39,
+      "fileName": "rcc-monitor-20250811-083641.log",
+      "extractedAt": "2025-08-11T06:12:11.392Z",
+      "dataSize": 129
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.392Z",
+    "data": {
+      "rawLine": "[08:44:37] [08:44:37] [INFO] [system] [e9b8b233-63d6-438e-b026-6da52ba622ba] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 41,
+      "fileName": "rcc-monitor-20250811-083641.log",
+      "extractedAt": "2025-08-11T06:12:11.392Z",
+      "dataSize": 141
+    }
+  }
+]

@@ -1,0 +1,4 @@
+ID,Timestamp,Provider,Model,Finish Reason,Category,Duration (ms),Input Tokens,Output Tokens,Total Tokens,Error Details,Request ID
+ld59no1w,2025-08-11T07:01:29.497Z,gemini,gemini-pro,tool_calls,tool_calls,,80,120,,,
+30c0p1ft,2025-08-11T07:01:29.496Z,openai,gpt-4,length,length,,200,150,,,
+977p1ggz,2025-08-11T07:01:29.494Z,anthropic,claude-sonnet-4,stop,stop,,100,50,,,

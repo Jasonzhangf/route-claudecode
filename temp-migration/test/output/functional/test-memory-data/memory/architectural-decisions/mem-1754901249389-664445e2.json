@@ -1,0 +1,44 @@
+{
+  "id": "mem-1754901249389-664445e2",
+  "timestamp": "2025-08-11T08:34:09.389Z",
+  "category": "architectural-decisions",
+  "type": "implementation",
+  "title": "Round Robin Load Balancing Pattern",
+  "summary": "Implemented round robin load balancing pattern for multi-account provider support with automatic failover capabilities.",
+  "content": "Implemented round robin load balancing pattern for multi-account provider support with automatic failover capabilities.",
+  "metadata": {
+    "project": "claude-code-router",
+    "version": "3.0.0",
+    "author": "Project Memory System",
+    "priority": "medium",
+    "status": "active",
+    "tags": [
+      "load-balancing",
+      "failover",
+      "multi-account"
+    ],
+    "correlatedEntries": []
+  },
+  "context": {
+    "task": null,
+    "component": null,
+    "provider": null,
+    "environment": "development",
+    "session": null
+  },
+  "problemSolution": null,
+  "architecturalDecision": null,
+  "experience": {
+    "difficulty": "medium",
+    "timeSpent": null,
+    "successRate": null,
+    "lessonsLearned": [],
+    "recommendedActions": []
+  },
+  "references": {
+    "codeFiles": [],
+    "documentation": [],
+    "externalLinks": [],
+    "relatedTasks": []
+  }
+}

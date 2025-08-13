@@ -1,0 +1,87 @@
+[
+  {
+    "type": "structured",
+    "providerProtocol": "codewhisperer",
+    "timestamp": "2025-08-11T06:12:11.373Z",
+    "data": {
+      "error": {
+        "type": "bad_request",
+        "message": "Request failed with status code 400",
+        "code": "400",
+        "requestId": "cd8b268d-c9e0-4725-9b4f-5906e44c8ea5",
+        "port": 3458,
+        "provider": "codewhisperer-primary",
+        "stage": "provider",
+        "timestamp": "2025-08-11T02:47:54.565Z",
+        "details": {
+          "originalError": {
+            "type": "Buffer",
+            "data": [
+              123,
+              34,
+              109,
+              101,
+              115,
+              115,
+              97,
+              103,
+              101,
+              34,
+              58,
+              34,
+              73,
+              109,
+              112,
+              114,
+              111,
+              112,
+              101,
+              114,
+              108,
+              121,
+              32,
+              102,
+              111,
+              114,
+              109,
+              101,
+              100,
+              32,
+              114,
+              101,
+              113,
+              117,
+              101,
+              115,
+              116,
+              46,
+              34,
+              44,
+              34,
+              114,
+              101,
+              97,
+              115,
+              111,
+              110,
+              34,
+              58,
+              110,
+              117,
+              108,
+              108,
+              125
+            ]
+          },
+          "diagnostics": "Silent failure detected and fixed"
+        }
+      }
+    },
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-tool-calls.log",
+      "extractedAt": "2025-08-11T06:12:11.373Z",
+      "dataSize": 555
+    }
+  }
+]

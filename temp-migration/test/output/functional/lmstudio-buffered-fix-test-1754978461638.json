@@ -1,0 +1,134 @@
+{
+  "sessionId": "lmstudio-buffered-fix-test-1754978461638",
+  "timestamp": "2025-08-12T06:01:01.638Z",
+  "testType": "lmstudio-buffered-processing-fix",
+  "results": [
+    {
+      "test": "processor-initialization",
+      "status": "failed",
+      "details": {
+        "processorCreated": true,
+        "healthCheckPassed": true,
+        "layerInfoCorrect": true
+      }
+    },
+    {
+      "test": "real-capture-data-fix",
+      "status": "failed",
+      "details": {
+        "filesProcessed": 40,
+        "fixedFiles": 0,
+        "toolCallsExtracted": 0,
+        "fixedIssues": [],
+        "failedFiles": [
+          {
+            "file": "openai-capture-2025-08-06T04-09-45-440Z-7664ef64-93b7-42f8-acd3-51179293435b.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T04-10-20-588Z-f8b70747-cc09-479c-832c-c6c021bcda86.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T04-11-18-362Z-92952e4e-bce1-40af-a1c2-1649f10bda8a.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T04-12-33-589Z-012489b8-1df6-47e3-b99a-a7e40058791f.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T04-13-02-492Z-8aed7b71-7856-4dc5-ab18-c520ec8aa192.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T04-13-25-132Z-c993f028-98f8-4be1-a4e2-e12efc6baa40.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T10-47-32-405Z-session_1754477049275_ekrkxhrri:conv_1754477049275_nhdbry3b9:seq0029:1754477232632.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T10-47-39-269Z-session_1754477049275_ekrkxhrri:conv_1754477049275_nhdbry3b9:seq0030:1754477244799.json",
+            "reason": "fix_failed"
+          },
+          {
+            "file": "openai-capture-2025-08-06T10-48-07-009Z-session_1754477049275_ekrkxhrri:conv_1754477049275_nhdbry3b9:seq0034:1754477273021.json",
+            "reason": "fix_failed"
+          }
+        ],
+        "performanceMetrics": {
+          "totalProcessingTime": 31,
+          "averageProcessingTime": 0.775
+        }
+      }
+    },
+    {
+      "test": "edge-cases-and-error-handling",
+      "status": "partial",
+      "details": {
+        "totalTests": 4,
+        "passed": 3,
+        "results": [
+          {
+            "name": "empty-input",
+            "passed": false,
+            "expectedBehavior": "return_input_as_is",
+            "error": "Cannot read properties of null (reading 'events')"
+          },
+          {
+            "name": "non-lmstudio-input",
+            "passed": true,
+            "expectedBehavior": "return_input_as_is",
+            "actualResult": "success"
+          },
+          {
+            "name": "malformed-json",
+            "passed": true,
+            "expectedBehavior": "handle_gracefully",
+            "actualResult": "success"
+          },
+          {
+            "name": "large-input",
+            "passed": true,
+            "expectedBehavior": "process_successfully",
+            "actualResult": "success"
+          }
+        ]
+      }
+    },
+    {
+      "test": "performance-benchmark",
+      "status": "passed",
+      "details": {
+        "iterations": 100,
+        "averageTime": 0.04,
+        "minTime": 0,
+        "maxTime": 1,
+        "times": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 1,
+    "failed": 2,
+    "warnings": 1,
+    "fixSuccessRate": 0,
+    "processedFiles": 40,
+    "fixedFiles": 0,
+    "toolCallsExtracted": 0
+  }
+}

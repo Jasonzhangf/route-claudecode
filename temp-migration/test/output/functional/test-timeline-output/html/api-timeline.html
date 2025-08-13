@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Timeline Visualization - Claude Code Router</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .control-input {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .control-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .stats-bar {
+            padding: 20px 30px;
+            background: #ffffff;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            color: #495057;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .timeline-container {
+            padding: 30px;
+            overflow-x: auto;
+        }
+
+        .timeline {
+            position: relative;
+            min-width: 800px;
+            height: 400px;
+            background: #ffffff;
+            border: 2px solid #f1f3f4;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .timeline-axis {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .timeline-content {
+            position: relative;
+            height: calc(100% - 40px);
+            padding: 20px;
+        }
+
+        .api-call {
+            position: absolute;
+            height: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .api-call:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .api-call.request { height: 8px; }
+        .api-call.response { height: 10px; }
+        .api-call.error { height: 14px; border: 2px solid #dc3545; }
+        .api-call.performance { height: 6px; opacity: 0.7; }
+
+        .provider-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px 30px;
+            background: #f8f9fa;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .legend-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 300px;
+            line-height: 1.4;
+            display: none;
+        }
+
+        .search-results {
+            padding: 0 30px 20px;
+            background: #f8f9fa;
+        }
+
+        .search-result {
+            background: white;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .search-result:hover {
+            background: #f1f3f4;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 API Timeline Visualization</h1>
+            <p>Interactive timeline of API calls across provider-protocols</p>
+            <p><strong>Generated:</strong> 8/11/2025, 2:20:25 PM | <strong>Calls:</strong> 8 | <strong>Time Range:</strong> 1h 55m</p>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Provider Filter:</label>
+                <select id="providerFilter" class="control-input">
+                    <option value="">All Providers</option>
+                    <option value="anthropic">anthropic</option><option value="codewhisperer">codewhisperer</option><option value="gemini">gemini</option><option value="openai">openai</option><option value="unknown">unknown</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Call Type:</label>
+                <select id="typeFilter" class="control-input">
+                    <option value="">All Types</option>
+                    <option value="request">Requests</option>
+                    <option value="response">Responses</option>
+                    <option value="error">Errors</option>
+                    <option value="performance">Performance</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>Search:</label>
+                <input type="text" id="searchInput" class="control-input" placeholder="Search calls...">
+            </div>
+            
+            <div class="control-group">
+                <label>Zoom:</label>
+                <input type="range" id="zoomSlider" min="1" max="10" value="1" class="control-input">
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <span class="stat-number">8</span>
+                <span class="stat-label">Total API Calls</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">5</span>
+                <span class="stat-label">Provider-Protocols</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">13%</span>
+                <span class="stat-label">Error Rate</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-number">1258ms</span>
+                <span class="stat-label">Avg Latency</span>
+            </div>
+        </div>
+
+        <div class="timeline-container">
+            <div class="timeline" id="timelineChart">
+                <div class="timeline-content" id="timelineContent">
+                    <!-- Timeline calls will be generated here -->
+                </div>
+                <div class="timeline-axis" id="timelineAxis">
+                    <!-- Time axis will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="provider-legend">
+            
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #FF6B35;"></div>
+                    <span class="legend-label">anthropic</span>
+                </div>
+            
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #10A37F;"></div>
+                    <span class="legend-label">openai</span>
+                </div>
+            
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #4285F4;"></div>
+                    <span class="legend-label">gemini</span>
+                </div>
+            
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #FF9900;"></div>
+                    <span class="legend-label">codewhisperer</span>
+                </div>
+            
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #6B7280;"></div>
+                    <span class="legend-label">unknown</span>
+                </div>
+            
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #8B5CF6;"></div>
+                    <span class="legend-label">system</span>
+                </div>
+            
+        </div>
+
+        <div class="search-results" id="searchResults" style="display: none;">
+            <h4>Search Results:</h4>
+            <div id="searchResultsList"></div>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        // Timeline data loaded from server
+        const timelineData = [
+  {
+    "id": "7a5e8b6f",
+    "timestamp": "2025-08-11T04:20:25.644Z",
+    "provider": "anthropic",
+    "type": "request",
+    "method": "POST",
+    "url": "/v1/messages",
+    "status": 200,
+    "duration": 890,
+    "size": 200,
+    "error": null,
+    "color": "#FF6B35",
+    "metadata": {
+      "lineNumber": 2,
+      "fileName": "anthropic.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "structured",
+      "providerProtocol": "anthropic",
+      "timestamp": "2025-08-11T04:20:25.644Z",
+      "data": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "status": 200,
+        "duration": 890
+      },
+      "metadata": {
+        "lineNumber": 2,
+        "fileName": "anthropic.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 200
+      },
+      "dataType": "request",
+      "provider": "anthropic"
+    }
+  },
+  {
+    "id": "79f85042",
+    "timestamp": "2025-08-11T05:20:25.644Z",
+    "provider": "anthropic",
+    "type": "request",
+    "method": "POST",
+    "url": "/v1/messages",
+    "status": 200,
+    "duration": 1250,
+    "size": 150,
+    "error": null,
+    "color": "#FF6B35",
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "anthropic.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "structured",
+      "providerProtocol": "anthropic",
+      "timestamp": "2025-08-11T05:20:25.644Z",
+      "data": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "status": 200,
+        "duration": 1250
+      },
+      "metadata": {
+        "lineNumber": 1,
+        "fileName": "anthropic.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 150
+      },
+      "dataType": "request",
+      "provider": "anthropic"
+    }
+  },
+  {
+    "id": "19a0d92e",
+    "timestamp": "2025-08-11T05:20:25.644Z",
+    "provider": "anthropic",
+    "type": "response",
+    "method": null,
+    "url": null,
+    "status": 200,
+    "duration": 1250,
+    "size": 1200,
+    "error": null,
+    "color": "#FF6B35",
+    "metadata": {
+      "lineNumber": 3,
+      "fileName": "anthropic.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "structured",
+      "providerProtocol": "anthropic",
+      "timestamp": "2025-08-11T05:20:25.644Z",
+      "data": {
+        "status": 200,
+        "duration": 1250
+      },
+      "metadata": {
+        "lineNumber": 3,
+        "fileName": "anthropic.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 1200
+      },
+      "dataType": "response",
+      "provider": "anthropic"
+    }
+  },
+  {
+    "id": "c97b3e82",
+    "timestamp": "2025-08-11T05:35:25.644Z",
+    "provider": "openai",
+    "type": "request",
+    "method": "POST",
+    "url": "/v1/chat/completions",
+    "status": 429,
+    "duration": null,
+    "size": 120,
+    "error": "Rate limit exceeded",
+    "color": "#10A37F",
+    "metadata": {
+      "lineNumber": 2,
+      "fileName": "openai.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "structured",
+      "providerProtocol": "openai",
+      "timestamp": "2025-08-11T05:35:25.644Z",
+      "data": {
+        "method": "POST",
+        "url": "/v1/chat/completions",
+        "status": 429,
+        "error": "Rate limit exceeded"
+      },
+      "metadata": {
+        "lineNumber": 2,
+        "fileName": "openai.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 120
+      },
+      "dataType": "request",
+      "provider": "openai"
+    }
+  },
+  {
+    "id": "7a9b25ab",
+    "timestamp": "2025-08-11T05:50:25.644Z",
+    "provider": "openai",
+    "type": "request",
+    "method": "POST",
+    "url": "/v1/chat/completions",
+    "status": 200,
+    "duration": 800,
+    "size": 180,
+    "error": null,
+    "color": "#10A37F",
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "openai.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "structured",
+      "providerProtocol": "openai",
+      "timestamp": "2025-08-11T05:50:25.644Z",
+      "data": {
+        "method": "POST",
+        "url": "/v1/chat/completions",
+        "status": 200,
+        "duration": 800
+      },
+      "metadata": {
+        "lineNumber": 1,
+        "fileName": "openai.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 180
+      },
+      "dataType": "request",
+      "provider": "openai"
+    }
+  },
+  {
+    "id": "68fb9e07",
+    "timestamp": "2025-08-11T06:00:25.644Z",
+    "provider": "gemini",
+    "type": "performance",
+    "method": null,
+    "url": null,
+    "status": null,
+    "duration": null,
+    "size": 80,
+    "error": null,
+    "color": "#4285F4",
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "gemini.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "unstructured",
+      "providerProtocol": "gemini",
+      "timestamp": "2025-08-11T06:00:25.644Z",
+      "data": {
+        "rawLine": "INFO Gemini API request completed",
+        "performance": {
+          "duration": 1500
+        }
+      },
+      "metadata": {
+        "lineNumber": 1,
+        "fileName": "gemini.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 80
+      },
+      "dataType": "performance",
+      "provider": "gemini"
+    }
+  },
+  {
+    "id": "b203b5cb",
+    "timestamp": "2025-08-11T06:10:25.644Z",
+    "provider": "codewhisperer",
+    "type": "request",
+    "method": "POST",
+    "url": "/conversation",
+    "status": 200,
+    "duration": 2100,
+    "size": 300,
+    "error": null,
+    "color": "#FF9900",
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "codewhisperer.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "structured",
+      "providerProtocol": "codewhisperer",
+      "timestamp": "2025-08-11T06:10:25.644Z",
+      "data": {
+        "method": "POST",
+        "url": "/conversation",
+        "status": 200,
+        "duration": 2100
+      },
+      "metadata": {
+        "lineNumber": 1,
+        "fileName": "codewhisperer.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 300
+      },
+      "dataType": "request",
+      "provider": "codewhisperer"
+    }
+  },
+  {
+    "id": "2e356e9d",
+    "timestamp": "2025-08-11T06:15:25.644Z",
+    "provider": "unknown",
+    "type": "request",
+    "method": null,
+    "url": null,
+    "status": null,
+    "duration": null,
+    "size": 50,
+    "error": null,
+    "color": "#6B7280",
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "server.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z"
+    },
+    "rawData": {
+      "type": "unstructured",
+      "providerProtocol": "unknown",
+      "timestamp": "2025-08-11T06:15:25.644Z",
+      "data": {
+        "rawLine": "Server listening on port 3456",
+        "request": null
+      },
+      "metadata": {
+        "lineNumber": 1,
+        "fileName": "server.log",
+        "extractedAt": "2025-08-11T06:20:25.644Z",
+        "dataSize": 50
+      },
+      "dataType": "request",
+      "provider": "unknown"
+    }
+  }
+];
+        const stats = {
+  "totalCalls": 8,
+  "uniqueProviders": {},
+  "timeSpan": {
+    "start": "2025-08-11T04:20:25.644Z",
+    "end": "2025-08-11T06:15:25.644Z"
+  },
+  "callFrequency": {},
+  "errorRate": 0
+};
+        const providerColors = {
+  "anthropic": "#FF6B35",
+  "openai": "#10A37F",
+  "gemini": "#4285F4",
+  "codewhisperer": "#FF9900",
+  "unknown": "#6B7280",
+  "system": "#8B5CF6"
+};
+        
+        let filteredData = [...timelineData];
+        let currentZoom = 1;
+
+        // Initialize timeline
+        function initializeTimeline() {
+            renderTimeline();
+            setupEventListeners();
+        }
+
+        // Render timeline visualization
+        function renderTimeline() {
+            const container = document.getElementById('timelineContent');
+            const axis = document.getElementById('timelineAxis');
+            
+            container.innerHTML = '';
+            axis.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                container.innerHTML = '<div style="text-align: center; padding: 50px; color: #6c757d;">No data to display</div>';
+                return;
+            }
+
+            // Calculate time range
+            const times = filteredData.map(d => new Date(d.timestamp).getTime());
+            const minTime = Math.min(...times);
+            const maxTime = Math.max(...times);
+            const timeRange = maxTime - minTime || 1;
+
+            // Generate timeline calls
+            filteredData.forEach((call, index) => {
+                const element = document.createElement('div');
+                element.className = `api-call ${call.type}`;
+                element.style.backgroundColor = call.color;
+                
+                // Position calculation
+                const timeProgress = (new Date(call.timestamp).getTime() - minTime) / timeRange;
+                const left = Math.max(0, Math.min(95, timeProgress * 95));
+                const top = (index % 20) * 18 + 10; // Stack calls vertically
+                
+                element.style.left = `${left}%`;
+                element.style.top = `${top}px`;
+                element.style.width = '8px';
+                
+                // Add hover tooltip
+                element.addEventListener('mouseenter', (e) => showTooltip(e, call));
+                element.addEventListener('mouseleave', hideTooltip);
+                element.addEventListener('click', () => showCallDetails(call));
+                
+                container.appendChild(element);
+            });
+
+            // Generate time axis
+            const axisPoints = 5;
+            for (let i = 0; i <= axisPoints; i++) {
+                const time = new Date(minTime + (timeRange * i / axisPoints));
+                const label = document.createElement('div');
+                label.style.position = 'absolute';
+                label.style.left = `${i * (100 / axisPoints)}%`;
+                label.style.top = '10px';
+                label.style.fontSize = '11px';
+                label.style.color = '#6c757d';
+                label.style.transform = 'translateX(-50%)';
+                label.textContent = time.toLocaleTimeString();
+                axis.appendChild(label);
+            }
+        }
+
+        // Show tooltip on hover
+        function showTooltip(event, call) {
+            const tooltip = document.getElementById('tooltip');
+            tooltip.innerHTML = `
+                <strong>${call.provider.toUpperCase()}</strong><br>
+                <strong>Type:</strong> ${call.type}<br>
+                <strong>Time:</strong> ${new Date(call.timestamp).toLocaleString()}<br>
+                ${call.method ? `<strong>Method:</strong> ${call.method}<br>` : ''}
+                ${call.url ? `<strong>URL:</strong> ${call.url}<br>` : ''}
+                ${call.status ? `<strong>Status:</strong> ${call.status}<br>` : ''}
+                ${call.duration ? `<strong>Duration:</strong> ${call.duration}ms<br>` : ''}
+                ${call.error ? `<strong>Error:</strong> ${call.error}<br>` : ''}
+            `;
+            
+            tooltip.style.display = 'block';
+            tooltip.style.left = event.pageX + 10 + 'px';
+            tooltip.style.top = event.pageY + 10 + 'px';
+        }
+
+        // Hide tooltip
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        // Show detailed call information
+        function showCallDetails(call) {
+            alert(`API Call Details:
+
+Provider: ${call.provider}
+Type: ${call.type}
+Timestamp: ${call.timestamp}
+ID: ${call.id}${call.method ? '
+Method: ' + call.method : ''}${call.status ? '
+Status: ' + call.status : ''}`);
+        }
+
+        // Filter timeline data
+        function applyFilters() {
+            const providerFilter = document.getElementById('providerFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            
+            filteredData = timelineData.filter(call => {
+                return (!providerFilter || call.provider === providerFilter) &&
+                       (!typeFilter || call.type === typeFilter);
+            });
+            
+            renderTimeline();
+        }
+
+        // Search functionality
+        function performSearch() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const resultsContainer = document.getElementById('searchResults');
+            const resultsList = document.getElementById('searchResultsList');
+            
+            if (!searchTerm) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+            
+            const results = timelineData.filter(call => 
+                JSON.stringify(call).toLowerCase().includes(searchTerm)
+            ).slice(0, 10); // Limit to 10 results
+            
+            if (results.length > 0) {
+                resultsList.innerHTML = results.map(call => `
+                    <div class="search-result" onclick="highlightCall('${call.id}')">
+                        <strong>${call.provider}</strong> - ${call.type} at ${new Date(call.timestamp).toLocaleString()}
+                        ${call.method ? ' (' + call.method + ')' : ''}
+                    </div>
+                `).join('');
+                resultsContainer.style.display = 'block';
+            } else {
+                resultsList.innerHTML = '<div style="padding: 10px; color: #6c757d;">No results found</div>';
+                resultsContainer.style.display = 'block';
+            }
+        }
+
+        // Highlight specific call
+        function highlightCall(callId) {
+            // This would highlight the specific call in the timeline
+            console.log('Highlighting call:', callId);
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('providerFilter').addEventListener('change', applyFilters);
+            document.getElementById('typeFilter').addEventListener('change', applyFilters);
+            document.getElementById('searchInput').addEventListener('input', performSearch);
+            document.getElementById('zoomSlider').addEventListener('input', (e) => {
+                currentZoom = parseFloat(e.target.value);
+                renderTimeline();
+            });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initializeTimeline);
+
+        // Auto-refresh every 30 seconds if enabled
+        // setInterval(() => {
+        //     if (document.getElementById('autoRefresh')?.checked) {
+        //         window.location.reload();
+        //     }
+        // }, 30000);
+    </script>
+</body>
+</html>

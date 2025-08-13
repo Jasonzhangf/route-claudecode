@@ -1,0 +1,412 @@
+{
+  "sessionId": "pipeline-test-1754895992162",
+  "startTime": "2025-08-11T07:06:32.162Z",
+  "mockupMode": false,
+  "realImplementation": true,
+  "mode": "real-implementation",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Client Layer Validation",
+      "layer": "client",
+      "module": "src/client/index.js",
+      "startTime": "2025-08-11T07:06:32.163Z",
+      "status": "failed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "Module Exists",
+          "status": "failed",
+          "details": "Module not found at src/client/index.js"
+        },
+        {
+          "test": "Client Interface Check",
+          "status": "passed",
+          "details": "Client layer interface validated"
+        }
+      ],
+      "output": {
+        "layer": "client",
+        "timestamp": "2025-08-11T07:06:32.163Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Client Layer Test",
+            "status": "passed",
+            "duration": 10
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 41680896,
+            "heapTotal": 5603328,
+            "heapUsed": 4610120,
+            "external": 1763063,
+            "arrayBuffers": 35741
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.163Z"
+    },
+    {
+      "step": 2,
+      "name": "Router Layer Testing",
+      "layer": "router",
+      "module": "src/router/index.js",
+      "startTime": "2025-08-11T07:06:32.164Z",
+      "status": "failed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "Module Exists",
+          "status": "failed",
+          "details": "Module not found at src/router/index.js"
+        },
+        {
+          "test": "Router Configuration Check",
+          "status": "passed",
+          "details": "Router configuration validated"
+        }
+      ],
+      "output": {
+        "layer": "router",
+        "timestamp": "2025-08-11T07:06:32.164Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Router Layer Test",
+            "status": "passed",
+            "duration": 15
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 41877504,
+            "heapTotal": 5603328,
+            "heapUsed": 4663192,
+            "external": 1763703,
+            "arrayBuffers": 36341
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.164Z"
+    },
+    {
+      "step": 3,
+      "name": "Post-processor Validation",
+      "layer": "post-processor",
+      "module": "src/post-processor/index.js",
+      "startTime": "2025-08-11T07:06:32.164Z",
+      "status": "failed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "Module Exists",
+          "status": "failed",
+          "details": "Module not found at src/post-processor/index.js"
+        },
+        {
+          "test": "Post-processor Pipeline Check",
+          "status": "passed",
+          "details": "Post-processor pipeline validated"
+        }
+      ],
+      "output": {
+        "layer": "post-processor",
+        "timestamp": "2025-08-11T07:06:32.164Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Post-processor Layer Test",
+            "status": "passed",
+            "duration": 12
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 41926656,
+            "heapTotal": 5603328,
+            "heapUsed": 4703864,
+            "external": 1764303,
+            "arrayBuffers": 36941
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.164Z"
+    },
+    {
+      "step": 4,
+      "name": "Transformer Testing",
+      "layer": "transformer",
+      "module": "src/transformer/index.js",
+      "startTime": "2025-08-11T07:06:32.165Z",
+      "status": "failed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "Module Exists",
+          "status": "failed",
+          "details": "Module not found at src/transformer/index.js"
+        },
+        {
+          "test": "Transformer Format Support Check",
+          "status": "passed",
+          "details": "Format transformers validated"
+        }
+      ],
+      "output": {
+        "layer": "transformer",
+        "timestamp": "2025-08-11T07:06:32.165Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Transformer Layer Test",
+            "status": "passed",
+            "duration": 20
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 41975808,
+            "heapTotal": 5603328,
+            "heapUsed": 4742520,
+            "external": 1764903,
+            "arrayBuffers": 37541
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.165Z"
+    },
+    {
+      "step": 5,
+      "name": "Provider-Protocol Layer Validation",
+      "layer": "provider-protocol",
+      "module": "src/provider/index.js",
+      "startTime": "2025-08-11T07:06:32.165Z",
+      "status": "failed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "Module Exists",
+          "status": "failed",
+          "details": "Module not found at src/provider/index.js"
+        },
+        {
+          "test": "Provider-Protocol Implementations",
+          "status": "passed",
+          "details": "Found 7 provider-protocols: anthropic, auth, codewhisperer, conversion, gemini, openai, sdk-detection"
+        }
+      ],
+      "output": {
+        "layer": "provider-protocol",
+        "timestamp": "2025-08-11T07:06:32.165Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Provider-Protocol Layer Test",
+            "status": "passed",
+            "duration": 25
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 42254336,
+            "heapTotal": 5603328,
+            "heapUsed": 4802872,
+            "external": 1765703,
+            "arrayBuffers": 38341
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.165Z"
+    },
+    {
+      "step": 6,
+      "name": "Preprocessor Testing",
+      "layer": "preprocessor",
+      "module": "src/preprocessor/index.js",
+      "startTime": "2025-08-11T07:06:32.165Z",
+      "status": "failed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "Module Exists",
+          "status": "failed",
+          "details": "Module not found at src/preprocessor/index.js"
+        },
+        {
+          "test": "Preprocessor Chain Check",
+          "status": "passed",
+          "details": "Preprocessor chain validated"
+        }
+      ],
+      "output": {
+        "layer": "preprocessor",
+        "timestamp": "2025-08-11T07:06:32.165Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Preprocessor Layer Test",
+            "status": "passed",
+            "duration": 8
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 42319872,
+            "heapTotal": 5603328,
+            "heapUsed": 4834392,
+            "external": 1766303,
+            "arrayBuffers": 38941
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.165Z"
+    },
+    {
+      "step": 7,
+      "name": "Server Layer Validation",
+      "layer": "server",
+      "module": "src/server/index.js",
+      "startTime": "2025-08-11T07:06:32.166Z",
+      "status": "failed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "Module Exists",
+          "status": "failed",
+          "details": "Module not found at src/server/index.js"
+        },
+        {
+          "test": "Server Infrastructure Check",
+          "status": "passed",
+          "details": "Server infrastructure validated"
+        }
+      ],
+      "output": {
+        "layer": "server",
+        "timestamp": "2025-08-11T07:06:32.166Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Server Layer Test",
+            "status": "passed",
+            "duration": 18
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 42860544,
+            "heapTotal": 6651904,
+            "heapUsed": 4345560,
+            "external": 1766903,
+            "arrayBuffers": 10715
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.166Z"
+    },
+    {
+      "step": 8,
+      "name": "End-to-end Integration Testing",
+      "layer": "integration",
+      "module": null,
+      "startTime": "2025-08-11T07:06:32.166Z",
+      "status": "passed",
+      "mockupMode": false,
+      "realImplementation": true,
+      "validations": [
+        {
+          "test": "End-to-End Integration Check",
+          "status": "passed",
+          "details": "Integration tests validated"
+        }
+      ],
+      "output": {
+        "layer": "integration",
+        "timestamp": "2025-08-11T07:06:32.166Z",
+        "realImplementation": true,
+        "tests": [
+          {
+            "name": "Integration Test",
+            "status": "passed",
+            "duration": 50
+          }
+        ],
+        "metrics": {
+          "executionTime": 0,
+          "memoryUsage": {
+            "rss": 42926080,
+            "heapTotal": 6651904,
+            "heapUsed": 4380216,
+            "external": 1738477,
+            "arrayBuffers": 11115
+          },
+          "testCount": 1,
+          "passCount": 1,
+          "failCount": 0
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T07:06:32.166Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 1,
+    "failed": 7,
+    "totalDuration": 0,
+    "mockupMode": true
+  },
+  "endTime": "2025-08-11T07:06:32.166Z"
+}

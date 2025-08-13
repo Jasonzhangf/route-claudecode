@@ -1,0 +1,463 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:48:37] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 43,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:48:37] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 44,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:49:14] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 86,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:49:14] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 87,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:49:14] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 114,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.427Z",
+    "data": {
+      "rawLine": "[19:49:14] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 115,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.427Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[19:49:27] [DEBUG] [system] [ce158e42-592a-424c-a28e-92318be1063c] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 192,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:29] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 222,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:29] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 223,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:31] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 265,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:31] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 266,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:32] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 308,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:32] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 309,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:33] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 351,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:33] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 352,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 394,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 395,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 423,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.428Z",
+    "data": {
+      "rawLine": "[20:14:39] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 424,
+      "fileName": "test-gemini-service-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.428Z",
+      "dataSize": 71
+    }
+  }
+]

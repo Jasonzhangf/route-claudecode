@@ -1,0 +1,261 @@
+{
+  "sessionId": "log-parser-test-1754892731216",
+  "startTime": "2025-08-11T06:12:11.216Z",
+  "tests": [
+    {
+      "name": "Log File Discovery",
+      "startTime": "2025-08-11T06:12:11.218Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Log Files Discovered",
+          "status": "passed",
+          "details": "Found 98 log files (expected at least 5)"
+        },
+        {
+          "test": "File Discovery: anthropic-test.log",
+          "status": "passed",
+          "details": "Expected file anthropic-test.log found"
+        },
+        {
+          "test": "File Discovery: openai-test.log",
+          "status": "passed",
+          "details": "Expected file openai-test.log found"
+        },
+        {
+          "test": "File Discovery: gemini-test.log",
+          "status": "passed",
+          "details": "Expected file gemini-test.log found"
+        },
+        {
+          "test": "File Discovery: codewhisperer-test.log",
+          "status": "passed",
+          "details": "Expected file codewhisperer-test.log found"
+        },
+        {
+          "test": "File Discovery: ccr-dev.log",
+          "status": "passed",
+          "details": "Expected file ccr-dev.log found"
+        }
+      ],
+      "duration": 16,
+      "endTime": "2025-08-11T06:12:11.234Z"
+    },
+    {
+      "name": "Provider-Protocol Classification",
+      "startTime": "2025-08-11T06:12:11.234Z",
+      "status": "failed",
+      "validations": [
+        {
+          "test": "Classification: \"Request to Anthropic API with ...\"",
+          "status": "passed",
+          "details": "Expected: anthropic, Got: anthropic"
+        },
+        {
+          "test": "Classification: \"OpenAI API call to gpt-4 model...\"",
+          "status": "passed",
+          "details": "Expected: openai, Got: openai"
+        },
+        {
+          "test": "Classification: \"Gemini pro request to googleap...\"",
+          "status": "passed",
+          "details": "Expected: gemini, Got: gemini"
+        },
+        {
+          "test": "Classification: \"CodeWhisperer CLAUDE_SONNET_4 ...\"",
+          "status": "failed",
+          "details": "Expected: codewhisperer, Got: anthropic"
+        },
+        {
+          "test": "Classification: \"Server listening on port 3456...\"",
+          "status": "passed",
+          "details": "Expected: unknown, Got: unknown"
+        },
+        {
+          "test": "Classification: \"Generic application log messag...\"",
+          "status": "passed",
+          "details": "Expected: null, Got: null"
+        }
+      ],
+      "duration": 1,
+      "endTime": "2025-08-11T06:12:11.235Z"
+    },
+    {
+      "name": "Structured Log Processing",
+      "startTime": "2025-08-11T06:12:11.235Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "JSON Log Parsing",
+          "status": "passed",
+          "details": "JSON log successfully parsed"
+        },
+        {
+          "test": "Structured Data Type",
+          "status": "passed",
+          "details": "Data type: structured"
+        },
+        {
+          "test": "Provider-Protocol Detection",
+          "status": "passed",
+          "details": "Detected provider-protocol: anthropic"
+        },
+        {
+          "test": "Timestamp Extraction",
+          "status": "passed",
+          "details": "Extracted timestamp: 2025-08-11T18:00:01.000Z"
+        },
+        {
+          "test": "Metadata Generation",
+          "status": "passed",
+          "details": "Metadata line number: 1"
+        }
+      ],
+      "duration": 0,
+      "endTime": "2025-08-11T06:12:11.235Z"
+    },
+    {
+      "name": "Unstructured Log Processing",
+      "startTime": "2025-08-11T06:12:11.235Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Text Log Parsing",
+          "status": "passed",
+          "details": "Text log successfully parsed"
+        },
+        {
+          "test": "Unstructured Data Type",
+          "status": "passed",
+          "details": "Data type: unstructured"
+        },
+        {
+          "test": "Provider-Protocol Detection",
+          "status": "passed",
+          "details": "Detected provider-protocol: anthropic"
+        },
+        {
+          "test": "Timestamp Extraction",
+          "status": "passed",
+          "details": "Extracted timestamp: 2025-08-11T10:00:01.000Z"
+        },
+        {
+          "test": "Raw Line Preservation",
+          "status": "passed",
+          "details": "Raw line preserved in data"
+        }
+      ],
+      "duration": 0,
+      "endTime": "2025-08-11T06:12:11.235Z"
+    },
+    {
+      "name": "Data Extraction and Storage",
+      "startTime": "2025-08-11T06:12:11.235Z",
+      "status": "failed",
+      "validations": [
+        {
+          "test": "Log File Processing",
+          "status": "failed",
+          "details": "File processed: false, Entries: 1"
+        },
+        {
+          "test": "Data Categorization",
+          "status": "passed",
+          "details": "Requests: 1, Responses: 0"
+        },
+        {
+          "test": "Provider-Protocol Breakdown",
+          "status": "passed",
+          "details": "Anthropic entries: 1"
+        },
+        {
+          "test": "Output Files Created",
+          "status": "failed",
+          "details": "Output directory not created"
+        }
+      ],
+      "duration": 4,
+      "endTime": "2025-08-11T06:12:11.239Z"
+    },
+    {
+      "name": "Metadata Generation",
+      "startTime": "2025-08-11T06:12:11.240Z",
+      "status": "failed",
+      "validations": [],
+      "duration": 0,
+      "error": "ENOENT: no such file or directory, open '/Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-output/metadata/extraction-metadata.json'",
+      "endTime": "2025-08-11T06:12:11.240Z"
+    },
+    {
+      "name": "Complete System Integration",
+      "startTime": "2025-08-11T06:12:11.240Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "System Execution",
+          "status": "passed",
+          "details": "System status: completed"
+        },
+        {
+          "test": "Data Extraction",
+          "status": "passed",
+          "details": "Data available: true"
+        },
+        {
+          "test": "Processing Statistics",
+          "status": "passed",
+          "details": "Processed 98 log files"
+        },
+        {
+          "test": "Output Directory",
+          "status": "passed",
+          "details": "Output path: /Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-output"
+        },
+        {
+          "test": "README Generation",
+          "status": "passed",
+          "details": "README.md file created"
+        }
+      ],
+      "duration": 217,
+      "endTime": "2025-08-11T06:12:11.457Z"
+    },
+    {
+      "name": "CLI Interface",
+      "startTime": "2025-08-11T06:12:11.457Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Custom Configuration",
+          "status": "passed",
+          "details": "Custom port setting: 5501"
+        },
+        {
+          "test": "Path Configuration",
+          "status": "passed",
+          "details": "Custom output path: /custom/output"
+        },
+        {
+          "test": "Date Range Configuration",
+          "status": "passed",
+          "details": "Custom date range: 30 days"
+        },
+        {
+          "test": "CLI Interface Available",
+          "status": "passed",
+          "details": "CLI interface methods and configuration validated"
+        }
+      ],
+      "duration": 0,
+      "endTime": "2025-08-11T06:12:11.457Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 5,
+    "failed": 3,
+    "totalDuration": 238,
+    "passRate": 63
+  },
+  "endTime": "2025-08-11T06:12:11.457Z"
+}

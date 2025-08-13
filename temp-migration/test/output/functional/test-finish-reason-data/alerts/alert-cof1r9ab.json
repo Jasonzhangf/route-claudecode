@@ -1,0 +1,13 @@
+{
+  "id": "cof1r9ab",
+  "type": "high_error_rate",
+  "timestamp": "2025-08-11T07:01:29.497Z",
+  "severity": "critical",
+  "data": {
+    "provider": "openai",
+    "errorRate": "100.00%",
+    "threshold": "20.00%",
+    "timeWindow": "1 hour"
+  },
+  "resolved": false
+}

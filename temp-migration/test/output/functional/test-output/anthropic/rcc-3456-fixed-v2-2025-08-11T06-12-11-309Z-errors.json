@@ -1,0 +1,326 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "    'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6709,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "    'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "    'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6867,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 105
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7418,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 121
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7576,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 107
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8118,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 121
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8276,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 107
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "    'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "    'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8883,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "    'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "    'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9041,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 105
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9592,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 121
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9750,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 107
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "      'Claude: 服务启动成功！我可以看到服务在端口5506上运行。但是有一个错误 \"Failed to initialize expanded provider: lmstudio-glm\"，让我检查一下这个配置文件：\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10292,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 121
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "      'Claude: 我看到了关键问题！在第29行：`[ERROR] [error] Failed to initialize expanded provider: lmstudio-qwen3`\\n' +",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10450,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 107
+    }
+  }
+]

@@ -9,6 +9,7 @@ import { Provider, BaseRequest, BaseResponse } from '../../types/index.js';
 
 export function createOpenAIClient(config: any, id: string): Provider {
   console.log(`🔧 V3 Creating real OpenAI client for ${id}`);
+  console.log('🔧 OpenAI client config:', JSON.stringify(config, null, 2));
   
   return {
     name: config.name || `OpenAI ${id}`,
@@ -38,7 +39,7 @@ export function createOpenAIClient(config: any, id: string): Provider {
         // Convert Anthropic format to OpenAI format
         const openAIRequest: any = {
           model: request.metadata?.targetModel || request.model,
-          messages: request.messages,
+          messages: convertAnthropicMessagesToOpenAI(request.messages),
           max_tokens: request.max_tokens,
           stream: false // Force non-streaming for regular requests
         };
@@ -141,7 +142,7 @@ export function createOpenAIClient(config: any, id: string): Provider {
     async *sendStreamRequest(request: BaseRequest): AsyncIterable<any> {
       const openAIRequest: any = {
         model: request.metadata?.targetModel || request.model,
-        messages: request.messages,
+        messages: convertAnthropicMessagesToOpenAI(request.messages),
         max_tokens: request.max_tokens,
         stream: true // Force streaming for stream requests
       };
@@ -277,4 +278,91 @@ function mapFinishReason(openAIReason: string | undefined): string {
     case 'tool_calls': return 'tool_use';
     default: return 'end_turn';
   }
+}
+
+function convertAnthropicMessagesToOpenAI(messages: any[]): any[] {
+  return messages.map(message => {
+    // Handle standard user/assistant messages
+    if (typeof message.content === 'string') {
+      return message;
+    }
+
+    // Handle messages with content array
+    if (Array.isArray(message.content)) {
+      // Check for tool_use content in assistant messages
+      const hasToolUse = message.content.some((item: any) => item.type === 'tool_use');
+      if (hasToolUse && message.role === 'assistant') {
+        // Convert Anthropic tool_use to OpenAI tool_calls format
+        const toolCalls: any[] = [];
+        let textContent = '';
+
+        for (const contentItem of message.content) {
+          if (contentItem.type === 'tool_use') {
+            toolCalls.push({
+              id: contentItem.id,
+              type: 'function',
+              function: {
+                name: contentItem.name,
+                arguments: JSON.stringify(contentItem.input)
+              }
+            });
+          } else if (contentItem.type === 'text') {
+            textContent += contentItem.text;
+          }
+        }
+
+        return {
+          ...message,
+          content: textContent || null,
+          tool_calls: toolCalls
+        };
+      }
+
+      // Check for tool_result content in user messages
+      const hasToolResult = message.content.some((item: any) => item.type === 'tool_result');
+      if (hasToolResult) {
+        // Convert tool_result to plain text for LM Studio compatibility
+        const textParts: string[] = [];
+        
+        for (const contentItem of message.content) {
+          if (contentItem.type === 'tool_result') {
+            textParts.push(`Tool result from ${contentItem.tool_use_id}:\n${contentItem.content}`);
+          } else if (contentItem.type === 'text') {
+            textParts.push(contentItem.text);
+          } else {
+            textParts.push(JSON.stringify(contentItem));
+          }
+        }
+
+        return {
+          ...message,
+          content: textParts.join('\n\n')
+        };
+      }
+
+      // Handle other content arrays (text, image_url, etc.)
+      const textParts: string[] = [];
+      for (const contentItem of message.content) {
+        if (contentItem.type === 'text') {
+          textParts.push(contentItem.text);
+        } else {
+          textParts.push(JSON.stringify(contentItem));
+        }
+      }
+
+      if (textParts.length > 0) {
+        return {
+          ...message,
+          content: textParts.join('\n\n')
+        };
+      }
+
+      return {
+        ...message,
+        content: message.content
+      };
+    }
+
+    return message;
+  });
 }

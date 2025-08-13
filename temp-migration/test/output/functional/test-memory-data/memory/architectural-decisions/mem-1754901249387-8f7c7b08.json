@@ -1,0 +1,44 @@
+{
+  "id": "mem-1754901249387-8f7c7b08",
+  "timestamp": "2025-08-11T08:34:09.387Z",
+  "category": "architectural-decisions",
+  "type": "implementation",
+  "title": "Six-Layer Architecture Decision",
+  "summary": "Decided to implement six-layer architecture (Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server) for better modularity and maintainability.",
+  "content": "Decided to implement six-layer architecture (Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server) for better modularity and maintainability.",
+  "metadata": {
+    "project": "claude-code-router",
+    "version": "3.0.0",
+    "author": "Project Memory System",
+    "priority": "medium",
+    "status": "active",
+    "tags": [
+      "architecture",
+      "design",
+      "modularity"
+    ],
+    "correlatedEntries": []
+  },
+  "context": {
+    "task": null,
+    "component": null,
+    "provider": null,
+    "environment": "development",
+    "session": null
+  },
+  "problemSolution": null,
+  "architecturalDecision": null,
+  "experience": {
+    "difficulty": "medium",
+    "timeSpent": null,
+    "successRate": null,
+    "lessonsLearned": [],
+    "recommendedActions": []
+  },
+  "references": {
+    "codeFiles": [],
+    "documentation": [],
+    "externalLinks": [],
+    "relatedTasks": []
+  }
+}

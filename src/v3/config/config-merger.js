@@ -70,8 +70,12 @@ export class ConfigMerger {
             if (userConfig.routing) {
                 mergedConfig.routing = {
                     ...mergedConfig.routing,
-                    categories: userConfig.routing
+                    ...userConfig.routing
                 };
+                // 确保categories字段正确设置
+                if (userConfig.routing.categories) {
+                    mergedConfig.routing.categories = userConfig.routing.categories;
+                }
             }
 
             // 5. 合并调试配置

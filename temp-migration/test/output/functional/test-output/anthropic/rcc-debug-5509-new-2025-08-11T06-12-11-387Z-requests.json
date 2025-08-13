@@ -1,0 +1,319 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "[10:08:28] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 54,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "[10:08:28] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 55,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:01] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 163,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:01] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 164,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:01] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 190,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:01] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 191,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:01] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 278,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:01] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 279,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:18] [DEBUG] [system] [00de6165-8159-421e-bd0a-26008699d34c] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 473,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:18] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 499,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:18] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 500,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:19] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 578,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:19] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 579,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 71
+    }
+  }
+]

@@ -1,0 +1,54 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "  \"message\": \"No choices in OpenAI response\",",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 113,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 45
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.393Z",
+    "data": {
+      "rawLine": "   Error: No choices in OpenAI response",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "   Error: No choices in OpenAI response",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 125,
+      "fileName": "rcc-startup-20250811-083633.log",
+      "extractedAt": "2025-08-11T06:12:11.393Z",
+      "dataSize": 39
+    }
+  }
+]

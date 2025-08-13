@@ -1,0 +1,138 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.392Z",
+    "data": {
+      "rawLine": "[08:44:32] {\"level\":30,\"time\":1754873072747,\"pid\":72028,\"hostname\":\"Fans-Mac-Studio.local\",\"reqId\":\"req-3\",\"req\":{\"method\":\"POST\",\"url\":\"/v1/messages\",\"host\":\"localhost:5502\",\"remoteAddress\":\"127.0.0.1\",\"remotePort\":50650},\"msg\":\"incoming request\"}",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages\",\"host\":\"localhost:5502\",\"remoteAddress\":\"127.0.0.1\",\"remotePort\":50650},\"msg\":\"incoming",
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": 127,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "[08:44:32] {\"level\":30,\"time\":1754873072747,\"pid\":72028,\"hostname\":\"Fans-Mac-Studio.local\",\"reqId\":\"req-3\",\"req\":{\"method\":\"POST\",\"url\":\"/v1/messages\",\"host\":\"localhost:5502\",\"remoteAddress\":\"127.0.0.1\",\"remotePort\":50650},\"msg\":\"incoming request\"}",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 15,
+      "fileName": "rcc-monitor-20250811-083641.log",
+      "extractedAt": "2025-08-11T06:12:11.392Z",
+      "dataSize": 248
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.392Z",
+    "data": {
+      "rawLine": "[08:44:37] [08:44:37] [DEBUG] [system] [e9b8b233-63d6-438e-b026-6da52ba622ba] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 45,
+      "fileName": "rcc-monitor-20250811-083641.log",
+      "extractedAt": "2025-08-11T06:12:11.392Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.392Z",
+    "data": {
+      "rawLine": "[08:44:37] [08:44:37] [ERROR] [error] [e9b8b233-63d6-438e-b026-6da52ba622ba] [output] Failed to process response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[08:44:37] [08:44:37] [ERROR] [error] [e9b8b233-63d6-438e-b026-6da52ba622ba] [output] Failed to process response to Anthropic format",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 48,
+      "fileName": "rcc-monitor-20250811-083641.log",
+      "extractedAt": "2025-08-11T06:12:11.392Z",
+      "dataSize": 132
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.392Z",
+    "data": {
+      "rawLine": "[08:44:37] {\"level\":40,\"time\":1754873077479,\"pid\":72028,\"hostname\":\"Fans-Mac-Studio.local\",\"reqId\":\"req-3\",\"err\":{\"type\":\"FastifyError\",\"message\":\"Reply was already sent, did you forget to \"return reply\" in \"/v1/messages\" (POST)?\",\"stack\":\"FastifyError: Reply was already sent, did you forget to \"return reply\" in \"/v1/messages\" (POST)?n    at Reply.send (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:12159:30)n    at UnifiedErrorHandler.handleRegularError (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:77513:38)n    at UnifiedErrorHandler.handleError (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:77450:12)n    at handleProviderError2 (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:77727:23)n    at RouterServer.handleMessagesRequest (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:78601:7)n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\",\"code\":\"FST_ERR_REP_ALREADY_SENT\",\"name\":\"FastifyError\",\"statusCode\":500},\"msg\":\"Reply was already sent, did you forget to \"return reply\" in \"/v1/messages\" (POST)?\"}",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages\"",
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": 105,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "[08:44:37] {\"level\":40,\"time\":1754873077479,\"pid\":72028,\"hostname\":\"Fans-Mac-Studio.local\",\"reqId\":\"req-3\",\"err\":{\"type\":\"FastifyError\",\"message\":\"Reply was already sent, did you forget to \"return reply\" in \"/v1/messages\" (POST)?\",\"stack\":\"FastifyError: Reply was already sent, did you forget to \"return reply\" in \"/v1/messages\" (POST)?n    at Reply.send (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:12159:30)n    at UnifiedErrorHandler.handleRegularError (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:77513:38)n    at UnifiedErrorHandler.handleError (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:77450:12)n    at handleProviderError2 (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:77727:23)n    at RouterServer.handleMessagesRequest (/Users/fanzhang/.nvm/versions/node/v22.16.0/lib/node_modules/route-claudecode/dist/cli.js:78601:7)n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\",\"code\":\"FST_ERR_REP_ALREADY_SENT\",\"name\":\"FastifyError\",\"statusCode\":500},\"msg\":\"Reply was already sent, did you forget to \"return reply\" in \"/v1/messages\" (POST)?\"}",
+        "stack": null
+      },
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 75,
+      "fileName": "rcc-monitor-20250811-083641.log",
+      "extractedAt": "2025-08-11T06:12:11.392Z",
+      "dataSize": 1263
+    }
+  }
+]

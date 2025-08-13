@@ -1,0 +1,76 @@
+{
+  "version": "3.0.0",
+  "description": "Provider port configurations for Claude Code Router v3.0",
+  "lastUpdated": "2025-08-11T08:35:00.000Z",
+  "providerPorts": {
+    "5501": {
+      "provider": "codewhisperer",
+      "account": "primary",
+      "config": "config-codewhisperer-primary-5501.json",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0",
+      "description": "CodeWhisperer Primary Account"
+    },
+    "5502": {
+      "provider": "google-gemini",
+      "account": "api-keys",
+      "config": "config-google-gemini-5502.json",
+      "model": "gemini-2.5-pro",
+      "description": "Google Gemini API Keys"
+    },
+    "5503": {
+      "provider": "codewhisperer",
+      "account": "kiro-github",
+      "config": "config-codewhisperer-kiro-github-5503.json",
+      "model": "CLAUDE_SONNET_4_20250514_V1_0",
+      "description": "CodeWhisperer Kiro-GitHub Account"
+    },
+    "5504": {
+      "provider": "codewhisperer",
+      "account": "kiro-gmail",
+      "config": "config-codewhisperer-kiro-gmail-5504.json",
+      "model": "CLAUDE_SONNET_4",
+      "description": "CodeWhisperer Kiro-Gmail Account"
+    },
+    "5505": {
+      "provider": "codewhisperer",
+      "account": "kiro-zcam",
+      "config": "config-codewhisperer-kiro-zcam-5505.json",
+      "model": "CLAUDE_3_7_SONNET",
+      "description": "CodeWhisperer Kiro-Zcam Account"
+    },
+    "5506": {
+      "provider": "openai-compatible",
+      "account": "lmstudio",
+      "config": "config-openai-lmstudio-5506.json",
+      "model": "qwen3-30b",
+      "description": "OpenAI Compatible LM Studio"
+    },
+    "5507": {
+      "provider": "openai-compatible",
+      "account": "modelscope",
+      "config": "config-openai-modelscope-5507.json",
+      "model": "Qwen3-Coder-480B",
+      "description": "OpenAI Compatible ModelScope"
+    },
+    "5508": {
+      "provider": "openai-compatible",
+      "account": "shuaihong",
+      "config": "config-openai-shuaihong-5508.json",
+      "model": "claude-4-sonnet",
+      "description": "OpenAI Compatible ShuaiHong"
+    },
+    "5509": {
+      "provider": "openai-compatible",
+      "account": "modelscope-glm",
+      "config": "config-openai-modelscope-glm-5509.json",
+      "model": "ZhipuAI/GLM-4.5",
+      "description": "OpenAI Compatible ModelScope GLM"
+    }
+  },
+  "metadata": {
+    "environment": "development",
+    "configFormat": "v3.0",
+    "validationRequired": true,
+    "zeroFallback": true
+  }
+}

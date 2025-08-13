@@ -1,0 +1,36 @@
+[
+  {
+    "type": "structured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T05:50:25.644Z",
+    "data": {
+      "method": "POST",
+      "url": "/v1/chat/completions",
+      "status": 200,
+      "duration": 800
+    },
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "openai.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z",
+      "dataSize": 180
+    }
+  },
+  {
+    "type": "structured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T05:35:25.644Z",
+    "data": {
+      "method": "POST",
+      "url": "/v1/chat/completions",
+      "status": 429,
+      "error": "Rate limit exceeded"
+    },
+    "metadata": {
+      "lineNumber": 2,
+      "fileName": "openai.log",
+      "extractedAt": "2025-08-11T06:20:25.644Z",
+      "dataSize": 120
+    }
+  }
+]

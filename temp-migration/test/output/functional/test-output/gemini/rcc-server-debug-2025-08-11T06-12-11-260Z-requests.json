@@ -1,0 +1,127 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.260Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"7f56f532-bd29-452a-9d1b-8f8fd86d8a92\",\"provider\":\"google-gemini\",\"model\":\"gemini-2.5-pro\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 76,
+      "fileName": "rcc-server-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.260Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.260Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"7f56f532-bd29-452a-9d1b-8f8fd86d8a92\",\"provider\":\"google-gemini\",\"model\":\"gemini-2.5-pro\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 84,
+      "fileName": "rcc-server-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.260Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.260Z",
+    "data": {
+      "rawLine": "[12:17:24] [DEBUG] [system] [7f56f532-bd29-452a-9d1b-8f8fd86d8a92] [provider] [TRACE] Sending request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 110,
+      "fileName": "rcc-server-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.260Z",
+      "dataSize": 111
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.260Z",
+    "data": {
+      "rawLine": "[12:17:24] [INFO] [system] [7f56f532-bd29-452a-9d1b-8f8fd86d8a92] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 111,
+      "fileName": "rcc-server-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.260Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.260Z",
+    "data": {
+      "rawLine": "[12:17:30] [INFO] [system] [7f56f532-bd29-452a-9d1b-8f8fd86d8a92] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 125,
+      "fileName": "rcc-server-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.260Z",
+      "dataSize": 130
+    }
+  }
+]

@@ -1,0 +1,146 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.395Z",
+    "data": {
+      "rawLine": "[08:33:10] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 156,
+      "fileName": "rcc-e2e-test-1754872377.log",
+      "extractedAt": "2025-08-11T06:12:11.395Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.395Z",
+    "data": {
+      "rawLine": "[08:33:10] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 157,
+      "fileName": "rcc-e2e-test-1754872377.log",
+      "extractedAt": "2025-08-11T06:12:11.395Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.395Z",
+    "data": {
+      "rawLine": "[08:33:10] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 158,
+      "fileName": "rcc-e2e-test-1754872377.log",
+      "extractedAt": "2025-08-11T06:12:11.395Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.395Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 170,
+      "fileName": "rcc-e2e-test-1754872377.log",
+      "extractedAt": "2025-08-11T06:12:11.395Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.395Z",
+    "data": {
+      "rawLine": "[08:33:10] [DEBUG] [system] [db0c5e59-fb1e-4054-9270-51f06412061c] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 176,
+      "fileName": "rcc-e2e-test-1754872377.log",
+      "extractedAt": "2025-08-11T06:12:11.395Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.395Z",
+    "data": {
+      "rawLine": "[08:33:12] [DEBUG] [system] Provider modelscope-openai-key4 request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 224,
+      "fileName": "rcc-e2e-test-1754872377.log",
+      "extractedAt": "2025-08-11T06:12:11.395Z",
+      "dataSize": 77
+    }
+  }
+]

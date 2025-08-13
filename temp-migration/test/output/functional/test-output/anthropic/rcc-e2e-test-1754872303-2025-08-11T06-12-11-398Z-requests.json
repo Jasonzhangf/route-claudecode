@@ -1,0 +1,79 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.397Z",
+    "data": {
+      "rawLine": "[08:31:43] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 121,
+      "fileName": "rcc-e2e-test-1754872303.log",
+      "extractedAt": "2025-08-11T06:12:11.397Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.397Z",
+    "data": {
+      "rawLine": "[08:31:43] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 122,
+      "fileName": "rcc-e2e-test-1754872303.log",
+      "extractedAt": "2025-08-11T06:12:11.397Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.398Z",
+    "data": {
+      "rawLine": "[08:32:11] [DEBUG] [system] [8a44a42b-0beb-4f19-be33-aa43a73306fe] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 213,
+      "fileName": "rcc-e2e-test-1754872303.log",
+      "extractedAt": "2025-08-11T06:12:11.398Z",
+      "dataSize": 123
+    }
+  }
+]

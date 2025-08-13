@@ -1,0 +1,13 @@
+{
+  "id": "teva3u1f",
+  "type": "high_error_rate",
+  "timestamp": "2025-08-12T02:21:32.656Z",
+  "severity": "critical",
+  "data": {
+    "provider": "error-test-provider",
+    "errorRate": "50.00%",
+    "threshold": "20.00%",
+    "timeWindow": "1 hour"
+  },
+  "resolved": false
+}

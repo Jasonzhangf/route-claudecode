@@ -1,0 +1,163 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"codewhisperer-primary\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 98,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 231
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"codewhisperer-primary\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 205,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 231
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"codewhisperer-primary\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 335,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 231
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"codewhisperer-primary\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 392,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 231
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.368Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"codewhisperer-primary\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 581,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.368Z",
+      "dataSize": 231
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.368Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"codewhisperer-primary\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 637,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.368Z",
+      "dataSize": 231
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.372Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"codewhisperer-primary\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 4046,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.372Z",
+      "dataSize": 231
+    }
+  }
+]

@@ -1,0 +1,112 @@
+{
+  "sessionId": "tool-parsing-fix-verification-1754978625448",
+  "timestamp": "2025-08-12T06:03:45.448Z",
+  "testType": "tool-parsing-fix-verification",
+  "results": [
+    {
+      "test": "standard-tool-call-pattern",
+      "status": "passed",
+      "details": {
+        "totalTests": 3,
+        "passed": 3,
+        "totalToolCallsExtracted": 8,
+        "results": [
+          {
+            "name": "single-tool-call",
+            "success": true,
+            "toolCallsExtracted": 2,
+            "hasProperFormat": true
+          },
+          {
+            "name": "multiple-tool-calls",
+            "success": true,
+            "toolCallsExtracted": 4,
+            "hasProperFormat": true
+          },
+          {
+            "name": "tool-call-with-json-args",
+            "success": true,
+            "toolCallsExtracted": 2,
+            "hasProperFormat": true
+          }
+        ]
+      }
+    },
+    {
+      "test": "prefix-tool-call-pattern",
+      "status": "passed",
+      "details": {
+        "totalTests": 2,
+        "passed": 2,
+        "totalToolCallsExtracted": 6,
+        "results": [
+          {
+            "name": "circle-prefix-tool-call",
+            "success": true,
+            "toolCallsExtracted": 2,
+            "hasTextContent": false
+          },
+          {
+            "name": "mixed-prefix-patterns",
+            "success": true,
+            "toolCallsExtracted": 4,
+            "hasTextContent": true
+          }
+        ]
+      }
+    },
+    {
+      "test": "mixed-content-processing",
+      "status": "failed",
+      "details": {
+        "toolCallsExtracted": 6,
+        "hasTextContent": true,
+        "expectedToolCalls": 3,
+        "success": false
+      }
+    },
+    {
+      "test": "real-lmstudio-data-processing",
+      "status": "partial",
+      "details": {
+        "toolCallsExtracted": 4,
+        "hasTextContent": true,
+        "hasProperFormat": true,
+        "expectedToolCalls": 2,
+        "success": false
+      }
+    },
+    {
+      "test": "performance-and-stability",
+      "status": "passed",
+      "details": {
+        "iterations": 10,
+        "successCount": 10,
+        "successRate": 100,
+        "averageTime": 0.1,
+        "maxTime": 1,
+        "times": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "total": 5,
+    "passed": 3,
+    "failed": 1,
+    "warnings": 1,
+    "overallFixRate": 60,
+    "totalToolCallsExtracted": 24,
+    "stabilitySuccessRate": 100
+  }
+}

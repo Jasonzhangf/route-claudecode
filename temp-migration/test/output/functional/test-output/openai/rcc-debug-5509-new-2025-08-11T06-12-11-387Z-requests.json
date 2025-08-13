@@ -1,0 +1,354 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "[10:08:54] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 89,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "[10:08:54] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 90,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "[10:08:54] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 91,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 103,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "[10:08:54] [DEBUG] [system] [599b8e57-9b93-46c2-97b0-e4f64bbcf110] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 109,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.386Z",
+    "data": {
+      "rawLine": "🚨 [modelscope-openai-key3] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [modelscope-openai-key3] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 114,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.386Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "🚨 [modelscope-openai-key2] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [modelscope-openai-key2] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 220,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 73
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 295,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:02] [DEBUG] [system] [00de6165-8159-421e-bd0a-26008699d34c] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 301,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:18] [DEBUG] [system] Provider modelscope-openai request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 485,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 72
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "🚨 [modelscope-openai-key3] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [modelscope-openai-key3] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 520,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 73
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 595,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "[10:09:19] [DEBUG] [system] [a6056170-ebb1-447d-b805-3d850771f560] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 601,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.387Z",
+    "data": {
+      "rawLine": "🚨 [modelscope-openai-key3] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [modelscope-openai-key3] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 606,
+      "fileName": "rcc-debug-5509-new.log",
+      "extractedAt": "2025-08-11T06:12:11.387Z",
+      "dataSize": 77
+    }
+  }
+]

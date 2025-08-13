@@ -1,0 +1,48 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.260Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"google-gemini\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 91,
+      "fileName": "rcc-server-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.260Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.260Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"google-gemini\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 145,
+      "fileName": "rcc-server-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.260Z",
+      "dataSize": 223
+    }
+  }
+]

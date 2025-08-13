@@ -1,0 +1,397 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "[10:47:47] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 29,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "[10:47:47] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 30,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "[10:47:52] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 65,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "[10:47:52] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 66,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"cd8b268d-c9e0-4725-9b4f-5906e44c8ea5\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 78,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 417
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"cd8b268d-c9e0-4725-9b4f-5906e44c8ea5\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 91,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 211
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"f6a652b8-aee9-4e0f-ad43-d05a5a8430d8\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 190,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 417
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"f6a652b8-aee9-4e0f-ad43-d05a5a8430d8\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 198,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 211
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "[10:47:57] [DEBUG] [system] [f6a652b8-aee9-4e0f-ad43-d05a5a8430d8] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 338,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"88c4b485-516a-4a92-b070-6ee619054b4f\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 377,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 417
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.367Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"88c4b485-516a-4a92-b070-6ee619054b4f\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 385,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.367Z",
+      "dataSize": 211
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.368Z",
+    "data": {
+      "rawLine": "[10:48:00] [DEBUG] [system] [88c4b485-516a-4a92-b070-6ee619054b4f] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 584,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.368Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.368Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"f2641ffe-bb5c-47c8-b95b-a7d69547fdbd\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 622,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.368Z",
+      "dataSize": 417
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.368Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"f2641ffe-bb5c-47c8-b95b-a7d69547fdbd\",\"provider\":\"codewhisperer-primary\",\"model\":\"CLAUDE_SONNET_4_20250514_V1_0\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 630,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.368Z",
+      "dataSize": 211
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.372Z",
+    "data": {
+      "rawLine": "[10:48:41] [DEBUG] [system] [f2641ffe-bb5c-47c8-b95b-a7d69547fdbd] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4049,
+      "fileName": "delivery-test-20250811-104745-codewhisperer-server.log",
+      "extractedAt": "2025-08-11T06:12:11.372Z",
+      "dataSize": 123
+    }
+  }
+]

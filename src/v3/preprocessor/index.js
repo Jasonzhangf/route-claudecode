@@ -4,6 +4,7 @@
  * @author Jason Zhang
  */
 import { getLogger } from '../logging/index.js';
+import { LMStudioOpenAIPreprocessor } from './lmstudio-openai-preprocessor.js';
 
 const logger = getLogger();
 
@@ -179,9 +180,24 @@ class CodeWhispererPreprocessor {
  */
 class PreprocessorManager {
     static createPreprocessor(type, config) {
+        // Auto-detect LM Studio based on endpoint for OpenAI-compatible providers
+        if (type === 'openai' && config && config.endpoint) {
+            const isLMStudio = config.endpoint.includes('localhost:1234') || 
+                              config.endpoint.includes('127.0.0.1:1234');
+            if (isLMStudio) {
+                logger.debug('Auto-detected LM Studio endpoint, using LMStudioOpenAIPreprocessor', {
+                    endpoint: config.endpoint
+                });
+                return new LMStudioOpenAIPreprocessor(config);
+            }
+        }
+        
         switch (type) {
             case 'openai':
                 return new OpenAICompatiblePreprocessor(config);
+            case 'lmstudio':
+                // LM Studio is OpenAI-compatible but needs special preprocessing
+                return new LMStudioOpenAIPreprocessor(config);
             case 'gemini':
                 return new GeminiPreprocessor(config);
             case 'codewhisperer':
@@ -199,6 +215,7 @@ export function getPreprocessor(type = 'openai', config = {}) {
 
 export {
     OpenAICompatiblePreprocessor,
+    LMStudioOpenAIPreprocessor,
     GeminiPreprocessor,
     CodeWhispererPreprocessor,
     PreprocessorManager

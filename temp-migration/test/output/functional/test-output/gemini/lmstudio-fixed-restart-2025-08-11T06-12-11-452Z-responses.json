@@ -1,0 +1,74 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.450Z",
+    "data": {
+      "rawLine": "[16:08:34] [DEBUG] [system] Registered patch: gemini-response-format-fix",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 13,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.450Z",
+      "dataSize": 72
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.450Z",
+    "data": {
+      "rawLine": "[16:08:34] [DEBUG] [system] Registered patch: gemini-response-format-fix",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 18,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.450Z",
+      "dataSize": 72
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.450Z",
+    "data": {
+      "rawLine": "[16:09:06] [DEBUG] [system] Registered patch: gemini-response-format-fix",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 69,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.450Z",
+      "dataSize": 72
+    }
+  }
+]

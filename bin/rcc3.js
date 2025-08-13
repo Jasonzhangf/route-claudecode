@@ -49,17 +49,6 @@ program
         console.log(`🎯 Categories: ${Object.keys(routingConfig || {}).length}`);
         // Initialize and start router server
         const server = new RouterServer(config);
-        // Graceful shutdown handling
-        process.on('SIGINT', async () => {
-            console.log('\\n🛑 Shutting down V3 Router Server...');
-            await server.stop();
-            process.exit(0);
-        });
-        process.on('SIGTERM', async () => {
-            console.log('\\n🛑 Shutting down V3 Router Server...');
-            await server.stop();
-            process.exit(0);
-        });
         await server.start();
         console.log('');
         console.log('✅ V3 Router Server is running with REAL provider connections!');
@@ -70,30 +59,36 @@ program
         console.log('   GET  /stats      - Statistics dashboard');
         console.log('');
         console.log('Press Ctrl+C to stop');
-        // 添加服务器状态监控
-        const monitorInterval = setInterval(async () => {
-            try {
-                const response = await fetch(`http://localhost:${config.server.port}/health`, {
-                    signal: AbortSignal.timeout(5000) // 5秒超时
-                });
-                if (!response.ok) {
-                    console.log('\n❌ Server health check failed, shutting down CLI...');
-                    clearInterval(monitorInterval);
-                    process.exit(1);
-                }
+        // 移除自动监控逻辑 - 避免不必要的CLI退出
+        // CLI应该保持运行直到用户手动退出 (Ctrl+C)
+        let monitorInterval; // 声明变量以便SIGINT处理器可以引用
+        // 全局错误处理 - 防止CLI因为Provider错误而崩溃
+        process.on('uncaughtException', (error) => {
+            console.error('\n⚠️  Uncaught Exception (CLI continues running):', error.message);
+            if (error.stack) {
+                console.error('   Stack trace saved to debug logs');
             }
-            catch (error) {
-                console.log('\n❌ Server connection lost, shutting down CLI...');
-                clearInterval(monitorInterval);
-                process.exit(1);
-            }
-        }, 10000); // 每10秒检查一次
-        // 清理监控器
-        process.on('SIGINT', () => {
-            clearInterval(monitorInterval);
+            // 不退出进程，继续运行
         });
-        process.on('SIGTERM', () => {
-            clearInterval(monitorInterval);
+        process.on('unhandledRejection', (reason, promise) => {
+            console.error('\n⚠️  Unhandled Rejection (CLI continues running):', reason);
+            console.error('   Promise:', promise);
+            // 不退出进程，继续运行
+        });
+        // Graceful shutdown handling (after monitorInterval is declared)
+        process.on('SIGINT', async () => {
+            console.log('\\n🛑 Shutting down V3 Router Server...');
+            if (monitorInterval)
+                clearInterval(monitorInterval);
+            await server.stop();
+            process.exit(0);
+        });
+        process.on('SIGTERM', async () => {
+            console.log('\\n🛑 Shutting down V3 Router Server...');
+            if (monitorInterval)
+                clearInterval(monitorInterval);
+            await server.stop();
+            process.exit(0);
         });
     }
     catch (error) {
@@ -255,16 +250,14 @@ program
     try {
         console.log('🔗 Connecting Claude Code to V3 Router...');
         console.log(`📡 Server: http://${options.host}:${options.port}`);
-        // 检查服务器是否运行
-        const healthResponse = await fetch(`http://${options.host}:${options.port}/health`);
-        if (!healthResponse.ok) {
-            console.log('❌ V3 Router Server is not responding');
-            console.log('   Please start the server first:');
-            console.log(`   rcc3 start <config> --port ${options.port}`);
-            process.exit(1);
+        // 检查服务器是否运行 (静默检查，不输出健康状态)
+        try {
+            await fetch(`http://${options.host}:${options.port}/health`);
+            console.log(`✅ V3 Router Server is available`);
         }
-        const health = await healthResponse.json();
-        console.log(`✅ V3 Router Server is healthy (${health.healthy || '?'}/${health.total || '?'} providers)`);
+        catch (error) {
+            console.log(`⚠️  V3 Router Server may not be running, but continuing...`);
+        }
         // 启动 Claude Code 连接
         const { spawn } = await import('child_process');
         // 设置 Claude Code 环境变量
@@ -288,24 +281,16 @@ program
             env,
             stdio: 'inherit'
         });
-        // 添加服务器健康监控 (for code command)
+        // 添加服务器健康监控 (for code command) - 静默监控
         const codeMonitorInterval = setInterval(async () => {
             try {
-                const response = await fetch(`http://${options.host}:${options.port}/health`, {
+                await fetch(`http://${options.host}:${options.port}/health`, {
                     signal: AbortSignal.timeout(5000) // 5秒超时
                 });
-                if (!response.ok) {
-                    console.log('\n❌ Router server health check failed, disconnecting Claude Code...');
-                    clearInterval(codeMonitorInterval);
-                    claudeProcess.kill('SIGTERM');
-                    process.exit(1);
-                }
+                // 静默健康检查，不输出任何信息
             }
             catch (error) {
-                console.log('\n❌ Router server connection lost, disconnecting Claude Code...');
-                clearInterval(codeMonitorInterval);
-                claudeProcess.kill('SIGTERM');
-                process.exit(1);
+                // 静默处理连接丢失，不输出任何信息
             }
         }, 10000); // 每10秒检查一次
         // 处理 Claude Code 进程
@@ -315,33 +300,67 @@ program
                 console.log('❌ Claude Code not found');
                 console.log('   Please install Claude Code first:');
                 console.log('   npm install -g @anthropics/claude-code');
-                process.exit(1);
+                console.log('⚠️  Staying connected for when Claude Code becomes available...');
+                // 不退出，继续等待
             }
             else {
                 console.error('❌ Failed to start Claude Code:', error.message);
-                process.exit(1);
+                console.log('⚠️  Staying connected for retry...');
+                // 不退出，继续等待
             }
         });
         claudeProcess.on('close', (code) => {
             clearInterval(codeMonitorInterval);
             console.log(`\n🔌 Claude Code disconnected (exit code: ${code})`);
-            process.exit(code || 0);
+            console.log('⚠️  rcc3 code session ended, but router connection remains active');
+            console.log('💡 You can restart Claude Code anytime with the same command');
+            // 不退出进程，让用户手动退出 (Ctrl+C)
         });
         // 优雅关闭处理
-        process.on('SIGINT', () => {
+        const codeExitHandler = () => {
             console.log('\n🛑 Disconnecting Claude Code...');
             clearInterval(codeMonitorInterval);
             claudeProcess.kill('SIGINT');
-        });
+            // 清理事件监听器
+            process.off('uncaughtException', uncaughtHandler);
+            process.off('unhandledRejection', rejectionHandler);
+            // 给Claude Code时间优雅退出
+            setTimeout(() => {
+                console.log('✅ rcc3 code disconnected gracefully');
+                process.exit(0);
+            }, 1000);
+        };
+        process.on('SIGINT', codeExitHandler);
         process.on('SIGTERM', () => {
             console.log('\n🛑 Disconnecting Claude Code...');
             clearInterval(codeMonitorInterval);
             claudeProcess.kill('SIGTERM');
+            // 清理事件监听器
+            process.off('uncaughtException', uncaughtHandler);
+            process.off('unhandledRejection', rejectionHandler);
+            // 给Claude Code时间优雅退出
+            setTimeout(() => {
+                console.log('✅ rcc3 code disconnected gracefully');
+                process.exit(0);
+            }, 1000);
         });
+        // 防止进程错误导致的崩溃（仅在code命令中）
+        const uncaughtHandler = (error) => {
+            console.error('⚠️  Uncaught Exception:', error.message);
+            // 不退出，继续运行
+        };
+        const rejectionHandler = (reason, promise) => {
+            console.error('⚠️  Unhandled Rejection at:', promise, 'reason:', reason);
+            // 不退出，继续运行
+        };
+        process.on('uncaughtException', uncaughtHandler);
+        process.on('unhandledRejection', rejectionHandler);
     }
     catch (error) {
         console.error('❌ Failed to connect Claude Code:', error instanceof Error ? error.message : error);
-        process.exit(1);
+        console.log('⚠️  Connection failed, but rcc3 code remains running');
+        console.log('💡 You can try again or press Ctrl+C to exit');
+        // 不退出，让用户决定
     }
 });
 // Parse command line arguments

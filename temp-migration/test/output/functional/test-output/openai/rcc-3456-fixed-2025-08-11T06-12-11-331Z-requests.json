@@ -1,0 +1,4210 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "[11:14:17] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 161,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "[11:14:17] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 162,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "[11:14:17] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 163,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"7b984376-7853-4523-aec1-7753238fac5b\",\"provider\":\"shuaihong-openai\",\"model\":\"gpt-4o-mini\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 174,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"7b984376-7853-4523-aec1-7753238fac5b\",\"provider\":\"shuaihong-openai\",\"model\":\"gpt-4o-mini\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 182,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 196,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 242,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔍 [OPENAI-TRANSFORMER-DEBUG] Full converted request: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 248,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 55
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "[11:14:17] [DEBUG] [system] [7b984376-7853-4523-aec1-7753238fac5b] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 260,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "[11:14:24] [DEBUG] [system] Provider shuaihong-openai request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 310,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"8d8d992f-6d22-4608-aeb8-4505b013a36e\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 342,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"8d8d992f-6d22-4608-aeb8-4505b013a36e\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 435,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 449,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"82662d40-03d3-4fba-8f43-1498d4cafc52\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 691,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"82662d40-03d3-4fba-8f43-1498d4cafc52\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 699,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 713,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.313Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"5cb5d10f-c1b7-4b1e-95d8-34d8d14ac33a\",\"provider\":\"shuaihong-openai\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 787,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.313Z",
+      "dataSize": 404
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.314Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"5cb5d10f-c1b7-4b1e-95d8-34d8d14ac33a\",\"provider\":\"shuaihong-openai\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1152,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.314Z",
+      "dataSize": 198
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.314Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1166,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.314Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.314Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1246,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.314Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.314Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"2539fe4c-1f69-4e92-bd18-f0178aa13b93\",\"provider\":\"shuaihong-openai\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1365,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.314Z",
+      "dataSize": 404
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.315Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"2539fe4c-1f69-4e92-bd18-f0178aa13b93\",\"provider\":\"shuaihong-openai\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1730,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.315Z",
+      "dataSize": 198
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.315Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1744,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.315Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.315Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1820,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.315Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.315Z",
+    "data": {
+      "rawLine": "🔍 [OPENAI-TRANSFORMER-DEBUG] Full converted request: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1826,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.315Z",
+      "dataSize": 55
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "[11:14:56] [DEBUG] [system] [2539fe4c-1f69-4e92-bd18-f0178aa13b93] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2376,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2381,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"a2be6421-85bc-411c-a019-6e5d7d1e95f5\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2454,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"a2be6421-85bc-411c-a019-6e5d7d1e95f5\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2547,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2561,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "[11:15:00] [DEBUG] [system] Provider shuaihong-openai request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2824,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2830,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"ad2d531a-cde8-469a-98cc-d43e560f80ea\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2903,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.317Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"ad2d531a-cde8-469a-98cc-d43e560f80ea\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2911,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.317Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2925,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2975,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"4fdda5ce-c789-4b01-ac81-dbbdbe3c06eb\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3048,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"4fdda5ce-c789-4b01-ac81-dbbdbe3c06eb\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3141,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3155,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3375,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"89c4b9fc-0d22-44cf-8855-6ffb255d6b51\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3448,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"89c4b9fc-0d22-44cf-8855-6ffb255d6b51\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3456,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3470,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3520,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3570,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"f2065d4c-dd3c-4b64-ac47-78c033b52f70\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3643,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"f2065d4c-dd3c-4b64-ac47-78c033b52f70\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3651,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3665,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.318Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"7c6ee532-edae-430d-9278-92222a7a7bbc\",\"provider\":\"shuaihong-openai\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3731,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.318Z",
+      "dataSize": 404
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.319Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"7c6ee532-edae-430d-9278-92222a7a7bbc\",\"provider\":\"shuaihong-openai\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4095,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.319Z",
+      "dataSize": 198
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.319Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4109,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.319Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.319Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"93a21500-8207-467b-ace7-6ffc362f1126\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "debug",
+        "message": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"93a21500-8207-467b-ace7-6ffc362f1126\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4212,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.319Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.319Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"93a21500-8207-467b-ace7-6ffc362f1126\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"93a21500-8207-467b-ace7-6ffc362f1126\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4305,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.319Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.319Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4319,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.319Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.320Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"b39e9fc3-9f77-419c-860a-b748712524cc\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4562,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.320Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.320Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"b39e9fc3-9f77-419c-860a-b748712524cc\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4570,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.320Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.320Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4584,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.320Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.320Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4634,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.320Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.320Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"5963d758-59d5-49a5-a34c-426c6d6dba12\",\"provider\":\"modelscope-openai-key4\",\"model\":\"Qwen/Qwen2.5-14B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen2.5-14B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[",
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 4753,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.320Z",
+      "dataSize": 414
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.321Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"5963d758-59d5-49a5-a34c-426c6d6dba12\",\"provider\":\"modelscope-openai-key4\",\"model\":\"Qwen/Qwen2.5-14B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen2.5-14B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5117,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.321Z",
+      "dataSize": 208
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.321Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5131,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.321Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.321Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5207,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.321Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.321Z",
+    "data": {
+      "rawLine": "🔍 [OPENAI-TRANSFORMER-DEBUG] Full converted request: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5213,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.321Z",
+      "dataSize": 55
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.322Z",
+    "data": {
+      "rawLine": "[11:15:17] [DEBUG] [system] [5963d758-59d5-49a5-a34c-426c6d6dba12] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5771,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.322Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.322Z",
+    "data": {
+      "rawLine": "🚨 [modelscope-openai-key4] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [modelscope-openai-key4] NON-STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5776,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.322Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.322Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5818,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.322Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.322Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5868,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.322Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5918,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"ae5ca64e-1255-4510-8fd5-1117dca59272\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5992,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"ae5ca64e-1255-4510-8fd5-1117dca59272\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6000,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6014,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"e133fd58-fe57-4e6c-aa0d-b15a5c12e865\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6080,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"e133fd58-fe57-4e6c-aa0d-b15a5c12e865\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6173,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6187,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"d216bbc6-1108-451c-91fa-174e79886138\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6431,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"d216bbc6-1108-451c-91fa-174e79886138\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6439,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6453,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6503,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"7267ed02-c4b2-42a9-ac19-bafe14e04132\",\"provider\":\"modelscope-openai-key3\",\"model\":\"Qwen/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[",
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6577,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 424
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.323Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"7267ed02-c4b2-42a9-ac19-bafe14e04132\",\"provider\":\"modelscope-openai-key3\",\"model\":\"Qwen/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6585,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.323Z",
+      "dataSize": 218
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6599,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [modelscope-openai-key3] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [modelscope-openai-key3] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6641,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 73
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6691,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6741,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"e6627d99-94b2-4623-9852-a26f7bf1c663\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6815,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"e6627d99-94b2-4623-9852-a26f7bf1c663\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6908,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6922,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"c7f9db3f-1f6c-431b-b796-bf76a805c9dc\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7166,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"c7f9db3f-1f6c-431b-b796-bf76a805c9dc\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7174,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7188,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7238,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7288,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"9411eeb6-1491-4d52-ac49-d18791db135f\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7362,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.324Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"9411eeb6-1491-4d52-ac49-d18791db135f\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7455,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.324Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7469,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"f1d6c01a-790b-4d1f-98c8-edbbe1225777\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7713,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"f1d6c01a-790b-4d1f-98c8-edbbe1225777\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7721,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7735,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7785,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7835,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"8c7c63cd-cd4f-46ff-a3c8-375c369653d2\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7909,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"8c7c63cd-cd4f-46ff-a3c8-375c369653d2\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7917,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7931,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.325Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"42c4b220-c317-4a99-956b-ca089875b089\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8005,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.325Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"42c4b220-c317-4a99-956b-ca089875b089\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8098,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8112,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8332,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8382,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"90f95e29-9809-4798-af9f-d07cf9555c82\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8456,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"90f95e29-9809-4798-af9f-d07cf9555c82\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8464,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8478,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8528,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"46859085-69cd-41d2-8871-f5f0a622445d\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8602,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"46859085-69cd-41d2-8871-f5f0a622445d\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8695,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.326Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8709,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.326Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"5472c7cb-2277-4316-abb1-e6b0514f2a1a\",\"provider\":\"modelscope-openai-key2\",\"model\":\"Qwen/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[",
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8985,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 424
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"5472c7cb-2277-4316-abb1-e6b0514f2a1a\",\"provider\":\"modelscope-openai-key2\",\"model\":\"Qwen/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen3-Coder-480B-A35B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 8993,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 218
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9007,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] BaseRequest -> OpenAI: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9075,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🔍 [OPENAI-TRANSFORMER-DEBUG] Full converted request: {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9081,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 55
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "[11:17:47] [DEBUG] [system] [5472c7cb-2277-4316-abb1-e6b0514f2a1a] [transformer] Applied OpenAI request transformation",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9301,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "[11:17:49] [DEBUG] [system] Provider modelscope-openai-key2 request succeeded",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9350,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9356,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"e62bd254-0a37-4408-b1e7-1228084b7e3e\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9430,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"e62bd254-0a37-4408-b1e7-1228084b7e3e\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9438,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9452,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.327Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9502,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.327Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9683,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "   Error: Missing openaiRequest in metadata - transformer step required",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Missing openaiRequest in metadata - transformer step required",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9904,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "   Error Message: Missing openaiRequest in metadata - transformer step required",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error Message: Missing openaiRequest in metadata - transformer step required",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9913,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "  \"message\": \"Missing openaiRequest in metadata - transformer step required\",",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9925,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "   Error: Missing openaiRequest in metadata - transformer step required",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Missing openaiRequest in metadata - transformer step required",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9938,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"f3129438-04a0-43fc-918d-3c666ef9c06d\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9974,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"f3129438-04a0-43fc-918d-3c666ef9c06d\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9982,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 9996,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"f04d8f9a-c7e8-4827-b886-2e39bad87056\",\"provider\":\"modelscope-openai-key1\",\"model\":\"Qwen/Qwen2.5-14B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen2.5-14B-Instruct\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[",
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10070,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 414
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"f04d8f9a-c7e8-4827-b886-2e39bad87056\",\"provider\":\"modelscope-openai-key1\",\"model\":\"Qwen/Qwen2.5-14B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": "/Qwen2.5-14B-Instruct\",\"hasData\":true,\"debugMode\":false}",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10163,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 208
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.328Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10177,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.328Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🚨 [modelscope-openai-key1] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [modelscope-openai-key1] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10397,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 73
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"5b95085d-61a2-404d-bbd2-7a3e907dd987\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "debug",
+        "message": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"5b95085d-61a2-404d-bbd2-7a3e907dd987\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10471,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"5b95085d-61a2-404d-bbd2-7a3e907dd987\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"5b95085d-61a2-404d-bbd2-7a3e907dd987\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10568,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10582,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10810,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10860,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.329Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"8c0c2e5b-e16d-4923-8748-306b7dc86a9d\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 10934,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.329Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"8c0c2e5b-e16d-4923-8748-306b7dc86a9d\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11031,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11045,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11273,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"5e0a9ab5-512f-452d-a747-7e23d19a3753\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11347,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"5e0a9ab5-512f-452d-a747-7e23d19a3753\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11444,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11458,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11686,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 67
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.330Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 11871,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.330Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "   Error: Missing openaiRequest in metadata - transformer step required",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Missing openaiRequest in metadata - transformer step required",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12100,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "   Error Message: Missing openaiRequest in metadata - transformer step required",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error Message: Missing openaiRequest in metadata - transformer step required",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12109,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "  \"message\": \"Missing openaiRequest in metadata - transformer step required\",",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12121,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "   Error: Missing openaiRequest in metadata - transformer step required",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "   Error: Missing openaiRequest in metadata - transformer step required",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12134,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"3c621d37-af2e-41f1-90c3-41b25943fbe4\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12170,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"3c621d37-af2e-41f1-90c3-41b25943fbe4\",\"provider\":\"shuaihong-openai\",\"model\":\"DeepSeek-V3\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12267,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input {",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12281,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 76
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.331Z",
+    "data": {
+      "rawLine": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": {
+        "level": null,
+        "message": "🚨 [shuaihong-openai] STREAMING REQUEST FAILED - NO SILENT FAILURE:",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12511,
+      "fileName": "rcc-3456-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.331Z",
+      "dataSize": 67
+    }
+  }
+]

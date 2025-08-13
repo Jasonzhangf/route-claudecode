@@ -1,0 +1,123 @@
+{
+  "timestamp": "2025-08-12T06:43:16.288Z",
+  "testType": "provider-integration-v3.0",
+  "providers": [
+    "modelscope",
+    "shuaihong"
+  ],
+  "results": {
+    "modelscope": {
+      "passed": 9,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "配置文件存在性",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "配置文件加载",
+          "status": "✅ PASS",
+          "details": "Config loaded: ModelScope OpenAI-Compatible Configuration v3.0"
+        },
+        {
+          "name": "v3.0版本验证",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "六层架构配置",
+          "status": "✅ PASS",
+          "details": "Layers enabled: client,router,postProcessor,transformer,providerProtocol,preprocessor,server"
+        },
+        {
+          "name": "零硬编码合规性",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "Preprocessing-Only修改",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "ModelScope特定配置",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "Patch系统配置",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "配置架构一致性",
+          "status": "✅ PASS",
+          "details": "MS layers: 7, SH layers: 7"
+        }
+      ]
+    },
+    "shuaihong": {
+      "passed": 10,
+      "failed": 0,
+      "tests": [
+        {
+          "name": "配置文件存在性",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "配置文件加载",
+          "status": "✅ PASS",
+          "details": "Config loaded: ShuaiHong OpenAI-Compatible Configuration v3.0"
+        },
+        {
+          "name": "v3.0版本验证",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "六层架构配置",
+          "status": "✅ PASS",
+          "details": "Layers enabled: client,router,postProcessor,transformer,providerProtocol,preprocessor,server"
+        },
+        {
+          "name": "零硬编码合规性",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "Preprocessing-Only修改",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "ShuaiHong特定配置",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "Patch系统配置",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "多模型支持配置",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        },
+        {
+          "name": "Debug配置一致性",
+          "status": "✅ PASS",
+          "details": "Test passed"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "totalTests": 19,
+    "totalPassed": 19,
+    "totalFailed": 0,
+    "overallPassRate": 100
+  }
+}

@@ -1,0 +1,252 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"1e42af50-7677-4124-9330-963c5607b564\",\"provider\":\"google-gemini\",\"model\":\"gemini-2.5-pro\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 76,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 394
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"1e42af50-7677-4124-9330-963c5607b564\",\"provider\":\"google-gemini\",\"model\":\"gemini-2.5-pro\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 84,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 188
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "[12:08:59] [DEBUG] [system] [1e42af50-7677-4124-9330-963c5607b564] [provider] [TRACE] Sending request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 110,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 111
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "[12:08:59] [INFO] [system] [1e42af50-7677-4124-9330-963c5607b564] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 111,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.263Z",
+    "data": {
+      "rawLine": "🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! {\"requestId\":\"4059e974-8004-41e4-829a-ef2f2530ca45\",\"provider\":\"google-gemini\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"config\":{\"enabled\":true,\"debugMode\":false,\"forceAllInputs\":false,\"bypassConditions\":[],\"performanceTracking\":true,\"cacheResults\":false,\"validateFinishReason\":true,\"strictFinishReasonValidation\":false}}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 138,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.263Z",
+      "dataSize": 401
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "🔥 [PROCESS-INPUT-ENTRY] processInput called with: {\"requestId\":\"4059e974-8004-41e4-829a-ef2f2530ca45\",\"provider\":\"google-gemini\",\"model\":\"gemini-2.5-flash-lite\",\"hasData\":true,\"debugMode\":false}",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 459,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 195
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:09] [DEBUG] [system] [4059e974-8004-41e4-829a-ef2f2530ca45] [provider] [TRACE] Sending request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 485,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 111
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:09] [INFO] [system] [4059e974-8004-41e4-829a-ef2f2530ca45] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 486,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:14] [INFO] [system] [4059e974-8004-41e4-829a-ef2f2530ca45] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 500,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.264Z",
+    "data": {
+      "rawLine": "[12:09:18] [INFO] [system] [1e42af50-7677-4124-9330-963c5607b564] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 565,
+      "fileName": "rcc-clean-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.264Z",
+      "dataSize": 130
+    }
+  }
+]

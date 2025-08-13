@@ -1,0 +1,50 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.389Z",
+    "data": {
+      "rawLine": "[10:04:56] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 54,
+      "fileName": "rcc-debug-5509.log",
+      "extractedAt": "2025-08-11T06:12:11.389Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.389Z",
+    "data": {
+      "rawLine": "[10:04:56] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 55,
+      "fileName": "rcc-debug-5509.log",
+      "extractedAt": "2025-08-11T06:12:11.389Z",
+      "dataSize": 81
+    }
+  }
+]

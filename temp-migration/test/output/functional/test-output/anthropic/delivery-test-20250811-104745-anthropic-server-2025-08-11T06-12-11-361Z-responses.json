@@ -1,0 +1,450 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "[10:48:58] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:58] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 115,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 94
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 122,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 134,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 139
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 140,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 104
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "[10:48:59] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:59] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 205,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 94
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 212,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 224,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 139
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 229,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 104
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "[10:48:59] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:59] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 295,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 94
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 302,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 314,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 139
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 319,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 104
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "[10:49:00] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:49:00] [WARN] [system] Failed response recorded: anthropic-test/claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 385,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 94
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "  \"message\": \"Anthropic API error (404): {\\\"type\\\":\\\"error\\\",\\\"error\\\":{\\\"type\\\":\\\"not_found_error\\\",\\\"message\\\":\\\"Not Found\\\"}}\",",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 392,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 130
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "   Error: Model or endpoint not found: Anthropic API error (404): {\"type\":\"error\",\"error\":{\"type\":\"not_found_error\",\"message\":\"Not Found\"}}",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 404,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 139
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: anthropic-test, Model: claude-3-5-sonnet-20241022",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 409,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 104
+    }
+  }
+]

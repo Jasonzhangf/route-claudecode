@@ -1,0 +1,25 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.429Z",
+    "data": {
+      "rawLine": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-openai-lmstudio-qwen3-5506.json",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5,
+      "fileName": "lmstudio-service.log",
+      "extractedAt": "2025-08-11T06:12:11.429Z",
+      "dataSize": 124
+    }
+  }
+]

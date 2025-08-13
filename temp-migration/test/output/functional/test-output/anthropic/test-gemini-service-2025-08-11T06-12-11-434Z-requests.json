@@ -1,0 +1,83 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.434Z",
+    "data": {
+      "rawLine": "[19:39:19] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 43,
+      "fileName": "test-gemini-service.log",
+      "extractedAt": "2025-08-11T06:12:11.434Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.434Z",
+    "data": {
+      "rawLine": "[19:39:19] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 44,
+      "fileName": "test-gemini-service.log",
+      "extractedAt": "2025-08-11T06:12:11.434Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.434Z",
+    "data": {
+      "rawLine": "[19:40:54] [ERROR] [error] [0132c342-4f5a-4de4-b577-5f1066a21ac2] [output] Failed to process response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[19:40:54] [ERROR] [error] [0132c342-4f5a-4de4-b577-5f1066a21ac2] [output] Failed to process response to Anthropic format",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 94,
+      "fileName": "test-gemini-service.log",
+      "extractedAt": "2025-08-11T06:12:11.434Z",
+      "dataSize": 121
+    }
+  }
+]

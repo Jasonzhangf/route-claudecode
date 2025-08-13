@@ -1,0 +1,25 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.389Z",
+    "data": {
+      "rawLine": "[10:05:19] [ERROR] [error] [session_1754877919441_ct4bdor9l:conv_1754877919441_2wzl5fvem:1:1754877919444:3gb8] [pure-api-handler] Pure OpenAI API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:05:19] [ERROR] [error] [session_1754877919441_ct4bdor9l:conv_1754877919441_2wzl5fvem:1:1754877919444:3gb8] [pure-api-handler] Pure OpenAI API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 112,
+      "fileName": "rcc-debug-5509.log",
+      "extractedAt": "2025-08-11T06:12:11.389Z",
+      "dataSize": 157
+    }
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "id": "j4c60sea",
+  "type": "rate_limit_threshold",
+  "timestamp": "2025-08-11T07:01:29.499Z",
+  "severity": "high",
+  "data": {
+    "provider": "test-provider",
+    "count": 4,
+    "threshold": 3,
+    "timeWindow": "1 hour"
+  },
+  "resolved": false
+}

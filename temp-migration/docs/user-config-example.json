@@ -1,0 +1,80 @@
+{
+  "environment": "development",
+  "debug": true,
+  "server": {
+    "port": 3000,
+    "host": "localhost",
+    "cors": {
+      "enabled": true,
+      "origins": ["http://localhost:3000", "http://localhost:3001"]
+    }
+  },
+  "providers": {
+    "anthropic": {
+      "enabled": true,
+      "apiKey": "sk-ant-api03-your-real-anthropic-key-here",
+      "baseURL": "https://api.anthropic.com/v1",
+      "timeout": 30000,
+      "retries": 3,
+      "rateLimits": {
+        "requestsPerMinute": 60,
+        "tokensPerMinute": 100000
+      }
+    },
+    "openai": {
+      "enabled": true,
+      "apiKey": "sk-your-real-openai-key-here",
+      "organizationId": "org-your-org-id-here",
+      "baseURL": "https://api.openai.com/v1",
+      "timeout": 30000,
+      "retries": 3,
+      "rateLimits": {
+        "requestsPerMinute": 100,
+        "tokensPerMinute": 150000
+      }
+    },
+    "gemini": {
+      "enabled": true,
+      "apiKey": "your-real-gemini-key-here",
+      "baseURL": "https://generativelanguage.googleapis.com/v1",
+      "timeout": 30000,
+      "retries": 3,
+      "rateLimits": {
+        "requestsPerMinute": 60,
+        "tokensPerMinute": 120000
+      }
+    },
+    "codewhisperer": {
+      "enabled": true,
+      "accessKeyId": "your-real-aws-access-key-here",
+      "secretAccessKey": "your-real-aws-secret-key-here",
+      "region": "us-east-1",
+      "timeout": 30000,
+      "retries": 3,
+      "rateLimits": {
+        "requestsPerMinute": 30,
+        "tokensPerMinute": 80000
+      }
+    }
+  },
+  "database": {
+    "path": "~/.route-claude-code/dev-database",
+    "maxSize": "500MB",
+    "backupInterval": "1h",
+    "retentionDays": 7
+  },
+  "logging": {
+    "level": "debug",
+    "console": true,
+    "file": "~/.route-claude-code/logs/development.log",
+    "maxSize": "50MB",
+    "maxFiles": 3
+  },
+  "rateLimits": {
+    "enabled": false,
+    "global": {
+      "requestsPerMinute": 1000,
+      "tokensPerMinute": 1000000
+    }
+  }
+}

@@ -1,0 +1,531 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.450Z",
+    "data": {
+      "rawLine": "[16:08:34] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 38,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.450Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.450Z",
+    "data": {
+      "rawLine": "[16:08:34] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 39,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.450Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.450Z",
+    "data": {
+      "rawLine": "[16:09:06] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 72,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.450Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.450Z",
+    "data": {
+      "rawLine": "[16:09:06] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 73,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.450Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.451Z",
+    "data": {
+      "rawLine": "[16:09:06] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 115,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.451Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.451Z",
+    "data": {
+      "rawLine": "[16:09:06] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 116,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.451Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:09:30] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 824,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:09:30] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 825,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:09:52] [DEBUG] [system] [session_1754813346759_7lwdnj44v:conv_1754813346759_ru7wt0fei:3:1754813370987:tjey] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 941,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:24] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 967,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:24] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 968,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:25] [DEBUG] [system] [session_1754813424868_8gsubttqf:conv_1754813424868_0avl0gutr:1:1754813424870:jlr0] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1080,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:26] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1106,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:26] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1107,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:33] [DEBUG] [system] [session_1754813424868_8gsubttqf:conv_1754813424868_0avl0gutr:2:1754813426505:0a6h] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1212,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:34] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1238,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:34] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1239,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:34] [DEBUG] [system] [session_1754813424868_8gsubttqf:conv_1754813424868_0avl0gutr:3:1754813434205:zp1z] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1351,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:35] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1377,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:35] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1378,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "[16:10:36] [DEBUG] [system] [session_1754813424868_8gsubttqf:conv_1754813424868_0avl0gutr:4:1754813435833:kcad] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1490,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 168
+    }
+  }
+]

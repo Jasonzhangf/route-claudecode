@@ -1,0 +1,45 @@
+{
+  "id": "mem-1754901249389-402576a2",
+  "timestamp": "2025-08-11T08:34:09.389Z",
+  "category": "problem-solutions",
+  "type": "implementation",
+  "title": "Tool Call Parsing Issue Resolution",
+  "summary": "Fixed tool call parsing failures in streaming responses by implementing intelligent buffering strategies and full buffer mode for tool calls.",
+  "content": "Fixed tool call parsing failures in streaming responses by implementing intelligent buffering strategies and full buffer mode for tool calls.",
+  "metadata": {
+    "project": "claude-code-router",
+    "version": "3.0.0",
+    "author": "Project Memory System",
+    "priority": "medium",
+    "status": "active",
+    "tags": [
+      "tool-calls",
+      "parsing",
+      "streaming",
+      "buffer"
+    ],
+    "correlatedEntries": []
+  },
+  "context": {
+    "task": null,
+    "component": null,
+    "provider": null,
+    "environment": "development",
+    "session": null
+  },
+  "problemSolution": null,
+  "architecturalDecision": null,
+  "experience": {
+    "difficulty": "medium",
+    "timeSpent": null,
+    "successRate": null,
+    "lessonsLearned": [],
+    "recommendedActions": []
+  },
+  "references": {
+    "codeFiles": [],
+    "documentation": [],
+    "externalLinks": [],
+    "relatedTasks": []
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "testName": "Zero-Hardcoding Configuration Compliance",
+  "startTime": "2025-08-12T01:58:22.659Z",
+  "tests": [
+    {
+      "name": "Environment Variable Configuration Loading",
+      "status": "failed",
+      "details": [],
+      "timestamp": "2025-08-12T01:58:22.660Z",
+      "error": "Cannot find module '/Users/fanzhang/Documents/github/route-claudecode/src/v3/config/zero-hardcoding-config-manager.js' imported from /Users/fanzhang/Documents/github/route-claudecode/test/functional/test-zero-hardcoding-config-compliance.js"
+    },
+    {
+      "name": "Explicit Error Handling (NO Fallbacks)",
+      "status": "failed",
+      "details": [],
+      "timestamp": "2025-08-12T01:58:22.660Z",
+      "error": "Cannot find module '/Users/fanzhang/Documents/github/route-claudecode/src/v3/config/zero-hardcoding-config-manager.js' imported from /Users/fanzhang/Documents/github/route-claudecode/test/functional/test-zero-hardcoding-config-compliance.js"
+    },
+    {
+      "name": "Environment-Based Configuration Separation",
+      "status": "failed",
+      "details": [],
+      "timestamp": "2025-08-12T01:58:22.661Z",
+      "error": "Cannot find module '/Users/fanzhang/Documents/github/route-claudecode/src/v3/config/zero-hardcoding-config-manager.js' imported from /Users/fanzhang/Documents/github/route-claudecode/test/functional/test-zero-hardcoding-config-compliance.js"
+    },
+    {
+      "name": "Configuration-Driven Error Messages",
+      "status": "failed",
+      "details": [],
+      "timestamp": "2025-08-12T01:58:22.661Z",
+      "error": "Cannot find module '/Users/fanzhang/Documents/github/route-claudecode/src/v3/config/zero-hardcoding-config-manager.js' imported from /Users/fanzhang/Documents/github/route-claudecode/test/functional/test-zero-hardcoding-config-compliance.js"
+    },
+    {
+      "name": "Configuration Validation System",
+      "status": "failed",
+      "details": [],
+      "timestamp": "2025-08-12T01:58:22.661Z",
+      "error": "Cannot find module '/Users/fanzhang/Documents/github/route-claudecode/src/v3/config/zero-hardcoding-config-manager.js' imported from /Users/fanzhang/Documents/github/route-claudecode/test/functional/test-zero-hardcoding-config-compliance.js"
+    }
+  ],
+  "passed": 0,
+  "failed": 5,
+  "summary": {
+    "total": 5,
+    "passed": 0,
+    "failed": 5,
+    "compliance": "NON-COMPLIANT"
+  },
+  "endTime": "2025-08-12T01:58:22.661Z"
+}

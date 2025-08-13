@@ -1,0 +1,48 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.401Z",
+    "data": {
+      "rawLine": "🎯 [SERVER] Creating OpenAI client for LMStudio: { providerId: 'lmstudio-glm', type: 'lmstudio' }",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 27,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.401Z",
+      "dataSize": 97
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "✅ [SERVER] OpenAI client for LMStudio created: { providerId: 'lmstudio-glm', name: 'lmstudio-glm' }",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 35,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 99
+    }
+  }
+]

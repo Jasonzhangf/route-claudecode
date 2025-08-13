@@ -1,0 +1,369 @@
+{
+  "sessionId": "pipeline-test-1754891610630",
+  "startTime": "2025-08-11T05:53:30.630Z",
+  "mockupMode": true,
+  "realImplementation": false,
+  "mode": "mockup",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Client Layer Validation",
+      "layer": "client",
+      "module": "src/client/index.js",
+      "startTime": "2025-08-11T05:53:30.631Z",
+      "status": "passed",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [
+        {
+          "test": "Request Authentication",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Input Validation",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Rate Limiting Check",
+          "status": "passed",
+          "mockup": true
+        }
+      ],
+      "output": {
+        "layer": "client",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.631Z",
+          "inputData": {
+            "mockInput": "sample-client-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-client-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 78
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.631Z"
+    },
+    {
+      "step": 2,
+      "name": "Router Layer Testing",
+      "layer": "router",
+      "module": "src/router/index.js",
+      "startTime": "2025-08-11T05:53:30.632Z",
+      "status": "passed",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [
+        {
+          "test": "Route Resolution",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Provider Selection",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Load Balancing",
+          "status": "passed",
+          "mockup": true
+        }
+      ],
+      "output": {
+        "layer": "router",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.632Z",
+          "inputData": {
+            "mockInput": "sample-router-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-router-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 61
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.632Z"
+    },
+    {
+      "step": 3,
+      "name": "Post-processor Validation",
+      "layer": "post-processor",
+      "module": "src/post-processor/index.js",
+      "startTime": "2025-08-11T05:53:30.632Z",
+      "status": "passed",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [
+        {
+          "test": "Response Formatting",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Error Handling",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Output Validation",
+          "status": "passed",
+          "mockup": true
+        }
+      ],
+      "output": {
+        "layer": "post-processor",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.632Z",
+          "inputData": {
+            "mockInput": "sample-post-processor-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-post-processor-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 40
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.632Z"
+    },
+    {
+      "step": 4,
+      "name": "Transformer Testing",
+      "layer": "transformer",
+      "module": "src/transformer/index.js",
+      "startTime": "2025-08-11T05:53:30.633Z",
+      "status": "passed",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [
+        {
+          "test": "Format Conversion",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Schema Validation",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Data Integrity",
+          "status": "passed",
+          "mockup": true
+        }
+      ],
+      "output": {
+        "layer": "transformer",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.633Z",
+          "inputData": {
+            "mockInput": "sample-transformer-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-transformer-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 72
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.633Z"
+    },
+    {
+      "step": 5,
+      "name": "Provider-Protocol Layer Validation",
+      "layer": "provider-protocol",
+      "module": "src/provider/index.js",
+      "startTime": "2025-08-11T05:53:30.633Z",
+      "status": "unknown",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [],
+      "output": {
+        "layer": "provider-protocol",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.633Z",
+          "inputData": {
+            "mockInput": "sample-provider-protocol-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-provider-protocol-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 18
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.633Z"
+    },
+    {
+      "step": 6,
+      "name": "Preprocessor Testing",
+      "layer": "preprocessor",
+      "module": "src/preprocessor/index.js",
+      "startTime": "2025-08-11T05:53:30.633Z",
+      "status": "passed",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [
+        {
+          "test": "Input Preprocessing",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Request Sanitization",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Context Preparation",
+          "status": "passed",
+          "mockup": true
+        }
+      ],
+      "output": {
+        "layer": "preprocessor",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.633Z",
+          "inputData": {
+            "mockInput": "sample-preprocessor-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-preprocessor-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 45
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.633Z"
+    },
+    {
+      "step": 7,
+      "name": "Server Layer Validation",
+      "layer": "server",
+      "module": "src/server/index.js",
+      "startTime": "2025-08-11T05:53:30.633Z",
+      "status": "passed",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [
+        {
+          "test": "Server Health",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Resource Management",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Service Discovery",
+          "status": "passed",
+          "mockup": true
+        }
+      ],
+      "output": {
+        "layer": "server",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.633Z",
+          "inputData": {
+            "mockInput": "sample-server-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-server-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 51
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.633Z"
+    },
+    {
+      "step": 8,
+      "name": "End-to-end Integration Testing",
+      "layer": "integration",
+      "module": null,
+      "startTime": "2025-08-11T05:53:30.633Z",
+      "status": "passed",
+      "mockupMode": true,
+      "realImplementation": false,
+      "validations": [
+        {
+          "test": "End-to-End Flow",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Cross-Layer Communication",
+          "status": "passed",
+          "mockup": true
+        },
+        {
+          "test": "Performance Metrics",
+          "status": "passed",
+          "mockup": true
+        }
+      ],
+      "output": {
+        "layer": "integration",
+        "mockupData": {
+          "timestamp": "2025-08-11T05:53:30.633Z",
+          "inputData": {
+            "mockInput": "sample-integration-input"
+          },
+          "processedData": {
+            "mockOutput": "sample-integration-output"
+          },
+          "metadata": {
+            "version": "v3.0-mockup",
+            "processingTime": 89
+          }
+        }
+      },
+      "duration": 0,
+      "errors": [],
+      "endTime": "2025-08-11T05:53:30.633Z"
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 7,
+    "failed": 1,
+    "totalDuration": 0,
+    "mockupMode": true
+  },
+  "endTime": "2025-08-11T05:53:30.634Z"
+}
