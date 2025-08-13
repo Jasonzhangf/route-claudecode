@@ -32,6 +32,13 @@ class TransformationManager {
         this.transformers.set(providerType, transformer);
         return transformer;
       }
+
+      if (providerType === 'codewhisperer') {
+        const { CodewhispererTransformer } = await import('./codewhisperer-transformer.js');
+        const transformer = new CodewhispererTransformer();
+        this.transformers.set(providerType, transformer);
+        return transformer;
+      }
       
       // 其他provider类型可以在这里添加
       
@@ -59,6 +66,10 @@ class TransformationManager {
       if (context.provider === 'gemini' && transformer.transformAnthropicToGemini) {
         return transformer.transformAnthropicToGemini(data);
       }
+
+      if (context.provider === 'codewhisperer' && transformer.transformAnthropicToCodewhisperer) {
+        return transformer.transformAnthropicToCodewhisperer(data);
+      }
       
       // 默认直接返回
       return data;
@@ -84,6 +95,10 @@ class TransformationManager {
     try {
       if (context.provider === 'gemini' && transformer.transformGeminiToAnthropic) {
         return transformer.transformGeminiToAnthropic(data, context.originalRequest);
+      }
+
+      if (context.provider === 'codewhisperer' && transformer.transformCodewhispererToAnthropic) {
+        return transformer.transformCodewhispererToAnthropic(data, context.originalRequest);
       }
       
       // 默认直接返回
@@ -116,6 +131,11 @@ class TransformationManager {
           const transformedChunk = transformer.transformGeminiStreamToAnthropicStream(chunk);
           yield transformedChunk;
         }
+      } else if (context.provider === 'codewhisperer' && transformer.transformCodewhispererStreamToAnthropicStream) {
+        for await (const chunk of stream) {
+          const transformedChunk = transformer.transformCodewhispererStreamToAnthropicStream(chunk);
+          yield transformedChunk;
+        }
       } else {
         // 默认passthrough
         for await (const chunk of stream) {
@@ -133,7 +153,7 @@ class TransformationManager {
    * 获取支持的transformer列表
    */
   getTransformers(): string[] {
-    return ['gemini', 'v3-default'];
+    return ['gemini', 'codewhisperer', 'v3-default'];
   }
 
   /**
@@ -149,6 +169,10 @@ class TransformationManager {
    */
   async supportsProvider(providerType: string): Promise<boolean> {
     if (providerType === 'gemini') {
+      return true;
+    }
+
+    if (providerType === 'codewhisperer') {
       return true;
     }
     

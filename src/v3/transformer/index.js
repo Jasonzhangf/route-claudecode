@@ -6,6 +6,7 @@
 
 // Gemini转换器
 export { GeminiTransformer } from './gemini-transformer.js';
+export { CodewhispererTransformer } from './codewhisperer-transformer.js';
 export { GeminiTransformerWithReplay } from './gemini-transformer-with-replay.js';
 
 // 转换器管理器和基础组件（TypeScript文件需要编译后才能导入）

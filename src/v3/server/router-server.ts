@@ -124,7 +124,7 @@ export class RouterServer {
         let client: Provider;
         
         if (providerConfig.type === 'codewhisperer') {
-          client = new CodeWhispererProvider(expandedProviderId);
+          client = new CodeWhispererProvider(providerConfig, expandedProviderId);
         } else if (providerConfig.type === 'openai' || providerConfig.type === 'lmstudio') {
           // All OpenAI-compatible providers use the same client
           // Special handling (like LM Studio) is done via preprocessors

@@ -20,6 +20,9 @@ export { LMStudioOpenAIPreprocessor } from './lmstudio-openai-preprocessor.js';
 // Gemini预处理器
 export { GeminiPreprocessor } from './gemini-preprocessor.js';
 
+// CodeWhisperer预处理器  
+export { CodewhispererPreprocessor } from './codewhisperer-preprocessor.js';
+
 /**
  * Gemini预处理器
  */
@@ -86,7 +89,9 @@ class PreprocessorManager {
                 const { GeminiPreprocessor: GeminiPreprocessorClass } = await import('./gemini-preprocessor.js');
                 return new GeminiPreprocessorClass(config);
             case 'codewhisperer':
-                return new CodeWhispererPreprocessor(config);
+                // 使用专用CodeWhisperer预处理器
+                const { CodewhispererPreprocessor: CodewhispererPreprocessorClass } = await import('./codewhisperer-preprocessor.js');
+                return new CodewhispererPreprocessorClass(config);
             default:
                 throw new Error(`Unsupported preprocessor type: ${type}`);
         }
