@@ -1,43 +1,46 @@
 /**
- * Test imports to debug the issue
+ * Test imports for real implementations - NO MOCKUPS
+ * Project owner: Jason Zhang
  */
 
 import { describe, it, expect } from 'vitest';
 
-describe('Import Tests', () => {
-  it('should import service manager correctly', async () => {
-    const { MockupServiceManager } = await import('../../src/service/index.js');
-    expect(MockupServiceManager).toBeDefined();
-    expect(typeof MockupServiceManager).toBe('function');
+describe('Real Implementation Import Tests', () => {
+  it('should import ServiceController correctly', async () => {
+    const { ServiceController } = await import('../../src/service/index.js');
+    expect(ServiceController).toBeDefined();
+    expect(typeof ServiceController).toBe('function');
     
-    const instance = new MockupServiceManager();
+    const instance = new ServiceController();
     expect(instance).toBeDefined();
   });
 
-  it('should import service manager as default', async () => {
-    const MockupServiceManager = (await import('../../src/service/index.js')).default;
-    expect(MockupServiceManager).toBeDefined();
-    expect(typeof MockupServiceManager).toBe('function');
+  it('should import ServiceController as default', async () => {
+    const ServiceController = (await import('../../src/service/index.js')).default;
+    expect(ServiceController).toBeDefined();
+    expect(typeof ServiceController).toBe('function');
     
-    const instance = new MockupServiceManager();
+    const instance = new ServiceController();
     expect(instance).toBeDefined();
   });
 
-  it('should import debug recorder correctly', async () => {
-    const { MockupDebugRecorder } = await import('../../src/debug/recorder.js');
-    expect(MockupDebugRecorder).toBeDefined();
-    expect(typeof MockupDebugRecorder).toBe('function');
+  it('should import DebugRecorder correctly', async () => {
+    const { DebugRecorder } = await import('../../src/debug/recorder.js');
+    expect(DebugRecorder).toBeDefined();
+    expect(typeof DebugRecorder).toBe('function');
     
-    const instance = new MockupDebugRecorder();
+    const instance = new DebugRecorder();
     expect(instance).toBeDefined();
+    expect(instance.sessionId).toBeDefined();
   });
 
-  it('should import debug recorder as default', async () => {
-    const MockupDebugRecorder = (await import('../../src/debug/recorder.js')).default;
-    expect(MockupDebugRecorder).toBeDefined();
-    expect(typeof MockupDebugRecorder).toBe('function');
+  it('should import DebugRecorder as default', async () => {
+    const DebugRecorder = (await import('../../src/debug/recorder.js')).default;
+    expect(DebugRecorder).toBeDefined();
+    expect(typeof DebugRecorder).toBe('function');
     
-    const instance = new MockupDebugRecorder();
+    const instance = new DebugRecorder();
     expect(instance).toBeDefined();
+    expect(instance.sessionId).toBeDefined();
   });
 });
