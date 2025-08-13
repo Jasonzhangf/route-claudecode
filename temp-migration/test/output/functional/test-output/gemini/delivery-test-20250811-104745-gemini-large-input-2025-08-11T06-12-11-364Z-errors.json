@@ -1,0 +1,28 @@
+[
+  {
+    "type": "structured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "error": {
+        "type": "internal_server_error",
+        "message": "Provider not found: gemini-test. Available providers: ",
+        "code": "500",
+        "requestId": "2be8c092-a497-40a6-8274-6926b7542c58",
+        "port": 3460,
+        "provider": "gemini-test",
+        "stage": "provider",
+        "timestamp": "2025-08-11T02:48:51.774Z",
+        "details": {
+          "diagnostics": "Silent failure detected and fixed"
+        }
+      }
+    },
+    "metadata": {
+      "lineNumber": 1,
+      "fileName": "delivery-test-20250811-104745-gemini-large-input.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 330
+    }
+  }
+]

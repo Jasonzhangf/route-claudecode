@@ -1,0 +1,29 @@
+{
+  "version": "3.0.0",
+  "server": {
+    "port": 5555,
+    "host": "localhost"
+  },
+  "routing": {
+    "strategy": "single-provider",
+    "defaultProvider": "test-provider",
+    "models": {
+      "test-model": {
+        "provider": "test-provider",
+        "account": "test-account"
+      }
+    }
+  },
+  "testprovider": {},
+  "security": {
+    "configReadOnly": true,
+    "requireValidation": true,
+    "configHash": null
+  },
+  "metadata": {
+    "createdAt": "2025-08-12T02:20:16.490Z",
+    "createdBy": "Configuration Isolation System",
+    "description": "Single-provider configuration for test-provider on port 5555",
+    "placeholder": true
+  }
+}

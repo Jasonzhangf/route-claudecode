@@ -1,0 +1,58 @@
+{
+  "results": [
+    {
+      "id": "oif4ed64",
+      "timestamp": "2025-08-12T02:21:32.548Z",
+      "provider": "anthropic",
+      "model": "claude-sonnet-4",
+      "finishReason": "stop",
+      "category": "stop",
+      "requestId": null,
+      "sessionId": null,
+      "duration": null,
+      "tokenCount": {
+        "input": 100,
+        "output": 50,
+        "total": null
+      },
+      "errorDetails": null,
+      "metadata": {
+        "userAgent": null,
+        "endpoint": null,
+        "method": null,
+        "status": null
+      },
+      "rawData": null
+    },
+    {
+      "id": "fzn76b3w",
+      "timestamp": "2025-08-11T07:01:29.501Z",
+      "provider": "anthropic",
+      "model": "unknown",
+      "finishReason": "content_filter",
+      "category": "content_filter",
+      "requestId": null,
+      "sessionId": null,
+      "duration": null,
+      "tokenCount": {
+        "input": null,
+        "output": null,
+        "total": null
+      },
+      "errorDetails": "Policy violation",
+      "metadata": {
+        "userAgent": null,
+        "endpoint": null,
+        "method": null,
+        "status": null
+      },
+      "rawData": null
+    }
+  ],
+  "total": 2,
+  "offset": 0,
+  "limit": 100,
+  "query": {
+    "provider": "anthropic"
+  }
+}

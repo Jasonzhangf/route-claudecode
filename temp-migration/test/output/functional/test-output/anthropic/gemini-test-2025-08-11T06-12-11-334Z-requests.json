@@ -1,0 +1,50 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.334Z",
+    "data": {
+      "rawLine": "[11:01:55] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 24,
+      "fileName": "gemini-test.log",
+      "extractedAt": "2025-08-11T06:12:11.334Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.334Z",
+    "data": {
+      "rawLine": "[11:01:55] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 25,
+      "fileName": "gemini-test.log",
+      "extractedAt": "2025-08-11T06:12:11.334Z",
+      "dataSize": 81
+    }
+  }
+]

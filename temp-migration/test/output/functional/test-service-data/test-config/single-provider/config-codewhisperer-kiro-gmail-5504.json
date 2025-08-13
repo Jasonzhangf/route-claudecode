@@ -1,0 +1,31 @@
+{
+  "version": "3.0.0",
+  "server": {
+    "port": 5504,
+    "host": "localhost"
+  },
+  "routing": {
+    "strategy": "single-provider",
+    "defaultProvider": "codewhisperer",
+    "models": {
+      "CLAUDE_SONNET_4": {
+        "provider": "codewhisperer",
+        "account": "kiro-gmail"
+      }
+    }
+  },
+  "codewhisperer": {
+    "region": "us-east-1"
+  },
+  "security": {
+    "configReadOnly": true,
+    "requireValidation": true,
+    "configHash": null
+  },
+  "metadata": {
+    "createdAt": "2025-08-11T08:07:41.260Z",
+    "createdBy": "Configuration Isolation System",
+    "description": "Single-provider configuration for codewhisperer on port 5504",
+    "placeholder": true
+  }
+}

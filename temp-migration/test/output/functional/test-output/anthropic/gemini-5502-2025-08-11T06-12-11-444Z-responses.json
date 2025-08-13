@@ -1,0 +1,950 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.440Z",
+    "data": {
+      "rawLine": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-google-gemini-5502.json",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 5,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.440Z",
+      "dataSize": 116
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.440Z",
+    "data": {
+      "rawLine": "[17:08:38] [INFO] [system] 🚀 Claude Code Router listening on http://0.0.0.0:5502",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "info",
+        "message": "[17:08:38] [INFO] [system] 🚀 Claude Code Router listening on http://0.0.0.0:5502",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 41,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.440Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "export ANTHROPIC_BASE_URL=\"http://0.0.0.0:5502\"",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "export ANTHROPIC_BASE_URL=\"http://0.0.0.0:5502\"",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 56,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 47
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:18] [DEBUG] [system] [a4b6a7e1-d9ed-41bc-9b4d-c26a023d010f] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 197,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:18] [DEBUG] [system] [a4b6a7e1-d9ed-41bc-9b4d-c26a023d010f] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 198,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:18] [DEBUG] [system] [a4b6a7e1-d9ed-41bc-9b4d-c26a023d010f] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 212,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:20] [DEBUG] [system] [ec9a910d-6293-4ebf-9ab3-2514b0f99f00] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 262,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:20] [DEBUG] [system] [ec9a910d-6293-4ebf-9ab3-2514b0f99f00] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 263,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:22] [DEBUG] [system] [ac0b7ebf-16e3-4abd-82ae-6bd623f5436f] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 400,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:22] [DEBUG] [system] [ac0b7ebf-16e3-4abd-82ae-6bd623f5436f] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 401,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:22] [DEBUG] [system] [ac0b7ebf-16e3-4abd-82ae-6bd623f5436f] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 415,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:22] [DEBUG] [system] [635302ad-a181-4564-addb-82d0e64d2d8e] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 429,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:22] [DEBUG] [system] [635302ad-a181-4564-addb-82d0e64d2d8e] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 430,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:49] [DEBUG] [system] [edb18daa-a92e-4347-b761-10552317236e] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 662,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:49] [DEBUG] [system] [edb18daa-a92e-4347-b761-10552317236e] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 663,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:49] [DEBUG] [system] [edb18daa-a92e-4347-b761-10552317236e] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 677,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:55] [DEBUG] [system] [e9d1a07a-dd16-46fe-bc63-2990e9a18e22] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 727,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:00] [DEBUG] [system] [429628c4-6dea-46ad-bb84-57645c26a120] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 798,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:00] [DEBUG] [system] [429628c4-6dea-46ad-bb84-57645c26a120] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 799,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:00] [DEBUG] [system] [429628c4-6dea-46ad-bb84-57645c26a120] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 813,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:06] [DEBUG] [system] [5b7799a5-94e0-4848-9ae2-c0fe997d81c6] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 864,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:38] [DEBUG] [system] [b50c8b88-3fd5-4b7c-bb85-1d99b20c487b] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 952,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:38] [DEBUG] [system] [b50c8b88-3fd5-4b7c-bb85-1d99b20c487b] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 953,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:38] [DEBUG] [system] [b50c8b88-3fd5-4b7c-bb85-1d99b20c487b] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 967,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:07] [DEBUG] [system] [5d2d0bcc-7e5f-434d-93ba-9ea2ab3d0d59] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1017,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:07] [DEBUG] [system] [5d2d0bcc-7e5f-434d-93ba-9ea2ab3d0d59] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1018,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:07] [DEBUG] [system] [5d2d0bcc-7e5f-434d-93ba-9ea2ab3d0d59] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1032,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:14] [DEBUG] [system] [1b0ccc1f-64c7-4a59-9f97-5a580c1c3c0f] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1082,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:28:54] [DEBUG] [system] [31465dbd-3253-409e-867f-dde06780e6a7] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1229,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:29:03] [DEBUG] [system] [59cd2b38-8ae7-4867-ab80-4b98b8bfd3a7] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1300,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:29:03] [DEBUG] [system] [59cd2b38-8ae7-4867-ab80-4b98b8bfd3a7] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1301,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:29:03] [DEBUG] [system] [59cd2b38-8ae7-4867-ab80-4b98b8bfd3a7] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1315,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:55] [DEBUG] [system] [68566e85-3d0e-43f7-a3ab-5e92ccdbe81c] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1407,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:55] [DEBUG] [system] [68566e85-3d0e-43f7-a3ab-5e92ccdbe81c] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1408,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:04] [DEBUG] [system] [4397a572-e23e-4f75-addf-c3c495f08a75] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1505,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:04] [DEBUG] [system] [4397a572-e23e-4f75-addf-c3c495f08a75] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1506,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:06] [DEBUG] [system] [3bae4fa8-7988-4a13-8a22-145ce546e901] [gemini-transformer] Converting Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1637,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:06] [DEBUG] [system] [3bae4fa8-7988-4a13-8a22-145ce546e901] [gemini-transformer] Converted Gemini response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1638,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:06] [DEBUG] [system] [3bae4fa8-7988-4a13-8a22-145ce546e901] [response-converter] Converted OpenAI response to Anthropic format",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1652,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 133
+    }
+  }
+]

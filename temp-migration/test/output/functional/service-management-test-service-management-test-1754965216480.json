@@ -1,0 +1,405 @@
+{
+  "sessionId": "service-management-test-1754965216480",
+  "startTime": "2025-08-12T02:20:16.480Z",
+  "tests": [
+    {
+      "name": "Configuration Isolation System",
+      "startTime": "2025-08-12T02:20:16.482Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Isolation System Initialization",
+          "status": "passed",
+          "details": "Initialization status: initialized"
+        },
+        {
+          "test": "Provider Port Configuration",
+          "status": "passed",
+          "details": "Provider ports configured: 9"
+        },
+        {
+          "test": "Configuration Validation",
+          "status": "failed",
+          "details": "Validation result: false"
+        },
+        {
+          "test": "Service Startup Validation - Missing Config",
+          "status": "passed",
+          "details": "Missing configuration properly detected"
+        },
+        {
+          "test": "Status Report Generation",
+          "status": "passed",
+          "details": "Status report structure complete"
+        },
+        {
+          "test": "Provider Port Mapping",
+          "status": "passed",
+          "details": "Provider ports in report: 9"
+        }
+      ],
+      "duration": 8,
+      "endTime": "2025-08-12T02:20:16.490Z"
+    },
+    {
+      "name": "Single-Provider Configuration (Ports 5501-5509)",
+      "startTime": "2025-08-12T02:20:16.482Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "All Expected Ports Configured",
+          "status": "passed",
+          "details": "Ports: 5501, 5502, 5503, 5504, 5505, 5506, 5507, 5508, 5509"
+        },
+        {
+          "test": "Provider Diversity",
+          "status": "passed",
+          "details": "Unique providers: codewhisperer, google-gemini, openai-compatible"
+        },
+        {
+          "test": "Port 5501 Configuration",
+          "status": "passed",
+          "details": "Port 5501: codewhisperer/primary"
+        },
+        {
+          "test": "Port 5508 Configuration",
+          "status": "passed",
+          "details": "Port 5508: openai-compatible/shuaihong"
+        },
+        {
+          "test": "Configuration File Naming",
+          "status": "passed",
+          "details": "All configuration files follow naming convention"
+        },
+        {
+          "test": "Model Assignments",
+          "status": "passed",
+          "details": "Models assigned: 9"
+        },
+        {
+          "test": "Placeholder Configuration Creation",
+          "status": "passed",
+          "details": "Placeholder configuration file created"
+        }
+      ],
+      "duration": 10,
+      "endTime": "2025-08-12T02:20:16.492Z"
+    },
+    {
+      "name": "Service Type Distinction and Classification",
+      "startTime": "2025-08-12T02:20:16.481Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Service Type Identification Accuracy",
+          "status": "passed",
+          "details": "5/5 identifications correct"
+        },
+        {
+          "test": "API Server Manageability",
+          "status": "passed",
+          "details": "API servers are manageable"
+        },
+        {
+          "test": "Client Session Protection",
+          "status": "passed",
+          "details": "Client sessions are protected"
+        },
+        {
+          "test": "Service Descriptions",
+          "status": "passed",
+          "details": "All service types have descriptions"
+        },
+        {
+          "test": "Graceful Shutdown Configuration",
+          "status": "passed",
+          "details": "Graceful shutdown timeouts configured correctly"
+        }
+      ],
+      "duration": 282,
+      "endTime": "2025-08-12T02:20:16.763Z"
+    },
+    {
+      "name": "Service Controller Initialization",
+      "startTime": "2025-08-12T02:20:16.481Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Controller Initialization",
+          "status": "passed",
+          "details": "Initialization status: initialized"
+        },
+        {
+          "test": "Base Directory Creation",
+          "status": "passed",
+          "details": "Base directory: /Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-service-data"
+        },
+        {
+          "test": "Services Directory Setup",
+          "status": "passed",
+          "details": "Services directory created"
+        },
+        {
+          "test": "Service Types Configuration",
+          "status": "passed",
+          "details": "Service types correctly configured"
+        },
+        {
+          "test": "Safety Settings",
+          "status": "passed",
+          "details": "Protected processes configured"
+        },
+        {
+          "test": "Controller Ready State",
+          "status": "passed",
+          "details": "Controller marked as initialized"
+        }
+      ],
+      "controller": {
+        "_events": {},
+        "_eventsCount": 0,
+        "config": {
+          "baseDir": "/Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-service-data",
+          "servicesDir": "test-services",
+          "pidFile": "test-service-pids.json",
+          "statusFile": "test-service-status.json",
+          "serviceTypes": {
+            "api-server": {
+              "pattern": "rcc start",
+              "manageable": true,
+              "description": "API Server - Can be safely managed/restarted",
+              "healthCheckPath": "/health",
+              "gracefulShutdownTimeout": 10000
+            },
+            "client-session": {
+              "pattern": "rcc code",
+              "manageable": false,
+              "description": "Client Session - Must be preserved and protected",
+              "healthCheckPath": null,
+              "gracefulShutdownTimeout": null
+            },
+            "dashboard": {
+              "pattern": "configuration-dashboard",
+              "manageable": true,
+              "description": "Configuration Dashboard - Web interface service",
+              "healthCheckPath": "/status",
+              "gracefulShutdownTimeout": 5000
+            },
+            "tools": {
+              "pattern": "tools-ecosystem",
+              "manageable": true,
+              "description": "Tools Ecosystem Services - Data processing services",
+              "healthCheckPath": null,
+              "gracefulShutdownTimeout": 3000
+            }
+          },
+          "healthCheckInterval": 30000,
+          "statusUpdateInterval": 5000,
+          "processDiscoveryInterval": 60000,
+          "protectedProcesses": [
+            "rcc code"
+          ],
+          "requireConfirmation": false,
+          "dryRun": true
+        },
+        "services": {},
+        "healthChecks": {},
+        "statusReporting": {},
+        "initialized": true
+      },
+      "duration": 282,
+      "endTime": "2025-08-12T02:20:16.763Z"
+    },
+    {
+      "name": "Comprehensive Service Management Integration",
+      "startTime": "2025-08-12T02:20:16.482Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "CLI Integration",
+          "status": "passed",
+          "details": "4/4 CLI commands successful"
+        },
+        {
+          "test": "Service-Config Status Coordination",
+          "status": "passed",
+          "details": "Both systems provide status information"
+        },
+        {
+          "test": "End-to-End Workflow",
+          "status": "passed",
+          "details": "4/4 workflow steps successful"
+        },
+        {
+          "test": "Safety and Security Features",
+          "status": "passed",
+          "details": "All 5 safety features tested"
+        },
+        {
+          "test": "File System Integration",
+          "status": "passed",
+          "details": "3/3 expected files/directories created"
+        }
+      ],
+      "duration": 367,
+      "endTime": "2025-08-12T02:20:16.849Z"
+    },
+    {
+      "name": "Service Status Reporting with Process Information",
+      "startTime": "2025-08-12T02:20:16.482Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Service Count Accuracy",
+          "status": "passed",
+          "details": "Total services: 3"
+        },
+        {
+          "test": "Running Services Count",
+          "status": "passed",
+          "details": "Running services: 0"
+        },
+        {
+          "test": "Manageable Services Count",
+          "status": "passed",
+          "details": "Manageable services: 2"
+        },
+        {
+          "test": "Protected Services Count",
+          "status": "passed",
+          "details": "Protected services: 1"
+        },
+        {
+          "test": "Individual Service Status",
+          "status": "passed",
+          "details": "Individual service: PID 10001, Type api-server"
+        },
+        {
+          "test": "Status File Structure",
+          "status": "passed",
+          "details": "Status file has correct structure"
+        },
+        {
+          "test": "Status Summary Accuracy",
+          "status": "failed",
+          "details": "Status summary contains type and status breakdowns"
+        },
+        {
+          "test": "Configuration Status Integration",
+          "status": "passed",
+          "details": "Configuration status report integrated"
+        }
+      ],
+      "duration": 787,
+      "endTime": "2025-08-12T02:20:17.269Z"
+    },
+    {
+      "name": "Service Discovery and Process Detection",
+      "startTime": "2025-08-12T02:20:16.481Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Initial Service Discovery",
+          "status": "passed",
+          "details": "Discovered 0 initial services"
+        },
+        {
+          "test": "Process Running Check - Current",
+          "status": "passed",
+          "details": "Current process (PID: 52026) correctly identified as running"
+        },
+        {
+          "test": "Process Running Check - Non-existent",
+          "status": "passed",
+          "details": "Non-existent process (PID: 999999) correctly identified as not running"
+        },
+        {
+          "test": "Service Status Retrieval",
+          "status": "passed",
+          "details": "Service status structure is correct"
+        },
+        {
+          "test": "Service Summary Accuracy",
+          "status": "passed",
+          "details": "Service summary: 0 total, 0 running"
+        },
+        {
+          "test": "Service Status Persistence",
+          "status": "passed",
+          "details": "Service status saved to /Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-service-data/test-service-status.json"
+        }
+      ],
+      "duration": 1285,
+      "endTime": "2025-08-12T02:20:17.766Z"
+    },
+    {
+      "name": "Health Monitoring and Status Tracking",
+      "startTime": "2025-08-12T02:20:16.482Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Health Check Initiation",
+          "status": "passed",
+          "details": "Health check started for manageable service"
+        },
+        {
+          "test": "Health Check Execution",
+          "status": "passed",
+          "details": "Health check has been executed"
+        },
+        {
+          "test": "Health Status Update",
+          "status": "passed",
+          "details": "Health status: unhealthy"
+        },
+        {
+          "test": "Port Parsing: rcc start --port 3456",
+          "status": "passed",
+          "details": "Extracted port: 3456"
+        },
+        {
+          "test": "Port Parsing: dashboard :3458",
+          "status": "passed",
+          "details": "Extracted port: 3458"
+        }
+      ],
+      "duration": 2282,
+      "endTime": "2025-08-12T02:20:18.764Z"
+    },
+    {
+      "name": "Safe Service Control and Protection",
+      "startTime": "2025-08-12T02:20:16.481Z",
+      "status": "passed",
+      "validations": [
+        {
+          "test": "Protected Service Stop Prevention",
+          "status": "passed",
+          "details": "Protected service stop correctly prevented"
+        },
+        {
+          "test": "Manageable Service Stop (Dry Run)",
+          "status": "passed",
+          "details": "Stop result: dry-run"
+        },
+        {
+          "test": "Service Restart (Dry Run)",
+          "status": "passed",
+          "details": "Restart result: restart-required"
+        },
+        {
+          "test": "Confirmation Requirement",
+          "status": "passed",
+          "details": "Confirmation requirement correctly enforced"
+        }
+      ],
+      "duration": 2381,
+      "endTime": "2025-08-12T02:20:18.862Z"
+    }
+  ],
+  "summary": {
+    "total": 9,
+    "passed": 9,
+    "failed": 0
+  },
+  "endTime": "2025-08-12T02:20:18.862Z"
+}

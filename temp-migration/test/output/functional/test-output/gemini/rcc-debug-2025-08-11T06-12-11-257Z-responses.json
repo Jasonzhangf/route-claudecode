@@ -1,0 +1,74 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.253Z",
+    "data": {
+      "rawLine": "  reason: 'gemini-api-naming-restriction'",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2263,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.253Z",
+      "dataSize": 41
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.254Z",
+    "data": {
+      "rawLine": "  reason: 'gemini-api-naming-restriction'",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2863,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.254Z",
+      "dataSize": 41
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.256Z",
+    "data": {
+      "rawLine": "  reason: 'gemini-api-naming-restriction'",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 3358,
+      "fileName": "rcc-debug.log",
+      "extractedAt": "2025-08-11T06:12:11.256Z",
+      "dataSize": 41
+    }
+  }
+]

@@ -1,0 +1,162 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.272Z",
+    "data": {
+      "rawLine": "[11:42:23] [DEBUG] [system] Received response from Gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 587,
+      "fileName": "rcc-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.272Z",
+      "dataSize": 57
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.272Z",
+    "data": {
+      "rawLine": "[11:42:23] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[11:42:23] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 597,
+      "fileName": "rcc-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.272Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.272Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 621,
+      "fileName": "rcc-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.272Z",
+      "dataSize": 91
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.272Z",
+    "data": {
+      "rawLine": "[11:42:52] [DEBUG] [system] Received response from Gemini",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 686,
+      "fileName": "rcc-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.272Z",
+      "dataSize": 57
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.272Z",
+    "data": {
+      "rawLine": "[11:42:52] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[11:42:52] [WARN] [system] Failed response recorded: google-gemini/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 696,
+      "fileName": "rcc-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.272Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.273Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 500 - Provider: google-gemini, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 721,
+      "fileName": "rcc-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.273Z",
+      "dataSize": 91
+    }
+  }
+]

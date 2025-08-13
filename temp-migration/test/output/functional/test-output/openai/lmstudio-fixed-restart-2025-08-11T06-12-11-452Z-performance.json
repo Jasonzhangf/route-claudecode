@@ -1,0 +1,117 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "📍 [MODEL-MATCH] gpt-oss-20b-mlx on lmstudio-glm",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 934,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "📍 [MODEL-MATCH] gpt-oss-20b-mlx on lmstudio-glm",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1073,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "📍 [MODEL-MATCH] gpt-oss-20b-mlx on lmstudio-glm",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1205,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "📍 [MODEL-MATCH] gpt-oss-20b-mlx on lmstudio-glm",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1344,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 48
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.452Z",
+    "data": {
+      "rawLine": "📍 [MODEL-MATCH] gpt-oss-20b-mlx on lmstudio-glm",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1483,
+      "fileName": "lmstudio-fixed-restart.log",
+      "extractedAt": "2025-08-11T06:12:11.452Z",
+      "dataSize": 48
+    }
+  }
+]

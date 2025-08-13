@@ -1,0 +1,54 @@
+{
+  "providerName": "test-api-provider",
+  "providerType": "api-service",
+  "generatedAt": "2025-08-11T11:23:34.602Z",
+  "templateVersion": "3.0.0",
+  "requiredFiles": [
+    "index.js",
+    "client.js",
+    "auth.js",
+    "converter.js",
+    "parser.js",
+    "preprocessor.js",
+    "types.js",
+    "config.js",
+    "test.js"
+  ],
+  "preprocessorTemplate": {
+    "className": "Test-api-providerPreprocessor",
+    "description": "Preprocessing layer for test-api-provider provider-protocol integration",
+    "templateCode": "/**\n * TEST-API-PROVIDER Provider-Protocol Preprocessor\n * \n * FOCUS AREA: All provider-specific logic should be contained in preprocessing\n * to minimize changes to core system components.\n * \n * @author Generated Template\n * @version 3.0.0\n */\n\nexport class Test-api-providerPreprocessor {\n    constructor(config = {}) {\n        this.config = config;\n        this.providerName = 'test-api-provider';\n        this.providerType = 'api-service';\n    }\n\n    /**\n     * Main preprocessing entry point - ALL provider-specific logic here\n     */\n    async preprocessRequest(request) {\n        // Step 1: Validate request format\n        await this.validateRequest(request);\n        \n        // Step 2: Transform headers for test-api-provider compatibility\n        const headers = await this.transformHeaders(request.headers);\n        \n        // Step 3: Handle provider-specific authentication\n        const authHeaders = await this.handleAuthentication(request);\n        \n        // Step 4: Transform request body for test-api-provider API\n        const body = await this.transformRequestBody(request.body);\n        \n        return {\n            ...request,\n            headers: { ...headers, ...authHeaders },\n            body,\n            preprocessedBy: this.providerName,\n            preprocessedAt: new Date().toISOString()\n        };\n    }\n\n    async validateRequest(request) {\n        // Provider-specific request validation logic\n        if (!request) {\n            throw new Error('Request cannot be null or undefined');\n        }\n        \n        // Add test-api-provider-specific validation here\n        return true;\n    }\n\n    async transformHeaders(headers = {}) {\n        // Provider-specific header transformations\n        return {\n            ...headers,\n            'User-Agent': 'Claude-Code-Router/3.0.0',\n            'X-Provider': 'test-api-provider'\n        };\n    }\n\n    async handleAuthentication(request) {\n        // Provider-specific authentication logic\n        // This is where API keys, tokens, etc. should be added\n        return {\n            'Authorization': 'Bearer YOUR_TEST-API-PROVIDER_TOKEN'\n        };\n    }\n\n    async transformRequestBody(body) {\n        // Provider-specific request body transformations\n        // Convert between different API formats here\n        return body;\n    }\n}\n\nexport default Test-api-providerPreprocessor;",
+    "testTemplate": "/**\n * Test suite for TEST-API-PROVIDER Preprocessor\n */\nimport { Test-api-providerPreprocessor } from './test-api-provider-preprocessor.js';\n\nexport async function testTest-api-providerPreprocessor() {\n    const preprocessor = new Test-api-providerPreprocessor();\n    \n    // Test preprocessing functionality\n    const testRequest = {\n        method: 'POST',\n        url: 'https://api.example.com/test',\n        headers: {},\n        body: { message: 'Hello, world!' }\n    };\n    \n    const processed = await preprocessor.preprocessRequest(testRequest);\n    \n    console.assert(processed.preprocessedBy === 'test-api-provider');\n    console.assert(processed.headers['X-Provider'] === 'test-api-provider');\n    \n    console.log('✅ test-api-provider preprocessor tests passed');\n    return true;\n}"
+  },
+  "interfaceRequirements": {
+    "mustImplement": [
+      "processRequest(request, options)",
+      "healthCheck()",
+      "authenticate(credentials)",
+      "validateConfiguration(config)"
+    ],
+    "preprocessingMethods": [
+      "preprocessRequest(request)",
+      "validateRequest(request)",
+      "transformHeaders(headers)",
+      "handleAuthentication(request)"
+    ]
+  },
+  "complianceChecklist": [
+    "preprocessing-only-modification",
+    "standard-interface-compliance",
+    "testing-requirements",
+    "documentation-completeness",
+    "security-compliance",
+    "zero-fallback-compliance"
+  ],
+  "integrationSteps": [
+    "Create provider directory structure",
+    "Implement preprocessing-focused files",
+    "Write comprehensive tests",
+    "Create integration documentation",
+    "Run compliance validation",
+    "Submit for review approval",
+    "Deploy and monitor"
+  ]
+}

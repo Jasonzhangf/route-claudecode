@@ -1,0 +1,1530 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:12:34] [DEBUG] [system] [session_1754831549130_2cislfxxq:conv_1754831549130_5d3tr8b9s:1:1754831549133:0vsr] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 95,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 97,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 117,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:12:34] [DEBUG] [system] [45ffd243-0044-4dd3-97c9-aa750f3dc757] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 123,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:12:34] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 137,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:18] [DEBUG] [system] [session_1754831717964_fhk8jwr6x:conv_1754831717964_wyu23zy9b:1:1754831717966:nv4w] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 178,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 180,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 200,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:18] [DEBUG] [system] [adf78afa-bdf2-46db-a2d6-f0a7007e7d21] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 206,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:18] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 220,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:19] [DEBUG] [system] [session_1754831717964_fhk8jwr6x:conv_1754831717964_wyu23zy9b:2:1754831718883:n693] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 258,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 260,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 280,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:19] [DEBUG] [system] [00bfde44-3a01-4a64-97f6-8c955a187f7a] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 286,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:15:19] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 300,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:31] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:1:1754832271376:tjfq] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 342,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 344,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 364,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:31] [DEBUG] [system] [a969f8fa-0c21-49cc-906d-f280375655b3] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 370,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:31] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 384,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:32] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:2:1754832271884:zmkh] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 454,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 456,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 476,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:32] [DEBUG] [system] [518e6c22-7885-452c-830f-2fc940844eb5] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 482,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:24:32] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 496,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:27:39] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:3:1754832458803:rs7h] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 537,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 539,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 559,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:27:39] [DEBUG] [system] [70fba9c3-1422-4918-a621-27a1db6c4133] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 565,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.402Z",
+    "data": {
+      "rawLine": "[21:27:39] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 579,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.402Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:40] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:4:1754832459286:roho] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 617,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 619,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 639,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:40] [DEBUG] [system] [7db20b9a-a256-4dd1-a297-339071a0f4e2] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 645,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:40] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 659,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:41] [DEBUG] [system] [session_1754832271369_ppxgfw3k8:conv_1754832271369_c5a86h6sc:5:1754832460347:g3qg] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 696,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 698,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 718,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:41] [DEBUG] [system] [e718cc08-df82-4874-9adc-e42e0603ed43] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 724,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.403Z",
+    "data": {
+      "rawLine": "[21:27:41] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 738,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.403Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.407Z",
+    "data": {
+      "rawLine": "[21:31:35] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:5:1754832657756:n4rg] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6582,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.407Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.407Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6584,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.407Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.407Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6604,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.407Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.407Z",
+    "data": {
+      "rawLine": "[21:31:35] [DEBUG] [system] [2ee4afe6-54b9-41a3-8f1f-dd75f12d5f2a] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 6610,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.407Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.407Z",
+    "data": {
+      "rawLine": "[21:31:35] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6624,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.407Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.408Z",
+    "data": {
+      "rawLine": "[21:32:35] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:3:1754832755023:rsde] [pure-api-handler] Pure OpenAI streaming API call",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "debug",
+        "message": "[21:32:35] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:3:1754832755023:rsde] [pure-api-handler] Pure OpenAI streaming API call",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7895,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.408Z",
+      "dataSize": 161
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.408Z",
+    "data": {
+      "rawLine": "[21:32:35] [ERROR] [error] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:3:1754832755023:rsde] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[21:32:35] [ERROR] [error] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:3:1754832755023:rsde] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 7896,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.408Z",
+      "dataSize": 167
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.412Z",
+    "data": {
+      "rawLine": "[21:33:01] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:4:1754832755093:wq0j] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12237,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.412Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.412Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12239,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.412Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.412Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12259,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.412Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.412Z",
+    "data": {
+      "rawLine": "[21:33:01] [DEBUG] [system] [5651f672-f290-41bb-b8d0-b63305d9b711] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 12265,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.412Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.412Z",
+    "data": {
+      "rawLine": "[21:33:01] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12279,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.412Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.414Z",
+    "data": {
+      "rawLine": "[21:34:02] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:17:1754832842400:gyhz] [pure-api-handler] Pure OpenAI streaming API call",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16024,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.414Z",
+      "dataSize": 162
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.414Z",
+    "data": {
+      "rawLine": "[21:34:02] [ERROR] [error] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:17:1754832842400:gyhz] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[21:34:02] [ERROR] [error] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:17:1754832842400:gyhz] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 16025,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.414Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.418Z",
+    "data": {
+      "rawLine": "[21:37:04] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:30:1754833024042:shuy] [pure-api-handler] Pure OpenAI streaming API call",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "debug",
+        "message": "[21:37:04] [DEBUG] [system] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:30:1754833024042:shuy] [pure-api-handler] Pure OpenAI streaming API call",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 24071,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.418Z",
+      "dataSize": 162
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.418Z",
+    "data": {
+      "rawLine": "[21:37:04] [ERROR] [error] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:30:1754833024042:shuy] [pure-api-handler] Pure OpenAI streaming API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[21:37:04] [ERROR] [error] [session_1754832653028_fp7hhu44l:conv_1754832653028_jxlmf6hnb:30:1754833024042:shuy] [pure-api-handler] Pure OpenAI streaming API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 24072,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.418Z",
+      "dataSize": 168
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.425Z",
+    "data": {
+      "rawLine": "[21:46:29] [DEBUG] [system] [session_1754833300168_ll0no3s2r:conv_1754833300168_34x5y64mi:1:1754833588052:x59h] [pure-api-handler] Pure OpenAI API response received",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 37162,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.425Z",
+      "dataSize": 164
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.425Z",
+    "data": {
+      "rawLine": "🔍 [TRANSFORMER-DEBUG] transformOpenAIResponseToBase received: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 37164,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.425Z",
+      "dataSize": 64
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.425Z",
+    "data": {
+      "rawLine": "🔄 [OPENAI-TRANSFORMER] OpenAI -> BaseResponse: {",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 37184,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.425Z",
+      "dataSize": 49
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.425Z",
+    "data": {
+      "rawLine": "[21:46:29] [DEBUG] [system] [ea89bd6b-e051-4dd1-a426-6d6749b0877a] [transformer] Applied OpenAI response transformation",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 37190,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.425Z",
+      "dataSize": 119
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.425Z",
+    "data": {
+      "rawLine": "[21:46:29] [DEBUG] [system] Response recorded: lmstudio-glm/gpt-oss-20b-mlx",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 37204,
+      "fileName": "server-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.425Z",
+      "dataSize": 75
+    }
+  }
+]

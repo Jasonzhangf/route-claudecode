@@ -1,0 +1,134 @@
+{
+  "server": {
+    "port": 3457,
+    "host": "0.0.0.0",
+    "architecture": "v3.0-six-layer",
+    "environment": "production"
+  },
+  "providers": {
+    "codewhisperer-primary": {
+      "type": "codewhisperer",
+      "endpoint": "https://codewhisperer.amazonaws.com/v1/chat/completions",
+      "authentication": {
+        "type": "aws-codewhisperer",
+        "credentials": {
+          "profile": "primary"
+        }
+      },
+      "models": ["CLAUDE_SONNET_4_20250514_V1_0"],
+      "timeout": 120000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "google-gemini": {
+      "type": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-pro:generateContent",
+      "authentication": {
+        "type": "api-key",
+        "credentials": {
+          "apiKey": ["${GOOGLE_GEMINI_API_KEY}"]
+        }
+      },
+      "models": ["gemini-2.5-pro", "gemini-2.5-flash"],
+      "timeout": 90000,
+      "maxRetries": 2,
+      "retryDelay": 3000
+    },
+    "shuaihong-production": {
+      "type": "openai",
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKey": ["${SHUAIHONG_PROD_API_KEY}"]
+        }
+      },
+      "models": ["claude-4-sonnet", "gemini-2.5-pro", "o1-preview"],
+      "timeout": 90000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    }
+  },
+  "routing": {
+    "strategy": "category-driven-load-balanced",
+    "categories": {
+      "default": {
+        "provider": "codewhisperer-primary",
+        "model": "CLAUDE_SONNET_4_20250514_V1_0"
+      },
+      "background": {
+        "provider": "google-gemini",
+        "model": "gemini-2.5-flash"
+      },
+      "thinking": {
+        "provider": "shuaihong-production",
+        "model": "claude-4-sonnet"
+      },
+      "longcontext": {
+        "provider": "google-gemini",
+        "model": "gemini-2.5-pro"
+      },
+      "search": {
+        "provider": "shuaihong-production",
+        "model": "o1-preview"
+      }
+    }
+  },
+  "debug": {
+    "enabled": false,
+    "logLevel": "warn",
+    "logDir": "/var/log/ccr-production",
+    "traceRequests": false,
+    "saveRequests": false
+  },
+  "errors": {
+    "messages": {
+      "configuration_missing": "System configuration error occurred",
+      "provider_unavailable": "Service temporarily unavailable",
+      "model_not_found": "Requested model is not available",
+      "authentication_failed": "Authentication error occurred",
+      "request_timeout": "Request timeout occurred",
+      "validation_error": "Request validation failed",
+      "preprocessing_failed": "System error occurred during response processing"
+    },
+    "httpCodes": {
+      "configuration_missing": 500,
+      "provider_unavailable": 503,
+      "model_not_found": 404,
+      "authentication_failed": 401,
+      "request_timeout": 504,
+      "validation_error": 400,
+      "preprocessing_failed": 500
+    },
+    "templates": {
+      "configuration_missing": "SYSTEM ERROR: A system configuration error has occurred. Please contact support.",
+      "provider_unavailable": "SERVICE ERROR: The requested service is temporarily unavailable. Please try again later.",
+      "model_not_found": "MODEL ERROR: The requested model is not available. Please check your request and try again.",
+      "authentication_failed": "AUTH ERROR: Authentication failed. Please check your credentials.",
+      "request_timeout": "TIMEOUT ERROR: The request timed out. Please try again.",
+      "validation_error": "REQUEST ERROR: Your request could not be processed. {details}",
+      "preprocessing_failed": "SYSTEM ERROR: A system error occurred during response processing. Please try again or contact support."
+    }
+  },
+  "validation": {
+    "required": [
+      "server.port",
+      "server.host",
+      "server.architecture",
+      "server.environment",
+      "providers",
+      "routing.strategy",
+      "routing.categories",
+      "debug.enabled",
+      "debug.logLevel",
+      "debug.logDir",
+      "errors.messages",
+      "errors.httpCodes",
+      "errors.templates"
+    ],
+    "environmentFiles": {
+      "providers.google-gemini.authentication.credentials.apiKey": "GOOGLE_GEMINI_API_KEY_JSON",
+      "providers.shuaihong-production.authentication.credentials.apiKey": "SHUAIHONG_PROD_API_KEY_JSON"
+    }
+  }
+}

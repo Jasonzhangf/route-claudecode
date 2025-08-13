@@ -1,0 +1,32 @@
+{
+  "version": "3.0.0",
+  "server": {
+    "port": 5509,
+    "host": "localhost"
+  },
+  "routing": {
+    "strategy": "single-provider",
+    "defaultProvider": "openai-compatible",
+    "models": {
+      "ZhipuAI/GLM-4.5": {
+        "provider": "openai-compatible",
+        "account": "modelscope-glm"
+      }
+    }
+  },
+  "openaicompatible": {
+    "baseURL": "https://api.openai.com",
+    "apiKey": "${OPENAI_API_KEY}"
+  },
+  "security": {
+    "configReadOnly": true,
+    "requireValidation": true,
+    "configHash": null
+  },
+  "metadata": {
+    "createdAt": "2025-08-11T08:07:41.262Z",
+    "createdBy": "Configuration Isolation System",
+    "description": "Single-provider configuration for openai-compatible on port 5509",
+    "placeholder": true
+  }
+}

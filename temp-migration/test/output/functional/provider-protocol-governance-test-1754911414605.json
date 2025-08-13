@@ -1,0 +1,48 @@
+{
+  "timestamp": "2025-08-11T11:23:34.599Z",
+  "testSuite": "provider-protocol-governance",
+  "totalTests": 5,
+  "passedTests": 5,
+  "failedTests": 0,
+  "details": [
+    {
+      "test": "governance-init",
+      "status": "passed",
+      "providersLoaded": 5,
+      "rulesLoaded": 6
+    },
+    {
+      "test": "template-generation",
+      "status": "passed",
+      "templatesGenerated": 3,
+      "averageRequiredFiles": 9
+    },
+    {
+      "test": "compliance-validation",
+      "status": "passed",
+      "scenariosTested": 2,
+      "rulesEnforced": 6
+    },
+    {
+      "test": "workflow-management",
+      "status": "passed",
+      "workflowSteps": 5,
+      "workflowCompleted": true
+    },
+    {
+      "test": "compliance-framework",
+      "status": "passed",
+      "frameworkTests": 3,
+      "validatorsCount": 3
+    }
+  ],
+  "metrics": {
+    "initializationTime": 1754911414602,
+    "templateGeneration": 3,
+    "complianceValidation": 2,
+    "workflowManagement": 5,
+    "complianceFramework": 3
+  },
+  "passRate": 1,
+  "status": "PASSED"
+}

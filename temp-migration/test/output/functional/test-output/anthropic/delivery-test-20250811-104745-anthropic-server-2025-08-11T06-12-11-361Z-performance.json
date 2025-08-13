@@ -1,0 +1,94 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"anthropic-test\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 91,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 224
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"anthropic-test\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 181,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 224
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"anthropic-test\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 271,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 224
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.360Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"anthropic-test\",\"isCompatible\":false,\"includesOpenai\":false,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 361,
+      "fileName": "delivery-test-20250811-104745-anthropic-server.log",
+      "extractedAt": "2025-08-11T06:12:11.360Z",
+      "dataSize": 224
+    }
+  }
+]

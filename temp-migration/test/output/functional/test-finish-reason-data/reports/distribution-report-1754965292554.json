@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "generatedAt": "2025-08-12T02:21:32.554Z",
+    "timeRange": {
+      "hours": 1
+    },
+    "totalEntries": 10,
+    "uniqueProviders": 4,
+    "uniqueCategories": 6
+  },
+  "distributions": {
+    "byCategory": [
+      {
+        "key": "stop",
+        "count": 3,
+        "percentage": "30.00"
+      },
+      {
+        "key": "tool_calls",
+        "count": 2,
+        "percentage": "20.00"
+      },
+      {
+        "key": "length",
+        "count": 2,
+        "percentage": "20.00"
+      },
+      {
+        "key": "error",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "rate_limit",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "content_filter",
+        "count": 1,
+        "percentage": "10.00"
+      }
+    ],
+    "byProvider": [
+      {
+        "key": "anthropic",
+        "count": 4,
+        "percentage": "40.00"
+      },
+      {
+        "key": "openai",
+        "count": 3,
+        "percentage": "30.00"
+      },
+      {
+        "key": "gemini",
+        "count": 2,
+        "percentage": "20.00"
+      },
+      {
+        "key": "codewhisperer",
+        "count": 1,
+        "percentage": "10.00"
+      }
+    ],
+    "byFinishReason": [
+      {
+        "key": "stop",
+        "count": 3,
+        "percentage": "30.00"
+      },
+      {
+        "key": "tool_calls",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "function_call",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "max_tokens",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "length",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "error",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "rate_limit",
+        "count": 1,
+        "percentage": "10.00"
+      },
+      {
+        "key": "content_filter",
+        "count": 1,
+        "percentage": "10.00"
+      }
+    ],
+    "byHour": [
+      {
+        "key": "10",
+        "count": 10,
+        "percentage": "100.00"
+      }
+    ]
+  },
+  "insights": [
+    "Most common finish reason: stop (3 occurrences)",
+    "Most active provider: anthropic (4 requests)",
+    "Error rate: 10.00% (1 errors out of 10 total)"
+  ]
+}

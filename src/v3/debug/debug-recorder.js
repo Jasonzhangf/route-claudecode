@@ -242,10 +242,14 @@ export class DebugRecorder {
             /password/i,
             /secret/i,
             /token/i,
-            /key/i,
+            /^api[_-]?key$/i,         // Only exact API key field names
+            /^access[_-]?key$/i,      // Only exact access key field names
+            /^private[_-]?key$/i,     // Only exact private key field names
+            /^session[_-]?key$/i,     // Only exact session key field names
+            /^auth[_-]?key$/i,        // Only exact auth key field names
             /auth/i,
             /credential/i,
-            /api[_-]?key/i
+            /^bearer$/i               // Bearer token field
         ];
         
         return sensitivePatterns.some(pattern => pattern.test(fieldName));

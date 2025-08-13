@@ -8,8 +8,7 @@
 export { 
   CodeWhispererProvider, 
   GeminiProvider, 
-  AnthropicProvider, 
-  LMStudioClient 
+  AnthropicProvider 
 } from './base-provider.js';
 
 export { createOpenAIClient } from './openai/client-factory.js';

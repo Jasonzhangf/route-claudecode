@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LMStudio 主控测试报告</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 40px; }
+        .title { color: #2c3e50; font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { color: #7f8c8d; font-size: 1.2em; }
+        .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .metric { background: #ecf0f1; padding: 20px; border-radius: 8px; text-align: center; }
+        .metric-value { font-size: 2em; font-weight: bold; color: #3498db; }
+        .metric-label { color: #7f8c8d; margin-top: 10px; }
+        .section { margin-bottom: 40px; }
+        .section-title { color: #2c3e50; font-size: 1.8em; margin-bottom: 20px; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .suite { background: #f8f9fa; padding: 20px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #3498db; }
+        .suite.failed { border-left-color: #e74c3c; }
+        .suite-name { font-weight: bold; color: #2c3e50; font-size: 1.3em; }
+        .suite-description { color: #7f8c8d; margin: 5px 0; }
+        .suite-status { display: inline-block; padding: 5px 15px; border-radius: 15px; color: white; font-size: 0.9em; margin-top: 10px; }
+        .suite-status.success { background: #27ae60; }
+        .suite-status.failed { background: #e74c3c; }
+        .recommendation { background: #fff3cd; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ffc107; }
+        .recommendation.critical { border-left-color: #dc3545; background: #f8d7da; }
+        .recommendation.high { border-left-color: #fd7e14; background: #fff3cd; }
+        .recommendation-title { font-weight: bold; color: #2c3e50; margin-bottom: 10px; }
+        .recommendation-action { color: #495057; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">🎯 LMStudio 主控测试报告</div>
+            <div class="subtitle">会话ID: lmstudio-master-1755005894928</div>
+            <div class="subtitle">执行时间: 2025-08-12T13:39:18.720Z</div>
+        </div>
+
+        <div class="summary">
+            <div class="metric">
+                <div class="metric-value">100%</div>
+                <div class="metric-label">整体成功率</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">4/4</div>
+                <div class="metric-label">成功套件</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">54.8s</div>
+                <div class="metric-label">总执行时间</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value">1</div>
+                <div class="metric-label">生成建议</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">测试套件执行结果</div>
+            
+                <div class="suite success">
+                    <div class="suite-name">综合验证系统 - 7个阶段的完整验证流程</div>
+                    <div class="suite-description">套件: comprehensive-validation | 优先级: critical</div>
+                    <div class="suite-description">执行时间: 32.1秒</div>
+                    
+                    <div class="suite-status success">
+                        ✅ 成功
+                    </div>
+                </div>
+            
+                <div class="suite success">
+                    <div class="suite-name">自动化数据扫描 - 发现解析错误和生成修复建议</div>
+                    <div class="suite-description">套件: data-scanner | 优先级: high</div>
+                    <div class="suite-description">执行时间: 0.5秒</div>
+                    
+                    <div class="suite-status success">
+                        ✅ 成功
+                    </div>
+                </div>
+            
+                <div class="suite success">
+                    <div class="suite-name">Claude Code集成测试 - 端到端连接和工具调用验证</div>
+                    <div class="suite-description">套件: integration-test | 优先级: critical</div>
+                    <div class="suite-description">执行时间: 22.1秒</div>
+                    
+                    <div class="suite-status success">
+                        ✅ 成功
+                    </div>
+                </div>
+            
+                <div class="suite success">
+                    <div class="suite-name">工具调用解析分析 - 现有数据的深度分析</div>
+                    <div class="suite-description">套件: tool-parsing-analysis | 优先级: medium</div>
+                    <div class="suite-description">执行时间: 0.1秒</div>
+                    
+                    <div class="suite-status success">
+                        ✅ 成功
+                    </div>
+                </div>
+            
+        </div>
+
+        <div class="section">
+            <div class="section-title">智能建议 (1个)</div>
+            
+                <div class="recommendation medium">
+                    <div class="recommendation-title">⚠️ LMStudio集成持续优化</div>
+                    <div class="recommendation-action"><strong>描述:</strong> 基于测试结果持续优化LMStudio集成</div>
+                    <div class="recommendation-action"><strong>行动:</strong> 建立定期回归测试机制，监控工具调用准确性趋势</div>
+                    <div class="recommendation-action"><strong>影响:</strong> medium</div>
+                </div>
+            
+        </div>
+    </div>
+</body>
+</html>

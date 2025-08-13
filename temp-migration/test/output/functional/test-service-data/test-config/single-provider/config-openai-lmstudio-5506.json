@@ -1,0 +1,32 @@
+{
+  "version": "3.0.0",
+  "server": {
+    "port": 5506,
+    "host": "localhost"
+  },
+  "routing": {
+    "strategy": "single-provider",
+    "defaultProvider": "openai-compatible",
+    "models": {
+      "qwen3-30b": {
+        "provider": "openai-compatible",
+        "account": "lmstudio"
+      }
+    }
+  },
+  "openaicompatible": {
+    "baseURL": "http://localhost:1234",
+    "apiKey": "${OPENAI_API_KEY}"
+  },
+  "security": {
+    "configReadOnly": true,
+    "requireValidation": true,
+    "configHash": null
+  },
+  "metadata": {
+    "createdAt": "2025-08-11T08:07:41.261Z",
+    "createdBy": "Configuration Isolation System",
+    "description": "Single-provider configuration for openai-compatible on port 5506",
+    "placeholder": true
+  }
+}

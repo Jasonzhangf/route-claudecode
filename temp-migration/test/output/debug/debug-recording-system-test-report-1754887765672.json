@@ -1,0 +1,71 @@
+{
+  "sessionId": "debug-test-1754887765507",
+  "startTime": "2025-08-11T04:49:25.507Z",
+  "testSuite": "Debug Recording System",
+  "results": [
+    {
+      "testName": "Debug Recorder Functionality",
+      "status": "PASSED",
+      "message": "All debug recorder functions working correctly",
+      "timestamp": "2025-08-11T04:49:25.509Z",
+      "duration": 0
+    },
+    {
+      "testName": "Audit Trail System",
+      "status": "PASSED",
+      "message": "Audit trail system functioning correctly",
+      "timestamp": "2025-08-11T04:49:25.510Z",
+      "duration": 0
+    },
+    {
+      "testName": "Replay System",
+      "status": "PASSED",
+      "message": "Replay system functioning correctly",
+      "timestamp": "2025-08-11T04:49:25.511Z",
+      "duration": 0
+    },
+    {
+      "testName": "Performance Metrics Collection",
+      "status": "PASSED",
+      "message": "Performance metrics collection working correctly",
+      "timestamp": "2025-08-11T04:49:25.613Z",
+      "duration": 0
+    },
+    {
+      "testName": "Integrated Debug System",
+      "status": "PASSED",
+      "message": "Integrated debug system working correctly",
+      "timestamp": "2025-08-11T04:49:25.615Z",
+      "duration": 0
+    },
+    {
+      "testName": "Layer Wrapping and Debug Integration",
+      "status": "PASSED",
+      "message": "Layer wrapping and debug integration working correctly",
+      "timestamp": "2025-08-11T04:49:25.669Z",
+      "duration": 0
+    },
+    {
+      "testName": "Scenario Creation and Replay",
+      "status": "PASSED",
+      "message": "Scenario creation working correctly (replay test skipped for mock)",
+      "timestamp": "2025-08-11T04:49:25.670Z",
+      "duration": 0
+    },
+    {
+      "testName": "Debug System Status and Reporting",
+      "status": "PASSED",
+      "message": "Debug system status and reporting working correctly",
+      "timestamp": "2025-08-11T04:49:25.672Z",
+      "duration": 0
+    }
+  ],
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0,
+    "successRate": "100.00"
+  },
+  "endTime": "2025-08-11T04:49:25.672Z"
+}

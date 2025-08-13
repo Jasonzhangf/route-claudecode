@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-08-11T06:20:25.666Z",
+  "version": "v3.0-production",
+  "task": "Task 10.2 - API Timeline Visualization",
+  "statistics": {
+    "totalCalls": 8,
+    "uniqueProviders": [
+      "anthropic",
+      "codewhisperer",
+      "gemini",
+      "openai",
+      "unknown"
+    ],
+    "timeSpan": {
+      "start": "2025-08-11T04:20:25.644Z",
+      "end": "2025-08-11T06:15:25.644Z"
+    },
+    "errorRate": 13,
+    "averageLatency": 1258
+  },
+  "outputs": {
+    "htmlVisualization": "/Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-timeline-output/html/api-timeline.html",
+    "jsonExport": "/Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-timeline-output/json/timeline-data.json",
+    "csvExport": "/Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-timeline-output/exports/timeline-data.csv"
+  },
+  "features": {
+    "interactiveHTML": true,
+    "realTimeCapable": true,
+    "multipleFormats": true,
+    "searchAndFilter": true,
+    "zoomCapable": true,
+    "tooltipDetails": true
+  }
+}

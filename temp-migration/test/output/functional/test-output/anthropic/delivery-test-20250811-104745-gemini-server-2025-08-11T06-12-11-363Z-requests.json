@@ -1,0 +1,98 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "rawLine": "[10:48:46] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 22,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "rawLine": "[10:48:46] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 23,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "rawLine": "[10:48:51] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 56,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "rawLine": "[10:48:51] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 57,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 71
+    }
+  }
+]

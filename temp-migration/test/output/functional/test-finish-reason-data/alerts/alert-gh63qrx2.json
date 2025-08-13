@@ -1,0 +1,13 @@
+{
+  "id": "gh63qrx2",
+  "type": "rate_limit_threshold",
+  "timestamp": "2025-08-12T02:21:32.553Z",
+  "severity": "high",
+  "data": {
+    "provider": "test-provider",
+    "count": 4,
+    "threshold": 3,
+    "timeWindow": "1 hour"
+  },
+  "resolved": false
+}

@@ -19,9 +19,11 @@ export interface PipelineContext {
 
 export class ResponsePipeline {
   private lmStudioProcessor: LMStudioBufferedProcessor;
+  private debugSystem: any;
   
-  constructor() {
+  constructor(debugSystem?: any) {
     this.lmStudioProcessor = new LMStudioBufferedProcessor();
+    this.debugSystem = debugSystem;
     logger.info('V3 ResponsePipeline initialized with LM Studio buffered processing');
   }
   
@@ -32,6 +34,20 @@ export class ResponsePipeline {
       isStreaming: context.isStreaming,
       responseType: typeof response
     }, context.requestId);
+    
+    // Record pipeline input
+    if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+      this.debugSystem.debugComponents.recorder.recordLayerIO('pipeline', 'input', {
+        provider: context.provider,
+        model: context.model,
+        response: response,
+        isStreaming: context.isStreaming
+      }, {
+        requestId: context.requestId,
+        processingTime: Date.now() - context.timestamp,
+        layer: 'pipeline'
+      });
+    }
     
     try {
       // 检查是否为 LM Studio provider 或包含 LM Studio 特征的响应
@@ -61,7 +77,35 @@ export class ResponsePipeline {
           hasToolExtraction: this.hasToolExtractionEvidence(processedResponse)
         }, context.requestId);
         
+        // Record pipeline output (LM Studio processed)
+        if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+          this.debugSystem.debugComponents.recorder.recordLayerIO('pipeline', 'output', {
+            provider: context.provider,
+            model: context.model,
+            processedResponse: processedResponse,
+            lmStudioProcessed: true
+          }, {
+            requestId: context.requestId,
+            processingTime: Date.now() - context.timestamp,
+            layer: 'pipeline'
+          });
+        }
+        
         return processedResponse;
+      }
+      
+      // Record pipeline output (no processing)
+      if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+        this.debugSystem.debugComponents.recorder.recordLayerIO('pipeline', 'output', {
+          provider: context.provider,
+          model: context.model,
+          response: response,
+          lmStudioProcessed: false
+        }, {
+          requestId: context.requestId,
+          processingTime: Date.now() - context.timestamp,
+          layer: 'pipeline'
+        });
       }
       
       // 对于非 LM Studio 响应，直接返回

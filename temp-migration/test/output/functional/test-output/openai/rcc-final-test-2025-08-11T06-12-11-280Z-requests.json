@@ -1,0 +1,650 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.274Z",
+    "data": {
+      "rawLine": "[08:56:44] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 63,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.274Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.274Z",
+    "data": {
+      "rawLine": "[08:56:44] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 64,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.274Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.274Z",
+    "data": {
+      "rawLine": "[08:56:44] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 65,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.274Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.275Z",
+    "data": {
+      "rawLine": "[09:11:48] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 386,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.275Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.275Z",
+    "data": {
+      "rawLine": "[09:11:48] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 387,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.275Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.275Z",
+    "data": {
+      "rawLine": "[09:11:48] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 388,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.275Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.276Z",
+    "data": {
+      "rawLine": "[11:06:21] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 807,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.276Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.276Z",
+    "data": {
+      "rawLine": "[11:06:21] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 808,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.276Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.276Z",
+    "data": {
+      "rawLine": "[11:06:21] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 809,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.276Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.276Z",
+    "data": {
+      "rawLine": "[11:08:06] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 897,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.276Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.276Z",
+    "data": {
+      "rawLine": "[11:08:06] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 898,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.276Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.276Z",
+    "data": {
+      "rawLine": "[11:08:06] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 899,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.276Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.277Z",
+    "data": {
+      "rawLine": "[11:09:37] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1066,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.277Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.277Z",
+    "data": {
+      "rawLine": "[11:09:37] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1067,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.277Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.277Z",
+    "data": {
+      "rawLine": "[11:09:37] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1068,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.277Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.277Z",
+    "data": {
+      "rawLine": "[11:14:24] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1382,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.277Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.277Z",
+    "data": {
+      "rawLine": "[11:14:24] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1383,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.277Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.277Z",
+    "data": {
+      "rawLine": "[11:14:24] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1384,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.277Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.278Z",
+    "data": {
+      "rawLine": "[11:14:47] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1493,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.278Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.278Z",
+    "data": {
+      "rawLine": "[11:14:47] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1494,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.278Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.278Z",
+    "data": {
+      "rawLine": "[11:14:47] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1495,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.278Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.279Z",
+    "data": {
+      "rawLine": "[11:23:11] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1989,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.279Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.279Z",
+    "data": {
+      "rawLine": "[11:23:11] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1990,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.279Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.279Z",
+    "data": {
+      "rawLine": "[11:23:11] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1991,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.279Z",
+      "dataSize": 68
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.280Z",
+    "data": {
+      "rawLine": "[11:37:18] [DEBUG] [system] [temp-id] [openai-input-processor] OpenAI input processed through unified preprocessing and tool detection",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2543,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.280Z",
+      "dataSize": 134
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.280Z",
+    "data": {
+      "rawLine": "[11:37:18] [DEBUG] [system] Processed OpenAI request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2544,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.280Z",
+      "dataSize": 53
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.280Z",
+    "data": {
+      "rawLine": "[11:37:18] [DEBUG] [system] Request processed successfully by openai",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 2545,
+      "fileName": "rcc-final-test.log",
+      "extractedAt": "2025-08-11T06:12:11.280Z",
+      "dataSize": 68
+    }
+  }
+]

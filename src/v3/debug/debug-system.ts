@@ -4,6 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { DebugRecorder } from './debug-recorder.js';
 
 export class DebugSystem {
   public debugComponents?: any;
@@ -20,14 +21,35 @@ export class DebugSystem {
     this.activeOperations = new Set();
     this.wrappedLayers = new Set();
     
-    // Mock debug components
-    this.debugComponents = {
-      recorder: {
-        recordLayerIO: (layer: string, type: string, data: any, metadata: any) => {
-          console.log(`🐛 [${metadata?.requestId}] ${layer}:${type}`, data);
+    // Initialize real debug recorder (not mock)
+    try {
+      const recorder = new DebugRecorder();
+      this.debugComponents = {
+        recorder: {
+          recordLayerIO: (layer: string, type: string, data: any, metadata: any) => {
+            try {
+              // Record to real files and also console log
+              recorder.recordLayerIO(layer, type, data, metadata);
+              console.log(`🐛 [${metadata?.requestId}] ${layer}:${type}`, data);
+            } catch (error) {
+              console.error('Failed to record layer I/O:', error);
+              // Fallback to console only if file recording fails
+              console.log(`🐛 [${metadata?.requestId}] ${layer}:${type}`, data);
+            }
+          }
         }
-      }
-    };
+      };
+    } catch (error) {
+      console.error('Failed to initialize DebugRecorder, falling back to mock:', error);
+      // Fallback to mock if real recorder fails
+      this.debugComponents = {
+        recorder: {
+          recordLayerIO: (layer: string, type: string, data: any, metadata: any) => {
+            console.log(`🐛 [${metadata?.requestId}] ${layer}:${type}`, data);
+          }
+        }
+      };
+    }
   }
 
   /**

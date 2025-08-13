@@ -1,0 +1,112 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.394Z",
+    "data": {
+      "rawLine": "[08:21:13] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 33,
+      "fileName": "rcc-5502-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.394Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.394Z",
+    "data": {
+      "rawLine": "[08:21:13] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 34,
+      "fileName": "rcc-5502-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.394Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.394Z",
+    "data": {
+      "rawLine": "[08:24:46] [DEBUG] [system] [1954ff48-9fba-4c96-a16f-206cf1063f39] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 92,
+      "fileName": "rcc-5502-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.394Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.394Z",
+    "data": {
+      "rawLine": "[08:24:46] [ERROR] [error] [1954ff48-9fba-4c96-a16f-206cf1063f39] [output] Failed to process response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[08:24:46] [ERROR] [error] [1954ff48-9fba-4c96-a16f-206cf1063f39] [output] Failed to process response to Anthropic format",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 95,
+      "fileName": "rcc-5502-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.394Z",
+      "dataSize": 121
+    }
+  }
+]

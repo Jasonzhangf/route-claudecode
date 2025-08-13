@@ -1,0 +1,2003 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.282Z",
+    "data": {
+      "rawLine": "🎯 [SERVER] Creating OpenAI client for LMStudio: { providerId: 'lmstudio', type: 'lmstudio' }",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 72,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.282Z",
+      "dataSize": 93
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.282Z",
+    "data": {
+      "rawLine": "✅ [SERVER] OpenAI client for LMStudio created: { providerId: 'lmstudio', name: 'lmstudio' }",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 80,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.282Z",
+      "dataSize": 91
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 187,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 280,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 309,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 422,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key2\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 602,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.283Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key2\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 968,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.283Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.284Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1025,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.284Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.284Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1118,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.284Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.284Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1147,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.284Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.284Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1260,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.284Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.284Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1390,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.284Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.285Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 1834,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.285Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.286Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 2411,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.286Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.288Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key2\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 3201,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.288Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.288Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 3318,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.288Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.289Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key3\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 3737,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.289Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.290Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key3\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 4269,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.290Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5005,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5098,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5127,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5240,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5418,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5511,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5540,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.292Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5653,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.292Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.293Z",
+    "data": {
+      "rawLine": "    '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5831,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.293Z",
+      "dataSize": 60
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.293Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5924,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.293Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.293Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 5953,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.293Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "      '完成了对LMStudio和OpenAI实现的全面审核，确认当前架构完全符合流水线跨节点耦合约束规则。\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6066,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 62
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "    'User: 根据这个规则，审核lmstudio 实现和openai实现，将所有的的patch在该预处理实现的地方都移动到预处理阶段\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6368,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "    'User: 你需要重新构建并运行openai的单配置文件一一验证功能，从lmstudio工具验证开始。我们运行单元测试验证数据库中样本\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6567,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "    '根据对LMStudio和OpenAI实现的全面审核，我已经成功完成了流水线跨节点耦合约束的验证和实施：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6807,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 61
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.294Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 6924,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.294Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.295Z",
+    "data": {
+      "rawLine": "      'User: 根据这个规则，审核lmstudio 实现和openai实现，将所有的的patch在该预处理实现的地方都移动到预处理阶段\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7077,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.295Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.295Z",
+    "data": {
+      "rawLine": "      'User: 你需要重新构建并运行openai的单配置文件一一验证功能，从lmstudio工具验证开始。我们运行单元测试验证数据库中样本\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7276,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.295Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      '根据对LMStudio和OpenAI实现的全面审核，我已经成功完成了流水线跨节点耦合约束的验证和实施：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7516,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 63
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      'User: 根据这个规则，审核lmstudio 实现和openai实现，将所有的的patch在该预处理实现的地方都移动到预处理阶段\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7777,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      'User: 你需要重新构建并运行openai的单配置文件一一验证功能，从lmstudio工具验证开始。我们运行单元测试验证数据库中样本\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 7976,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "      '根据对LMStudio和OpenAI实现的全面审核，我已经成功完成了流水线跨节点耦合约束的验证和实施：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8216,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 63
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.296Z",
+    "data": {
+      "rawLine": "    'User: 根据这个规则，审核lmstudio 实现和openai实现，将所有的的patch在该预处理实现的地方都移动到预处理阶段\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8542,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.296Z",
+      "dataSize": 75
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "    'User: 你需要重新构建并运行openai的单配置文件一一验证功能，从lmstudio工具验证开始。我们运行单元测试验证数据库中样本\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8741,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "    '根据对LMStudio和OpenAI实现的全面审核，我已经成功完成了流水线跨节点耦合约束的验证和实施：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 8981,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 61
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"modelscope-openai-key1\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":true,\"includesShuaihong\":false,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9098,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 229
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "      'User: 根据这个规则，审核lmstudio 实现和openai实现，将所有的的patch在该预处理实现的地方都移动到预处理阶段\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9251,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.297Z",
+    "data": {
+      "rawLine": "      'User: 你需要重新构建并运行openai的单配置文件一一验证功能，从lmstudio工具验证开始。我们运行单元测试验证数据库中样本\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9450,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.297Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "      '根据对LMStudio和OpenAI实现的全面审核，我已经成功完成了流水线跨节点耦合约束的验证和实施：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9690,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 63
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "      'User: 根据这个规则，审核lmstudio 实现和openai实现，将所有的的patch在该预处理实现的地方都移动到预处理阶段\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 9951,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 77
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "      'User: 你需要重新构建并运行openai的单配置文件一一验证功能，从lmstudio工具验证开始。我们运行单元测试验证数据库中样本\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10150,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "      '根据对LMStudio和OpenAI实现的全面审核，我已经成功完成了流水线跨节点耦合约束的验证和实施：\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10390,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 63
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.298Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10620,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.298Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10814,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 10871,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.299Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11113,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.299Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11420,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11614,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11671,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.300Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 11913,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.300Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12220,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12414,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.301Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12471,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.301Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 12713,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 13020,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 13214,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.302Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 13271,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.302Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 13513,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 13820,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.303Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 14014,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.303Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 14071,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 14313,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.304Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 14620,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.304Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 14814,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 14871,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 15113,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.305Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 15419,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.305Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 15613,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 15670,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 15912,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.306Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 16218,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.306Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 16412,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 16469,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.307Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 16711,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.307Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "    '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 17017,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 113
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: {\"provider\":\"shuaihong-openai\",\"isCompatible\":true,\"includesOpenai\":true,\"includesLmstudio\":false,\"includesModelscope\":false,\"includesShuaihong\":true,\"includesDeepseek\":false}",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 17211,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 223
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 17268,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 115
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.308Z",
+    "data": {
+      "rawLine": "      '   - Audit LMStudio and OpenAI implementations to move patches to preprocessing stage where appropriate\\n' +",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": null,
+      "performance": {
+        "duration": null,
+        "memory": null,
+        "cpu": null
+      }
+    },
+    "metadata": {
+      "lineNumber": 17510,
+      "fileName": "rcc-3456-fixed-v2.log",
+      "extractedAt": "2025-08-11T06:12:11.308Z",
+      "dataSize": 115
+    }
+  }
+]

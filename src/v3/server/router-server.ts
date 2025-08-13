@@ -7,7 +7,7 @@ import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { UnifiedInputProcessor } from '../client/unified-processor.js';
 import { RoutingEngine } from '../router/index.js';
 import { AnthropicOutputProcessor } from '../post-processor/anthropic.js';
-import { CodeWhispererProvider, GeminiProvider, AnthropicProvider, LMStudioClient } from '../provider-protocol/base-provider.js';
+import { CodeWhispererProvider, GeminiProvider, AnthropicProvider } from '../provider-protocol/base-provider.js';
 import { createOpenAIClient } from '../provider-protocol/openai/client-factory.js';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from '../types/index.js';
 import { getLogger, setDefaultPort, createRequestTracker, createErrorTracker } from '../logging/index.js';
@@ -57,10 +57,10 @@ export class RouterServer {
     this.errorTracker = createErrorTracker(config.server.port);
     
     // 初始化响应处理流水线
-    this.responsePipeline = new ResponsePipeline();
+    this.responsePipeline = new ResponsePipeline(this.debugSystem);
     
     // 初始化预处理管道
-    this.preprocessingPipeline = new PreprocessingPipeline(config);
+    this.preprocessingPipeline = new PreprocessingPipeline(config, this.debugSystem);
     
     this.fastify = Fastify({
       logger: config.debug.enabled ? {
@@ -124,26 +124,17 @@ export class RouterServer {
         
         if (providerConfig.type === 'codewhisperer') {
           client = new CodeWhispererProvider(expandedProviderId);
-        } else if (providerConfig.type === 'openai') {
-          // Check if this is specifically an LMStudio provider based on provider ID or endpoint
-          if (expandedProviderId.includes('lmstudio') || 
-              providerConfig.endpoint?.includes('localhost:1234') ||
-              providerConfig.endpoint?.includes('127.0.0.1:1234')) {
-            // Use LMStudioClient for local LMStudio instances
-            client = new LMStudioClient(providerConfig, expandedProviderId);
-          } else {
-            // Use generic OpenAI client for other OpenAI-compatible providers
-            client = createOpenAIClient(providerConfig, expandedProviderId);
-          }
+        } else if (providerConfig.type === 'openai' || providerConfig.type === 'lmstudio') {
+          // All OpenAI-compatible providers use the same client
+          // Special handling (like LM Studio) is done via preprocessors
+          console.log('🎯 Creating unified OpenAI client for:', expandedProviderId, 'type:', providerConfig.type);
+          client = createOpenAIClient(providerConfig, expandedProviderId);
         } else if (providerConfig.type === 'anthropic') {
           // Direct Anthropic API client
           client = new AnthropicProvider(providerConfig);
         } else if (providerConfig.type === 'gemini') {
           // Google Gemini API client
           client = new GeminiProvider(providerConfig, expandedProviderId);
-        } else if (providerConfig.type === 'lmstudio') {
-          // LM Studio local server client (legacy type)
-          client = new LMStudioClient(providerConfig, expandedProviderId);
         } else {
           this.logger.warn(`Unsupported provider type: ${providerConfig.type}`, { providerId: expandedProviderId });
           continue;
@@ -874,7 +865,7 @@ export class RouterServer {
         }
         
         // Apply preprocessing to the request
-        const preprocessedRequest = this.preprocessingPipeline.preprocessRequest(
+        const preprocessedRequest = await this.preprocessingPipeline.preprocessRequest(
           baseRequest, 
           providerId, 
           { 
@@ -897,31 +888,50 @@ export class RouterServer {
           });
         }
         
-        providerResponse = await provider.sendRequest(preprocessedRequest);
-        
-        // Apply postprocessing to the response
-        providerResponse = this.preprocessingPipeline.postprocessResponse(
-          providerResponse,
-          preprocessedRequest,
-          providerId,
-          {
-            requestId,
-            sessionId,
-            targetModel: targetModel || baseRequest.model
-          }
-        );
-        
-        // Record provider-protocol layer output
-        if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
-          this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'output', {
+        try {
+          providerResponse = await provider.sendRequest(preprocessedRequest);
+          
+          // Apply postprocessing to the response
+          providerResponse = this.preprocessingPipeline.postprocessResponse(
+            providerResponse,
+            preprocessedRequest,
             providerId,
-            response: providerResponse,
-            targetModel: targetModel || baseRequest.model
-          }, {
-            requestId,
-            processingTime: Date.now() - startTime,
-            layer: 'provider-protocol'
-          });
+            {
+              requestId,
+              sessionId,
+              targetModel: targetModel || baseRequest.model
+            }
+          );
+          
+          // Record provider-protocol layer output (success)
+          if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+            this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'output', {
+              providerId,
+              response: providerResponse,
+              targetModel: targetModel || baseRequest.model,
+              success: true
+            }, {
+              requestId,
+              processingTime: Date.now() - startTime,
+              layer: 'provider-protocol'
+            });
+          }
+        } catch (providerError) {
+          // Record provider-protocol layer output (error)
+          if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+            this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'output', {
+              providerId,
+              error: providerError instanceof Error ? providerError.message : String(providerError),
+              targetModel: targetModel || baseRequest.model,
+              success: false
+            }, {
+              requestId,
+              processingTime: Date.now() - startTime,
+              layer: 'provider-protocol'
+            });
+          }
+          // Re-throw the error to be handled by outer try-catch
+          throw providerError;
         }
         
         this.logger.logPipeline('provider-response', 'Provider response received', { 
@@ -1168,6 +1178,19 @@ export class RouterServer {
     let streamInitialized = false;
     
     try {
+      // Record provider-protocol layer input for streaming
+      if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+        this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'input', {
+          providerId: (provider as any).id || provider.name || 'unknown-provider',
+          request: request,
+          streaming: true
+        }, {
+          requestId,
+          processingTime: 0,
+          layer: 'provider-protocol'
+        });
+      }
+      
       // 🔧 修复核心沉默失败：先获取流并验证第一个块，确保请求有效性后再设置HTTP状态码
       const streamIterable = provider.sendStreamRequest(request);
       const streamIterator = streamIterable[Symbol.asyncIterator]();
@@ -1415,6 +1438,21 @@ export class RouterServer {
 
       // Do NOT send message_stop event to keep conversation open
 
+      // Record provider-protocol layer output for streaming (success)
+      if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+        this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'output', {
+          providerId: (provider as any).id || provider.name || 'unknown-provider',
+          streaming: true,
+          success: true,
+          outputTokens,
+          chunkCount
+        }, {
+          requestId,
+          processingTime: Date.now(),
+          layer: 'provider-protocol'
+        });
+      }
+      
       // 保持HTTP连接正常结束，避免连接悬挂
       this.logger.logPipeline('streaming-end', 'Streaming completed', { outputTokens }, requestId);
       
@@ -1441,6 +1479,22 @@ export class RouterServer {
       }, requestId, 'server');
 
     } catch (error) {
+      // Record provider-protocol layer output for streaming (error)
+      if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
+        this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'output', {
+          providerId: (provider as any).id || provider.name || 'unknown-provider',
+          streaming: true,
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          outputTokens,
+          chunkCount
+        }, {
+          requestId,
+          processingTime: Date.now(),
+          layer: 'provider-protocol'
+        });
+      }
+      
       const errorMessage = error instanceof Error ? error.message : 'Stream processing failed';
       const errorCode = (error as any)?.response?.status || 500;
       const providerName = provider.name || 'unknown';

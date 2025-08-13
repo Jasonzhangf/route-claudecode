@@ -1,0 +1,58 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.385Z",
+    "data": {
+      "rawLine": "[10:14:51] [WARN] [system] Failed response recorded: modelscope-openai/ZhipuAI/GLM-4.5",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:14:51] [WARN] [system] Failed response recorded: modelscope-openai/ZhipuAI/GLM-4.5",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 122,
+      "fileName": "rcc-debug-5509-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.385Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.385Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 500 - Provider: modelscope-openai, Model: ZhipuAI/GLM-4.5",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 500,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 500 - Provider: modelscope-openai, Model: ZhipuAI/GLM-4.5",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 147,
+      "fileName": "rcc-debug-5509-fixed.log",
+      "extractedAt": "2025-08-11T06:12:11.385Z",
+      "dataSize": 96
+    }
+  }
+]

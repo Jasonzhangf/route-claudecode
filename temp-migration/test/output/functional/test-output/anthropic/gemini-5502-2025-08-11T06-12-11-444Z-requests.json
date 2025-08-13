@@ -1,0 +1,1434 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.440Z",
+    "data": {
+      "rawLine": "[17:08:38] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 43,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.440Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.440Z",
+    "data": {
+      "rawLine": "[17:08:38] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 44,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.440Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:12] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 95,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:12] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 96,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:12] [DEBUG] [system] [a4b6a7e1-d9ed-41bc-9b4d-c26a023d010f] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 118,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:16] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 131,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:16] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 132,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:16] [DEBUG] [system] [635302ad-a181-4564-addb-82d0e64d2d8e] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 155,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:16] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 166,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:16] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 167,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:16] [DEBUG] [system] [ec9a910d-6293-4ebf-9ab3-2514b0f99f00] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 193,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:18] [DEBUG] [system] [a4b6a7e1-d9ed-41bc-9b4d-c26a023d010f] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 209,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:18] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 235,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:18] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 236,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:18] [DEBUG] [system] [edb18daa-a92e-4347-b761-10552317236e] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 258,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:20] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 287,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:20] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 288,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:20] [DEBUG] [system] [ac0b7ebf-16e3-4abd-82ae-6bd623f5436f] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 313,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.441Z",
+    "data": {
+      "rawLine": "[17:09:22] [DEBUG] [system] [ac0b7ebf-16e3-4abd-82ae-6bd623f5436f] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 412,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.441Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:49] [DEBUG] [system] [edb18daa-a92e-4347-b761-10552317236e] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 674,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:49] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 700,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:49] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 701,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:09:49] [DEBUG] [system] [e9d1a07a-dd16-46fe-bc63-2990e9a18e22] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 723,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:10:48] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 771,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:10:48] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 772,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:10:48] [DEBUG] [system] [429628c4-6dea-46ad-bb84-57645c26a120] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 794,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:00] [DEBUG] [system] [429628c4-6dea-46ad-bb84-57645c26a120] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 810,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:00] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 837,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:00] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 838,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:11:00] [DEBUG] [system] [5b7799a5-94e0-4848-9ae2-c0fe997d81c6] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 860,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:32] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 924,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:32] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 925,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:32] [DEBUG] [system] [b50c8b88-3fd5-4b7c-bb85-1d99b20c487b] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 948,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:38] [DEBUG] [system] [b50c8b88-3fd5-4b7c-bb85-1d99b20c487b] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 964,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:38] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 990,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:38] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 991,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.442Z",
+    "data": {
+      "rawLine": "[17:26:38] [DEBUG] [system] [5d2d0bcc-7e5f-434d-93ba-9ea2ab3d0d59] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1013,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.442Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:07] [DEBUG] [system] [5d2d0bcc-7e5f-434d-93ba-9ea2ab3d0d59] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1029,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:07] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1055,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:07] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1056,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:27:07] [DEBUG] [system] [1b0ccc1f-64c7-4a59-9f97-5a580c1c3c0f] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1078,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:28:45] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1202,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:28:45] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1203,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:28:45] [DEBUG] [system] [31465dbd-3253-409e-867f-dde06780e6a7] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1225,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:28:54] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1273,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:28:54] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1274,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:28:54] [DEBUG] [system] [59cd2b38-8ae7-4867-ab80-4b98b8bfd3a7] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1296,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.443Z",
+    "data": {
+      "rawLine": "[17:29:03] [DEBUG] [system] [59cd2b38-8ae7-4867-ab80-4b98b8bfd3a7] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1312,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.443Z",
+      "dataSize": 123
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:51] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1339,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:51] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1340,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:51] [DEBUG] [system] [68566e85-3d0e-43f7-a3ab-5e92ccdbe81c] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1364,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:51] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1375,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:51] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1376,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:33:51] [DEBUG] [system] [4397a572-e23e-4f75-addf-c3c495f08a75] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1402,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:04] [DEBUG] [system] Processed Anthropic request through unified preprocessing:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1530,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 86
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:04] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1531,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 71
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:04] [DEBUG] [system] [3bae4fa8-7988-4a13-8a22-145ce546e901] [gemini-transformer] Converting Anthropic request to Gemini format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1556,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 133
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.444Z",
+    "data": {
+      "rawLine": "[17:34:06] [DEBUG] [system] [3bae4fa8-7988-4a13-8a22-145ce546e901] [output] [TRACE] Processing response to Anthropic format",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 1649,
+      "fileName": "gemini-5502.log",
+      "extractedAt": "2025-08-11T06:12:11.444Z",
+      "dataSize": 123
+    }
+  }
+]

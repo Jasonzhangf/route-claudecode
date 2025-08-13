@@ -1,0 +1,302 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "rawLine": "[10:48:51] [DEBUG] [system] [88201f5d-d478-4d79-bd1f-a2a7cf755058] [routing] Legacy round-robin provider selection: gemini-test",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 65,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 127
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.362Z",
+    "data": {
+      "rawLine": "[10:48:51] [DEBUG] [system] [88201f5d-d478-4d79-bd1f-a2a7cf755058] [routing] Routing default to gemini-test",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 67,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.362Z",
+      "dataSize": 107
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [ERROR] [error] [88201f5d-d478-4d79-bd1f-a2a7cf755058] [server] Provider not found: gemini-test",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "error",
+        "message": "[10:48:51] [ERROR] [error] [88201f5d-d478-4d79-bd1f-a2a7cf755058] [server] Provider not found: gemini-test",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 69,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 106
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 72,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 96,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 89
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 126,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 150,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 89
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 180,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 204,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 89
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": null,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": "warn",
+        "message": "[10:48:51] [WARN] [system] Failed response recorded: gemini-test/gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 234,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 79
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.363Z",
+    "data": {
+      "rawLine": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+      "timestamp": null,
+      "request": null,
+      "response": {
+        "status": 404,
+        "headers": null,
+        "body": null,
+        "duration": null
+      },
+      "error": {
+        "level": null,
+        "message": "🔚 [REGULAR] Response sent with status 404 - Provider: gemini-test, Model: gemini-2.5-pro",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 258,
+      "fileName": "delivery-test-20250811-104745-gemini-server.log",
+      "extractedAt": "2025-08-11T06:12:11.363Z",
+      "dataSize": 89
+    }
+  }
+]

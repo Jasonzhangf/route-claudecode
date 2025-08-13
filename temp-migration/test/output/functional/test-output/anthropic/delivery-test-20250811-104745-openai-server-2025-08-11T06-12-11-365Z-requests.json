@@ -1,0 +1,98 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:41] [INFO] [system]    POST /v1/messages             - Anthropic API proxy",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 26,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:41] [INFO] [system]    POST /v1/messages/count_tokens - Token counting API",
+      "timestamp": null,
+      "request": {
+        "method": "POST",
+        "url": "/v1/messages/count_tokens",
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 27,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 81
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:46] [DEBUG] [system] Processed Anthropic request:",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 60,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 56
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "anthropic",
+    "timestamp": "2025-08-11T06:12:11.365Z",
+    "data": {
+      "rawLine": "[10:48:46] [DEBUG] [system] Request processed successfully by anthropic",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 61,
+      "fileName": "delivery-test-20250811-104745-openai-server.log",
+      "extractedAt": "2025-08-11T06:12:11.365Z",
+      "dataSize": 71
+    }
+  }
+]

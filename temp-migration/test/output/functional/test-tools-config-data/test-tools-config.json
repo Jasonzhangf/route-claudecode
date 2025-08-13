@@ -1,0 +1,91 @@
+{
+  "version": "3.0.0",
+  "lastUpdated": "2025-08-11T07:06:31.580Z",
+  "tools": {
+    "log-parser": {
+      "enabled": true,
+      "inputDir": "./logs",
+      "outputDir": "./provider-protocols",
+      "maxFiles": 100,
+      "providerProtocols": [
+        "anthropic",
+        "openai",
+        "gemini",
+        "codewhisperer"
+      ],
+      "metadata": {
+        "category": "data-processing",
+        "description": "Provider-protocol-classified data extraction from logs",
+        "lastConfigured": "2025-08-11T07:06:31.573Z"
+      },
+      "lastUpdated": "2025-08-11T07:06:31.573Z",
+      "version": "3.0.0"
+    },
+    "timeline-visualizer": {
+      "enabled": true,
+      "inputPath": "./provider-protocols",
+      "outputPath": "./timeline-output",
+      "maxCalls": 100,
+      "timeRangeHours": 48,
+      "colorScheme": "default",
+      "metadata": {
+        "category": "visualization",
+        "description": "Interactive API timeline visualization with multi-provider support",
+        "lastConfigured": "2025-08-11T07:06:31.573Z"
+      },
+      "lastUpdated": "2025-08-11T07:06:31.577Z",
+      "version": "3.0.0"
+    },
+    "finish-reason-tracker": {
+      "enabled": true,
+      "baseDir": "~/.route-claude-code/finish-reasons",
+      "alertThresholds": {
+        "errorRateHigh": 0.25,
+        "rateLimitFrequency": 15
+      },
+      "retentionDays": 30,
+      "categories": [
+        "stop",
+        "length",
+        "tool_calls",
+        "error",
+        "custom"
+      ],
+      "metadata": {
+        "category": "monitoring",
+        "description": "Comprehensive finish reason logging and pattern analysis",
+        "lastConfigured": "2025-08-11T07:06:31.573Z"
+      },
+      "lastUpdated": "2025-08-11T07:06:31.580Z",
+      "version": "3.0.0"
+    },
+    "dynamic-config-manager": {
+      "enabled": true,
+      "configPath": "./config",
+      "backupEnabled": true,
+      "validationStrict": true,
+      "auditLog": true,
+      "metadata": {
+        "category": "configuration",
+        "description": "Real-time configuration management with validation and rollback",
+        "lastConfigured": "2025-08-11T07:06:31.573Z"
+      },
+      "lastUpdated": "2025-08-11T07:06:31.573Z",
+      "version": "3.0.0"
+    },
+    "configuration-dashboard": {
+      "enabled": true,
+      "port": 3458,
+      "enableMetrics": true,
+      "refreshInterval": 5000,
+      "theme": "dark",
+      "metadata": {
+        "category": "monitoring",
+        "description": "Web-based real-time configuration monitoring dashboard",
+        "lastConfigured": "2025-08-11T07:06:31.573Z"
+      },
+      "lastUpdated": "2025-08-11T07:06:31.573Z",
+      "version": "3.0.0"
+    }
+  }
+}

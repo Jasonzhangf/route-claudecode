@@ -1,0 +1,13 @@
+{
+  "id": "876ok9vx",
+  "type": "high_error_rate",
+  "timestamp": "2025-08-11T07:01:29.603Z",
+  "severity": "critical",
+  "data": {
+    "provider": "error-test-provider",
+    "errorRate": "50.00%",
+    "threshold": "20.00%",
+    "timeWindow": "1 hour"
+  },
+  "resolved": false
+}

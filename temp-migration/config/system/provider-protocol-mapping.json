@@ -1,0 +1,94 @@
+{
+  "protocolMapping": {
+    "openai-compatible": {
+      "type": "openai",
+      "authentication": {
+        "type": "bearer"
+      },
+      "timeout": 60000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "openai-compatible-v3": {
+      "type": "openai",
+      "authentication": {
+        "type": "bearer"
+      },
+      "timeout": 60000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "lmstudio": {
+      "type": "openai",
+      "authentication": {
+        "type": "none"
+      },
+      "timeout": 120000,
+      "maxRetries": 2,
+      "retryDelay": 1000
+    },
+    "shuaihong": {
+      "type": "openai",
+      "authentication": {
+        "type": "bearer"
+      },
+      "timeout": 60000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "modelscope": {
+      "type": "openai",
+      "authentication": {
+        "type": "bearer"
+      },
+      "timeout": 45000,
+      "maxRetries": 2,
+      "retryDelay": 1500
+    },
+    "google": {
+      "type": "gemini",
+      "authentication": {
+        "type": "api-key"
+      },
+      "timeout": 90000,
+      "maxRetries": 2,
+      "retryDelay": 3000
+    },
+    "codewhisperer": {
+      "type": "codewhisperer",
+      "authentication": {
+        "type": "aws-codewhisperer"
+      },
+      "timeout": 120000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "codewhisperer-primary": {
+      "type": "codewhisperer",
+      "authentication": {
+        "type": "aws-codewhisperer"
+      },
+      "timeout": 120000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "codewhisperer-primary-v3": {
+      "type": "codewhisperer",
+      "authentication": {
+        "type": "aws-codewhisperer"
+      },
+      "timeout": 120000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "anthropic": {
+      "type": "anthropic",
+      "authentication": {
+        "type": "bearer"
+      },
+      "timeout": 120000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    }
+  }
+}

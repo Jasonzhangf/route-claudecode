@@ -1,0 +1,13 @@
+{
+  "id": "z5wb81xl",
+  "type": "high_error_rate",
+  "timestamp": "2025-08-12T02:21:32.551Z",
+  "severity": "critical",
+  "data": {
+    "provider": "openai",
+    "errorRate": "100.00%",
+    "threshold": "20.00%",
+    "timeWindow": "1 hour"
+  },
+  "resolved": false
+}

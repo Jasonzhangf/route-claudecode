@@ -1,0 +1,74 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.391Z",
+    "data": {
+      "rawLine": "[08:49:29] [DEBUG] [system] [57a5953e-724c-4e0c-9624-7a066823078f] [provider] [TRACE] Sending request to Gemini",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 85,
+      "fileName": "rcc-fixed-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.391Z",
+      "dataSize": 111
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.391Z",
+    "data": {
+      "rawLine": "[08:49:29] [INFO] [system] [57a5953e-724c-4e0c-9624-7a066823078f] [gemini-provider] Processing pure Gemini API request",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 86,
+      "fileName": "rcc-fixed-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.391Z",
+      "dataSize": 118
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "gemini",
+    "timestamp": "2025-08-11T06:12:11.391Z",
+    "data": {
+      "rawLine": "[08:49:35] [INFO] [system] [57a5953e-724c-4e0c-9624-7a066823078f] [gemini-provider] Pure Gemini API request completed successfully",
+      "timestamp": null,
+      "request": {
+        "method": null,
+        "url": null,
+        "headers": null,
+        "body": null
+      },
+      "response": null,
+      "error": null,
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 88,
+      "fileName": "rcc-fixed-startup.log",
+      "extractedAt": "2025-08-11T06:12:11.391Z",
+      "dataSize": 130
+    }
+  }
+]

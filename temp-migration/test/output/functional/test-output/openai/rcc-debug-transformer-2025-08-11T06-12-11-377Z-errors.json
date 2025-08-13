@@ -1,0 +1,48 @@
+[
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.376Z",
+    "data": {
+      "rawLine": "[10:31:04] [ERROR] [error] [session_1754879464237_h74a7izxd:conv_1754879464237_2mmumt2tq:1:1754879464241:80dk] [pure-api-handler] Pure OpenAI API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:31:04] [ERROR] [error] [session_1754879464237_h74a7izxd:conv_1754879464237_2mmumt2tq:1:1754879464241:80dk] [pure-api-handler] Pure OpenAI API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 201,
+      "fileName": "rcc-debug-transformer.log",
+      "extractedAt": "2025-08-11T06:12:11.376Z",
+      "dataSize": 157
+    }
+  },
+  {
+    "type": "unstructured",
+    "providerProtocol": "openai",
+    "timestamp": "2025-08-11T06:12:11.377Z",
+    "data": {
+      "rawLine": "[10:36:42] [ERROR] [error] [session_1754879464237_h74a7izxd:conv_1754879464237_2mmumt2tq:2:1754879802394:mew6] [pure-api-handler] Pure OpenAI API call failed",
+      "timestamp": null,
+      "request": null,
+      "response": null,
+      "error": {
+        "level": "error",
+        "message": "[10:36:42] [ERROR] [error] [session_1754879464237_h74a7izxd:conv_1754879464237_2mmumt2tq:2:1754879802394:mew6] [pure-api-handler] Pure OpenAI API call failed",
+        "stack": null
+      },
+      "performance": null
+    },
+    "metadata": {
+      "lineNumber": 362,
+      "fileName": "rcc-debug-transformer.log",
+      "extractedAt": "2025-08-11T06:12:11.377Z",
+      "dataSize": 157
+    }
+  }
+]
