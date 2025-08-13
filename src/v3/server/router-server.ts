@@ -10,6 +10,7 @@ import { AnthropicOutputProcessor } from '../post-processor/anthropic.js';
 import { CodeWhispererProvider, GeminiProvider, AnthropicProvider } from '../provider-protocol/base-provider.js';
 import { createOpenAIClient } from '../provider-protocol/openai/client-factory.js';
 import { RouterConfig, BaseRequest, ProviderConfig, Provider, RoutingCategory, CategoryRouting, ProviderError } from '../types/index.js';
+import { ProcessingContext } from '../shared/layer-interface.js';
 import { getLogger, setDefaultPort, createRequestTracker, createErrorTracker } from '../logging/index.js';
 import { sessionManager } from '../session/manager.js';
 import { ProviderExpander, ProviderExpansionResult } from '../router/provider-expander.js';
@@ -992,7 +993,21 @@ export class RouterServer {
         });
       }
       
-      const finalResponse = await this.outputProcessor.process(pipelineResponse, baseRequest);
+      // Create processing context for post-processor
+      const postProcessorContext = {
+        sessionId,
+        requestId,
+        timestamp: new Date(startTime),
+        metadata: { 
+          layer: 'post-processor', 
+          processingTime: Date.now() - startTime,
+          baseRequest,
+          provider: providerId
+        },
+        debugEnabled: !!this.debugSystem
+      };
+      
+      const finalResponse = await this.outputProcessor.process(pipelineResponse, postProcessorContext);
       
       // Record post-processor layer output
       if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {

@@ -21,11 +21,19 @@ export class UnifiedInputProcessor {
   }
 
   async processRequest(rawRequest: any): Promise<BaseRequest> {
+    // 🚨 Zero-fallback principle: Validate required fields explicitly
+    if (!rawRequest.model) {
+      throw new Error('Request missing required field: model');
+    }
+    if (!rawRequest.messages || !Array.isArray(rawRequest.messages)) {
+      throw new Error('Request missing required field: messages (must be array)');
+    }
+    
     // Basic request processing - normalize to standard format
     const request: BaseRequest = {
-      model: rawRequest.model || 'default',
+      model: rawRequest.model,
       max_tokens: rawRequest.max_tokens || 1000,
-      messages: rawRequest.messages || [],
+      messages: rawRequest.messages,
       tools: rawRequest.tools || [],
       stream: rawRequest.stream || false
     };

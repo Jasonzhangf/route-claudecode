@@ -1,5 +1,0 @@
-列出当前目录下的文件
-创建一个名为test.txt的文件，内容是"Hello World"
-读取test.txt文件的内容
-删除test.txt文件
-/exit

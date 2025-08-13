@@ -12,7 +12,11 @@ export class FinishReasonDebug {
   }
 
   static mapReason(provider: string, reason: string): string {
-    return reason || 'stop';
+    // 🚨 Zero-fallback principle: Never use default 'stop' without validation
+    if (!reason) {
+      throw new Error(`Invalid finish reason: Missing finish_reason from provider ${provider}`);
+    }
+    return reason;
   }
 
   static logFinishReasonDebug(reason: string, context: any): void {

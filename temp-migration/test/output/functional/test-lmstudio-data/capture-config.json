@@ -1,9 +1,0 @@
-{
-  "enabled": true,
-  "targets": [
-    "lmstudio",
-    "openai-protocol"
-  ],
-  "outputPath": "/Users/fanzhang/Documents/github/route-claudecode/test/output/functional/test-lmstudio-data/captures",
-  "timestamp": "2025-08-12T13:38:14.943Z"
-}

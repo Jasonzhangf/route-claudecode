@@ -110,7 +110,9 @@ export class LMStudioBufferedProcessor implements LayerInterface {
       logger.error('LM Studio buffered processing failed', {
         error: error instanceof Error ? error.message : String(error)
       }, context.requestId);
-      return input;
+      
+      // 🚨 Zero-fallback principle: Never return corrupted input silently
+      throw new Error(`LM Studio buffered processing failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

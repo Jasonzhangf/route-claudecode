@@ -1,0 +1,122 @@
+{
+  "sessionId": "lmstudio-tool-parsing-analysis-1755101585276",
+  "timestamp": "2025-08-13T16:13:05.276Z",
+  "testType": "lmstudio-tool-parsing-analysis",
+  "results": [
+    {
+      "test": "captured-data-analysis",
+      "status": "no-data",
+      "details": {
+        "totalFiles": 0,
+        "toolCallFiles": 0,
+        "parsingIssues": 0,
+        "uniquePatterns": [],
+        "models": []
+      }
+    },
+    {
+      "test": "pattern-recognition",
+      "status": "passed",
+      "details": {
+        "totalTests": 5,
+        "passed": 5,
+        "results": [
+          {
+            "name": "standard-pattern",
+            "success": true,
+            "expected": "standard",
+            "detected": [
+              "standard",
+              "prefix"
+            ]
+          },
+          {
+            "name": "prefix-pattern",
+            "success": true,
+            "expected": "prefix",
+            "detected": [
+              "standard",
+              "prefix"
+            ]
+          },
+          {
+            "name": "function-pattern",
+            "success": true,
+            "expected": "function",
+            "detected": [
+              "function"
+            ]
+          },
+          {
+            "name": "json-pattern",
+            "success": true,
+            "expected": "json",
+            "detected": [
+              "json"
+            ]
+          },
+          {
+            "name": "complex-multiline",
+            "success": true,
+            "expected": "standard",
+            "detected": [
+              "standard",
+              "prefix"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "test": "parsing-logic-validation",
+      "status": "failed",
+      "details": {
+        "textLength": 0,
+        "patternsDetected": [],
+        "hasProperStructure": false,
+        "extractedToolCalls": 0,
+        "toolCalls": []
+      }
+    },
+    {
+      "test": "fix-recommendations",
+      "status": "completed",
+      "details": {
+        "totalRecommendations": 2,
+        "byPriority": {
+          "critical": 1,
+          "high": 0,
+          "medium": 1
+        },
+        "recommendations": [
+          {
+            "priority": "critical",
+            "category": "extraction-failure",
+            "title": "工具调用提取完全失败",
+            "description": "无法从响应文本中提取任何工具调用",
+            "solution": "重新设计提取逻辑，可能需要采用状态机或多阶段解析",
+            "implementation": "complete parser redesign"
+          },
+          {
+            "priority": "medium",
+            "category": "lmstudio-specific",
+            "title": "LM Studio兼容性优化",
+            "description": "LM Studio使用OpenAI兼容API，但可能有特殊的响应格式",
+            "solution": "添加LM Studio特定的预处理器，处理其独特的响应格式",
+            "implementation": "src/providers/openai/lmstudio-preprocessor.ts"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "total": 4,
+    "passed": 1,
+    "failed": 1,
+    "completed": 1,
+    "issuesFound": 0,
+    "recommendations": 2,
+    "criticalIssues": 1,
+    "highIssues": 0
+  }
+}
