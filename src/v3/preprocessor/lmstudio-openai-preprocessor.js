@@ -222,84 +222,64 @@ export class LMStudioOpenAIPreprocessor {
 
     /**
      * Post-process response from LM Studio
-     * Converts OpenAI format response back to Anthropic format
+     * Only fixes LM Studio specific issues, keeps OpenAI format for Transformer layer
      */
     async postprocessResponse(response, originalRequest, context) {
         if (!response) {
             return response;
         }
 
-        logger.debug('LM Studio postprocessing response', {
+        logger.debug('LM Studio postprocessing response (format fixing only)', {
             responseType: typeof response,
             hasChoices: !!(response.choices && response.choices.length > 0),
             providerId: context.providerId
         });
 
-        // Handle LM Studio specific response format
+        // Only handle LM Studio specific format fixes
         if (response.choices && response.choices.length > 0) {
             const choice = response.choices[0];
             const message = choice?.message;
             
-            // Handle tool calls response
-            if (message?.tool_calls && Array.isArray(message.tool_calls)) {
-                console.log(`🔧 LM Studio returned ${message.tool_calls.length} tool calls`);
-                
-                const content = [];
-                
-                // Add text content if present (including reasoning field)
-                const textContent = message.content || message.reasoning || '';
-                if (textContent) {
-                    content.push({
-                        type: 'text',
-                        text: textContent
-                    });
+            // Fix LM Studio specific issues but keep OpenAI format
+            if (message) {
+                // Handle reasoning field specific to LM Studio
+                if (message.reasoning && !message.content) {
+                    message.content = message.reasoning;
+                    delete message.reasoning;
                 }
                 
-                // Convert OpenAI tool_calls to Anthropic tool_use format
-                for (const toolCall of message.tool_calls) {
-                    content.push({
-                        type: 'tool_use',
-                        id: toolCall.id || `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                        name: toolCall.function?.name || 'unknown_function',
-                        input: this.parseToolArguments(toolCall.function?.arguments)
-                    });
-                }
-                
-                return {
-                    id: response.id || `msg-lmstudio-${Date.now()}`,
-                    type: 'message',
-                    role: 'assistant',
-                    content,
-                    model: originalRequest.model, // Keep original model name for client
-                    stop_reason: this.mapFinishReason(choice?.finish_reason),
-                    usage: {
-                        input_tokens: response.usage?.prompt_tokens || 0,
-                        output_tokens: response.usage?.completion_tokens || 0
+                // Fix tool call arguments parsing issues
+                if (message.tool_calls && Array.isArray(message.tool_calls)) {
+                    console.log(`🔧 LM Studio returned ${message.tool_calls.length} tool calls`);
+                    
+                    for (const toolCall of message.tool_calls) {
+                        if (toolCall.function?.arguments && typeof toolCall.function.arguments === 'string') {
+                            // Ensure arguments are valid JSON
+                            try {
+                                JSON.parse(toolCall.function.arguments);
+                            } catch (error) {
+                                // Try to fix common malformed JSON cases
+                                const cleaned = toolCall.function.arguments.trim()
+                                    .replace(/,\s*}/g, '}')
+                                    .replace(/,\s*]/g, ']');
+                                try {
+                                    JSON.parse(cleaned);
+                                    toolCall.function.arguments = cleaned;
+                                } catch (secondError) {
+                                    // If still can't parse, wrap in object
+                                    toolCall.function.arguments = JSON.stringify({ 
+                                        raw_arguments: toolCall.function.arguments 
+                                    });
+                                }
+                            }
+                        }
                     }
-                };
-            }
-            
-            // Handle regular text response (including reasoning field)
-            const textContent = message?.content || message?.reasoning || 'No response from LM Studio';
-            
-            return {
-                id: response.id || `msg-lmstudio-${Date.now()}`,
-                type: 'message',
-                role: 'assistant',
-                content: [{
-                    type: 'text',
-                    text: textContent
-                }],
-                model: originalRequest.model, // Keep original model name for client
-                stop_reason: this.mapFinishReason(choice?.finish_reason),
-                usage: {
-                    input_tokens: response.usage?.prompt_tokens || 0,
-                    output_tokens: response.usage?.completion_tokens || 0
                 }
-            };
+            }
         }
 
-        // Fallback for unexpected response format
+        // Return fixed OpenAI format response (NOT Anthropic format)
+        // Format conversion will be handled by Transformer layer
         return response;
     }
 

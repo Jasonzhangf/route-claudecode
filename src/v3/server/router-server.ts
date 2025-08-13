@@ -865,7 +865,7 @@ export class RouterServer {
         }
         
         // Apply preprocessing to the request
-        const preprocessedRequest = this.preprocessingPipeline.preprocessRequest(
+        const preprocessedRequest = await this.preprocessingPipeline.preprocessRequest(
           baseRequest, 
           providerId, 
           { 
@@ -1181,7 +1181,7 @@ export class RouterServer {
       // Record provider-protocol layer input for streaming
       if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
         this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'input', {
-          providerId: 'streaming-provider',
+          providerId: (provider as any).id || provider.name || 'unknown-provider',
           request: request,
           streaming: true
         }, {
@@ -1441,7 +1441,7 @@ export class RouterServer {
       // Record provider-protocol layer output for streaming (success)
       if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
         this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'output', {
-          providerId: 'streaming-provider',
+          providerId: (provider as any).id || provider.name || 'unknown-provider',
           streaming: true,
           success: true,
           outputTokens,
@@ -1482,7 +1482,7 @@ export class RouterServer {
       // Record provider-protocol layer output for streaming (error)
       if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {
         this.debugSystem.debugComponents.recorder.recordLayerIO('provider-protocol', 'output', {
-          providerId: 'streaming-provider',
+          providerId: (provider as any).id || provider.name || 'unknown-provider',
           streaming: true,
           success: false,
           error: error instanceof Error ? error.message : String(error),
