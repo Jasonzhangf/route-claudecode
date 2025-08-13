@@ -1,8 +1,0 @@
-{
-  "id": "rollback-1754910188046",
-  "timestamp": "2025-08-11T11:03:08.065Z",
-  "gitHash": "1fe1c43f3fc29e02abd636f8b054261965801485",
-  "gitBranch": "refactor/v3.0-plugin-architecture",
-  "version": "3.0.0-test",
-  "deploymentId": "deploy-2025-08-11T11-03-08-046Z-167f23e7"
-}

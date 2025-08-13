@@ -180,8 +180,8 @@ export class SixLayerArchitecture {
         dataSize: JSON.stringify(data).length
       };
 
-      // Emit debug event (in production, integrate with debug recording system)
-      // process.emit('layerDebug', debugRecord);
+      // Emit debug event - integrated with debug recording system
+      (process as any).emit('layerDebug', debugRecord);
     }
   }
 }

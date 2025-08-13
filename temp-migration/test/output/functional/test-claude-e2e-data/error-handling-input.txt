@@ -1,4 +1,0 @@
-读取一个不存在的文件nonexistent.txt
-执行一个错误的命令：invalidcommand
-现在正常操作：列出当前目录
-/exit

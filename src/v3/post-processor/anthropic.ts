@@ -6,8 +6,14 @@
  */
 
 import { BaseResponse } from '../types/index.js';
+import { StandardProcessor, ProcessingContext, LayerCapabilities } from '../shared/layer-interface.js';
 
-export class AnthropicOutputProcessor {
+export class AnthropicOutputProcessor implements StandardProcessor {
+  readonly name = 'anthropic-output-processor';
+  readonly version = '3.0.1';
+  readonly layerType = 'post-processor' as const;
+  readonly dependencies: string[] = [];
+
   private port: number;
 
   constructor(port: number) {
@@ -15,11 +21,33 @@ export class AnthropicOutputProcessor {
     console.log(`📤 V3 AnthropicOutputProcessor initialized for port ${port}`);
   }
 
-  async process(response: any, request?: any): Promise<BaseResponse> {
-    return this.processResponse(response, 'default');
+  async process(input: any, context: ProcessingContext): Promise<any> {
+    return this.processResponse(input, null, context);
   }
 
-  async processResponse(response: any, requestId: string): Promise<BaseResponse> {
+  async healthCheck(): Promise<boolean> {
+    return true;
+  }
+
+  getCapabilities(): LayerCapabilities {
+    return {
+      supportedOperations: ['post-process', 'validate-format', 'anthropic-format'],
+      inputTypes: ['any-response'],
+      outputTypes: ['anthropic-response'],
+      dependencies: [],
+      version: this.version
+    };
+  }
+
+  async initialize(config?: any): Promise<void> {
+    // 初始化处理器
+  }
+
+  async cleanup(): Promise<void> {
+    // 清理资源
+  }
+
+  async processResponse(response: any, originalRequest: any, context: ProcessingContext): Promise<BaseResponse> {
     // Post-processor: 只做校验和微调，不做格式转换
     // 🚨 Zero-fallback principle: 在v3.0.1架构下，Post-processor接收预转换的数据，但仍需验证关键字段
     

@@ -243,6 +243,38 @@ export class LayerRegistry extends EventEmitter {
 export const globalLayerRegistry = new LayerRegistry();
 
 /**
+ * Standard processor interface for unified request/response processing
+ * Extends LayerInterface to provide consistent method signatures across all layers
+ */
+export interface StandardProcessor extends LayerInterface {
+  /**
+   * Process request data - unified signature for all layers
+   * @param request - Request data to process
+   * @param context - Processing context with metadata
+   * @returns Promise resolving to processed request
+   */
+  processRequest?(request: any, context: ProcessingContext): Promise<any>;
+
+  /**
+   * Process response data - unified signature for all layers
+   * @param response - Response data to process
+   * @param originalRequest - Original request for reference
+   * @param context - Processing context with metadata
+   * @returns Promise resolving to processed response
+   */
+  processResponse?(response: any, originalRequest: any, context: ProcessingContext): Promise<any>;
+
+  /**
+   * Post-process response data - unified signature for specialized processing
+   * @param response - Response data to post-process
+   * @param originalRequest - Original request for reference
+   * @param context - Processing context with metadata
+   * @returns Promise resolving to post-processed response
+   */
+  postprocessResponse?(response: any, originalRequest: any, context: ProcessingContext): Promise<any>;
+}
+
+/**
  * Base abstract class for layer implementations
  */
 export abstract class BaseLayer extends EventEmitter implements LayerInterface {
