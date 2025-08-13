@@ -389,8 +389,68 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 3. **文档同步**: 每个测试文件都有对应.md文档
 4. **实时更新**: 每次测试后必须更新文档
 
-### STD-6-STEP-PIPELINE (标准测试流程)
-适用于新功能开发或重大问题调试：
+### 📊 STD-DATA-CAPTURE-PIPELINE (标准数据捕获测试流程) - v3.0架构
+
+**⚠️ 强制执行的新标准测试流程**，集成数据捕获和回放系统：
+
+#### 🔄 四步标准流程 (MANDATORY 4-STEP PROCESS)
+
+**步骤1: 端到端测试 + 数据捕获**
+```bash
+# 启用数据捕获模式运行端到端测试
+rcc3 start config.json --debug
+# 执行完整的端到端测试用例
+# 系统自动捕获六层架构的所有I/O数据到 ~/.route-claudecode/database/
+```
+
+**步骤2: 错误数据链路分析**
+```bash
+# 分析捕获的数据，定位出错的流水线模块
+ls ~/.route-claudecode/database/layers/     # 检查每层的I/O数据
+cat ~/.route-claudecode/database/audit/trail-*.json  # 审计追踪分析
+# 确定出错的具体层级: client/router/post-processor/transformer/provider-protocol/preprocessor/server
+```
+
+**步骤3: 数据回放复现问题**
+```bash
+# 使用回放系统精确复现问题
+node test-replay-system-demo.js
+# 或者从特定流水线步骤开始回放
+# 验证问题确实存在并可重现
+```
+
+**步骤4: 修复验证循环**
+```bash
+# 修复代码逻辑
+# 使用数据回放系统验证修复效果
+# 重复直到问题完全解决
+# 确保修复后的回放测试100%通过
+```
+
+#### 🎯 六层架构数据捕获点 (SIX-LAYER CAPTURE POINTS)
+1. **Client Layer**: 用户输入验证和格式化
+2. **Router Layer**: 模型路由和Provider选择  
+3. **Post-processor Layer**: Provider响应处理
+4. **Transformer Layer**: 数据格式转换
+5. **Provider-Protocol Layer**: 第三方API通信
+6. **Preprocessor Layer**: 工具调用处理
+7. **Server Layer**: 最终响应发送
+
+#### 📋 强制验证检查清单 (MANDATORY VALIDATION CHECKLIST)
+- [ ] **数据捕获完整**: 所有六层的I/O数据均已记录
+- [ ] **错误定位精确**: 明确识别出错的具体层级和操作
+- [ ] **问题回放成功**: 可以通过回放系统重现问题
+- [ ] **修复验证通过**: 修复后的回放测试达到100%成功率
+- [ ] **审计追踪清晰**: 数据流转路径完全可追溯
+
+#### ⛔ 测试流程违规处理 (TESTING VIOLATIONS)
+- **跳过数据捕获** → 立即拒绝，要求重新执行完整流程
+- **未定位具体层级** → 拒绝修复，要求精确的错误分析
+- **回放验证失败** → 禁止提交，要求继续修复直到通过
+- **缺失审计追踪** → 要求补充完整的数据流分析
+
+### 🔄 传统STD-6-STEP-PIPELINE (向后兼容)
+适用于v2.7.0架构或简单调试：
 1. **Step1**: Input Processing - 验证API请求链路
 2. **Step2**: Routing Logic - 验证模型路由逻辑
 3. **Step3**: Transformation - 验证格式转换
@@ -692,7 +752,30 @@ node ~/.route-claudecode/database/analyze-lmstudio-tool-call-issues.js
 5. **[REQUIRED]** 构建部署 → [📄 部署发布规则](.claude/rules/deployment-rules.md) ✅ 必须确认
 6. **[REQUIRED]** 经验记录 → [📄 知识管理规则](.claude/rules/memory-system-rules.md) ✅ 必须更新
 
-### 🚨 问题调试 - 强制程序 (MANDATORY DEBUGGING)
+### 🚨 问题调试 - 强制程序 (MANDATORY DEBUGGING) - v3.0版本
+
+#### 📊 强制数据捕获调试流程 (MANDATORY DATA-CAPTURE DEBUGGING)
+1. **[STEP 1]** 强制查阅相关规则和项目记忆 - **违反此步骤将拒绝继续**
+2. **[STEP 2]** 强制运行STD-DATA-CAPTURE-PIPELINE - **跳过数据捕获将被拒绝**
+   - 启用`--debug`模式进行端到端测试
+   - 收集完整的六层架构I/O数据
+   - 生成审计追踪和性能监控数据
+3. **[STEP 3]** 强制进行错误链路分析 - **未定位具体层级将拒绝修复**
+   - 分析`~/.route-claudecode/database/`中的数据
+   - 精确定位出错的流水线模块
+   - 确定数据流转中断点
+4. **[STEP 4]** 强制数据回放验证 - **回放失败不允许提交**
+   - 使用回放系统重现问题
+   - 验证问题的可重现性
+   - 建立修复验证基线
+5. **[STEP 5]** 强制修复验证循环 - **未达到100%成功率不允许完成**
+   - 修复代码逻辑
+   - 使用数据回放验证修复效果
+   - 重复直到回放测试100%通过
+6. **[STEP 6]** 强制更新测试文档和记忆系统 - **缺失文档将被退回**
+
+#### 🔄 传统调试流程 (向后兼容)
+适用于v2.7.0架构或简单问题：
 1. **[STEP 1]** 强制查阅相关规则和项目记忆 - **违反此步骤将拒绝继续**
 2. **[STEP 2]** 强制运行STD-6-STEP-PIPELINE定位问题 - **跳过测试将被拒绝**
 3. **[STEP 3]** 应用解决方案并强制验证修复 - **未验证不允许提交**
@@ -755,7 +838,7 @@ node ~/.route-claudecode/database/analyze-lmstudio-tool-call-issues.js
 - [ ] **规则查阅完成** - 已查阅相关规则文件
 - [ ] **架构合规验证** - 符合四层架构要求
 - [ ] **编码规范检查** - 零硬编码、零Fallback确认
-- [ ] **测试要求满足** - STD-6-STEP-PIPELINE或交付测试准备就绪
+- [ ] **测试要求满足** - STD-DATA-CAPTURE-PIPELINE（v3.0）或STD-6-STEP-PIPELINE（传统）准备就绪
 - [ ] **记忆专家准备** - 架构变更时记忆专家调用计划确认
 
 ## 🧠 项目记忆存储路径

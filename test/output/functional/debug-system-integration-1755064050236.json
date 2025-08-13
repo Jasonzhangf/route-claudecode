@@ -1,0 +1,141 @@
+{
+  "testId": "debug-system-integration-1755064050236",
+  "testName": "debug-system-integration",
+  "startTime": "2025-08-13T05:47:30.236Z",
+  "results": {
+    "initialization": {
+      "success": false,
+      "error": "debugSystem.getDebugStatus is not a function",
+      "details": {
+        "error": "TypeError: debugSystem.getDebugStatus is not a function\n    at testDebugSystemInitialization (file:///Users/fanzhang/Documents/github/route-claudecode/workspace/module-developer/test/functional/test-debug-system-integration.js:143:36)\n    at async runTest (file:///Users/fanzhang/Documents/github/route-claudecode/workspace/module-developer/test/functional/test-debug-system-integration.js:56:28)"
+      }
+    },
+    "serverStartup": {
+      "success": false,
+      "error": "Debug test server not compiled",
+      "details": {
+        "missingFile": "/Users/fanzhang/Documents/github/route-claudecode/workspace/module-developer/dist/v3/server/router-server-debug-test.js"
+      }
+    },
+    "layerRecording": {
+      "success": true,
+      "details": {
+        "layersRecorded": 7,
+        "recordIds": [
+          "6c8365dd-2093-43aa-8557-61919d55c44e",
+          "6fe65eb9-d48e-4225-8946-4c6d2ffc6db1",
+          "0d592097-425e-46ce-a220-66fe77388043",
+          "ba5342e3-2c19-47b0-bf49-3a4d64c52743",
+          "19e0c042-c59d-445a-9d41-49b007592a0b",
+          "1ff70c3d-0afd-4bd4-939b-f4a9f3131c8b",
+          "4309c930-f28d-499a-bfbe-f49a9e252b65"
+        ],
+        "sessionSummary": {
+          "sessionId": "02710834-3434-4f18-ad13-dd9778d0a20f",
+          "startTime": "2025-08-13T05:47:30.246Z",
+          "endTime": "2025-08-13T05:47:30.247Z",
+          "auditTrail": [
+            {
+              "recordId": "6c8365dd-2093-43aa-8557-61919d55c44e",
+              "layer": "client",
+              "operation": "input",
+              "timestamp": "2025-08-13T05:47:30.246Z",
+              "filePath": "/Users/fanzhang/.route-claudecode/database/layers/client-input-1755064050246.json"
+            },
+            {
+              "recordId": "6fe65eb9-d48e-4225-8946-4c6d2ffc6db1",
+              "layer": "router",
+              "operation": "input",
+              "timestamp": "2025-08-13T05:47:30.247Z",
+              "filePath": "/Users/fanzhang/.route-claudecode/database/layers/router-input-1755064050247.json"
+            },
+            {
+              "recordId": "0d592097-425e-46ce-a220-66fe77388043",
+              "layer": "post-processor",
+              "operation": "input",
+              "timestamp": "2025-08-13T05:47:30.247Z",
+              "filePath": "/Users/fanzhang/.route-claudecode/database/layers/post-processor-input-1755064050247.json"
+            },
+            {
+              "recordId": "ba5342e3-2c19-47b0-bf49-3a4d64c52743",
+              "layer": "transformer",
+              "operation": "input",
+              "timestamp": "2025-08-13T05:47:30.247Z",
+              "filePath": "/Users/fanzhang/.route-claudecode/database/layers/transformer-input-1755064050247.json"
+            },
+            {
+              "recordId": "19e0c042-c59d-445a-9d41-49b007592a0b",
+              "layer": "provider-protocol",
+              "operation": "input",
+              "timestamp": "2025-08-13T05:47:30.247Z",
+              "filePath": "/Users/fanzhang/.route-claudecode/database/layers/provider-protocol-input-1755064050247.json"
+            },
+            {
+              "recordId": "1ff70c3d-0afd-4bd4-939b-f4a9f3131c8b",
+              "layer": "preprocessor",
+              "operation": "input",
+              "timestamp": "2025-08-13T05:47:30.247Z",
+              "filePath": "/Users/fanzhang/.route-claudecode/database/layers/preprocessor-input-1755064050247.json"
+            },
+            {
+              "recordId": "4309c930-f28d-499a-bfbe-f49a9e252b65",
+              "layer": "server",
+              "operation": "input",
+              "timestamp": "2025-08-13T05:47:30.247Z",
+              "filePath": "/Users/fanzhang/.route-claudecode/database/layers/server-input-1755064050247.json"
+            }
+          ],
+          "recordCount": 7,
+          "databasePath": "/Users/fanzhang/.route-claudecode/database"
+        }
+      }
+    },
+    "databaseValidation": {
+      "success": true,
+      "details": {
+        "databasePath": "/Users/fanzhang/.route-claudecode/database",
+        "existingDirs": [
+          "sessions",
+          "layers",
+          "audit",
+          "performance",
+          "replay"
+        ],
+        "missingDirs": [],
+        "layerFiles": 35,
+        "recentFiles": [
+          "transformer-input-1755062460468.json",
+          "transformer-input-1755062563335.json",
+          "transformer-input-1755062691253.json",
+          "transformer-input-1755064050247.json",
+          "transformer-output-1755062563335.json"
+        ]
+      },
+      "files": {
+        "layerFiles": 35,
+        "directories": 5
+      }
+    },
+    "auditTrail": {
+      "success": true,
+      "details": {
+        "auditId": "a4cac2e0-8afe-4271-a8ca-b837e820c719",
+        "auditTrailLength": 0,
+        "sessionId": "f03a6fa9-ac2e-4ce0-855d-0386d0eaaebd"
+      }
+    }
+  },
+  "summary": {
+    "totalTests": 5,
+    "passed": 3,
+    "failed": 2,
+    "successRate": "60%",
+    "duration": "12ms"
+  },
+  "databaseFiles": {
+    "layerFiles": 35,
+    "directories": 5
+  },
+  "errors": [],
+  "endTime": "2025-08-13T05:47:30.248Z"
+}

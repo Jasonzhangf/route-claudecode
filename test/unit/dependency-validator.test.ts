@@ -31,7 +31,8 @@ describe('DependencyValidator', () => {
       dependencies: {
         'typescript': '^5.0.0',
         '@anthropic-ai/sdk': '^0.24.3',
-        'openai': '^4.52.7'
+        'openai': '^4.52.7',
+        '@google/generative-ai': '^0.15.0'
       },
       devDependencies: {
         '@types/node': '^20.0.0'
