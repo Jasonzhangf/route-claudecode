@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "generatedAt": "2025-08-12T02:21:32.555Z",
+    "timeRange": {
+      "hours": 24
+    },
+    "totalEntries": 17,
+    "uniqueProviders": 5,
+    "uniqueCategories": 6
+  },
+  "distributions": {
+    "byCategory": [
+      {
+        "key": "stop",
+        "count": 5,
+        "percentage": "29.41"
+      },
+      {
+        "key": "error",
+        "count": 4,
+        "percentage": "23.53"
+      },
+      {
+        "key": "rate_limit",
+        "count": 2,
+        "percentage": "11.76"
+      },
+      {
+        "key": "content_filter",
+        "count": 2,
+        "percentage": "11.76"
+      },
+      {
+        "key": "tool_calls",
+        "count": 2,
+        "percentage": "11.76"
+      },
+      {
+        "key": "length",
+        "count": 2,
+        "percentage": "11.76"
+      }
+    ],
+    "byProvider": [
+      {
+        "key": "anthropic",
+        "count": 5,
+        "percentage": "29.41"
+      },
+      {
+        "key": "openai",
+        "count": 4,
+        "percentage": "23.53"
+      },
+      {
+        "key": "error-test-provider",
+        "count": 4,
+        "percentage": "23.53"
+      },
+      {
+        "key": "codewhisperer",
+        "count": 2,
+        "percentage": "11.76"
+      },
+      {
+        "key": "gemini",
+        "count": 2,
+        "percentage": "11.76"
+      }
+    ],
+    "byFinishReason": [
+      {
+        "key": "stop",
+        "count": 5,
+        "percentage": "29.41"
+      },
+      {
+        "key": "error",
+        "count": 4,
+        "percentage": "23.53"
+      },
+      {
+        "key": "rate_limit",
+        "count": 2,
+        "percentage": "11.76"
+      },
+      {
+        "key": "content_filter",
+        "count": 2,
+        "percentage": "11.76"
+      },
+      {
+        "key": "tool_calls",
+        "count": 1,
+        "percentage": "5.88"
+      },
+      {
+        "key": "function_call",
+        "count": 1,
+        "percentage": "5.88"
+      },
+      {
+        "key": "max_tokens",
+        "count": 1,
+        "percentage": "5.88"
+      },
+      {
+        "key": "length",
+        "count": 1,
+        "percentage": "5.88"
+      }
+    ],
+    "byHour": [
+      {
+        "key": "10",
+        "count": 10,
+        "percentage": "58.82"
+      },
+      {
+        "key": "15",
+        "count": 7,
+        "percentage": "41.18"
+      }
+    ]
+  },
+  "insights": [
+    "Most common finish reason: stop (5 occurrences)",
+    "Most active provider: anthropic (5 requests)",
+    "Error rate: 23.53% (4 errors out of 17 total)"
+  ]
+}

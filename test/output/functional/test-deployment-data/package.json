@@ -1,0 +1,11 @@
+{
+  "name": "test-route-claudecode",
+  "version": "3.0.0-test",
+  "description": "Test package for deployment pipeline",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo \"Build completed\"",
+    "test": "echo \"Tests passed\""
+  },
+  "author": "Jason Zhang"
+}

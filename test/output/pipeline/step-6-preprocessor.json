@@ -2,26 +2,31 @@
   "step": 6,
   "name": "Preprocessor Testing",
   "layer": "preprocessor",
-  "module": "src/preprocessor/index.js",
-  "startTime": "2025-08-11T07:06:32.165Z",
-  "status": "failed",
+  "module": "src/v3/preprocessor/unified-patch-preprocessor.ts",
+  "startTime": "2025-08-12T01:42:01.467Z",
+  "status": "passed",
   "mockupMode": false,
   "realImplementation": true,
   "validations": [
     {
       "test": "Module Exists",
-      "status": "failed",
-      "details": "Module not found at src/preprocessor/index.js"
+      "status": "passed",
+      "details": "Module found at /Users/fanzhang/Documents/github/route-claudecode/src/v3/preprocessor/unified-patch-preprocessor.ts"
     },
     {
-      "test": "Preprocessor Chain Check",
+      "test": "v3.0 Unified Patch Preprocessor",
       "status": "passed",
-      "details": "Preprocessor chain validated"
+      "details": "Unified patch preprocessor implementation found"
+    },
+    {
+      "test": "v3.0 Preprocessor Layer",
+      "status": "passed",
+      "details": "v3.0 Preprocessor layer architecture validated"
     }
   ],
   "output": {
     "layer": "preprocessor",
-    "timestamp": "2025-08-11T07:06:32.165Z",
+    "timestamp": "2025-08-12T01:42:01.467Z",
     "realImplementation": true,
     "tests": [
       {
@@ -33,11 +38,11 @@
     "metrics": {
       "executionTime": 0,
       "memoryUsage": {
-        "rss": 42319872,
-        "heapTotal": 5603328,
-        "heapUsed": 4834392,
-        "external": 1766303,
-        "arrayBuffers": 38941
+        "rss": 45957120,
+        "heapTotal": 6651904,
+        "heapUsed": 4419856,
+        "external": 1739077,
+        "arrayBuffers": 11715
       },
       "testCount": 1,
       "passCount": 1,
@@ -46,5 +51,5 @@
   },
   "duration": 0,
   "errors": [],
-  "endTime": "2025-08-11T07:06:32.165Z"
+  "endTime": "2025-08-12T01:42:01.467Z"
 }

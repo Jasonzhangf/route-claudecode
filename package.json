@@ -1,23 +1,37 @@
 {
-  "name": "claude-code-router-mockup",
-  "version": "1.0.0-mockup",
-  "description": "MOCKUP: Six-layer architecture implementation for Claude Code Router",
+  "name": "route-claudecode-v3",
+  "version": "3.0.0",
+  "description": "Claude Code Router v3.0 - Six-layer architecture with official SDK integration",
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "rcc": "src/cli.js"
+    "rcc3": "bin/rcc3.js"
   },
+  "files": [
+    "bin/",
+    "dist/",
+    "src/",
+    "config/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "cli": "node src/cli.js",
-    "build": "tsc",
+    "build": "tsc && npm run build:rcc3",
+    "build:rcc3": "cp dist/v3-cli.js bin/rcc3.js && sed -i '' \"s|from './v3/|from '../dist/v3/|g\" bin/rcc3.js && chmod +x bin/rcc3.js",
+    "build:zero-fallback": "./scripts/build.sh",
+    "publish:zero-fallback": "./scripts/publish.sh",
+    "validate:dependencies": "./scripts/validate.sh",
+    "deploy": "./scripts/deploy.sh",
+    "rollback": "./scripts/rollback.sh",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src/ --ext .ts",
     "format": "prettier --write src/",
-    "clean": "rm -rf dist/",
+    "clean": "rm -rf dist/ bin/",
     "mockup:demo": "echo '🔧 MOCKUP: This is a placeholder implementation for demonstration purposes'"
   },
   "keywords": [
@@ -28,25 +42,35 @@
     "gemini",
     "codewhisperer",
     "six-layer-architecture",
-    "mockup"
+    "v3.0",
+    "sdk-integration",
+    "preprocessing"
   ],
-  "author": "Claude Code Router Team",
+  "author": "Jason Zhang",
   "license": "MIT",
   "dependencies": {
-    "@types/node": "^20.0.0",
     "@anthropic-ai/sdk": "^0.24.3",
-    "openai": "^4.52.7",
+    "@aws-sdk/client-bedrock-runtime": "^3.600.0",
+    "@aws-sdk/credential-providers": "^3.600.0",
     "@google/generative-ai": "^0.15.0",
-    "@aws-sdk/client-codewhisperer": "^3.600.0",
-    "@aws-sdk/credential-providers": "^3.600.0"
+    "@types/node": "^20.0.0",
+    "axios": "^1.11.0",
+    "commander": "^12.1.0",
+    "fastify": "^5.5.0",
+    "glob": "^11.0.3",
+    "openai": "^4.52.7",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0",
+    "@types/uuid": "^10.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitest/coverage-v8": "^1.6.1",
     "eslint": "^8.0.0",
     "prettier": "^3.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0"
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

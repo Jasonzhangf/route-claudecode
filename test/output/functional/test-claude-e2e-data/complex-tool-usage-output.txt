@@ -1,0 +1,19 @@
+🔗 Connecting Claude Code to V3 Router...
+📡 Server: http://localhost:5506
+✅ V3 Router Server is healthy (1/1 providers)
+🚀 Starting Claude Code...
+🔧 Environment:
+   ANTHROPIC_BASE_URL=http://localhost:5506
+   ANTHROPIC_API_KEY=any-string-is-ok
+   API_TIMEOUT_MS=600000
+
+Press Ctrl+C to disconnect
+
+🌟 Welcome to Claude Code!
+🔗 You are using the canonical relay
+💡 If the relay doesn't work, you can run `claude --pick-relay`
+
+💡 ANTHROPIC_API_KEY discovered, skipping OAuth
+Error: LM Studio API error: 400 Bad Request
+
+🔌 Claude Code disconnected (exit code: 0)

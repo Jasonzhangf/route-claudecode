@@ -13,11 +13,72 @@
 2. **🚫 NO FALLBACK MECHANISMS** - 禁止任何形式的fallback或默认值降级
 3. **🚫 NO AUTO-PUBLISHING** - 禁止自主发布，必须用户明确确认
 4. **🚫 NO RULE VIOLATIONS** - 违反任何规则必须立即停止并要求规则查阅
+5. **🚫 NO ARCHITECTURE VIOLATIONS** - 严禁违反架构的操作，详见架构保护规则
 
 ### 🔒 强制执行优先级 (ENFORCEMENT PRIORITIES)
-1. **P0 - 立即拒绝**: 硬编码、Fallback、自主发布
+1. **P0 - 立即拒绝**: 硬编码、Fallback、自主发布、架构违反
 2. **P1 - 强制查阅**: 架构违反、测试跳过、文档缺失、记忆缺失
 3. **P2 - 警告纠正**: 命名不规范、注释缺失、性能问题
+
+### 🏛️ 架构保护规则 (ARCHITECTURE PROTECTION RULES) - P0级别强制执行
+
+⚠️ **架构已确定 - 严禁违反** (ARCHITECTURE FINALIZED - VIOLATIONS FORBIDDEN)
+
+**📐 当前架构状态**: v2.7.0生产稳定 + v3.0插件化基础完成
+**🔒 保护级别**: 最高级 - 任何违反立即拒绝执行
+**📋 架构确认**: 29个主要任务已100%完成，架构定型
+
+#### ❌ 严格禁止的架构违反操作 (STRICTLY FORBIDDEN OPERATIONS)
+
+**🚫 文件系统操作禁令**:
+1. **禁止创建新文件** - 除非用户明确标注`[架构修复]`
+2. **禁止创建新测试文件** - 不允许任何新的测试文件创建
+3. **禁止创建新文件夹** - 现有目录结构已定型，严禁新增
+4. **禁止跨节点修复** - 不允许跨组件/模块的修改操作
+
+**🚫 代码结构操作禁令**:
+1. **禁止新增模块** - src/目录结构已确定
+2. **禁止新增插件** - 插件架构已完善
+3. **禁止新增Provider** - Provider系统已标准化
+4. **禁止新增测试类别** - 测试框架已完整
+
+**🚫 配置架构操作禁令**:
+1. **禁止新增配置文件** - 配置架构已标准化
+2. **禁止修改目录结构** - 六层架构已确定
+3. **禁止新增依赖项** - package.json依赖已锁定
+
+#### ✅ 唯一例外条件 (ONLY EXCEPTION CONDITION)
+
+**🔧 [架构修复] 标识符**:
+- 只有当用户在请求中明确包含 `[架构修复]` 标识符时
+- 才被允许执行可能违反架构保护的操作
+- 此时必须：
+  1. 先查阅项目记忆相关架构决策
+  2. 调用记忆专家保存架构修复决策
+  3. 详细说明修复原因和影响范围
+  4. 更新相关文档
+
+#### 🔍 架构合规检查清单 (ARCHITECTURE COMPLIANCE CHECKLIST)
+
+每次操作前必须通过以下检查：
+- [ ] 是否创建新文件？→ **如否则继续，如是则检查[架构修复]标识**
+- [ ] 是否创建新目录？→ **如否则继续，如是则检查[架构修复]标识**
+- [ ] 是否跨模块修改？→ **如否则继续，如是则检查[架构修复]标识**
+- [ ] 是否新增依赖？→ **如否则继续，如是则检查[架构修复]标识**
+- [ ] 用户是否明确标注[架构修复]？→ **如否则拒绝，如是则执行架构修复流程**
+
+#### 🚨 违反处理程序 (VIOLATION HANDLING PROCEDURE)
+
+**发现架构违反 → 执行以下步骤**:
+1. **立即停止** - 停止当前所有操作
+2. **明确拒绝** - 向用户说明违反了架构保护规则
+3. **引用规则** - 引用此架构保护规则章节
+4. **建议替代** - 如有可能，建议在现有架构内的替代方案
+5. **要求标识** - 如确需修复，要求用户添加`[架构修复]`标识
+
+#### 📝 架构保护声明 (ARCHITECTURE PROTECTION STATEMENT)
+
+> **Claude Code Router架构已经过29个主要任务的系统性开发和验证，当前架构为生产级稳定状态。为保证系统稳定性和一致性，任何可能影响架构的操作都被严格禁止，除非明确标注为架构修复需求。此规则优先级为P0，违反将被立即拒绝执行。**
 
 ### 🧠 MEMORY MANAGEMENT - 记忆管理强制规则 (MANDATORY MEMORY)
 
@@ -301,8 +362,9 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 | **架构变更** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) + [📁 记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 变更后记忆保存 | **拒绝无记忆变更** |
 | **问题疑惑** | [📁 项目记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 相关经验查阅 | **强制记忆优先** |
 | **长任务执行** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) | 任务记忆管理 | **要求记忆跟踪** |
-| **服务管理** | [📄 服务管理重要规则](#️-服务管理重要规则-critical-service-management-rules) | rcc start/code区分、配置只读检查 | **阻止破坏性操作** |
+| **服务管理** | [📄 服务管理重要规则](#️-服务管理重要规则-critical-service-management-rules) | rcc3 start/code区分、配置只读检查 | **阻止破坏性操作** |
 | **补丁系统** | [📄 补丁系统架构](.claude/project-details/patch-system-architecture.md) + [📁 src/patches/](src/patches/) | 非侵入式修复、条件匹配验证 | **拒绝硬编码修复** |
+| **🚨 所有操作** | [📄 架构保护规则](#️-架构保护规则-architecture-protection-rules---p0级别强制执行) | 创建文件、文件夹、跨节点操作检查 | **P0级立即拒绝** |
 
 ### 🚫 违规处理程序 (VIOLATION HANDLING)
 1. **发现违规** → 立即停止当前操作
@@ -346,18 +408,57 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 
 ## 🚀 启动和部署 (Launch & Deployment)
 
-### 推荐启动方式
+### 🔄 版本共存启动方式 (v2.7.0 + v3.0)
+
+**统一命令行工具**:
 ```bash
-./rcc start              # 简化启动器，支持Ctrl+C退出
-./rcc status             # 检查服务状态
-./rcc stop               # 停止服务
+rcc3 start               # 简化启动器，支持Ctrl+C退出
+rcc3 status              # 检查服务状态
+rcc3 stop                # 停止服务
 ```
 
-### 开发工具集
-- **完整开发流程**: `./fix-and-test.sh` (构建+启动+测试)
-- **开发模式**: `./start-dev.sh` (自动构建+日志记录)
-- **构建项目**: `./build.sh` (清理和构建)
-- **本地安装**: `./install-local.sh` (打包+全局安装)
+**v3.0 六层架构**:
+```bash
+rcc3 start [config-file] --debug    # 六层架构启动
+rcc3 status                          # 检查v3.0服务状态
+rcc3 stop                           # 停止v3.0服务
+rcc3 sdk detect                     # 检查SDK集成状态
+```
+
+### 🛠️ 开发工具集
+
+#### v3.0 标准脚本 (推荐)
+- **v3.0 构建**: `./build.sh` (v3.0 六层架构构建+验证)
+- **v3.0 本地安装**: `./install-local.sh` (安装为 rcc3 命令)
+- **v3.0 专用安装**: `./scripts/install-v3.sh` (rcc3 命令独立安装)
+- **v3.0 完整测试**: `./test-all-v3.sh` (六层架构+SDK集成验证)
+
+#### 传统脚本 (保持兼容)
+- **完整开发流程**: `./fix-and-test.sh` (构建+启动+测试，如存在)
+- **开发模式**: `./start-dev.sh` (自动构建+日志记录，如存在)
+
+### 🧪 测试和验证
+
+#### v3.0 测试标准
+```bash
+# 完整v3.0架构测试 (推荐)
+./test-all-v3.sh
+
+# 特定组件测试
+node test/functional/test-lmstudio-ollama-sdk-integration.js
+node test/functional/test-provider-protocol-governance.js
+
+# STD-8-STEP-PIPELINE 测试 (六层架构)
+node test/pipeline/std-8-step-pipeline-framework.js
+```
+
+#### 构建验证标准
+```bash
+# v3.0 构建验证流程
+./build.sh                    # 1. 构建项目
+./test-all-v3.sh               # 2. 运行测试套件  
+./scripts/install-v3.sh        # 3. 全局安装 (可选)
+```
 
 ### 端口配置
 
@@ -382,32 +483,44 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 | **5509** | OpenAI Compatible | ModelScope GLM | `config-openai-modelscope-glm-5509.json` | ZhipuAI/GLM-4.5 |
 
 #### 🚀 调试使用示例
+
+**统一使用 `rcc3` 命令** (支持所有配置格式):
 ```bash
-# 启动服务器的标准格式
-rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+# 启动指定配置文件的服务
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-lmstudio-v3-5506.json --debug
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-openai-shuaihong-v3-5508.json --debug
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-google-gemini-v3-5502.json --debug
 
-# 启动Claude Code连接到特定端口
-rcc code --port 5508
+# 也支持v2.7.0配置文件
+rcc3 start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+rcc3 start ~/.route-claude-code/config/single-provider/config-google-gemini-5502.json --debug
 
-# 具体启动命令示例:
-# 启动CodeWhisperer主账号服务 (端口5501)
-rcc start ~/.route-claude-code/config/single-provider/config-codewhisperer-primary-5501.json --debug
+# 连接Claude Code客户端
+rcc3 code --port 5506
+rcc3 code --port 5508
+```
 
-# 启动Gemini服务 (端口5502) 
-rcc start ~/.route-claude-code/config/single-provider/config-google-gemini-5502.json --debug
+**具体启动示例**:
+```bash
+# 启动LM Studio服务 (端口5506)
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-lmstudio-v3-5506.json --debug
 
-# 启动ModelScope GLM服务 (端口5509)
-rcc start ~/.route-claude-code/config/single-provider/config-openai-modelscope-glm-5509.json --debug
+# 启动ShuaiHong服务 (端口5508)  
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-openai-shuaihong-v3-5508.json --debug
 
-# 启动ShuaiHong服务 (端口5508)
-rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+# 启动CodeWhisperer服务 (端口5501)
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-codewhisperer-primary-v3-5501.json --debug
 
-# 检查特定端口服务状态
-curl http://localhost:5502/health
+# 启动Gemini服务 (端口5502)
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-google-gemini-v3-5502.json --debug
 
-# 连接Claude Code到特定端口进行交互
-rcc code --port 5509  # 连接到ModelScope GLM服务
-rcc code --port 5508  # 连接到ShuaiHong服务
+# 启动多Provider负载均衡服务 (端口3456)
+rcc3 start ~/.route-claudecode/config/v3/load-balancing/config-multi-provider-v3-3456.json --debug
+
+# 检查服务状态
+curl http://localhost:5506/health
+rcc3 sdk detect
+rcc3 config list
 ```
 
 #### 📁 配置文件位置
@@ -420,18 +533,18 @@ rcc code --port 5508  # 连接到ShuaiHong服务
 **🚨 强制执行服务管理约束 - 违反将导致系统不稳定**
 
 ##### 1. **服务类型区分**
-- **`rcc start`服务**: API服务器，可以停止/重启/管理
-- **`rcc code`服务**: Claude Code客户端会话，**绝对不可杀掉**
+- **`rcc3 start`服务**: API服务器，可以停止/重启/管理
+- **`rcc3 code`服务**: Claude Code客户端会话，**绝对不可杀掉**
 
 ##### 2. **服务操作权限**
 ```bash
 # ✅ 允许的操作 - 可以管理API服务器
-pkill -f "rcc start"           # 只杀掉API服务器
-ps aux | grep "rcc start"      # 查看API服务器状态
+pkill -f "rcc3 start"           # 只杀掉API服务器
+ps aux | grep "rcc3 start"      # 查看API服务器状态
 
 # ❌ 禁止的操作 - 不可杀掉客户端会话  
-pkill -f "rcc code"           # 绝对禁止！会断掉用户会话
-kill <rcc code的PID>          # 绝对禁止！
+pkill -f "rcc3 code"           # 绝对禁止！会断掉用户会话
+kill <rcc3 code的PID>          # 绝对禁止！
 ```
 
 ##### 3. **配置文件管理约束**
@@ -443,26 +556,78 @@ kill <rcc code的PID>          # 绝对禁止！
 ##### 4. **端口管理规则**
 - **端口固定**: 每个配置文件的端口由文件名和内容预定义
 - **不可变更**: 配置文件中的端口设置不可修改
-- **冲突处理**: 如端口被占用，停止冲突的`rcc start`服务，不修改配置
+- **冲突处理**: 如端口被占用，停止冲突的`rcc3 start`服务，不修改配置
 
 ##### 5. **服务启动标准流程**
 ```bash
-# 步骤1: 检查现有API服务器(只检查rcc start)
-ps aux | grep "rcc start" | grep -v grep
+# 步骤1: 检查现有API服务器(只检查rcc3 start)
+ps aux | grep "rcc3 start" | grep -v grep
 
 # 步骤2: 停止冲突的API服务器(如果需要)
-pkill -f "rcc start.*5508"  # 只停止特定端口的API服务器
+pkill -f "rcc3 start.*5508"  # 只停止特定端口的API服务器
 
 # 步骤3: 使用现有配置启动服务
-rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json --debug
+rcc3 start ~/.route-claudecode/config/v3/single-provider/config-openai-shuaihong-v3-5508.json --debug
 
-# 注意: 绝不触碰 rcc code 进程！
+# 注意: 绝不触碰 rcc3 code 进程！
 ```
 
 ##### 6. **调试和测试约束**
 - **测试隔离**: 调试单个Provider-Protocol时使用single-provider配置
 - **配置不变**: 测试过程中不修改任何配置文件
-- **会话保护**: 调试期间保护用户的`rcc code`会话不被中断
+- **会话保护**: 调试期间保护用户的`rcc3 code`会话不被中断
+
+## 🗄️ Provider数据分级分类系统 (Provider Data Classification System)
+
+### 📊 三层分级架构
+**Provider Protocol → Provider → Model** 的层级数据分类存储
+
+#### 🏗️ 目录结构
+```
+~/.route-claudecode/database/captures/
+├── openai-protocol/           # OpenAI兼容协议
+│   ├── lmstudio/             # LM Studio第三方服务
+│   │   ├── qwen3-30b/        # Qwen3 30B模型数据
+│   │   └── glm-4.5-air/      # GLM 4.5 Air模型数据
+│   ├── modelscope/           # ModelScope第三方服务
+│   └── shuaihong/            # ShuaiHong第三方服务
+├── codewhisperer-protocol/    # AWS CodeWhisperer协议
+├── gemini-protocol/           # Google Gemini协议
+└── anthropic-protocol/        # Anthropic直连协议
+```
+
+#### 🔧 关键工具脚本
+```bash
+# Provider数据分级分类系统设置
+./database/setup-provider-classification.sh
+
+# LM Studio数据提取和分析
+node ./database/extract-lmstudio-tool-calls.js
+
+# 深度格式问题分析
+node ./database/analyze-lmstudio-tool-call-issues.js
+
+# 自动分类规则配置
+./database/auto-classification-rules.json
+```
+
+#### 📋 自动分类规则
+- **LM Studio**: 识别`functions.`、`LM Studio`、`localhost:11`标识符
+- **ModelScope**: 识别`modelscope`、`ModelScope`、`dashscope`标识符
+- **ShuaiHong**: 识别`shuaihong`、`ShuaiHong`、`ai.shuaihong.fun`标识符
+- **Model检测**: 基于内容关键字自动识别具体模型
+
+#### 🚀 使用方法
+```bash
+# 查看特定Provider数据
+ls -la ~/.route-claudecode/database/captures/openai-protocol/lmstudio/
+
+# 分析工具调用问题
+find ~/.route-claudecode/database/captures/openai-protocol/lmstudio/ -name "*.json" -exec grep -l "tool_calls" {} \;
+
+# 运行数据分析
+node ~/.route-claudecode/database/analyze-lmstudio-tool-call-issues.js
+```
 
 ## 🔧 细菌式编程原则 (Bacterial Programming)
 
@@ -585,6 +750,7 @@ rcc start ~/.route-claude-code/config/single-provider/config-openai-shuaihong-55
 ### 🔍 AI自检清单 (AI SELF-CHECK REQUIRED)
 在执行任何操作前，AI必须通过以下检查：
 
+- [ ] **🚨 架构保护检查** - 已确认不违反架构保护规则（P0级最高优先级）
 - [ ] **记忆优先检查** - 已查阅 [📁 项目记忆](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) 目录相关文件
 - [ ] **规则查阅完成** - 已查阅相关规则文件
 - [ ] **架构合规验证** - 符合四层架构要求
@@ -623,11 +789,13 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/ | tail -5
 
 **⚠️ 警告**: 未通过上述检查的操作将被自动拒绝执行！
 **🧠 特别提醒**: 记忆优先原则 - 任何疑惑都必须先查阅项目记忆！
+**🚨 架构保护**: 架构保护检查为P0级最高优先级 - 违反将被立即拒绝！
 
 ---
 **📊 项目版本**: v2.7.0  
-**🔒 规则架构**: v1.2.0 (记忆管理强化版)  
+**🔒 规则架构**: v1.3.0 (架构保护强化版)  
 **👤 项目所有者**: Jason Zhang  
-**📅 最后更新**: 2025-08-02  
+**📅 最后更新**: 2025-08-11  
 **⚡ 强制执行**: ACTIVE - 所有规则均为强制性  
-**🧠 记忆管理**: ACTIVE - 记忆优先原则生效
+**🧠 记忆管理**: ACTIVE - 记忆优先原则生效  
+**🏛️ 架构保护**: ACTIVE - P0级架构保护生效

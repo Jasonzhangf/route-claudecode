@@ -1,0 +1,49 @@
+{
+  "timestamp": "2025-08-12T00:04:59.493Z",
+  "totalScanned": 0,
+  "toolCallFiles": 0,
+  "needsFixFiles": 0,
+  "providers": [
+    {
+      "protocol": "openai-protocol",
+      "provider": "lmstudio",
+      "model": "glm-4.5-air",
+      "scannedFiles": 0,
+      "toolCallFiles": 0,
+      "needsFixFiles": 0
+    },
+    {
+      "protocol": "openai-protocol",
+      "provider": "lmstudio",
+      "model": "qwen3-30b",
+      "scannedFiles": 0,
+      "toolCallFiles": 0,
+      "needsFixFiles": 0
+    },
+    {
+      "protocol": "openai-protocol",
+      "provider": "modelscope",
+      "model": "zhipuai-glm-4.5",
+      "scannedFiles": 0,
+      "toolCallFiles": 0,
+      "needsFixFiles": 0
+    },
+    {
+      "protocol": "openai-protocol",
+      "provider": "shuaihong",
+      "model": "claude-4-sonnet",
+      "scannedFiles": 0,
+      "toolCallFiles": 0,
+      "needsFixFiles": 0
+    }
+  ],
+  "issues": [],
+  "recommendations": {
+    "summary": {
+      "totalFiles": 0,
+      "needsFixCount": 0,
+      "byProvider": {}
+    },
+    "fixes": []
+  }
+}

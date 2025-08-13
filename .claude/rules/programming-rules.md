@@ -2,6 +2,26 @@
 
 ## 🚨 最高优先级禁令 (Absolute Prohibitions)
 
+### 0. 🚫 严禁Mockup实现 (NO MOCKUP/MOCK/PLACEHOLDER CODE)
+- **绝对禁止**：任何形式的mockup、mock、placeholder或占位符实现
+- **实现要求**：所有功能必须为真实、完整的实现，不允许模拟或假实现
+- **违例检查**：代码中不允许出现mockup标识、placeholder注释或模拟功能
+
+**❌ 违例示例：**
+```typescript
+// MOCKUP: This is a placeholder implementation
+function processRequest() {
+  return { status: 'mockup', data: 'placeholder' };  // 禁止！
+}
+```
+
+**✅ 正确示例：**
+```typescript
+function processRequest(request: AIRequest): Promise<AIResponse> {
+  return this.provider.sendRequest(request);  // 真实实现
+}
+```
+
 ### 1. 🚫 零硬编码原则 (NO HARDCODING)
 - **绝对禁止**：任何模型名称、API端点、配置值的硬编码
 - **实现要求**：所有常量必须通过配置文件、环境变量或参数传递

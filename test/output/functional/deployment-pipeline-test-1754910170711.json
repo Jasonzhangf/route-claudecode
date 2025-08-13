@@ -1,0 +1,53 @@
+{
+  "timestamp": "2025-08-11T11:01:05.648Z",
+  "testSuite": "deployment-pipeline",
+  "totalTests": 6,
+  "passedTests": 5,
+  "failedTests": 1,
+  "details": [
+    {
+      "test": "initialization",
+      "status": "passed",
+      "checks": 5
+    },
+    {
+      "test": "pre-validation",
+      "status": "passed",
+      "scenarios": 3
+    },
+    {
+      "test": "package-validation",
+      "status": "failed",
+      "error": "Package build validation failed"
+    },
+    {
+      "test": "rollback-system",
+      "status": "passed",
+      "features": 3
+    },
+    {
+      "test": "health-checks",
+      "status": "passed",
+      "features": 3
+    },
+    {
+      "test": "cli-compliance",
+      "status": "passed",
+      "commands": 2
+    }
+  ],
+  "metrics": {
+    "validationScenarios": 3,
+    "rollbackFeatures": 3,
+    "deploymentIds": [
+      "deploy-2025-08-11T11-01-05-682Z-f042347a",
+      "deploy-2025-08-11T11-01-05-682Z-8195ce91"
+    ],
+    "healthCheckFeatures": 3,
+    "retryAttempts": 2,
+    "cliCommands": 2,
+    "complianceChecks": 3
+  },
+  "passRate": 0.8333333333333334,
+  "status": "FAILED"
+}

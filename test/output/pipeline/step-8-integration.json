@@ -3,20 +3,30 @@
   "name": "End-to-end Integration Testing",
   "layer": "integration",
   "module": null,
-  "startTime": "2025-08-11T07:06:32.166Z",
+  "startTime": "2025-08-12T01:42:01.467Z",
   "status": "passed",
   "mockupMode": false,
   "realImplementation": true,
   "validations": [
     {
-      "test": "End-to-End Integration Check",
+      "test": "Six-Layer Architecture Completeness",
       "status": "passed",
-      "details": "Integration tests validated"
+      "details": "All 7 layers implemented in v3.0 architecture"
+    },
+    {
+      "test": "v3.0 Main Entry Point",
+      "status": "passed",
+      "details": "v3.0 main entry point found"
+    },
+    {
+      "test": "v3.0 End-to-End Integration",
+      "status": "passed",
+      "details": "v3.0 six-layer architecture integration validated"
     }
   ],
   "output": {
     "layer": "integration",
-    "timestamp": "2025-08-11T07:06:32.166Z",
+    "timestamp": "2025-08-12T01:42:01.468Z",
     "realImplementation": true,
     "tests": [
       {
@@ -28,18 +38,18 @@
     "metrics": {
       "executionTime": 0,
       "memoryUsage": {
-        "rss": 42926080,
+        "rss": 47284224,
         "heapTotal": 6651904,
-        "heapUsed": 4380216,
-        "external": 1738477,
-        "arrayBuffers": 11115
+        "heapUsed": 4522168,
+        "external": 1750669,
+        "arrayBuffers": 23307
       },
       "testCount": 1,
       "passCount": 1,
       "failCount": 0
     }
   },
-  "duration": 0,
+  "duration": 1,
   "errors": [],
-  "endTime": "2025-08-11T07:06:32.166Z"
+  "endTime": "2025-08-12T01:42:01.468Z"
 }

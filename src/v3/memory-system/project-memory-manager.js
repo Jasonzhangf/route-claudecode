@@ -242,7 +242,7 @@ export class ProjectMemoryManager extends EventEmitter {
 
     async categorizeContent(data) {
         if (!this.config.autoCategorization) {
-            return 'implementation-patterns'; // Default category
+            throw new Error('Auto-categorization is disabled and no explicit category provided. Zero-fallback principle requires explicit categorization.');
         }
 
         const content = (data.content || data.summary || data.title || '').toLowerCase();
@@ -277,7 +277,11 @@ export class ProjectMemoryManager extends EventEmitter {
         const bestCategory = Object.entries(categoryScores)
             .sort(([,a], [,b]) => b - a)[0];
 
-        return bestCategory ? bestCategory[0] : 'implementation-patterns';
+        if (!bestCategory || bestCategory[1] === 0) {
+            throw new Error(`Unable to categorize content. Keywords found: ${keywords.join(', ')}. Zero-fallback principle requires successful categorization.`);
+        }
+        
+        return bestCategory[0];
     }
 
     extractKeywords(text) {
@@ -602,7 +606,8 @@ ${memoryEntry.references.externalLinks.map(link => `- ${link}`).join('\n')}` : '
                         this.updateCategoryIndex(memoryEntry);
                         loadedEntries++;
                     } catch (error) {
-                        console.warn(`⚠️ Failed to load memory entry ${file}:`, error.message);
+                        console.error(`❌ Failed to load memory entry ${file}:`, error.message);
+                        throw new Error(`Critical memory system failure: Unable to load memory entry ${file}. ${error.message}`);
                     }
                 }
             } catch (error) {

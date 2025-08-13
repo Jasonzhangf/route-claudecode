@@ -1,0 +1,31 @@
+{
+  "version": "3.0.0",
+  "server": {
+    "port": 5505,
+    "host": "localhost"
+  },
+  "routing": {
+    "strategy": "single-provider",
+    "defaultProvider": "codewhisperer",
+    "models": {
+      "CLAUDE_3_7_SONNET": {
+        "provider": "codewhisperer",
+        "account": "kiro-zcam"
+      }
+    }
+  },
+  "codewhisperer": {
+    "region": "us-east-1"
+  },
+  "security": {
+    "configReadOnly": true,
+    "requireValidation": true,
+    "configHash": null
+  },
+  "metadata": {
+    "createdAt": "2025-08-11T08:07:41.261Z",
+    "createdBy": "Configuration Isolation System",
+    "description": "Single-provider configuration for codewhisperer on port 5505",
+    "placeholder": true
+  }
+}

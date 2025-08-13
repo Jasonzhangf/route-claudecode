@@ -47,7 +47,7 @@ async function validateTask7Complete() {
             }
             
             // Check scenario manager
-            const scenarioManagerPath = path.resolve(process.cwd(), 'src/v3/mock-server/scenarios/scenario-manager.js');
+            const scenarioManagerPath = path.resolve(process.cwd(), 'test/mock-server/data-replay-system/scenarios/scenario-manager.js');
             const scenarioManagerContent = await fs.readFile(scenarioManagerPath, 'utf-8');
             
             const hasScenarioFeatures = [
@@ -58,7 +58,7 @@ async function validateTask7Complete() {
             ].filter(feature => scenarioManagerContent.toLowerCase().includes(feature.replace(' ', ''))).length;
             
             // Check response simulator with realistic timing
-            const responseSimPath = path.resolve(process.cwd(), 'src/v3/mock-server/simulation/response-simulator.js');
+            const responseSimPath = path.resolve(process.cwd(), 'test/mock-server/data-replay-system/simulation/response-simulator.js');
             const responseSimContent = await fs.readFile(responseSimPath, 'utf-8');
             
             const hasTimingFeatures = [
@@ -69,7 +69,7 @@ async function validateTask7Complete() {
             ].filter(feature => responseSimContent.toLowerCase().includes(feature)).length;
             
             // Check provider-protocol simulation
-            const providerSimPath = path.resolve(process.cwd(), 'src/v3/mock-server/providers/provider-simulation.js');
+            const providerSimPath = path.resolve(process.cwd(), 'test/mock-server/data-replay-system/providers/provider-simulation.js');
             const providerSimContent = await fs.readFile(providerSimPath, 'utf-8');
             
             const supportedProviders = ['anthropic', 'openai', 'gemini', 'codewhisperer'];
@@ -78,7 +78,7 @@ async function validateTask7Complete() {
             ).length;
             
             // Check data replay infrastructure
-            const dataReplayPath = path.resolve(process.cwd(), 'src/v3/mock-server/replay/data-replay-infrastructure.js');
+            const dataReplayPath = path.resolve(process.cwd(), 'test/mock-server/data-replay-system/replay/data-replay-infrastructure.js');
             const dataReplayContent = await fs.readFile(dataReplayPath, 'utf-8');
             
             const hasDataReplayFeatures = [
@@ -105,7 +105,7 @@ async function validateTask7Complete() {
         // Task 7.2: Mock Server Management Interface
         await validateSubtask(validationResults, '7.2', async () => {
             // Check web-based control panel
-            const controlPanelPath = path.resolve(process.cwd(), 'src/v3/mock-server/management/web-control-panel.js');
+            const controlPanelPath = path.resolve(process.cwd(), 'test/mock-server/data-replay-system/management/web-control-panel.js');
             const controlPanelContent = await fs.readFile(controlPanelPath, 'utf-8');
             
             // Check for web-based control panel features
@@ -144,7 +144,7 @@ async function validateTask7Complete() {
             
             // Test runtime functionality by attempting to create mock server
             try {
-                const mockServerModule = await import('../../src/v3/mock-server/index.js');
+                const mockServerModule = await import('../../test/mock-server/data-replay-system/index.js');
                 const MockServer = mockServerModule.MockServer;
                 
                 const mockServer = new MockServer({

@@ -23,7 +23,7 @@ export const developmentConfig: Configuration = {
       // API key will be loaded from ANTHROPIC_API_KEY environment variable
       // No fallback values - explicit error if missing
       baseURL: 'https://api.anthropic.com/v1',
-      timeout: 30000,
+      timeout: 120000,
       retries: 3,
       rateLimits: {
         requestsPerMinute: 60,
@@ -35,7 +35,7 @@ export const developmentConfig: Configuration = {
       // API key will be loaded from OPENAI_API_KEY environment variable
       // Organization ID from OPENAI_ORG_ID environment variable
       baseURL: 'https://api.openai.com/v1',
-      timeout: 30000,
+      timeout: 120000,
       retries: 3,
       rateLimits: {
         requestsPerMinute: 100,
@@ -46,7 +46,7 @@ export const developmentConfig: Configuration = {
       enabled: true,
       // API key will be loaded from GEMINI_API_KEY environment variable
       baseURL: 'https://generativelanguage.googleapis.com/v1',
-      timeout: 30000,
+      timeout: 120000,
       retries: 3,
       rateLimits: {
         requestsPerMinute: 60,
@@ -57,7 +57,7 @@ export const developmentConfig: Configuration = {
       enabled: true,
       // AWS credentials will be loaded from AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
       region: 'us-east-1',
-      timeout: 30000,
+      timeout: 120000,
       retries: 3,
       rateLimits: {
         requestsPerMinute: 30,

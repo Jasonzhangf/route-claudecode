@@ -6,8 +6,8 @@
  */
 
 import http from 'http';
-import { MockServer } from '../../src/v3/mock-server/index.js';
-import { MockServerConfig } from '../../src/v3/mock-server/config/mock-server-config.js';
+import { MockServer } from '../mock-server/data-replay-system/index.js';
+import { MockServerConfig } from '../mock-server/data-replay-system/config/mock-server-config.js';
 
 export class MockServerBasicFunctionalityTests {
     constructor() {

@@ -1,0 +1,49 @@
+{
+  "timestamp": "2025-08-11T08:33:17.894Z",
+  "testSuite": "project-memory-manager",
+  "totalTests": 6,
+  "passedTests": 4,
+  "failedTests": 2,
+  "details": [
+    {
+      "test": "initialization",
+      "status": "passed",
+      "checks": 5
+    },
+    {
+      "test": "entry-creation",
+      "status": "failed",
+      "error": "Memory entry creation validation failed"
+    },
+    {
+      "test": "search-retrieval",
+      "status": "passed",
+      "searches": 4,
+      "categories": 10
+    },
+    {
+      "test": "correlation-system",
+      "status": "passed",
+      "correlations": 0
+    },
+    {
+      "test": "cli-interface",
+      "status": "passed",
+      "commands": 4
+    },
+    {
+      "test": "integration-filesystem",
+      "status": "failed",
+      "error": "File system integration validation failed"
+    }
+  ],
+  "metrics": {
+    "searchTests": 4,
+    "categoriesAvailable": 10,
+    "correlationTests": 2,
+    "totalCorrelations": 0,
+    "cliCommands": 4
+  },
+  "passRate": 0.6666666666666666,
+  "status": "FAILED"
+}

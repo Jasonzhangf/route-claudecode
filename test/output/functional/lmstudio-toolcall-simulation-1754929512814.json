@@ -1,0 +1,65 @@
+{
+  "testId": "lmstudio-toolcall-simulation-1754929512814",
+  "timestamp": "2025-08-11T16:25:12.816Z",
+  "overallSuccess": true,
+  "tests": [
+    {
+      "name": "LM Studio Problematic Response",
+      "success": true,
+      "detection": {
+        "needsFix": true,
+        "issues": [
+          "Choice 0: finish_reason is \"tool_calls\" but no tool_calls data found"
+        ]
+      },
+      "fixesApplied": [
+        "Added placeholder tool call to choice 0"
+      ],
+      "validation": {
+        "success": true,
+        "issues": [],
+        "improvements": [
+          "Choice 0: Added 1 placeholder tool calls"
+        ],
+        "toolCallsAdded": 1
+      },
+      "clientResult": {
+        "success": true,
+        "toolCallsReceived": 1,
+        "toolCallsProcessed": 1,
+        "errors": [],
+        "messages": [
+          "Processed placeholder tool call (LM Studio fix): LM Studio sent finish_reason='tool_calls' without actual tool_calls data"
+        ]
+      }
+    },
+    {
+      "name": "Normal OpenAI Response",
+      "success": true,
+      "detection": {
+        "needsFix": false,
+        "issues": [
+          "Choice 0: finish_reason is \"tool_calls\" and has 1 tool calls - OK"
+        ]
+      },
+      "fixesApplied": [],
+      "validation": {
+        "success": true,
+        "issues": [],
+        "improvements": [
+          "Choice 0: Already had 1 tool calls - no fix needed"
+        ],
+        "toolCallsAdded": 0
+      },
+      "clientResult": {
+        "success": true,
+        "toolCallsReceived": 1,
+        "toolCallsProcessed": 1,
+        "errors": [],
+        "messages": [
+          "Processed tool call: get_current_weather"
+        ]
+      }
+    }
+  ]
+}
