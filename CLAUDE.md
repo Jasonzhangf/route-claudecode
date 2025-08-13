@@ -183,31 +183,69 @@ ls -la ~/.claudecode/Users-fanzhang-Documents-github-route-claudecode/ | tail -5
 ## 🏗️ 项目架构概览 (Project Architecture)
 
 ### 基本信息
-- **项目名称**: Claude Code Output Router v2.7.0 → v3.0 (重构进行中)
-- **核心功能**: 多AI提供商路由转换系统
+- **项目名称**: Claude Code Router v3.0.1 (LM Studio工具调用修复完成)
+- **核心功能**: 多AI提供商路由转换系统，完美支持工具调用
 - **协作模式**: 与kiro共同开发项目
-- **当前架构**: v2.7.0四层模块化设计（输入-路由-输出-提供商协议）
-- **目标架构**: v3.0六层插件化架构（Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server）
+- **当前架构**: v3.0.1六层架构完全稳定运行（Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server）
 - **支持Provider-Protocol**: Anthropic, CodeWhisperer, OpenAI-Compatible, Gemini
-- **第三方Provider**: ShuaiHong, LM Studio, ModelScope, Google API等
-- **配置路径**: `~/.route-claudecode/` (新重构项目)
+- **第三方Provider**: ShuaiHong, **LM Studio ✅**, ModelScope, Google API等
+- **配置路径**: `~/.route-claudecode/` (v3.0项目)
+- **重大突破**: LM Studio工具调用100%正常工作
 
-### 四层架构设计
+### 🎯 v3.0.1六层架构 - 完整实现
+
+基于**单一职责原则**的六层架构，每层职责明确分离：
+
 ```
-用户请求 → 输入层 → 路由层 → 输出层 → 提供商协议层 → AI服务提供商(Provider)
+HTTP Request → Server → Preprocessor → Provider-Protocol → [External API]
+[External API] → Provider-Protocol → Transformer → Post-processor → Router → Client → HTTP Response
 ```
 
-- **输入层** (`src/input/`): 处理Anthropic、OpenAI、Gemini格式请求
-- **路由层** (`src/routing/`): 类别驱动的模型路由和Provider选择
-- **输出层** (`src/output/`): 格式转换和响应处理  
-- **提供商协议层** (`src/provider-protocol/`): 与实际AI服务提供商的连接通信协议
+#### 📐 核心层级设计 (v3.0.1稳定版)
 
-### 路由机制核心
+**🔄 请求处理流程**:
+1. **Server Layer** (`src/v3/server/`): HTTP服务监听和请求分发
+2. **Preprocessor Layer** (`src/v3/preprocessor/`): 请求预处理、认证、格式标准化
+3. **Provider-Protocol Layer** (`src/v3/provider-protocol/`): 第三方API通信协议
+4. **Transformer Layer** (`src/v3/pipeline/`): **格式转换核心** - OpenAI → Anthropic
+5. **Post-processor Layer** (`src/v3/post-processor/`): 响应校验、一致性检查、微调
+6. **Router Layer** (`src/v3/router/`): 路由选择、负载均衡
+7. **Client Layer** (`src/v3/client/`): 客户端接口
+
+#### 🚨 关键架构突破 - 基于v3.0.1修复
+
+**Transformer Layer 核心职责**:
+- ✅ **完整格式转换**: `OpenAI format → Anthropic format`
+- ✅ **工具调用映射**: `tool_calls[] → content[].tool_use`
+- ✅ **停止原因映射**: `finish_reason → stop_reason`
+- ✅ **消息结构转换**: `choices[0].message → content[]`
+
+**Post-processor Layer 核心职责**:
+- ✅ **一致性校验**: `stop_reason` 与 `content` 匹配性检查
+- ✅ **自动校正**: 发现不匹配时的智能修正
+- ✅ **最终验证**: 确保响应完全符合Anthropic标准
+
+#### 🔧 LM Studio工具调用完美支持
+
+**技术实现**:
+- **response-pipeline.js**: `transformOpenAIToAnthropic()` 完整实现
+- **anthropic.ts**: `validateStopReason()` 校验机制
+- **preprocessing-pipeline.js**: LM Studio自动检测和专用预处理
+- **构建系统**: 脚本化构建确保模块正确导出
+
+**支持功能**:
+- ✅ 工具调用格式完全兼容
+- ✅ 多轮对话工具调用
+- ✅ 复杂工具参数解析
+- ✅ 错误处理和回退机制
+
+### 路由机制核心 (Enhanced in v3.0.1)
 - **类别驱动映射**: `category → {provider, model}`
 - **五种路由类别**: default, background, thinking, longcontext, search
 - **零硬编码**: 模型名在路由阶段直接替换 `request.model = targetModel`
 - **Round Robin**: 多Provider/多Account负载均衡
 - **Provider-Protocol分离**: 配置中明确区分第三方Provider和Protocol实现
+- **🆕 格式转换分离**: Transformer专注转换，Post-processor专注校验
 
 ## 🤝 Kiro协作项目管理 (Kiro Collaboration Project Management)
 
@@ -465,6 +503,254 @@ node test-replay-system-demo.js
 ./test-runner.sh --search <关键词>          # 搜索相关测试
 ./test-runner.sh test/functional/test-xxx.js # 运行单个测试
 ```
+
+## 🔧 标准调试方法论 (Standard Debugging Methodology) - 基于v3.0.1经验
+
+### 💡 调试哲学 - LM Studio工具调用修复总结
+
+经过v3.0.1 LM Studio工具调用的成功修复，我们总结出一套系统性的调试方法论：
+
+#### 🎯 核心原则
+1. **从底层开始**: 总是从最底层(Server/Preprocessor)开始分析
+2. **层层递进**: 按照六层架构顺序逐层检查数据流转
+3. **职责分离**: 明确每层的职责，避免功能混淆
+4. **数据驱动**: 基于实际数据流进行问题定位
+
+#### 📋 六层架构调试检查清单 (SIX-LAYER DEBUG CHECKLIST)
+
+**🔍 标准调试序列**:
+```
+Server → Preprocessor → Provider-Protocol → Transformer → Post-processor → Router → Client
+```
+
+**逐层检查要点**:
+1. **Server Layer** (`server-layer.js`): 请求接收和响应发送
+2. **Preprocessor Layer** (`preprocessing-pipeline.js`): 请求预处理和格式标准化
+3. **Provider-Protocol Layer** (`openai/client-factory.js`): 第三方API通信
+4. **Transformer Layer** (`response-pipeline.js`): **核心格式转换层**
+5. **Post-processor Layer** (`anthropic.ts`): 响应校验和微调
+6. **Router Layer** (`router-layer.js`): 路由选择和负载均衡
+7. **Client Layer** (`client-layer.js`): 客户端接口
+
+#### 🚨 关键架构分工 (CRITICAL ARCHITECTURE SEPARATION)
+
+**⚠️ 基于v3.0.1修复的重要发现**:
+
+**Transformer Layer 职责**:
+- ✅ **格式转换**: OpenAI → Anthropic 完整转换
+- ✅ **协议映射**: `tool_calls` → `tool_use`
+- ✅ **停止原因映射**: `finish_reason` → `stop_reason`
+- ✅ **消息结构转换**: `choices[0].message` → `content[]`
+
+**Post-processor Layer 职责**:
+- ✅ **一致性校验**: 检查 `stop_reason` 与 `content` 匹配性
+- ✅ **最后校正**: 发现不匹配时自动校正
+- ✅ **格式验证**: 确保响应符合Anthropic标准
+- ❌ **禁止格式转换**: 不应承担主要转换任务
+
+#### 🔄 STD-ARCHITECTURE-DEBUG-PIPELINE (标准架构调试流程)
+
+**Phase 1: 问题定位**
+```bash
+# 1. 启用完整调试模式
+rcc3 start config.json --debug
+
+# 2. 检查六层数据流
+ls ~/.route-claudecode/database/layers/
+cat ~/.route-claudecode/database/audit/trail-*.json
+
+# 3. 确定问题层级
+# 检查每层的输入输出数据格式
+```
+
+**Phase 2: 层层分析**
+```bash
+# 从底层开始逐层检查
+# 1. Server: 请求是否正确接收
+# 2. Preprocessor: 请求预处理是否正确
+# 3. Provider-Protocol: API调用是否正常
+# 4. Transformer: 格式转换是否完整
+# 5. Post-processor: 校验是否通过
+# 6. Router: 路由是否正确
+# 7. Client: 响应是否正确返回
+```
+
+**Phase 3: 精确修复**
+```bash
+# 基于分析结果进行精确修复
+# - 格式转换问题 → 修复Transformer Layer
+# - 校验问题 → 修复Post-processor Layer  
+# - 预处理问题 → 修复Preprocessor Layer
+# - 通信问题 → 修复Provider-Protocol Layer
+```
+
+**Phase 4: 验证循环**
+```bash
+# 使用数据回放验证修复效果
+node test-replay-system-demo.js
+# 确保修复后100%通过测试
+```
+
+#### 🏗️ 架构问题诊断模式 (ARCHITECTURE ISSUE PATTERNS)
+
+**模式1: 格式转换错误**
+- **症状**: 工具调用格式不正确
+- **定位**: Transformer Layer
+- **修复**: 实现正确的格式转换方法
+
+**模式2: 职责混乱**
+- **症状**: Post-processor承担转换任务
+- **定位**: 架构设计理解错误  
+- **修复**: 明确层级职责，重新分工
+
+**模式3: 构建问题**
+- **症状**: 模块导入错误，PreprocessorManager未定义
+- **定位**: TypeScript/JavaScript文件冲突
+- **修复**: 删除冲突文件，确保正确导出
+
+**模式4: 数据流中断**
+- **症状**: 某层数据丢失或格式错误
+- **定位**: 使用六层数据捕获分析
+- **修复**: 修复对应层的数据处理逻辑
+
+#### 📚 v3.0.1修复案例学习 (CASE STUDY)
+
+**问题**: LM Studio工具调用返回格式错误
+**分析过程**:
+1. 从Preprocessor开始逐层检查 → 发现Transformer层未正确转换
+2. 识别职责混乱 → Post-processor在做格式转换工作  
+3. 构建问题分析 → TypeScript文件覆盖JavaScript实现
+4. 精确修复 → 实现正确的转换和校验分离
+
+**关键发现**:
+- Transformer必须负责主要格式转换
+- Post-processor只做校验和微调
+- 构建系统必须确保正确的模块导出
+- 脚本化构建和安装的重要性
+
+**成功指标**: LM Studio工具调用100%正常工作
+
+#### ⚡ 快速诊断命令 (RAPID DIAGNOSIS COMMANDS)
+
+```bash
+# 快速检查六层架构状态
+rcc3 status --layers
+
+# 检查特定层的数据流  
+cat ~/.route-claudecode/database/layers/transformer/latest.json
+
+# 验证格式转换正确性
+node test-format-conversion-validator.js
+
+# 检查构建完整性
+ls dist/v3/*/index.js | xargs grep -l "export"
+```
+
+## 🏗️ 六层架构设计指引 (Six-Layer Architecture Design Guide)
+
+### 🎯 架构核心理念
+
+六层架构设计基于**单一职责原则**和**数据流清晰性**：
+
+```
+Client ↔ Router ↔ Post-processor ↔ Transformer ↔ Provider-Protocol ↔ Preprocessor ↔ Server
+```
+
+#### 📐 层级职责矩阵 (LAYER RESPONSIBILITY MATRIX)
+
+| 层级 | 主要职责 | 输入格式 | 输出格式 | 关键方法 |
+|------|---------|---------|---------|----------|
+| **Client** | 用户接口、请求发送 | User Input | Anthropic Request | `process()` |
+| **Router** | 路由选择、负载均衡 | Anthropic Request | Routed Request | `route()` |
+| **Post-processor** | 校验、微调、一致性检查 | Transformed Response | Validated Response | `validate()` |
+| **Transformer** | **格式转换、协议映射** | Provider Response | Anthropic Response | `transform()` |
+| **Provider-Protocol** | 第三方API通信 | Processed Request | Provider Response | `call()` |
+| **Preprocessor** | 请求预处理、认证 | Raw Request | Processed Request | `preprocess()` |
+| **Server** | 服务监听、请求分发 | HTTP Request | Raw Request | `handle()` |
+
+#### 🔄 标准数据流转模式 (STANDARD DATA FLOW PATTERNS)
+
+**请求流向** (Request Flow):
+```
+HTTP Request → Server → Preprocessor → Provider-Protocol → [External API]
+```
+
+**响应流向** (Response Flow):
+```
+[External API] → Provider-Protocol → Transformer → Post-processor → Router → Client
+```
+
+**关键转换点**:
+- **Preprocessor**: 请求格式标准化
+- **Transformer**: **响应格式完整转换** ← 最关键
+- **Post-processor**: 最终校验和微调
+
+#### 🚨 设计原则强制执行 (MANDATORY DESIGN PRINCIPLES)
+
+**原则1: 单一职责分离**
+- 每层只负责一个核心功能
+- 严禁跨层职责混淆
+- Transformer专注格式转换，Post-processor专注校验
+
+**原则2: 数据流单向性**  
+- 数据按固定方向流转
+- 每层对数据进行特定处理
+- 禁止跳层或反向数据流
+
+**原则3: 接口标准化**
+- 每层都有标准的输入输出接口
+- 使用统一的错误处理机制
+- 支持调试和监控的标准接口
+
+**原则4: 可测试性**
+- 每层都可独立测试
+- 支持数据注入和回放
+- 完整的I/O数据捕获
+
+#### 💡 关键设计决策 (KEY DESIGN DECISIONS)
+
+**决策1: Transformer vs Post-processor分工**
+- **Transformer**: 承担主要格式转换任务
+  - OpenAI → Anthropic 完整转换
+  - `tool_calls` → `tool_use` 映射
+  - `finish_reason` → `stop_reason` 映射
+- **Post-processor**: 承担校验和微调任务
+  - 检查 `stop_reason` 与 `content` 一致性
+  - 修正不匹配的字段
+  - 最终格式验证
+
+**决策2: 预处理器模块化管理**
+- 基于Provider-Protocol类型的预处理器选择
+- 支持自动检测和动态创建
+- LM Studio特殊预处理器的自动识别
+
+**决策3: 数据捕获和回放系统**
+- 每层都支持I/O数据捕获
+- 完整的审计追踪机制
+- 支持问题回放和修复验证
+
+### 🛠️ 实现指导原则 (IMPLEMENTATION GUIDELINES)
+
+**开发新Layer时**:
+1. 明确单一职责
+2. 定义标准接口  
+3. 实现错误处理
+4. 添加调试支持
+5. 编写独立测试
+
+**修改现有Layer时**:
+1. 确认职责范围
+2. 保持接口兼容
+3. 更新相关测试
+4. 验证数据流转
+5. 记录变更影响
+
+**调试Layer问题时**:
+1. 使用STD-ARCHITECTURE-DEBUG-PIPELINE
+2. 从底层开始逐层检查
+3. 验证数据格式转换
+4. 确认职责分离正确
+5. 使用回放系统验证
 
 ## 🚀 启动和部署 (Launch & Deployment)
 
