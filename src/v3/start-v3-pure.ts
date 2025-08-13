@@ -91,9 +91,9 @@ class V3PureServer {
         role: 'assistant',
         content: [{
           type: 'text',
-          text: `V3 Pure Server Response: Received request for model ${body.model || 'unknown'}. V3 six-layer architecture is active with ${Object.keys(this.config.providers).length} providers and ${Object.keys(this.config.routing.categories).length} routing categories.`
+          text: `V3 Pure Server Response: Received request for model ${body.model ? body.model : '[MISSING MODEL]'}. V3 six-layer architecture is active with ${Object.keys(this.config.providers).length} providers and ${Object.keys(this.config.routing.categories).length} routing categories.`
         }],
-        model: body.model || 'v3-default',
+        model: body.model || (() => { throw new Error('Request missing required field: model'); })(),
         stop_reason: 'end_turn',
         stop_sequence: null,
         usage: {

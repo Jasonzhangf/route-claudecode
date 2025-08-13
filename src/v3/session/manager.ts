@@ -8,7 +8,8 @@ export const sessionManager = {
   closeSession: (id: string) => console.log(`🔒 V3 Session closed: ${id}`),
   
   extractSessionId(headers: Record<string, string>): string {
-    return headers['x-session-id'] || 'default-session';
+    // 🚨 Zero-fallback principle: Generate unique session ID instead of default
+    return headers['x-session-id'] || `session-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   },
 
   getOrCreateSession(sessionId: string) {

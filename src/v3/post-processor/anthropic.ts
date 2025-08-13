@@ -21,13 +21,24 @@ export class AnthropicOutputProcessor {
 
   async processResponse(response: any, requestId: string): Promise<BaseResponse> {
     // Convert any response format to Anthropic format
+    // 🚨 Zero-fallback principle: Validate all required fields explicitly
+    if (!response.id) {
+      throw new Error('Response missing required field: id');
+    }
+    if (!response.model) {
+      throw new Error('Response missing required field: model');
+    }
+    if (!response.stop_reason) {
+      throw new Error('Response missing required field: stop_reason');
+    }
+    
     const anthropicResponse: BaseResponse = {
-      id: response.id || `msg-v3-${Date.now()}`,
+      id: response.id,
       type: 'message',
       role: 'assistant',
       content: this.normalizeContent(response),
-      model: response.model || 'v3-default',
-      stop_reason: response.stop_reason || 'end_turn',
+      model: response.model,
+      stop_reason: response.stop_reason,
       usage: response.usage || {
         input_tokens: 0,
         output_tokens: 0
