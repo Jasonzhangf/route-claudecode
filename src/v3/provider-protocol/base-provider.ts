@@ -78,22 +78,85 @@ export class CodeWhispererProvider extends BaseProvider {
 }
 
 export class GeminiProvider extends BaseProvider {
+  private client: any;
+  
   constructor(config: ProviderConfig, id: string) {
     super(id, config);
-    // Use real Gemini client when available
-    // this.client = createGeminiClient(config, id);
+    this.initializeGeminiClient(config, id);
   }
   
-  async isHealthy(): Promise<boolean> { 
-    return false; // Not implemented yet
+  private async initializeGeminiClient(config: ProviderConfig, id: string) {
+    try {
+      // 动态导入Gemini客户端工厂
+      const { GeminiClientFactory } = await import('./gemini/client-factory.js');
+      
+      // 创建Gemini客户端
+      this.client = GeminiClientFactory.createValidatedClient(config);
+      
+      console.log(`[V3:${process.env.RCC_PORT}] Initialized Gemini provider ${id}`, {
+        type: config.type,
+        endpoint: config.endpoint || 'https://generativelanguage.googleapis.com'
+      });
+      
+    } catch (error) {
+      console.error(`Failed to initialize Gemini provider ${id}:`, error.message);
+      throw error;
+    }
+  }
+  
+  async isHealthy(): Promise<boolean> {
+    try {
+      if (this.client && typeof this.client.healthCheck === 'function') {
+        const health = await this.client.healthCheck();
+        return health.healthy;
+      }
+      return false;
+    } catch (error) {
+      console.warn(`Gemini provider ${this.id} health check failed:`, error.message);
+      return false;
+    }
   }
   
   async sendRequest(request: BaseRequest): Promise<BaseResponse> {
-    throw new Error('Gemini provider not implemented yet');
+    try {
+      // Provider层只负责API通信，不做transformer转换
+      // 转换应该在transformer层完成
+      const context = {
+        requestId: request.metadata?.requestId || `req_${Date.now()}`,
+        providerId: this.id,
+        config: this.config
+      };
+      
+      // 直接发送到Gemini API（假设request已经被transformer转换过）
+      const response = await this.client.sendRequest(request, context);
+      
+      return response;
+      
+    } catch (error) {
+      console.error(`Gemini provider ${this.id} request failed:`, error.message);
+      return this.createErrorResponse(request, error.message);
+    }
   }
   
   async *sendStreamRequest?(request: BaseRequest): AsyncIterable<any> {
-    throw new Error('Gemini stream provider not implemented yet');
+    try {
+      const context = {
+        requestId: request.metadata?.requestId || `req_${Date.now()}`,
+        providerId: this.id,
+        config: this.config
+      };
+      
+      // 发送流式请求
+      const stream = this.client.sendStreamRequest(request, context);
+      
+      for await (const chunk of stream) {
+        yield chunk;
+      }
+      
+    } catch (error) {
+      console.error(`Gemini provider ${this.id} stream request failed:`, error.message);
+      throw error;
+    }
   }
 }
 

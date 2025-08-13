@@ -1,172 +1,158 @@
 /**
- * V3.0 Gemini Client Factory - Real API Implementation
- * 基于demo3模式，实现Gemini API真实通信
- *
- * Project owner: Jason Zhang
+ * Gemini Client Factory
+ * 创建和管理Gemini API客户端实例，基于官方Google Generative AI SDK
+ * @author Jason Zhang
  */
-import axios from 'axios';
+
+import { GeminiClient } from './gemini-client.js';
 import { getLogger } from '../../logging/index.js';
 
 const logger = getLogger();
 
+export class GeminiClientFactory {
+    static createClient(config) {
+        logger.debug('Creating Gemini client', {
+            hasApiKey: !!(config.apiKey),
+            endpoint: config.endpoint || 'Official Gemini API',
+            models: config.models || ['gemini-1.5-pro-latest']
+        });
+
+        // 验证配置
+        if (!config.apiKey) {
+            throw new Error('Gemini API key is required for client creation');
+        }
+
+        // 创建Gemini客户端实例
+        const client = new GeminiClient(config);
+
+        // 返回标准化的客户端接口
+        return {
+            type: 'gemini',
+            provider: 'gemini',
+            endpoint: config.endpoint || 'https://generativelanguage.googleapis.com',
+            
+            // 非流式请求
+            sendRequest: async (request, context) => {
+                return await client.sendRequest(request, context);
+            },
+
+            // 流式请求
+            sendStreamRequest: async (request, context) => {
+                return client.sendStreamRequest(request, context);
+            },
+
+            // 健康检查
+            healthCheck: async () => {
+                return await client.healthCheck();
+            },
+
+            // 获取支持的模型
+            getSupportedModels: () => {
+                return config.models || [
+                    'gemini-2.0-flash-exp',
+                    'gemini-1.5-pro-latest',
+                    'gemini-1.5-flash',
+                    'gemini-1.5-flash-8b'
+                ];
+            },
+
+            // 客户端配置信息
+            getConfig: () => {
+                return {
+                    type: 'gemini',
+                    timeout: config.timeout || 30000,
+                    maxRetries: config.maxRetries || 3,
+                    retryDelay: config.retryDelay || 1000
+                };
+            }
+        };
+    }
+
+    /**
+     * 验证Gemini配置
+     */
+    static validateConfig(config) {
+        const errors = [];
+
+        if (!config.apiKey) {
+            errors.push('Missing required field: apiKey');
+        }
+
+        if (config.timeout && (config.timeout < 1000 || config.timeout > 300000)) {
+            errors.push('Timeout must be between 1000ms and 300000ms');
+        }
+
+        if (config.maxRetries && (config.maxRetries < 0 || config.maxRetries > 10)) {
+            errors.push('MaxRetries must be between 0 and 10');
+        }
+
+        return {
+            valid: errors.length === 0,
+            errors
+        };
+    }
+
+    /**
+     * 创建带验证的客户端
+     */
+    static createValidatedClient(config) {
+        const validation = this.validateConfig(config);
+        
+        if (!validation.valid) {
+            const errorMessage = `Invalid Gemini configuration: ${validation.errors.join(', ')}`;
+            logger.error(errorMessage);
+            throw new Error(errorMessage);
+        }
+
+        return this.createClient(config);
+    }
+}
+
+/**
+ * 保持向后兼容的工厂函数
+ */
 export function createGeminiClient(config, id) {
-    logger.info(`🔧 V3 Creating Gemini client for ${id}`, {
-        endpoint: config.endpoint,
-        models: config.models?.length || 0
-    });
-
-    // 处理Gemini endpoint
-    const baseURL = config.endpoint || 'https://generativelanguage.googleapis.com';
+    logger.debug(`Creating Gemini client using legacy interface for ${id}`);
     
-    // 创建axios实例
-    const axiosInstance = axios.create({
-        baseURL: baseURL,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        timeout: config.timeout || 60000
-    });
+    // 转换配置格式
+    const standardConfig = {
+        apiKey: config.apiKey || config.authentication?.credentials?.apiKey,
+        models: config.models,
+        timeout: config.timeout || 60000,
+        maxRetries: config.maxRetries || 3,
+        retryDelay: config.retryDelay || 1000
+    };
 
+    // 处理多API密钥
+    if (config.authentication?.credentials?.apiKeys) {
+        const keys = config.authentication.credentials.apiKeys;
+        standardConfig.apiKey = keys[Math.floor(Math.random() * keys.length)];
+    }
+
+    const client = GeminiClientFactory.createValidatedClient(standardConfig);
+
+    // 返回向后兼容的接口
     return {
         name: config.name || `Gemini ${id}`,
         
         async isHealthy() {
             try {
-                // Gemini健康检查 - 尝试列出模型
-                const apiKey = getApiKey(config);
-                const response = await axiosInstance.get(`/v1beta/models?key=${apiKey}`, { 
-                    timeout: 5000 
-                });
-                return response.status === 200;
+                const health = await client.healthCheck();
+                return health.healthy;
             } catch (error) {
-                logger.warn(`Health check failed for ${id}`, {
-                    error: error.message,
-                    status: error.response?.status
-                });
+                logger.warn(`Health check failed for ${id}`, error);
                 return false;
             }
         },
 
         async sendRequest(request) {
-            try {
-                logger.debug(`Gemini sendRequest for ${id}`, {
-                    model: request.model,
-                    hasTools: !!(request.tools && request.tools.length > 0)
-                });
-
-                // 转换为Gemini格式
-                const geminiRequest = convertToGeminiFormat(request);
-                const apiKey = getApiKey(config);
-                
-                const response = await axiosInstance.post(
-                    `/v1beta/models/${request.model}:generateContent?key=${apiKey}`,
-                    geminiRequest
-                );
-                
-                return response.data;
-                
-            } catch (error) {
-                logger.error(`Gemini sendRequest failed for ${id}`, {
-                    error: error.message,
-                    status: error.response?.status,
-                    model: request.model
-                });
-                throw error;
-            }
+            const context = { requestId: `legacy_${Date.now()}`, providerId: id };
+            return await client.sendRequest(request, context);
         },
 
         async sendStreamRequest(request) {
-            try {
-                logger.debug(`Gemini sendStreamRequest for ${id}`, {
-                    model: request.model,
-                    hasTools: !!(request.tools && request.tools.length > 0)
-                });
-
-                // Gemini流式请求
-                const geminiRequest = convertToGeminiFormat(request);
-                const apiKey = getApiKey(config);
-                
-                const response = await axiosInstance.post(
-                    `/v1beta/models/${request.model}:streamGenerateContent?key=${apiKey}`,
-                    geminiRequest,
-                    { responseType: 'stream' }
-                );
-
-                return response.data; // 直接返回stream，让transformer处理
-                
-            } catch (error) {
-                logger.error(`Gemini sendStreamRequest failed for ${id}`, {
-                    error: error.message,
-                    status: error.response?.status,
-                    model: request.model
-                });
-                throw error;
-            }
+            const context = { requestId: `legacy_stream_${Date.now()}`, providerId: id };
+            return client.sendStreamRequest(request, context);
         }
     };
-}
-
-/**
- * 获取API密钥
- */
-function getApiKey(config) {
-    if (config.authentication?.credentials?.apiKeys) {
-        const keys = config.authentication.credentials.apiKeys;
-        return keys[Math.floor(Math.random() * keys.length)];
-    }
-    return config.apiKey || config.authentication?.credentials?.apiKey;
-}
-
-/**
- * 将请求转换为Gemini格式
- */
-function convertToGeminiFormat(request) {
-    const geminiRequest = {
-        contents: [],
-        generationConfig: {}
-    };
-
-    // 转换messages
-    if (request.messages) {
-        for (const message of request.messages) {
-            if (message.role === 'system') {
-                // Gemini的system instruction需要特殊处理
-                continue; // 暂时跳过system messages
-            } else if (message.role === 'user') {
-                geminiRequest.contents.push({
-                    role: 'user',
-                    parts: [{ text: message.content }]
-                });
-            } else if (message.role === 'assistant') {
-                geminiRequest.contents.push({
-                    role: 'model',
-                    parts: [{ text: message.content }]
-                });
-            }
-        }
-    }
-
-    // 转换参数
-    if (request.max_tokens) {
-        geminiRequest.generationConfig.maxOutputTokens = request.max_tokens;
-    }
-    if (request.temperature !== undefined) {
-        geminiRequest.generationConfig.temperature = request.temperature;
-    }
-    if (request.top_p !== undefined) {
-        geminiRequest.generationConfig.topP = request.top_p;
-    }
-
-    // 工具调用支持（简化版本）
-    if (request.tools && request.tools.length > 0) {
-        geminiRequest.tools = request.tools.map(tool => ({
-            functionDeclarations: [{
-                name: tool.name || tool.function?.name,
-                description: tool.description || tool.function?.description,
-                parameters: tool.input_schema || tool.function?.parameters
-            }]
-        }));
-    }
-
-    return geminiRequest;
 }

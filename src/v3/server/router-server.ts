@@ -890,7 +890,27 @@ export class RouterServer {
         }
         
         try {
-          providerResponse = await provider.sendRequest(preprocessedRequest);
+          // Apply input transformation (Anthropic → Provider format)
+          const providerConfig = this.config.providers[providerId];
+          let transformedRequest = preprocessedRequest;
+          
+          if (providerConfig && providerConfig.type === 'gemini') {
+            try {
+              transformedRequest = await transformationManager.transformInput(preprocessedRequest, {
+                provider: providerConfig.type,
+                direction: 'input',
+                requestId,
+                originalRequest: baseRequest
+              });
+              
+              console.log(`🔄 [${requestId}] Applied Gemini input transformation`);
+            } catch (transformError) {
+              console.error(`❌ [${requestId}] Input transformation failed:`, transformError.message);
+              // Continue with original request if transformation fails
+            }
+          }
+          
+          providerResponse = await provider.sendRequest(transformedRequest);
           
           // Apply postprocessing to the response
           providerResponse = this.preprocessingPipeline.postprocessResponse(
@@ -903,6 +923,23 @@ export class RouterServer {
               targetModel: targetModel || baseRequest.model
             }
           );
+          
+          // Apply output transformation (Provider format → Anthropic)
+          if (providerConfig && providerConfig.type === 'gemini') {
+            try {
+              providerResponse = await transformationManager.transformOutput(providerResponse, {
+                provider: providerConfig.type,
+                direction: 'output',
+                requestId,
+                originalRequest: baseRequest
+              });
+              
+              console.log(`🔄 [${requestId}] Applied Gemini output transformation`);
+            } catch (transformError) {
+              console.error(`❌ [${requestId}] Output transformation failed:`, transformError.message);
+              // Continue with original response if transformation fails
+            }
+          }
           
           // Record provider-protocol layer output (success)
           if (this.debugSystem && this.debugSystem.debugComponents?.recorder) {

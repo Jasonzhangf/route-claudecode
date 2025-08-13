@@ -17,6 +17,9 @@ export { JSONToolFixer } from './json-tool-fixer.js';
 export { StandardToolFixer } from './standard-tool-fixer.js';
 export { LMStudioOpenAIPreprocessor } from './lmstudio-openai-preprocessor.js';
 
+// Gemini预处理器
+export { GeminiPreprocessor } from './gemini-preprocessor.js';
+
 /**
  * Gemini预处理器
  */
@@ -59,7 +62,7 @@ class CodeWhispererPreprocessor {
  * 预处理器管理器
  */
 class PreprocessorManager {
-    static createPreprocessor(type, config) {
+    static async createPreprocessor(type, config) {
         // Auto-detect LM Studio based on endpoint for OpenAI-compatible providers
         if (type === 'openai' && config && config.endpoint) {
             const isLMStudio = config.endpoint.includes('localhost:1234') || 
@@ -79,7 +82,9 @@ class PreprocessorManager {
                 // LM Studio is OpenAI-compatible but needs special preprocessing
                 return new LMStudioOpenAIPreprocessor(config);
             case 'gemini':
-                return new GeminiPreprocessor(config);
+                // 使用专用Gemini预处理器
+                const { GeminiPreprocessor: GeminiPreprocessorClass } = await import('./gemini-preprocessor.js');
+                return new GeminiPreprocessorClass(config);
             case 'codewhisperer':
                 return new CodeWhispererPreprocessor(config);
             default:
@@ -89,12 +94,11 @@ class PreprocessorManager {
 }
 
 // 兼容旧接口
-export function getPreprocessor(type = 'openai', config = {}) {
-    return PreprocessorManager.createPreprocessor(type, config);
+export async function getPreprocessor(type = 'openai', config = {}) {
+    return await PreprocessorManager.createPreprocessor(type, config);
 }
 
 export {
-    GeminiPreprocessor,
     CodeWhispererPreprocessor,
     PreprocessorManager
 };
