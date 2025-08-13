@@ -1,6 +1,6 @@
 {
   "name": "route-claudecode-v3",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Claude Code Router v3.0 - Six-layer architecture with official SDK integration",
   "type": "module",
   "main": "src/index.js",

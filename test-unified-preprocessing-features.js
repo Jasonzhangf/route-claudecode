@@ -7,7 +7,10 @@
  * @version v3.0-unified-preprocessing-test
  */
 
-import { OpenAICompatiblePreprocessor } from './src/v3/preprocessor/index.js';
+import { 
+    OpenAICompatiblePreprocessor,
+    FeatureDetector
+} from './src/v3/preprocessor/index.js';
 
 console.log('🧪 v3.0 统一预处理功能测试');
 console.log('=' * 60);
@@ -168,10 +171,10 @@ async function runTests() {
             console.log(`   - 工具数量: ${processedRequest.tools?.length || 0}`);
             console.log(`   - 工具选择: ${processedRequest.tool_choice}`);
             
-            // 测试特征检测
-            const needsTextParsing = preprocessor.needsTextBasedToolCallParsing(testCase.request, testCase.context);
-            const needsJSONFormat = preprocessor.needsEnhancedJSONFormat(testCase.request, testCase.context);
-            const needsStandardFormat = preprocessor.needsStandardOpenAIFormat(testCase.request, testCase.context);
+            // 测试特征检测（使用FeatureDetector静态方法）
+            const needsTextParsing = FeatureDetector.needsTextBasedToolCallParsing(testCase.request, testCase.context);
+            const needsJSONFormat = FeatureDetector.needsEnhancedJSONFormat(testCase.request, testCase.context);
+            const needsStandardFormat = FeatureDetector.needsStandardOpenAIFormat(testCase.request, testCase.context);
             
             console.log(`   - 需要文本工具调用解析: ${needsTextParsing}`);
             console.log(`   - 需要增强JSON格式: ${needsJSONFormat}`);
@@ -231,8 +234,6 @@ async function runTests() {
     console.log('\n📋 3. 特征检测准确性测试');
     console.log('-' * 50);
     
-    const preprocessor = new OpenAICompatiblePreprocessor({});
-    
     // 测试文本工具调用检测
     const textToolCallResponse = {
         choices: [{
@@ -243,7 +244,7 @@ async function runTests() {
     };
     
     console.log(`\n🔍 文本工具调用检测测试:`);
-    const hasTextCalls = preprocessor.hasTextBasedToolCallsInResponse(textToolCallResponse);
+    const hasTextCalls = FeatureDetector.hasTextBasedToolCallsInResponse(textToolCallResponse);
     console.log(`   结果: ${hasTextCalls ? '✅ 检测到' : '❌ 未检测到'}`);
     
     // 测试JSON修复检测
@@ -261,7 +262,7 @@ async function runTests() {
     };
     
     console.log(`\n🔍 格式错误JSON检测测试:`);
-    const hasMalformedJSON = preprocessor.hasmalformedJSONToolCalls(malformedJSONResponse);
+    const hasMalformedJSON = FeatureDetector.hasmalformedJSONToolCalls(malformedJSONResponse);
     console.log(`   结果: ${hasMalformedJSON ? '✅ 检测到' : '❌ 未检测到'}`);
     
     // 测试ID修复检测
@@ -280,7 +281,7 @@ async function runTests() {
     };
     
     console.log(`\n🔍 缺失ID检测测试:`);
-    const needsIDFix = preprocessor.needsToolCallIDFix(missingIDResponse);
+    const needsIDFix = FeatureDetector.needsToolCallIDFix(missingIDResponse);
     console.log(`   结果: ${needsIDFix ? '✅ 检测到' : '❌ 未检测到'}`);
     
     console.log('\n🎉 所有测试完成！');
