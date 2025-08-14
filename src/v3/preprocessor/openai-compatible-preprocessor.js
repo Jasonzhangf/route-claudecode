@@ -49,7 +49,7 @@ export class OpenAICompatiblePreprocessor {
     addAuthentication(request, context) {
         const { config } = context;
         
-        if (config.authentication?.type === 'bearer') {
+        if (config && config.authentication?.type === 'bearer') {
             logger.debug('Bearer authentication configured', {
                 providerId: context.providerId
             });

@@ -309,23 +309,12 @@ export class RouterServer {
       });
     });
 
-    // OpenAI Client Status API endpoint
+    // OpenAI Client Status API endpoint - disabled for now
     this.fastify.get('/api/openai-client-status', async (request, reply) => {
-      try {
-        const { OpenAIClientFactory } = await import('./providers/openai/client-factory');
-        const clientStatus = OpenAIClientFactory.getAllClientStatus();
-        
-        reply.send({
-          timestamp: new Date().toISOString(),
-          clientStatus,
-          totalClients: Object.keys(clientStatus).length
-        });
-      } catch (error) {
-        reply.status(500).send({
-          error: 'Failed to get OpenAI client status',
-          message: error instanceof Error ? error.message : 'Unknown error'
-        });
-      }
+      reply.send({ 
+        status: 'disabled', 
+        message: 'OpenAI client status endpoint disabled in v3.0'
+      });
     });
 
     // Statistics API endpoint

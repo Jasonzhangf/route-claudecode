@@ -133,8 +133,14 @@ export class ConfigMerger {
             retryDelay: protocolConfig.retryDelay
         };
 
-        // 处理认证凭据
-        if (userProviderConfig.apiKey) {
+        // 处理认证凭据 - 支持单个apiKey或apiKeys数组
+        if (userProviderConfig.authentication?.credentials?.apiKeys) {
+            // 处理用户配置中的apiKeys数组格式
+            mergedProviderConfig.authentication.credentials = {
+                apiKeys: userProviderConfig.authentication.credentials.apiKeys
+            };
+        } else if (userProviderConfig.apiKey) {
+            // 处理传统的单个apiKey格式
             if (protocolConfig.authentication.type === 'bearer') {
                 mergedProviderConfig.authentication.credentials = {
                     apiKey: [userProviderConfig.apiKey]
@@ -144,6 +150,9 @@ export class ConfigMerger {
                     apiKey: [userProviderConfig.apiKey]
                 };
             }
+        } else if (userProviderConfig.authentication?.credentials) {
+            // 直接传递用户的credentials配置
+            mergedProviderConfig.authentication.credentials = userProviderConfig.authentication.credentials;
         }
 
         // 处理AWS CodeWhisperer特殊配置

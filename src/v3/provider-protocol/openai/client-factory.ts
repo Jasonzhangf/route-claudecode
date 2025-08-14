@@ -17,12 +17,13 @@ export function createOpenAIClient(config: any, id: string): Provider {
     async isHealthy(): Promise<boolean> {
       try {
         const timeoutMs = config.timeout || 120000; // Default to 120 seconds
+        const apiKey = getApiKey(config);
         const response = await fetch(`${config.endpoint.replace('/v1/chat/completions', '')}/v1/models`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            ...(config.authentication?.type === 'bearer' && config.authentication?.credentials?.apiKey 
-              ? { 'Authorization': `Bearer ${config.authentication.credentials.apiKey}` }
+            ...(config.authentication?.type === 'bearer' && apiKey 
+              ? { 'Authorization': `Bearer ${apiKey}` }
               : {})
           },
           signal: AbortSignal.timeout(timeoutMs)
@@ -56,8 +57,9 @@ export function createOpenAIClient(config: any, id: string): Provider {
         };
 
         // Add authentication if configured
-        if (config.authentication?.type === 'bearer' && config.authentication?.credentials?.apiKey) {
-          headers['Authorization'] = `Bearer ${config.authentication.credentials.apiKey}`;
+        const apiKey = getApiKey(config);
+        if (config.authentication?.type === 'bearer' && apiKey) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
         }
 
         const timeoutMs = config.timeout || 120000; // Default to 120 seconds
@@ -158,8 +160,9 @@ export function createOpenAIClient(config: any, id: string): Provider {
         'Content-Type': 'application/json'
       };
 
-      if (config.authentication?.type === 'bearer' && config.authentication?.credentials?.apiKey) {
-        headers['Authorization'] = `Bearer ${config.authentication.credentials.apiKey}`;
+      const apiKey = getApiKey(config);
+      if (config.authentication?.type === 'bearer' && apiKey) {
+        headers['Authorization'] = `Bearer ${apiKey}`;
       }
 
       const timeoutMs = config.timeout || 120000;
@@ -281,10 +284,13 @@ function mapFinishReason(openAIReason: string | undefined): string {
 }
 
 function convertAnthropicMessagesToOpenAI(messages: any[]): any[] {
-  return messages.map(message => {
+  const convertedMessages: any[] = [];
+  
+  for (const message of messages) {
     // Handle standard user/assistant messages
     if (typeof message.content === 'string') {
-      return message;
+      convertedMessages.push(message);
+      continue;
     }
 
     // Handle messages with content array
@@ -311,33 +317,46 @@ function convertAnthropicMessagesToOpenAI(messages: any[]): any[] {
           }
         }
 
-        return {
+        convertedMessages.push({
           ...message,
           content: textContent || null,
           tool_calls: toolCalls
-        };
+        });
+        continue;
       }
 
       // Check for tool_result content in user messages
       const hasToolResult = message.content.some((item: any) => item.type === 'tool_result');
       if (hasToolResult) {
-        // Convert tool_result to plain text for LM Studio compatibility
+        // For ModelScope API, convert tool_result to proper OpenAI tool response format
+        let hasTextContent = false;
         const textParts: string[] = [];
         
         for (const contentItem of message.content) {
           if (contentItem.type === 'tool_result') {
-            textParts.push(`Tool result from ${contentItem.tool_use_id}:\n${contentItem.content}`);
+            // Add separate tool response message
+            convertedMessages.push({
+              role: 'tool',
+              tool_call_id: contentItem.tool_use_id,
+              content: contentItem.content
+            });
           } else if (contentItem.type === 'text') {
             textParts.push(contentItem.text);
+            hasTextContent = true;
           } else {
             textParts.push(JSON.stringify(contentItem));
+            hasTextContent = true;
           }
         }
-
-        return {
-          ...message,
-          content: textParts.join('\n\n')
-        };
+        
+        // If there's additional text content, add it as a user message
+        if (hasTextContent && textParts.length > 0) {
+          convertedMessages.push({
+            ...message,
+            content: textParts.join('\n\n')
+          });
+        }
+        continue;
       }
 
       // Handle other content arrays (text, image_url, etc.)
@@ -351,18 +370,33 @@ function convertAnthropicMessagesToOpenAI(messages: any[]): any[] {
       }
 
       if (textParts.length > 0) {
-        return {
+        convertedMessages.push({
           ...message,
           content: textParts.join('\n\n')
-        };
+        });
+      } else {
+        convertedMessages.push({
+          ...message,
+          content: message.content
+        });
       }
-
-      return {
-        ...message,
-        content: message.content
-      };
+      continue;
     }
 
-    return message;
-  });
+    convertedMessages.push(message);
+  }
+  
+  return convertedMessages;
+}
+
+/**
+ * 获取API密钥（支持多密钥轮询）
+ */
+function getApiKey(config: any): string {
+  if (config.authentication?.credentials?.apiKeys) {
+    const keys = config.authentication.credentials.apiKeys;
+    // 简单轮询选择
+    return keys[Math.floor(Math.random() * keys.length)];
+  }
+  return config.apiKey || config.authentication?.credentials?.apiKey;
 }
