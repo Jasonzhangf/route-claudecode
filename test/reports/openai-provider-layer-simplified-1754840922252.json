@@ -1,0 +1,198 @@
+{
+  "timestamp": "2025-08-10T15:48:42.252Z",
+  "testType": "openai-provider-layer-simplified",
+  "summary": {
+    "totalTests": 3,
+    "passedTests": 1,
+    "failedTests": 2,
+    "passRate": 33.3,
+    "allPassed": false,
+    "results": [
+      {
+        "providerName": "modelscope",
+        "success": false,
+        "port": 5507,
+        "error": "Provider port 5507 not healthy: ",
+        "timestamp": "2025-08-10T15:48:34.218Z"
+      },
+      {
+        "providerName": "shuaihong",
+        "success": false,
+        "port": 5508,
+        "error": "Provider port 5508 not healthy: ",
+        "timestamp": "2025-08-10T15:48:36.222Z"
+      },
+      {
+        "providerName": "lmstudio",
+        "success": true,
+        "port": 5506,
+        "responseTime": 1044,
+        "validation": {
+          "passed": true,
+          "issues": []
+        },
+        "response": {
+          "id": "chatcmpl-tddluu49x7kql4czfwiqa",
+          "model": "claude-3-opus-20240229",
+          "hasContent": true,
+          "hasToolUse": true,
+          "statusCode": 200
+        },
+        "timestamp": "2025-08-10T15:48:40.252Z"
+      }
+    ]
+  },
+  "results": [
+    {
+      "providerName": "modelscope",
+      "success": false,
+      "port": 5507,
+      "error": "Provider port 5507 not healthy: ",
+      "timestamp": "2025-08-10T15:48:34.218Z"
+    },
+    {
+      "providerName": "shuaihong",
+      "success": false,
+      "port": 5508,
+      "error": "Provider port 5508 not healthy: ",
+      "timestamp": "2025-08-10T15:48:36.222Z"
+    },
+    {
+      "providerName": "lmstudio",
+      "success": true,
+      "port": 5506,
+      "responseTime": 1044,
+      "validation": {
+        "passed": true,
+        "issues": []
+      },
+      "response": {
+        "id": "chatcmpl-tddluu49x7kql4czfwiqa",
+        "model": "claude-3-opus-20240229",
+        "hasContent": true,
+        "hasToolUse": true,
+        "statusCode": 200
+      },
+      "timestamp": "2025-08-10T15:48:40.252Z"
+    }
+  ],
+  "errors": [
+    {
+      "providerName": "modelscope",
+      "error": "Provider port 5507 not healthy: "
+    },
+    {
+      "providerName": "shuaihong",
+      "error": "Provider port 5508 not healthy: "
+    }
+  ],
+  "providerConfigs": {
+    "modelscope": {
+      "name": "ModelScope Provider Test",
+      "port": 5507,
+      "expectedModel": "Qwen3-Coder-480B",
+      "testRequest": {
+        "model": "claude-4-sonnet",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Hello! Please introduce yourself briefly and tell me what you can help with."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 500,
+        "temperature": 0.3
+      }
+    },
+    "shuaihong": {
+      "name": "ShuaiHong Provider Test",
+      "port": 5508,
+      "expectedModel": "gpt-4o-mini",
+      "testRequest": {
+        "model": "claude-3-5-haiku-20241022",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Please calculate 25 + 37 using the calculator tool."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.1,
+        "tools": [
+          {
+            "name": "calculator",
+            "description": "Perform mathematical calculations",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "expression": {
+                  "type": "string",
+                  "description": "Mathematical expression to evaluate"
+                }
+              },
+              "required": [
+                "expression"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "lmstudio": {
+      "name": "LMStudio Provider Test",
+      "port": 5506,
+      "expectedModel": "qwen3-30b",
+      "testRequest": {
+        "model": "claude-3-opus-20240229",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Use the file analysis tool to analyze a JSON configuration structure."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 1200,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "analyze_file",
+            "description": "Analyze file structure and content",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "file_type": {
+                  "type": "string",
+                  "description": "Type of file to analyze"
+                },
+                "analysis_depth": {
+                  "type": "string",
+                  "enum": [
+                    "basic",
+                    "detailed"
+                  ],
+                  "description": "Analysis depth"
+                }
+              },
+              "required": [
+                "file_type"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

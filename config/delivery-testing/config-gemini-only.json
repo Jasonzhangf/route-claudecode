@@ -1,93 +1,44 @@
 {
   "name": "Gemini Only - Delivery Testing",
   "description": "Routes ALL categories to Gemini for isolated testing",
-  
-  "server": {
+  "server": { 
     "port": 3460,
     "host": "127.0.0.1"
   },
-  
   "routing": {
-    "default": {
-      "provider": "gemini-delivery",
-      "model": "gemini-2.5-pro"
-    },
-    "background": {
-      "provider": "gemini-delivery",
-      "model": "gemini-2.5-flash"
-    },
-    "thinking": {
-      "provider": "gemini-delivery",
-      "model": "gemini-2.5-pro"
-    },
-    "longcontext": {
-      "provider": "gemini-delivery",
-      "model": "gemini-2.5-pro"
-    },
-    "search": {
-      "provider": "gemini-delivery",
-      "model": "gemini-2.5-flash"
-    }
+    "default": { "provider": "gemini-test", "model": "gemini-2.5-pro" },
+    "background": { "provider": "gemini-test", "model": "gemini-2.5-flash" },
+    "thinking": { "provider": "gemini-test", "model": "gemini-2.5-pro" },
+    "longcontext": { "provider": "gemini-test", "model": "gemini-2.5-pro" },
+    "search": { "provider": "gemini-test", "model": "gemini-2.5-pro" }
   },
-  
   "providers": {
-    "gemini-delivery": {
+    "gemini-test": {
       "type": "gemini",
-      "name": "Gemini Delivery Testing",
-      "endpoint": "https://generativelanguage.googleapis.com/v1beta",
+      "name": "Google Gemini for Delivery Testing",
+      "endpoint": "https://generativelanguage.googleapis.com",
       "authentication": {
-        "type": "bearer",
+        "type": "api_key",
         "credentials": {
-          "apiKey": "${GEMINI_API_KEY}"
+          "apiKey": ["test-key"]
         }
       },
-      "settings": {
-        "maxConcurrentRequests": 10,
-        "timeoutMs": 25000,
-        "retryAttempts": 3,
-        "models": [
-          "gemini-2.5-pro",
-          "gemini-2.5-flash",
-          "gemini-1.5-pro"
-        ],
-        "outputFormat": "gemini",
-        "convertToAnthropic": true
+      "timeout": 60000,
+      "retry": {
+        "maxRetries": 3,
+        "delayMs": 1000
+      },
+      "models": {
+        "gemini-2.5-pro": { "maxTokens": 200000 },
+        "gemini-2.5-flash": { "maxTokens": 200000 }
       }
     }
   },
-  
-  "input": {
-    "format": "anthropic",
-    "defaultInstance": true,
-    "validation": {
-      "enabled": true,
-      "strictMode": false
-    }
-  },
-  
-  "output": {
-    "gemini": {
-      "enabled": true,
-      "convertToAnthropic": true,
-      "preserveToolCalls": true
-    }
-  },
-  
   "debug": {
     "enabled": true,
     "logLevel": "debug",
     "traceRequests": true,
     "saveRequests": true,
-    "logDir": "~/.route-claude-code/logs/delivery-testing",
-    "dataCapture": {
-      "enabled": true,
-      "savePath": "~/.route-claude-code/database/delivery-testing/providers/gemini"
-    }
-  },
-  
-  "health": {
-    "checkIntervalMs": 10000,
-    "timeoutMs": 5000,
-    "failureThreshold": 2
+    "logDir": "/tmp/ccr-delivery-logs"
   }
 }

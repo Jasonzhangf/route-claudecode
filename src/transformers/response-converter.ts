@@ -280,6 +280,77 @@ export function convertOpenAIResponseToAnthropic(
 }
 
 /**
+ * 将Gemini原生格式响应转换为Anthropic格式
+ */
+function convertGeminiResponseToAnthropic(
+  response: any,
+  originalRequest: BaseRequest,
+  requestId: string
+): AnthropicResponse {
+  const candidate = response.candidates?.[0];
+  if (!candidate) {
+    throw new Error('No candidates in Gemini response');
+  }
+
+  // 提取文本内容
+  const parts = candidate.content?.parts || [];
+  const textParts = parts.filter((part: any) => part.text);
+  
+  if (textParts.length === 0) {
+    throw new Error('No text content in Gemini response');
+  }
+  
+  // 构建Anthropic content
+  const content = textParts.map((part: any) => ({
+    type: 'text' as const,
+    text: part.text
+  }));
+
+  // 映射finish reason
+  let stopReason: string | undefined;
+  if (candidate.finishReason) {
+    switch (candidate.finishReason) {
+      case 'STOP':
+        stopReason = 'end_turn';
+        break;
+      case 'MAX_TOKENS':
+        stopReason = 'max_tokens';
+        break;
+      case 'SAFETY':
+      case 'RECITATION':
+        stopReason = 'stop_sequence';
+        break;
+      default:
+        stopReason = 'end_turn';
+    }
+  }
+
+  const anthropicResponse: AnthropicResponse = {
+    id: `msg_${Date.now().toString(36)}_${Math.random().toString(36).substr(2, 8)}`,
+    type: 'message',
+    role: 'assistant',
+    model: originalRequest.metadata?.originalModel || originalRequest.model,
+    content: content,
+    stop_reason: stopReason,
+    usage: {
+      input_tokens: response.usageMetadata?.promptTokenCount || 0,
+      output_tokens: response.usageMetadata?.candidatesTokenCount || Math.ceil(content.reduce((sum: number, c: any) => sum + c.text.length, 0) / 4)
+    }
+  };
+
+  logger.debug('Converted Gemini response to Anthropic format', {
+    originalFinishReason: candidate.finishReason,
+    mappedStopReason: stopReason || 'undefined',
+    contentBlocks: content.length,
+    inputTokens: anthropicResponse.usage?.input_tokens || 0,
+    outputTokens: anthropicResponse.usage?.output_tokens || 0,
+    requestId
+  }, requestId, 'response-converter');
+
+  return anthropicResponse;
+}
+
+/**
  * 验证并标准化已有的Anthropic格式响应
  */
 export function validateAndNormalizeAnthropicResponse(
@@ -329,6 +400,11 @@ export function convertToAnthropicResponse(
   // OpenAI格式
   if (response.choices && Array.isArray(response.choices)) {
     return convertOpenAIResponseToAnthropic(response, originalRequest, requestId);
+  }
+
+  // Gemini原生格式
+  if (response.candidates && Array.isArray(response.candidates)) {
+    return convertGeminiResponseToAnthropic(response, originalRequest, requestId);
   }
 
   // 已经是Anthropic格式

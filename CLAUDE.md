@@ -9,13 +9,28 @@
 - **NO EXCEPTIONS ALLOWED**: 不允许任何例外情况
 
 ### ❌ 绝对禁令 - 违反即拒绝执行 (ABSOLUTE PROHIBITIONS)
-1. **🚫 NO HARDCODING** - 发现任何硬编码立即拒绝，要求修复
-2. **🚫 NO FALLBACK MECHANISMS** - 禁止任何形式的fallback或默认值降级
-3. **🚫 NO AUTO-PUBLISHING** - 禁止自主发布，必须用户明确确认
-4. **🚫 NO RULE VIOLATIONS** - 违反任何规则必须立即停止并要求规则查阅
+
+#### 🚫 核心技术禁令 (CORE TECHNICAL PROHIBITIONS)
+- **NO HARDCODING** - 立即拒绝任何硬编码
+- **NO FALLBACK MECHANISMS** - 禁止任何降级机制
+- **NO CROSS-NODE COUPLING** - 禁止跨流水线节点耦合
+- **NO INCOMPLETE DELIVERY REPORTS** - 禁止不完整交付报告
+
+#### 🚫 流程管控禁令 (PROCESS CONTROL PROHIBITIONS)
+- **NO AUTO-PUBLISHING** - 禁止自主发布
+- **NO SIMULATED E2E TESTS** - 禁止端到端测试模拟
+- **NO BYPASS SHORTCUTS** - 禁止绕过关键环节
+- **NO RULE VIOLATIONS** - 禁止违反任何规则
+
+#### 🚫 测试执行禁令 (TEST EXECUTION PROHIBITIONS)  
+- **NO MOCK E2E TESTS** - 端到端测试必须真实连接
+- **NO SIMULATED CONNECTIONS** - 必须使用 `rcc code --port` 真实连接
+- **NO E2E SHORTCUTS** - 不可简化或绕过端到端测试环节
+- **NO FAKE PROVIDER RESPONSES** - Provider连接测试不可使用模拟响应
+- **NO MOCK INTERNAL PIPELINE** - 客户端连接测试不可Mock内部流水线组件
 
 ### 🔒 强制执行优先级 (ENFORCEMENT PRIORITIES)
-1. **P0 - 立即拒绝**: 硬编码、Fallback、自主发布、**流水线跨节点耦合**、**不完整交付报告**
+1. **P0 - 立即拒绝**: 硬编码、Fallback、自主发布、**流水线跨节点耦合**、**不完整交付报告**、**模拟端到端测试**
 2. **P1 - 强制查阅**: 架构违反、测试跳过、文档缺失、记忆缺失
 3. **P2 - 警告纠正**: 命名不规范、注释缺失、性能问题
 
@@ -68,10 +83,38 @@
 - **Provider连接层**: 各Provider连接、连接池管理
 - **响应后处理层**: 响应格式、错误处理、Finish reason映射、Token计算
 
-##### 🌐 3. 端到端测试报告 (MANDATORY)
+##### 🌐 3. 端到端测试报告 (MANDATORY) - 真实连接测试
 - **简单对话**: 单轮对话、Provider切换、错误恢复、流式传输、性能基准
 - **工具调用**: 函数调用、工具定义传输、执行结果、错误处理、复杂场景  
 - **多轮多工具**: 多轮上下文、工具链执行、内存管理、会话持久化、复杂工作流
+
+⚠️ **端到端测试强制要求**:
+- **必须真实连接**: `rcc code --port <端口号>` 连接目标服务端口
+- **禁止模拟测试**: 不可使用mock、stub或模拟响应
+- **禁止绕过连接**: 不可简化或跳过真实连接环节
+- **完整链路验证**: 必须验证从客户端到Provider的完整请求响应链路
+
+#### 🔬 测试层级设计精确定义 (PRECISE TEST LAYER DESIGN)
+
+##### 客户端连接测试 (Client Connection Test)
+- **测试范围**: 客户端 → 路由器 → 预处理器 → Transformer → Provider连接层
+- **Mock策略**: **可以Mock第三方服务器连接** (基于database样本构建)
+- **验证标准**: 整链路完整响应(多工具测试)视为连接正常
+- **测试重点**: 验证系统内部流水线的完整性和正确性
+
+##### Provider连接测试 (Provider Connection Test)  
+- **测试范围**: Provider连接层 → 真实第三方AI服务
+- **Mock策略**: **禁止Mock** - 必须连接真实AI服务
+- **验证标准**: 真实API调用和响应验证
+- **测试重点**: 验证与外部AI服务的实际连通性
+
+##### 测试分层原则
+```
+✅ 客户端连接测试: rcc code --port + Mock第三方服务(基于真实数据)
+✅ Provider连接测试: 真实连接第三方AI服务
+❌ 错误: 客户端连接测试中Mock内部流水线组件
+❌ 错误: Provider连接测试中Mock第三方AI服务响应
+```
 
 #### 🚨 强制执行流程
 1. **交付前检查** → 必须先执行 `./cleanup-delivery-reports.sh --check`
@@ -84,15 +127,19 @@
 - **发现报告过时** → 立即要求重新生成最新报告
 - **发现报告不完整** → 立即要求按标准格式补全
 - **跳过报告生成** → 立即拒绝交付请求
+- **使用模拟端到端测试** → 立即拒绝，要求真实连接测试
+- **绕过rcc code连接** → 立即拒绝，强制使用真实端口连接
 
 #### 💡 实施指导
 ```
 ✅ 正确: 交付前生成完整的三类测试报告
 ✅ 正确: 报告内容反映当前版本最新状态  
 ✅ 正确: 先清理旧报告再生成新报告
+✅ 正确: 端到端测试使用 `rcc code --port <端口>` 真实连接
 ❌ 错误: 交付时缺少任何一类测试报告
 ❌ 错误: 使用过时或不完整的测试报告
 ❌ 错误: 跳过报告清理和生成步骤
+❌ 错误: 端到端测试使用模拟或绕过真实连接
 ```
 
 **详细规则**: 参见 [📄 交付测试规则](.claude/rules/delivery-testing-rules.md) 中的"完整交付报告体系"章节
@@ -316,7 +363,7 @@ Refactor目录包含的是v3.0的规划和设计文档，当前生产环境仍�
 | **构建部署** | [📄 部署发布规则](.claude/rules/deployment-rules.md) | 构建验证、用户确认检查 | **阻止自动发布** |
 | **配置管理** | [📄 配置管理规则](.claude/rules/configuration-management-rules.md) | 配置路径、命名规范、安全检查 | **拒绝无效配置** |
 | **知识记录** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) | 经验记录、ADR完整性 | **要求补充文档** |
-| **交付测试** | [📄 交付测试标准](.claude/rules/delivery-testing-rules.md) | **完整交付报告体系**验证 | **阻止未验证发布** |
+| **交付测试** | [📄 完整交付规格](.claude/rules/comprehensive-delivery-specification.md) | **完整交付报告体系**验证 + **客户端连接错误评分** | **阻止未验证发布** |
 | **记忆查询** | [📁 项目记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 检查现有记忆文件 | **要求先查阅记忆** |
 | **架构变更** | [📄 知识管理规则](.claude/rules/memory-system-rules.md) + [📁 记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 变更后记忆保存 | **拒绝无记忆变更** |
 | **问题疑惑** | [📁 项目记忆目录](~/.claudecode/Users-fanzhang-Documents-github-claude-code-router/) | 相关经验查阅 | **强制记忆优先** |

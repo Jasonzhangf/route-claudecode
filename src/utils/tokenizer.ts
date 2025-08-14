@@ -47,8 +47,8 @@ export function calculateTokenCount(
 
     return tokenCount;
   } catch (error) {
-    logger.warn('Error calculating token count, using fallback estimation', error);
-    return estimateTokenCount(messages, system, tools);
+    logger.error('Token count calculation failed', { error, messages, system, tools });
+    throw new Error(`Token count calculation failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -91,14 +91,8 @@ export function calculateDetailedTokenCount(
       tools: toolTokens
     };
   } catch (error) {
-    logger.warn('Error calculating detailed token count, using fallback estimation', error);
-    const estimated = estimateTokenCount(messages, system, tools);
-    return {
-      total: estimated,
-      messages: Math.floor(estimated * 0.8),
-      system: Math.floor(estimated * 0.15),
-      tools: Math.floor(estimated * 0.05)
-    };
+    logger.error('Detailed token count calculation failed', { error, messages, system, tools });
+    throw new Error(`Detailed token count calculation failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

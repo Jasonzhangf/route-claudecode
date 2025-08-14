@@ -51,6 +51,19 @@ export class AnthropicOutputProcessor implements OutputProcessor {
       console.log(`🔍 [DEBUG-PROCESS] Using unified response converter`);
       let anthropicResponse: AnthropicResponse;
       
+      console.log(`🔍 [DEBUG-PROCESS] Response format check:`, {
+        hasResponse: !!response,
+        type: typeof response,
+        role: response?.role,
+        hasContent: !!response?.content,
+        contentIsArray: Array.isArray(response?.content),
+        responseType: response?.type,
+        keys: response ? Object.keys(response) : [],
+        isAnthropicFormatCheck: this.isAnthropicFormat(response),
+        stopReason: response?.stop_reason,
+        usage: response?.usage
+      });
+      
       if (this.isAnthropicFormat(response)) {
         console.log(`🔍 [DEBUG-PROCESS] Validating existing Anthropic format`);
         anthropicResponse = validateAndNormalizeAnthropicResponse(response, originalRequest, requestId);

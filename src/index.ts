@@ -17,8 +17,8 @@ export { AnthropicOutputProcessor } from './output/anthropic';
 
 // Providers
 export { CodeWhispererClient, CodeWhispererAuth, CodeWhispererConverter } from './providers/codewhisperer';
-// EnhancedOpenAIClient removed - using SDK-only architecture
-export { OpenAISDKClient, createOpenAIClient } from './providers/openai';
+// OpenAI Provider exports - unified client architecture
+export { UnifiedOpenAIClient, createOpenAIClient } from './providers/openai';
 
 // Types
 export * from './types';

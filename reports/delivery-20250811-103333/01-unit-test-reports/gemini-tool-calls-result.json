@@ -1,0 +1,9 @@
+{
+  "provider": "gemini",
+  "scenario": "tool-calls",
+  "result": "MOCK_PASS",
+  "duration": "5s",
+  "timestamp": "2025-08-11T10:33:36+08:00",
+  "error": "",
+  "logFile": "DRY_RUN_MODE"
+}

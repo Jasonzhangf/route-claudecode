@@ -180,6 +180,19 @@ export class GeminiClient {
     // 构建原始Gemini响应
     const response = this.buildGeminiResponse(geminiResponse, request.model, requestId);
     
+    console.log(`🔍 [GEMINI-CLIENT-DEBUG] Response from buildGeminiResponse:`, {
+      hasResponse: !!response,
+      responseKeys: response ? Object.keys(response) : [],
+      responseType: typeof response,
+      role: response?.role,
+      hasContent: !!response?.content,
+      contentType: Array.isArray(response?.content) ? 'array' : typeof response?.content,
+      stopReason: response?.stop_reason,
+      usage: response?.usage,
+      id: response?.id,
+      model: response?.model
+    });
+    
     logger.info('Pure Gemini API request completed successfully', {
       originalModel: request.model,
       responseType: 'raw_gemini_response',
@@ -203,8 +216,11 @@ export class GeminiClient {
     // For now, use non-streaming and return raw response
     const response = await this.createCompletion(request);
     
-    // 返回原始Gemini响应，不进行Anthropic格式转换
-    yield response;
+    // 返回原始Gemini响应，包装成正确的streaming chunk格式
+    yield {
+      event: 'content_block_delta',
+      data: response
+    };
     
     logger.info('Pure Gemini API streaming completed', {
       responseType: 'raw_gemini_response'

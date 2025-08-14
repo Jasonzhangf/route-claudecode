@@ -239,6 +239,15 @@ export class OpenAIInputProcessor implements InputProcessor {
             content.push(block); // Pass through other types
           }
         });
+      } else if (typeof msg.content === 'object' && msg.content !== null) {
+        // 🔧 Handle object content format (e.g., { type: "text", text: "..." })
+        const contentObj = msg.content as any;
+        if (contentObj.type === 'text' && contentObj.text) {
+          content.push({ type: 'text', text: contentObj.text });
+        } else {
+          // Convert object to text content
+          content.push({ type: 'text', text: JSON.stringify(msg.content) });
+        }
       }
     }
 

@@ -1,7 +1,9 @@
 /**
  * OpenAI SDK Client - 并行模块
- * 使用官方OpenAI SDK实现，提供平滑切换选项
+ * @deprecated Use UnifiedOpenAIClient instead - this client will be removed in v3.0.0
+ * 废弃警告：请使用UnifiedOpenAIClient - 此客户端将在v3.0.0中移除
  * 
+ * 使用官方OpenAI SDK实现，提供平滑切换选项
  * 设计目标:
  * 1. 使用官方OpenAI SDK
  * 2. 保持与enhanced-client相同的接口

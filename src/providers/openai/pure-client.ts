@@ -1,7 +1,9 @@
 /**
  * Pure OpenAI Client - 纯粹的OpenAI逻辑 (重构版)
- * 只负责与OpenAI API的通信，所有转换逻辑都在transformer中处理
+ * @deprecated Use UnifiedOpenAIClient instead - this client will be removed in v3.0.0
+ * 废弃警告：请使用UnifiedOpenAIClient - 此客户端将在v3.0.0中移除
  * 
+ * 只负责与OpenAI API的通信，所有转换逻辑都在transformer中处理
  * 遵循零硬编码、零Fallback、零沉默失败原则
  */
 

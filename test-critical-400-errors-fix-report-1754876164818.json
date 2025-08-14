@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-08-11T01:36:04.811Z",
+  "testName": "Critical 400 Errors Fix - Database-Driven Mock Test",
+  "problems": [],
+  "fixes": [
+    "Mock连接预处理器构建完成"
+  ],
+  "validationResults": {},
+  "overallSuccess": false,
+  "sampleAnalysis": {
+    "samplesCount": 35,
+    "failurePatterns": {
+      "text_instead_of_tools": 35
+    },
+    "toolsFormatIssues": 0,
+    "messagesFormatIssues": 0
+  },
+  "multiToolTestResults": [
+    {
+      "testCase": "Correct Anthropic Format",
+      "originalExpectedSuccess": true,
+      "actualSuccess": true,
+      "validationErrors": [],
+      "appliedFixes": [],
+      "fixWorked": true
+    },
+    {
+      "testCase": "Invalid Tools Format (Mixed)",
+      "originalExpectedSuccess": false,
+      "actualSuccess": true,
+      "validationErrors": [],
+      "appliedFixes": [
+        "Converted OpenAI format tool at index 1 to Anthropic format",
+        "Removed invalid tool at index 2 (not an object)"
+      ],
+      "fixWorked": true
+    },
+    {
+      "testCase": "Invalid Messages Format (Object Content)",
+      "originalExpectedSuccess": false,
+      "actualSuccess": true,
+      "validationErrors": [],
+      "appliedFixes": [
+        "Fixed message[0].content from object to array format"
+      ],
+      "fixWorked": true
+    }
+  ],
+  "summary": {
+    "totalTests": 3,
+    "successfulFixes": 3,
+    "identifiedProblems": [
+      "Tools array containing mixed format objects",
+      "Tools array containing non-object elements (strings)",
+      "Messages content as plain object instead of string/array",
+      "Missing required fields in tool definitions",
+      "System instructions being passed as user messages"
+    ],
+    "recommendedSolutions": [
+      "Implement strict tools format validation in preprocessing layer",
+      "Add automatic format conversion for mixed tool definitions",
+      "Validate messages content format before sending to providers",
+      "Separate system instructions from user messages properly",
+      "Add comprehensive format testing in CI pipeline"
+    ]
+  }
+}

@@ -1,0 +1,451 @@
+{
+  "timestamp": "2025-08-10T15:56:38.726Z",
+  "testType": "openai-transformer-layer-simplified",
+  "summary": {
+    "totalTests": 5,
+    "passedTests": 4,
+    "failedTests": 1,
+    "passRate": 80,
+    "allPassed": false,
+    "byType": {
+      "anthropic_to_openai": {
+        "total": 3,
+        "passed": 3
+      },
+      "openai_to_anthropic": {
+        "total": 2,
+        "passed": 1
+      }
+    },
+    "results": [
+      {
+        "testKey": "basicMessage",
+        "testName": "基础消息转换",
+        "transformationType": "anthropic_to_openai",
+        "success": true,
+        "responseTime": 6074,
+        "validation": {
+          "valid": true,
+          "issues": []
+        },
+        "apiResponse": {
+          "statusCode": 200,
+          "hasValidResponse": true,
+          "responseFormat": "message"
+        },
+        "timestamp": "2025-08-10T15:56:12.011Z"
+      },
+      {
+        "testKey": "systemMessage",
+        "testName": "系统消息转换",
+        "transformationType": "anthropic_to_openai",
+        "success": true,
+        "responseTime": 5875,
+        "validation": {
+          "valid": true,
+          "issues": []
+        },
+        "apiResponse": {
+          "statusCode": 200,
+          "hasValidResponse": true,
+          "responseFormat": "message"
+        },
+        "timestamp": "2025-08-10T15:56:18.889Z"
+      },
+      {
+        "testKey": "toolDefinition",
+        "testName": "工具定义转换",
+        "transformationType": "anthropic_to_openai",
+        "success": true,
+        "responseTime": 4416,
+        "validation": {
+          "valid": true,
+          "issues": []
+        },
+        "apiResponse": {
+          "statusCode": 200,
+          "hasValidResponse": true,
+          "responseFormat": "message"
+        },
+        "timestamp": "2025-08-10T15:56:24.307Z"
+      },
+      {
+        "testKey": "textResponse",
+        "testName": "文本响应转换",
+        "transformationType": "openai_to_anthropic",
+        "success": true,
+        "responseTime": 6777,
+        "validation": {
+          "valid": true,
+          "issues": []
+        },
+        "actualResponse": {
+          "content": [
+            {
+              "type": "text",
+              "text": "Hello! I’m an AI language model created by OpenAI, designed to assist with a variety of tasks such as answering questions, providing information, and engaging in conversation. My knowledge is based on a wide range of topics up to October 2023. How can I help you today?"
+            }
+          ],
+          "id": "chatcmpl-C32hJRPTENygEi1Cgvry9FnnSBWnL",
+          "model": "claude-3-5-sonnet-20241022",
+          "role": "assistant",
+          "type": "message",
+          "usage": {
+            "input_tokens": 0,
+            "output_tokens": 0
+          },
+          "stop_reason": "end_turn"
+        },
+        "timestamp": "2025-08-10T15:56:32.087Z"
+      },
+      {
+        "testKey": "toolCallResponse",
+        "testName": "工具调用响应转换",
+        "transformationType": "openai_to_anthropic",
+        "success": false,
+        "responseTime": 4633,
+        "validation": {
+          "valid": false,
+          "issues": [
+            "No response provided"
+          ]
+        },
+        "actualResponse": null,
+        "timestamp": "2025-08-10T15:56:37.722Z"
+      }
+    ]
+  },
+  "results": [
+    {
+      "testKey": "basicMessage",
+      "testName": "基础消息转换",
+      "transformationType": "anthropic_to_openai",
+      "success": true,
+      "responseTime": 6074,
+      "validation": {
+        "valid": true,
+        "issues": []
+      },
+      "apiResponse": {
+        "statusCode": 200,
+        "hasValidResponse": true,
+        "responseFormat": "message"
+      },
+      "timestamp": "2025-08-10T15:56:12.011Z"
+    },
+    {
+      "testKey": "systemMessage",
+      "testName": "系统消息转换",
+      "transformationType": "anthropic_to_openai",
+      "success": true,
+      "responseTime": 5875,
+      "validation": {
+        "valid": true,
+        "issues": []
+      },
+      "apiResponse": {
+        "statusCode": 200,
+        "hasValidResponse": true,
+        "responseFormat": "message"
+      },
+      "timestamp": "2025-08-10T15:56:18.889Z"
+    },
+    {
+      "testKey": "toolDefinition",
+      "testName": "工具定义转换",
+      "transformationType": "anthropic_to_openai",
+      "success": true,
+      "responseTime": 4416,
+      "validation": {
+        "valid": true,
+        "issues": []
+      },
+      "apiResponse": {
+        "statusCode": 200,
+        "hasValidResponse": true,
+        "responseFormat": "message"
+      },
+      "timestamp": "2025-08-10T15:56:24.307Z"
+    },
+    {
+      "testKey": "textResponse",
+      "testName": "文本响应转换",
+      "transformationType": "openai_to_anthropic",
+      "success": true,
+      "responseTime": 6777,
+      "validation": {
+        "valid": true,
+        "issues": []
+      },
+      "actualResponse": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Hello! I’m an AI language model created by OpenAI, designed to assist with a variety of tasks such as answering questions, providing information, and engaging in conversation. My knowledge is based on a wide range of topics up to October 2023. How can I help you today?"
+          }
+        ],
+        "id": "chatcmpl-C32hJRPTENygEi1Cgvry9FnnSBWnL",
+        "model": "claude-3-5-sonnet-20241022",
+        "role": "assistant",
+        "type": "message",
+        "usage": {
+          "input_tokens": 0,
+          "output_tokens": 0
+        },
+        "stop_reason": "end_turn"
+      },
+      "timestamp": "2025-08-10T15:56:32.087Z"
+    },
+    {
+      "testKey": "toolCallResponse",
+      "testName": "工具调用响应转换",
+      "transformationType": "openai_to_anthropic",
+      "success": false,
+      "responseTime": 4633,
+      "validation": {
+        "valid": false,
+        "issues": [
+          "No response provided"
+        ]
+      },
+      "actualResponse": null,
+      "timestamp": "2025-08-10T15:56:37.722Z"
+    }
+  ],
+  "errors": [],
+  "testCases": {
+    "anthropicToOpenAI": {
+      "basicMessage": {
+        "name": "基础消息转换",
+        "description": "Anthropic format -> OpenAI format",
+        "anthropicInput": {
+          "model": "claude-3-5-sonnet-20241022",
+          "max_tokens": 1000,
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Hello, how are you?"
+                }
+              ]
+            }
+          ]
+        },
+        "expectedOpenAI": {
+          "model": "gpt-4o-mini",
+          "max_tokens": 1000,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Hello, how are you?"
+            }
+          ]
+        }
+      },
+      "systemMessage": {
+        "name": "系统消息转换",
+        "description": "Anthropic system field -> OpenAI system message",
+        "anthropicInput": {
+          "model": "claude-3-5-haiku-20241022",
+          "max_tokens": 800,
+          "system": "You are a helpful coding assistant.",
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Help me with Python"
+                }
+              ]
+            }
+          ]
+        },
+        "expectedOpenAI": {
+          "model": "gpt-4o-mini",
+          "max_tokens": 800,
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are a helpful coding assistant."
+            },
+            {
+              "role": "user",
+              "content": "Help me with Python"
+            }
+          ]
+        }
+      },
+      "toolDefinition": {
+        "name": "工具定义转换",
+        "description": "Anthropic tools -> OpenAI functions format",
+        "anthropicInput": {
+          "model": "claude-4-sonnet",
+          "max_tokens": 1200,
+          "messages": [
+            {
+              "role": "user",
+              "content": [
+                {
+                  "type": "text",
+                  "text": "Calculate 25 + 37"
+                }
+              ]
+            }
+          ],
+          "tools": [
+            {
+              "name": "calculator",
+              "description": "Perform mathematical calculations",
+              "input_schema": {
+                "type": "object",
+                "properties": {
+                  "expression": {
+                    "type": "string",
+                    "description": "Mathematical expression to evaluate"
+                  }
+                },
+                "required": [
+                  "expression"
+                ]
+              }
+            }
+          ]
+        },
+        "expectedOpenAI": {
+          "model": "gpt-4o-mini",
+          "max_tokens": 1200,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Calculate 25 + 37"
+            }
+          ],
+          "tools": [
+            {
+              "type": "function",
+              "function": {
+                "name": "calculator",
+                "description": "Perform mathematical calculations",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "expression": {
+                      "type": "string",
+                      "description": "Mathematical expression to evaluate"
+                    }
+                  },
+                  "required": [
+                    "expression"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "openaiResponse": {
+      "textResponse": {
+        "name": "文本响应转换",
+        "description": "OpenAI text response -> Anthropic format",
+        "openaiResponse": {
+          "id": "chatcmpl-test123",
+          "object": "chat.completion",
+          "created": 1234567890,
+          "model": "gpt-4o-mini",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "Hello! I'm doing well, thank you for asking."
+              },
+              "finish_reason": "stop"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 10,
+            "completion_tokens": 12,
+            "total_tokens": 22
+          }
+        },
+        "expectedAnthropic": {
+          "id": "chatcmpl-test123",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-3-5-sonnet-20241022",
+          "content": [
+            {
+              "type": "text",
+              "text": "Hello! I'm doing well, thank you for asking."
+            }
+          ],
+          "stop_reason": "end_turn",
+          "usage": {
+            "input_tokens": 10,
+            "output_tokens": 12
+          }
+        }
+      },
+      "toolCallResponse": {
+        "name": "工具调用响应转换",
+        "description": "OpenAI function call -> Anthropic tool_use format",
+        "openaiResponse": {
+          "id": "chatcmpl-test456",
+          "object": "chat.completion",
+          "created": 1234567890,
+          "model": "gpt-4o-mini",
+          "choices": [
+            {
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": null,
+                "tool_calls": [
+                  {
+                    "id": "call_abc123",
+                    "type": "function",
+                    "function": {
+                      "name": "calculator",
+                      "arguments": "{\"expression\": \"25 + 37\"}"
+                    }
+                  }
+                ]
+              },
+              "finish_reason": "tool_calls"
+            }
+          ],
+          "usage": {
+            "prompt_tokens": 25,
+            "completion_tokens": 15,
+            "total_tokens": 40
+          }
+        },
+        "expectedAnthropic": {
+          "id": "chatcmpl-test456",
+          "type": "message",
+          "role": "assistant",
+          "model": "claude-4-sonnet",
+          "content": [
+            {
+              "type": "tool_use",
+              "id": "call_abc123",
+              "name": "calculator",
+              "input": {
+                "expression": "25 + 37"
+              }
+            }
+          ],
+          "stop_reason": "tool_use",
+          "usage": {
+            "input_tokens": 25,
+            "output_tokens": 15
+          }
+        }
+      }
+    }
+  }
+}

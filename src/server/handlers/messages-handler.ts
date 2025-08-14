@@ -194,6 +194,17 @@ export class MessagesHandler {
       // 1. 发送Provider请求
       const providerResponse = await this.sendProviderRequest(request, provider, reply, requestId);
       
+      console.log(`🔍 [HANDLER-DEBUG] providerResponse after sendProviderRequest:`, {
+        hasResponse: !!providerResponse,
+        responseKeys: providerResponse ? Object.keys(providerResponse) : [],
+        role: providerResponse?.role,
+        hasContent: !!providerResponse?.content,
+        contentType: Array.isArray(providerResponse?.content) ? 'array' : typeof providerResponse?.content,
+        stopReason: providerResponse?.stop_reason,
+        model: providerResponse?.model,
+        usage: providerResponse?.usage
+      });
+      
       // 2. 处理输出
       const finalResponse = await this.processOutput(providerResponse, request, reply, requestId);
       

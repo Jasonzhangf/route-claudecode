@@ -77,6 +77,16 @@ export class OpenAITransformer implements MessageTransformer {
       model: openaiRequest.model
     });
 
+    // 🚨 DEBUG: 输出完整的转换后请求数据
+    console.log('🔍 [OPENAI-TRANSFORMER-DEBUG] Full converted request:', JSON.stringify({
+      model: openaiRequest.model,
+      messages: openaiRequest.messages,
+      tools: openaiRequest.tools,
+      max_tokens: openaiRequest.max_tokens,
+      temperature: openaiRequest.temperature,
+      stream: openaiRequest.stream
+    }, null, 2));
+
     return openaiRequest;
   }
 
@@ -702,23 +712,52 @@ export class OpenAITransformer implements MessageTransformer {
       throw new Error('Tools must be an array - violates zero fallback principle');
     }
 
-    return tools.map(tool => {
+    return tools.map((tool, index) => {
       if (!tool || typeof tool !== 'object') {
         throw new Error('Invalid tool object - violates zero fallback principle');
       }
 
-      if (!tool.name) {
-        throw new Error('Tool missing name - violates zero fallback principle');
-      }
-
-      return {
-        type: 'function',
-        function: {
-          name: tool.name,
-          description: tool.description || '',
-          parameters: tool.input_schema || {}
+      // 🔧 支持两种格式：Anthropic格式和已预处理的OpenAI格式
+      const isAnthropicFormat = tool.name && tool.input_schema && !tool.function;
+      const isOpenAIFormat = tool.function && tool.function.name && !tool.name;
+      
+      if (isAnthropicFormat) {
+        // ✅ Anthropic格式：{ name, description, input_schema }
+        return {
+          type: 'function',
+          function: {
+            name: tool.name,
+            description: tool.description || '',
+            parameters: tool.input_schema || {}
+          }
+        };
+      } else if (isOpenAIFormat) {
+        // ✅ 已经是OpenAI格式：{ type: 'function', function: { name, description, parameters } }
+        return {
+          type: tool.type || 'function',
+          function: {
+            name: tool.function.name,
+            description: tool.function.description || '',
+            parameters: tool.function.parameters || {}
+          }
+        };
+      } else {
+        // ❌ 未知格式或格式不完整
+        const toolName = tool.name || tool.function?.name;
+        if (!toolName) {
+          throw new Error(`Tool missing name - violates zero fallback principle. Tool: ${JSON.stringify(tool)}`);
         }
-      };
+        
+        // 尽力处理混合格式
+        return {
+          type: 'function',
+          function: {
+            name: toolName,
+            description: tool.description || tool.function?.description || '',
+            parameters: tool.input_schema || tool.function?.parameters || {}
+          }
+        };
+      }
     });
   }
 
@@ -801,30 +840,46 @@ export class OpenAITransformer implements MessageTransformer {
 
   /**
    * 🎯 Map OpenAI finish_reason to Anthropic stop_reason
-   * 使用统一的response-converter.ts进行映射
+   * 修复跨节点耦合问题 - finish reason映射应在Transformer内部处理
    */
   private mapOpenAIFinishReasonToAnthropic(finishReason: string, hasToolCalls: boolean): string {
-    // 🔧 使用统一的转换器，避免重复逻辑
-    const { mapFinishReasonStrict } = require('@/transformers/response-converter');
+    // 🔧 消除跨节点耦合 - 直接在Transformer中实现映射逻辑
+    if (!finishReason) {
+      throw new Error('finish_reason is required - violates zero fallback principle');
+    }
     
-    try {
-      const mappedReason = mapFinishReasonStrict(finishReason);
-      
-      // 🔧 Critical Fix: 如果有工具调用，强制返回tool_use
-      if (hasToolCalls && (mappedReason === 'end_turn' || finishReason === 'tool_calls')) {
-        return 'tool_use';
-      }
-      
-      return mappedReason;
-    } catch (error) {
-      // 记录映射失败，但不使用fallback
-      logger.error('OpenAI finish_reason mapping failed', {
+    // 🎯 标准OpenAI finish_reason到Anthropic stop_reason映射
+    const finishReasonMap: Record<string, string> = {
+      'stop': 'end_turn',
+      'length': 'max_tokens', 
+      'tool_calls': 'tool_use',
+      'content_filter': 'stop_sequence',
+      'function_call': 'tool_use'  // 兼容旧版OpenAI API
+    };
+    
+    const mappedReason = finishReasonMap[finishReason];
+    
+    if (!mappedReason) {
+      logger.error('Unknown OpenAI finish_reason', {
         finishReason,
         hasToolCalls,
-        error: error instanceof Error ? error.message : String(error)
+        supportedReasons: Object.keys(finishReasonMap)
       });
-      throw error; // 重新抛出错误，不使用fallback
+      throw new Error(`Unknown OpenAI finish_reason: ${finishReason} - violates zero fallback principle`);
     }
+    
+    // 🔧 Critical Fix: 如果有工具调用但映射不是tool_use，强制返回tool_use
+    if (hasToolCalls && mappedReason !== 'tool_use') {
+      logger.info('Correcting finish_reason for tool calls', {
+        originalFinishReason: finishReason,
+        originalMappedReason: mappedReason,
+        correctedReason: 'tool_use',
+        hasToolCalls
+      });
+      return 'tool_use';
+    }
+    
+    return mappedReason;
   }
 
   /**

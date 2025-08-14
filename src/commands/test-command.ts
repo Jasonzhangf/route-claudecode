@@ -105,7 +105,10 @@ async function testGeminiModel(apiKey: string, model: string): Promise<ModelTest
       'gemini-1.5-flash-8b': 1048576
     };
     
-    result.maxTokens = geminiTokenLimits[model] || 131072; // Default fallback
+    result.maxTokens = geminiTokenLimits[model];
+    if (!result.maxTokens) {
+      throw new Error(`Unknown Gemini model token limit for: ${model}. Please add to configuration.`);
+    }
 
     return result;
   } catch (error) {

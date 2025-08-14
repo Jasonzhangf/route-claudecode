@@ -129,10 +129,12 @@ export class ProviderManager {
       }
     }
 
-    // 如果都不可用，返回第一个（让后续处理决定如何处理）
-    const fallbackProvider = providers[0] || originalProviderId;
-    this.deps.logger.warn(`No healthy providers found, using fallback: ${fallbackProvider}`);
-    return fallbackProvider;
+    // 如果都不可用，抛出错误而不是使用fallback
+    this.deps.logger.error(`No healthy providers available for original: ${originalProviderId}`, {
+      requestedProviders: providers,
+      timestamp: new Date().toISOString()
+    });
+    throw new Error(`No healthy providers available. Requested: ${providers.join(', ')}. Original: ${originalProviderId}`);
   }
 
   /**

@@ -860,12 +860,30 @@ export class RouterServer {
         providerResponse = await this.applyResponseTransformation(providerResponse, preprocessedRequest, provider, providerId, requestId);
         
         // 🆕 统一预处理：对Provider响应应用补丁系统
+        console.log(`🔍 [BEFORE-PREPROCESSING] Response before preprocessing:`, {
+          responseKeys: providerResponse ? Object.keys(providerResponse) : [],
+          role: providerResponse?.role,
+          hasContent: !!providerResponse?.content,
+          contentType: Array.isArray(providerResponse?.content) ? 'array' : typeof providerResponse?.content,
+          stopReason: providerResponse?.stop_reason,
+          model: providerResponse?.model
+        });
+        
         const preprocessedResponse = await this.unifiedPreprocessor.preprocessResponse(
           providerResponse,
           providerId as any, // Cast to Provider type
           targetModel || baseRequest.model,
           requestId
         );
+        
+        console.log(`🔍 [AFTER-PREPROCESSING] Response after preprocessing:`, {
+          responseKeys: preprocessedResponse ? Object.keys(preprocessedResponse) : [],
+          role: preprocessedResponse?.role,
+          hasContent: !!preprocessedResponse?.content,
+          contentType: Array.isArray(preprocessedResponse?.content) ? 'array' : typeof preprocessedResponse?.content,
+          stopReason: preprocessedResponse?.stop_reason,
+          model: preprocessedResponse?.model
+        });
         
         this.logger.logPipeline('provider-response', 'Provider response received and preprocessed', { 
           originalResponse: providerResponse,
@@ -1600,6 +1618,17 @@ export class RouterServer {
     requestId: string
   ): Promise<any> {
     const providerType = this.getProviderType(providerId);
+    
+    console.log(`🔍 [RESPONSE-TRANSFORM-DEBUG] Response transformation check:`, {
+      providerId,
+      providerType,
+      isOpenAIType: providerType === 'openai',
+      includesLMStudio: providerId.includes('lmstudio'),
+      willTransform: providerType === 'openai' || providerId.includes('lmstudio'),
+      responseKeys: response ? Object.keys(response) : [],
+      hasMetadata: !!response?.metadata,
+      hasRawResponse: !!response?.metadata?.rawResponse
+    });
     
     if (providerType === 'openai' || providerId.includes('lmstudio')) {
       // OpenAI/LMStudio Provider需要OpenAI格式 -> BaseResponse格式转换

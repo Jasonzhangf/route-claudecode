@@ -1,0 +1,241 @@
+{
+  "timestamp": "2025-08-10T15:52:33.921Z",
+  "testType": "openai-provider-layer-simplified",
+  "summary": {
+    "totalTests": 3,
+    "passedTests": 1,
+    "failedTests": 2,
+    "passRate": 33.3,
+    "allPassed": false,
+    "results": [
+      {
+        "providerName": "modelscope",
+        "success": true,
+        "port": 3456,
+        "responseTime": 5868,
+        "validation": {
+          "passed": true,
+          "issues": []
+        },
+        "response": {
+          "id": "chatcmpl-C32dDNG4bLpEQK8qXHH38SabSrP28",
+          "model": "claude-4-sonnet",
+          "hasContent": true,
+          "hasToolUse": false,
+          "statusCode": 200
+        },
+        "timestamp": "2025-08-10T15:52:18.261Z"
+      },
+      {
+        "providerName": "shuaihong",
+        "success": false,
+        "port": 3456,
+        "responseTime": 4508,
+        "validation": {
+          "passed": false,
+          "issues": [
+            "Response has no text content"
+          ]
+        },
+        "response": {
+          "id": "chatcmpl-c3d01530-9328-9efb-bb8d-028a3732b31f",
+          "model": "claude-3-5-haiku-20241022",
+          "hasContent": false,
+          "hasToolUse": true,
+          "statusCode": 200
+        },
+        "timestamp": "2025-08-10T15:52:24.771Z"
+      },
+      {
+        "providerName": "lmstudio",
+        "success": false,
+        "port": 3456,
+        "responseTime": 5144,
+        "validation": {
+          "passed": false,
+          "issues": [
+            "Response has no text content"
+          ]
+        },
+        "response": {
+          "id": "chatcmpl-C32dRJRonLkObKPY9QmaUye5VGuc4",
+          "model": "claude-3-opus-20240229",
+          "hasContent": false,
+          "hasToolUse": true,
+          "statusCode": 200
+        },
+        "timestamp": "2025-08-10T15:52:31.918Z"
+      }
+    ]
+  },
+  "results": [
+    {
+      "providerName": "modelscope",
+      "success": true,
+      "port": 3456,
+      "responseTime": 5868,
+      "validation": {
+        "passed": true,
+        "issues": []
+      },
+      "response": {
+        "id": "chatcmpl-C32dDNG4bLpEQK8qXHH38SabSrP28",
+        "model": "claude-4-sonnet",
+        "hasContent": true,
+        "hasToolUse": false,
+        "statusCode": 200
+      },
+      "timestamp": "2025-08-10T15:52:18.261Z"
+    },
+    {
+      "providerName": "shuaihong",
+      "success": false,
+      "port": 3456,
+      "responseTime": 4508,
+      "validation": {
+        "passed": false,
+        "issues": [
+          "Response has no text content"
+        ]
+      },
+      "response": {
+        "id": "chatcmpl-c3d01530-9328-9efb-bb8d-028a3732b31f",
+        "model": "claude-3-5-haiku-20241022",
+        "hasContent": false,
+        "hasToolUse": true,
+        "statusCode": 200
+      },
+      "timestamp": "2025-08-10T15:52:24.771Z"
+    },
+    {
+      "providerName": "lmstudio",
+      "success": false,
+      "port": 3456,
+      "responseTime": 5144,
+      "validation": {
+        "passed": false,
+        "issues": [
+          "Response has no text content"
+        ]
+      },
+      "response": {
+        "id": "chatcmpl-C32dRJRonLkObKPY9QmaUye5VGuc4",
+        "model": "claude-3-opus-20240229",
+        "hasContent": false,
+        "hasToolUse": true,
+        "statusCode": 200
+      },
+      "timestamp": "2025-08-10T15:52:31.918Z"
+    }
+  ],
+  "errors": [],
+  "providerConfigs": {
+    "modelscope": {
+      "name": "ModelScope Provider Test (via Load Balancer)",
+      "port": 3456,
+      "expectedProvider": "modelscope",
+      "testRequest": {
+        "model": "claude-4-sonnet",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Hello! Please introduce yourself briefly and tell me what you can help with."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 500,
+        "temperature": 0.3
+      }
+    },
+    "shuaihong": {
+      "name": "ShuaiHong Provider Test (via Load Balancer)",
+      "port": 3456,
+      "expectedProvider": "shuaihong",
+      "testRequest": {
+        "model": "claude-3-5-haiku-20241022",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Please calculate 25 + 37 using the calculator tool."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.1,
+        "tools": [
+          {
+            "name": "calculator",
+            "description": "Perform mathematical calculations",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "expression": {
+                  "type": "string",
+                  "description": "Mathematical expression to evaluate"
+                }
+              },
+              "required": [
+                "expression"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "lmstudio": {
+      "name": "LMStudio Provider Test (via Load Balancer)",
+      "port": 3456,
+      "expectedProvider": "lmstudio",
+      "testRequest": {
+        "model": "claude-3-opus-20240229",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Use the file analysis tool to analyze a JSON configuration structure."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 1200,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "analyze_file",
+            "description": "Analyze file structure and content",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "file_type": {
+                  "type": "string",
+                  "description": "Type of file to analyze"
+                },
+                "analysis_depth": {
+                  "type": "string",
+                  "enum": [
+                    "basic",
+                    "detailed"
+                  ],
+                  "description": "Analysis depth"
+                }
+              },
+              "required": [
+                "file_type"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

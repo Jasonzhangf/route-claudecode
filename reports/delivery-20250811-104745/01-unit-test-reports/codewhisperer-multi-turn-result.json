@@ -1,0 +1,9 @@
+{
+  "provider": "codewhisperer",
+  "scenario": "multi-turn", 
+  "result": "PASS",
+  "duration": 3s,
+  "timestamp": "2025-08-11T10:47:57+08:00",
+  "error": "",
+  "logFile": "/tmp/delivery-test-20250811-104745-codewhisperer-multi-turn.log"
+}

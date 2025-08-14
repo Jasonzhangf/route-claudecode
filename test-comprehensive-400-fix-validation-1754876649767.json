@@ -1,0 +1,55 @@
+{
+  "timestamp": "2025-08-11T01:43:25.648Z",
+  "testName": "Comprehensive 400 Error Fix Validation",
+  "tests": {
+    "Tools Format Mixed - Anthropic + OpenAI": {
+      "testCase": "Tools Format Mixed - Anthropic + OpenAI",
+      "provider": "shuaihong",
+      "port": 5508,
+      "success": true,
+      "apiCallMade": true,
+      "formatFixed": true,
+      "errors": [],
+      "details": {
+        "serverOutput": "No existing response stats file found, starting fresh.\nResponseStatsManager initialized\n🚀 Starting Claude Code Router...\n\n🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json\n🎯 Starting single-config server with custom configuration\n\n[LoggerManager] Creating logger for port 5508 (requested: 5508, default: 5508)\n[09:43:25] [INFO] [system] 🔧 Starting provider expansion for multi-key routing\n[09:43:25] [DEBUG] [system] ➡️ Single-",
+        "apiResponse": "{\"content\":[{\"type\":\"text\",\"text\":\"Sorry, I can't convert the search results into a summary. I can only search for files or write to files.\"}],\"id\":\"chatcmpl-20250811094401841552858JknnmQG6\",\"model\":\"claude-3-5-sonnet-20241022\",\"role\":\"assistant\",\"type\":\"message\",\"usage\":{\"input_tokens\":0,\"output_to",
+        "apiError": null
+      }
+    },
+    "Messages Content Object Format Error": {
+      "testCase": "Messages Content Object Format Error",
+      "provider": "modelscope-glm",
+      "port": 5509,
+      "success": false,
+      "apiCallMade": true,
+      "formatFixed": false,
+      "errors": [],
+      "details": {
+        "response": "{\"error\":{\"type\":\"bad_request\",\"message\":\"400 API 调用参数有误，请检查文档。\",\"code\":\"400\",\"requestId\":\"85002ed7-0784-48d6-a55e-2254362079c2\",\"port\":5509,\"provider\":\"modelscope-openai\",\"stage\":\"provider\",\"timestam",
+        "serverOutput": "No existing response stats file found, starting fresh.\nResponseStatsManager initialized\n🚀 Starting Claude Code Router...\n\n🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-openai-sdk-modelscope-glm-5509.json\n🎯 Starting single-config server with custom configuration\n\n[LoggerManager] Creating logger for port 5509 (requested: 5509, default: 5509)\n[09:43:49] [INFO] [system] 🔧 Starting provider expansion for multi-key routing\n[09:43:49] [INFO] [system] 📊",
+        "apiResponse": "{\"error\":{\"type\":\"bad_request\",\"message\":\"400 API 调用参数有误，请检查文档。\",\"code\":\"400\",\"requestId\":\"85002ed7-0784-48d6-a55e-2254362079c2\",\"port\":5509,\"provider\":\"modelscope-openai\",\"stage\":\"provider\",\"timestamp\":\"2025-08-11T01:44:05.728Z\",\"details\":{\"diagnostics\":\"Silent failure detected and fixed\"}}}",
+        "apiError": null
+      }
+    },
+    "Tools Array with Invalid Elements": {
+      "testCase": "Tools Array with Invalid Elements",
+      "provider": "shuaihong",
+      "port": 5508,
+      "success": false,
+      "apiCallMade": true,
+      "formatFixed": false,
+      "errors": [],
+      "details": {
+        "response": "{\"error\":{\"type\":\"internal_server_error\",\"message\":\"Request format not supported\",\"code\":\"500\",\"requestId\":\"c627eef0-928c-4882-b1f7-5d1608e59299\",\"port\":5508,\"provider\":\"unknown\",\"stage\":\"input-proces",
+        "serverOutput": "No existing response stats file found, starting fresh.\nResponseStatsManager initialized\n🚀 Starting Claude Code Router...\n\n🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-openai-shuaihong-5508.json\n🎯 Starting single-config server with custom configuration\n\n[LoggerManager] Creating logger for port 5508 (requested: 5508, default: 5508)\n[09:43:25] [INFO] [system] 🔧 Starting provider expansion for multi-key routing\n[09:43:25] [DEBUG] [system] ➡️ Single-",
+        "apiResponse": "{\"error\":{\"type\":\"internal_server_error\",\"message\":\"Request format not supported\",\"code\":\"500\",\"requestId\":\"c627eef0-928c-4882-b1f7-5d1608e59299\",\"port\":5508,\"provider\":\"unknown\",\"stage\":\"input-processing\",\"timestamp\":\"2025-08-11T01:44:07.765Z\",\"details\":{\"diagnostics\":\"Silent failure detected and f",
+        "apiError": null
+      }
+    }
+  },
+  "summary": {
+    "total": 3,
+    "passed": 1,
+    "failed": 2
+  }
+}

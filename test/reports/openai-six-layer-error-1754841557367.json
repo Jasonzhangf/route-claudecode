@@ -1,0 +1,24 @@
+{
+  "timestamp": "2025-08-10T15:59:17.367Z",
+  "testSuite": "openai-six-layer-complete",
+  "error": "必需测试阶段失败: Provider层单元测试",
+  "results": [
+    {
+      "phase": "Provider层单元测试",
+      "script": "test/unit/openai-provider-layer-test.js",
+      "success": false,
+      "executionTime": 38,
+      "output": "",
+      "error": "node:internal/modules/cjs/loader:1404\n  throw err;\n  ^\n\nError: Cannot find module '@/utils/logger'\nRequire stack:\n- /Users/fanzhang/Documents/github/claude-code-router/dist/providers/openai/sdk-client.js\n- /Users/fanzhang/Documents/github/claude-code-router/dist/providers/openai/index.js\n- /Users/fanzhang/Documents/github/claude-code-router/test/unit/openai-provider-layer-test.js\n    at Function._resolveFilename (node:internal/modules/cjs/loader:1401:15)\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)\n    at Function._load (node:internal/modules/cjs/loader:1211:37)\n    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)\n    at Module.require (node:internal/modules/cjs/loader:1487:12)\n    at require (node:internal/modules/helpers:135:16)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/claude-code-router/dist/providers/openai/sdk-client.js:19:18)\n    at Module._compile (node:internal/modules/cjs/loader:1730:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    '/Users/fanzhang/Documents/github/claude-code-router/dist/providers/openai/sdk-client.js',\n    '/Users/fanzhang/Documents/github/claude-code-router/dist/providers/openai/index.js',\n    '/Users/fanzhang/Documents/github/claude-code-router/test/unit/openai-provider-layer-test.js'\n  ]\n}\n\nNode.js v22.16.0",
+      "timestamp": "2025-08-10T15:59:17.366Z"
+    },
+    {
+      "phase": "Provider层单元测试",
+      "script": "test/unit/openai-provider-layer-test.js",
+      "success": false,
+      "executionTime": 39,
+      "error": "必需测试阶段失败: Provider层单元测试",
+      "timestamp": "2025-08-10T15:59:17.367Z"
+    }
+  ]
+}

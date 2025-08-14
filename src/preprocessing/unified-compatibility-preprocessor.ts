@@ -70,6 +70,14 @@ export class UnifiedCompatibilityPreprocessor {
     model: string,
     requestId: string
   ): Promise<any> {
+    console.log('🚨🚨🚨 [ENTRY] UnifiedCompatibilityPreprocessor.preprocessInput CALLED!', {
+      requestId,
+      provider,
+      model,
+      hasData: !!inputData,
+      messageContent: inputData?.messages?.[0]?.content
+    });
+    
     const context: PreprocessingContext = {
       requestId,
       provider,
@@ -243,10 +251,80 @@ export class UnifiedCompatibilityPreprocessor {
    * 处理输入数据
    */
   private async processInput(data: any, context: PreprocessingContext): Promise<any> {
+    // 强制stderr debug - 确保这个方法被调用
+    process.stderr.write(`🔥 [PROCESS-INPUT-ENTRY] processInput called with: ${JSON.stringify({
+      requestId: context.requestId,
+      provider: context.provider,
+      model: context.model,
+      hasData: !!data,
+      debugMode: this.config.debugMode
+    })}\n`);
+
     let processedData = data;
 
+    if (this.config.debugMode) {
+      this.logger.debug('ProcessInput: Starting input processing', {
+        hasTools: !!data.tools,
+        toolsCount: data.tools?.length || 0,
+        toolsType: typeof data.tools,
+        isArray: Array.isArray(data.tools),
+        requestId: context.requestId
+      });
+    }
+
+    // 🚨 Critical Fix 0: 对所有OpenAI兼容Provider应用通用格式修复
+    console.log('🔍 [PROVIDER-CHECK-BEFORE] About to check provider compatibility', {
+      requestId: context.requestId,
+      provider: context.provider,
+      model: context.model,
+      providerType: typeof context.provider
+    });
+    
+    const isCompatible = this.isOpenAICompatibleProvider(context.provider);
+    console.log('🔍 [PROVIDER-CHECK-RESULT] Provider compatibility check result', {
+      requestId: context.requestId,
+      provider: context.provider,
+      isCompatible,
+      willApplyFix: isCompatible
+    });
+    
+    if (isCompatible) {
+      console.log('🔧 [UNIVERSAL-FIX] Applying universal OpenAI compatibility fixes for input', {
+        requestId: context.requestId,
+        provider: context.provider,
+        model: context.model,
+        hasTools: !!data.tools,
+        toolsCount: data.tools?.length || 0,
+        messagesCount: data.messages?.length || 0
+      });
+      
+      processedData = this.applyUniversalOpenAICompatibilityFixes(processedData, context);
+      
+      console.log('🔧 [UNIVERSAL-FIX] Universal fixes applied successfully', {
+        requestId: context.requestId,
+        originalEquals: processedData === data,
+        hasFixedData: !!processedData
+      });
+    } else {
+      console.log('🚫 [UNIVERSAL-FIX] Skipping universal fixes - not OpenAI compatible provider', {
+        requestId: context.requestId,
+        provider: context.provider
+      });
+    }
+
     // 1. ModelScope请求格式修复
-    if (this.isModelScopeCompatible(context.provider, context.model)) {
+    const isModelScopeCompatible = this.isModelScopeCompatible(context.provider, context.model);
+    console.log('🚨 [DEBUG] ModelScope compatibility check:', {
+      requestId: context.requestId,
+      provider: context.provider,
+      model: context.model,
+      isModelScopeCompatible
+    });
+    
+    if (isModelScopeCompatible) {
+      console.log('🚨 [DEBUG] ENTERING ModelScope processing path');
+      // ⚠️ CRITICAL: Apply universal fixes BEFORE ModelScope-specific processing
+      processedData = this.applyUniversalOpenAICompatibilityFixes(processedData, context);
       processedData = await this.processModelScopeRequest(processedData, context);
     }
 
@@ -257,7 +335,32 @@ export class UnifiedCompatibilityPreprocessor {
 
     // 3. 工具定义标准化
     if (processedData.tools && Array.isArray(processedData.tools)) {
+      if (this.config.debugMode) {
+        this.logger.debug('ProcessInput: Standardizing tool definitions', {
+          originalToolsCount: processedData.tools.length,
+          firstToolName: processedData.tools[0]?.name,
+          requestId: context.requestId
+        });
+      }
+      
+      const originalTools = [...processedData.tools];
       processedData.tools = this.standardizeToolDefinitions(processedData.tools, context);
+      
+      if (this.config.debugMode) {
+        this.logger.debug('ProcessInput: Tool standardization complete', {
+          originalCount: originalTools.length,
+          standardizedCount: processedData.tools.length,
+          standardizedFirstToolName: processedData.tools[0]?.function?.name,
+          requestId: context.requestId
+        });
+      }
+    } else if (this.config.debugMode) {
+      this.logger.debug('ProcessInput: Skipping tool standardization', {
+        hasTools: !!processedData.tools,
+        toolsType: typeof processedData.tools,
+        isArray: Array.isArray(processedData.tools),
+        requestId: context.requestId
+      });
     }
 
     return processedData;
@@ -713,11 +816,24 @@ export class UnifiedCompatibilityPreprocessor {
    * 检查是否为OpenAI兼容Provider
    */
   private isOpenAICompatibleProvider(provider: string): boolean {
-    return provider.includes('openai') || 
+    const isCompatible = provider.includes('openai') || 
            provider.includes('lmstudio') ||
            provider.includes('modelscope') ||
            provider.includes('shuaihong') ||
            provider.includes('deepseek');
+    
+    // 强制输出到stderr进行debug
+    process.stderr.write(`🚨 [PROVIDER-CHECK] isOpenAICompatibleProvider: ${JSON.stringify({
+      provider,
+      isCompatible,
+      includesOpenai: provider.includes('openai'),
+      includesLmstudio: provider.includes('lmstudio'),
+      includesModelscope: provider.includes('modelscope'),
+      includesShuaihong: provider.includes('shuaihong'),
+      includesDeepseek: provider.includes('deepseek')
+    })}\n`);
+    
+    return isCompatible;
   }
 
   /**
@@ -915,14 +1031,221 @@ export class UnifiedCompatibilityPreprocessor {
    * 标准化工具定义
    */
   private standardizeToolDefinitions(tools: any[], context: PreprocessingContext): any[] {
-    return tools.map((tool: any) => ({
-      type: 'function', // 确保有type字段
-      ...tool,
-      function: {
-        ...tool.function,
-        description: tool.function?.description || `Function: ${tool.function?.name || 'unknown'}`
+
+    if (this.config.debugMode) {
+      this.logger.debug('StandardizeToolDefinitions: Starting tool standardization', {
+        toolsCount: tools?.length || 0,
+        toolsType: typeof tools,
+        isArray: Array.isArray(tools),
+        requestId: context.requestId
+      });
+    }
+
+    if (!Array.isArray(tools)) {
+      this.logger.warn('Invalid tools array provided', { tools, requestId: context.requestId });
+      return [];
+    }
+
+    const results = tools.map((tool: any, index: number) => {
+
+      if (this.config.debugMode) {
+        this.logger.debug(`StandardizeToolDefinitions: Processing tool ${index}`, {
+          toolName: tool?.name,
+          hasName: !!tool?.name,
+          hasFunction: !!tool?.function,
+          hasInputSchema: !!tool?.input_schema,
+          toolKeys: Object.keys(tool || {}),
+          requestId: context.requestId
+        });
       }
-    }));
+
+      try {
+        // 基础结构验证
+        if (!tool || typeof tool !== 'object') {
+          this.logger.warn(`Invalid tool at index ${index}`, { tool, requestId: context.requestId });
+          return null;
+        }
+
+        // 处理不同的工具定义格式
+        let standardizedTool: any = {
+          type: 'function' // 确保有type字段
+        };
+
+        // 如果已经有function字段，使用它
+        if (tool.function && typeof tool.function === 'object') {
+          standardizedTool.function = {
+            name: tool.function.name || tool.name || 'unknown', // 优先使用function.name，然后是tool.name
+            description: tool.function.description || tool.description || `Function: ${tool.function.name || tool.name || 'unknown'}`,
+            parameters: tool.function.parameters || {}
+          };
+
+          // 如果没有parameters但有input_schema，转换它
+          if (!tool.function.parameters && tool.input_schema && typeof tool.input_schema === 'object') {
+            standardizedTool.function.parameters = this.convertInputSchemaToParameters(tool.input_schema, context);
+          }
+        }
+        // 如果是直接格式（name在顶级），转换为function格式
+        else if (tool.name) {
+          standardizedTool.function = {
+            name: tool.name,
+            description: tool.description || `Function: ${tool.name}`,
+            parameters: {}
+          };
+
+          // 处理input_schema转换为parameters
+          if (tool.input_schema && typeof tool.input_schema === 'object') {
+            standardizedTool.function.parameters = this.convertInputSchemaToParameters(tool.input_schema, context);
+          }
+        }
+        // 保留其他字段并复制到function格式
+        else {
+          // 尝试从工具对象的其他字段推断
+          const toolName = tool.name || tool.function?.name || `tool_${index}`;
+          const toolDescription = tool.description || tool.function?.description || `Function: ${toolName}`;
+          
+          standardizedTool.function = {
+            name: toolName,
+            description: toolDescription,
+            parameters: {}
+          };
+
+          // 处理input_schema
+          if (tool.input_schema && typeof tool.input_schema === 'object') {
+            standardizedTool.function.parameters = this.convertInputSchemaToParameters(tool.input_schema, context);
+          }
+          // 处理parameters
+          else if (tool.parameters && typeof tool.parameters === 'object') {
+            standardizedTool.function.parameters = tool.parameters;
+          }
+          // 处理function.parameters
+          else if (tool.function?.parameters && typeof tool.function.parameters === 'object') {
+            standardizedTool.function.parameters = tool.function.parameters;
+          }
+
+          if (!tool.name && !tool.function?.name) {
+            this.logger.warn(`Tool at index ${index} missing name, using generated name: ${toolName}`, { 
+              tool, 
+              generatedName: toolName,
+              requestId: context.requestId 
+            });
+          }
+        }
+
+        // 验证最终结果
+        if (!this.isValidToolDefinition(standardizedTool)) {
+          this.logger.warn(`Tool at index ${index} failed validation after standardization`, { 
+            tool: standardizedTool, 
+            requestId: context.requestId 
+          });
+          return null;
+        }
+
+
+        return standardizedTool;
+
+      } catch (error) {
+        this.logger.error(`Error standardizing tool at index ${index}`, {
+          error: error instanceof Error ? error.message : String(error),
+          tool,
+          requestId: context.requestId
+        });
+        return null;
+      }
+    });
+
+    const validResults = results.filter(tool => tool !== null);
+
+    if (this.config.debugMode) {
+      this.logger.debug('StandardizeToolDefinitions: Standardization complete', {
+        originalCount: tools.length,
+        validCount: validResults.length,
+        resultToolNames: validResults.map(tool => tool?.function?.name),
+        requestId: context.requestId
+      });
+    }
+
+    return validResults; // 移除无效的工具
+  }
+
+  /**
+   * 转换input_schema为OpenAI parameters格式
+   */
+  private convertInputSchemaToParameters(inputSchema: any, context: PreprocessingContext): any {
+    if (!inputSchema || typeof inputSchema !== 'object') {
+      return {};
+    }
+
+    try {
+      // 基础验证和修复
+      const parameters: any = {
+        type: inputSchema.type || 'object',
+        properties: {},
+        required: inputSchema.required || []
+      };
+
+      // 处理properties字段
+      if (inputSchema.properties && typeof inputSchema.properties === 'object') {
+        for (const [key, value] of Object.entries(inputSchema.properties)) {
+          // 修复malformed properties
+          if (typeof value === 'string') {
+            // 如果是字符串，转换为正确的schema格式
+            parameters.properties[key] = {
+              type: 'string',
+              description: value
+            };
+          } else if (typeof value === 'object' && value !== null) {
+            parameters.properties[key] = { ...value };
+          } else {
+            // 默认为string类型
+            parameters.properties[key] = {
+              type: 'string',
+              description: `Parameter: ${key}`
+            };
+          }
+        }
+      }
+
+      return parameters;
+    } catch (error) {
+      this.logger.warn('Failed to convert input_schema to parameters', {
+        error: error instanceof Error ? error.message : String(error),
+        inputSchema,
+        requestId: context.requestId
+      });
+      return {
+        type: 'object',
+        properties: {},
+        required: []
+      };
+    }
+  }
+
+  /**
+   * 验证工具定义是否有效
+   */
+  private isValidToolDefinition(tool: any): boolean {
+    if (!tool || typeof tool !== 'object') {
+      return false;
+    }
+
+    if (tool.type !== 'function') {
+      return false;
+    }
+
+    if (!tool.function || typeof tool.function !== 'object') {
+      return false;
+    }
+
+    if (!tool.function.name || typeof tool.function.name !== 'string') {
+      return false;
+    }
+
+    // parameters字段是可选的，但如果存在必须是对象
+    if (tool.function.parameters !== undefined && typeof tool.function.parameters !== 'object') {
+      return false;
+    }
+
+    return true;
   }
 
   /**
@@ -1039,26 +1362,404 @@ export class UnifiedCompatibilityPreprocessor {
   }
 
   /**
-   * 应用GLM特定的补丁
+   * 🚨 Critical Fix: 通用OpenAI兼容格式验证和修复
+   * 适用于所有OpenAI兼容Provider (GLM, ShuaiHong, LMStudio等)
    */
-  private applyGLMSpecificPatches(request: any, context: PreprocessingContext): any {
+  private applyUniversalOpenAICompatibilityFixes(request: any, context: PreprocessingContext): any {
     const patchedRequest = { ...request };
     
+    console.log('🚨 [UNIVERSAL-FIX-DEBUG] Starting universal compatibility fixes', {
+      requestId: context.requestId,
+      provider: context.provider,
+      model: context.model,
+      hasMessages: !!patchedRequest.messages,
+      messagesCount: patchedRequest.messages?.length || 0,
+      firstMessageContent: patchedRequest.messages?.[0]?.content ? {
+        type: typeof patchedRequest.messages[0].content,
+        isArray: Array.isArray(patchedRequest.messages[0].content),
+        structure: patchedRequest.messages[0].content
+      } : null
+    });
+    
+    // 🔧 Critical Fix 1: Messages Content Format Validation
+    if (patchedRequest.messages && Array.isArray(patchedRequest.messages)) {
+      patchedRequest.messages = patchedRequest.messages.map((message: any, index: number) => {
+        if (message.content && typeof message.content === 'object' && !Array.isArray(message.content)) {
+          console.log(`🔧 [UNIVERSAL-FIX] DETECTED OBJECT CONTENT - Fixing message[${index}].content from object to array format`, {
+            requestId: context.requestId,
+            provider: context.provider,
+            model: context.model,
+            originalContentType: typeof message.content,
+            hasTextType: message.content.type === 'text',
+            hasText: !!message.content.text,
+            originalContent: message.content
+          });
+          
+          // 将object格式的content转换为字符串格式（OpenAI标准）
+          if (message.content.type === 'text' && message.content.text) {
+            return {
+              ...message,
+              content: message.content.text
+            };
+          } else {
+            // 转换为字符串格式（备选方案）
+            return {
+              ...message,
+              content: JSON.stringify(message.content)
+            };
+          }
+        }
+        return message;
+      });
+    }
+    
+    // 🔧 Critical Fix 2: Tools Array Format Validation
+    if (patchedRequest.tools && Array.isArray(patchedRequest.tools)) {
+      console.log('🔧 [UNIVERSAL-FIX] Pre-fix tools format:', {
+        requestId: context.requestId,
+        provider: context.provider,
+        model: context.model,
+        toolsCount: patchedRequest.tools.length,
+        toolTypes: patchedRequest.tools.map((tool: any, i: number) => `[${i}]:${typeof tool}`).join(', '),
+        invalidTools: patchedRequest.tools.filter((tool: any) => typeof tool !== 'object' || tool === null).length
+      });
+
+      // 过滤和修复tools数组
+      patchedRequest.tools = patchedRequest.tools
+        .map((tool: any, index: number) => {
+          // 检查工具是否是字符串（需要解析）
+          if (typeof tool === 'string') {
+            console.log('🚨 [UNIVERSAL-FIX] Found string tool, attempting to parse:', tool);
+            try {
+              tool = JSON.parse(tool);
+              console.log(`✅ [UNIVERSAL-FIX] Successfully parsed string tool at index ${index}`);
+            } catch (e) {
+              const errorMessage = e instanceof Error ? e.message : String(e);
+              console.error('❌ [UNIVERSAL-FIX] Failed to parse string tool:', errorMessage);
+              console.log(`🗑️ [UNIVERSAL-FIX] Removing unparseable string tool at index ${index}`);
+              return null; // 标记为删除
+            }
+          }
+
+          // 检查工具是否为null、undefined或非对象
+          if (typeof tool !== 'object' || tool === null) {
+            console.log(`🚨 [UNIVERSAL-FIX] Removing invalid tool at index ${index}: ${typeof tool}`, {
+              requestId: context.requestId,
+              provider: context.provider,
+              toolValue: tool,
+              toolType: typeof tool
+            });
+            return null; // 标记为删除
+          }
+
+          // 修复混合格式和格式转换
+          return this.fixToolFormat(tool, index, context);
+        })
+        .filter((tool: any) => tool !== null); // 移除标记为删除的工具
+
+      console.log('🔧 [UNIVERSAL-FIX] Post-fix tools format:', {
+        requestId: context.requestId,
+        provider: context.provider,
+        originalToolsCount: request.tools?.length || 0,
+        fixedToolsCount: patchedRequest.tools.length,
+        removedToolsCount: (request.tools?.length || 0) - patchedRequest.tools.length
+      });
+    }
+    
+    return patchedRequest;
+  }
+
+  /**
+   * 修复单个工具的格式
+   */
+  private fixToolFormat(tool: any, index: number, context: PreprocessingContext): any | null {
+    const hasName = !!tool.name;
+    const hasFunction = !!tool.function;
+    const hasInputSchema = !!tool.input_schema;
+    
+    // 处理混合格式问题
+    if (hasName && hasFunction && hasInputSchema) {
+      console.log(`🔧 [UNIVERSAL-FIX] Fixing mixed format tool at index ${index}`, {
+        requestId: context.requestId,
+        provider: context.provider,
+        toolName: tool.name,
+        functionName: tool.function?.name
+      });
+      
+      // 优先选择Anthropic格式转为OpenAI
+      const convertedTool = {
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description || tool.function?.description || `Function: ${tool.name}`,
+          parameters: tool.input_schema || {}
+        }
+      };
+      
+      // 🚨 OpenAI协议provider的Gemini后端验证
+      return this.validateGeminiToolNameIfNeeded(convertedTool, index, context);
+    }
+
+    // 检测工具格式
+    const isAnthropicFormat = hasInputSchema && !hasFunction;
+    const isOpenAIFormat = hasFunction && !hasInputSchema;
+    
+    if (isAnthropicFormat) {
+      // Anthropic格式转OpenAI格式
+      if (!tool.name || typeof tool.name !== 'string') {
+        console.log(`🗑️ [UNIVERSAL-FIX] Removing Anthropic tool with invalid name at index ${index}`);
+        return null;
+      }
+      
+      const convertedTool = {
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description || `Function: ${tool.name}`,
+          parameters: tool.input_schema || {}
+        }
+      };
+      
+      // 🚨 OpenAI协议provider的Gemini后端验证
+      return this.validateGeminiToolNameIfNeeded(convertedTool, index, context);
+    } else if (isOpenAIFormat) {
+      // 优化OpenAI格式
+      if (!tool.function?.name || typeof tool.function.name !== 'string') {
+        console.log(`🗑️ [UNIVERSAL-FIX] Removing OpenAI tool with invalid function name at index ${index}`);
+        return null;
+      }
+      
+      const convertedTool = {
+        type: 'function',
+        function: {
+          name: tool.function.name,
+          description: tool.function.description || `Function: ${tool.function.name}`,
+          parameters: typeof tool.function.parameters === 'string' 
+            ? JSON.parse(tool.function.parameters) 
+            : (tool.function.parameters || {})
+        }
+      };
+      
+      // 🚨 OpenAI协议provider的Gemini后端验证
+      return this.validateGeminiToolNameIfNeeded(convertedTool, index, context);
+    } else {
+      // 未知格式，尝试修复
+      const toolName = tool.name || tool.function?.name;
+      
+      if (!toolName) {
+        console.log(`🗑️ [UNIVERSAL-FIX] Removing tool without name at index ${index}`);
+        return null;
+      }
+      
+      const convertedTool = {
+        type: 'function',
+        function: {
+          name: toolName,
+          description: tool.description || tool.function?.description || `Function: ${toolName}`,
+          parameters: tool.input_schema || tool.function?.parameters || {}
+        }
+      };
+      
+      // 🚨 OpenAI协议provider的Gemini后端验证
+      return this.validateGeminiToolNameIfNeeded(convertedTool, index, context);
+    }
+  }
+
+  /**
+   * 🚨 为OpenAI协议Provider验证Gemini工具名称格式
+   * 根据架构指导：不能通过模型名判断协议，而是在该provider协议下决定预处理的方法
+   */
+  private validateGeminiToolNameIfNeeded(tool: any, index: number, context: PreprocessingContext): any | null {
+    // 检查是否是OpenAI协议Provider且可能有Gemini后端
+    const isOpenAIProvider = this.isOpenAICompatibleProvider(context.provider);
+    const mightHaveGeminiBackend = this.mightProviderHaveGeminiBackend(context.provider, context.model);
+    
+    console.log(`🔍 [GEMINI-VALIDATION-DEBUG] Checking tool validation`, {
+      requestId: context.requestId,
+      provider: context.provider,
+      model: context.model,
+      toolName: tool.function?.name,
+      toolIndex: index,
+      isOpenAIProvider,
+      mightHaveGeminiBackend,
+      willValidate: isOpenAIProvider && mightHaveGeminiBackend
+    });
+    
+    if (!isOpenAIProvider || !mightHaveGeminiBackend) {
+      // 非OpenAI协议或确定非Gemini后端，直接返回
+      console.log(`🚫 [GEMINI-VALIDATION-DEBUG] Skipping validation`, {
+        requestId: context.requestId,
+        reason: !isOpenAIProvider ? 'not-openai-provider' : 'no-gemini-backend'
+      });
+      return tool;
+    }
+    
+    const toolName = tool.function?.name;
+    if (!toolName || typeof toolName !== 'string') {
+      console.log(`🗑️ [GEMINI-VALIDATION] Removing tool with invalid name at index ${index}`, {
+        requestId: context.requestId,
+        provider: context.provider,
+        model: context.model
+      });
+      return null;
+    }
+    
+    // Gemini API工具名称验证规则
+    const isValidGeminiToolName = this.isValidGeminiToolName(toolName);
+    
+    if (!isValidGeminiToolName) {
+      console.log(`🚨 [GEMINI-VALIDATION] Invalid Gemini tool name detected`, {
+        requestId: context.requestId,
+        provider: context.provider,
+        model: context.model,
+        toolName,
+        toolIndex: index,
+        reason: 'gemini-api-naming-restriction'
+      });
+      
+      // 尝试修复工具名称为Gemini兼容格式
+      const fixedToolName = this.fixToolNameForGemini(toolName);
+      
+      if (fixedToolName && fixedToolName !== toolName) {
+        console.log(`🔧 [GEMINI-VALIDATION] Fixed tool name for Gemini compatibility`, {
+          requestId: context.requestId,
+          provider: context.provider,
+          model: context.model,
+          originalName: toolName,
+          fixedName: fixedToolName,
+          toolIndex: index
+        });
+        
+        return {
+          ...tool,
+          function: {
+            ...tool.function,
+            name: fixedToolName
+          }
+        };
+      } else {
+        console.log(`🗑️ [GEMINI-VALIDATION] Cannot fix tool name for Gemini, removing tool at index ${index}`, {
+          requestId: context.requestId,
+          provider: context.provider,
+          model: context.model,
+          toolName
+        });
+        return null;
+      }
+    }
+    
+    // 工具名称有效，直接返回
+    return tool;
+  }
+  
+  /**
+   * 检查Provider是否可能有Gemini后端
+   */
+  private mightProviderHaveGeminiBackend(provider: string, model?: string): boolean {
+    // 基于Provider名称的启发式判断
+    const providerIndicators = [
+      'shuaihong', 'gemini', 'google'
+    ];
+    
+    // 基于模型名称的启发式判断
+    const modelIndicators = [
+      'gemini', 'Gemini'
+    ];
+    
+    const hasProviderIndicator = providerIndicators.some(indicator => 
+      provider.toLowerCase().includes(indicator.toLowerCase())
+    );
+    
+    const hasModelIndicator = model ? modelIndicators.some(indicator => 
+      model.includes(indicator)
+    ) : false;
+    
+    return hasProviderIndicator || hasModelIndicator;
+  }
+  
+  /**
+   * 验证工具名称是否符合Gemini API要求
+   */
+  private isValidGeminiToolName(toolName: string): boolean {
+    // Gemini API工具名称要求：
+    // 1. 只能包含字母、数字、下划线
+    // 2. 必须以字母开头
+    // 3. 长度限制通常在64字符以内
+    const geminiToolNamePattern = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+    const isValidFormat = geminiToolNamePattern.test(toolName);
+    const isValidLength = toolName.length <= 64;
+    
+    return isValidFormat && isValidLength;
+  }
+  
+  /**
+   * 修复工具名称为Gemini兼容格式
+   */
+  private fixToolNameForGemini(toolName: string): string | null {
+    if (!toolName || typeof toolName !== 'string') {
+      return null;
+    }
+    
+    // 移除不支持的字符，只保留字母、数字、下划线
+    let fixed = toolName.replace(/[^a-zA-Z0-9_]/g, '_');
+    
+    // 确保以字母开头
+    if (fixed.length > 0 && !/^[a-zA-Z]/.test(fixed)) {
+      fixed = 'tool_' + fixed;
+    }
+    
+    // 移除连续下划线
+    fixed = fixed.replace(/_+/g, '_');
+    
+    // 移除首尾下划线
+    fixed = fixed.replace(/^_+|_+$/g, '');
+    
+    // 长度限制
+    if (fixed.length > 64) {
+      fixed = fixed.substring(0, 64);
+    }
+    
+    // 再次验证修复后的名称
+    if (fixed.length === 0 || !this.isValidGeminiToolName(fixed)) {
+      return null;
+    }
+    
+    return fixed;
+  }
+
+  /**
+   * 应用GLM特定的补丁 (现在调用通用修复)
+   */
+  private applyGLMSpecificPatches(request: any, context: PreprocessingContext): any {
+    // 应用通用OpenAI兼容性修复
+    let patchedRequest = this.applyUniversalOpenAICompatibilityFixes(request, context);
+    
+    // GLM特定配置
     if (!patchedRequest.temperature) {
       patchedRequest.temperature = 0.8;
     }
-    
-    if (patchedRequest.tools && Array.isArray(patchedRequest.tools)) {
-      patchedRequest.tools = patchedRequest.tools.map((tool: any) => ({
-        ...tool,
-        function: {
-          ...tool.function,
-          description: tool.function?.description || `Function: ${tool.function?.name || 'unknown'}`
-        }
-      }));
-    }
+
+    console.log('🔧 [GLM-DEBUG] Applied GLM-specific patches', {
+      requestId: context.requestId,
+      model: context.model,
+      hasTools: !!patchedRequest.tools,
+      toolsCount: patchedRequest.tools?.length || 0
+    });
 
     return patchedRequest;
+  }
+
+  /**
+   * 验证GLM工具格式是否正确
+   */
+  private isValidGLMToolFormat(tool: any): boolean {
+    return tool && 
+           typeof tool === 'object' && 
+           tool.type === 'function' &&
+           tool.function &&
+           typeof tool.function === 'object' &&
+           typeof tool.function.name === 'string' &&
+           typeof tool.function.parameters === 'object';
   }
 
   /**

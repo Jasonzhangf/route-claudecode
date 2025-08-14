@@ -1,19 +1,21 @@
 /**
- * OpenAI Client Factory - 平滑切换管理器
- * 在Enhanced Client和SDK Client之间提供平滑切换
+ * OpenAI Client Factory - 统一客户端管理器
+ * 基于项目记忆中的成功重构经验，消除重复实现
+ * 项目所有者: Jason Zhang
  * 
  * 设计目标:
  * 1. 统一的客户端创建接口
- * 2. 基于配置的自动选择
- * 3. 运行时切换支持
+ * 2. 消除Pure Client和SDK Client的重复代码
+ * 3. 遵循零硬编码、零Fallback、零跨节点耦合原则
  * 4. 向后兼容性保证
  */
 
 import { Provider, ProviderConfig } from '@/types';
 import { logger } from '@/utils/logger';
+import { UnifiedOpenAIClient, UnifiedOpenAIConfig } from './unified-client';
+// 保留legacy clients用于向后兼容，但标记为废弃
 import { OpenAISDKClient, OpenAISDKConfig } from './sdk-client';
 import { PureOpenAIClient, PureOpenAIConfig } from './pure-client';
-// import { UnifiedOpenAIProviderFactory, shouldUseUnifiedConversion } from './unified-factory';
 
 export interface OpenAIClientConfig extends ProviderConfig {
   // 客户端选择配置
@@ -40,12 +42,12 @@ export interface OpenAIClientConfig extends ProviderConfig {
 }
 
 /**
- * 客户端类型枚举
+ * 客户端类型枚举 - 推荐使用UNIFIED
  */
 export enum ClientType {
-  PURE = 'pure',
-  SDK = 'sdk',
-  UNIFIED = 'unified'
+  UNIFIED = 'unified',  // 推荐：统一客户端实现
+  PURE = 'pure',        // 废弃：保留向后兼容
+  SDK = 'sdk'           // 废弃：保留向后兼容
 }
 
 /**
@@ -68,19 +70,9 @@ export class OpenAIClientFactory {
   private static activeClients: Map<string, { client: Provider; type: ClientType }> = new Map();
 
   /**
-   * 创建OpenAI客户端
+   * 创建OpenAI客户端 - 优先使用统一实现
    */
   static createClient(config: OpenAIClientConfig, providerId: string, globalConfig?: any): Provider {
-    // 🎯 暂时禁用统一转换层直到修复完成
-    // if (shouldUseUnifiedConversion()) {
-    //   logger.info('🔄 Using unified conversion layer for OpenAI provider', {
-    //     providerId,
-    //     clientType: 'unified',
-    //     reason: 'solve_duplicate_response_and_silent_stop'
-    //   });
-    //   return UnifiedOpenAIProviderFactory.createProvider(config, providerId, globalConfig?.port);
-    // }
-
     const clientType = this.determineClientType(config, providerId);
     const client = this.instantiateClient(clientType, config, providerId, globalConfig);
     
@@ -108,48 +100,49 @@ export class OpenAIClientFactory {
   }
 
   /**
-   * 确定客户端类型 - 优先使用统一转换层
-   * 统一转换层解决重复响应和静默停止问题
+   * 确定客户端类型 - 优先使用统一客户端
+   * 基于项目记忆中的成功重构经验
    */
   private static determineClientType(config: OpenAIClientConfig, providerId: string): ClientType {
-    // 暂时使用pure客户端，因为unified客户端被禁用
-    const clientType = config.clientType || 'pure';
+    const clientType = config.clientType || 'unified';
     
-    if (clientType === 'unified') {
-      logger.warn('Unified client disabled, falling back to pure client', { 
+    if (clientType === 'unified' || clientType === 'auto') {
+      logger.info('Selected Unified OpenAI client (recommended)', { 
         providerId,
-        originalType: 'unified',
-        fallbackType: 'pure'
+        clientType: 'unified',
+        reason: 'eliminate-duplicate-code-architecture'
       });
-      return ClientType.PURE;
+      return ClientType.UNIFIED;
     } else if (clientType === 'pure') {
-      logger.debug('Selected Pure OpenAI client (legacy)', { 
+      logger.warn('Selected Pure OpenAI client (deprecated)', { 
         providerId,
         clientType: 'pure',
-        reason: 'transformer-based architecture'
+        reason: 'backward-compatibility',
+        recommendation: 'migrate-to-unified'
       });
       return ClientType.PURE;
     } else if (clientType === 'sdk') {
-      logger.debug('Selected SDK OpenAI client (legacy)', { 
+      logger.warn('Selected SDK OpenAI client (deprecated)', { 
         providerId,
         clientType: 'sdk',
-        reason: 'explicit configuration'
+        reason: 'backward-compatibility',
+        recommendation: 'migrate-to-unified'
       });
       return ClientType.SDK;
     } else {
-      // 默认使用pure客户端（unified客户端已禁用）
-      logger.debug('Auto-selected Pure client (unified disabled)', { 
+      // 默认使用统一客户端
+      logger.info('Auto-selected Unified client (default)', { 
         providerId,
         originalClientType: clientType,
-        selectedClientType: 'pure',
-        reason: 'zero-cross-node-coupling-architecture'
+        selectedClientType: 'unified',
+        reason: 'zero-duplicate-code-principle'
       });
-      return ClientType.PURE;
+      return ClientType.UNIFIED;
     }
   }
 
   /**
-   * 实例化客户端
+   * 实例化客户端 - 优先使用统一实现
    */
   private static instantiateClient(
     clientType: ClientType, 
@@ -159,27 +152,28 @@ export class OpenAIClientFactory {
   ): Provider {
     switch (clientType) {
       case ClientType.UNIFIED:
-        logger.debug('Creating Unified Conversion OpenAI client', {
+        logger.debug('Creating Unified OpenAI client', {
           providerId,
           clientType: 'unified',
-          architecture: 'unified-conversion-layer'
+          architecture: 'six-layer-clean-zero-duplicate-code'
         });
-        // return UnifiedOpenAIProviderFactory.createProvider(config, providerId, globalConfig?.port);
-        throw new Error('Unified client temporarily disabled - use pure or sdk client');
+        return new UnifiedOpenAIClient(config as UnifiedOpenAIConfig, providerId);
         
       case ClientType.PURE:
-        logger.debug('Creating Pure OpenAI client', {
+        logger.debug('Creating Pure OpenAI client (deprecated)', {
           providerId,
           clientType: 'pure',
-          architecture: 'transformer-based'
+          architecture: 'legacy-transformer-based',
+          warning: 'consider-migrating-to-unified'
         });
         return new PureOpenAIClient(config as PureOpenAIConfig, providerId);
         
       case ClientType.SDK:
-        logger.debug('Creating SDK OpenAI client', {
+        logger.debug('Creating SDK OpenAI client (deprecated)', {
           providerId,
           clientType: 'sdk',
-          architecture: 'legacy'
+          architecture: 'legacy-sdk-based',
+          warning: 'consider-migrating-to-unified'
         });
         return new OpenAISDKClient(config as OpenAISDKConfig, providerId);
         

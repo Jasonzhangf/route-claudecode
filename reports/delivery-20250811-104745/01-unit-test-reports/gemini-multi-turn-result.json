@@ -1,0 +1,9 @@
+{
+  "provider": "gemini",
+  "scenario": "multi-turn", 
+  "result": "FAIL",
+  "duration": 0s,
+  "timestamp": "2025-08-11T10:48:51+08:00",
+  "error": "",
+  "logFile": "/tmp/delivery-test-20250811-104745-gemini-multi-turn.log"
+}

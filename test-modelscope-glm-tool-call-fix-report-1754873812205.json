@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-08-11T00:56:52.205Z",
+  "testName": "ModelScope GLM Tool Call Fix Verification",
+  "results": {
+    "serverStarted": true,
+    "glmFixApplied": false,
+    "noInvalidTypeError": true,
+    "toolCallSuccess": false,
+    "apiCallSuccess": false
+  },
+  "details": {
+    "apiResult": null,
+    "apiError": "Error: spawnSync /bin/sh ETIMEDOUT",
+    "serverOutput": "No existing response stats file found, starting fresh.\nResponseStatsManager initialized\n🚀 Starting Claude Code Router...\n\n🎯 Custom config specified: /Users/fanzhang/.route-claude-code/config/single-provider/config-openai-sdk-modelscope-glm-5509.json\n🎯 Starting single-config server with custom configuration\n\n[LoggerManager] Creating logger for port 5509 (requested: 5509, default: 5509)\n[08:55:49] [INFO] [system] UnifiedCompatibilityPreprocessor initialized\n[08:55:49] [INFO] [system] UnifiedPatchPreprocessor initialized (now using UnifiedCompatibilityPreprocessor)\n[08:55:49] [INFO] [system] 🔧 Starting provider expansion for multi-key routing\n[08:55:49] [INFO] [system] 📊 Expanding multi-key provider: modelscope-openai\n[08:55:49] [DEBUG] [system] ✅ Created expanded provider: modelscope-openai-key1\n[08:55:49] [DEBUG] [system] ✅ Created expanded provider: modelscope-openai-key2\n[08:55:49] [DEBUG] [system] ✅ Created expanded provider: modelscope-openai-key3\n[08:55:49] [DEBUG] [system] ✅ "
+  }
+}

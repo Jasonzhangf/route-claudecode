@@ -1,0 +1,9 @@
+{
+  "provider": "anthropic",
+  "scenario": "tool-calls", 
+  "result": "PASS",
+  "duration": 0s,
+  "timestamp": "2025-08-11T10:48:58+08:00",
+  "error": "",
+  "logFile": "/tmp/delivery-test-20250811-104745-anthropic-tool-calls.log"
+}

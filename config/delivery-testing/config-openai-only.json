@@ -1,93 +1,42 @@
 {
   "name": "OpenAI Compatible Only - Delivery Testing",
-  "description": "Routes ALL categories to OpenAI Compatible providers for isolated testing",
-  
-  "server": {
+  "description": "Routes ALL categories to OpenAI Compatible for isolated testing",
+  "server": { 
     "port": 3459,
     "host": "127.0.0.1"
   },
-  
-  "routing": {  
-    "default": {
-      "provider": "openai-delivery",
-      "model": "gpt-4o"
-    },
-    "background": {
-      "provider": "openai-delivery", 
-      "model": "gpt-4o-mini"
-    },
-    "thinking": {
-      "provider": "openai-delivery",
-      "model": "gpt-4o"
-    },
-    "longcontext": {
-      "provider": "openai-delivery",
-      "model": "gpt-4o"
-    },
-    "search": {
-      "provider": "openai-delivery",
-      "model": "gpt-4o-mini"
-    }
+  "routing": {
+    "default": { "provider": "shuaihong-test", "model": "claude-4-sonnet" },
+    "background": { "provider": "shuaihong-test", "model": "claude-3-5-haiku-20241022" },
+    "thinking": { "provider": "shuaihong-test", "model": "claude-4-sonnet" },
+    "longcontext": { "provider": "shuaihong-test", "model": "claude-4-sonnet" },
+    "search": { "provider": "shuaihong-test", "model": "claude-4-sonnet" }
   },
-  
   "providers": {
-    "openai-delivery": {
+    "shuaihong-test": {
       "type": "openai",
-      "name": "OpenAI Compatible Delivery Testing",
-      "endpoint": "https://api.shuaihong.ai/v1",
+      "name": "ShuaiHong OpenAI Compatible for Delivery Testing",
+      "endpoint": "https://api.gaccode.com/v1/chat/completions",
       "authentication": {
         "type": "bearer",
         "credentials": {
-          "apiKey": "${SHUAIHONG_API_KEY}"
+          "apiKey": ["sk-test-key"]
         }
       },
-      "settings": {
-        "maxConcurrentRequests": 15,
-        "timeoutMs": 20000,
-        "retryAttempts": 3,
-        "models": [
-          "gpt-4o",
-          "gpt-4o-mini",
-          "gpt-4-turbo"
-        ],
-        "outputFormat": "openai",
-        "convertToAnthropic": true
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "timeout": 60000,
+      "models": {
+        "claude-4-sonnet": { "maxTokens": 200000 },
+        "claude-3-5-haiku-20241022": { "maxTokens": 200000 }
       }
     }
   },
-  
-  "input": {
-    "format": "anthropic",
-    "defaultInstance": true,
-    "validation": {
-      "enabled": true,
-      "strictMode": false
-    }
-  },
-  
-  "output": {
-    "openai": {
-      "enabled": true,
-      "convertToAnthropic": true,
-      "preserveToolCalls": true
-    }
-  },
-  
   "debug": {
     "enabled": true,
     "logLevel": "debug",
     "traceRequests": true,
     "saveRequests": true,
-    "logDir": "~/.route-claude-code/logs/delivery-testing",
-    "dataCapture": {
-      "enabled": true,
-      "savePath": "~/.route-claude-code/database/delivery-testing/providers/openai-compatible"
-    }
-  },
-  
-  "health": {
-    "checkIntervalMs": 10000,
-    "timeoutMs": 5000,
-    "failureThreshold": 2
+    "logDir": "/tmp/ccr-delivery-logs"
   }
 }

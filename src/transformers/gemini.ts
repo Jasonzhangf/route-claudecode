@@ -214,8 +214,20 @@ export class GeminiTransformer {
    * 构建工具和配置
    */
   private buildToolsAndConfig(tools: any[], toolChoice?: any): { tools: any[]; toolConfig: any } {
+    // 🚨 调试：记录接收到的工具数据
+    logger.debug('🔧 [GEMINI-TOOL-INPUT] Received tools for conversion', {
+      toolCount: tools.length,
+      toolNames: tools.map((t, i) => ({ 
+        index: i, 
+        name: t.name || t.function?.name, 
+        type: typeof t,
+        hasFunction: !!t.function 
+      })),
+      rawTools: JSON.stringify(tools, null, 2).substring(0, 1000)
+    });
+
     // 转换工具定义
-    const functionDeclarations = tools.map(tool => {
+    const functionDeclarations = tools.map((tool, index) => {
       // 🔧 修复：支持双格式工具（OpenAI和Anthropic）
       const name = tool.name || tool.function?.name;
       const description = tool.description || tool.function?.description;
@@ -223,6 +235,31 @@ export class GeminiTransformer {
 
       if (!name || !description) {
         throw new Error(`Invalid tool format: missing name or description in ${JSON.stringify(tool)}`);
+      }
+
+      // 🚨 调试：验证工具名称格式并记录
+      const geminiNameRegex = /^[a-zA-Z_][a-zA-Z0-9_.\-]*$/;
+      const isValidName = geminiNameRegex.test(name) && name.length <= 64;
+      
+      logger.debug('🔧 [GEMINI-TOOL-DEBUG] Tool name validation', {
+        index,
+        name,
+        isValidName,
+        length: name.length,
+        originalTool: JSON.stringify(tool).substring(0, 200)
+      });
+
+      if (!isValidName) {
+        logger.warn('❌ [GEMINI-TOOL-ERROR] Invalid tool name detected', {
+          index,
+          name,
+          reasons: {
+            invalidChars: !geminiNameRegex.test(name),
+            tooLong: name.length > 64,
+            startsWrong: !/^[a-zA-Z_]/.test(name)
+          }
+        });
+        throw new Error(`Invalid Gemini tool name at index ${index}: "${name}" - Must start with letter/underscore, contain only alphanumeric/underscore/dot/dash, max 64 chars`);
       }
 
       return {

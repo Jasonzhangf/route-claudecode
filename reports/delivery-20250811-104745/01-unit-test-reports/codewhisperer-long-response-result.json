@@ -1,0 +1,9 @@
+{
+  "provider": "codewhisperer",
+  "scenario": "long-response", 
+  "result": "PASS",
+  "duration": 41s,
+  "timestamp": "2025-08-11T10:48:41+08:00",
+  "error": "",
+  "logFile": "/tmp/delivery-test-20250811-104745-codewhisperer-long-response.log"
+}

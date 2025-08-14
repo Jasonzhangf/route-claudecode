@@ -80,7 +80,24 @@ export class UnifiedPatchPreprocessor {
     model: string,
     requestId: string
   ): Promise<any> {
-    return this.compatibilityProcessor.preprocessInput(inputData, provider, model, requestId);
+    // 强制输出到stderr以确保可见
+    process.stderr.write(`🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput CALLED! ${JSON.stringify({
+      requestId,
+      provider,
+      model,
+      hasData: !!inputData,
+      config: this.config
+    })}\n`);
+    
+    const result = await this.compatibilityProcessor.preprocessInput(inputData, provider, model, requestId);
+    
+    process.stderr.write(`🚨🚨🚨 [CRITICAL-DEBUG] UnifiedPatchPreprocessor.preprocessInput COMPLETED! ${JSON.stringify({
+      requestId,
+      hasResult: !!result,
+      resultType: typeof result
+    })}\n`);
+    
+    return result;
   }
 
   /**

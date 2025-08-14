@@ -1,0 +1,233 @@
+{
+  "timestamp": "2025-08-10T15:51:51.939Z",
+  "testType": "openai-provider-layer-simplified",
+  "summary": {
+    "totalTests": 3,
+    "passedTests": 0,
+    "failedTests": 3,
+    "passRate": 0,
+    "allPassed": false,
+    "results": [
+      {
+        "providerName": "modelscope",
+        "success": false,
+        "port": 3456,
+        "responseTime": 3104,
+        "validation": {
+          "passed": false,
+          "issues": [
+            "HTTP status 400, expected 200",
+            "No valid parsed response"
+          ]
+        },
+        "response": {
+          "statusCode": 400
+        },
+        "timestamp": "2025-08-10T15:51:24.176Z"
+      },
+      {
+        "providerName": "shuaihong",
+        "success": false,
+        "port": 3456,
+        "responseTime": 5208,
+        "validation": {
+          "passed": false,
+          "issues": [
+            "HTTP status 503, expected 200",
+            "No valid parsed response"
+          ]
+        },
+        "response": {
+          "statusCode": 503
+        },
+        "timestamp": "2025-08-10T15:51:31.387Z"
+      },
+      {
+        "providerName": "lmstudio",
+        "success": false,
+        "port": 3456,
+        "responseTime": 16547,
+        "validation": {
+          "passed": false,
+          "issues": [
+            "Response has no text content"
+          ]
+        },
+        "response": {
+          "id": "chatcmpl-C32cmDWSzJ21Yxa757a3BSmGwIDr4",
+          "model": "claude-3-opus-20240229",
+          "hasContent": false,
+          "hasToolUse": true,
+          "statusCode": 200
+        },
+        "timestamp": "2025-08-10T15:51:49.937Z"
+      }
+    ]
+  },
+  "results": [
+    {
+      "providerName": "modelscope",
+      "success": false,
+      "port": 3456,
+      "responseTime": 3104,
+      "validation": {
+        "passed": false,
+        "issues": [
+          "HTTP status 400, expected 200",
+          "No valid parsed response"
+        ]
+      },
+      "response": {
+        "statusCode": 400
+      },
+      "timestamp": "2025-08-10T15:51:24.176Z"
+    },
+    {
+      "providerName": "shuaihong",
+      "success": false,
+      "port": 3456,
+      "responseTime": 5208,
+      "validation": {
+        "passed": false,
+        "issues": [
+          "HTTP status 503, expected 200",
+          "No valid parsed response"
+        ]
+      },
+      "response": {
+        "statusCode": 503
+      },
+      "timestamp": "2025-08-10T15:51:31.387Z"
+    },
+    {
+      "providerName": "lmstudio",
+      "success": false,
+      "port": 3456,
+      "responseTime": 16547,
+      "validation": {
+        "passed": false,
+        "issues": [
+          "Response has no text content"
+        ]
+      },
+      "response": {
+        "id": "chatcmpl-C32cmDWSzJ21Yxa757a3BSmGwIDr4",
+        "model": "claude-3-opus-20240229",
+        "hasContent": false,
+        "hasToolUse": true,
+        "statusCode": 200
+      },
+      "timestamp": "2025-08-10T15:51:49.937Z"
+    }
+  ],
+  "errors": [],
+  "providerConfigs": {
+    "modelscope": {
+      "name": "ModelScope Provider Test (via Load Balancer)",
+      "port": 3456,
+      "expectedProvider": "modelscope",
+      "testRequest": {
+        "model": "claude-4-sonnet",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Hello! Please introduce yourself briefly and tell me what you can help with."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 500,
+        "temperature": 0.3
+      }
+    },
+    "shuaihong": {
+      "name": "ShuaiHong Provider Test (via Load Balancer)",
+      "port": 3456,
+      "expectedProvider": "shuaihong",
+      "testRequest": {
+        "model": "claude-3-5-haiku-20241022",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Please calculate 25 + 37 using the calculator tool."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.1,
+        "tools": [
+          {
+            "name": "calculator",
+            "description": "Perform mathematical calculations",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "expression": {
+                  "type": "string",
+                  "description": "Mathematical expression to evaluate"
+                }
+              },
+              "required": [
+                "expression"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "lmstudio": {
+      "name": "LMStudio Provider Test (via Load Balancer)",
+      "port": 3456,
+      "expectedProvider": "lmstudio",
+      "testRequest": {
+        "model": "claude-3-opus-20240229",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Use the file analysis tool to analyze a JSON configuration structure."
+              }
+            ]
+          }
+        ],
+        "max_tokens": 1200,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "analyze_file",
+            "description": "Analyze file structure and content",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "file_type": {
+                  "type": "string",
+                  "description": "Type of file to analyze"
+                },
+                "analysis_depth": {
+                  "type": "string",
+                  "enum": [
+                    "basic",
+                    "detailed"
+                  ],
+                  "description": "Analysis depth"
+                }
+              },
+              "required": [
+                "file_type"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

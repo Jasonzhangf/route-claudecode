@@ -1,0 +1,9 @@
+{
+  "provider": "anthropic",
+  "scenario": "large-input", 
+  "result": "PASS",
+  "duration": 0s,
+  "timestamp": "2025-08-11T10:48:59+08:00",
+  "error": "",
+  "logFile": "/tmp/delivery-test-20250811-104745-anthropic-large-input.log"
+}
