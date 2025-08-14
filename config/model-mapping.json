@@ -1,0 +1,231 @@
+{
+  "configVersion": "v3.0.2",
+  "modelMappings": {
+    "anthropic": {
+      "protocol": "anthropic",
+      "models": {
+        "claude-3-5-sonnet-20241022": {
+          "endpoint": "https://api.anthropic.com/v1/messages",
+          "maxTokens": 200000,
+          "costPerInputToken": 0.000003,
+          "costPerOutputToken": 0.000015,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions"]
+        },
+        "claude-3-5-haiku-20241022": {
+          "endpoint": "https://api.anthropic.com/v1/messages", 
+          "maxTokens": 200000,
+          "costPerInputToken": 0.00000025,
+          "costPerOutputToken": 0.00000125,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions"]
+        }
+      }
+    },
+    "codewhisperer": {
+      "protocol": "codewhisperer",
+      "models": {
+        "CLAUDE_SONNET_4_20250514_V1_0": {
+          "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+          "maxTokens": 200000,
+          "costPerInputToken": 0.000003,
+          "costPerOutputToken": 0.000015,
+          "supportedFeatures": ["streaming", "tool_calls", "system_instructions"],
+          "profileArn": "arn:aws:sso::accountId:permission-set/AmazonCodeWhispererServiceRolePolicy",
+          "awsRegion": "us-east-1"
+        },
+        "CLAUDE_3_7_SONNET": {
+          "endpoint": "https://codewhisperer.us-east-1.amazonaws.com",
+          "maxTokens": 200000,
+          "costPerInputToken": 0.000003,
+          "costPerOutputToken": 0.000015,
+          "supportedFeatures": ["streaming", "tool_calls", "system_instructions"],
+          "profileArn": "arn:aws:sso::accountId:permission-set/AmazonCodeWhispererServiceRolePolicy",
+          "awsRegion": "us-east-1"
+        }
+      }
+    },
+    "gemini": {
+      "protocol": "gemini",
+      "models": {
+        "gemini-2.0-flash-exp": {
+          "endpoint": "https://generativelanguage.googleapis.com",
+          "maxTokens": 1048576,
+          "costPerInputToken": 0.000000075,
+          "costPerOutputToken": 0.0000003,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions", "safety_settings"]
+        },
+        "gemini-1.5-pro-latest": {
+          "endpoint": "https://generativelanguage.googleapis.com",
+          "maxTokens": 2097152,
+          "costPerInputToken": 0.00000125,
+          "costPerOutputToken": 0.000005,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions", "safety_settings"]
+        },
+        "gemini-1.5-flash": {
+          "endpoint": "https://generativelanguage.googleapis.com",
+          "maxTokens": 1048576,
+          "costPerInputToken": 0.000000075,
+          "costPerOutputToken": 0.0000003,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions", "safety_settings"]
+        },
+        "gemini-1.5-flash-8b": {
+          "endpoint": "https://generativelanguage.googleapis.com",
+          "maxTokens": 1048576,
+          "costPerInputToken": 0.0000000375,
+          "costPerOutputToken": 0.00000015,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions", "safety_settings"]
+        }
+      }
+    },
+    "openai-compatible": {
+      "protocol": "openai",
+      "models": {
+        "gpt-4o": {
+          "endpoint": "https://api.openai.com/v1/chat/completions",
+          "maxTokens": 128000,
+          "costPerInputToken": 0.0000025,
+          "costPerOutputToken": 0.00001,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions"]
+        },
+        "gpt-4o-mini": {
+          "endpoint": "https://api.openai.com/v1/chat/completions",
+          "maxTokens": 128000,
+          "costPerInputToken": 0.00000015,
+          "costPerOutputToken": 0.0000006,
+          "supportedFeatures": ["streaming", "tool_calls", "vision", "system_instructions"]
+        },
+        "claude-4-sonnet": {
+          "endpoint": "third-party-openai-compatible",
+          "maxTokens": 200000,
+          "costPerInputToken": 0.000003,
+          "costPerOutputToken": 0.000015,
+          "supportedFeatures": ["streaming", "tool_calls", "system_instructions"],
+          "note": "Third-party provider offering Claude via OpenAI API"
+        },
+        "qwen3-30b": {
+          "endpoint": "lmstudio-local",
+          "maxTokens": 32768,
+          "costPerInputToken": 0,
+          "costPerOutputToken": 0,
+          "supportedFeatures": ["streaming", "basic_tool_calls"],
+          "note": "Local LM Studio model"
+        },
+        "glm-4.5-air": {
+          "endpoint": "lmstudio-local",
+          "maxTokens": 131072,
+          "costPerInputToken": 0,
+          "costPerOutputToken": 0,
+          "supportedFeatures": ["streaming", "basic_tool_calls"],
+          "note": "Local LM Studio model"
+        },
+        "Qwen3-Coder-480B": {
+          "endpoint": "modelscope-api",
+          "maxTokens": 32768,
+          "costPerInputToken": 0.0000002,
+          "costPerOutputToken": 0.0000006,
+          "supportedFeatures": ["streaming", "tool_calls"],
+          "note": "ModelScope hosted model"
+        },
+        "ZhipuAI/GLM-4.5": {
+          "endpoint": "modelscope-api",
+          "maxTokens": 131072,
+          "costPerInputToken": 0.0000001,
+          "costPerOutputToken": 0.0000003,
+          "supportedFeatures": ["streaming", "tool_calls"],
+          "note": "ModelScope GLM model"
+        }
+      }
+    }
+  },
+  "providerEndpoints": {
+    "anthropic-direct": {
+      "baseUrl": "https://api.anthropic.com",
+      "authType": "bearer",
+      "supportedProtocols": ["anthropic"]
+    },
+    "codewhisperer-primary": {
+      "baseUrl": "https://codewhisperer.us-east-1.amazonaws.com",
+      "authType": "aws-codewhisperer",
+      "supportedProtocols": ["codewhisperer"],
+      "region": "us-east-1"
+    },
+    "google-gemini": {
+      "baseUrl": "https://generativelanguage.googleapis.com",
+      "authType": "bearer",
+      "supportedProtocols": ["gemini"]
+    },
+    "openai-official": {
+      "baseUrl": "https://api.openai.com",
+      "authType": "bearer", 
+      "supportedProtocols": ["openai"]
+    },
+    "shuaihong-openai": {
+      "baseUrl": "https://ai.shuaihong.fun",
+      "authType": "bearer",
+      "supportedProtocols": ["openai"],
+      "note": "Third-party OpenAI-compatible service"
+    },
+    "lmstudio-local": {
+      "baseUrl": "http://localhost:1234",
+      "authType": "none",
+      "supportedProtocols": ["openai"],
+      "note": "Local LM Studio server"
+    },
+    "modelscope-api": {
+      "baseUrl": "https://dashscope.aliyuncs.com",
+      "authType": "bearer",
+      "supportedProtocols": ["openai"],
+      "note": "ModelScope DashScope API"
+    }
+  },
+  "routingStrategies": {
+    "cost_optimized": {
+      "description": "Route to lowest cost model that meets requirements",
+      "priorityFactors": ["costPerToken", "responseTime", "availability"]
+    },
+    "performance_optimized": {
+      "description": "Route to fastest model that meets requirements",
+      "priorityFactors": ["responseTime", "throughput", "availability"]
+    },
+    "feature_optimized": {
+      "description": "Route to model with best feature support",
+      "priorityFactors": ["supportedFeatures", "accuracy", "availability"]
+    },
+    "balanced": {
+      "description": "Balance cost, performance, and features",
+      "priorityFactors": ["availability", "costPerToken", "responseTime", "supportedFeatures"]
+    }
+  },
+  "categoryMappings": {
+    "default": {
+      "preferredModels": ["claude-3-5-sonnet-20241022", "gpt-4o", "gemini-2.0-flash-exp"],
+      "strategy": "balanced",
+      "fallbackModels": ["claude-3-5-haiku-20241022", "gpt-4o-mini", "gemini-1.5-flash"]
+    },
+    "background": {
+      "preferredModels": ["claude-3-5-haiku-20241022", "gpt-4o-mini", "gemini-1.5-flash-8b"],
+      "strategy": "cost_optimized",
+      "fallbackModels": ["gemini-1.5-flash", "qwen3-30b"]
+    },
+    "thinking": {
+      "preferredModels": ["claude-3-5-sonnet-20241022", "gpt-4o", "gemini-1.5-pro-latest"],
+      "strategy": "feature_optimized",
+      "fallbackModels": ["claude-3-5-haiku-20241022", "gpt-4o-mini"]
+    },
+    "longcontext": {
+      "preferredModels": ["gemini-1.5-pro-latest", "claude-3-5-sonnet-20241022"],
+      "strategy": "performance_optimized",
+      "fallbackModels": ["gemini-1.5-flash", "claude-3-5-haiku-20241022"]
+    },
+    "search": {
+      "preferredModels": ["gemini-1.5-flash-8b", "claude-3-5-haiku-20241022", "gpt-4o-mini"],
+      "strategy": "cost_optimized",
+      "fallbackModels": ["qwen3-30b", "glm-4.5-air"]
+    }
+  },
+  "metadata": {
+    "lastUpdated": "2025-08-14T00:30:00Z",
+    "version": "v3.0.2",
+    "description": "Independent model mapping configuration for Claude Code Router v3.0",
+    "author": "Jason Zhang"
+  }
+}

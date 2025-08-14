@@ -891,7 +891,16 @@ export class RouterServer {
         
         try {
           // Apply input transformation (Anthropic → Provider format)
-          const providerConfig = this.config.providers[providerId];
+          let providerConfig = this.config.providers[providerId];
+          
+          // 如果在原始配置中找不到，尝试从扩展配置中查找
+          if (!providerConfig && this.providerExpansion) {
+            const expandedProvider = this.providerExpansion.expandedProviders.get(providerId);
+            if (expandedProvider) {
+              providerConfig = expandedProvider.config;
+            }
+          }
+          
           let transformedRequest = preprocessedRequest;
           
           if (providerConfig && providerConfig.type === 'gemini') {
@@ -904,6 +913,22 @@ export class RouterServer {
               });
               
               console.log(`🔄 [${requestId}] Applied Gemini input transformation`);
+            } catch (transformError) {
+              console.error(`❌ [${requestId}] Input transformation failed:`, transformError.message);
+              // Continue with original request if transformation fails
+            }
+          }
+          
+          if (providerConfig && providerConfig.type === 'codewhisperer') {
+            try {
+              transformedRequest = await transformationManager.transformInput(preprocessedRequest, {
+                provider: providerConfig.type,
+                direction: 'input',
+                requestId,
+                originalRequest: baseRequest
+              });
+              
+              console.log(`🔄 [${requestId}] Applied CodeWhisperer input transformation`);
             } catch (transformError) {
               console.error(`❌ [${requestId}] Input transformation failed:`, transformError.message);
               // Continue with original request if transformation fails
@@ -935,6 +960,22 @@ export class RouterServer {
               });
               
               console.log(`🔄 [${requestId}] Applied Gemini output transformation`);
+            } catch (transformError) {
+              console.error(`❌ [${requestId}] Output transformation failed:`, transformError.message);
+              // Continue with original response if transformation fails
+            }
+          }
+          
+          if (providerConfig && providerConfig.type === 'codewhisperer') {
+            try {
+              providerResponse = await transformationManager.transformOutput(providerResponse, {
+                provider: providerConfig.type,
+                direction: 'output',
+                requestId,
+                originalRequest: baseRequest
+              });
+              
+              console.log(`🔄 [${requestId}] Applied CodeWhisperer output transformation`);
             } catch (transformError) {
               console.error(`❌ [${requestId}] Output transformation failed:`, transformError.message);
               // Continue with original response if transformation fails

@@ -23,7 +23,6 @@ export interface CategoryConfig {
   providers: string[];
   models: string[];
   priority: number;
-  fallbackCategory?: string;
 }
 
 /**
@@ -32,7 +31,6 @@ export interface CategoryConfig {
 export interface LoadBalancingConfig {
   strategy: 'round-robin' | 'weighted' | 'random';
   healthCheckEnabled: boolean;
-  fallbackEnabled: boolean;
 }
 
 /**
@@ -52,7 +50,6 @@ export interface RouterDecision {
  */
 export interface RouterLayerConfig {
   routingConfig: RoutingConfig;
-  enableFallback: boolean;
   healthCheckInterval: number;
   maxRetries: number;
 }
@@ -66,14 +63,18 @@ export class RouterLayer extends BaseLayer {
   private providerHealth: Map<string, boolean> = new Map();
   private roundRobinIndex: Map<string, number> = new Map();
 
-  constructor(config: Partial<RouterLayerConfig> = {}) {
+  constructor(config: RouterLayerConfig) {
     super('router-layer', '1.0.0', 'router', ['client-layer']);
     
+    // 零硬编码原则 - 必须提供完整配置
+    if (!config.routingConfig) {
+      throw new Error('Zero-hardcode violation: routingConfig is required');
+    }
+    
     this.config = {
-      routingConfig: config.routingConfig || this.getDefaultRoutingConfig(),
-      enableFallback: config.enableFallback ?? false, // Zero-fallback principle
+      routingConfig: config.routingConfig,
       healthCheckInterval: config.healthCheckInterval ?? 60000, // 1 minute
-      maxRetries: config.maxRetries ?? 0 // No retries by default
+      maxRetries: config.maxRetries ?? 0 // No retries by default - zero fallback principle
     };
   }
 
@@ -221,12 +222,9 @@ export class RouterLayer extends BaseLayer {
   private async makeRoutingDecision(category: string, input: any, context: ProcessingContext): Promise<RouterDecision> {
     const categoryConfig = this.config.routingConfig.categories[category];
     
+    // 零fallback原则 - 不允许任何降级机制
     if (!categoryConfig) {
-      if (this.config.enableFallback) {
-        category = this.config.routingConfig.defaultCategory;
-      } else {
-        throw new Error(`No configuration found for category: ${category}`);
-      }
+      throw new Error(`No configuration found for category: ${category}. Available categories: ${Object.keys(this.config.routingConfig.categories).join(', ')}`);
     }
     
     // Select provider using load balancing strategy
@@ -303,44 +301,11 @@ export class RouterLayer extends BaseLayer {
   }
 
   /**
-   * Get default routing configuration
+   * Get default routing configuration - 零硬编码原则
+   * 在实际部署中，必须提供外部配置文件，不允许使用默认值
    */
   private getDefaultRoutingConfig(): RoutingConfig {
-    return {
-      categories: {
-        default: {
-          providers: ['anthropic-claude', 'openai-gpt'],
-          models: ['claude-3-sonnet-20240229', 'gpt-4'],
-          priority: 1
-        },
-        thinking: {
-          providers: ['anthropic-claude'],
-          models: ['claude-3-sonnet-20240229'],
-          priority: 1
-        },
-        longcontext: {
-          providers: ['anthropic-claude'],
-          models: ['claude-3-sonnet-20240229'],
-          priority: 1
-        },
-        background: {
-          providers: ['openai-gpt'],
-          models: ['gpt-4'],
-          priority: 2
-        },
-        search: {
-          providers: ['openai-gpt'],
-          models: ['gpt-4'],
-          priority: 2
-        }
-      },
-      defaultCategory: 'default',
-      loadBalancing: {
-        strategy: 'round-robin',
-        healthCheckEnabled: true,
-        fallbackEnabled: false
-      }
-    };
+    throw new Error('Zero-hardcode violation: Router configuration must be provided externally. No default routing configuration allowed.');
   }
 
   /**

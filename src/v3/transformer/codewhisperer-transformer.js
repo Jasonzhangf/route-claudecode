@@ -68,8 +68,11 @@ export class CodewhispererTransformer {
         const { messages, model, tools, system, max_tokens = 4000 } = anthropicRequest;
         const conversationId = uuidv4();
 
-        // 获取CodeWhisperer模型名
-        const codewhispererModel = this.modelMapping[model] || this.modelMapping["claude-sonnet-4-20250514"];
+        // 获取CodeWhisperer模型名 - 零硬编码，零fallback原则
+        const codewhispererModel = this.modelMapping[model];
+        if (!codewhispererModel) {
+            throw new Error(`Unsupported model: ${model}. Available models: ${Object.keys(this.modelMapping).join(', ')}`);
+        }
         
         let systemPrompt = this.getContentText(system);
         const processedMessages = messages || [];
@@ -229,6 +232,9 @@ export class CodewhispererTransformer {
                 history: history
             }
         };
+
+        // 详细记录转换后的请求用于调试
+        console.log(`✅ [CodeWhisperer] DEBUG - Transformed Request:`, JSON.stringify(request, null, 2));
 
         if (currentMessage.role === 'user') {
             request.conversationState.currentMessage.userInputMessage = {

@@ -134,7 +134,11 @@ export class ConfigMerger {
         };
 
         // 处理认证凭据
-        if (userProviderConfig.apiKey) {
+        if (userProviderConfig.authentication?.credentials) {
+            // 优先使用用户配置中的完整认证凭据（支持apiKeys数组）
+            mergedProviderConfig.authentication.credentials = userProviderConfig.authentication.credentials;
+        } else if (userProviderConfig.apiKey) {
+            // 向后兼容：单个apiKey转换为数组
             if (protocolConfig.authentication.type === 'bearer') {
                 mergedProviderConfig.authentication.credentials = {
                     apiKey: [userProviderConfig.apiKey]

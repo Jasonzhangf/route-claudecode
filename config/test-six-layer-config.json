@@ -1,0 +1,138 @@
+{
+  "configVersion": "v3.0-six-layer-final",
+  "architecture": "six-layer",
+  "server": {
+    "port": 5600,
+    "host": "0.0.0.0",
+    "name": "six-layer-test-server"
+  },
+  "providers": {
+    "google-gemini": {
+      "type": "gemini",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKeys": [
+            "AIzaSyB59-hG3lluhWoucvz-qOQKWTrygIxZ2e4",
+            "AIzaSyBwrFU85pzvJtAmV-Rh48FuocRYbkuzpiA",
+            "AIzaSyBGVrcTiEDko1jZW0wmaGC_oYxK-AL3mEQ"
+          ]
+        }
+      },
+      "timeout": 60000,
+      "retry": {
+        "maxRetries": 3,
+        "delayMs": 2000
+      },
+      "models": [
+        "gemini-2.0-flash-exp",
+        "gemini-1.5-pro-latest",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b"
+      ],
+      "defaultModel": "gemini-2.0-flash-exp"
+    }
+  },
+  "routing": {
+    "categories": {
+      "default": {
+        "providers": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-2.0-flash-exp",
+            "weight": 1.0
+          }
+        ]
+      },
+      "background": {
+        "providers": [
+          {
+            "provider": "google-gemini", 
+            "model": "gemini-1.5-flash-8b",
+            "weight": 1.0
+          }
+        ]
+      },
+      "thinking": {
+        "providers": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-1.5-pro-latest",
+            "weight": 1.0
+          }
+        ]
+      },
+      "longcontext": {
+        "providers": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-1.5-pro-latest",
+            "weight": 1.0
+          }
+        ]
+      },
+      "search": {
+        "providers": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-1.5-flash-8b",
+            "weight": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "sixLayerArchitecture": {
+    "client": {
+      "acceptAnthropicFormat": true,
+      "supportStreaming": true
+    },
+    "router": {
+      "strategy": "configuration-driven",
+      "onDemandInitialization": true,
+      "authenticationManagement": true,
+      "loadBalancing": {
+        "enabled": true,
+        "strategy": "weighted_round_robin",
+        "healthCheck": true
+      }
+    },
+    "postProcessor": {
+      "type": "anthropic",
+      "streamingSupport": true
+    },
+    "transformer": {
+      "type": "dynamic",
+      "bidirectional": true,
+      "isolation": "strict"
+    },
+    "providerProtocol": {
+      "initialization": "on-demand",
+      "isolation": "physical",
+      "providers": ["google-gemini"]
+    },
+    "preprocessor": {
+      "type": "provider-specific",
+      "mode": "conditional"
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "debug",
+    "traceRequests": true,
+    "saveRequests": true,
+    "enableRecording": true,
+    "enableAuditTrail": true,
+    "enableReplay": true,
+    "enablePerformanceMetrics": true,
+    "logDir": "/tmp"
+  },
+  "replaySystem": {
+    "enabled": true,
+    "captureAllLayers": true,
+    "databasePath": "/tmp/six-layer-test/",
+    "dataRetentionDays": 7
+  },
+  "hooks": []
+}

@@ -140,11 +140,11 @@ export class GeminiProvider extends BaseProvider {
   
   private async initializeGeminiClient(config: ProviderConfig, id: string) {
     try {
-      // 动态导入Gemini客户端工厂
-      const { GeminiClientFactory } = await import('./gemini/client-factory.js');
+      // 动态导入Gemini客户端工厂，使用支持apiKeys数组的函数
+      const { createGeminiClient } = await import('./gemini/client-factory.js');
       
-      // 创建Gemini客户端
-      this.client = GeminiClientFactory.createValidatedClient(config);
+      // 创建Gemini客户端，支持多API密钥
+      this.client = createGeminiClient(config, id);
       
       console.log(`[V3:${process.env.RCC_PORT}] Initialized Gemini provider ${id}`, {
         type: config.type,

@@ -1,0 +1,120 @@
+{
+  "configVersion": "v3.0-final",
+  "routingTable": {
+    "categories": {
+      "default": {
+        "required": true,
+        "description": "默认路由，必须配置",
+        "providers": [
+          {
+            "provider": "codewhisperer-primary",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0",
+            "weight": 0.6,
+            "priority": 1
+          },
+          {
+            "provider": "google-gemini",
+            "model": "gemini-2.0-flash-exp", 
+            "weight": 0.4,
+            "priority": 2
+          }
+        ],
+        "fallback": {
+          "provider": "google-gemini",
+          "model": "gemini-1.5-flash"
+        }
+      },
+      "background": {
+        "description": "后台任务路由",
+        "providers": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-1.5-flash-8b",
+            "weight": 1.0
+          }
+        ]
+      },
+      "thinking": {
+        "description": "思考任务路由",
+        "providers": [
+          {
+            "provider": "codewhisperer-primary",
+            "model": "CLAUDE_SONNET_4_20250514_V1_0",
+            "weight": 0.8
+          },
+          {
+            "provider": "google-gemini",
+            "model": "gemini-1.5-pro-latest",
+            "weight": 0.2
+          }
+        ]
+      },
+      "longcontext": {
+        "description": "长上下文路由",
+        "providers": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-1.5-pro-latest",
+            "weight": 1.0
+          }
+        ]
+      },
+      "search": {
+        "description": "搜索任务路由",
+        "providers": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-1.5-flash-8b",
+            "weight": 1.0
+          }
+        ]
+      }
+    }
+  },
+  "modelMappingRules": {
+    "inputModel": {
+      "claude-3-5-sonnet-20241022": {
+        "targetCategory": "default",
+        "preferredProvider": "codewhisperer-primary"
+      },
+      "claude-3-5-haiku-20241022": {
+        "targetCategory": "background", 
+        "preferredProvider": "google-gemini"
+      },
+      "gemini-2.0-flash-exp": {
+        "targetCategory": "default",
+        "preferredProvider": "google-gemini"
+      }
+    },
+    "unmappedModelBehavior": {
+      "action": "route_to_default",
+      "logWarning": true
+    }
+  },
+  "loadBalancingRules": {
+    "strategy": "weighted_round_robin",
+    "healthCheckInterval": 30000,
+    "failoverThreshold": 3,
+    "cooldownPeriod": 60000,
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 5,
+      "recoveryTimeout": 120000
+    }
+  },
+  "authenticationPolicy": {
+    "failureHandling": "blacklist_temporary",
+    "blacklistDuration": 300000,
+    "retryPolicy": {
+      "maxRetries": 3,
+      "backoffMultiplier": 2,
+      "maxBackoffTime": 30000
+    }
+  },
+  "metadata": {
+    "description": "主路由表配置 - 定义所有路由规则和负载均衡策略",
+    "lastUpdated": "2025-08-14T00:45:00Z",
+    "version": "v3.0-final",
+    "author": "Jason Zhang"
+  }
+}

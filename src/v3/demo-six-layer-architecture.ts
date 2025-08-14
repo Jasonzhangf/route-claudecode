@@ -26,16 +26,16 @@ async function runSixLayerDemo() {
         routingConfig: {
           categories: {
             default: {
-              providers: ['anthropic-claude', 'openai-gpt'],
-              models: ['claude-3-sonnet-20240229', 'gpt-4'],
+              // 注意：这些是DEMO示例值，生产环境必须从外部配置加载
+              providers: ['demo-provider-1', 'demo-provider-2'],
+              models: ['demo-model-1', 'demo-model-2'],
               priority: 1
             }
           },
           defaultCategory: 'default',
           loadBalancing: {
             strategy: 'round-robin',
-            healthCheckEnabled: true,
-            fallbackEnabled: false
+            healthCheckEnabled: true
           }
         }
       }

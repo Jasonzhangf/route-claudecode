@@ -76,15 +76,10 @@ export class CodewhispererClient {
         
         await this.initializeAuth();
         
-        const macSha256 = await this.getMacAddressSha256();
         this.axiosInstance = axios.create({
             timeout: this.timeout,
             headers: {
                 'Content-Type': KIRO_CONSTANTS.CONTENT_TYPE_JSON,
-                'x-amz-user-agent': `aws-sdk-js/1.0.7 KiroIDE-0.1.25-${macSha256}`,
-                'user-agent': `aws-sdk-js/1.0.7 ua/2.1 os/win32#10.0.26100 lang/js md/nodejs#20.16.0 api/codewhispererstreaming#1.0.7 m/E KiroIDE-0.1.25-${macSha256}`,
-                'amz-sdk-request': 'attempt=1; max=1',
-                'x-amzn-kiro-agent-mode': 'vibe',
                 'Accept': KIRO_CONSTANTS.ACCEPT_JSON,
             }
         });
@@ -339,6 +334,15 @@ export class CodewhispererClient {
                 request.profileArn = this.profileArn;
             }
 
+            // 详细记录请求信息用于调试
+            console.log(`[V3:${process.env.RCC_PORT}] [CodeWhisperer:${this.id}] DEBUG REQUEST DETAILS:`);
+            console.log(`  - URL: ${requestUrl}`);
+            console.log(`  - Headers:`, JSON.stringify(headers, null, 2));
+            console.log(`  - Request Body:`, JSON.stringify(request, null, 2));
+            console.log(`  - Auth Method: ${this.authMethod}`);
+            console.log(`  - Profile ARN: ${this.profileArn}`);
+            console.log(`  - Region: ${this.region}`);
+
             const response = await this.axiosInstance.post(requestUrl, request, { headers });
 
             // 回放系统集成
@@ -358,6 +362,16 @@ export class CodewhispererClient {
             return response.data;
 
         } catch (error) {
+            // 详细记录错误信息用于调试
+            console.error(`[V3:${process.env.RCC_PORT}] [CodeWhisperer:${this.id}] DEBUG ERROR DETAILS:`);
+            console.error(`  - Status: ${error.response?.status}`);
+            console.error(`  - Status Text: ${error.response?.statusText}`);
+            console.error(`  - Response Headers:`, error.response?.headers);
+            console.error(`  - Response Data:`, error.response?.data);
+            console.error(`  - Request URL: ${error.config?.url}`);
+            console.error(`  - Request Method: ${error.config?.method}`);
+            console.error(`  - Request Headers:`, error.config?.headers);
+            
             // 处理403错误 - 尝试刷新token
             if (error.response?.status === 403) {
                 console.log(`[V3:${process.env.RCC_PORT}] [CodeWhisperer:${this.id}] Received 403, attempting token refresh for ${requestId}`);

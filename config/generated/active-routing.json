@@ -1,0 +1,90 @@
+{
+  "version": "v3.0-final",
+  "generatedAt": 1755133077852,
+  "activeProviders": [
+    "codewhisperer-primary",
+    "google-gemini"
+  ],
+  "routingDecisions": {
+    "default": {
+      "required": true,
+      "description": "默认路由，必须配置",
+      "providers": [
+        {
+          "provider": "codewhisperer-primary",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 0.6,
+          "priority": 1
+        },
+        {
+          "provider": "google-gemini",
+          "model": "gemini-2.0-flash-exp",
+          "weight": 0.4,
+          "priority": 2
+        }
+      ],
+      "fallback": {
+        "provider": "google-gemini",
+        "model": "gemini-1.5-flash"
+      }
+    },
+    "background": {
+      "description": "后台任务路由",
+      "providers": [
+        {
+          "provider": "google-gemini",
+          "model": "gemini-1.5-flash-8b",
+          "weight": 1
+        }
+      ]
+    },
+    "thinking": {
+      "description": "思考任务路由",
+      "providers": [
+        {
+          "provider": "codewhisperer-primary",
+          "model": "CLAUDE_SONNET_4_20250514_V1_0",
+          "weight": 0.8
+        },
+        {
+          "provider": "google-gemini",
+          "model": "gemini-1.5-pro-latest",
+          "weight": 0.2
+        }
+      ]
+    },
+    "longcontext": {
+      "description": "长上下文路由",
+      "providers": [
+        {
+          "provider": "google-gemini",
+          "model": "gemini-1.5-pro-latest",
+          "weight": 1
+        }
+      ]
+    },
+    "search": {
+      "description": "搜索任务路由",
+      "providers": [
+        {
+          "provider": "google-gemini",
+          "model": "gemini-1.5-flash-8b",
+          "weight": 1
+        }
+      ]
+    }
+  },
+  "blacklistedProviders": [],
+  "healthStatus": {
+    "codewhisperer-primary": {
+      "status": "healthy",
+      "lastChecked": 1755133077852,
+      "authStatus": "active"
+    },
+    "google-gemini": {
+      "status": "healthy",
+      "lastChecked": 1755133077852,
+      "authStatus": "active"
+    }
+  }
+}

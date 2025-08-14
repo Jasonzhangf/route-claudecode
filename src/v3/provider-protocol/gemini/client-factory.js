@@ -127,6 +127,10 @@ export function createGeminiClient(config, id) {
     if (config.authentication?.credentials?.apiKeys) {
         const keys = config.authentication.credentials.apiKeys;
         standardConfig.apiKey = keys[Math.floor(Math.random() * keys.length)];
+        logger.debug(`Selected API key from ${keys.length} available keys`);
+    } else {
+        logger.debug('No apiKeys array found in config.authentication.credentials');
+        logger.debug('Config structure:', JSON.stringify(config, null, 2));
     }
 
     const client = GeminiClientFactory.createValidatedClient(standardConfig);

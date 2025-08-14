@@ -1,0 +1,42 @@
+{
+  "providerId": "google-gemini",
+  "name": "Google Gemini API",
+  "type": "gemini",
+  "endpoint": "https://generativelanguage.googleapis.com",
+  "authentication": {
+    "type": "bearer",
+    "credentials": {
+      "apiKeys": [
+        "AIzaSyB59-hG3lluhWoucvz-qOQKWTrygIxZ2e4",
+        "AIzaSyBwrFU85pzvJtAmV-Rh48FuocRYbkuzpiA",
+        "AIzaSyBGVrcTiEDko1jZW0wmaGC_oYxK-AL3mEQ"
+      ]
+    }
+  },
+  "models": [
+    "gemini-2.0-flash-exp",
+    "gemini-1.5-pro-latest",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b"
+  ],
+  "defaultModel": "gemini-2.0-flash-exp",
+  "timeout": 60000,
+  "maxRetries": 3,
+  "retryDelay": 2000,
+  "healthCheck": {
+    "enabled": true,
+    "interval": 30000,
+    "timeout": 10000,
+    "model": "gemini-2.0-flash-exp"
+  },
+  "rateLimit": {
+    "requestsPerMinute": 120,
+    "requestsPerHour": 5000
+  },
+  "status": "active",
+  "metadata": {
+    "description": "Google Gemini API with multiple keys for load balancing",
+    "keyRotation": "round_robin",
+    "lastUpdated": "2025-08-14T00:50:00Z"
+  }
+}
