@@ -14,7 +14,8 @@ export type ModuleType =
   | 'transformer'
   | 'protocol'
   | 'compatibility'
-  | 'server';
+  | 'server'
+  | 'debug';
 
 /**
  * 模块状态接口
