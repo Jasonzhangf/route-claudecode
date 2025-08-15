@@ -98,7 +98,8 @@ export class MonitoringDashboard {
       await new Promise<void>((resolve, reject) => {
         this.server.listen(this.config.port, this.config.host, () => {
           this.isRunning = true;
-          console.log(`[MonitoringDashboard] Started on http://${this.config.host}:${this.config.port}`);\n          resolve();
+          console.log(`[MonitoringDashboard] Started on http://${this.config.host}:${this.config.port}`);
+          resolve();
         });
         
         this.server.on('error', (error: Error) => {
@@ -106,7 +107,8 @@ export class MonitoringDashboard {
         });
       });
     } catch (error) {
-      throw new Error(`Failed to start monitoring dashboard: ${error}`);\n    }
+      throw new Error(`Failed to start monitoring dashboard: ${error}`);
+    }
   }
 
   /**

@@ -293,6 +293,21 @@ export interface IAutoRecoverySystem {
    * @returns Promise<RecoveryResult[]> 活跃恢复操作
    */
   getActiveRecoveries(): Promise<RecoveryResult[]>;
+
+  /**
+   * 检查服务是否需要恢复
+   * @param serviceId 服务ID
+   * @param healthResult 健康检查结果
+   * @param strategy 恢复策略配置
+   * @returns boolean 是否需要触发恢复
+   */
+  shouldTriggerRecovery(serviceId: string, healthResult: HealthCheckResult, strategy: RecoveryStrategyConfig): boolean;
+
+  /**
+   * 获取恢复系统统计信息
+   * @returns 恢复系统统计
+   */
+  getRecoveryStats(): any;
 }
 
 /**
@@ -331,6 +346,24 @@ export interface IDependencyMonitor {
    * @returns Promise<HealthCheckResult[]> 依赖链状态
    */
   checkDependencyChain(serviceId: string): Promise<HealthCheckResult[]>;
+
+  /**
+   * 开始依赖监控
+   * @returns Promise<void>
+   */
+  startMonitoring(): Promise<void>;
+
+  /**
+   * 停止依赖监控
+   * @returns Promise<void>
+   */
+  stopMonitoring(): Promise<void>;
+
+  /**
+   * 获取依赖监控统计
+   * @returns 监控统计信息
+   */
+  getMonitoringStats(): any;
 }
 
 /**

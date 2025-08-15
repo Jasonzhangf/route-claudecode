@@ -97,15 +97,14 @@ export class ConfigLoader {
    * 初始化默认配置
    */
   private initializeDefaults(): void {
+    const { DEFAULT_SERVER_CONFIG, DEFAULT_CLIENT_CONFIG, DEFAULT_SYSTEM_CONFIG } = require('../config/default-config');
+    
     this.defaultConfig = {
       // 服务器配置
-      port: 3456,
-      host: 'localhost',
-      debug: false,
+      ...DEFAULT_SERVER_CONFIG,
       
       // 客户端配置
-      autoStart: false,
-      export: false,
+      ...DEFAULT_CLIENT_CONFIG,
       
       // 状态配置
       detailed: false,
@@ -119,9 +118,7 @@ export class ConfigLoader {
       reset: false,
       
       // 通用配置
-      timeout: 30000,
-      retryCount: 3,
-      logLevel: 'info'
+      ...DEFAULT_SYSTEM_CONFIG
     };
   }
   
@@ -224,29 +221,43 @@ export class ConfigLoader {
    * 加载JSON配置文件
    */
   private async loadJSONConfig(filePath: string): Promise<Record<string, any>> {
-    // TODO: 实现实际的JSON文件读取
-    // const fs = await import('fs/promises');\n    // const content = await fs.readFile(filePath, 'utf-8');\n    // return JSON.parse(content);
-    
-    // 模拟返回空配置
-    return {};
+    const fs = await import('fs/promises');
+    const content = await fs.readFile(filePath, 'utf-8');
+    return JSON.parse(content);
   }
   
   /**
    * 加载YAML配置文件
    */
   private async loadYAMLConfig(filePath: string): Promise<Record<string, any>> {
-    // TODO: 实现YAML文件加载
-    // 需要安装 yaml 依赖
-    throw new Error('YAML config support not implemented yet');
+    try {
+      const yaml = await import('yaml');
+      const fs = await import('fs/promises');
+      const content = await fs.readFile(filePath, 'utf-8');
+      return yaml.parse(content);
+    } catch (error) {
+      if ((error as any)?.code === 'MODULE_NOT_FOUND') {
+        throw new Error('YAML support requires "yaml" package. Please install: npm install yaml');
+      }
+      throw error;
+    }
   }
   
   /**
    * 加载TOML配置文件
    */
   private async loadTOMLConfig(filePath: string): Promise<Record<string, any>> {
-    // TODO: 实现TOML文件加载
-    // 需要安装 @iarna/toml 依赖
-    throw new Error('TOML config support not implemented yet');
+    try {
+      const toml = await import('@iarna/toml');
+      const fs = await import('fs/promises');
+      const content = await fs.readFile(filePath, 'utf-8');
+      return toml.parse(content);
+    } catch (error) {
+      if ((error as any)?.code === 'MODULE_NOT_FOUND') {
+        throw new Error('TOML support requires "@iarna/toml" package. Please install: npm install @iarna/toml');
+      }
+      throw error;
+    }
   }
   
   /**
