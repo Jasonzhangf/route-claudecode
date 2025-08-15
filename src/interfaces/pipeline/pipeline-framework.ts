@@ -127,6 +127,14 @@ export interface PipelineStatus {
  */
 export interface PipelineFramework extends Pipeline {
   readonly id: string;
+  
+  /**
+   * 事件监听器方法
+   */
+  on(event: string, listener: (...args: any[]) => void): this;
+  emit(event: string, ...args: any[]): boolean;
+  removeListener(event: string, listener: (...args: any[]) => void): this;
+  removeAllListeners(event?: string): this;
   /**
    * 添加模块到流水线
    */
@@ -168,17 +176,9 @@ export interface PipelineFramework extends Pipeline {
   reset(): Promise<void>;
   
   /**
-   * Pipeline生命周期管理
+   * 清理资源
    */
-  start(): Promise<void>;
-  stop(): Promise<void>;
-  execute(input: any, context?: ExecutionContext): Promise<any>;
-  
-  /**
-   * EventEmitter方法
-   */
-  on(event: string, listener: (...args: any[]) => void): this;
-  emit(event: string, ...args: any[]): boolean;
+  cleanup(): Promise<void>;
 }
 
 /**

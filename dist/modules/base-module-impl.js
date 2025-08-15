@@ -207,7 +207,7 @@ class BaseModule extends events_1.EventEmitter {
             this.recordError(error);
             return {
                 healthy: false,
-                details: { error: error.message }
+                details: { error: error instanceof Error ? error.message : String(error) }
             };
         }
     }

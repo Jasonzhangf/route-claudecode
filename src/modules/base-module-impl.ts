@@ -238,7 +238,7 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
       this.recordError(error as Error);
       return { 
         healthy: false, 
-        details: { error: (error as Error).message } 
+        details: { error: error instanceof Error ? error.message : String(error) } 
       };
     }
   }
