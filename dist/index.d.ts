@@ -7,7 +7,7 @@
  * @version 4.0.0-alpha.1
  */
 export * from './interfaces';
-export { RCCCli, CommandParser, ArgumentValidator, ConfigLoader } from './cli';
+export * from './cli';
 export * from './client';
 export * from './router';
 export { PIPELINE_MODULE_VERSION, PipelineModuleInterface } from './pipeline';

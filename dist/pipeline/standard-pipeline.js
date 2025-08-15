@@ -1,8 +1,8 @@
 "use strict";
 /**
- * 标准Pipeline实现
+ * 标准流水线实现
  *
- * 实现PipelineFramework接口，提供完整的Pipeline执行功能
+ * RCC v4.0核心流水线执行引擎
  *
  * @author Jason Zhang
  */
@@ -10,17 +10,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.StandardPipeline = void 0;
 const events_1 = require("events");
 /**
- * 标准Pipeline实现
+ * 标准流水线实现
  */
 class StandardPipeline extends events_1.EventEmitter {
     id;
     name;
     config;
-    modules = new Map();
+    moduleMap = new Map();
     moduleOrder = [];
     status = 'stopped';
     executionHistory = [];
-    currentExecution;
     constructor(config) {
         super();
         this.id = config.id;
@@ -31,24 +30,77 @@ class StandardPipeline extends events_1.EventEmitter {
             .sort((a, b) => a.order - b.order)
             .map(m => m.moduleId);
     }
-    /**
-     * 获取Pipeline ID
-     */
-    getId() {
-        return this.id;
+    // Pipeline接口实现
+    get provider() {
+        return this.config.provider;
+    }
+    get model() {
+        return this.config.model;
+    }
+    get modules() {
+        return Array.from(this.moduleMap.values());
+    }
+    get spec() {
+        return {
+            id: this.id,
+            name: this.name,
+            description: `Pipeline for ${this.config.provider} ${this.config.model}`,
+            version: '1.0.0',
+            provider: this.config.provider,
+            model: this.config.model,
+            modules: this.moduleOrder.map(moduleId => ({ id: moduleId })),
+            configuration: {
+                parallel: false,
+                failFast: true,
+                retryPolicy: {
+                    maxRetries: 3,
+                    backoffMultiplier: 1.5
+                }
+            },
+            metadata: {
+                author: 'RCC v4.0',
+                created: Date.now(),
+                tags: [this.config.provider, this.config.model]
+            }
+        };
     }
     /**
-     * 获取Pipeline名称
+     * 处理请求
      */
-    getName() {
-        return this.name;
+    async process(input) {
+        const context = {
+            metadata: { timestamp: new Date() },
+            configuration: this.config,
+            timeout: 30000
+        };
+        return this.execute(input, context);
     }
     /**
-     * 获取Pipeline状态
+     * 验证流水线
+     */
+    async validate() {
+        try {
+            if (this.moduleMap.size === 0) {
+                return false;
+            }
+            for (const [, module] of this.moduleMap) {
+                const status = module.getStatus();
+                if (status.health !== 'healthy') {
+                    return false;
+                }
+            }
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+    /**
+     * 获取状态
      */
     getStatus() {
         const moduleStatuses = {};
-        for (const [moduleId, module] of this.modules) {
+        for (const [moduleId, module] of this.moduleMap) {
             moduleStatuses[moduleId] = module.getStatus();
         }
         return {
@@ -58,106 +110,169 @@ class StandardPipeline extends events_1.EventEmitter {
             modules: moduleStatuses,
             lastExecution: this.executionHistory.length > 0 ?
                 this.executionHistory[this.executionHistory.length - 1] : undefined,
-            uptime: 0, // TODO: 实现运行时间计算
+            uptime: 0,
             performance: {
                 requestsProcessed: this.executionHistory.length,
-                averageProcessingTime: this.calculateAverageProcessingTime(),
-                errorRate: this.calculateErrorRate(),
-                throughput: this.calculateThroughput()
+                averageProcessingTime: 0,
+                errorRate: 0,
+                throughput: 0
             }
         };
     }
     /**
-     * 启动Pipeline
+     * 启动流水线
      */
     async start() {
         if (this.status === 'running') {
-            throw new Error(`Pipeline ${this.id} is already running`);
+            return;
         }
+        this.status = 'starting';
+        this.emit('statusChanged', { status: this.status });
         try {
-            this.status = 'starting';
-            this.emit('statusChanged', { status: this.status });
             // 启动所有模块
-            for (const [moduleId, module] of this.modules) {
-                await module.start();
+            for (const [, module] of this.moduleMap) {
+                if (typeof module.start === 'function') {
+                    await module.start();
+                }
             }
             this.status = 'running';
             this.emit('statusChanged', { status: this.status });
-            this.emit('started');
         }
         catch (error) {
             this.status = 'error';
             this.emit('statusChanged', { status: this.status });
-            throw new Error(`Failed to start pipeline ${this.id}: ${error}`);
+            throw error;
         }
     }
     /**
-     * 停止Pipeline
+     * 停止流水线
      */
     async stop() {
         if (this.status === 'stopped') {
             return;
         }
+        this.status = 'stopping';
+        this.emit('statusChanged', { status: this.status });
         try {
-            this.status = 'stopping';
-            this.emit('statusChanged', { status: this.status });
-            // 停止所有模块
-            for (const [moduleId, module] of this.modules) {
-                await module.stop();
+            for (const [, module] of this.moduleMap) {
+                if (typeof module.stop === 'function') {
+                    await module.stop();
+                }
             }
             this.status = 'stopped';
             this.emit('statusChanged', { status: this.status });
-            this.emit('stopped');
+            this.emit('stopped', { pipelineId: this.id });
         }
         catch (error) {
             this.status = 'error';
             this.emit('statusChanged', { status: this.status });
-            throw new Error(`Failed to stop pipeline ${this.id}: ${error}`);
+            throw error;
         }
     }
     /**
-     * 执行Pipeline
+     * 销毁流水线
+     */
+    async destroy() {
+        await this.stop();
+        // 清理模块（如果有destroy方法）
+        for (const [, module] of this.moduleMap) {
+            if ('destroy' in module && typeof module.destroy === 'function') {
+                await module.destroy();
+            }
+        }
+        this.moduleMap.clear();
+        this.moduleOrder = [];
+        this.executionHistory = [];
+        this.removeAllListeners();
+    }
+    // PipelineFramework接口实现
+    /**
+     * 添加模块
+     */
+    addModule(module) {
+        this.moduleMap.set(module.getId(), module);
+        this.setupModuleEventListeners(module);
+    }
+    /**
+     * 移除模块
+     */
+    removeModule(moduleId) {
+        const module = this.moduleMap.get(moduleId);
+        if (module) {
+            this.moduleMap.delete(moduleId);
+            this.moduleOrder = this.moduleOrder.filter(id => id !== moduleId);
+        }
+    }
+    /**
+     * 获取模块
+     */
+    getModule(moduleId) {
+        return this.moduleMap.get(moduleId) || null;
+    }
+    /**
+     * 获取所有模块
+     */
+    getAllModules() {
+        return Array.from(this.moduleMap.values());
+    }
+    /**
+     * 设置模块顺序
+     */
+    setModuleOrder(moduleIds) {
+        this.moduleOrder = moduleIds;
+    }
+    /**
+     * 执行单个模块
+     */
+    async executeModule(moduleId, input) {
+        const module = this.moduleMap.get(moduleId);
+        if (!module) {
+            throw new Error(`Module ${moduleId} not found`);
+        }
+        return await module.process(input);
+    }
+    /**
+     * 执行流水线
      */
     async execute(input, context) {
-        if (this.status !== 'running') {
-            throw new Error(`Pipeline ${this.id} is not running (status: ${this.status})`);
-        }
-        const executionId = this.generateExecutionId();
+        const executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const executionRecord = {
             id: executionId,
             pipelineId: this.id,
-            requestId: context?.requestId || executionId,
+            requestId: context?.metadata?.requestId || executionId,
             startTime: new Date(),
             status: 'running',
             moduleExecutions: []
         };
-        this.currentExecution = executionRecord;
+        this.executionHistory.push(executionRecord);
         this.emit('executionStarted', { executionRecord });
         try {
             let currentInput = input;
             // 按顺序执行所有模块
             for (const moduleId of this.moduleOrder) {
-                const module = this.modules.get(moduleId);
+                const module = this.moduleMap.get(moduleId);
                 if (!module) {
-                    throw new Error(`Module ${moduleId} not found in pipeline ${this.id}`);
+                    throw new Error(`Module ${moduleId} not found`);
                 }
-                const moduleExecution = await this.executeModule(moduleId, currentInput, executionRecord);
+                const moduleStart = new Date();
+                const result = await module.process(currentInput);
+                const moduleExecution = {
+                    moduleId,
+                    moduleName: module.getName(),
+                    startTime: moduleStart,
+                    endTime: new Date(),
+                    status: 'completed',
+                    input: currentInput,
+                    output: result,
+                    processingTime: Date.now() - moduleStart.getTime()
+                };
                 executionRecord.moduleExecutions.push(moduleExecution);
-                // 如果模块执行失败且配置为快速失败，则抛出错误
-                if (moduleExecution.status === 'failed' && this.config.settings.failFast) {
-                    throw moduleExecution.error || new Error(`Module ${moduleId} execution failed`);
-                }
-                // 更新输入为模块的输出
-                if (moduleExecution.output !== undefined) {
-                    currentInput = moduleExecution.output;
-                }
+                this.emit('moduleExecutionCompleted', { moduleExecution });
+                currentInput = result;
             }
             executionRecord.endTime = new Date();
             executionRecord.status = 'completed';
-            executionRecord.totalTime =
-                executionRecord.endTime.getTime() - executionRecord.startTime.getTime();
-            this.executionHistory.push(executionRecord);
-            this.currentExecution = undefined;
+            executionRecord.totalTime = executionRecord.endTime.getTime() - executionRecord.startTime.getTime();
             this.emit('executionCompleted', { executionRecord });
             return currentInput;
         }
@@ -165,70 +280,10 @@ class StandardPipeline extends events_1.EventEmitter {
             executionRecord.endTime = new Date();
             executionRecord.status = 'failed';
             executionRecord.error = error;
-            executionRecord.totalTime =
-                executionRecord.endTime.getTime() - executionRecord.startTime.getTime();
-            this.executionHistory.push(executionRecord);
-            this.currentExecution = undefined;
+            executionRecord.totalTime = executionRecord.endTime.getTime() - executionRecord.startTime.getTime();
             this.emit('executionFailed', { executionRecord, error });
             throw error;
         }
-    }
-    /**
-     * 添加模块到流水线
-     */
-    addModule(module) {
-        this.modules.set(module.getId(), module);
-        // 设置模块事件监听
-        this.setupModuleEventListeners(module);
-        this.emit('moduleAdded', { moduleId: module.getId() });
-    }
-    /**
-     * 移除模块
-     */
-    removeModule(moduleId) {
-        const module = this.modules.get(moduleId);
-        if (module) {
-            this.modules.delete(moduleId);
-            this.moduleOrder = this.moduleOrder.filter(id => id !== moduleId);
-            // 移除事件监听
-            module.removeAllListeners();
-            this.emit('moduleRemoved', { moduleId });
-        }
-    }
-    /**
-     * 获取模块
-     */
-    getModule(moduleId) {
-        return this.modules.get(moduleId) || null;
-    }
-    /**
-     * 获取所有模块
-     */
-    getAllModules() {
-        return Array.from(this.modules.values());
-    }
-    /**
-     * 设置模块顺序
-     */
-    setModuleOrder(moduleIds) {
-        // 验证所有模块ID都存在
-        for (const moduleId of moduleIds) {
-            if (!this.modules.has(moduleId)) {
-                throw new Error(`Module ${moduleId} not found in pipeline`);
-            }
-        }
-        this.moduleOrder = [...moduleIds];
-        this.emit('moduleOrderChanged', { moduleOrder: this.moduleOrder });
-    }
-    /**
-     * 执行单个模块
-     */
-    async executeModule(moduleId, input) {
-        const module = this.modules.get(moduleId);
-        if (!module) {
-            throw new Error(`Module ${moduleId} not found`);
-        }
-        return await module.process(input);
     }
     /**
      * 获取执行历史
@@ -237,51 +292,15 @@ class StandardPipeline extends events_1.EventEmitter {
         return [...this.executionHistory];
     }
     /**
-     * 重置流水线状态
+     * 重置流水线
      */
     async reset() {
+        await this.stop();
         this.executionHistory = [];
-        this.currentExecution = undefined;
-        // 重置所有模块
-        for (const [moduleId, module] of this.modules) {
-            await module.reset();
-        }
-        this.emit('reset');
-    }
-    /**
-     * 执行单个模块（内部方法）
-     */
-    async executeModule(moduleId, input, executionRecord) {
-        const module = this.modules.get(moduleId);
-        if (!module) {
-            throw new Error(`Module ${moduleId} not found`);
-        }
-        const moduleExecution = {
-            moduleId,
-            moduleName: module.getName(),
-            startTime: new Date(),
-            status: 'running',
-            input
-        };
-        this.emit('moduleExecutionStarted', { moduleExecution });
-        try {
-            const output = await module.process(input);
-            moduleExecution.endTime = new Date();
-            moduleExecution.status = 'completed';
-            moduleExecution.output = output;
-            moduleExecution.processingTime =
-                moduleExecution.endTime.getTime() - moduleExecution.startTime.getTime();
-            this.emit('moduleExecutionCompleted', { moduleExecution });
-            return moduleExecution;
-        }
-        catch (error) {
-            moduleExecution.endTime = new Date();
-            moduleExecution.status = 'failed';
-            moduleExecution.error = error;
-            moduleExecution.processingTime =
-                moduleExecution.endTime.getTime() - moduleExecution.startTime.getTime();
-            this.emit('moduleExecutionFailed', { moduleExecution, error });
-            return moduleExecution;
+        for (const [, module] of this.moduleMap) {
+            if ('reset' in module && typeof module.reset === 'function') {
+                await module.reset();
+            }
         }
     }
     /**
@@ -300,41 +319,6 @@ class StandardPipeline extends events_1.EventEmitter {
                 ...data
             });
         });
-    }
-    /**
-     * 生成执行ID
-     */
-    generateExecutionId() {
-        return `${this.id}_exec_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-    }
-    /**
-     * 计算平均处理时间
-     */
-    calculateAverageProcessingTime() {
-        if (this.executionHistory.length === 0) {
-            return 0;
-        }
-        const totalTime = this.executionHistory.reduce((sum, record) => {
-            return sum + (record.totalTime || 0);
-        }, 0);
-        return totalTime / this.executionHistory.length;
-    }
-    /**
-     * 计算错误率
-     */
-    calculateErrorRate() {
-        if (this.executionHistory.length === 0) {
-            return 0;
-        }
-        const failedCount = this.executionHistory.filter(record => record.status === 'failed').length;
-        return failedCount / this.executionHistory.length;
-    }
-    /**
-     * 计算吞吐量
-     */
-    calculateThroughput() {
-        const averageTime = this.calculateAverageProcessingTime();
-        return averageTime > 0 ? 1000 / averageTime : 0;
     }
 }
 exports.StandardPipeline = StandardPipeline;

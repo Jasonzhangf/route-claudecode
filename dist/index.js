@@ -22,15 +22,11 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RouteClaudeCode = exports.BUILD_DATE = exports.VERSION = exports.PipelineModuleRegistry = exports.PipelineFactoryImpl = exports.StandardPipeline = exports.PipelineManager = exports.PIPELINE_MODULE_VERSION = exports.ConfigLoader = exports.ArgumentValidator = exports.CommandParser = exports.RCCCli = void 0;
+exports.RouteClaudeCode = exports.BUILD_DATE = exports.VERSION = exports.PipelineModuleRegistry = exports.PipelineFactoryImpl = exports.StandardPipeline = exports.PipelineManager = exports.PIPELINE_MODULE_VERSION = void 0;
 // 核心接口导出
 __exportStar(require("./interfaces"), exports);
 // CLI模块导出
-var cli_1 = require("./cli");
-Object.defineProperty(exports, "RCCCli", { enumerable: true, get: function () { return cli_1.RCCCli; } });
-Object.defineProperty(exports, "CommandParser", { enumerable: true, get: function () { return cli_1.CommandParser; } });
-Object.defineProperty(exports, "ArgumentValidator", { enumerable: true, get: function () { return cli_1.ArgumentValidator; } });
-Object.defineProperty(exports, "ConfigLoader", { enumerable: true, get: function () { return cli_1.ConfigLoader; } });
+__exportStar(require("./cli"), exports);
 // 客户端模块导出
 __exportStar(require("./client"), exports);
 // 路由器模块导出

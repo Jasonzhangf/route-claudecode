@@ -33,10 +33,13 @@
   "author": "Jason Zhang",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "@google-ai/generativelanguage": "^3.3.0",
     "commander": "^14.0.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.4.0",
     "json5": "^2.2.3",
+    "openai": "^5.12.2",
     "uuid": "^11.1.0",
     "ws": "^8.18.0",
     "yaml": "^2.4.5"
