@@ -6,7 +6,85 @@
  * @author Jason Zhang
  */
 
-import { RCCConfig, ProviderConfig, RoutingConfig } from '../../types';
+// 内嵌必要的配置类型定义
+export interface RCCConfig {
+  version: string;
+  debug?: DebugConfig;
+  server?: ServerConfig;
+  providers?: ProviderConfig[];
+  routing?: RoutingConfig;
+  pipeline?: PipelineConfig;
+}
+
+export interface DebugConfig {
+  enabled: boolean;
+  level: 'debug' | 'info' | 'warn' | 'error';
+  saveRequests: boolean;
+  captureLevel: 'basic' | 'full';
+}
+
+export interface ServerConfig {
+  port: number;
+  host: string;
+  cors?: {
+    enabled: boolean;
+    origins: string[];
+  };
+}
+
+export interface ProviderConfig {
+  id: string;
+  name: string;
+  protocol: 'openai' | 'anthropic' | 'gemini';
+  baseUrl: string;
+  apiKey: string;
+  models: ModelConfig[];
+  healthCheck?: HealthCheckConfig;
+  rateLimit?: RateLimitConfig;
+}
+
+export interface ModelConfig {
+  id: string;
+  name: string;
+  maxTokens: number;
+  supportsFunctions: boolean;
+  supportsStreaming: boolean;
+}
+
+export interface HealthCheckConfig {
+  enabled: boolean;
+  interval: number;
+  endpoint: string;
+}
+
+export interface RateLimitConfig {
+  requestsPerMinute: number;
+  tokensPerMinute: number;
+}
+
+export interface RoutingConfig {
+  strategy: 'weighted' | 'round-robin' | 'least-connections';
+  categories: Record<string, CategoryConfig>;
+}
+
+export interface CategoryConfig {
+  rules: RoutingRule[];
+}
+
+export interface RoutingRule {
+  provider: string;
+  model: string;
+  weight: number;
+}
+
+export interface PipelineConfig {
+  modules: Record<string, ModuleConfig>;
+}
+
+export interface ModuleConfig {
+  enabled: boolean;
+  [key: string]: any;
+}
 
 /**
  * 配置管理器接口

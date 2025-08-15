@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { MiddlewareFunction } from '../server/http-server';
+import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
 
 /**
  * CORS配置选项
@@ -24,7 +24,7 @@ export interface CORSOptions {
 /**
  * 创建CORS中间件
  */
-export function cors(options: CORSOptions = {}): MiddlewareFunction {
+export function cors(options: CORSOptions = {}): IMiddlewareFunction {
   const {
     origin = '*',
     methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

@@ -5,9 +5,11 @@
  *
  * @author Jason Zhang
  */
-import { HTTPServer, ServerConfig } from './http-server';
+import { ServerConfig, MiddlewareFunction, RouteHandler } from './http-server';
 import { PipelineManager } from '../pipeline/pipeline-manager';
 import { PipelineConfig } from '../interfaces/pipeline/pipeline-framework';
+import { ServerStatus } from '../interfaces';
+import { EventEmitter } from 'events';
 /**
  * Pipeline服务器配置
  */
@@ -20,8 +22,10 @@ export interface PipelineServerConfig extends ServerConfig {
 }
 /**
  * Pipeline集成HTTP服务器
+ * 使用组合而非继承的方式集成HTTPServer功能
  */
-export declare class PipelineServer extends HTTPServer {
+export declare class PipelineServer extends EventEmitter {
+    private httpServer;
     private pipelineManager;
     private pipelineConfigs;
     private serverConfig;
@@ -102,5 +106,20 @@ export declare class PipelineServer extends HTTPServer {
      * 获取Pipeline配置
      */
     getPipelineConfigs(): PipelineConfig[];
+    /**
+     * 获取服务器状态
+     * 委托给HTTPServer并添加Pipeline相关信息
+     */
+    getStatus(): ServerStatus & {
+        pipelines?: any;
+    };
+    /**
+     * 添加中间件 - 委托给HTTPServer
+     */
+    use(middleware: MiddlewareFunction): void;
+    /**
+     * 添加路由 - 委托给HTTPServer
+     */
+    addRoute(method: string, path: string, handler: RouteHandler, middleware?: MiddlewareFunction[]): void;
 }
 //# sourceMappingURL=pipeline-server.d.ts.map

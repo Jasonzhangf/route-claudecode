@@ -6,8 +6,8 @@
  * @author Jason Zhang
  */
 
-import { BaseModule } from '../base-module-impl';
-import { StandardRequest } from '../../interfaces/standard/request';
+import { IModuleInterface, ModuleType, IModuleStatus, IModuleMetrics } from '../../interfaces/core/module-implementation-interface';
+import { EventEmitter } from 'events';
 
 /**
  * Anthropic到OpenAI转换器配置
@@ -22,11 +22,31 @@ export interface AnthropicToOpenAITransformerConfig {
 /**
  * Anthropic到OpenAI格式转换器
  */
-export class AnthropicToOpenAITransformer extends BaseModule {
+export class AnthropicToOpenAITransformer extends EventEmitter implements IModuleInterface {
+  protected readonly id: string = 'anthropic-to-openai-transformer';
+  protected readonly name: string = 'Anthropic to OpenAI Transformer';
+  protected readonly type: ModuleType = ModuleType.TRANSFORMER;
+  protected readonly version: string = '1.0.0';
+  protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
+  protected metrics: IModuleMetrics = { requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0 };
+  
+  getId(): string { return this.id; }
+  getName(): string { return this.name; }
+  getType(): ModuleType { return this.type; }
+  getVersion(): string { return this.version; }
+  getStatus(): IModuleStatus { return { id: this.id, name: this.name, type: this.type, status: this.status, health: 'healthy' }; }
+  getMetrics(): IModuleMetrics { return { ...this.metrics }; }
+  async configure(config: any): Promise<void> {}
+  async start(): Promise<void> { this.status = 'running'; }
+  async stop(): Promise<void> { this.status = 'stopped'; }
+  async reset(): Promise<void> {}
+  async cleanup(): Promise<void> {}
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> { return { healthy: true, details: {} }; }
+  async process(input: any): Promise<any> { return this.onProcess(input); }
   private transformerConfig: AnthropicToOpenAITransformerConfig;
   
-  constructor(id: string, config: Partial<AnthropicToOpenAITransformerConfig> = {}) {
-    super(id, 'Anthropic to OpenAI Transformer', 'transformer', '1.0.0');
+  constructor(id: string = 'anthropic-to-openai-transformer', config: Partial<AnthropicToOpenAITransformerConfig> = {}) {
+    super();
     
     this.transformerConfig = {
       model: 'gpt-3.5-turbo',

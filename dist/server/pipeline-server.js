@@ -13,17 +13,26 @@ const pipeline_manager_1 = require("../pipeline/pipeline-manager");
 const pipeline_factory_1 = require("../pipeline/pipeline-factory");
 const module_registry_1 = require("../pipeline/module-registry");
 const middleware_1 = require("../middleware");
+const events_1 = require("events");
 /**
  * Pipeline集成HTTP服务器
+ * 使用组合而非继承的方式集成HTTPServer功能
  */
-class PipelineServer extends http_server_1.HTTPServer {
+class PipelineServer extends events_1.EventEmitter {
+    httpServer;
     pipelineManager;
     pipelineConfigs;
     serverConfig;
     constructor(config) {
-        super(config);
+        super();
         this.serverConfig = config;
         this.pipelineConfigs = config.pipelines || [];
+        // 使用组合：创建HTTPServer实例
+        this.httpServer = new http_server_1.HTTPServer(config);
+        // 转发HTTPServer的事件到PipelineServer
+        this.httpServer.on('error', (error) => this.emit('error', error));
+        this.httpServer.on('started', (data) => this.emit('started', data));
+        this.httpServer.on('stopped', () => this.emit('stopped'));
         // 初始化Pipeline管理器
         const moduleRegistry = new module_registry_1.ModuleRegistry();
         const factory = new pipeline_factory_1.StandardPipelineFactoryImpl(moduleRegistry);
@@ -36,32 +45,32 @@ class PipelineServer extends http_server_1.HTTPServer {
      */
     initializePipelineRoutes() {
         // Anthropic兼容端点 - 使用Pipeline处理
-        this.addRoute('POST', '/v1/messages', async (req, res) => {
+        this.httpServer.addRoute('POST', '/v1/messages', async (req, res) => {
             await this.handleAnthropicRequest(req, res);
         });
         // OpenAI兼容端点 - 使用Pipeline处理
-        this.addRoute('POST', '/v1/chat/completions', async (req, res) => {
+        this.httpServer.addRoute('POST', '/v1/chat/completions', async (req, res) => {
             await this.handleOpenAIRequest(req, res);
         });
         // Gemini兼容端点 - 使用Pipeline处理
-        this.addRoute('POST', '/v1beta/models/:model/generateContent', async (req, res) => {
+        this.httpServer.addRoute('POST', '/v1beta/models/:model/generateContent', async (req, res) => {
             await this.handleGeminiRequest(req, res);
         });
         // 统一Pipeline端点
-        this.addRoute('POST', '/v1/pipeline/:pipelineId', async (req, res) => {
+        this.httpServer.addRoute('POST', '/v1/pipeline/:pipelineId', async (req, res) => {
             await this.handlePipelineRequest(req, res);
         });
         // Pipeline管理端点
-        this.addRoute('GET', '/v1/pipelines', async (req, res) => {
+        this.httpServer.addRoute('GET', '/v1/pipelines', async (req, res) => {
             await this.handleGetPipelines(req, res);
         });
-        this.addRoute('GET', '/v1/pipelines/:pipelineId/status', async (req, res) => {
+        this.httpServer.addRoute('GET', '/v1/pipelines/:pipelineId/status', async (req, res) => {
             await this.handleGetPipelineStatus(req, res);
         });
-        this.addRoute('POST', '/v1/pipelines/:pipelineId/start', async (req, res) => {
+        this.httpServer.addRoute('POST', '/v1/pipelines/:pipelineId/start', async (req, res) => {
             await this.handleStartPipeline(req, res);
         });
-        this.addRoute('POST', '/v1/pipelines/:pipelineId/stop', async (req, res) => {
+        this.httpServer.addRoute('POST', '/v1/pipelines/:pipelineId/stop', async (req, res) => {
             await this.handleStopPipeline(req, res);
         });
     }
@@ -71,7 +80,7 @@ class PipelineServer extends http_server_1.HTTPServer {
     initializeMiddleware() {
         // CORS中间件
         if (this.serverConfig.enableCors !== false) {
-            this.use((0, middleware_1.cors)({
+            this.httpServer.use((0, middleware_1.cors)({
                 origin: true,
                 credentials: true,
                 methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -79,26 +88,26 @@ class PipelineServer extends http_server_1.HTTPServer {
             }));
         }
         // 日志中间件
-        this.use((0, middleware_1.logger)({
+        this.httpServer.use((0, middleware_1.logger)({
             level: this.serverConfig.logLevel === 'debug' ? 2 : 1,
             format: 'detailed'
         }));
         // 认证中间件 (可选)
         if (this.serverConfig.enableAuth) {
-            this.use((0, middleware_1.authentication)({
+            this.httpServer.use((0, middleware_1.authentication)({
                 required: false,
                 apiKeyHeader: 'Authorization'
             }));
         }
         // 请求验证中间件
         if (this.serverConfig.enableValidation !== false) {
-            this.use((0, middleware_1.validation)({
+            this.httpServer.use((0, middleware_1.validation)({
                 maxBodySize: this.serverConfig.maxRequestSize || 10 * 1024 * 1024,
                 validateContentType: true
             }));
         }
         // 速率限制中间件
-        this.use((0, middleware_1.rateLimit)({
+        this.httpServer.use((0, middleware_1.rateLimit)({
             maxRequests: 1000,
             windowMs: 60000,
             message: 'Too many requests from this IP'
@@ -111,7 +120,7 @@ class PipelineServer extends http_server_1.HTTPServer {
         // 先创建和启动所有Pipeline
         await this.initializePipelines();
         // 启动HTTP服务器
-        await super.start();
+        await this.httpServer.start();
         // 设置Pipeline事件监听
         this.setupPipelineEventListeners();
         console.log(`🎯 Pipeline Server started with ${this.pipelineConfigs.length} pipelines`);
@@ -123,7 +132,7 @@ class PipelineServer extends http_server_1.HTTPServer {
         // 停止所有Pipeline
         await this.cleanupPipelines();
         // 停止HTTP服务器
-        await super.stop();
+        await this.httpServer.stop();
         console.log('🛑 Pipeline Server stopped');
     }
     /**
@@ -557,6 +566,31 @@ class PipelineServer extends http_server_1.HTTPServer {
      */
     getPipelineConfigs() {
         return [...this.pipelineConfigs];
+    }
+    /**
+     * 获取服务器状态
+     * 委托给HTTPServer并添加Pipeline相关信息
+     */
+    getStatus() {
+        const httpStatus = this.httpServer.getStatus();
+        const pipelineStatuses = this.pipelineManager.getAllPipelineStatus();
+        return {
+            ...httpStatus,
+            activePipelines: Object.keys(pipelineStatuses).length,
+            pipelines: pipelineStatuses
+        };
+    }
+    /**
+     * 添加中间件 - 委托给HTTPServer
+     */
+    use(middleware) {
+        this.httpServer.use(middleware);
+    }
+    /**
+     * 添加路由 - 委托给HTTPServer
+     */
+    addRoute(method, path, handler, middleware) {
+        this.httpServer.addRoute(method, path, handler, middleware);
     }
 }
 exports.PipelineServer = PipelineServer;

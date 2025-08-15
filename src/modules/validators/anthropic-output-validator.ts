@@ -6,8 +6,8 @@
  * @author Jason Zhang
  */
 
-import { BaseModule } from '../base-module-impl';
-import { StandardResponse } from '../../interfaces/standard/response';
+import { IModuleInterface, ModuleType, IModuleStatus, IModuleMetrics } from '../../interfaces/core/module-implementation-interface';
+import { EventEmitter } from 'events';
 
 /**
  * Anthropic输出验证模块配置
@@ -22,11 +22,31 @@ export interface AnthropicOutputValidatorConfig {
 /**
  * Anthropic输出验证模块
  */
-export class AnthropicOutputValidator extends BaseModule {
+export class AnthropicOutputValidator extends EventEmitter implements IModuleInterface {
+  protected readonly id: string = 'anthropic-output-validator';
+  protected readonly name: string = 'Anthropic Output Validator';
+  protected readonly type: ModuleType = ModuleType.VALIDATOR;
+  protected readonly version: string = '1.0.0';
+  protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
+  protected metrics: IModuleMetrics = { requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0 };
+  
+  getId(): string { return this.id; }
+  getName(): string { return this.name; }
+  getType(): ModuleType { return this.type; }
+  getVersion(): string { return this.version; }
+  getStatus(): IModuleStatus { return { id: this.id, name: this.name, type: this.type, status: this.status, health: 'healthy' }; }
+  getMetrics(): IModuleMetrics { return { ...this.metrics }; }
+  async configure(config: any): Promise<void> {}
+  async start(): Promise<void> { this.status = 'running'; }
+  async stop(): Promise<void> { this.status = 'stopped'; }
+  async reset(): Promise<void> {}
+  async cleanup(): Promise<void> {}
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> { return { healthy: true, details: {} }; }
+  async process(input: any): Promise<any> { return this.onProcess(input); }
   private validatorConfig: AnthropicOutputValidatorConfig;
   
-  constructor(id: string, config: Partial<AnthropicOutputValidatorConfig> = {}) {
-    super(id, 'Anthropic Output Validator', 'validator', '1.0.0');
+  constructor(id: string = 'anthropic-output-validator', config: Partial<AnthropicOutputValidatorConfig> = {}) {
+    super();
     
     this.validatorConfig = {
       strictMode: true,

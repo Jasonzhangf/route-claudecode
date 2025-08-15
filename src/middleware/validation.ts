@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { MiddlewareFunction } from '../server/http-server';
+import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
 
 /**
  * 验证中间件配置
@@ -23,7 +23,7 @@ export interface ValidationConfig {
 /**
  * 创建验证中间件
  */
-export function validation(config: ValidationConfig = {}): MiddlewareFunction {
+export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
   const {
     maxBodySize = 10 * 1024 * 1024, // 10MB
     validateContentType = true,

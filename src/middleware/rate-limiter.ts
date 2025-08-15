@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { MiddlewareFunction } from '../server/http-server';
+import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
 
 /**
  * 速率限制配置
@@ -31,7 +31,7 @@ interface RequestRecord {
 /**
  * 创建速率限制中间件
  */
-export function rateLimit(options: RateLimitOptions = {}): MiddlewareFunction {
+export function rateLimit(options: RateLimitOptions = {}): IMiddlewareFunction {
   const {
     windowMs = 15 * 60 * 1000,  // 15分钟
     maxRequests = 100,

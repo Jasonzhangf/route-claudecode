@@ -7,12 +7,12 @@
  */
 
 import { Router } from './router';
-import { cors, logger, rateLimit } from '../middleware';
+import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
 
 /**
  * 配置代理路由
  */
-export function setupProxyRoutes(router: Router): void {
+export function setupProxyRoutes(router: Router, middlewareManager: IMiddlewareManager): void {
   
   // Anthropic兼容端点
   router.post('/v1/messages', async (req, res, params) => {
@@ -26,9 +26,9 @@ export function setupProxyRoutes(router: Router): void {
       };
     }
   }, [
-    cors({ origin: true, credentials: true }),
-    logger({ level: 2, format: 'detailed' }),
-    rateLimit({ maxRequests: 200, windowMs: 60000 })
+    middlewareManager.createCors({ origin: true, credentials: true }),
+    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+    middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 })
   ]);
   
   // OpenAI兼容端点
@@ -43,9 +43,9 @@ export function setupProxyRoutes(router: Router): void {
       };
     }
   }, [
-    cors({ origin: true, credentials: true }),
-    logger({ level: 2, format: 'detailed' }),
-    rateLimit({ maxRequests: 200, windowMs: 60000 })
+    middlewareManager.createCors({ origin: true, credentials: true }),
+    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+    middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 })
   ]);
   
   // Google Gemini兼容端点
@@ -66,9 +66,9 @@ export function setupProxyRoutes(router: Router): void {
       };
     }
   }, [
-    cors({ origin: true, credentials: true }),
-    logger({ level: 2, format: 'detailed' }),
-    rateLimit({ maxRequests: 200, windowMs: 60000 })
+    middlewareManager.createCors({ origin: true, credentials: true }),
+    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+    middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 })
   ]);
   
   // 统一代理端点
@@ -90,9 +90,9 @@ export function setupProxyRoutes(router: Router): void {
       };
     }
   }, [
-    cors({ origin: true, credentials: true }),
-    logger({ level: 2, format: 'detailed' }),
-    rateLimit({ maxRequests: 150, windowMs: 60000 })
+    middlewareManager.createCors({ origin: true, credentials: true }),
+    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+    middlewareManager.createRateLimit({ maxRequests: 150, windowMs: 60000 })
   ]);
 }
 

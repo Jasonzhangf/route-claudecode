@@ -7,23 +7,23 @@
  */
 
 import { Router, RouteGroup } from './router';
-import { cors, logger, rateLimit, apiKeyAuth } from '../middleware';
+import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
 
 /**
  * 配置API路由
  */
-export function setupApiRoutes(router: Router): void {
+export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareManager): void {
   // API v1路由组
   const apiV1Routes: RouteGroup = {
     prefix: '/api/v1',
     middleware: [
-      cors({
+      middlewareManager.createCors({
         origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         credentials: true
       }),
-      logger({ level: 2, format: 'detailed' }),
-      rateLimit({ maxRequests: 1000, windowMs: 60000 }) // 1000 req/min
+      middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+      middlewareManager.createRateLimit({ maxRequests: 1000, windowMs: 60000 }) // 1000 req/min
     ],
     routes: [
       // 系统信息
@@ -255,10 +255,10 @@ export function setupApiRoutes(router: Router): void {
   const adminRoutes: RouteGroup = {
     prefix: '/api/admin',
     middleware: [
-      cors({ origin: false }), // 仅允许同源请求
-      logger({ level: 2, format: 'json' }),
-      rateLimit({ maxRequests: 100, windowMs: 60000 }), // 更严格的限制
-      apiKeyAuth(['admin-key-123']) // 需要管理员API密钥
+      middlewareManager.createCors({ origin: false }), // 仅允许同源请求
+      middlewareManager.createLogger({ level: 2, format: 'json' }),
+      middlewareManager.createRateLimit({ maxRequests: 100, windowMs: 60000 }), // 更严格的限制
+      middlewareManager.createAuth({ type: 'apikey', keys: ['admin-key-123'] }) // 需要管理员API密钥
     ],
     routes: [
       // 重启服务

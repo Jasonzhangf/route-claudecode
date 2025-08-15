@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { MiddlewareFunction } from '../server/http-server';
+import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
 
 /**
  * 应用程序错误类
@@ -95,7 +95,7 @@ export interface ErrorHandlerOptions {
 /**
  * 创建错误处理中间件
  */
-export function errorHandler(options: ErrorHandlerOptions = {}): MiddlewareFunction {
+export function errorHandler(options: ErrorHandlerOptions = {}): IMiddlewareFunction {
   const {
     includeStack = process.env.NODE_ENV === 'development',
     logErrors = true,

@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { HTTPServer, RouteHandler, MiddlewareFunction } from '../server/http-server';
+import { IHTTPServer, IRouteHandler, IMiddlewareFunction } from '../interfaces/core/server-interface';
 
 /**
  * 路由参数类型
@@ -29,7 +29,7 @@ export interface RouteDefinition {
   method: string;
   path: string;
   handler: EnhancedRouteHandler;
-  middleware?: MiddlewareFunction[];
+  middleware?: IMiddlewareFunction[];
   name?: string;
   description?: string;
 }
@@ -39,7 +39,7 @@ export interface RouteDefinition {
  */
 export interface RouteGroup {
   prefix: string;
-  middleware?: MiddlewareFunction[];
+  middleware?: IMiddlewareFunction[];
   routes: RouteDefinition[];
 }
 
@@ -56,51 +56,51 @@ interface PathMatch {
  */
 export class Router {
   private routes: RouteDefinition[] = [];
-  private server: HTTPServer;
+  private server: IHTTPServer;
   
-  constructor(server: HTTPServer) {
+  constructor(server: IHTTPServer) {
     this.server = server;
   }
   
   /**
    * 添加GET路由
    */
-  get(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void {
+  get(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
     this.addRoute('GET', path, handler, middleware);
   }
   
   /**
    * 添加POST路由
    */
-  post(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void {
+  post(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
     this.addRoute('POST', path, handler, middleware);
   }
   
   /**
    * 添加PUT路由
    */
-  put(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void {
+  put(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
     this.addRoute('PUT', path, handler, middleware);
   }
   
   /**
    * 添加DELETE路由
    */
-  delete(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void {
+  delete(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
     this.addRoute('DELETE', path, handler, middleware);
   }
   
   /**
    * 添加PATCH路由
    */
-  patch(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void {
+  patch(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
     this.addRoute('PATCH', path, handler, middleware);
   }
   
   /**
    * 添加所有HTTP方法的路由
    */
-  all(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void {
+  all(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
     const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
     methods.forEach(method => {
       this.addRoute(method, path, handler, middleware);
@@ -114,7 +114,7 @@ export class Router {
     method: string,
     path: string,
     handler: EnhancedRouteHandler,
-    middleware?: MiddlewareFunction[]
+    middleware?: IMiddlewareFunction[]
   ): void {
     const route: RouteDefinition = {
       method: method.toUpperCase(),
@@ -157,7 +157,7 @@ export class Router {
   /**
    * 创建路由处理器包装器
    */
-  private createRouteHandler(route: RouteDefinition): RouteHandler {
+  private createRouteHandler(route: RouteDefinition): IRouteHandler {
     return async (req, res) => {
       // 解析路径参数
       const url = req.url || '/';

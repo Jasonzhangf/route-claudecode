@@ -6,8 +6,121 @@
  * @author Jason Zhang
  */
 
-import { ModuleInterface, PipelineSpec } from '../module/base-module';
-import { Pipeline, PipelineStatus } from '../module/pipeline-module';
+/**
+ * 模块类型枚举
+ */
+export type ModuleType = 
+  | 'validator'
+  | 'transformer'
+  | 'protocol'
+  | 'compatibility'
+  | 'server';
+
+/**
+ * 模块状态接口
+ */
+export interface ModuleStatus {
+  id: string;
+  name: string;
+  type: ModuleType;
+  status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+  health: 'healthy' | 'degraded' | 'unhealthy';
+  lastActivity?: Date;
+  error?: Error;
+}
+
+/**
+ * 模块接口定义
+ */
+export interface ModuleInterface {
+  getId(): string;
+  getName(): string;
+  getType(): ModuleType;
+  getVersion(): string;
+  getStatus(): ModuleStatus;
+  getMetrics(): any;
+  configure(config: any): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  process(input: any): Promise<any>;
+  reset(): Promise<void>;
+  cleanup(): Promise<void>;
+  healthCheck(): Promise<{ healthy: boolean; details: any }>;
+  on(event: string, listener: (...args: any[]) => void): void;
+  removeAllListeners(): void;
+}
+
+/**
+ * 流水线规范接口
+ */
+export interface PipelineSpec {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  provider?: string;
+  model?: string;
+  timeout?: number;
+  modules: {
+    id: string;
+    config?: Record<string, any>;
+  }[];
+  configuration: PipelineConfiguration;
+  metadata: PipelineMetadata;
+}
+
+/**
+ * 流水线配置
+ */
+export interface PipelineConfiguration {
+  parallel: boolean;
+  failFast: boolean;
+  retryPolicy: {
+    maxRetries: number;
+    backoffMultiplier: number;
+  };
+}
+
+/**
+ * 流水线元数据
+ */
+export interface PipelineMetadata {
+  author: string;
+  created: number;
+  tags: string[];
+}
+
+/**
+ * Pipeline接口
+ */
+export interface Pipeline {
+  getId(): string;
+  getName(): string;
+  getProvider(): string;
+  getModel(): string;
+  getStatus(): PipelineStatus;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  execute(input: any, context?: any): Promise<any>;
+}
+
+/**
+ * Pipeline状态
+ */
+export interface PipelineStatus {
+  id: string;
+  name: string;
+  status: 'idle' | 'running' | 'busy' | 'error' | 'stopped';
+  provider: string;
+  model: string;
+  activeConnections: number;
+  totalRequests: number;
+  successRequests: number;
+  errorRequests: number;
+  averageResponseTime: number;
+  lastActivity: Date;
+  health: 'healthy' | 'degraded' | 'unhealthy';
+}
 
 /**
  * 流水线框架接口

@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { MiddlewareFunction } from '../server/http-server';
+import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
 
 /**
  * 日志级别
@@ -32,7 +32,7 @@ export interface LoggerOptions {
 /**
  * 创建日志中间件
  */
-export function logger(options: LoggerOptions = {}): MiddlewareFunction {
+export function logger(options: LoggerOptions = {}): IMiddlewareFunction {
   const {
     level = LogLevel.INFO,
     format = 'simple',

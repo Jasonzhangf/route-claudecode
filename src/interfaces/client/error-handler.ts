@@ -6,7 +6,20 @@
  * @author Jason Zhang
  */
 
-import { RCCError } from '../../types';
+/**
+ * RCC错误基类
+ */
+export class RCCError extends Error {
+  public readonly code: string;
+  public readonly details?: Record<string, any>;
+  
+  constructor(message: string, code: string, details?: Record<string, any>) {
+    super(message);
+    this.name = 'RCCError';
+    this.code = code;
+    this.details = details;
+  }
+}
 
 /**
  * 错误处理器接口

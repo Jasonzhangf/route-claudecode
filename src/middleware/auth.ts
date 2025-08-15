@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { MiddlewareFunction } from '../server/http-server';
+import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
 
 /**
  * 认证配置选项
@@ -24,7 +24,7 @@ export interface AuthOptions {
 /**
  * 创建认证中间件
  */
-export function auth(options: AuthOptions): MiddlewareFunction {
+export function auth(options: AuthOptions): IMiddlewareFunction {
   const {
     type,
     validate,
@@ -143,7 +143,7 @@ function parseCookies(cookieHeader: string): Record<string, string> {
 /**
  * 创建API密钥认证中间件
  */
-export function apiKeyAuth(validApiKeys: string[]): MiddlewareFunction {
+export function apiKeyAuth(validApiKeys: string[]): IMiddlewareFunction {
   return auth({
     type: 'apikey',
     headerName: 'X-API-Key',
@@ -159,7 +159,7 @@ export function apiKeyAuth(validApiKeys: string[]): MiddlewareFunction {
 /**
  * 创建Bearer令牌认证中间件
  */
-export function bearerAuth(validateToken: (token: string) => Promise<any> | any): MiddlewareFunction {
+export function bearerAuth(validateToken: (token: string) => Promise<any> | any): IMiddlewareFunction {
   return auth({
     type: 'bearer',
     validate: validateToken
@@ -169,7 +169,7 @@ export function bearerAuth(validateToken: (token: string) => Promise<any> | any)
 /**
  * 创建Basic认证中间件
  */
-export function basicAuth(validateCredentials: (username: string, password: string) => Promise<any> | any): MiddlewareFunction {
+export function basicAuth(validateCredentials: (username: string, password: string) => Promise<any> | any): IMiddlewareFunction {
   return auth({
     type: 'basic',
     validate: async (token: string) => {
@@ -202,7 +202,7 @@ export interface SimpleAuthConfig {
 /**
  * 创建简单认证中间件 - 与PipelineServer兼容
  */
-export function authentication(config: SimpleAuthConfig = {}): MiddlewareFunction {
+export function authentication(config: SimpleAuthConfig = {}): IMiddlewareFunction {
   const {
     required = false,
     apiKeyHeader = 'X-API-Key',

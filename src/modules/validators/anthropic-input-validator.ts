@@ -6,9 +6,15 @@
  * @author Jason Zhang
  */
 
-import { BaseModule } from '../base-module-impl';
-import { ModuleType } from '../../interfaces/module/base-module';
-import { StandardRequest } from '../../interfaces/standard/request';
+import { 
+  IModuleInterface, 
+  ModuleType, 
+  IModuleStatus, 
+  IModuleMetrics, 
+  IStandardRequest, 
+  IValidationResult 
+} from '../../interfaces/core/module-implementation-interface';
+import { EventEmitter } from 'events';
 
 /**
  * Anthropic输入验证模块配置
@@ -24,11 +30,29 @@ export interface AnthropicInputValidatorConfig {
 /**
  * Anthropic输入验证模块
  */
-export class AnthropicInputValidator extends BaseModule {
+export class AnthropicInputValidator extends EventEmitter implements IModuleInterface {
+  protected readonly id: string = 'anthropic-input-validator';
+  protected readonly name: string = 'Anthropic Input Validator';
+  protected readonly type: ModuleType = ModuleType.VALIDATOR;
+  protected readonly version: string = '1.0.0';
+  protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
+  protected config: AnthropicInputValidatorConfig = {
+    strictMode: true,
+    allowExtraFields: false,
+    maxMessagesLength: 100,
+    maxMessageLength: 100000
+  };
+  protected metrics: IModuleMetrics = {
+    requestsProcessed: 0,
+    averageProcessingTime: 0,
+    errorRate: 0,
+    memoryUsage: 0,
+    cpuUsage: 0
+  };
   private validatorConfig: AnthropicInputValidatorConfig;
   
-  constructor(id: string, config: Partial<AnthropicInputValidatorConfig> = {}) {
-    super(id, 'Anthropic Input Validator', 'validator', '1.0.0');
+  constructor(config: Partial<AnthropicInputValidatorConfig> = {}) {
+    super();
     
     this.validatorConfig = {
       strictMode: true,
@@ -38,6 +62,125 @@ export class AnthropicInputValidator extends BaseModule {
       maxToolsLength: 20,
       ...config
     };
+  }
+
+  // 实现IModuleInterface接口方法
+  getId(): string { return this.id; }
+  getName(): string { return this.name; }
+  getType(): ModuleType { return this.type; }
+  getVersion(): string { return this.version; }
+
+  getStatus(): IModuleStatus {
+    return {
+      id: this.id,
+      name: this.name,
+      type: this.type,
+      status: this.status,
+      health: this.status === 'running' ? 'healthy' : 'unhealthy',
+      lastActivity: this.metrics.lastProcessedAt
+    };
+  }
+
+  getMetrics(): IModuleMetrics { return { ...this.metrics }; }
+
+  async configure(config: any): Promise<void> {
+    this.validatorConfig = { ...this.validatorConfig, ...config };
+  }
+
+  async start(): Promise<void> {
+    this.status = 'starting';
+    this.status = 'running';
+    this.emit('started');
+  }
+
+  async stop(): Promise<void> {
+    this.status = 'stopping';
+    this.status = 'stopped';
+    this.emit('stopped');
+  }
+
+  async reset(): Promise<void> {
+    this.metrics = {
+      requestsProcessed: 0,
+      averageProcessingTime: 0,
+      errorRate: 0,
+      memoryUsage: 0,
+      cpuUsage: 0
+    };
+  }
+
+  async cleanup(): Promise<void> {
+    await this.stop();
+    this.removeAllListeners();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return {
+      healthy: this.status === 'running',
+      details: {
+        status: this.status,
+        metrics: this.metrics
+      }
+    };
+  }
+
+  async process(input: any): Promise<any> {
+    const startTime = Date.now();
+    try {
+      const result = await this.validateInput(input);
+      this.updateMetrics(Date.now() - startTime, false);
+      return result;
+    } catch (error) {
+      this.updateMetrics(Date.now() - startTime, true);
+      throw error;
+    }
+  }
+
+  private updateMetrics(processingTime: number, isError: boolean): void {
+    this.metrics.requestsProcessed++;
+    this.metrics.lastProcessedAt = new Date();
+    
+    // 更新平均处理时间
+    const totalTime = this.metrics.averageProcessingTime * (this.metrics.requestsProcessed - 1) + processingTime;
+    this.metrics.averageProcessingTime = totalTime / this.metrics.requestsProcessed;
+    
+    // 更新错误率
+    if (isError) {
+      this.metrics.errorRate = (this.metrics.errorRate * (this.metrics.requestsProcessed - 1) + 1) / this.metrics.requestsProcessed;
+    } else {
+      this.metrics.errorRate = (this.metrics.errorRate * (this.metrics.requestsProcessed - 1)) / this.metrics.requestsProcessed;
+    }
+  }
+
+  private async validateInput(input: any): Promise<IValidationResult> {
+    // 原有的验证逻辑
+    if (!input) {
+      return { valid: false, errors: ['Input is required'] };
+    }
+
+    const errors: string[] = [];
+    
+    try {
+      this.validateBasicStructure(input);
+      this.validateRequiredFields(input);
+      
+      if (input.messages) {
+        this.validateMessages(input.messages);
+      }
+      
+      if (input.tools) {
+        this.validateTools(input.tools);
+      }
+      
+      this.validateParameterRanges(input);
+      
+      return { valid: true, errors: [] };
+    } catch (error) {
+      return { 
+        valid: false, 
+        errors: [error instanceof Error ? error.message : String(error)] 
+      };
+    }
   }
   
   /**
