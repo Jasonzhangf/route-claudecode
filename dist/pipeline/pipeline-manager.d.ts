@@ -6,7 +6,8 @@
  * @author Jason Zhang
  */
 import { EventEmitter } from 'events';
-import { PipelineFramework, PipelineConfig, ExecutionContext, ExecutionResult, ExecutionRecord, StandardPipelineFactory } from '../interfaces/pipeline/pipeline-framework';
+import { PipelineConfig, ExecutionContext, ExecutionResult, ExecutionRecord, StandardPipelineFactory } from '../interfaces/pipeline/pipeline-framework';
+import { StandardPipeline } from './standard-pipeline';
 import { PipelineStatus } from '../interfaces/module/pipeline-module';
 /**
  * Pipeline管理器
@@ -27,11 +28,11 @@ export declare class PipelineManager extends EventEmitter {
     /**
      * 获取Pipeline
      */
-    getPipeline(pipelineId: string): PipelineFramework | null;
+    getPipeline(pipelineId: string): StandardPipeline | null;
     /**
      * 获取所有Pipeline
      */
-    getAllPipelines(): Map<string, PipelineFramework>;
+    getAllPipelines(): Map<string, StandardPipeline>;
     /**
      * 执行Pipeline
      */

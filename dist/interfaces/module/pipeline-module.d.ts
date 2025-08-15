@@ -13,7 +13,6 @@ export interface Pipeline {
     readonly id: string;
     readonly provider: string;
     readonly model: string;
-    readonly modules: ModuleInterface[];
     readonly spec: PipelineSpec;
     /**
      * 处理请求

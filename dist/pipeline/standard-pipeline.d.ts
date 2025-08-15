@@ -7,15 +7,17 @@
  */
 import { EventEmitter } from 'events';
 import { PipelineFramework, PipelineConfig, ExecutionContext, ExecutionRecord } from '../interfaces/pipeline/pipeline-framework';
-import { ModuleInterface } from '../interfaces/module/base-module';
+import { ModuleInterface, PipelineSpec } from '../interfaces/module/base-module';
 import { PipelineStatus } from '../interfaces/module/pipeline-module';
 /**
  * 标准Pipeline实现
  */
 export declare class StandardPipeline extends EventEmitter implements PipelineFramework {
-    private readonly id;
+    readonly id: string;
     private readonly name;
     private readonly config;
+    private readonly providerName;
+    private readonly modelName;
     private modules;
     private moduleOrder;
     private status;
@@ -26,6 +28,18 @@ export declare class StandardPipeline extends EventEmitter implements PipelineFr
      * 获取Pipeline ID
      */
     getId(): string;
+    /**
+     * Pipeline接口实现 - provider getter
+     */
+    get provider(): string;
+    /**
+     * Pipeline接口实现 - model getter
+     */
+    get model(): string;
+    /**
+     * Pipeline接口实现 - spec getter
+     */
+    get spec(): PipelineSpec;
     /**
      * 获取Pipeline名称
      */
@@ -67,6 +81,10 @@ export declare class StandardPipeline extends EventEmitter implements PipelineFr
      */
     setModuleOrder(moduleIds: string[]): void;
     /**
+     * 执行单个模块
+     */
+    executeModule(moduleId: string, input: any): Promise<any>;
+    /**
      * 获取执行历史
      */
     getExecutionHistory(): ExecutionRecord[];
@@ -74,6 +92,10 @@ export declare class StandardPipeline extends EventEmitter implements PipelineFr
      * 重置流水线状态
      */
     reset(): Promise<void>;
+    /**
+     * 执行单个模块（内部方法）
+     */
+    private executeModuleInternal;
     /**
      * 设置模块事件监听器
      */
@@ -94,5 +116,17 @@ export declare class StandardPipeline extends EventEmitter implements PipelineFr
      * 计算吞吐量
      */
     private calculateThroughput;
+    /**
+     * Pipeline接口实现 - process方法
+     */
+    process(input: any): Promise<any>;
+    /**
+     * Pipeline接口实现 - validate方法
+     */
+    validate(): Promise<boolean>;
+    /**
+     * Pipeline接口实现 - destroy方法
+     */
+    destroy(): Promise<void>;
 }
 //# sourceMappingURL=standard-pipeline.d.ts.map

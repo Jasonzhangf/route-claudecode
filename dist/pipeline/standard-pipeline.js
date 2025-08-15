@@ -16,6 +16,8 @@ class StandardPipeline extends events_1.EventEmitter {
     id;
     name;
     config;
+    providerName;
+    modelName;
     modules = new Map();
     moduleOrder = [];
     status = 'stopped';
@@ -26,6 +28,8 @@ class StandardPipeline extends events_1.EventEmitter {
         this.id = config.id;
         this.name = config.name;
         this.config = config;
+        this.providerName = config.provider || 'default';
+        this.modelName = config.model || 'default';
         // 初始化模块顺序
         this.moduleOrder = config.modules
             .sort((a, b) => a.order - b.order)
@@ -36,6 +40,49 @@ class StandardPipeline extends events_1.EventEmitter {
      */
     getId() {
         return this.id;
+    }
+    /**
+     * Pipeline接口实现 - provider getter
+     */
+    get provider() {
+        return this.providerName;
+    }
+    /**
+     * Pipeline接口实现 - model getter
+     */
+    get model() {
+        return this.modelName;
+    }
+    /**
+     * Pipeline接口实现 - spec getter
+     */
+    get spec() {
+        return this.config.spec || {
+            id: this.id,
+            name: this.name,
+            description: `Pipeline for ${this.providerName}/${this.modelName}`,
+            version: '1.0.0',
+            modules: this.config.modules.map(m => ({
+                id: m.moduleId,
+                type: 'transformer', // 默认类型
+                name: m.moduleId,
+                version: '1.0.0'
+            })),
+            configuration: {
+                parallel: this.config.settings.parallel,
+                failFast: this.config.settings.failFast,
+                retryPolicy: {
+                    maxRetries: this.config.settings.retryPolicy.maxRetries,
+                    backoffMultiplier: this.config.settings.retryPolicy.backoffMultiplier
+                }
+            },
+            metadata: {
+                author: 'RCC v4.0',
+                created: Date.now(),
+                tags: [this.providerName, this.modelName],
+                ...this.config.metadata
+            }
+        };
     }
     /**
      * 获取Pipeline名称
@@ -141,7 +188,7 @@ class StandardPipeline extends events_1.EventEmitter {
                 if (!module) {
                     throw new Error(`Module ${moduleId} not found in pipeline ${this.id}`);
                 }
-                const moduleExecution = await this.executeModule(moduleId, currentInput, executionRecord);
+                const moduleExecution = await this.executeModuleInternal(moduleId, currentInput, executionRecord);
                 executionRecord.moduleExecutions.push(moduleExecution);
                 // 如果模块执行失败且配置为快速失败，则抛出错误
                 if (moduleExecution.status === 'failed' && this.config.settings.failFast) {
@@ -251,7 +298,7 @@ class StandardPipeline extends events_1.EventEmitter {
     /**
      * 执行单个模块（内部方法）
      */
-    async executeModule(moduleId, input, executionRecord) {
+    async executeModuleInternal(moduleId, input, executionRecord) {
         const module = this.modules.get(moduleId);
         if (!module) {
             throw new Error(`Module ${moduleId} not found`);
@@ -335,6 +382,39 @@ class StandardPipeline extends events_1.EventEmitter {
     calculateThroughput() {
         const averageTime = this.calculateAverageProcessingTime();
         return averageTime > 0 ? 1000 / averageTime : 0;
+    }
+    /**
+     * Pipeline接口实现 - process方法
+     */
+    async process(input) {
+        return this.execute(input);
+    }
+    /**
+     * Pipeline接口实现 - validate方法
+     */
+    async validate() {
+        try {
+            // 验证所有模块都可用
+            for (const [moduleId, module] of this.modules) {
+                if (!module || typeof module.process !== 'function') {
+                    return false;
+                }
+            }
+            return true;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+    /**
+     * Pipeline接口实现 - destroy方法
+     */
+    async destroy() {
+        await this.stop();
+        this.modules.clear();
+        this.moduleOrder = [];
+        this.executionHistory = [];
+        this.removeAllListeners();
     }
 }
 exports.StandardPipeline = StandardPipeline;

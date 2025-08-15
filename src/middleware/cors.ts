@@ -18,6 +18,7 @@ export interface CORSOptions {
   exposedHeaders?: string[];
   credentials?: boolean;
   maxAge?: number;
+  headers?: string[]; // 为了向后兼容
 }
 
 /**

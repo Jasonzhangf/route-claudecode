@@ -11,6 +11,7 @@ import { Pipeline } from '../module/pipeline-module';
  * 流水线框架接口
  */
 export interface PipelineFramework extends Pipeline {
+    readonly id: string;
     /**
      * 添加模块到流水线
      */
@@ -43,6 +44,17 @@ export interface PipelineFramework extends Pipeline {
      * 重置流水线状态
      */
     reset(): Promise<void>;
+    /**
+     * Pipeline生命周期管理
+     */
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    execute(input: any, context?: ExecutionContext): Promise<any>;
+    /**
+     * EventEmitter方法
+     */
+    on(event: string, listener: (...args: any[]) => void): this;
+    emit(event: string, ...args: any[]): boolean;
 }
 /**
  * 执行记录
@@ -84,6 +96,7 @@ export interface PipelineConfig {
     model: string;
     modules: ModuleConfig[];
     settings: PipelineSettings;
+    spec?: PipelineSpec;
     metadata?: Record<string, any>;
 }
 /**

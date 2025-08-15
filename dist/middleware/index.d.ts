@@ -10,4 +10,5 @@ export * from './logger';
 export * from './rate-limiter';
 export * from './auth';
 export * from './error-handler';
+export * from './validation';
 //# sourceMappingURL=index.d.ts.map

@@ -1,8 +1,8 @@
 "use strict";
 /**
- * 中间件系统导出
+ * 服务器模块导出
  *
- * 提供HTTP服务器的中间件功能
+ * 提供HTTP服务器和Pipeline集成服务器功能
  *
  * @author Jason Zhang
  */
@@ -21,10 +21,6 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./cors"), exports);
-__exportStar(require("./logger"), exports);
-__exportStar(require("./rate-limiter"), exports);
-__exportStar(require("./auth"), exports);
-__exportStar(require("./error-handler"), exports);
-__exportStar(require("./validation"), exports);
+__exportStar(require("./http-server"), exports);
+__exportStar(require("./pipeline-server"), exports);
 //# sourceMappingURL=index.js.map

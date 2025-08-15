@@ -34,4 +34,17 @@ export declare function bearerAuth(validateToken: (token: string) => Promise<any
  * 创建Basic认证中间件
  */
 export declare function basicAuth(validateCredentials: (username: string, password: string) => Promise<any> | any): MiddlewareFunction;
+/**
+ * 简单认证配置
+ */
+export interface SimpleAuthConfig {
+    required?: boolean;
+    apiKeyHeader?: string;
+    bearerHeader?: string;
+    basicAuth?: boolean;
+}
+/**
+ * 创建简单认证中间件 - 与PipelineServer兼容
+ */
+export declare function authentication(config?: SimpleAuthConfig): MiddlewareFunction;
 //# sourceMappingURL=auth.d.ts.map

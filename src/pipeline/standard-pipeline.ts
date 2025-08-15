@@ -15,16 +15,18 @@ import {
   ModuleExecutionRecord,
   PipelineSettings
 } from '../interfaces/pipeline/pipeline-framework';
-import { ModuleInterface, ModuleStatus } from '../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, PipelineSpec } from '../interfaces/module/base-module';
 import { PipelineStatus } from '../interfaces/module/pipeline-module';
 
 /**
  * 标准Pipeline实现
  */
 export class StandardPipeline extends EventEmitter implements PipelineFramework {
-  private readonly id: string;
+  public readonly id: string;
   private readonly name: string;
   private readonly config: PipelineConfig;
+  private readonly providerName: string;
+  private readonly modelName: string;
   private modules: Map<string, ModuleInterface> = new Map();
   private moduleOrder: string[] = [];
   private status: PipelineStatus['status'] = 'stopped';
@@ -36,6 +38,8 @@ export class StandardPipeline extends EventEmitter implements PipelineFramework 
     this.id = config.id;
     this.name = config.name;
     this.config = config;
+    this.providerName = config.provider || 'default';
+    this.modelName = config.model || 'default';
     
     // 初始化模块顺序
     this.moduleOrder = config.modules
@@ -48,6 +52,52 @@ export class StandardPipeline extends EventEmitter implements PipelineFramework 
    */
   getId(): string {
     return this.id;
+  }
+  
+  /**
+   * Pipeline接口实现 - provider getter
+   */
+  get provider(): string {
+    return this.providerName;
+  }
+  
+  /**
+   * Pipeline接口实现 - model getter
+   */
+  get model(): string {
+    return this.modelName;
+  }
+  
+  /**
+   * Pipeline接口实现 - spec getter  
+   */
+  get spec(): PipelineSpec {
+    return this.config.spec || {
+      id: this.id,
+      name: this.name,
+      description: `Pipeline for ${this.providerName}/${this.modelName}`,
+      version: '1.0.0',
+      modules: this.config.modules.map(m => ({
+        id: m.moduleId,
+        type: 'transformer' as any, // 默认类型
+        name: m.moduleId,
+        version: '1.0.0'
+      })),
+      configuration: {
+        parallel: this.config.settings.parallel,
+        failFast: this.config.settings.failFast,
+        retryPolicy: {
+          maxRetries: this.config.settings.retryPolicy.maxRetries,
+          backoffMultiplier: this.config.settings.retryPolicy.backoffMultiplier
+        }
+      },
+      metadata: {
+        author: 'RCC v4.0',
+        created: Date.now(),
+        tags: [this.providerName, this.modelName],
+        ...this.config.metadata
+      }
+    };
   }
   
   /**
@@ -168,7 +218,7 @@ export class StandardPipeline extends EventEmitter implements PipelineFramework 
           throw new Error(`Module ${moduleId} not found in pipeline ${this.id}`);
         }
         
-        const moduleExecution = await this.executeModule(
+        const moduleExecution = await this.executeModuleInternal(
           moduleId, 
           currentInput, 
           executionRecord
@@ -309,7 +359,7 @@ export class StandardPipeline extends EventEmitter implements PipelineFramework 
   /**
    * 执行单个模块（内部方法）
    */
-  private async executeModule(
+  private async executeModuleInternal(
     moduleId: string, 
     input: any, 
     executionRecord: ExecutionRecord
@@ -417,5 +467,40 @@ export class StandardPipeline extends EventEmitter implements PipelineFramework 
   private calculateThroughput(): number {
     const averageTime = this.calculateAverageProcessingTime();
     return averageTime > 0 ? 1000 / averageTime : 0;
+  }
+  
+  /**
+   * Pipeline接口实现 - process方法
+   */
+  async process(input: any): Promise<any> {
+    return this.execute(input);
+  }
+  
+  /**
+   * Pipeline接口实现 - validate方法
+   */
+  async validate(): Promise<boolean> {
+    try {
+      // 验证所有模块都可用
+      for (const [moduleId, module] of this.modules) {
+        if (!module || typeof module.process !== 'function') {
+          return false;
+        }
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+  
+  /**
+   * Pipeline接口实现 - destroy方法
+   */
+  async destroy(): Promise<void> {
+    await this.stop();
+    this.modules.clear();
+    this.moduleOrder = [];
+    this.executionHistory = [];
+    this.removeAllListeners();
   }
 }

@@ -18,13 +18,14 @@ import {
   StandardPipelineFactory
 } from '../interfaces/pipeline/pipeline-framework';
 import { ModuleInterface, ModuleType, ModuleStatus, PipelineSpec } from '../interfaces/module/base-module';
+import { StandardPipeline } from './standard-pipeline';
 import { Pipeline, PipelineStatus } from '../interfaces/module/pipeline-module';
 
 /**
  * Pipeline管理器
  */
 export class PipelineManager extends EventEmitter {
-  private pipelines: Map<string, PipelineFramework> = new Map();
+  private pipelines: Map<string, StandardPipeline> = new Map();
   private activeExecutions: Map<string, ExecutionRecord> = new Map();
   private factory: StandardPipelineFactory;
   
@@ -38,7 +39,7 @@ export class PipelineManager extends EventEmitter {
    */
   async createPipeline(config: PipelineConfig): Promise<string> {
     try {
-      const pipeline = await this.factory.createStandardPipeline(config);
+      const pipeline = await this.factory.createStandardPipeline(config) as StandardPipeline;
       this.pipelines.set(config.id, pipeline);
       
       // 设置Pipeline事件监听
@@ -87,14 +88,14 @@ export class PipelineManager extends EventEmitter {
   /**
    * 获取Pipeline
    */
-  getPipeline(pipelineId: string): PipelineFramework | null {
+  getPipeline(pipelineId: string): StandardPipeline | null {
     return this.pipelines.get(pipelineId) || null;
   }
   
   /**
    * 获取所有Pipeline
    */
-  getAllPipelines(): Map<string, PipelineFramework> {
+  getAllPipelines(): Map<string, StandardPipeline> {
     return new Map(this.pipelines);
   }
   
@@ -254,7 +255,7 @@ export class PipelineManager extends EventEmitter {
     for (const [pipelineId, pipeline] of this.pipelines) {
       try {
         const status = pipeline.getStatus();
-        if (status.status === 'running' || status.status === 'ready') {
+        if (status.status === 'running') {
           healthyPipelines++;
         } else {
           issues.push(`Pipeline ${pipelineId} is in ${status.status} status`);
@@ -275,7 +276,7 @@ export class PipelineManager extends EventEmitter {
   /**
    * 设置Pipeline事件监听器
    */
-  private setupPipelineEventListeners(pipeline: PipelineFramework, pipelineId: string): void {
+  private setupPipelineEventListeners(pipeline: StandardPipeline, pipelineId: string): void {
     pipeline.on('moduleExecutionStarted', (data) => {
       this.emit('moduleExecutionStarted', { pipelineId, ...data });
     });

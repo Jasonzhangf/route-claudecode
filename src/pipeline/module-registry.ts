@@ -275,7 +275,9 @@ export class ModuleRegistry extends EventEmitter {
     // 统计实例数量
     for (const [instanceId, instance] of this.instances) {
       const moduleId = instanceId.split('_')[0];
-      instancesByModule[moduleId] = (instancesByModule[moduleId] || 0) + 1;
+      if (moduleId) {
+        instancesByModule[moduleId] = (instancesByModule[moduleId] || 0) + 1;
+      }
     }
     
     return {

@@ -11,6 +11,7 @@ exports.auth = auth;
 exports.apiKeyAuth = apiKeyAuth;
 exports.bearerAuth = bearerAuth;
 exports.basicAuth = basicAuth;
+exports.authentication = authentication;
 /**
  * 创建认证中间件
  */
@@ -145,5 +146,44 @@ function basicAuth(validateCredentials) {
             }
         }
     });
+}
+/**
+ * 创建简单认证中间件 - 与PipelineServer兼容
+ */
+function authentication(config = {}) {
+    const { required = false, apiKeyHeader = 'X-API-Key', bearerHeader = 'Authorization', basicAuth: enableBasic = true } = config;
+    return async (req, res, next) => {
+        // 如果不要求认证，直接通过
+        if (!required) {
+            return next();
+        }
+        // 检查API密钥
+        const apiKey = req.headers[apiKeyHeader.toLowerCase()];
+        if (apiKey) {
+            req.user = { type: 'api-key', key: apiKey };
+            return next();
+        }
+        // 检查Bearer令牌
+        const authHeader = req.headers[bearerHeader.toLowerCase()];
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            req.user = { type: 'bearer', token: authHeader.substring(7) };
+            return next();
+        }
+        // 检查Basic认证
+        if (enableBasic && authHeader && authHeader.startsWith('Basic ')) {
+            req.user = { type: 'basic', token: authHeader.substring(6) };
+            return next();
+        }
+        // 如果必须认证但没有提供凭据
+        if (required) {
+            res.statusCode = 401;
+            res.body = {
+                error: 'Unauthorized',
+                message: 'Authentication required'
+            };
+            return;
+        }
+        next();
+    };
 }
 //# sourceMappingURL=auth.js.map

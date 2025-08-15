@@ -8,11 +8,7 @@
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ToolBuilder = exports.MessageBuilder = exports.StandardResponseBuilder = exports.StandardRequestBuilder = exports.BaseModule = void 0;
-// 基础模块接口
-var base_module_1 = require("./module/base-module");
-Object.defineProperty(exports, "BaseModule", { enumerable: true, get: function () { return base_module_1.BaseModule; } });
-// 标准化数据结构
+exports.ToolBuilder = exports.MessageBuilder = exports.StandardResponseBuilder = exports.StandardRequestBuilder = void 0;
 var request_1 = require("./standard/request");
 Object.defineProperty(exports, "StandardRequestBuilder", { enumerable: true, get: function () { return request_1.StandardRequestBuilder; } });
 var response_1 = require("./standard/response");

@@ -16,6 +16,7 @@ export interface CORSOptions {
     exposedHeaders?: string[];
     credentials?: boolean;
     maxAge?: number;
+    headers?: string[];
 }
 /**
  * 创建CORS中间件

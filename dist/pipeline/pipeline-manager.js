@@ -198,7 +198,7 @@ class PipelineManager extends events_1.EventEmitter {
         for (const [pipelineId, pipeline] of this.pipelines) {
             try {
                 const status = pipeline.getStatus();
-                if (status.status === 'running' || status.status === 'ready') {
+                if (status.status === 'running') {
                     healthyPipelines++;
                 }
                 else {
