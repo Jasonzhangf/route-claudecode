@@ -5,43 +5,97 @@
  *
  * @author Jason Zhang
  */
-import { ValidationResult, ModuleMetrics } from '../../types';
 /**
  * 模块类型枚举
  */
-export type ModuleType = 'router' | 'input-transformer' | 'format-normalizer' | 'preprocessor' | 'protocol' | 'response-interceptor' | 'postprocessor' | 'output-transformer' | 'debug' | 'error-capture' | 'unit-test';
+export type ModuleType = 'validator' | 'transformer' | 'protocol' | 'compatibility' | 'server';
+/**
+ * 模块状态接口
+ */
+export interface ModuleStatus {
+    id: string;
+    name: string;
+    type: ModuleType;
+    status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+    health: 'healthy' | 'degraded' | 'unhealthy';
+    lastActivity?: Date;
+    error?: Error;
+}
+/**
+ * 模块性能指标
+ */
+export interface ModuleMetrics {
+    requestsProcessed: number;
+    averageProcessingTime: number;
+    errorRate: number;
+    memoryUsage: number;
+    cpuUsage: number;
+    lastProcessedAt?: Date;
+}
 /**
  * 模块接口定义
  */
 export interface ModuleInterface {
-    readonly id: string;
-    readonly name: string;
-    readonly version: string;
-    readonly type: ModuleType;
-    readonly interfaces: {
-        input: DataInterface;
-        output: DataInterface;
-    };
     /**
-     * 处理数据
+     * 获取模块ID
      */
-    process(input: any): Promise<any>;
+    getId(): string;
     /**
-     * 验证输入数据
+     * 获取模块名称
      */
-    validate(input: any): Promise<ValidationResult>;
+    getName(): string;
+    /**
+     * 获取模块类型
+     */
+    getType(): ModuleType;
+    /**
+     * 获取模块版本
+     */
+    getVersion(): string;
+    /**
+     * 获取模块状态
+     */
+    getStatus(): ModuleStatus;
     /**
      * 获取模块性能指标
      */
     getMetrics(): ModuleMetrics;
     /**
-     * 模块初始化
+     * 配置模块
      */
-    initialize?(): Promise<void>;
+    configure(config: any): Promise<void>;
     /**
-     * 模块销毁
+     * 启动模块
      */
-    destroy?(): Promise<void>;
+    start(): Promise<void>;
+    /**
+     * 停止模块
+     */
+    stop(): Promise<void>;
+    /**
+     * 处理数据
+     */
+    process(input: any): Promise<any>;
+    /**
+     * 重置模块状态
+     */
+    reset(): Promise<void>;
+    /**
+     * 清理模块资源
+     */
+    cleanup(): Promise<void>;
+    /**
+     * 健康检查
+     */
+    healthCheck(): Promise<{
+        healthy: boolean;
+        details: any;
+    }>;
+    /**
+     * 事件监听器
+     */
+    on(event: string, listener: (...args: any[]) => void): void;
+    removeAllListeners(): void;
 }
 /**
  * 数据接口定义
@@ -61,6 +115,12 @@ export interface ModuleConfig {
     config: Record<string, any>;
 }
 /**
+ * 模块工厂接口
+ */
+export interface ModuleFactory {
+    createModule(type: ModuleType, config: any): Promise<ModuleInterface>;
+}
+/**
  * 流水线规范接口
  */
 export interface PipelineSpec {
@@ -68,7 +128,13 @@ export interface PipelineSpec {
     name: string;
     description: string;
     version: string;
-    modules: ModuleConfig[];
+    provider?: string;
+    model?: string;
+    timeout?: number;
+    modules: {
+        id: string;
+        config?: Record<string, any>;
+    }[];
     configuration: PipelineConfiguration;
     metadata: PipelineMetadata;
 }
@@ -90,43 +156,5 @@ export interface PipelineMetadata {
     author: string;
     created: number;
     tags: string[];
-}
-/**
- * 基础模块抽象类
- */
-export declare abstract class BaseModule implements ModuleInterface {
-    abstract readonly id: string;
-    abstract readonly name: string;
-    abstract readonly version: string;
-    abstract readonly type: ModuleType;
-    abstract readonly interfaces: {
-        input: DataInterface;
-        output: DataInterface;
-    };
-    private metrics;
-    /**
-     * 处理数据 - 子类必须实现
-     */
-    abstract process(input: any): Promise<any>;
-    /**
-     * 验证输入数据 - 子类必须实现
-     */
-    abstract validate(input: any): Promise<ValidationResult>;
-    /**
-     * 获取性能指标
-     */
-    getMetrics(): ModuleMetrics;
-    /**
-     * 更新性能指标
-     */
-    protected updateMetrics(processingTime: number, hasError?: boolean): void;
-    /**
-     * 模块初始化 - 可选实现
-     */
-    initialize(): Promise<void>;
-    /**
-     * 模块销毁 - 可选实现
-     */
-    destroy(): Promise<void>;
 }
 //# sourceMappingURL=base-module.d.ts.map

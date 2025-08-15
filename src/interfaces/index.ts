@@ -8,22 +8,26 @@
  */
 
 // 基础模块接口
-export { 
+export type { 
   ModuleInterface, 
-  ModuleType, 
-  BaseModule,
-  DataInterface
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+  ModuleConfig,
+  ModuleFactory,
+  DataInterface,
+  PipelineSpec,
+  PipelineConfiguration,
+  PipelineMetadata
 } from './module/base-module';
 
-export { 
+export type { 
   Pipeline, 
-  PipelineStatus,
-  ModuleFactory,
-  ModuleRegistry
+  PipelineStatus
 } from './module/pipeline-module';
 
 // 客户端接口
-export { 
+export type { 
   CLICommands, 
   ServerStatus,
   CLIHandler,
@@ -36,65 +40,66 @@ export {
   HealthCheck
 } from './client/cli-interface';
 
-export { 
+export type { 
   ServerManager,
   RouteHandler
 } from './client/server-manager';
 
-export { 
+export type { 
   ErrorHandler,
   ErrorContext,
   ExtendedRCCError
 } from './client/error-handler';
 
 // 路由器接口
-export { 
+export type { 
   ConfigManager,
   GeneratedRoutingTable
 } from './router/config-manager';
 
-export { 
+export type { 
   RequestRouter,
   RCCRequest,
   LoadBalancingStrategy
 } from './router/request-router';
 
-export { 
+export type { 
   PipelineManager,
   PipelineLifecycleManager
 } from './router/pipeline-manager';
 
 // 流水线接口
-export { 
+export type { 
   PipelineFramework,
   PipelineExecutor,
   ExecutionResult
 } from './pipeline/pipeline-framework';
 
 // 标准化数据结构
-export { 
+export type { 
   StandardRequest,
-  StandardRequestBuilder,
-  RequestMetadata
+  RequestMetadata,
+  ToolChoice
 } from './standard/request';
+export { StandardRequestBuilder } from './standard/request';
 
-export { 
+export type { 
   StandardResponse,
-  StandardResponseBuilder,
   Choice,
   Usage
 } from './standard/response';
+export { StandardResponseBuilder } from './standard/response';
 
-export { 
+export type { 
   Message,
-  MessageBuilder,
   ContentBlock,
   MessageRole
 } from './standard/message';
+export { MessageBuilder } from './standard/message';
 
-export { 
+export type { 
   Tool,
-  ToolBuilder,
   FunctionDefinition,
   ToolExecutor
 } from './standard/tool';
+export { ToolBuilder } from './standard/tool';

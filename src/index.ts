@@ -11,7 +11,7 @@
 export * from './interfaces';
 
 // CLI模块导出
-export * from './cli';
+export { RCCCli, CommandParser, ArgumentValidator, ConfigLoader } from './cli';
 
 // 客户端模块导出
 export * from './client';
@@ -19,8 +19,15 @@ export * from './client';
 // 路由器模块导出
 export * from './router';
 
-// 流水线模块导出
-export * from './pipeline';
+// 流水线模块导出 - 避免与interfaces中的命名冲突
+export { 
+  PIPELINE_MODULE_VERSION,
+  PipelineModuleInterface
+} from './pipeline';
+export { PipelineManager } from './pipeline/pipeline-manager';
+export { StandardPipeline } from './pipeline/standard-pipeline';
+export { StandardPipelineFactoryImpl as PipelineFactoryImpl } from './pipeline/pipeline-factory';
+export { ModuleRegistry as PipelineModuleRegistry } from './pipeline/module-registry';
 
 // Debug系统导出
 export * from './debug';

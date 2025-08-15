@@ -16,9 +16,13 @@ export interface StandardRequest {
     readonly messages: Message[];
     readonly temperature?: number;
     readonly maxTokens?: number;
+    readonly max_tokens?: number;
+    readonly top_p?: number;
     readonly stream?: boolean;
+    readonly system?: string;
     readonly tools?: Tool[];
     readonly toolChoice?: ToolChoice;
+    readonly tool_choice?: ToolChoice;
     readonly stop?: string | string[];
     readonly metadata: RequestMetadata;
     readonly timestamp: Date;

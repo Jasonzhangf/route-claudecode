@@ -22,17 +22,30 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RouteClaudeCode = exports.BUILD_DATE = exports.VERSION = void 0;
+exports.RouteClaudeCode = exports.BUILD_DATE = exports.VERSION = exports.PipelineModuleRegistry = exports.PipelineFactoryImpl = exports.StandardPipeline = exports.PipelineManager = exports.PIPELINE_MODULE_VERSION = exports.ConfigLoader = exports.ArgumentValidator = exports.CommandParser = exports.RCCCli = void 0;
 // 核心接口导出
 __exportStar(require("./interfaces"), exports);
 // CLI模块导出
-__exportStar(require("./cli"), exports);
+var cli_1 = require("./cli");
+Object.defineProperty(exports, "RCCCli", { enumerable: true, get: function () { return cli_1.RCCCli; } });
+Object.defineProperty(exports, "CommandParser", { enumerable: true, get: function () { return cli_1.CommandParser; } });
+Object.defineProperty(exports, "ArgumentValidator", { enumerable: true, get: function () { return cli_1.ArgumentValidator; } });
+Object.defineProperty(exports, "ConfigLoader", { enumerable: true, get: function () { return cli_1.ConfigLoader; } });
 // 客户端模块导出
 __exportStar(require("./client"), exports);
 // 路由器模块导出
 __exportStar(require("./router"), exports);
-// 流水线模块导出
-__exportStar(require("./pipeline"), exports);
+// 流水线模块导出 - 避免与interfaces中的命名冲突
+var pipeline_1 = require("./pipeline");
+Object.defineProperty(exports, "PIPELINE_MODULE_VERSION", { enumerable: true, get: function () { return pipeline_1.PIPELINE_MODULE_VERSION; } });
+var pipeline_manager_1 = require("./pipeline/pipeline-manager");
+Object.defineProperty(exports, "PipelineManager", { enumerable: true, get: function () { return pipeline_manager_1.PipelineManager; } });
+var standard_pipeline_1 = require("./pipeline/standard-pipeline");
+Object.defineProperty(exports, "StandardPipeline", { enumerable: true, get: function () { return standard_pipeline_1.StandardPipeline; } });
+var pipeline_factory_1 = require("./pipeline/pipeline-factory");
+Object.defineProperty(exports, "PipelineFactoryImpl", { enumerable: true, get: function () { return pipeline_factory_1.StandardPipelineFactoryImpl; } });
+var module_registry_1 = require("./pipeline/module-registry");
+Object.defineProperty(exports, "PipelineModuleRegistry", { enumerable: true, get: function () { return module_registry_1.ModuleRegistry; } });
 // Debug系统导出
 __exportStar(require("./debug"), exports);
 // 工具函数导出

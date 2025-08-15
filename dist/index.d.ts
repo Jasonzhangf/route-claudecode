@@ -7,10 +7,14 @@
  * @version 4.0.0-alpha.1
  */
 export * from './interfaces';
-export * from './cli';
+export { RCCCli, CommandParser, ArgumentValidator, ConfigLoader } from './cli';
 export * from './client';
 export * from './router';
-export * from './pipeline';
+export { PIPELINE_MODULE_VERSION, PipelineModuleInterface } from './pipeline';
+export { PipelineManager } from './pipeline/pipeline-manager';
+export { StandardPipeline } from './pipeline/standard-pipeline';
+export { StandardPipelineFactoryImpl as PipelineFactoryImpl } from './pipeline/pipeline-factory';
+export { ModuleRegistry as PipelineModuleRegistry } from './pipeline/module-registry';
 export * from './debug';
 export * from './utils';
 export declare const VERSION = "4.0.0-alpha.1";

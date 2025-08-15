@@ -44,11 +44,17 @@ export interface Pipeline {
  */
 export interface PipelineStatus {
   id: string;
-  status: 'initializing' | 'ready' | 'processing' | 'error' | 'destroyed';
-  isActive: boolean;
-  lastProcessedAt?: Date;
-  errorCount: number;
-  processedRequests: number;
+  name: string;
+  status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+  modules: Record<string, import('./base-module').ModuleStatus>;
+  lastExecution?: any;
+  uptime: number;
+  performance: {
+    requestsProcessed: number;
+    averageProcessingTime: number;
+    errorRate: number;
+    throughput: number;
+  };
 }
 
 /**

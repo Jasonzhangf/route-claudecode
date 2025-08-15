@@ -6,6 +6,11 @@
  * @author Jason Zhang
  */
 export declare const PIPELINE_MODULE_VERSION = "4.0.0-alpha.1";
+export { PipelineManager } from './pipeline-manager';
+export { StandardPipeline } from './standard-pipeline';
+export { StandardPipelineFactoryImpl } from './pipeline-factory';
+export { ModuleRegistry } from './module-registry';
+export type { ModuleRegistration, ModuleFactoryFunction } from './module-registry';
 export interface PipelineModuleInterface {
     version: string;
 }

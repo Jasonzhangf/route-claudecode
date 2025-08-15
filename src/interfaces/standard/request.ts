@@ -18,9 +18,13 @@ export interface StandardRequest {
   readonly messages: Message[];
   readonly temperature?: number;
   readonly maxTokens?: number;
+  readonly max_tokens?: number; // 兼容Anthropic格式
+  readonly top_p?: number; // 兼容Anthropic格式
   readonly stream?: boolean;
+  readonly system?: string; // Anthropic系统消息
   readonly tools?: Tool[];
   readonly toolChoice?: ToolChoice;
+  readonly tool_choice?: ToolChoice; // 兼容Anthropic格式
   readonly stop?: string | string[];
   readonly metadata: RequestMetadata;
   readonly timestamp: Date;
