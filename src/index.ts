@@ -11,7 +11,7 @@
 export * from './interfaces';
 
 // CLI模块导出
-export { RCCCli, CommandParser, ArgumentValidator, ConfigLoader } from './cli';
+export * from './cli';
 
 // 客户端模块导出
 export * from './client';
