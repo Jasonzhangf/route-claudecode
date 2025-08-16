@@ -498,11 +498,19 @@ export class ConfigHotReloader extends EventEmitter implements IConfigHotReloade
           return JSON.parse(content);
         case '.yaml':
         case '.yml':
-          // TODO: 实现YAML解析
-          throw new Error('YAML support not implemented yet');
+          try {
+            const yaml = await import('yaml');
+            return yaml.parse(content);
+          } catch (error) {
+            throw new Error(`YAML parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         case '.toml':
-          // TODO: 实现TOML解析
-          throw new Error('TOML support not implemented yet');
+          try {
+            const toml = await import('@iarna/toml');
+            return toml.parse(content);
+          } catch (error) {
+            throw new Error(`TOML parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
         default:
           throw new Error(`Unsupported file format: ${ext}`);
       }

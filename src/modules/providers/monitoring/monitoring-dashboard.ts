@@ -24,6 +24,21 @@ export interface DashboardConfig {
   apiKey?: string;
   /** 刷新间隔(秒) */
   refreshInterval: number;
+  /** 安全配置 */
+  security: {
+    /** 启用HTTPS */
+    enableHttps: boolean;
+    /** 允许的IP地址 */
+    allowedIPs: string[];
+    /** 会话超时(分钟) */
+    sessionTimeout: number;
+    /** 数据脱敏 */
+    dataSanitization: boolean;
+    /** 访问日志 */
+    enableAccessLog: boolean;
+  };
+  /** 数据权限级别 */
+  accessLevel: 'public' | 'internal' | 'admin';
 }
 
 /**
