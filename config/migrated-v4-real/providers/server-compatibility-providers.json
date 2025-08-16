@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "4.0.0",
+  "description": "从v3迁移的Provider配置",
+  "lastUpdated": "2025-08-16T00:18:46.170Z",
+  "serverCompatibilityProviders": {
+    "openai-lmstudio": {
+      "id": "openai-lmstudio",
+      "name": "lmstudio openai Provider",
+      "description": "从v3迁移的openai Provider - lmstudio",
+      "enabled": true,
+      "type": "server-compatibility",
+      "protocol": "openai",
+      "connection": {
+        "baseUrl": "http://localhost:1234/v1/chat/completions",
+        "timeout": 240000,
+        "maxRetries": 3,
+        "retryDelay": 1000
+      },
+      "models": {
+        "supportedModels": [
+          "gpt-oss-20b-mlx",
+          "text-embedding-nomic-embed-text-v1.5",
+          "gpt-oss-120b-mlx",
+          "unsloth/gpt-oss-120b-gguf/._gpt-oss-120b-q4_k_s-00001-of-00002.gguf",
+          "unsloth/gpt-oss-120b-gguf/gpt-oss-120b-q4_k_s-00001-of-00002.gguf",
+          "qwen3-4b-thinking-2507-mlx",
+          "gabriellarson/ii-search-4b-gguf/._ii-search-4b-q4_k_s.gguf",
+          "gabriellarson/ii-search-4b-gguf/ii-search-4b-q4_k_s.gguf",
+          "qwen3-30b-a3b-instruct-2507-mlx",
+          "glm-4.5-air@3bit",
+          "glm-4.5-air@8bit",
+          "qwen3-235b-a22b-instruct-2507-mlx",
+          "gemma-3n-e2b-it-mlx",
+          "bge-small-en-v1.5",
+          "nextcoder-32b-mlx",
+          "qwq-32b-mlx",
+          "external/gemma-3-27b-it-ud-q4_k_xl/._gemma-3-27b-it-ud-q4_k_xl.gguf",
+          "external/gemma-3-27b-it-ud-q4_k_xl/gemma-3-27b-it-ud-q4_k_xl.gguf",
+          "qwen2.5-vl-72b-instruct",
+          "qwen3-30b-a3b-python-coder-mlx"
+        ],
+        "defaultModel": "gpt-oss-20b-mlx",
+        "dynamicModelDiscovery": false
+      },
+      "features": {
+        "chat": true,
+        "tools": true,
+        "streaming": false,
+        "embedding": false,
+        "vision": false
+      },
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 5000,
+        "endpoint": "/v1/models"
+      }
+    }
+  },
+  "standardProviders": {},
+  "validation": {
+    "required": [
+      "openai-lmstudio"
+    ],
+    "environmentVariables": {
+      "required": [],
+      "optional": []
+    }
+  },
+  "_encryption": {
+    "version": "4.0.0",
+    "algorithm": "aes-256-gcm",
+    "encrypted": true,
+    "timestamp": "2025-08-16T00:18:46.171Z"
+  }
+}
