@@ -1,225 +1,288 @@
-# Route Claude Code (RCC) v4.0 🚀
+# RCC v4.0 模块化路由代理系统
 
-高性能、模块化的多AI提供商路由转换系统 - 完全重构版
+## 项目概述
 
-## 🎯 项目概述
-
-RCC v4.0 是一个基于 TypeScript 的现代化AI路由代理系统，支持多种AI提供商的无缝集成和智能路由。采用严格模块化架构，提供企业级的可靠性和性能。
+Route Claude Code (RCC) v4.0 是一个严格模块化的AI路由代理系统，采用三层架构设计：客户端模块 → 路由器模块 → 流水线Worker。系统禁止mockup响应，所有错误通过标准API error handler处理，确保无静默失败。
 
 ### 核心特性
+- **双模式CLI**: Server模式和Client模式，支持独立运行和透明代理
+- **会话流控**: 基于session.conversationID.requestID的分层流控管理
+- **智能路由**: 支持多Provider负载均衡和健康检查
+- **完整调试**: 端口分组的日志系统和回放测试
+- **自动化管理**: Provider自动更新和模型发现
 
-- 🏗️ **严格模块化架构** - 11模块标准流水线，职责清晰分离
-- 🔄 **智能路由系统** - 基于权重、负载均衡的动态路由
-- 🚀 **高性能设计** - <100ms 处理延迟，<200MB 内存占用
-- 🛡️ **零失败容忍** - 无静默失败，完整错误追踪链
-- 🧪 **真实流水线测试** - Debug系统支持数据捕获和回放
-- 🎛️ **双模式CLI** - Server模式和Client模式灵活切换
+## 核心架构
 
-### 支持的AI提供商
+### 整体架构图
 
-- ✅ **LM Studio** (优先支持) - OpenAI兼容协议
-- 🔄 **OpenAI** (计划支持) - 官方API
-- 🔄 **Anthropic** (计划支持) - Claude API
-- 🔄 **Google Gemini** (计划支持) - Gemini API
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   客户端模块     │───▶│   路由器模块     │───▶│  流水线Worker   │
+│   (Client)      │    │   (Router)      │    │  (Pipeline)     │
+│                 │    │                 │    │                 │
+│ ┌─────────────┐ │    │ ┌─────────────┐ │    │ ┌─────────────┐ │
+│ │ CLI管理     │ │    │ │ 配置管理     │ │    │ │ Transformer │ │
+│ │ 服务器管理   │ │    │ │ 请求路由     │ │    │ │ Protocol    │ │
+│ │ 会话管理     │ │    │ │ 会话流控     │ │    │ │ Server-Comp │ │
+│ │ 错误处理     │ │    │ │ 流水线管理   │ │    │ │ Server      │ │
+│ └─────────────┘ │    │ └─────────────┘ │    │ └─────────────┘ │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         │                       │                       │
+         ▼                       ▼                       ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    支撑系统模块                                  │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐             │
+│  │ Debug系统    │  │ 配置系统     │  │ 错误处理     │             │
+│  └─────────────┘  └─────────────┘  └─────────────┘             │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │   核心类型定义   │
+                    │   (Types)       │
+                    └─────────────────┘
+```
 
-## 🚀 快速开始
+### CLI双模式架构
 
-### 系统要求
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLI入口点                                │
+│                      (src/cli.ts)                              │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │   CLI管理器      │
+                    │ (cli-manager.ts) │
+                    └─────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    ▼                   ▼
+        ┌─────────────────┐   ┌─────────────────┐
+        │   Server模式     │   │   Client模式     │
+        │(cli-server.ts)  │   │(cli-client.ts)  │
+        │                 │   │                 │
+        │ rcc start       │   │ rcc code        │
+        │ - 启动HTTP服务器 │   │ - 启动Claude Code│
+        │ - 阻塞式运行     │   │ - 透明代理模式   │
+        │ - Ctrl+C优雅退出 │   │ - 进程生命周期管理│
+        │ - 服务器监控     │   │ - 自动服务管理   │
+        └─────────────────┘   └─────────────────┘
+```
 
-- Node.js >= 18.0.0
-- TypeScript >= 5.5.0
-- 内存 >= 512MB
+## 核心模块设计
 
-### 安装
+### 1. [客户端模块 (Client)](./src/client/README.md)
+- **路径**: `src/client/`
+- **职责**: CLI命令处理、HTTP服务器管理、统一错误处理、会话管理
+- **核心功能**: 
+  - CLI命令系统 (`rcc start`, `rcc stop`, `rcc code`, `rcc status`)
+  - HTTP服务器管理
+  - 统一错误处理
+  - 会话和对话ID提取管理
 
+### 2. [路由器模块 (Router)](./src/router/README.md)
+- **路径**: `src/router/`
+- **职责**: 配置管理、请求路由、流水线生命周期管理、会话流控
+- **核心功能**:
+  - 配置管理系统
+  - 智能请求路由
+  - 流水线动态管理
+  - 负载均衡
+  - 会话流控系统 (基于session.conversationID.requestID)
+
+### 3. [流水线Worker模块 (Pipeline)](./src/pipeline/README.md)
+- **路径**: `src/pipeline/`
+- **职责**: 核心处理单元，每个provider.model独立流水线
+- **核心功能**:
+  - 流水线框架
+  - 动态创建和销毁
+  - 模块化处理链
+
+## 流水线子模块
+
+### [Transformer模块](./src/modules/pipeline-modules/transformer/README.md)
+- **路径**: `src/modules/pipeline-modules/transformer/`
+- **职责**: Anthropic格式与目标协议格式双向转换
+- **支持协议**: OpenAI, Anthropic, Gemini
+- **核心功能**: 格式转换、工具调用转换、流式处理
+
+### [Protocol模块](./src/modules/pipeline-modules/protocol/README.md)
+- **路径**: `src/modules/pipeline-modules/protocol/`
+- **职责**: 协议控制转换，流式和非流式处理
+- **核心功能**: 流式控制、协议验证、格式标准化
+
+### [Server-Compatibility模块](./src/modules/pipeline-modules/server-compatibility/README.md)
+- **路径**: `src/modules/pipeline-modules/server-compatibility/`
+- **职责**: 第三方服务器兼容处理
+- **支持服务**: OpenAI, DeepSeek, LMStudio, Gemini, Anthropic
+- **核心功能**: 请求适配、响应适配、特殊处理
+
+### [Server模块](./src/modules/pipeline-modules/server/README.md)
+- **路径**: `src/modules/pipeline-modules/server/`
+- **职责**: 与AI服务提供商的实际通信
+- **SDK支持**: 优先使用官方SDK，回退到HTTP客户端
+- **支持服务**: OpenAI, Anthropic, Gemini, LMStudio, Ollama, CodeWhisperer
+
+## 支撑系统模块
+
+### [Debug系统模块](./src/debug/README.md)
+- **路径**: `src/debug/`
+- **职责**: 完整的调试和回放功能
+- **核心功能**:
+  - Debug管理和控制
+  - 数据记录和存储
+  - 回放系统和单元测试生成
+
+### [配置系统模块](./src/config/README.md)
+- **路径**: `src/config/`
+- **职责**: 配置管理、验证、动态重载
+- **核心功能**:
+  - 配置加载和验证
+  - 环境变量替换
+  - 动态重载和监听
+
+### [错误处理系统](./src/middleware/error-handler.ts)
+- **路径**: `src/middleware/`
+- **职责**: 统一错误处理机制
+- **核心功能**:
+  - 标准错误格式
+  - 错误分类和状态码映射
+  - 敏感信息过滤
+
+### [核心类型定义模块](./src/types/README.md)
+- **路径**: `src/types/`
+- **职责**: 系统中所有模块共享的类型定义
+- **核心功能**:
+  - 核心类型定义
+  - AI服务类型定义
+  - 模块接口类型
+
+## 设计原则
+
+### 核心质量标准
+1. **严格模块化**: 每个模块职责单一、物理隔离、通过标准接口通信
+2. **零静默失败**: 所有错误必须通过标准API error handler处理
+3. **零Mockup响应**: 严禁mockup响应，必须真实流水线测试
+4. **零重复代码**: 模块间不允许功能重叠
+5. **零硬编码**: 所有配置可动态加载和更新
+
+### 模块设计基本要求
+1. **功能不重叠**: 每个模块的功能彼此不覆盖，职责单一明确
+2. **标准接口**: 模块间通过标准接口连接，不允许直接调用内部方法
+3. **物理隔离**: 每个模块物理上存在于独立的文件夹中
+4. **文档完整**: 每个模块文件夹内必须有README说明功能和接口
+5. **数据校验**: 每个模块的输入输出都有标准的数据校验方式
+6. **错误处理**: 输入输出有问题时第一时间调用error handler处理
+
+## 命令行接口
+
+### 基本命令
 ```bash
-# 克隆项目
-git clone https://github.com/fanzhang16/route-claudecode.git
-cd route-claudecode/workspace/main-development
+# Server模式 - 启动HTTP服务器
+rcc start [--port 3456] [--config path] [--debug]
 
+# Client模式 - 启动Claude Code代理
+rcc code [--provider lmstudio] [--model llama-3.1]
+
+# 状态查询
+rcc status
+
+# 停止服务
+rcc stop
+```
+
+### 高级命令
+```bash
+# Provider管理
+rcc provider list
+rcc provider update
+rcc provider health
+
+# 配置管理
+rcc config validate
+rcc config reload
+
+# Debug功能
+rcc debug enable
+rcc debug replay [session-id]
+```
+
+## 开发指南
+
+### 新模块开发流程
+1. **需求分析**: 明确模块职责和边界
+2. **接口设计**: 定义标准接口和类型
+3. **文档编写**: 编写模块README文档
+4. **实现开发**: 按照质量标准实现功能
+5. **测试验证**: 进行真实流水线测试
+6. **质量检查**: 通过模块交付检查标准
+7. **集成测试**: 与其他模块集成测试
+
+### 模块交付检查标准
+每个模块完成交付时必须通过以下检查：
+- ✅ 是否有静默失败？（必须无静默失败）
+- ✅ 是否有mockup响应？（必须无mockup响应）
+- ✅ 是否有重复代码？（必须无重复代码）
+- ✅ 是否有硬编码实现？（必须无硬编码实现）
+
+## 部署和运行
+
+### 开发环境
+```bash
 # 安装依赖
 npm install
 
-# 构建项目
-npm run build
-
-# 复制配置文件
-cp .env.example .env
-cp config/examples/config.example.json ~/.route-claudecode/config/config.json
-```
-
-### 基础使用
-
-```bash
-# 启动服务器模式 (独立运行)
-rcc4 start
-
-# 启动客户端模式 (透明代理Claude Code)
-rcc4 code
-
-# 查看状态
-rcc4 status
-
-# 停止服务
-rcc4 stop
-```
-
-## 🏗️ 架构设计
-
-### 四大核心模块
-
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client        │────│    Router       │────│   Pipeline      │────│    Debug        │
-│                 │    │                 │    │    Worker       │    │    System       │
-│ • CLI System    │    │ • Config Mgmt   │    │ • Transformer   │    │ • Data Capture  │
-│ • Error Handler │    │ • Request Route │    │ • Protocol      │    │ • Replay System │
-│ • User Interface│    │ • Load Balance  │    │ • Server-Compat │    │ • Unit Testing  │
-└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
-### 11模块流水线架构
-
-每个Provider都有独立的流水线实例：
-
-1. **Router** - 路由决策和Provider选择
-2. **Input Transformer** - 输入格式转换 (Anthropic → Standard)
-3. **Format Normalizer** - 消息和工具格式统一
-4. **Provider Preprocessor** - Provider特定预处理
-5. **Protocol Interface** - 协议层接口 (OpenAI/Anthropic/etc)
-6. **Response Interceptor** - 响应拦截和验证
-7. **Provider Postprocessor** - Provider特定后处理
-8. **Output Transformer** - 输出格式转换 (Standard → Anthropic)
-9. **Debug Module** - 调试数据记录 (可选)
-10. **Error Capture** - 错误捕获系统 (可选)
-11. **Unit Test** - 单元测试支持 (可选)
-
-## 📁 项目结构
-
-```
-src/
-├── types/              # 核心类型定义
-├── client/             # 客户端模块 (CLI, 服务器管理)
-├── router/             # 路由器模块 (配置, 路由, 负载均衡)
-├── pipeline/           # 流水线Worker (动态管理, 11模块流水线)
-├── debug/              # Debug系统 (数据记录, 回放测试)
-├── utils/              # 通用工具函数
-├── interfaces/         # 接口定义
-├── modules/            # 可复用模块
-└── __tests__/          # 单元测试
-
-config/
-├── examples/           # 示例配置文件
-├── providers/          # Provider配置
-├── routing/            # 路由配置
-└── generated/          # 动态生成的配置
-
-tests/
-├── unit/               # 单元测试
-├── integration/        # 集成测试
-├── e2e/                # 端到端测试
-└── fixtures/           # 测试数据
-```
-
-## 🧪 开发和测试
-
-### 开发模式
-
-```bash
-# 开发模式运行 (自动重建)
+# 开发模式运行
 npm run dev
 
-# 代码检查
-npm run lint
+# 类型检查
+npm run typecheck
 
-# 自动修复代码格式
-npm run lint:fix
-```
-
-### 测试
-
-```bash
-# 运行所有测试
+# 测试
 npm test
-
-# 监听模式测试
-npm run test:watch
-
-# 生成覆盖率报告
-npm run test:coverage
 ```
 
-### 验收标准
+### 生产部署
+```bash
+# 构建
+npm run build
 
-根据 `tasks.md` 中的要求，每个任务必须满足：
+# 启动服务器模式
+npm start -- start --port 3456
 
-- ✅ **代码质量**: TypeScript严格模式编译通过，ESLint无错误
-- ✅ **测试覆盖**: 单元测试≥80%，集成测试≥90%，端到端测试=100%
-- ✅ **真实API测试**: 与LM Studio的真实API调用测试通过
-- ✅ **性能基准**: 响应延迟<100ms，内存使用<200MB
-- ✅ **文档更新**: 代码注释、API文档、用户文档同步更新
-- ✅ **安全检查**: 无安全漏洞，输入验证完整
+# 启动客户端模式
+npm start -- code
+```
 
-## 📋 开发计划
+## 技术栈
 
-当前处于 **Phase 1: 核心架构设计与实现** 阶段
+- **TypeScript**: 主要开发语言，严格类型检查
+- **Node.js**: 运行时环境
+- **官方SDK**: 优先使用各AI服务商的官方SDK
+  - `openai` - OpenAI SDK
+  - `@anthropic-ai/sdk` - Anthropic SDK
+  - `@google/generative-ai` - Gemini SDK
+- **HTTP客户端**: LMStudio等第三方服务
 
-### 完成状态
+## 许可证
 
-- ✅ **Task 1.1**: 项目初始化和结构设置
-- ⏳ **Task 1.2**: 核心接口定义和类型系统
-- ⏳ **Task 1.3**: CLI框架和命令系统
-- ⏳ **Task 1.4**: 基础模块管理器实现
+MIT License - 详见 LICENSE 文件
 
-详细任务计划请参考 [tasks.md](./tasks.md)
+## 维护指南
 
-## 🤝 开发规范
+### 日常维护
+- **配置更新**: 定期检查和更新配置文件
+- **日志监控**: 监控错误日志和性能指标
+- **健康检查**: 定期检查各模块健康状态
+- **依赖更新**: 及时更新依赖包和SDK
 
-### 强制执行规则
+### 故障排查
+- **错误追踪**: 使用Debug系统追踪错误
+- **日志分析**: 分析错误日志定位问题
+- **回放测试**: 使用回放功能重现问题
+- **模块隔离**: 逐个模块排查问题
 
-根据 `CLAUDE.md` 中的规定：
-
-1. **任务执行前检查** - 必须检查 `tasks.md` 中的任务状态和依赖
-2. **开发过程约束** - 零代码重复，接口优先，测试驱动
-3. **完成前验证** - 单元测试80%+，真实API测试，性能基准
-4. **任务完成确认** - 更新状态，记录测试报告，代码审查
-
-### 模块边界
-
-- 严格模块化：每个模块只能在职责范围内工作
-- 接口通信：模块间只能通过定义的接口通信
-- 不允许跨模块：不能直接调用其他模块的内部方法
-
-### 错误处理
-
-- 不允许静默失败：所有错误必须抛出
-- 统一错误格式：使用RCCError类型
-- 完整错误链：保持错误追踪链完整
-
-## 📚 文档
-
-- [项目规格书](.claude/project-details/rcc-v4-specification.md)
-- [详细设计](.claude/project-details/rcc-v4-detailed-design.md)
-- [项目结构](.claude/project-details/rcc-v4-project-structure.md)
-- [任务计划](./tasks.md)
-- [开发规范](./CLAUDE.md)
-
-## 📄 许可证
-
-MIT License - 详见 [LICENSE](LICENSE) 文件
-
-## 👥 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-请确保：
-1. 遵循项目的代码规范
-2. 添加适当的测试
-3. 更新相关文档
-4. 通过所有质量检查
-
----
-
-**项目版本**: v4.0.0-alpha.1  
-**最后更新**: 2025-08-15  
-**开发状态**: 🚧 开发中 - Phase 1
+这个模块化架构为RCC v4.0提供了清晰的结构和发展路径，确保系统的可维护性、可扩展性和可靠性。

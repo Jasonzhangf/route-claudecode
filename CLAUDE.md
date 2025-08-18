@@ -2,6 +2,57 @@
 
 ## 🚨 强制执行指令 - 不可违反 (MANDATORY COMPLIANCE)
 
+### 🔷 TypeScript-Only 强制政策 - 已实施 (TYPESCRIPT-ONLY ENFORCED)
+
+**状态**: ✅ 已完成TypeScript-Only强制政策实施 (2025-08-16)
+
+本项目强制要求**100% TypeScript开发**，任何JavaScript文件修改都将被自动拒绝：
+
+- ✅ **禁止JavaScript文件修改**: 严禁修改任何 `.js` 文件，包括创建新的JavaScript文件
+- ✅ **源代码100%TypeScript**: 所有 `src/` 目录下的文件必须使用 `.ts` 扩展名
+- ✅ **编译文件保护**: 严禁直接修改 `dist/` 目录下的编译产物
+- ✅ **TypeScript错误零容忍**: 禁止忽略编译错误，禁止使用 `@ts-ignore` 绕过
+- ✅ **正确构建系统**: 使用 `./build-and-install.sh` 进行完整的TypeScript编译构建和全局安装
+- ✅ **自动化检查**: Git pre-commit hooks和持续监控确保规则执行
+
+**核心原则**: 严格类型安全，零JavaScript容忍，完整的TypeScript开发环境。
+
+**强制执行工具**:
+- `.claude/rules/scripts/typescript-only-check.sh` - 强制检查脚本
+- `.claude/rules/scripts/dist-protection.sh` - 编译文件保护
+- `.claude/rules/scripts/automated-compliance-check.sh` - 自动化合规检查
+- `.claude/rules/scripts/compliance-monitor.sh` - 持续监控系统
+
+**参考文档**: 
+- `.claude/rules/typescript-only-policy.md` - TypeScript-Only强制政策
+- `.claude/rules/typescript-development-workflow.md` - TypeScript开发工作流程
+
+**⚠️ 违规处理**: 任何违反TypeScript-Only政策的行为将导致开发工作被立即拒绝。
+
+---
+
+### ⚡ ZERO FALLBACK POLICY - 已实施 (IMPLEMENTED)
+
+**状态**: ✅ 已完成零Fallback策略实施 (2025-08-16)
+
+本项目已完全实施**零Fallback策略**，消除了所有架构冲突：
+
+- ✅ **废弃fallback实现**: CrossProviderFallbackStrategy、ConditionalFallbackResolver等已标记废弃
+- ✅ **强化配置验证**: 强制要求 `zeroFallbackPolicy: true`，拒绝任何fallback配置
+- ✅ **统一错误处理**: 实施ZeroFallbackError统一错误类型，失败时立即抛出错误
+- ✅ **重构路由逻辑**: hybrid-multi-provider-router仅使用主Provider，移除所有fallback路径
+- ✅ **项目治理规则**: 建立`.claude/rules/`强制规则，防止fallback机制重新引入
+- ✅ **合规检查工具**: 创建自动化检查脚本，确保持续合规
+
+**核心原则**: 失败时立即报错，不进行任何形式的降级或备用路由。
+
+**参考文档**: 
+- `.claude/rules/zero-fallback-policy.md` - 零Fallback策略规则
+- `.claude/rules/zero-fallback-error-types.md` - 统一错误类型标准
+- `src/interfaces/core/zero-fallback-errors.ts` - 错误类型实现
+
+---
+
 ⚠️ **AI开发者必须严格遵循**: 本项目采用严格的任务驱动开发模式，所有开发工作必须按照`tasks.md`中的任务计划执行。违反者将被拒绝继续工作。
 
 ### 📋 强制执行的开发流程 (MANDATORY DEVELOPMENT WORKFLOW)
@@ -12,21 +63,30 @@
 - [ ] 确认前置任务已100%完成且测试通过
 - [ ] 验证当前任务的验收标准和测试要求
 - [ ] 更新任务状态为"🚧 进行中"
+- [ ] 阅读相关模块的开发指南 (`MODULE-DEVELOPMENT-GUIDE.md`)
 
 #### 2. **开发过程约束 (DEVELOPMENT CONSTRAINTS)**
 开发过程中必须：
+- [ ] **TypeScript-Only合规**: 运行 `bash .claude/rules/scripts/typescript-only-check.sh` 确保TypeScript规范
+- [ ] **零JavaScript文件**: 禁止创建或修改任何 `.js` 文件，只能使用 `.ts` 文件
+- [ ] **编译前检查**: 使用 `npm run type-check` 确保无TypeScript错误
 - [ ] **零代码重复**: 检查examples目录下的参考实现，复用可用组件
 - [ ] **接口优先**: 根据`.claude/project-details/`中的设计文档定义接口
 - [ ] **测试驱动**: 先写测试，再写实现代码
 - [ ] **实时文档**: 同步更新代码注释和设计文档
+- [ ] **模块化开发**: 严格按照`MODULE-DEVELOPMENT-GUIDE.md`进行模块开发
 
 #### 3. **完成前验证 (PRE-COMPLETION VALIDATION)**
 任务完成前必须：
+- [ ] **TypeScript合规检查**: 运行 `bash .claude/rules/scripts/automated-compliance-check.sh` 通过所有检查
+- [ ] **TypeScript编译**: 确保 `npm run build` 无错误
+- [ ] **类型覆盖率**: 达到95%+类型覆盖率 (使用 `npx type-coverage`)
 - [ ] **单元测试**: 达到80%+代码覆盖率
 - [ ] **真实API测试**: 与LM Studio进行真实API调用测试
 - [ ] **性能基准**: 满足延迟(<100ms)和内存(<200MB)要求
 - [ ] **集成测试**: 通过端到端流水线测试
 - [ ] **更新文档**: 同步更新相关设计文档和API文档
+- [ ] **模块文档**: 确保模块README文档完整准确
 
 #### 4. **任务完成确认 (TASK COMPLETION CONFIRMATION)**
 完成任务时必须：
@@ -53,16 +113,32 @@
 ### 🔧 技术实现要求 (TECHNICAL REQUIREMENTS)
 
 #### **架构约束 (ARCHITECTURE CONSTRAINTS)**
-- **模块化设计**: 11模块标准流水线架构
-- **接口标准**: 严格按照`.claude/project-details/rcc-v4-specification.md`
+- **模块化设计**: 严格遵循12大核心模块架构
+- **接口标准**: 严格按照模块开发指南和各模块README文档
 - **零硬编码**: 所有配置通过配置文件管理
 - **类型安全**: 使用TypeScript，严格类型检查
+
+#### **构建和部署规范 (BUILD AND DEPLOYMENT STANDARDS)**
+- **标准构建流程**: 必须使用 `./build-and-install.sh` 进行构建和全局安装
+- **构建步骤**:
+  1. 清理previous builds (`rm -rf dist/`)
+  2. 安装依赖 (`npm install`)
+  3. TypeScript编译 (`npm run build`)
+  4. 验证编译输出 (`dist/cli.js` 存在)
+  5. 创建npm包 (`npm pack`)
+  6. 卸载旧版本 (`npm uninstall -g`)
+  7. 全局安装 (`npm install -g <package>.tgz`)
+  8. 验证安装 (`rcc4 --version`)
+- **禁止使用**: 任何直接复制.js文件或跳过TypeScript编译的脚本
+- **错误脚本**: 已删除 `install-rcc4-global.sh`, `npm-global-install.sh`, `rcc-simple.js` 等错误实现
+- **全局命令**: 安装后必须提供 `rcc4` 全局命令
 
 #### **质量标准 (QUALITY STANDARDS)**
 - **代码覆盖率**: 单元测试80%+，集成测试90%+，端到端100%
 - **性能基准**: 响应延迟<100ms，内存使用<200MB
 - **错误处理**: 零静默失败，完整错误链追踪
 - **日志记录**: 结构化日志，支持调试和监控
+- **文档完整**: 每个模块必须有完整的README文档
 
 #### **测试要求 (TESTING REQUIREMENTS)**
 ```typescript
@@ -107,6 +183,7 @@ describe('End-to-End Pipeline', () => {
 - **测试结果**: 单元测试X个通过，API测试X个通过
 - **遇到问题**: 具体问题描述和解决方案
 - **明日计划**: 下一步工作计划
+- **文档更新**: 更新的模块文档列表
 ```
 
 #### **任务状态更新要求**
@@ -143,6 +220,7 @@ examples/
 - 未更新任务进度和文档
 - 违反架构设计约束
 - 提交未通过质量检查的代码
+- 未遵循模块开发指南
 
 #### **质量控制检查清单**
 在每次提交前，必须通过以下检查：
@@ -152,6 +230,8 @@ examples/
 - [ ] 性能基准测试达标
 - [ ] 代码注释和文档完整
 - [ ] 任务状态和进度已更新
+- [ ] 模块README文档已更新
+- [ ] 遵循`MODULE-DEVELOPMENT-GUIDE.md`开发规范
 
 ### 🎯 成功标准 (SUCCESS CRITERIA)
 
@@ -169,6 +249,7 @@ examples/
 - **质量保证**: 零已知bug，100%端到端测试覆盖
 - **文档完整**: 完整的API文档、部署指南和用户手册
 - **可扩展性**: 支持快速添加新的AI Provider
+- **模块化**: 12大核心模块完整实现，每个模块有详细文档
 
 ---
 
@@ -176,10 +257,14 @@ examples/
 
 **查看详细任务计划**: [tasks.md](./tasks.md)
 
+**查看模块开发指南**: [MODULE-DEVELOPMENT-GUIDE.md](./MODULE-DEVELOPMENT-GUIDE.md)
+
+**查看模块文档**: [README.md](./README.md)
+
 **当前阶段**: Phase 1 - 核心架构设计与实现
 
 **下一个任务**: 请查阅`tasks.md`确定当前需要执行的任务
 
 ---
 
-**⚠️ 重要提醒**: 本项目采用严格的质量控制标准。任何偷工减料或跳过测试的行为都将导致工作被拒绝。请严格按照任务计划和质量要求执行开发工作。
+**⚠️ 重要提醒**: 本项目采用严格的质量控制标准。任何偷工减料或跳过测试的行为都将导致工作被拒绝。请严格按照任务计划、质量要求和模块开发指南执行开发工作。

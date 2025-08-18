@@ -1,2 +1,75 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Configuration files with sensitive data
+config/hybrid-multi-provider-v3-*.json
+config/providers/lmstudio-*.json5
+config/providers/modelscope-*.json5
+config/test-*.json
+test-*-endpoint.js
+**/config-*.json
+
+# API Keys and credentials
+**/*apikey*
+**/*api-key*
+**/*secret*
+**/*credential*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Test reports and temporary files
+tests/reports/
+tests/temp/
+provider-connection-test-report.json
+*-test-report.json
+*.test.json
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Examples directory (may contain sensitive configs)
 examples
 .kiro
+
+# Security reports
+security-report.md
+*-audit-report.md
+
+# Backup files
+*.backup
+*.bak
+*.backup.*
