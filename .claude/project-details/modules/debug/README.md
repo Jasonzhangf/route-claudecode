@@ -1,384 +1,100 @@
-# Debug系统模块
+# Debug模块 (Debug Module)
 
 ## 模块概述
 
-Debug系统提供完整的调试和回放功能，记录系统运行状态，支持问题分析和回放测试。
+Debug模块是RCC v4.0系统的调试和监控中心，负责全链路数据记录、回放测试和调试支持。
 
-## 目录结构
+## 模块职责
+
+1. **数据记录**: 按端口分组记录全链路处理数据
+2. **回放测试**: 支持基于记录数据的回放测试
+3. **调试支持**: 提供调试信息和工具
+4. **性能分析**: 收集和分析系统性能数据
+
+## 模块结构
 
 ```
-src/debug/
-├── README.md                    # Debug系统文档
-├── index.ts                     # Debug系统入口
-├── debug-manager.ts             # Debug管理器
-├── debug-recorder.ts            # Debug记录器
-├── replay-system.ts             # 回放系统
-└── types/
-    ├── debug-types.ts           # Debug相关类型
-    ├── record-types.ts          # 记录相关类型
-    └── replay-types.ts          # 回放相关类型
+debug/
+├── README.md                       # 本模块设计文档
+├── index.ts                        # 模块入口和导出
+├── debug-manager.ts                 # Debug管理器
+├── debug-recorder.ts                # Debug记录器
+├── debug-collector.ts              # Debug收集器
+├── debug-storage.ts                # Debug存储器
+├── debug-serializer.ts             # Debug序列化器
+├── debug-filter.ts                 # Debug过滤器
+├── debug-analyzer.ts               # Debug分析器
+├── replay-system.ts                 # 回放系统
+└── types/                          # Debug相关类型定义
+    ├── debug-types.ts              # Debug类型定义
+    └── replay-types.ts             # 回放类型定义
 ```
 
-## 核心功能
+## 核心组件
 
-### 1. Debug管理
-- **模块注册**: 接受各模块的debug注册
-- **开关控制**: 可控制任意端口的debug开关
-- **全局调试**: 统一的调试控制中心
+### Debug管理器 (DebugManager)
+协调Debug模块的所有功能，是模块的主入口点。
 
-### 2. 数据记录
-- **输入输出记录**: 记录每个模块的输入输出数据
-- **错误记录**: 记录完整的错误信息和堆栈
-- **流水线记录**: 基于requestID的完整流水线记录
-- **会话管理**: 按端口和会话组织存储
+### Debug记录器 (DebugRecorder)
+负责实际的数据记录工作，按端口分组记录处理数据。
 
-### 3. 回放系统
-- **动态回放**: 支持重现原始请求的处理过程
-- **单元测试生成**: 基于Debug记录创建可执行测试
-- **验证回放**: 对比原始记录和回放结果
+### Debug收集器 (DebugCollector)
+收集各模块的调试信息和性能数据。
 
-## 存储结构
+### Debug存储器 (DebugStorage)
+管理记录数据的存储和检索。
 
-### 目录组织
-```
-~/.route-claudecode/debug/
-├── port-3456/                   # 按端口分组
-│   ├── session-2024-08-15_14-30-22/  # 按会话分组 (使用可读时间格式)
-│   │   ├── requests/            # 请求记录
-│   │   │   ├── req_2024-08-15_14-30-22_001.json     # 单个请求记录
-│   │   │   ├── req_2024-08-15_14-30-22_002.json
-│   │   │   └── ...
-│   │   ├── pipelines/           # 流水线记录
-│   │   │   ├── openai_gpt-4/    # 按流水线分组
-│   │   │   │   ├── pipeline_2024-08-15_14-30-22_001.json
-│   │   │   │   └── ...
-│   │   │   └── deepseek_chat/
-│   │   ├── session.json         # 会话信息 (包含可读时间)
-│   │   └── summary.json         # 会话摘要
-│   └── ...
-├── port-8080/
-│   └── session-2024-08-15_15-45-10/
-└── current/                     # 当前活跃会话的软链接
-    ├── port-3456 -> ../port-3456/session-2024-08-15_14-30-22/
-    └── port-8080 -> ../port-8080/session-2024-08-15_15-45-10/
-```
+### Debug序列化器 (DebugSerializer)
+负责调试数据的序列化和反序列化。
+
+### Debug过滤器 (DebugFilter)
+过滤和处理敏感信息，确保记录数据安全。
+
+### Debug分析器 (DebugAnalyzer)
+分析记录的性能数据，提供性能报告和优化建议。
+
+### 回放系统 (ReplaySystem)
+支持基于记录数据的回放测试，用于问题重现和测试验证。
 
 ## 接口定义
 
 ```typescript
-export interface DebugManager {
-  registerModule(moduleName: string, port: number): void;
-  enableDebug(moduleName: string): void;
-  disableDebug(moduleName: string): void;
-  recordInput(moduleName: string, requestId: string, input: any): void;
-  recordOutput(moduleName: string, requestId: string, output: any): void;
-  recordError(moduleName: string, requestId: string, error: RCCError): void;
+interface DebugModuleInterface {
+  initialize(): Promise<void>;
+  startRecording(): void;
+  stopRecording(): void;
+  getRecordingStatus(): RecordingStatus;
+  getRecordedData(filter?: DebugFilter): DebugRecord[];
+  clearRecordedData(): void;
+  exportData(format: ExportFormat): Promise<string>;
 }
 
-export interface DebugRecorder {
-  createSession(port: number): DebugSession;
-  recordPipelineExecution(requestId: string, pipeline: Pipeline, data: any): void;
-  saveRecord(record: DebugRecord): Promise<void>;
-  loadRecord(requestId: string): Promise<DebugRecord>;
+interface DebugRecorderInterface {
+  recordEvent(event: DebugEvent): void;
+  startSession(sessionId: string): void;
+  endSession(sessionId: string): void;
+  recordRequest(request: DebugRequest): void;
+  recordResponse(response: DebugResponse): void;
 }
 
-export interface ReplaySystem {
+interface ReplaySystemInterface {
   replayRequest(requestId: string): Promise<any>;
   createUnitTest(requestId: string): Promise<string>;
   validateReplay(original: DebugRecord, replayed: DebugRecord): boolean;
 }
 ```
 
-## Debug记录格式
+## 依赖关系
 
-### 请求记录
-```typescript
-interface DebugRecord {
-  requestId: string;
-  timestamp: number;
-  readableTime: string;        // 可读的当前时区时间: "2024-08-15 14:30:22 CST"
-  port: number;
-  sessionId: string;
-  
-  // 请求信息
-  request: {
-    method: string;
-    url: string;
-    headers: Record<string, string>;
-    body: any;
-  };
-  
-  // 流水线执行记录
-  pipeline: {
-    id: string;
-    provider: string;
-    model: string;
-    modules: ModuleRecord[];
-  };
-  
-  // 响应信息
-  response: {
-    status: number;
-    headers: Record<string, string>;
-    body: any;
-    duration: number;
-  };
-  
-  // 错误信息（如果有）
-  error?: {
-    type: string;
-    message: string;
-    module: string;
-    stack: string;
-  };
-}
-```
+- 依赖配置模块获取Debug配置
+- 被所有其他模块调用以记录调试信息
+- 依赖文件系统进行数据存储
 
-### 模块记录
-```typescript
-interface ModuleRecord {
-  moduleName: string;
-  startTime: number;
-  startTimeReadable: string;   // 可读的开始时间
-  endTime: number;
-  endTimeReadable: string;     // 可读的结束时间
-  duration: number;            // 处理时长(毫秒)
-  input: any;
-  output: any;
-  error?: RCCError;
-  metadata: {
-    version: string;
-    config: any;
-  };
-}
-```
+## 设计原则
 
-### 会话记录
-```typescript
-interface DebugSession {
-  sessionId: string;
-  port: number;
-  startTime: number;
-  startTimeReadable: string;   // 可读的开始时间: "2024-08-15 14:30:22 CST"
-  endTime?: number;
-  endTimeReadable?: string;    // 可读的结束时间
-  duration?: number;           // 会话持续时间(毫秒)
-  requestCount: number;
-  errorCount: number;
-  activePipelines: string[];
-  metadata: {
-    version: string;
-    config: any;
-    timezone: string;          // 时区信息
-  };
-}
-```
-
-## Debug管理器实现
-
-```typescript
-export class DebugManagerImpl implements DebugManager {
-  private registeredModules: Map<string, ModuleDebugInfo> = new Map();
-  private debugEnabled: Map<string, boolean> = new Map();
-  private recorder: DebugRecorder;
-
-  constructor() {
-    this.recorder = new DebugRecorderImpl();
-  }
-
-  registerModule(moduleName: string, port: number): void {
-    this.registeredModules.set(moduleName, {
-      name: moduleName,
-      port,
-      registeredAt: Date.now()
-    });
-    
-    // 默认启用debug
-    this.debugEnabled.set(moduleName, true);
-  }
-
-  enableDebug(moduleName: string): void {
-    if (!this.registeredModules.has(moduleName)) {
-      throw new Error(`Module ${moduleName} not registered`);
-    }
-    this.debugEnabled.set(moduleName, true);
-  }
-
-  disableDebug(moduleName: string): void {
-    this.debugEnabled.set(moduleName, false);
-  }
-
-  recordInput(moduleName: string, requestId: string, input: any): void {
-    if (!this.isDebugEnabled(moduleName)) return;
-    
-    this.recorder.recordModuleInput(moduleName, requestId, input);
-  }
-
-  recordOutput(moduleName: string, requestId: string, output: any): void {
-    if (!this.isDebugEnabled(moduleName)) return;
-    
-    this.recorder.recordModuleOutput(moduleName, requestId, output);
-  }
-
-  recordError(moduleName: string, requestId: string, error: RCCError): void {
-    // 错误总是记录，不受debug开关影响
-    this.recorder.recordModuleError(moduleName, requestId, error);
-  }
-
-  private isDebugEnabled(moduleName: string): boolean {
-    return this.debugEnabled.get(moduleName) ?? false;
-  }
-}
-```
-
-## 回放系统实现
-
-```typescript
-export class ReplaySystemImpl implements ReplaySystem {
-  private recorder: DebugRecorder;
-
-  constructor() {
-    this.recorder = new DebugRecorderImpl();
-  }
-
-  async replayRequest(requestId: string): Promise<any> {
-    // 加载原始记录
-    const originalRecord = await this.recorder.loadRecord(requestId);
-    
-    // 重建流水线环境
-    const pipeline = await this.reconstructPipeline(originalRecord.pipeline);
-    
-    // 执行回放
-    const replayResult = await pipeline.process(originalRecord.request.body);
-    
-    // 验证回放结果
-    const isValid = this.validateReplay(originalRecord, {
-      ...originalRecord,
-      response: { ...originalRecord.response, body: replayResult }
-    });
-    
-    return {
-      original: originalRecord.response.body,
-      replayed: replayResult,
-      isValid,
-      differences: this.findDifferences(originalRecord.response.body, replayResult)
-    };
-  }
-
-  async createUnitTest(requestId: string): Promise<string> {
-    const record = await this.recorder.loadRecord(requestId);
-    
-    return this.generateTestCode(record);
-  }
-
-  validateReplay(original: DebugRecord, replayed: DebugRecord): boolean {
-    // 比较关键字段
-    return this.compareResponses(original.response, replayed.response);
-  }
-
-  private generateTestCode(record: DebugRecord): string {
-    return `
-describe('Pipeline Replay Test - ${record.requestId}', () => {
-  test('should reproduce original behavior', async () => {
-    const pipeline = await createPipeline('${record.pipeline.provider}', '${record.pipeline.model}');
-    
-    const input = ${JSON.stringify(record.request.body, null, 2)};
-    const expectedOutput = ${JSON.stringify(record.response.body, null, 2)};
-    
-    const result = await pipeline.process(input);
-    
-    expect(result).toMatchObject(expectedOutput);
-  });
-});
-    `.trim();
-  }
-}
-```
-
-## 性能优化
-
-### 异步记录
-- 使用异步I/O避免阻塞主流程
-- 批量写入提高性能
-- 内存缓冲减少磁盘操作
-
-### 存储优化
-- 压缩大型记录文件
-- 定期清理过期记录
-- 索引文件加速查询
-
-### 内存管理
-- 限制内存中的记录数量
-- 及时释放不用的记录
-- 监控内存使用情况
-
-## 配置管理
-
-### Debug配置
-```typescript
-interface DebugConfig {
-  enabled: boolean;
-  maxRecordSize: number;
-  maxSessionDuration: number;
-  retentionDays: number;
-  compressionEnabled: boolean;
-  modules: {
-    [moduleName: string]: {
-      enabled: boolean;
-      logLevel: 'debug' | 'info' | 'warn' | 'error';
-    };
-  };
-}
-```
-
-### 默认配置
-```typescript
-const defaultDebugConfig: DebugConfig = {
-  enabled: true,
-  maxRecordSize: 10 * 1024 * 1024, // 10MB
-  maxSessionDuration: 24 * 60 * 60 * 1000, // 24小时
-  retentionDays: 7,
-  compressionEnabled: true,
-  modules: {
-    'client': { enabled: true, logLevel: 'info' },
-    'router': { enabled: true, logLevel: 'info' },
-    'pipeline': { enabled: true, logLevel: 'debug' },
-    'transformer': { enabled: true, logLevel: 'debug' },
-    'protocol': { enabled: true, logLevel: 'debug' },
-    'server-compatibility': { enabled: true, logLevel: 'debug' },
-    'server': { enabled: true, logLevel: 'info' }
-  }
-};
-```
-
-## 错误处理
-
-### Debug错误
-```typescript
-class DebugError extends Error {
-  constructor(operation: string, message: string) {
-    super(`Debug operation failed (${operation}): ${message}`);
-    this.name = 'DebugError';
-  }
-}
-```
-
-### 记录错误
-```typescript
-class RecordError extends Error {
-  constructor(recordId: string, message: string) {
-    super(`Record operation failed for ${recordId}: ${message}`);
-    this.name = 'RecordError';
-  }
-}
-```
-
-## 质量要求
-
-- ✅ 无静默失败
-- ✅ 无mockup调试
-- ✅ 无重复调试代码
-- ✅ 无硬编码调试路径
-- ✅ 完整的记录验证
-- ✅ 可靠的回放机制
-- ✅ 性能优化设计
+1. **完整性**: 记录全链路处理数据，确保问题可追溯
+2. **性能影响最小化**: Debug功能对系统性能的影响降到最低
+3. **安全性**: 敏感信息过滤，确保记录数据安全
+4. **可分析性**: 提供丰富的数据分析和可视化功能
+5. **可配置性**: 支持灵活的记录策略和存储配置
+6. **标准化**: 采用统一的数据格式和存储结构

@@ -1,504 +1,208 @@
-# 标准API Error Handler系统
+# 错误处理模块 (Error Handler Module)
 
 ## 模块概述
 
-标准API Error Handler系统提供统一的错误处理机制，确保所有模块的错误都遵循标准的API错误格式，实现一致的错误响应和处理。
+错误处理模块是RCC v4.0系统的统一错误管理中心，负责捕获、处理、记录和报告系统中的所有错误。
 
-## 目录结构
+## 模块职责
+
+1. **错误捕获**: 统一捕获系统中的所有错误
+2. **错误处理**: 标准化错误处理流程
+3. **错误记录**: 记录错误信息用于调试和分析
+4. **错误报告**: 向用户和监控系统报告错误
+5. **错误分类**: 对错误进行分类和优先级管理
+
+## 模块结构
 
 ```
-src/error-handler/
-├── README.md                    # Error Handler系统文档
-├── index.ts                     # Error Handler系统入口
-├── error-handler.ts             # 标准错误处理器
-├── error-formatter.ts           # 错误格式化器
-├── error-logger.ts              # 错误日志记录器
-└── types/
-    ├── error-types.ts           # 错误相关类型
-    ├── api-error-types.ts       # API错误类型
-    └── handler-types.ts         # 处理器相关类型
+error-handler/
+├── README.md                          # 本模块设计文档
+├── index.ts                           # 模块入口和导出
+├── error-handler.ts                   # 错误处理器
+├── error-formatter.ts                 # 错误格式化器
+├── error-logger.ts                    # 错误记录器
+├── error-categories.ts                # 错误分类管理
+├── error-codes.ts                     # 错误码定义
+├── error-filters.ts                   # 错误过滤器
+├── error-reporter.ts                  # 错误报告器
+└── types/                             # 错误处理相关类型定义
+    ├── error-types.ts                 # 错误类型定义
+    └── error-handler-types.ts         # 错误处理器类型定义
 ```
 
-## 核心功能
+## 核心组件
 
-### 1. 标准错误处理
-- **统一错误格式**: 生成标准的API错误响应格式
-- **错误分类**: 根据错误类型设置相应的HTTP状态码
-- **模块标识**: 在错误响应中包含具体的模块名
-- **敏感信息过滤**: 过滤敏感数据，只返回安全的错误信息
+### 错误处理器 (ErrorHandler)
+负责错误处理的主逻辑，是模块的主入口点。
 
-### 2. 错误追踪
-- **完整错误链**: 保持错误追踪链的完整性
-- **上下文信息**: 记录错误发生的完整上下文
-- **请求关联**: 将错误与特定请求ID关联
+### 错误格式化器 (ErrorFormatter)
+标准化错误信息的格式化输出。
 
-### 3. 错误日志
-- **结构化日志**: 使用结构化格式记录错误
-- **分级记录**: 根据错误严重程度分级记录
-- **持久化存储**: 错误日志持久化存储
+### 错误记录器 (ErrorLogger)
+记录错误信息到日志系统。
+
+### 错误分类管理 (ErrorCategories)
+管理错误的分类和优先级。
+
+### 错误码定义 (ErrorCodes)
+定义系统中使用的标准错误码。
+
+### 错误过滤器 (ErrorFilters)
+过滤敏感信息，确保错误信息安全性。
+
+### 错误报告器 (ErrorReporter)
+向用户和监控系统报告错误信息。
+
+## 错误分类
+
+### 客户端错误 (ClientError)
+- CLI命令错误
+- 用户输入错误
+- 客户端配置错误
+
+### 路由器错误 (RouterError)
+- 路由配置错误
+- 路由决策错误
+- 负载均衡错误
+
+### 流水线错误 (PipelineError)
+- 流水线创建错误
+- 流水线执行错误
+- 模块处理错误
+
+### 配置错误 (ConfigError)
+- 配置文件格式错误
+- 配置内容验证错误
+- 环境变量错误
+
+### 网络错误 (NetworkError)
+- 连接超时
+- DNS解析错误
+- SSL/TLS错误
+
+### 验证错误 (ValidationError)
+- 输入数据验证错误
+- 输出数据验证错误
+- 格式验证错误
+
+## 错误码标准
+
+```typescript
+// 客户端错误 (1000-1999)
+const CLIENT_ERRORS = {
+  CLI_INVALID_COMMAND: 1001,
+  CLI_MISSING_ARGUMENT: 1002,
+  CLI_INVALID_OPTION: 1003,
+  SERVER_START_FAILED: 1004,
+  SERVER_STOP_FAILED: 1005
+};
+
+// 路由器错误 (2000-2999)
+const ROUTER_ERRORS = {
+  CONFIG_LOAD_FAILED: 2001,
+  CONFIG_VALIDATION_FAILED: 2002,
+  ROUTING_DECISION_FAILED: 2003,
+  LOAD_BALANCING_FAILED: 2004,
+  SESSION_FLOW_CONTROL_FAILED: 2005
+};
+
+// 流水线错误 (3000-3999)
+const PIPELINE_ERRORS = {
+  PIPELINE_CREATION_FAILED: 3001,
+  PIPELINE_EXECUTION_FAILED: 3002,
+  MODULE_PROCESSING_FAILED: 3003,
+  TRANSFORMER_FAILED: 3004,
+  PROTOCOL_HANDLING_FAILED: 3005
+};
+
+// 配置错误 (4000-4999)
+const CONFIG_ERRORS = {
+  CONFIG_FILE_NOT_FOUND: 4001,
+  CONFIG_PARSE_FAILED: 4002,
+  CONFIG_VALIDATION_FAILED: 4003,
+  ENV_VARIABLE_MISSING: 4004
+};
+
+// 网络错误 (5000-5999)
+const NETWORK_ERRORS = {
+  CONNECTION_TIMEOUT: 5001,
+  DNS_RESOLUTION_FAILED: 5002,
+  SSL_HANDSHAKE_FAILED: 5003,
+  HTTP_STATUS_ERROR: 5004
+};
+```
 
 ## 接口定义
 
 ```typescript
-export interface ErrorHandler {
-  handleError(error: RCCError): APIErrorResponse;
-  createError(type: ErrorType, message: string, details?: any, module?: string): RCCError;
-  formatError(error: RCCError): APIErrorResponse;
+interface ErrorHandlerModuleInterface {
+  initialize(): Promise<void>;
+  handleError(error: RCCError): void;
+  formatError(error: RCCError): string;
   logError(error: RCCError): void;
+  reportError(error: RCCError): void;
+  getErrorStats(): ErrorStatistics;
 }
 
-export interface ErrorFormatter {
-  formatAPIError(error: RCCError): APIErrorResponse;
-  formatUserError(error: RCCError): string;
-  sanitizeErrorDetails(details: any): any;
+interface ErrorHandlerInterface {
+  handleClientError(error: ClientError): void;
+  handleRouterError(error: RouterError): void;
+  handlePipelineError(error: PipelineError): void;
+  handleConfigError(error: ConfigError): void;
+  handleNetworkError(error: NetworkError): void;
+  handleValidationError(error: ValidationError): void;
 }
 
-export interface ErrorLogger {
-  logError(error: RCCError): void;
-  logWarning(message: string, context?: any): void;
-  logInfo(message: string, context?: any): void;
-}
-```
-
-## 错误类型定义
-
-### RCC错误类型
-```typescript
-enum ErrorType {
-  CLIENT_ERROR = 'CLIENT_ERROR',
-  ROUTER_ERROR = 'ROUTER_ERROR',
-  PIPELINE_ERROR = 'PIPELINE_ERROR',
-  CONFIG_ERROR = 'CONFIG_ERROR',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  VALIDATION_ERROR = 'VALIDATION_ERROR',
-  AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR',
-  AUTHORIZATION_ERROR = 'AUTHORIZATION_ERROR',
-  RATE_LIMIT_ERROR = 'RATE_LIMIT_ERROR',
-  QUOTA_EXCEEDED_ERROR = 'QUOTA_EXCEEDED_ERROR',
-  INTERNAL_ERROR = 'INTERNAL_ERROR'
+interface ErrorFormatterInterface {
+  formatClientError(error: ClientError): string;
+  formatRouterError(error: RouterError): string;
+  formatPipelineError(error: PipelineError): string;
+  formatGenericError(error: RCCError): string;
+  formatDetailedError(error: RCCError): string;
 }
 
-interface RCCError {
-  id: string;
-  type: ErrorType;
-  module: string;
-  message: string;
-  details: any;
-  timestamp: number;
-  requestId?: string;
-  stack?: string;
-  originalError?: any;
+interface ErrorLoggerInterface {
+  logClientError(error: ClientError): void;
+  logRouterError(error: RouterError): void;
+  logPipelineError(error: PipelineError): void;
+  logConfigError(error: ConfigError): void;
+  logNetworkError(error: NetworkError): void;
+  logValidationError(error: ValidationError): void;
 }
 ```
 
-### API错误响应格式
-```typescript
-interface APIErrorResponse {
-  error: {
-    type: string;
-    message: string;
-    module: string;
-    details?: any;
-    timestamp: number;
-    request_id?: string;
-    code?: string;
-  };
-  status: number;
-  headers: Record<string, string>;
-}
+## 错误处理流程
+
+```
+错误发生
+    ↓
+错误捕获 (try-catch)
+    ↓
+错误包装 (RCCError)
+    ↓
+错误分类和优先级评估
+    ↓
+敏感信息过滤
+    ↓
+错误记录到日志系统
+    ↓
+错误格式化和用户报告
+    ↓
+错误统计和监控上报
 ```
 
-## 标准错误处理器实现
+## 依赖关系
 
-```typescript
-export class StandardErrorHandler implements ErrorHandler {
-  private formatter: ErrorFormatter;
-  private logger: ErrorLogger;
+- 被所有其他模块依赖以处理错误
+- 依赖日志模块进行错误记录
+- 依赖配置模块获取错误处理配置
 
-  constructor() {
-    this.formatter = new ErrorFormatterImpl();
-    this.logger = new ErrorLoggerImpl();
-  }
+## 设计原则
 
-  handleError(error: RCCError): APIErrorResponse {
-    // 记录错误日志
-    this.logError(error);
-    
-    // 格式化API错误响应
-    const apiError = this.formatError(error);
-    
-    return apiError;
-  }
-
-  createError(
-    type: ErrorType, 
-    message: string, 
-    details?: any, 
-    module?: string,
-    requestId?: string
-  ): RCCError {
-    return {
-      id: this.generateErrorId(),
-      type,
-      module: module || 'unknown',
-      message,
-      details: this.sanitizeDetails(details),
-      timestamp: Date.now(),
-      requestId,
-      stack: new Error().stack
-    };
-  }
-
-  formatError(error: RCCError): APIErrorResponse {
-    return this.formatter.formatAPIError(error);
-  }
-
-  logError(error: RCCError): void {
-    this.logger.logError(error);
-  }
-
-  private generateErrorId(): string {
-    return `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  private sanitizeDetails(details: any): any {
-    if (!details) return undefined;
-    
-    // 移除敏感信息
-    const sanitized = { ...details };
-    const sensitiveFields = ['apiKey', 'password', 'token', 'secret', 'authorization'];
-    
-    for (const field of sensitiveFields) {
-      if (sanitized[field]) {
-        sanitized[field] = '[REDACTED]';
-      }
-    }
-    
-    return sanitized;
-  }
-}
-```
-
-## 错误格式化器实现
-
-```typescript
-export class ErrorFormatterImpl implements ErrorFormatter {
-  formatAPIError(error: RCCError): APIErrorResponse {
-    const httpStatus = this.getHTTPStatus(error.type);
-    const errorCode = this.getErrorCode(error.type);
-    
-    return {
-      error: {
-        type: error.type,
-        message: error.message,
-        module: error.module,
-        details: this.sanitizeErrorDetails(error.details),
-        timestamp: error.timestamp,
-        request_id: error.requestId,
-        code: errorCode
-      },
-      status: httpStatus,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Error-ID': error.id
-      }
-    };
-  }
-
-  formatUserError(error: RCCError): string {
-    const timestamp = new Date(error.timestamp).toLocaleString();
-    const module = error.module.toUpperCase();
-    
-    let formatted = `[${timestamp}] ${module} ERROR: ${error.message}`;
-    
-    if (error.requestId) {
-      formatted += ` (Request: ${error.requestId})`;
-    }
-    
-    // 添加用户友好的解决建议
-    const suggestion = this.getUserSuggestion(error.type);
-    if (suggestion) {
-      formatted += `\n💡 建议: ${suggestion}`;
-    }
-    
-    return formatted;
-  }
-
-  sanitizeErrorDetails(details: any): any {
-    if (!details) return undefined;
-    
-    // 深度清理敏感信息
-    return this.deepSanitize(details);
-  }
-
-  private getHTTPStatus(errorType: ErrorType): number {
-    const statusMap = {
-      [ErrorType.CLIENT_ERROR]: 400,
-      [ErrorType.VALIDATION_ERROR]: 400,
-      [ErrorType.AUTHENTICATION_ERROR]: 401,
-      [ErrorType.AUTHORIZATION_ERROR]: 403,
-      [ErrorType.RATE_LIMIT_ERROR]: 429,
-      [ErrorType.QUOTA_EXCEEDED_ERROR]: 429,
-      [ErrorType.CONFIG_ERROR]: 500,
-      [ErrorType.NETWORK_ERROR]: 502,
-      [ErrorType.ROUTER_ERROR]: 500,
-      [ErrorType.PIPELINE_ERROR]: 500,
-      [ErrorType.INTERNAL_ERROR]: 500
-    };
-    
-    return statusMap[errorType] || 500;
-  }
-
-  private getErrorCode(errorType: ErrorType): string {
-    const codeMap = {
-      [ErrorType.CLIENT_ERROR]: 'CLIENT_ERROR',
-      [ErrorType.VALIDATION_ERROR]: 'INVALID_REQUEST',
-      [ErrorType.AUTHENTICATION_ERROR]: 'AUTHENTICATION_FAILED',
-      [ErrorType.AUTHORIZATION_ERROR]: 'PERMISSION_DENIED',
-      [ErrorType.RATE_LIMIT_ERROR]: 'RATE_LIMIT_EXCEEDED',
-      [ErrorType.QUOTA_EXCEEDED_ERROR]: 'QUOTA_EXCEEDED',
-      [ErrorType.CONFIG_ERROR]: 'CONFIGURATION_ERROR',
-      [ErrorType.NETWORK_ERROR]: 'SERVICE_UNAVAILABLE',
-      [ErrorType.ROUTER_ERROR]: 'ROUTING_ERROR',
-      [ErrorType.PIPELINE_ERROR]: 'PROCESSING_ERROR',
-      [ErrorType.INTERNAL_ERROR]: 'INTERNAL_SERVER_ERROR'
-    };
-    
-    return codeMap[errorType] || 'UNKNOWN_ERROR';
-  }
-
-  private getUserSuggestion(errorType: ErrorType): string | null {
-    const suggestionMap = {
-      [ErrorType.CONFIG_ERROR]: '请检查配置文件 ~/.route-claudecode/config/',
-      [ErrorType.NETWORK_ERROR]: '请检查网络连接和API密钥',
-      [ErrorType.VALIDATION_ERROR]: '请检查请求格式是否正确',
-      [ErrorType.AUTHENTICATION_ERROR]: '请检查API密钥是否正确',
-      [ErrorType.RATE_LIMIT_ERROR]: '请稍后重试，或检查API配额',
-      [ErrorType.QUOTA_EXCEEDED_ERROR]: '请检查API配额限制'
-    };
-    
-    return suggestionMap[errorType] || null;
-  }
-
-  private deepSanitize(obj: any): any {
-    if (obj === null || obj === undefined) return obj;
-    
-    if (typeof obj === 'string') {
-      // 检查是否包含敏感信息模式
-      if (this.containsSensitivePattern(obj)) {
-        return '[REDACTED]';
-      }
-      return obj;
-    }
-    
-    if (Array.isArray(obj)) {
-      return obj.map(item => this.deepSanitize(item));
-    }
-    
-    if (typeof obj === 'object') {
-      const sanitized: any = {};
-      for (const [key, value] of Object.entries(obj)) {
-        if (this.isSensitiveField(key)) {
-          sanitized[key] = '[REDACTED]';
-        } else {
-          sanitized[key] = this.deepSanitize(value);
-        }
-      }
-      return sanitized;
-    }
-    
-    return obj;
-  }
-
-  private containsSensitivePattern(str: string): boolean {
-    const patterns = [
-      /sk-[a-zA-Z0-9]{48}/, // OpenAI API key
-      /sk-ant-[a-zA-Z0-9-]{95}/, // Anthropic API key
-      /Bearer\s+[a-zA-Z0-9-._~+/]+=*/, // Bearer token
-      /[A-Z0-9]{20}/, // AWS access key pattern
-    ];
-    
-    return patterns.some(pattern => pattern.test(str));
-  }
-
-  private isSensitiveField(fieldName: string): boolean {
-    const sensitiveFields = [
-      'apikey', 'api_key', 'apiKey',
-      'password', 'passwd', 'pwd',
-      'token', 'accesstoken', 'access_token',
-      'secret', 'secretkey', 'secret_key',
-      'authorization', 'auth',
-      'clientsecret', 'client_secret',
-      'privatekey', 'private_key'
-    ];
-    
-    return sensitiveFields.includes(fieldName.toLowerCase());
-  }
-}
-```
-
-## 错误日志记录器实现
-
-```typescript
-export class ErrorLoggerImpl implements ErrorLogger {
-  private logger: winston.Logger;
-
-  constructor() {
-    this.logger = winston.createLogger({
-      level: 'error',
-      format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.errors({ stack: true }),
-        winston.format.json()
-      ),
-      transports: [
-        new winston.transports.File({
-          filename: path.join(os.homedir(), '.route-claudecode', 'logs', 'error.log'),
-          maxsize: 10 * 1024 * 1024, // 10MB
-          maxFiles: 5
-        }),
-        new winston.transports.Console({
-          level: 'error',
-          format: winston.format.combine(
-            winston.format.colorize(),
-            winston.format.simple()
-          )
-        })
-      ]
-    });
-  }
-
-  logError(error: RCCError): void {
-    this.logger.error('RCC Error occurred', {
-      errorId: error.id,
-      type: error.type,
-      module: error.module,
-      message: error.message,
-      requestId: error.requestId,
-      timestamp: error.timestamp,
-      details: error.details,
-      stack: error.stack
-    });
-  }
-
-  logWarning(message: string, context?: any): void {
-    this.logger.warn(message, context);
-  }
-
-  logInfo(message: string, context?: any): void {
-    this.logger.info(message, context);
-  }
-}
-```
-
-## 模块集成示例
-
-### 在Transformer模块中使用
-```typescript
-export class OpenAITransformer implements TransformerModule {
-  private errorHandler: ErrorHandler;
-
-  constructor() {
-    this.errorHandler = new StandardErrorHandler();
-  }
-
-  async transformRequest(anthropicRequest: AnthropicRequest): Promise<OpenAIRequest> {
-    try {
-      // 验证输入格式
-      if (!this.validateAnthropicRequest(anthropicRequest)) {
-        const error = this.errorHandler.createError(
-          ErrorType.VALIDATION_ERROR,
-          'Invalid Anthropic request format',
-          { request: anthropicRequest },
-          'transformer'
-        );
-        throw error;
-      }
-
-      // 执行转换逻辑
-      return this.performTransformation(anthropicRequest);
-      
-    } catch (error) {
-      if (error instanceof RCCError) {
-        throw error; // 重新抛出RCC错误
-      }
-      
-      // 包装未知错误
-      const rccError = this.errorHandler.createError(
-        ErrorType.PIPELINE_ERROR,
-        'Request transformation failed',
-        { originalError: error.message },
-        'transformer'
-      );
-      throw rccError;
-    }
-  }
-}
-```
-
-### 在客户端模块中使用
-```typescript
-export class ClientModule {
-  private errorHandler: ErrorHandler;
-
-  constructor() {
-    this.errorHandler = new StandardErrorHandler();
-  }
-
-  async handleRequest(request: Request, reply: Reply): Promise<void> {
-    try {
-      const response = await this.processRequest(request);
-      reply.send(response);
-      
-    } catch (error) {
-      const apiError = this.errorHandler.handleError(error);
-      
-      reply
-        .status(apiError.status)
-        .headers(apiError.headers)
-        .send(apiError.error);
-    }
-  }
-}
-```
-
-## 错误监控和告警
-
-### 错误统计
-```typescript
-class ErrorMetrics {
-  private errorCounts: Map<string, number> = new Map();
-  private errorRates: Map<string, number[]> = new Map();
-
-  recordError(error: RCCError): void {
-    const key = `${error.module}:${error.type}`;
-    this.errorCounts.set(key, (this.errorCounts.get(key) || 0) + 1);
-    
-    // 记录错误率
-    const now = Date.now();
-    const rates = this.errorRates.get(key) || [];
-    rates.push(now);
-    
-    // 保留最近1小时的数据
-    const oneHourAgo = now - 60 * 60 * 1000;
-    this.errorRates.set(key, rates.filter(time => time > oneHourAgo));
-  }
-
-  getErrorRate(module: string, type: ErrorType): number {
-    const key = `${module}:${type}`;
-    const rates = this.errorRates.get(key) || [];
-    return rates.length; // 每小时错误数
-  }
-}
-```
-
-## 质量要求
-
-- ✅ 无静默失败
-- ✅ 无mockup错误处理
-- ✅ 无重复错误处理代码
-- ✅ 无硬编码错误信息
-- ✅ 完整的错误格式标准化
-- ✅ 敏感信息过滤
-- ✅ 完整的错误追踪链
-- ✅ 结构化错误日志
+1. **零静默失败**: 所有错误必须被显式处理和报告
+2. **统一接口**: 提供统一的错误处理接口
+3. **详细信息**: 提供详细的错误上下文信息
+4. **安全性**: 过滤敏感信息，防止信息泄露
+5. **可追溯性**: 完整的错误链追踪
+6. **可配置性**: 支持灵活的错误处理策略
+7. **监控集成**: 与监控系统集成，支持告警

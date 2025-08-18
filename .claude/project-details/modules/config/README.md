@@ -1,84 +1,74 @@
-# 配置系统模块
+# 配置模块 (Config Module)
 
 ## 模块概述
 
-配置系统负责管理所有的供应商和路由规则配置，支持动态重载、环境变量替换和配置验证。
+配置模块是RCC v4.0系统的配置管理中心，负责系统配置的加载、验证、管理和动态更新。
 
-## 目录结构
+## 模块职责
+
+1. **配置加载**: 从文件系统加载系统配置
+2. **配置验证**: 验证配置文件的格式和内容正确性
+3. **配置管理**: 管理配置的生命周期和变更
+4. **动态更新**: 支持配置的动态更新和重载
+5. **环境适配**: 支持环境变量替换和配置覆盖
+
+## 模块结构
 
 ```
-src/config/
-├── README.md                    # 配置系统文档
-├── index.ts                     # 配置系统入口
-├── config-manager.ts            # 配置管理器
-├── config-validator.ts          # 配置验证器
-├── config-watcher.ts            # 配置文件监听器
-└── types/
-    ├── config-types.ts          # 配置相关类型
-    ├── provider-types.ts        # Provider配置类型
-    └── routing-types.ts         # 路由配置类型
+config/
+├── README.md                          # 本模块设计文档
+├── index.ts                           # 模块入口和导出
+├── config-manager.ts                   # 配置管理器
+├── config-validator.ts                # 配置验证器
+├── config-loader.ts                   # 配置加载器
+├── config-watcher.ts                  # 配置监视器
+├── config-encryptor.ts                # 配置加密器
+├── environment-processor.ts            # 环境变量处理器
+└── schemas/                           # 配置Schema定义
+    ├── provider-config-schema.ts      # Provider配置Schema
+    ├── routing-config-schema.ts      # 路由配置Schema
+    └── debug-config-schema.ts        # Debug配置Schema
 ```
+
+## 核心组件
+
+### 配置管理器 (ConfigManager)
+负责配置的完整生命周期管理，是模块的主入口点。
+
+### 配置加载器 (ConfigLoader)
+负责从文件系统加载配置文件，支持多种配置格式。
+
+### 配置验证器 (ConfigValidator)
+验证配置文件的格式和内容正确性，确保配置有效。
+
+### 配置监视器 (ConfigWatcher)
+监视配置文件变化，支持动态配置更新。
+
+### 配置加密器 (ConfigEncryptor)
+处理敏感配置信息的加密和解密。
+
+### 环境变量处理器 (EnvironmentProcessor)
+处理环境变量替换和配置覆盖。
 
 ## 配置文件结构
 
-### 运行时配置目录
 ```
 ~/.route-claudecode/
 ├── config/
-│   ├── providers.json           # Provider配置
-│   ├── routing.json            # 路由表配置
-│   ├── global.json             # 全局配置
-│   └── generated/              # 动态生成的配置
-│       ├── routing-table.json  # 生成的路由表
-│       └── provider-status.json # Provider状态
-├── debug/                      # Debug记录
-└── logs/                       # 日志文件
+│   ├── providers.json                 # Provider配置
+│   ├── routing.json                   # 路由配置
+│   ├── debug.json                      # Debug配置
+│   ├── security.json                  # 安全配置
+│   └── generated/                      # 动态生成的配置
+│       ├── routing-table.json          # 生成的路由表
+│       └── provider-status.json        # Provider状态
+├── debug/                              # Debug记录目录
+└── logs/                               # 日志目录
 ```
 
-## 核心功能
+## 配置类型
 
-### 1. 配置管理
-- **配置加载**: 读取和解析JSON配置文件
-- **环境变量替换**: 自动替换${VAR_NAME}占位符
-- **配置验证**: 检查配置格式和必需字段
-- **动态重载**: 文件变化时自动重新加载
-
-### 2. 配置监听
-- **文件监听**: 监控配置文件变化
-- **热重载**: 不中断服务的配置更新
-- **变更通知**: 通知相关模块配置已更新
-
-### 3. 配置生成
-- **路由表生成**: 根据配置生成优化的路由表
-- **状态文件**: 维护Provider和路由的状态信息
-
-## 接口定义
-
-```typescript
-export interface ConfigManager {
-  loadProviderConfig(): Promise<ProviderConfig[]>;
-  loadRoutingConfig(): Promise<RoutingConfig>;
-  loadGlobalConfig(): Promise<GlobalConfig>;
-  generateRoutingTable(): Promise<GeneratedRoutingTable>;
-  watchConfigChanges(): void;
-  validateConfig(config: any, schema: ConfigSchema): boolean;
-}
-
-export interface ConfigValidator {
-  validateProviderConfig(config: ProviderConfig[]): ValidationResult;
-  validateRoutingConfig(config: RoutingConfig): ValidationResult;
-  validateGlobalConfig(config: GlobalConfig): ValidationResult;
-}
-
-export interface ConfigWatcher {
-  watchFile(filePath: string, callback: (event: string, filename: string) => void): void;
-  stopWatching(): void;
-}
-```
-
-## 配置格式
-
-### Provider配置 (providers.json)
+### Provider配置
 ```json
 {
   "providers": [
@@ -86,62 +76,16 @@ export interface ConfigWatcher {
       "name": "openai",
       "protocol": "openai",
       "baseUrl": "https://api.openai.com/v1",
-      "serverType": "openai",
-      "models": ["gpt-4", "gpt-3.5-turbo"],
-      "availability": true,
-      
-      // 单密钥配置（向后兼容）
       "apiKey": "${OPENAI_API_KEY}",
-      
-      // 或多密钥配置（负载均衡）
-      "apiKeys": [
-        {
-          "keyId": "openai-key-1",
-          "key": "${OPENAI_API_KEY_1}",
-          "weight": 0.6,
-          "rateLimits": {
-            "requestsPerMinute": 3500,
-            "tokensPerDay": 1000000
-          }
-        },
-        {
-          "keyId": "openai-key-2",
-          "key": "${OPENAI_API_KEY_2}",
-          "weight": 0.4,
-          "rateLimits": {
-            "requestsPerMinute": 2000,
-            "tokensPerDay": 500000
-          }
-        }
-      ],
-      
-      // 负载均衡配置
-      "loadBalance": {
-        "keySelectionStrategy": "quota_aware",
-        "rotationPolicy": {
-          "rotateOnError": true,
-          "rotateOnRateLimit": true,
-          "cooldownPeriod": 60
-        }
-      }
-    },
-    
-    {
-      "name": "gemini",
-      "protocol": "gemini",
-      "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
-      "serverType": "gemini",
-      "models": ["gemini-2.5-flash", "gemini-2.5-pro"],
-      "authType": "oauth2",
-      "projectId": "${GOOGLE_PROJECT_ID}",
-      "apiKey": "${GEMINI_API_KEY}",
+      "models": ["gpt-4", "gpt-3.5-turbo"],
+      "maxTokens": 4096,
       "availability": true
     }
   ]
 }
 ```
 
-### 路由配置 (routing.json)
+### 路由配置
 ```json
 {
   "routes": [
@@ -151,50 +95,11 @@ export interface ConfigWatcher {
         {
           "provider": "openai",
           "model": "gpt-4",
-          "weight": 0.6,
-          "priority": 1
-        },
-        {
-          "provider": "deepseek",
-          "model": "deepseek-chat",
-          "weight": 0.4,
-          "priority": 2
-        }
-      ],
-      "loadBalance": {
-        "strategy": "health_aware",
-        "failoverEnabled": true,
-        "healthCheckInterval": 30
-      }
-    },
-    
-    {
-      "category": "think",
-      "rules": [
-        {
-          "provider": "openai",
-          "model": "gpt-4",
-          "weight": 0.8
-        },
-        {
-          "provider": "deepseek",
-          "model": "deepseek-reasoner",
-          "weight": 0.2
-        }
-      ]
-    },
-    
-    {
-      "category": "code",
-      "rules": [
-        {
-          "provider": "codewhisperer",
-          "model": "default",
           "weight": 0.7
         },
         {
-          "provider": "openai",
-          "model": "gpt-4",
+          "provider": "anthropic", 
+          "model": "claude-3",
           "weight": 0.3
         }
       ]
@@ -203,328 +108,52 @@ export interface ConfigWatcher {
 }
 ```
 
-### 全局配置 (global.json)
+### Debug配置
 ```json
 {
-  "server": {
-    "defaultPort": 3456,
-    "host": "127.0.0.1",
-    "timeout": 60000,
-    "maxConcurrentRequests": 100
-  },
-  
   "debug": {
     "enabled": true,
-    "maxRecordSize": 10485760,
-    "retentionDays": 7,
-    "compressionEnabled": true
-  },
-  
-  "logging": {
     "level": "info",
-    "maxFileSize": "10m",
-    "maxFiles": 5,
-    "enableConsole": true
-  },
-  
-  "loadBalance": {
-    "healthCheckEnabled": true,
-    "healthCheckInterval": 30,
-    "failureThreshold": 3,
-    "recoveryThreshold": 2,
-    "circuitBreakerEnabled": true,
-    "circuitBreakerTimeout": 60
+    "saveRequests": true,
+    "captureLevel": "full"
   }
 }
 ```
 
-## 配置验证
-
-### Provider配置验证
-```typescript
-const providerConfigSchema = {
-  type: 'object',
-  properties: {
-    providers: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['name', 'protocol', 'baseUrl', 'models'],
-        properties: {
-          name: { type: 'string', minLength: 1 },
-          protocol: { 
-            type: 'string', 
-            enum: ['openai', 'anthropic', 'gemini'] 
-          },
-          baseUrl: { type: 'string', format: 'uri' },
-          models: { 
-            type: 'array', 
-            items: { type: 'string' },
-            minItems: 1 
-          },
-          availability: { type: 'boolean' }
-        }
-      }
-    }
-  },
-  required: ['providers']
-};
-```
-
-### 路由配置验证
-```typescript
-const routingConfigSchema = {
-  type: 'object',
-  properties: {
-    routes: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['category', 'rules'],
-        properties: {
-          category: { 
-            type: 'string',
-            enum: ['default', 'think', 'longContext', 'background', 'code', 'webSearch']
-          },
-          rules: {
-            type: 'array',
-            items: {
-              type: 'object',
-              required: ['provider', 'model', 'weight'],
-              properties: {
-                provider: { type: 'string' },
-                model: { type: 'string' },
-                weight: { type: 'number', minimum: 0, maximum: 1 }
-              }
-            }
-          }
-        }
-      }
-    }
-  },
-  required: ['routes']
-};
-```
-
-## 配置管理器实现
+## 接口定义
 
 ```typescript
-export class ConfigManagerImpl implements ConfigManager {
-  private configPath: string;
-  private watcher: ConfigWatcher;
-  private validator: ConfigValidator;
-  private cache: Map<string, any> = new Map();
+interface ConfigModuleInterface {
+  initialize(): Promise<void>;
+  loadConfig(): Promise<RCCConfig>;
+  validateConfig(config: RCCConfig): boolean;
+  watchConfig(): void;
+  getConfig(): RCCConfig;
+  updateConfig(config: RCCConfig): Promise<void>;
+  reloadConfig(): Promise<void>;
+}
 
-  constructor(configPath?: string) {
-    this.configPath = configPath || path.join(os.homedir(), '.route-claudecode', 'config');
-    this.watcher = new ConfigWatcherImpl();
-    this.validator = new ConfigValidatorImpl();
-  }
-
-  async loadProviderConfig(): Promise<ProviderConfig[]> {
-    const configFile = path.join(this.configPath, 'providers.json');
-    
-    try {
-      const content = await fs.readFile(configFile, 'utf-8');
-      const config = JSON.parse(this.replaceEnvVariables(content));
-      
-      // 验证配置
-      const validation = this.validator.validateProviderConfig(config.providers);
-      if (!validation.isValid) {
-        throw new ConfigError('Provider config validation failed', validation.errors);
-      }
-      
-      // 缓存配置
-      this.cache.set('providers', config.providers);
-      
-      return config.providers;
-    } catch (error) {
-      throw new ConfigError('Failed to load provider config', error);
-    }
-  }
-
-  async loadRoutingConfig(): Promise<RoutingConfig> {
-    const configFile = path.join(this.configPath, 'routing.json');
-    
-    try {
-      const content = await fs.readFile(configFile, 'utf-8');
-      const config = JSON.parse(this.replaceEnvVariables(content));
-      
-      // 验证配置
-      const validation = this.validator.validateRoutingConfig(config);
-      if (!validation.isValid) {
-        throw new ConfigError('Routing config validation failed', validation.errors);
-      }
-      
-      // 缓存配置
-      this.cache.set('routing', config);
-      
-      return config;
-    } catch (error) {
-      throw new ConfigError('Failed to load routing config', error);
-    }
-  }
-
-  async generateRoutingTable(): Promise<GeneratedRoutingTable> {
-    const providers = await this.loadProviderConfig();
-    const routing = await this.loadRoutingConfig();
-    
-    const routingTable: GeneratedRoutingTable = {
-      timestamp: Date.now(),
-      routes: []
-    };
-    
-    for (const route of routing.routes) {
-      const routeEntry = {
-        category: route.category,
-        pipelines: []
-      };
-      
-      for (const rule of route.rules) {
-        const provider = providers.find(p => p.name === rule.provider);
-        if (provider && provider.availability) {
-          routeEntry.pipelines.push({
-            id: `${rule.provider}_${rule.model}`,
-            provider: rule.provider,
-            model: rule.model,
-            weight: rule.weight,
-            isActive: true
-          });
-        }
-      }
-      
-      routingTable.routes.push(routeEntry);
-    }
-    
-    // 保存生成的路由表
-    const generatedPath = path.join(this.configPath, 'generated', 'routing-table.json');
-    await fs.writeFile(generatedPath, JSON.stringify(routingTable, null, 2));
-    
-    return routingTable;
-  }
-
-  watchConfigChanges(): void {
-    const configFiles = ['providers.json', 'routing.json', 'global.json'];
-    
-    configFiles.forEach(filename => {
-      const filePath = path.join(this.configPath, filename);
-      this.watcher.watchFile(filePath, (event, filename) => {
-        if (event === 'change') {
-          this.handleConfigChange(filename);
-        }
-      });
-    });
-  }
-
-  private replaceEnvVariables(content: string): string {
-    return content.replace(/\$\{([^}]+)\}/g, (match, varName) => {
-      return process.env[varName] || match;
-    });
-  }
-
-  private async handleConfigChange(filename: string): void {
-    try {
-      // 清除缓存
-      this.cache.clear();
-      
-      // 重新加载配置
-      if (filename === 'providers.json') {
-        await this.loadProviderConfig();
-      } else if (filename === 'routing.json') {
-        await this.loadRoutingConfig();
-      }
-      
-      // 重新生成路由表
-      await this.generateRoutingTable();
-      
-      // 通知其他模块配置已更新
-      this.notifyConfigChange(filename);
-      
-    } catch (error) {
-      console.error(`Failed to reload config ${filename}:`, error);
-    }
-  }
+interface ConfigManagerInterface {
+  loadProviderConfig(): Promise<ProviderConfig[]>;
+  loadRoutingConfig(): Promise<RoutingConfig>;
+  loadDebugConfig(): Promise<DebugConfig>;
+  validateProviderConfig(config: ProviderConfig[]): boolean;
+  validateRoutingConfig(config: RoutingConfig): boolean;
+  generateRoutingTable(): Promise<GeneratedRoutingTable>;
 }
 ```
 
-## 环境变量管理
+## 依赖关系
 
-### 支持的环境变量
-```bash
-# OpenAI
-OPENAI_API_KEY=sk-xxx
-OPENAI_API_KEY_1=sk-xxx
-OPENAI_API_KEY_2=sk-xxx
+- 被所有其他模块依赖以获取配置信息
+- 依赖文件系统进行配置文件读写
+- 依赖环境变量进行配置覆盖
 
-# Anthropic
-ANTHROPIC_API_KEY=sk-ant-xxx
+## 设计原则
 
-# Gemini
-GEMINI_API_KEY=xxx
-GOOGLE_PROJECT_ID=xxx
-
-# DeepSeek
-DEEPSEEK_API_KEY=sk-xxx
-
-# AWS CodeWhisperer
-AWS_ACCESS_KEY_ID=xxx
-AWS_SECRET_ACCESS_KEY=xxx
-AWS_REGION=us-east-1
-```
-
-### 环境变量验证
-```typescript
-class EnvironmentValidator {
-  validateRequiredEnvVars(config: ProviderConfig[]): ValidationResult {
-    const missing: string[] = [];
-    
-    for (const provider of config) {
-      if (provider.apiKey && provider.apiKey.startsWith('${')) {
-        const varName = provider.apiKey.slice(2, -1);
-        if (!process.env[varName]) {
-          missing.push(varName);
-        }
-      }
-    }
-    
-    return {
-      isValid: missing.length === 0,
-      errors: missing.map(var => `Missing environment variable: ${var}`)
-    };
-  }
-}
-```
-
-## 错误处理
-
-### 配置错误
-```typescript
-class ConfigError extends Error {
-  constructor(message: string, details?: any) {
-    super(message);
-    this.name = 'ConfigError';
-    this.details = details;
-  }
-}
-```
-
-### 验证错误
-```typescript
-class ValidationError extends Error {
-  constructor(field: string, message: string) {
-    super(`Validation failed for ${field}: ${message}`);
-    this.name = 'ValidationError';
-  }
-}
-```
-
-## 质量要求
-
-- ✅ 无静默失败
-- ✅ 无mockup配置
-- ✅ 无重复配置代码
-- ✅ 无硬编码配置值
-- ✅ 完整的配置验证
-- ✅ 环境变量支持
-- ✅ 动态重载机制
-- ✅ 标准错误处理
+1. **安全性**: 敏感信息加密存储，防止配置信息泄露
+2. **灵活性**: 支持多种配置来源和格式
+3. **可靠性**: 完善的配置验证机制，防止错误配置导致系统故障
+4. **动态性**: 支持配置的动态更新和重载
+5. **可维护性**: 清晰的配置结构和文档
+6. **标准化**: 使用JSON Schema验证配置格式

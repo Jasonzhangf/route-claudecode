@@ -1,1150 +1,542 @@
-# 开发调试系统
+# 开发支持模块 (Development Module)
 
 ## 模块概述
 
-开发调试系统提供完整的开发环境支持，包括日志管理、调试命令、开发工具脚本等，确保开发过程的高效性和便利性。
+开发支持模块是RCC v4.0系统为开发者提供的工具集合，包括开发环境设置、代码生成、调试工具和文档生成等功能。
 
-## 目录结构
+## 模块职责
+
+1. **开发环境管理**: 管理开发环境的设置和配置
+2. **代码生成**: 自动生成代码模板和样板代码
+3. **调试工具**: 提供开发调试所需的工具
+4. **文档生成**: 自动生成API文档和设计文档
+5. **构建工具**: 管理项目的构建和打包过程
+6. **开发工作流**: 支持敏捷开发和持续集成工作流
+
+## 模块结构
 
 ```
-scripts/
-├── README.md                        # 开发脚本文档
-├── dev/                            # 开发相关脚本
-│   ├── setup-dev-env.sh            # 开发环境设置
-│   ├── start-dev.sh                # 开发模式启动
-│   ├── debug-mode.sh               # 调试模式启动
-│   ├── hot-reload.sh               # 热重载启动
-│   └── clean-dev.sh                # 清理开发环境
-├── build/                          # 编译相关脚本
-│   ├── build.sh                    # 构建脚本
-│   ├── build-watch.sh              # 监听构建
-│   ├── clean-build.sh              # 清理构建
-│   └── type-check.sh               # 类型检查
-├── test/                           # 测试相关脚本
-│   ├── run-tests.sh                # 运行测试
-│   ├── test-watch.sh               # 监听测试
-│   ├── coverage.sh                 # 覆盖率测试
-│   └── generate-replay-tests.sh    # 生成回放测试
-├── debug/                          # 调试工具脚本
-│   ├── curl-commands.sh            # cURL命令集合
-│   ├── log-viewer.sh               # 日志查看器
-│   ├── debug-session.sh            # 调试会话管理
-│   └── health-check.sh             # 健康检查
-├── utils/                          # 工具脚本
-│   ├── generate-types.sh           # 生成类型定义
-│   ├── update-deps.sh              # 更新依赖
-│   ├── format-code.sh              # 代码格式化
-│   └── lint-fix.sh                 # 代码检查修复
-└── templates/                      # 模板文件
-    ├── module-template/            # 模块模板
-    ├── test-template/              # 测试模板
-    └── config-template/            # 配置模板
+development/
+├── README.md                          # 本模块设计文档
+├── index.ts                           # 模块入口和导出
+├── dev-environment.ts                 # 开发环境管理器
+├── code-generator.ts                  # 代码生成器
+├── debug-tools.ts                     # 调试工具集
+├── doc-generator.ts                    # 文档生成器
+├── build-tools.ts                     # 构建工具集
+├── workflow-manager.ts                # 工作流管理器
+├── scaffolding/                      # 脚手架工具
+│   ├── module-scaffolder.ts            # 模块脚手架
+│   ├── component-scaffolder.ts        # 组件脚手架
+│   └── test-scaffolder.ts             # 测试脚手架
+├── templates/                         # 代码模板
+│   ├── module-template/               # 模块模板
+│   ├── component-template/             # 组件模板
+│   └── test-template/                # 测试模板
+├── scripts/                           # 开发脚本
+│   ├── setup-dev-env.ts               # 设置开发环境脚本
+│   ├── generate-module.ts             # 生成模块脚本
+│   ├── run-dev-server.ts               # 运行开发服务器脚本
+│   └── build-release.ts               # 构建发布版本脚本
+├── configs/                           # 开发配置
+│   ├── eslint.config.js              # ESLint配置
+│   ├── prettier.config.js             # Prettier配置
+│   ├── tsconfig.dev.json              # TypeScript开发配置
+│   └── webpack.dev.js                 # Webpack开发配置
+└── tools/                             # 开发工具
+    ├── api-explorer/                  # API浏览器
+    ├── perf-monitor/                  # 性能监控器
+    └── memory-analyzer/               # 内存分析器
 ```
 
-## 文件命名规则
+## 核心组件
 
-### 1. 日志文件命名规则
+### 开发环境管理器 (DevEnvironmentManager)
+负责开发环境的设置、配置和管理。
+
+### 代码生成器 (CodeGenerator)
+根据模板自动生成代码和项目结构。
+
+### 调试工具集 (DebugTools)
+提供开发调试所需的各种工具。
+
+### 文档生成器 (DocGenerator)
+自动生成API文档和设计文档。
+
+### 构建工具集 (BuildTools)
+管理项目的构建、打包和发布过程。
+
+### 工作流管理器 (WorkflowManager)
+管理开发工作流，支持敏捷开发和持续集成。
+
+### 脚手架工具 (ScaffoldingTools)
+提供快速生成项目结构和代码模板的功能。
+
+## 开发环境设置
+
+### 环境要求
 ```bash
-# 运行时日志路径: ~/.route-claudecode/logs/
-# 按端口组织，使用当前时区时间命名
-# 命名格式: port-[port]/[module]-[YYYY-MM-DD_HH-MM-SS].log
+# Node.js版本要求
+Node.js >= 18.0.0
+npm >= 9.0.0
 
-~/.route-claudecode/logs/
-├── port-3456/                      # 端口3456的日志
-│   ├── client-2024-08-15_14-30-22.log      # 客户端日志
-│   ├── router-2024-08-15_14-30-22.log      # 路由器日志
-│   ├── pipeline-2024-08-15_14-30-22.log    # 流水线日志
-│   ├── debug-2024-08-15_14-30-22.log       # Debug系统日志
-│   ├── error-2024-08-15_14-30-22.log       # 错误日志
-│   ├── access-2024-08-15_14-30-22.log      # 访问日志
-│   └── performance-2024-08-15_14-30-22.log # 性能日志
-├── port-8080/                      # 端口8080的日志
-│   ├── client-2024-08-15_15-45-10.log
-│   └── router-2024-08-15_15-45-10.log
-└── current/                        # 当前活跃日志的软链接
-    ├── port-3456 -> ../port-3456/
-    └── port-8080 -> ../port-8080/
-
-# 开发日志路径: ./logs/dev/
-# 开发环境按会话组织
-./logs/dev/
-├── session-2024-08-15_14-30-22/    # 开发会话日志
-│   ├── dev-server.log              # 开发服务器日志
-│   ├── hot-reload.log              # 热重载日志
-│   ├── build.log                   # 构建日志
-│   └── test.log                    # 测试日志
-└── current -> session-2024-08-15_14-30-22/  # 当前会话软链接
+# 开发工具
+TypeScript >= 5.0.0
+ESLint >= 8.0.0
+Prettier >= 3.0.0
+Jest >= 29.0.0
+Webpack >= 5.0.0
 ```
 
-### 2. 配置文件命名规则
+### 环境变量设置
 ```bash
-# 开发配置文件
-config/dev/
-├── providers.dev.json              # 开发环境Provider配置
-├── routing.dev.json                # 开发环境路由配置
-├── global.dev.json                 # 开发环境全局配置
-└── debug.dev.json                  # 开发环境Debug配置
-
-# 测试配置文件
-config/test/
-├── providers.test.json             # 测试环境Provider配置
-├── routing.test.json               # 测试环境路由配置
-└── mock-providers.test.json        # 测试Mock配置
-
-# 生产配置文件
-config/prod/
-├── providers.prod.json             # 生产环境Provider配置
-├── routing.prod.json               # 生产环境路由配置
-└── global.prod.json                # 生产环境全局配置
+# 开发环境变量
+export NODE_ENV=development
+export RCC_DEV_MODE=true
+export RCC_DEBUG_PORT=9229
+export RCC_LOG_LEVEL=debug
+export RCC_CONFIG_PATH=./config/dev.json
 ```
 
-### 3. 临时文件命名规则
-```bash
-# 临时文件路径: ./tmp/
-# 使用当前时区时间戳，格式: YYYY-MM-DD_HH-MM-SS
-./tmp/
-├── build/                          # 构建临时文件
-│   ├── tsc-output/                 # TypeScript编译输出
-│   └── webpack-cache/              # Webpack缓存
-├── debug/                          # 调试临时文件
-│   ├── port-3456/                  # 按端口分组调试文件
-│   │   ├── session-2024-08-15_14-30-22/  # 调试会话文件
-│   │   └── curl-responses-2024-08-15_14-30-22/  # cURL响应文件
-│   └── port-8080/
-├── test/                           # 测试临时文件
-│   ├── coverage-2024-08-15_14-30-22/     # 覆盖率报告
-│   └── test-results-2024-08-15_14-30-22/ # 测试结果
-└── logs/                           # 临时日志
-    ├── dev-2024-08-15_14-30-22.log       # 开发临时日志
-    └── debug-2024-08-15_14-30-22.log     # 调试临时日志
+### 开发环境初始化脚本
+```typescript
+// setup-dev-env.ts
+import { DevEnvironmentManager } from './dev-environment';
+
+async function setupDevelopmentEnvironment() {
+  const envManager = new DevEnvironmentManager();
+  
+  // 1. 检查系统要求
+  await envManager.checkSystemRequirements();
+  
+  // 2. 安装依赖
+  await envManager.installDependencies();
+  
+  // 3. 设置配置文件
+  await envManager.setupConfigFiles();
+  
+  // 4. 初始化开发数据库
+  await envManager.initializeDevDatabase();
+  
+  // 5. 启动开发服务器
+  await envManager.startDevServer();
+  
+  console.log('✅ Development environment setup completed!');
+}
+
+setupDevelopmentEnvironment().catch(console.error);
 ```
 
-## 开发调试命令
+## 代码生成工具
 
-### 1. cURL命令脚本
-```bash
-#!/bin/bash
-# scripts/debug/curl-commands.sh
-
-# RCC v4.0 调试cURL命令集合
-# 使用方法: ./curl-commands.sh [command] [options]
-
-set -e
-
-# 配置
-RCC_HOST="http://localhost:3456"
-RCC_PORT="${RCC_PORT:-3456}"
-LOG_DIR="./tmp/debug/port-${RCC_PORT}/curl-responses-$(date +'%Y-%m-%d_%H-%M-%S')"
-TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
-READABLE_TIME=$(date +'%Y-%m-%d %H:%M:%S %Z')
-
-# 创建日志目录
-mkdir -p "$LOG_DIR"
-
-# 颜色输出
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# 日志函数
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+### 模块生成器
+```typescript
+// generate-module.ts
+interface ModuleGeneratorOptions {
+  name: string;
+  type: 'client' | 'router' | 'pipeline' | 'debug' | 'config';
+  components: string[];
+  withTests: boolean;
+  withDocs: boolean;
 }
 
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# 健康检查
-health_check() {
-    log_info "Checking RCC server health at $READABLE_TIME..."
+class ModuleGenerator {
+  async generateModule(options: ModuleGeneratorOptions): Promise<void> {
+    // 1. 创建模块目录结构
+    await this.createModuleStructure(options.name, options.type);
     
-    local response_file="$LOG_DIR/health_check_$TIMESTAMP.json"
+    // 2. 生成核心文件
+    await this.generateCoreFiles(options);
     
-    curl -s -w "\n%{http_code}\n" \
-         -H "Content-Type: application/json" \
-         "$RCC_HOST/health" \
-         > "$response_file"
+    // 3. 生成组件文件
+    if (options.components.length > 0) {
+      await this.generateComponents(options.name, options.components);
+    }
     
-    local http_code=$(tail -n1 "$response_file")
-    local response_body=$(head -n -1 "$response_file")
+    // 4. 生成测试文件
+    if (options.withTests) {
+      await this.generateTestFiles(options);
+    }
     
-    if [ "$http_code" = "200" ]; then
-        log_success "Server is healthy"
-        echo "Response: $response_body"
-    else
-        log_error "Server health check failed (HTTP $http_code)"
-        echo "Response: $response_body"
-    fi
-}
-
-# 测试简单对话
-test_simple_chat() {
-    log_info "Testing simple chat..."
+    // 5. 生成文档文件
+    if (options.withDocs) {
+      await this.generateDocumentation(options);
+    }
     
-    local response_file="$LOG_DIR/simple_chat_$TIMESTAMP.json"
+    console.log(`✅ Module ${options.name} generated successfully!`);
+  }
+  
+  private async createModuleStructure(name: string, type: string): Promise<void> {
+    const basePath = `src/${type}/${name}`;
+    await fs.promises.mkdir(basePath, { recursive: true });
     
-    curl -s -w "\n%{http_code}\n" \
-         -X POST \
-         -H "Content-Type: application/json" \
-         -H "Authorization: Bearer rcc-proxy-key" \
-         -d '{
-           "model": "claude-3-5-sonnet-20241022",
-           "max_tokens": 100,
-           "messages": [
-             {
-               "role": "user",
-               "content": "Hello, this is a test message."
-             }
-           ]
-         }' \
-         "$RCC_HOST/v1/messages" \
-         > "$response_file"
+    // 创建子目录
+    await Promise.all([
+      fs.promises.mkdir(`${basePath}/types`),
+      fs.promises.mkdir(`${basePath}/components`),
+      fs.promises.mkdir(`${basePath}/__tests__`)
+    ]);
+  }
+  
+  private async generateCoreFiles(options: ModuleGeneratorOptions): Promise<void> {
+    // 生成index.ts
+    const indexPath = `src/${options.type}/${options.name}/index.ts`;
+    const indexContent = this.generateIndexFile(options);
+    await fs.promises.writeFile(indexPath, indexContent);
     
-    local http_code=$(tail -n1 "$response_file")
-    local response_body=$(head -n -1 "$response_file")
-    
-    if [ "$http_code" = "200" ]; then
-        log_success "Simple chat test passed"
-        echo "Response saved to: $response_file"
-    else
-        log_error "Simple chat test failed (HTTP $http_code)"
-        echo "Response: $response_body"
-    fi
-}
-
-# 测试流式对话
-test_streaming_chat() {
-    log_info "Testing streaming chat..."
-    
-    local response_file="$LOG_DIR/streaming_chat_$TIMESTAMP.txt"
-    
-    curl -s -w "\n%{http_code}\n" \
-         -X POST \
-         -H "Content-Type: application/json" \
-         -H "Authorization: Bearer rcc-proxy-key" \
-         -d '{
-           "model": "claude-3-5-sonnet-20241022",
-           "max_tokens": 100,
-           "stream": true,
-           "messages": [
-             {
-               "role": "user",
-               "content": "Count from 1 to 5."
-             }
-           ]
-         }' \
-         "$RCC_HOST/v1/messages" \
-         > "$response_file"
-    
-    local http_code=$(tail -n1 "$response_file")
-    
-    if [ "$http_code" = "200" ]; then
-        log_success "Streaming chat test passed"
-        echo "Response saved to: $response_file"
-    else
-        log_error "Streaming chat test failed (HTTP $http_code)"
-        cat "$response_file"
-    fi
-}
-
-# 测试工具调用
-test_tool_calling() {
-    log_info "Testing tool calling..."
-    
-    local response_file="$LOG_DIR/tool_calling_$TIMESTAMP.json"
-    
-    curl -s -w "\n%{http_code}\n" \
-         -X POST \
-         -H "Content-Type: application/json" \
-         -H "Authorization: Bearer rcc-proxy-key" \
-         -d '{
-           "model": "claude-3-5-sonnet-20241022",
-           "max_tokens": 200,
-           "messages": [
-             {
-               "role": "user",
-               "content": "What is the weather like in San Francisco?"
-             }
-           ],
-           "tools": [
-             {
-               "name": "get_weather",
-               "description": "Get weather information for a location",
-               "input_schema": {
-                 "type": "object",
-                 "properties": {
-                   "location": {
-                     "type": "string",
-                     "description": "The city and state, e.g. San Francisco, CA"
-                   }
-                 },
-                 "required": ["location"]
-               }
-             }
-           ]
-         }' \
-         "$RCC_HOST/v1/messages" \
-         > "$response_file"
-    
-    local http_code=$(tail -n1 "$response_file")
-    local response_body=$(head -n -1 "$response_file")
-    
-    if [ "$http_code" = "200" ]; then
-        log_success "Tool calling test passed"
-        echo "Response saved to: $response_file"
-    else
-        log_error "Tool calling test failed (HTTP $http_code)"
-        echo "Response: $response_body"
-    fi
-}
-
-# 测试错误处理
-test_error_handling() {
-    log_info "Testing error handling..."
-    
-    local response_file="$LOG_DIR/error_handling_$TIMESTAMP.json"
-    
-    # 发送无效请求
-    curl -s -w "\n%{http_code}\n" \
-         -X POST \
-         -H "Content-Type: application/json" \
-         -H "Authorization: Bearer invalid-key" \
-         -d '{
-           "model": "invalid-model",
-           "messages": []
-         }' \
-         "$RCC_HOST/v1/messages" \
-         > "$response_file"
-    
-    local http_code=$(tail -n1 "$response_file")
-    local response_body=$(head -n -1 "$response_file")
-    
-    if [ "$http_code" != "200" ]; then
-        log_success "Error handling test passed (HTTP $http_code)"
-        echo "Error response: $response_body"
-    else
-        log_warning "Error handling test unexpected success"
-        echo "Response: $response_body"
-    fi
-}
-
-# 性能测试
-test_performance() {
-    log_info "Running performance test..."
-    
-    local response_file="$LOG_DIR/performance_$TIMESTAMP.txt"
-    local concurrent_requests=5
-    local total_requests=20
-    
-    echo "Running $total_requests requests with $concurrent_requests concurrent connections..." > "$response_file"
-    
-    # 使用ab (Apache Bench) 进行性能测试
-    if command -v ab &> /dev/null; then
-        ab -n $total_requests -c $concurrent_requests \
-           -H "Content-Type: application/json" \
-           -H "Authorization: Bearer rcc-proxy-key" \
-           -p <(echo '{
-             "model": "claude-3-5-sonnet-20241022",
-             "max_tokens": 50,
-             "messages": [{"role": "user", "content": "Hello"}]
-           }') \
-           "$RCC_HOST/v1/messages" >> "$response_file"
-        
-        log_success "Performance test completed"
-        echo "Results saved to: $response_file"
-    else
-        log_warning "Apache Bench (ab) not found, skipping performance test"
-    fi
-}
-
-# 主函数
-main() {
-    case "${1:-help}" in
-        "health")
-            health_check
-            ;;
-        "chat")
-            test_simple_chat
-            ;;
-        "stream")
-            test_streaming_chat
-            ;;
-        "tools")
-            test_tool_calling
-            ;;
-        "error")
-            test_error_handling
-            ;;
-        "perf")
-            test_performance
-            ;;
-        "all")
-            health_check
-            test_simple_chat
-            test_streaming_chat
-            test_tool_calling
-            test_error_handling
-            test_performance
-            ;;
-        "help"|*)
-            echo "RCC v4.0 调试cURL命令"
-            echo ""
-            echo "使用方法: $0 [command]"
-            echo ""
-            echo "可用命令:"
-            echo "  health    - 健康检查"
-            echo "  chat      - 测试简单对话"
-            echo "  stream    - 测试流式对话"
-            echo "  tools     - 测试工具调用"
-            echo "  error     - 测试错误处理"
-            echo "  perf      - 性能测试"
-            echo "  all       - 运行所有测试"
-            echo "  help      - 显示帮助信息"
-            echo ""
-            echo "响应文件保存在: $LOG_DIR"
-            echo ""
-            echo "环境变量:"
-            echo "  RCC_PORT=3456           - 指定测试的RCC端口 (默认3456)"
-            echo "  RCC_HOST=localhost      - 指定RCC主机地址"
-            ;;
-    esac
-}
-
-# 执行主函数
-main "$@"
-```
-
-### 2. 日志查看器脚本
-```bash
-#!/bin/bash
-# scripts/debug/log-viewer.sh
-
-# RCC v4.0 日志查看器
-# 使用方法: ./log-viewer.sh [module] [options]
-
-set -e
-
-# 配置
-RCC_PORT="${RCC_PORT:-3456}"
-LOG_DIR="$HOME/.route-claudecode/logs/port-${RCC_PORT}"
-DEV_LOG_DIR="./logs/dev/current"
-TEMP_LOG_DIR="./tmp/logs"
-CURRENT_TIME=$(date +'%Y-%m-%d %H:%M:%S %Z')
-
-# 颜色输出
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-# 日志级别颜色映射
-colorize_log() {
-    sed -E \
-        -e "s/\[ERROR\]/${RED}[ERROR]${NC}/g" \
-        -e "s/\[WARN\]/${YELLOW}[WARN]${NC}/g" \
-        -e "s/\[INFO\]/${BLUE}[INFO]${NC}/g" \
-        -e "s/\[DEBUG\]/${CYAN}[DEBUG]${NC}/g" \
-        -e "s/\[SUCCESS\]/${GREEN}[SUCCESS]${NC}/g"
-}
-
-# 查看实时日志
-tail_logs() {
-    local module="$1"
-    local log_file
-    
-    if [ "$module" = "dev" ]; then
-        # 查找最新的开发日志文件
-        log_file=$(find "$DEV_LOG_DIR" -name "dev-server.log" -type f 2>/dev/null | head -1)
-        if [ -z "$log_file" ]; then
-            log_file="$DEV_LOG_DIR/dev-server.log"
-        fi
-    else
-        # 查找最新的模块日志文件
-        log_file=$(find "$LOG_DIR" -name "${module}-*.log" -type f 2>/dev/null | sort -r | head -1)
-        if [ -z "$log_file" ]; then
-            log_file="$LOG_DIR/${module}-$(date +'%Y-%m-%d_%H-%M-%S').log"
-        fi
-    fi
-    
-    if [ -f "$log_file" ]; then
-        echo -e "${BLUE}[INFO]${NC} [$CURRENT_TIME] Tailing log file: $log_file"
-        echo -e "${BLUE}[INFO]${NC} Port: $RCC_PORT, Module: $module"
-        echo -e "${BLUE}[INFO]${NC} Press Ctrl+C to stop"
-        echo ""
-        tail -f "$log_file" | colorize_log
-    else
-        echo -e "${RED}[ERROR]${NC} [$CURRENT_TIME] Log file not found: $log_file"
-        echo -e "${YELLOW}[INFO]${NC} Searching for logs in port-$RCC_PORT directory..."
-        list_available_logs
-    fi
-}
-
-# 查看历史日志
-view_logs() {
-    local module="$1"
-    local lines="${2:-100}"
-    local log_file
-    
-    if [ "$module" = "dev" ]; then
-        # 查找最新的开发日志文件
-        log_file=$(find "$DEV_LOG_DIR" -name "dev-server.log" -type f 2>/dev/null | head -1)
-    else
-        # 查找最新的模块日志文件
-        log_file=$(find "$LOG_DIR" -name "${module}-*.log" -type f 2>/dev/null | sort -r | head -1)
-    fi
-    
-    if [ -f "$log_file" ]; then
-        echo -e "${BLUE}[INFO]${NC} [$CURRENT_TIME] Viewing last $lines lines of: $log_file"
-        echo -e "${BLUE}[INFO]${NC} Port: $RCC_PORT, Module: $module"
-        echo ""
-        tail -n "$lines" "$log_file" | colorize_log
-    else
-        echo -e "${RED}[ERROR]${NC} [$CURRENT_TIME] Log file not found for module: $module"
-        echo -e "${YELLOW}[INFO]${NC} Searching in port-$RCC_PORT directory..."
-        list_available_logs
-    fi
-}
-
-# 搜索日志
-search_logs() {
-    local module="$1"
-    local pattern="$2"
-    local log_file
-    
-    if [ "$module" = "dev" ]; then
-        log_file="$DEV_LOG_DIR/dev-server-$(date +%Y-%m-%d).log"
-    else
-        log_file="$LOG_DIR/${module}-$(date +%Y-%m-%d).log"
-    fi
-    
-    if [ -f "$log_file" ]; then
-        echo -e "${BLUE}[INFO]${NC} Searching for '$pattern' in: $log_file"
-        echo ""
-        grep -n --color=always "$pattern" "$log_file" | colorize_log
-    else
-        echo -e "${RED}[ERROR]${NC} Log file not found: $log_file"
-        list_available_logs
-    fi
-}
-
-# 列出可用日志
-list_available_logs() {
-    echo -e "${BLUE}[INFO]${NC} [$CURRENT_TIME] Available log files:"
-    echo -e "${BLUE}[INFO]${NC} Current port: $RCC_PORT"
-    echo ""
-    
-    echo -e "${PURPLE}Production logs (Port $RCC_PORT):${NC}"
-    if [ -d "$LOG_DIR" ]; then
-        ls -la "$LOG_DIR"/*.log 2>/dev/null | while read -r line; do
-            echo "  $line"
-        done || echo "  No production logs found for port $RCC_PORT"
-    else
-        echo "  Log directory not found: $LOG_DIR"
-        echo "  Creating directory..."
-        mkdir -p "$LOG_DIR"
-    fi
-    
-    echo ""
-    echo -e "${PURPLE}All ports production logs:${NC}"
-    local base_log_dir="$HOME/.route-claudecode/logs"
-    if [ -d "$base_log_dir" ]; then
-        for port_dir in "$base_log_dir"/port-*; do
-            if [ -d "$port_dir" ]; then
-                local port=$(basename "$port_dir" | cut -d'-' -f2)
-                echo "  Port $port:"
-                ls -la "$port_dir"/*.log 2>/dev/null | sed 's/^/    /' || echo "    No logs found"
-            fi
-        done
-    fi
-    
-    echo ""
-    echo -e "${PURPLE}Development logs:${NC}"
-    if [ -d "$DEV_LOG_DIR" ]; then
-        ls -la "$DEV_LOG_DIR"/*.log 2>/dev/null | while read -r line; do
-            echo "  $line"
-        done || echo "  No development logs found"
-    else
-        echo "  Development log directory not found: $DEV_LOG_DIR"
-    fi
-}
-
-# 清理旧日志
-clean_old_logs() {
-    local days="${1:-7}"
-    
-    echo -e "${YELLOW}[WARNING]${NC} [$CURRENT_TIME] Cleaning logs older than $days days..."
-    
-    # 清理所有端口的生产日志
-    local base_log_dir="$HOME/.route-claudecode/logs"
-    if [ -d "$base_log_dir" ]; then
-        local cleaned_count=0
-        for port_dir in "$base_log_dir"/port-*; do
-            if [ -d "$port_dir" ]; then
-                local port=$(basename "$port_dir" | cut -d'-' -f2)
-                local files_before=$(find "$port_dir" -name "*.log" | wc -l)
-                find "$port_dir" -name "*.log" -mtime +$days -delete
-                local files_after=$(find "$port_dir" -name "*.log" | wc -l)
-                local cleaned=$((files_before - files_after))
-                if [ $cleaned -gt 0 ]; then
-                    echo -e "${GREEN}[SUCCESS]${NC} Cleaned $cleaned log files from port $port"
-                    cleaned_count=$((cleaned_count + cleaned))
-                fi
-            fi
-        done
-        echo -e "${GREEN}[SUCCESS]${NC} Total production logs cleaned: $cleaned_count"
-    fi
-    
-    # 清理开发日志
-    local dev_base_dir="./logs/dev"
-    if [ -d "$dev_base_dir" ]; then
-        local dev_cleaned=$(find "$dev_base_dir" -name "*.log" -mtime +$days | wc -l)
-        find "$dev_base_dir" -name "*.log" -mtime +$days -delete
-        find "$dev_base_dir" -type d -empty -mtime +$days -delete 2>/dev/null || true
-        echo -e "${GREEN}[SUCCESS]${NC} Cleaned $dev_cleaned development log files"
-    fi
-    
-    # 清理临时日志
-    if [ -d "$TEMP_LOG_DIR" ]; then
-        local temp_cleaned=$(find "$TEMP_LOG_DIR" -name "*.log" -mtime +$days | wc -l)
-        find "$TEMP_LOG_DIR" -name "*.log" -mtime +$days -delete
-        echo -e "${GREEN}[SUCCESS]${NC} Cleaned $temp_cleaned temporary log files"
-    fi
-}
-
-# 分析错误日志
-analyze_errors() {
-    local module="$1"
-    local log_file
-    
-    if [ "$module" = "dev" ]; then
-        log_file="$DEV_LOG_DIR/dev-server-$(date +%Y-%m-%d).log"
-    else
-        log_file="$LOG_DIR/${module}-$(date +%Y-%m-%d).log"
-    fi
-    
-    if [ -f "$log_file" ]; then
-        echo -e "${BLUE}[INFO]${NC} Analyzing errors in: $log_file"
-        echo ""
-        
-        echo -e "${RED}Error summary:${NC}"
-        grep -c "\[ERROR\]" "$log_file" 2>/dev/null || echo "0 errors found"
-        
-        echo ""
-        echo -e "${RED}Recent errors:${NC}"
-        grep "\[ERROR\]" "$log_file" | tail -10 | colorize_log
-        
-        echo ""
-        echo -e "${YELLOW}Warning summary:${NC}"
-        grep -c "\[WARN\]" "$log_file" 2>/dev/null || echo "0 warnings found"
-        
-    else
-        echo -e "${RED}[ERROR]${NC} Log file not found: $log_file"
-    fi
-}
-
-# 主函数
-main() {
-    local command="${1:-help}"
-    local module="$2"
-    local param3="$3"
-    
-    case "$command" in
-        "tail")
-            if [ -z "$module" ]; then
-                echo -e "${RED}[ERROR]${NC} Module name required"
-                echo "Usage: $0 tail [module]"
-                exit 1
-            fi
-            tail_logs "$module"
-            ;;
-        "view")
-            if [ -z "$module" ]; then
-                echo -e "${RED}[ERROR]${NC} Module name required"
-                echo "Usage: $0 view [module] [lines]"
-                exit 1
-            fi
-            view_logs "$module" "$param3"
-            ;;
-        "search")
-            if [ -z "$module" ] || [ -z "$param3" ]; then
-                echo -e "${RED}[ERROR]${NC} Module name and search pattern required"
-                echo "Usage: $0 search [module] [pattern]"
-                exit 1
-            fi
-            search_logs "$module" "$param3"
-            ;;
-        "list")
-            list_available_logs
-            ;;
-        "clean")
-            clean_old_logs "$module"
-            ;;
-        "errors")
-            if [ -z "$module" ]; then
-                echo -e "${RED}[ERROR]${NC} Module name required"
-                echo "Usage: $0 errors [module]"
-                exit 1
-            fi
-            analyze_errors "$module"
-            ;;
-        "help"|*)
-            echo "RCC v4.0 日志查看器"
-            echo ""
-            echo "使用方法: $0 [command] [options]"
-            echo ""
-            echo "可用命令:"
-            echo "  tail [module]           - 实时查看日志"
-            echo "  view [module] [lines]   - 查看历史日志 (默认100行)"
-            echo "  search [module] [pattern] - 搜索日志内容"
-            echo "  list                    - 列出可用日志文件"
-            echo "  clean [days]            - 清理旧日志 (默认7天)"
-            echo "  errors [module]         - 分析错误日志"
-            echo "  help                    - 显示帮助信息"
-            echo ""
-            echo "可用模块:"
-            echo "  client, router, pipeline, debug, error, dev"
-            echo ""
-            echo "环境变量:"
-            echo "  RCC_PORT=3456           - 指定要查看的端口日志 (默认3456)"
-            echo ""
-            echo "示例:"
-            echo "  $0 tail client          - 实时查看客户端日志"
-            echo "  $0 view router 50       - 查看路由器日志最后50行"
-            echo "  $0 search pipeline ERROR - 搜索流水线错误日志"
-            echo "  RCC_PORT=8080 $0 tail client - 查看端口8080的客户端日志"
-            ;;
-    esac
-}
-
-# 执行主函数
-main "$@"
-```
-
-### 3. 调试会话管理脚本
-```bash
-#!/bin/bash
-# scripts/debug/debug-session.sh
-
-# RCC v4.0 调试会话管理器
-# 使用方法: ./debug-session.sh [command] [options]
-
-set -e
-
-# 配置
-RCC_PORT="${RCC_PORT:-3456}"
-DEBUG_DIR="$HOME/.route-claudecode/debug/port-${RCC_PORT}"
-SESSION_DIR="./tmp/debug/port-${RCC_PORT}/sessions"
-TIMESTAMP=$(date +'%Y-%m-%d_%H-%M-%S')
-READABLE_TIME=$(date +'%Y-%m-%d %H:%M:%S %Z')
-
-# 创建会话目录
-mkdir -p "$SESSION_DIR"
-
-# 颜色输出
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
-
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
-
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# 启动调试会话
-start_debug_session() {
-    local session_name="${1:-debug_$TIMESTAMP}"
-    local session_dir="$SESSION_DIR/$session_name"
-    
-    mkdir -p "$session_dir"
-    
-    log_info "Starting debug session: $session_name at $READABLE_TIME"
-    
-    # 创建会话配置
-    cat > "$session_dir/session.json" << EOF
-{
-  "sessionName": "$session_name",
-  "port": $RCC_PORT,
-  "startTime": "$(date +'%Y-%m-%d %H:%M:%S %Z')",
-  "startTimeISO": "$(date -Iseconds)",
-  "pid": $$,
-  "debugLevel": "debug",
-  "modules": ["client", "router", "pipeline", "debug"],
-  "logFiles": {
-    "session": "$session_dir/session.log",
-    "requests": "$session_dir/requests.log",
-    "errors": "$session_dir/errors.log"
+    // 生成主模块文件
+    const modulePath = `src/${options.type}/${options.name}/${options.name}-manager.ts`;
+    const moduleContent = this.generateModuleFile(options);
+    await fs.promises.writeFile(modulePath, moduleContent);
   }
 }
-EOF
-    
-    # 启动日志记录
-    echo "$(date +'%Y-%m-%d %H:%M:%S %Z') [INFO] Debug session started: $session_name (Port: $RCC_PORT)" > "$session_dir/session.log"
-    
-    log_success "Debug session started: $session_name"
-    log_info "Port: $RCC_PORT"
-    log_info "Session directory: $session_dir"
-    log_info "Started at: $READABLE_TIME"
-    log_info "Use 'stop $session_name' to end the session"
-    
-    # 设置环境变量
-    export RCC_DEBUG_SESSION="$session_name"
-    export RCC_DEBUG_DIR="$session_dir"
-    export RCC_DEBUG_PORT="$RCC_PORT"
-    export RCC_LOG_LEVEL="debug"
-    
-    echo "# Export these environment variables:"
-    echo "export RCC_DEBUG_SESSION=\"$session_name\""
-    echo "export RCC_DEBUG_DIR=\"$session_dir\""
-    echo "export RCC_DEBUG_PORT=\"$RCC_PORT\""
-    echo "export RCC_LOG_LEVEL=\"debug\""
+```
+
+### 组件生成器
+```typescript
+// generate-component.ts
+interface ComponentGeneratorOptions {
+  moduleName: string;
+  componentName: string;
+  componentType: 'service' | 'controller' | 'middleware' | 'helper';
+  withInterface: boolean;
+  withTests: boolean;
 }
 
-# 停止调试会话
-stop_debug_session() {
-    local session_name="$1"
-    local session_dir="$SESSION_DIR/$session_name"
+class ComponentGenerator {
+  async generateComponent(options: ComponentGeneratorOptions): Promise<void> {
+    const modulePath = `src/modules/${options.moduleName}`;
     
-    if [ ! -d "$session_dir" ]; then
-        log_error "Debug session not found: $session_name"
-        return 1
-    fi
+    // 生成组件文件
+    const componentPath = `${modulePath}/${options.componentName}.ts`;
+    const componentContent = this.generateComponentFile(options);
+    await fs.promises.writeFile(componentPath, componentContent);
     
-    log_info "Stopping debug session: $session_name at $READABLE_TIME"
+    // 生成接口文件
+    if (options.withInterface) {
+      const interfacePath = `${modulePath}/${options.componentName}.interface.ts`;
+      const interfaceContent = this.generateInterfaceFile(options);
+      await fs.promises.writeFile(interfacePath, interfaceContent);
+    }
     
-    # 更新会话配置
-    local session_file="$session_dir/session.json"
-    if [ -f "$session_file" ]; then
-        # 使用jq更新结束时间（如果可用）
-        if command -v jq &> /dev/null; then
-            jq --arg endTime "$(date +'%Y-%m-%d %H:%M:%S %Z')" --arg endTimeISO "$(date -Iseconds)" '.endTime = $endTime | .endTimeISO = $endTimeISO' "$session_file" > "$session_file.tmp" && mv "$session_file.tmp" "$session_file"
-        fi
-    fi
-    
-    # 记录会话结束
-    echo "$(date +'%Y-%m-%d %H:%M:%S %Z') [INFO] Debug session ended: $session_name (Port: $RCC_PORT)" >> "$session_dir/session.log"
-    
-    # 生成会话报告
-    generate_session_report "$session_name"
-    
-    log_success "Debug session stopped: $session_name"
-    log_info "Session report: $session_dir/report.txt"
+    // 生成测试文件
+    if (options.withTests) {
+      const testPath = `${modulePath}/__tests__/${options.componentName}.test.ts`;
+      const testContent = this.generateTestFile(options);
+      await fs.promises.writeFile(testPath, testContent);
+    }
+  }
 }
+```
 
-# 列出调试会话
-list_debug_sessions() {
-    log_info "Debug sessions for port $RCC_PORT at $READABLE_TIME:"
+## 调试工具集
+
+### 开发服务器
+```typescript
+// dev-server.ts
+class DevServer {
+  private server: FastifyInstance;
+  private watcher: FSWatcher;
+  
+  async start(port: number = 3456): Promise<void> {
+    this.server = fastify({ logger: true });
     
-    if [ ! -d "$SESSION_DIR" ]; then
-        log_warning "No debug sessions found for port $RCC_PORT"
-        log_info "Session directory: $SESSION_DIR"
-        return
-    fi
+    // 设置热重载
+    this.setupHotReload();
     
-    local session_count=0
-    for session_dir in "$SESSION_DIR"/*; do
-        if [ -d "$session_dir" ]; then
-            local session_name=$(basename "$session_dir")
-            local session_file="$session_dir/session.json"
-            
-            if [ -f "$session_file" ]; then
-                local start_time=$(grep -o '"startTime": "[^"]*"' "$session_file" | cut -d'"' -f4)
-                local end_time=$(grep -o '"endTime": "[^"]*"' "$session_file" | cut -d'"' -f4)
-                local port=$(grep -o '"port": [0-9]*' "$session_file" | cut -d':' -f2 | tr -d ' ')
-                
-                if [ -z "$end_time" ]; then
-                    echo -e "  ${GREEN}●${NC} $session_name (Port: $port, Started: $start_time)"
-                else
-                    echo -e "  ${RED}●${NC} $session_name (Port: $port, Ended: $end_time)"
-                fi
-                session_count=$((session_count + 1))
-            else
-                echo -e "  ${YELLOW}●${NC} $session_name (invalid session)"
-            fi
-        fi
-    done
+    // 设置API路由
+    this.setupRoutes();
     
-    if [ $session_count -eq 0 ]; then
-        log_warning "No valid debug sessions found for port $RCC_PORT"
-    else
-        log_info "Found $session_count debug sessions for port $RCC_PORT"
-    fi
+    // 设置静态文件服务
+    this.setupStaticFiles();
     
-    # 显示其他端口的会话
-    local base_session_dir="./tmp/debug"
-    if [ -d "$base_session_dir" ]; then
-        echo ""
-        log_info "Sessions from other ports:"
-        for port_dir in "$base_session_dir"/port-*; do
-            if [ -d "$port_dir" ]; then
-                local other_port=$(basename "$port_dir" | cut -d'-' -f2)
-                if [ "$other_port" != "$RCC_PORT" ]; then
-                    local other_sessions=$(find "$port_dir/sessions" -maxdepth 1 -type d 2>/dev/null | wc -l)
-                    if [ $other_sessions -gt 1 ]; then  # 减1因为包含sessions目录本身
-                        echo -e "  Port $other_port: $((other_sessions - 1)) sessions"
-                    fi
-                fi
-            fi
-        done
-    fi
+    await this.server.listen({ port, host: 'localhost' });
+    console.log(`🚀 Dev server started on http://localhost:${port}`);
+  }
+  
+  private setupHotReload(): void {
+    this.watcher = chokidar.watch(['src/**/*.ts'], {
+      ignored: /node_modules/,
+      persistent: true
+    });
+    
+    this.watcher.on('change', async (path) => {
+      console.log(`🔄 File changed: ${path}`);
+      // 重新加载模块
+      await this.reloadModule(path);
+    });
+  }
+  
+  private setupRoutes(): void {
+    // API路由
+    this.server.post('/api/debug/execute', async (request, reply) => {
+      const { code } = request.body as { code: string };
+      try {
+        const result = await this.executeDebugCode(code);
+        return { success: true, result };
+      } catch (error) {
+        return { success: false, error: error.message };
+      }
+    });
+    
+    // Debug面板路由
+    this.server.get('/debug', async (request, reply) => {
+      return this.renderDebugPanel();
+    });
+  }
 }
+```
 
-# 生成会话报告
-generate_session_report() {
-    local session_name="$1"
-    local session_dir="$SESSION_DIR/$session_name"
-    local report_file="$session_dir/report.txt"
+### 性能监控器
+```typescript
+// perf-monitor.ts
+class PerformanceMonitor {
+  private metrics: Map<string, PerformanceMetric[]> = new Map();
+  
+  startMonitoring(label: string): () => PerformanceMetric {
+    const startTime = process.hrtime.bigint();
     
-    log_info "Generating session report..."
+    return (): PerformanceMetric => {
+      const endTime = process.hrtime.bigint();
+      const duration = Number(endTime - startTime) / 1000000; // 转换为毫秒
+      
+      const metric: PerformanceMetric = {
+        label,
+        duration,
+        timestamp: new Date(),
+        memoryUsage: process.memoryUsage()
+      };
+      
+      // 存储指标
+      if (!this.metrics.has(label)) {
+        this.metrics.set(label, []);
+      }
+      this.metrics.get(label)!.push(metric);
+      
+      return metric;
+    };
+  }
+  
+  getMetrics(label?: string): PerformanceMetric[] | Map<string, PerformanceMetric[]> {
+    if (label) {
+      return this.metrics.get(label) || [];
+    }
+    return new Map(this.metrics);
+  }
+  
+  generateReport(): PerformanceReport {
+    const report: PerformanceReport = {};
     
-    cat > "$report_file" << EOF
-RCC v4.0 Debug Session Report
-=============================
+    for (const [label, metrics] of this.metrics) {
+      const durations = metrics.map(m => m.duration);
+      report[label] = {
+        count: metrics.length,
+        avgDuration: durations.reduce((a, b) => a + b, 0) / durations.length,
+        minDuration: Math.min(...durations),
+        maxDuration: Math.max(...durations),
+        totalDuration: durations.reduce((a, b) => a + b, 0)
+      };
+    }
+    
+    return report;
+  }
+}
+```
 
-Session Name: $session_name
-Generated: $(date -Iseconds)
+## 文档生成工具
 
-EOF
+### API文档生成器
+```typescript
+// api-doc-generator.ts
+class APIDocGenerator {
+  async generateAPIDocs(sourceFiles: string[]): Promise<void> {
+    // 解析TypeScript文件
+    const parsedFiles = await this.parseSourceFiles(sourceFiles);
     
-    # 会话信息
-    if [ -f "$session_dir/session.json" ]; then
-        echo "Session Information:" >> "$report_file"
-        cat "$session_dir/session.json" >> "$report_file"
-        echo "" >> "$report_file"
-    fi
+    // 提取API端点信息
+    const apiEndpoints = this.extractAPIEndpoints(parsedFiles);
     
-    # 请求统计
-    if [ -f "$session_dir/requests.log" ]; then
-        echo "Request Statistics:" >> "$report_file"
-        echo "Total requests: $(wc -l < "$session_dir/requests.log")" >> "$report_file"
-        echo "" >> "$report_file"
-    fi
+    // 生成Markdown文档
+    const markdownDoc = this.generateMarkdownDoc(apiEndpoints);
+    await fs.promises.writeFile('docs/api.md', markdownDoc);
     
-    # 错误统计
-    if [ -f "$session_dir/errors.log" ]; then
-        echo "Error Statistics:" >> "$report_file"
-        echo "Total errors: $(wc -l < "$session_dir/errors.log")" >> "$report_file"
-        echo "" >> "$report_file"
+    // 生成HTML文档
+    const htmlDoc = this.generateHTMLDoc(apiEndpoints);
+    await fs.promises.writeFile('docs/api.html', htmlDoc);
+    
+    // 生成OpenAPI规范
+    const openAPISpec = this.generateOpenAPISpec(apiEndpoints);
+    await fs.promises.writeFile('docs/openapi.json', JSON.stringify(openAPISpec, null, 2));
+  }
+  
+  private extractAPIEndpoints(files: ParsedFile[]): APIEndpoint[] {
+    const endpoints: APIEndpoint[] = [];
+    
+    for (const file of files) {
+      // 查找带有@route注解的函数
+      const routeDecorators = file.ast.find(j.Decorator, {
+        expression: {
+          callee: {
+            name: decorator => decorator === 'route' || decorator === 'get' || decorator === 'post'
+          }
+        }
+      });
+      
+      routeDecorators.forEach(decorator => {
+        const endpoint: APIEndpoint = {
+          method: this.extractMethod(decorator),
+          path: this.extractPath(decorator),
+          description: this.extractDescription(decorator),
+          parameters: this.extractParameters(decorator),
+          returnType: this.extractReturnType(decorator),
+          file: file.path
+        };
         
-        if [ -s "$session_dir/errors.log" ]; then
-            echo "Recent Errors:" >> "$report_file"
-            tail -10 "$session_dir/errors.log" >> "$report_file"
-            echo "" >> "$report_file"
-        fi
-    fi
+        endpoints.push(endpoint);
+      });
+    }
     
-    # 性能统计
-    echo "Performance Metrics:" >> "$report_file"
-    echo "Session duration: $(calculate_session_duration "$session_dir")" >> "$report_file"
-    echo "" >> "$report_file"
-    
-    log_success "Session report generated: $report_file"
+    return endpoints;
+  }
 }
-
-# 计算会话持续时间
-calculate_session_duration() {
-    local session_dir="$1"
-    local session_file="$session_dir/session.json"
-    
-    if [ -f "$session_file" ]; then
-        local start_time=$(grep -o '"startTime": "[^"]*"' "$session_file" | cut -d'"' -f4)
-        local end_time=$(grep -o '"endTime": "[^"]*"' "$session_file" | cut -d'"' -f4)
-        
-        if [ -n "$start_time" ] && [ -n "$end_time" ]; then
-            # 计算时间差（需要date命令支持）
-            local start_epoch=$(date -d "$start_time" +%s 2>/dev/null || echo "0")
-            local end_epoch=$(date -d "$end_time" +%s 2>/dev/null || echo "0")
-            local duration=$((end_epoch - start_epoch))
-            
-            if [ $duration -gt 0 ]; then
-                echo "${duration}s"
-            else
-                echo "Unknown"
-            fi
-        else
-            echo "Ongoing"
-        fi
-    else
-        echo "Unknown"
-    fi
-}
-
-# 清理调试会话
-clean_debug_sessions() {
-    local days="${1:-7}"
-    
-    log_warning "Cleaning debug sessions older than $days days..."
-    
-    if [ -d "$SESSION_DIR" ]; then
-        find "$SESSION_DIR" -type d -mtime +$days -exec rm -rf {} + 2>/dev/null || true
-        log_success "Cleaned old debug sessions"
-    fi
-}
-
-# 主函数
-main() {
-    local command="${1:-help}"
-    local param2="$2"
-    
-    case "$command" in
-        "start")
-            start_debug_session "$param2"
-            ;;
-        "stop")
-            if [ -z "$param2" ]; then
-                log_error "Session name required"
-                echo "Usage: $0 stop [session_name]"
-                exit 1
-            fi
-            stop_debug_session "$param2"
-            ;;
-        "list")
-            list_debug_sessions
-            ;;
-        "report")
-            if [ -z "$param2" ]; then
-                log_error "Session name required"
-                echo "Usage: $0 report [session_name]"
-                exit 1
-            fi
-            generate_session_report "$param2"
-            ;;
-        "clean")
-            clean_debug_sessions "$param2"
-            ;;
-        "help"|*)
-            echo "RCC v4.0 调试会话管理器"
-            echo ""
-            echo "使用方法: $0 [command] [options]"
-            echo ""
-            echo "可用命令:"
-            echo "  start [name]    - 启动调试会话"
-            echo "  stop [name]     - 停止调试会话"
-            echo "  list            - 列出所有调试会话"
-            echo "  report [name]   - 生成会话报告"
-            echo "  clean [days]    - 清理旧会话 (默认7天)"
-            echo "  help            - 显示帮助信息"
-            echo ""
-            echo "环境变量:"
-            echo "  RCC_PORT=3456           - 指定调试会话的端口 (默认3456)"
-            echo ""
-            echo "示例:"
-            echo "  $0 start my-debug       - 启动名为my-debug的会话"
-            echo "  $0 stop my-debug        - 停止my-debug会话"
-            echo "  $0 list                 - 列出当前端口的所有会话"
-            echo "  RCC_PORT=8080 $0 start test - 在端口8080启动test会话"
-            ;;
-    esac
-}
-
-# 执行主函数
-main "$@"
 ```
 
-## 开发环境配置
+## 构建工具集
 
-### 1. 开发环境变量
-```bash
-# .env.development
-NODE_ENV=development
-RCC_PORT=3456
-RCC_HOST=127.0.0.1
-RCC_LOG_LEVEL=debug
-RCC_DEBUG_ENABLED=true
+### 构建配置
+```javascript
+// webpack.dev.js
+const path = require('path');
 
-# 测试API密钥（开发用）
-OPENAI_API_KEY_DEV=sk-dev-test-key
-ANTHROPIC_API_KEY_DEV=sk-ant-dev-test-key
-GEMINI_API_KEY_DEV=dev-test-key
-
-# 开发配置路径
-RCC_CONFIG_PATH=./config/dev
-RCC_LOG_PATH=./logs/dev
-RCC_DEBUG_PATH=./tmp/debug
-
-# 热重载配置
-RCC_HOT_RELOAD=true
-RCC_WATCH_CONFIG=true
-RCC_AUTO_RESTART=true
+module.exports = {
+  mode: 'development',
+  entry: './src/index.ts',
+  output: {
+    path: path.resolve(__dirname, '../dist'),
+    filename: 'rcc.js',
+    library: 'RCC',
+    libraryTarget: 'umd'
+  },
+  resolve: {
+    extensions: ['.ts', '.js']
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: 'ts-loader',
+        exclude: /node_modules/
+      }
+    ]
+  },
+  devtool: 'source-map',
+  devServer: {
+    contentBase: path.join(__dirname, '../dist'),
+    compress: true,
+    port: 3456
+  }
+};
 ```
 
-### 2. 开发启动脚本
-```bash
-#!/bin/bash
-# scripts/dev/start-dev.sh
-
-set -e
-
-# 加载开发环境变量
-if [ -f ".env.development" ]; then
-    export $(cat .env.development | grep -v '^#' | xargs)
-fi
-
-# 创建必要目录
-mkdir -p logs/dev
-mkdir -p tmp/debug
-mkdir -p config/dev
-
-# 启动开发服务器
-echo "🚀 Starting RCC v4.0 Development Server..."
-echo "Port: $RCC_PORT"
-echo "Log Level: $RCC_LOG_LEVEL"
-echo "Config Path: $RCC_CONFIG_PATH"
-
-# 使用nodemon进行热重载
-if command -v nodemon &> /dev/null; then
-    nodemon \
-        --watch src \
-        --watch config \
-        --ext ts,json \
-        --exec "npm run build && node dist/cli.js start --port $RCC_PORT --config $RCC_CONFIG_PATH --debug"
-else
-    echo "⚠️  nodemon not found, using regular node"
-    npm run build && node dist/cli.js start --port $RCC_PORT --config $RCC_CONFIG_PATH --debug
-fi
+### 发布构建脚本
+```typescript
+// build-release.ts
+class ReleaseBuilder {
+  async buildRelease(version: string): Promise<void> {
+    // 1. 运行测试
+    await this.runTests();
+    
+    // 2. 检查代码质量
+    await this.checkCodeQuality();
+    
+    // 3. 更新版本号
+    await this.updateVersion(version);
+    
+    // 4. 编译TypeScript
+    await this.compileTypeScript();
+    
+    // 5. 打包
+    await this.bundle();
+    
+    // 6. 生成文档
+    await this.generateDocs();
+    
+    // 7. 创建发布包
+    await this.createReleasePackage(version);
+    
+    console.log(`✅ Release ${version} built successfully!`);
+  }
+  
+  private async runTests(): Promise<void> {
+    const testProcess = spawn('npm', ['test'], { stdio: 'inherit' });
+    await new Promise((resolve, reject) => {
+      testProcess.on('close', code => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`Tests failed with exit code ${code}`));
+        }
+      });
+    });
+  }
+  
+  private async compileTypeScript(): Promise<void> {
+    const tscProcess = spawn('npx', ['tsc', '--project', 'tsconfig.prod.json'], { stdio: 'inherit' });
+    await new Promise((resolve, reject) => {
+      tscProcess.on('close', code => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`TypeScript compilation failed with exit code ${code}`));
+        }
+      });
+    });
+  }
+}
 ```
 
-## 质量要求
+## 接口定义
 
-### 开发工具标准
-- ✅ 完整的调试命令集合
-- ✅ 实时日志查看和分析
-- ✅ 调试会话管理
-- ✅ 自动化测试脚本
-- ✅ 性能监控工具
-- ✅ 错误追踪机制
+```typescript
+interface DevelopmentModuleInterface {
+  initialize(): Promise<void>;
+  setupDevelopmentEnvironment(): Promise<void>;
+  generateCode(template: string, options: CodeGenOptions): Promise<string>;
+  startDevServer(port?: number): Promise<void>;
+  stopDevServer(): Promise<void>;
+  runTests(testPattern?: string): Promise<TestResults>;
+  generateDocumentation(): Promise<void>;
+  buildProject(): Promise<BuildResult>;
+}
 
-### 文件管理规范
-- ✅ 统一的文件命名规则
-- ✅ 自动日志轮转和清理
-- ✅ 临时文件管理
-- ✅ 配置文件版本管理
-- ✅ 敏感信息保护
+interface CodeGeneratorInterface {
+  generateModule(options: ModuleGenOptions): Promise<void>;
+  generateComponent(options: ComponentGenOptions): Promise<void>;
+  generateTest(options: TestGenOptions): Promise<void>;
+  generateConfig(options: ConfigGenOptions): Promise<void>;
+}
 
-这个开发调试系统为RCC v4.0提供了完整的开发支持，确保开发过程的高效性和便利性。
+interface DevServerInterface {
+  start(port: number): Promise<void>;
+  stop(): Promise<void>;
+  reload(): Promise<void>;
+  getServerInfo(): ServerInfo;
+}
+```
+
+## 依赖关系
+
+- 依赖配置模块获取开发配置
+- 依赖测试模块执行自动化测试
+- 被开发者工具调用以支持开发工作流
+
+## 设计原则
+
+1. **开发者友好**: 提供简单易用的开发工具和脚本
+2. **自动化**: 支持开发、测试、构建的自动化流程
+3. **可扩展性**: 易于添加新的开发工具和功能
+4. **文档化**: 提供完整的开发文档和示例
+5. **标准化**: 遵循业界标准的开发实践
+6. **可配置性**: 支持灵活的开发环境配置
+7. **集成性**: 与主流开发工具和IDE良好集成
+8. **效率性**: 提高开发效率，减少重复工作

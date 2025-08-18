@@ -285,6 +285,12 @@
   "configuration": {
     "strictErrorReporting": true,
     "zeroFallbackPolicy": true,
+    "allowEmergencyFallback": false,
+    "emergencyThresholds": {
+      "consecutiveFailures": 5,
+      "errorRateThreshold": 0.8,
+      "criticalLatencyMs": 60000
+    },
     "maxRetries": 3,
     "requestTimeout": 30000,
     "healthCheckInterval": 30000,
