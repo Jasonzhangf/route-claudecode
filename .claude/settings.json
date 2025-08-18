@@ -1,0 +1,60 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npm run build 2>/dev/null || tsc --noEmit 2>/dev/null || echo 'TypeScript check completed'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/pre_bash_e2e_verification_enforcer_hook.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop_universal_build_reminder_hook.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/stop_universal_debug_enforcer_hook.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "projectSpecific": {
+    "typescript": {
+      "strict": true,
+      "compileOnSave": true,
+      "formatOnSave": true
+    },
+    "autoImports": true,
+    "linting": {
+      "typescript": {
+        "enabled": true,
+        "rules": [
+          "strict",
+          "noUnusedLocals",
+          "noUnusedParameters"
+        ]
+      }
+    }
+  },
+  "debugMode": true
+}
