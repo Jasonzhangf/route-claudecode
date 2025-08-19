@@ -767,19 +767,20 @@ class PipelineServer extends events_1.EventEmitter {
                     console.log(`✅ [Router] 找到providerId: ${providerId}`);
                 }
                 else {
-                    console.warn(`⚠️ [Router] 未找到server-compatibility层的providerId`);
-                    // 尝试从server层查找作为备选
-                    const serverLayer = routeConfig.pipeline.layers.find((layer) => layer.layer === 'server');
-                    if (serverLayer && serverLayer.config && serverLayer.config.providerId) {
-                        providerId = serverLayer.config.providerId;
-                        console.log(`🔄 [Router] 从server层找到providerId: ${providerId}`);
-                    }
+                    // 🔧 ZERO FALLBACK POLICY: 直接使用selectedRoute作为providerId
+                    // 因为根据demo1逻辑，selectedRoute就是provider名称
+                    providerId = selectedRoute;
+                    console.log(`✅ [Router] 使用selectedRoute作为providerId: ${providerId}`);
                 }
             }
         }
+        // 🔧 ZERO FALLBACK POLICY: 确保providerId必须存在，不使用fallback
+        if (!providerId) {
+            throw new Error(`路由配置错误：无法确定Provider ID，selectedRoute: ${selectedRoute}`);
+        }
         const decision = {
             routeId: selectedRoute,
-            providerId: providerId || 'unknown-provider',
+            providerId: providerId,
             originalModel: requestedModel,
             mappedModel: mappedModel,
             selectionCriteria: routingRules.routeSelectionCriteria || {

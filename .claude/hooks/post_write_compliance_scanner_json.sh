@@ -212,7 +212,7 @@ if command -v jq >/dev/null 2>&1; then
         perform_comprehensive_scan "$file_path" "$content"
         
         # 生成扫描报告
-        local report_file=$(generate_scan_report "$file_path")
+        report_file=$(generate_scan_report "$file_path")
         
         # 检查是否发现违规
         if [ "$VIOLATION_FOUND" = true ]; then
@@ -239,6 +239,9 @@ if command -v jq >/dev/null 2>&1; then
             echo "⚠️ 必须修复所有违规才能继续开发工作！" >&2
             
             log_scan_result "扫描完成: $file_path - 发现 ${#VIOLATION_MESSAGES[@]} 个违规"
+            
+            # Record statistics
+            /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "post_write_compliance_scanner_json" "compliance_violation" "${file_path:-unknown}"
             exit 1
         fi
         

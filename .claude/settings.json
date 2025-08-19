@@ -6,38 +6,75 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/.claude/hooks/post_tooluse_full_file_compliance_check_hook_json.sh"
+            "command": "bash /Users/fanzhang/.claude/hooks/post_tooluse_full_file_compliance_check_hook_json.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_write_compliance_scanner_json.sh"
+            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_write_compliance_scanner_json.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "npm run build 2>/dev/null || tsc --noEmit 2>/dev/null || echo 'TypeScript check completed'"
+            "command": "npm run build 2>/dev/null || tsc --noEmit 2>/dev/null || echo 'TypeScript check completed'",
+            "blocking": true
           }
         ]
       }
     ],
     "PreToolUse": [
       {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/fanzhang/.claude/hooks/universal_curl_interceptor_json.sh",
+            "blocking": true
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/.claude/hooks/pre_bash_curl_blocker_json.sh"
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_bash_curl_blocker_json.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_bash_e2e_verification_enforcer_hook.sh"
+            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_bash_e2e_verification_enforcer_hook.sh",
+            "blocking": true
           },
           {
             "type": "command", 
-            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_bash_anti_test_fraud_hook.sh"
+            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_bash_anti_test_fraud_hook.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_bash_typescript_compilation_enforcer_json.sh"
+            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_bash_typescript_compilation_enforcer_json.sh",
+            "blocking": true
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_tooluse_dist_access_blocker_json.sh",
+            "blocking": true
+          }
+        ]
+      },
+      {
+        "matcher": "BashOutput",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_tooluse_bashoutput_debug_guide_json.sh",
+            "blocking": true
           }
         ]
       },
@@ -46,23 +83,33 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/.claude/hooks/pre_write_simple_blocker_hook_json.sh"
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_write_simple_blocker_hook_json.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/.claude/hooks/pre_tooluse_logging_standards_enforcer_hook_json.sh"
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_tooluse_logging_standards_enforcer_hook_json.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/.claude/hooks/pre_edit_package_json_guard_hook_json.sh"
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_edit_package_json_guard_hook_json.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_write_p0_redline_enforcer_json.sh"
+            "command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_write_p0_redline_enforcer_json.sh",
+            "blocking": true
           },
           {
             "type": "command",
-            "command": "bash /Users/fanzhang/.claude/hooks/pre_write_fallback_blocker_json.sh"
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_write_fallback_blocker_json.sh",
+            "blocking": true
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_edit_anti_mockup_guard_hook.sh",
+            "blocking": true
           }
         ]
       }

@@ -655,26 +655,195 @@ export class PipelineLifecycleManager extends EventEmitter {
   }
 
   /**
-   * 处理Server Compatibility层
+   * 处理Server Compatibility层 - 配置驱动的模块选择
    */
   private async processServerCompatibilityLayer(
     request: any,
     routingDecision: any,
     context: RequestContext
   ): Promise<any> {
+    const providerType = routingDecision.selectedProvider.split('-')[0];
+    const providerInfo = ConfigLoader.getProviderInfo(this.config.systemConfig, providerType);
+    
+    // 获取server compatibility模块标签
+    const compatibilityTag = providerInfo.serverCompatibility || 'generic';
+    const moduleInfo = this.config.systemConfig.serverCompatibilityModules?.[compatibilityTag];
+    
     context.transformations.push({
       layer: 'server-compatibility',
-      moduleType: 'adaptive-compatibility',
+      moduleType: moduleInfo?.module || 'generic',
+      compatibilityTag,
       bidirectional: true,
       timestamp: new Date(),
     });
 
     secureLogger.debug('Server compatibility layer processing', {
       requestId: context.requestId,
+      providerType,
+      compatibilityTag,
+      moduleType: moduleInfo?.module,
       hasInternalConfig: !!request.__internal,
     });
 
-    return request;
+    // 根据配置选择和加载相应的兼容性模块
+    if (compatibilityTag === 'lmstudio' && moduleInfo?.module === 'LMStudioCompatibilityModule') {
+      secureLogger.debug('Applying LM Studio compatibility processing', {
+        requestId: context.requestId,
+        hasTools: Array.isArray(request.tools) && request.tools.length > 0,
+        toolsCount: Array.isArray(request.tools) ? request.tools.length : 0,
+      });
+
+      try {
+        const { LMStudioCompatibilityModule } = require('../modules/pipeline-modules/server-compatibility/lmstudio-compatibility');
+        const lmstudioConfig = {
+          baseUrl: routingDecision.selectedEndpoint,
+          apiKey: routingDecision.selectedApiKey,
+          timeout: 30000,
+          maxRetries: 3,
+          retryDelay: 1000,
+          models: [routingDecision.selectedModel],
+          maxTokens: {}
+        };
+
+        const compatibilityModule = new LMStudioCompatibilityModule(lmstudioConfig);
+        
+        // 关键修复：必须先初始化模块
+        await compatibilityModule.initialize();
+        
+        const processedRequest = await compatibilityModule.process(request);
+        
+        secureLogger.info('LM Studio compatibility processing completed', {
+          requestId: context.requestId,
+          originalToolsCount: Array.isArray(request.tools) ? request.tools.length : 0,
+          processedToolsCount: Array.isArray(processedRequest.tools) ? processedRequest.tools.length : 0,
+        });
+
+        return processedRequest;
+      } catch (error) {
+        secureLogger.error('LM Studio compatibility processing failed - ZERO FALLBACK POLICY', {
+          requestId: context.requestId,
+          error: error.message,
+        });
+        
+        // ZERO FALLBACK POLICY: 立即抛出错误，不进行任何降级处理
+        throw new Error(`LM Studio兼容性处理失败: ${error.message}`);
+      }
+    } 
+    else if (compatibilityTag === 'generic' || !moduleInfo) {
+      // 使用通用兼容性处理
+      return this.processGenericCompatibility(request, context);
+    }
+    else {
+      // 其他模块类型，未来扩展
+      secureLogger.debug(`Compatibility module ${moduleInfo.module} not yet implemented, using generic`, {
+        requestId: context.requestId,
+        compatibilityTag,
+      });
+      
+      return this.processGenericCompatibility(request, context);
+    }
+  }
+
+  /**
+   * 通用兼容性处理 - 默认行为
+   * 主要负责Anthropic工具格式到OpenAI格式的转换
+   */
+  private async processGenericCompatibility(request: any, context: RequestContext): Promise<any> {
+    secureLogger.debug('Applying generic compatibility processing', {
+      requestId: context.requestId,
+      hasTools: Array.isArray(request.tools) && request.tools.length > 0,
+      originalToolCount: Array.isArray(request.tools) ? request.tools.length : 0,
+    });
+
+    // 基础的请求验证和清理
+    const processedRequest = { ...request };
+    
+    // 🔧 关键修复：转换工具格式从Anthropic到OpenAI标准
+    if (Array.isArray(processedRequest.tools)) {
+      processedRequest.tools = this.convertToolsToOpenAIFormat(processedRequest.tools, context);
+    }
+
+    secureLogger.debug('Generic compatibility processing completed', {
+      requestId: context.requestId,
+      processedToolCount: Array.isArray(processedRequest.tools) ? processedRequest.tools.length : 0,
+    });
+
+    return processedRequest;
+  }
+
+  /**
+   * 将工具从Anthropic格式转换为OpenAI格式
+   */
+  private convertToolsToOpenAIFormat(tools: any[], context: RequestContext): any[] {
+    if (!tools || !Array.isArray(tools)) {
+      return [];
+    }
+
+    return tools.map((tool, index) => {
+      // 检查工具的基本结构
+      if (!tool || typeof tool !== 'object') {
+        secureLogger.warn('Invalid tool structure, skipping', {
+          requestId: context.requestId,
+          toolIndex: index,
+          tool: typeof tool
+        });
+        return null;
+      }
+
+      // 如果已经是OpenAI格式，直接返回
+      if (tool.type === 'function' && tool.function && tool.function.name) {
+        return tool;
+      }
+
+      // 转换Anthropic格式到OpenAI格式
+      const openAITool: any = {
+        type: 'function',
+      };
+
+      if (tool.name) {
+        // Anthropic格式：{ name: '...', description: '...', input_schema: {...} }
+        openAITool.function = {
+          name: tool.name,
+          description: tool.description || 'Converted from Anthropic format',
+          parameters: tool.input_schema || { type: 'object', properties: {} },
+        };
+      } else if (tool.function) {
+        // 部分OpenAI格式，确保完整
+        openAITool.function = {
+          name: tool.function.name || `tool_${index}`,
+          description: tool.function.description || 'Auto-generated description',
+          parameters: tool.function.parameters || { type: 'object', properties: {} },
+        };
+      } else {
+        // 无法识别的格式，创建默认工具
+        secureLogger.warn('Unrecognized tool format, creating default', {
+          requestId: context.requestId,
+          toolIndex: index
+        });
+        openAITool.function = {
+          name: `unknown_tool_${index}`,
+          description: 'Unknown tool format, auto-converted',
+          parameters: { type: 'object', properties: {} },
+        };
+      }
+
+      // 验证必需字段
+      if (!openAITool.function.name || typeof openAITool.function.name !== 'string') {
+        secureLogger.warn('Tool missing valid name, skipping', {
+          requestId: context.requestId,
+          toolIndex: index
+        });
+        return null;
+      }
+
+      secureLogger.debug('Tool converted to OpenAI format', {
+        requestId: context.requestId,
+        toolIndex: index,
+        toolName: openAITool.function.name
+      });
+
+      return openAITool;
+    }).filter(tool => tool !== null); // 过滤掉无效工具
   }
 
   /**
@@ -683,9 +852,18 @@ export class PipelineLifecycleManager extends EventEmitter {
   private async processServerLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
     const { endpoint, apiKey, protocol, timeout, maxRetries } = request.__internal;
 
+    // 🔧 关键修复：确保LM Studio使用正确的/chat/completions端点
+    let fullEndpoint = endpoint;
+    if (endpoint === 'http://localhost:1234/v1') {
+      fullEndpoint = 'http://localhost:1234/v1/chat/completions';
+    } else if (endpoint.endsWith('/v1') && !endpoint.includes('/chat/completions')) {
+      fullEndpoint = `${endpoint}/chat/completions`;
+    }
+
     secureLogger.debug('Server layer processing', {
       requestId: context.requestId,
-      endpoint,
+      originalEndpoint: endpoint,
+      fullEndpoint,
       model: request.model,
       apiKeyPresent: !!apiKey,
       protocol,
@@ -705,7 +883,7 @@ export class PipelineLifecycleManager extends EventEmitter {
         messages: request.messages,
         max_tokens: request.max_tokens,
         temperature: request.temperature || 0.7,
-        stream: request.stream || false,
+        stream: false, // 🔧 关键修复：强制禁用流式响应，使用标准JSON格式
         tools: request.tools,
       }),
       timeout,
@@ -719,10 +897,11 @@ export class PipelineLifecycleManager extends EventEmitter {
           requestId: context.requestId,
           attempt: attempt + 1,
           maxRetries: maxRetries + 1,
-          endpoint,
+          originalEndpoint: endpoint,
+          fullEndpoint,
         });
 
-        const response = await this.makeHttpRequest(endpoint, httpOptions);
+        const response = await this.makeHttpRequest(fullEndpoint, httpOptions);
 
         secureLogger.info('HTTP request successful', {
           requestId: context.requestId,
@@ -734,8 +913,24 @@ export class PipelineLifecycleManager extends EventEmitter {
         // 解析响应
         const responseData = JSON.parse(response.body);
 
+        // 🔍 调试日志：记录LM Studio实际返回的响应格式
+        secureLogger.info('LM Studio响应格式检查', {
+          requestId: context.requestId,
+          responseKeys: Object.keys(responseData),
+          hasChoices: !!responseData.choices,
+          choicesType: Array.isArray(responseData.choices) ? 'array' : typeof responseData.choices,
+          choicesLength: Array.isArray(responseData.choices) ? responseData.choices.length : 'n/a',
+          responsePreview: JSON.stringify(responseData).substring(0, 200) + '...',
+        });
+
         // 验证响应格式
         if (!responseData.choices || !Array.isArray(responseData.choices)) {
+          secureLogger.error('LM Studio响应格式验证失败', {
+            requestId: context.requestId,
+            actualResponse: responseData,
+            hasChoices: !!responseData.choices,
+            choicesType: typeof responseData.choices,
+          });
           throw new Error('Invalid response format: missing choices array');
         }
 

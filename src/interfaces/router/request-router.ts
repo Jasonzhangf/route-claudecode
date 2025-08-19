@@ -255,3 +255,25 @@ export interface HealthStatus {
     metadata?: Record<string, any>;
   };
 }
+
+/**
+ * 路由表接口 (RCC v4.0)
+ */
+export interface RoutingTable {
+  routes: Record<string, PipelineRoute[]>;
+  defaultRoute: string;
+}
+
+/**
+ * 流水线路由定义 (RCC v4.0)
+ */
+export interface PipelineRoute {
+  routeId: string;
+  virtualModel: string;
+  provider: string;
+  targetModel: string;
+  apiKeys: string[];
+  pipelineIds: string[];
+  isActive: boolean;
+  health: 'healthy' | 'degraded' | 'unhealthy';
+}

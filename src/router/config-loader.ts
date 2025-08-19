@@ -44,6 +44,32 @@ export interface NewUserConfig {
   };
 }
 
+// Merged configuration interface
+export interface MergedConfig {
+  virtualModels: Record<string, {
+    providers: Array<{
+      providerId: string;
+      model: string;
+      weight: number;
+      apiKeys: string[];
+      endpoint: string;
+      currentKeyIndex: number;
+      maxTokens?: number;
+      blacklist: string[];
+    }>;
+  }>;
+  blacklistSettings: {
+    timeout429: number;
+    timeoutError: number;
+  };
+  server: {
+    port: number;
+    host: string;
+    debug: boolean;
+  };
+  systemConfig?: any;
+}
+
 // Legacy user config format (for backward compatibility)
 export interface UserConfig {
   virtualModels: Record<
@@ -76,12 +102,17 @@ export interface SystemConfig {
       endpoint: string;
       protocol: string;
       transformer: string;
+      serverCompatibility?: string;
       timeout: number;
       maxRetries: number;
     }
   >;
   transformers: Record<string, any>;
   pipelineLayers: Record<string, any>;
+  serverCompatibilityModules?: Record<string, {
+    module: string;
+    description: string;
+  }>;
   connectionHandshake: {
     enabled: boolean;
     healthCheckInterval: number;

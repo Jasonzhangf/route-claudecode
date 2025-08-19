@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/396</span>
+                <span class='fraction'>0/394</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/246</span>
+                <span class='fraction'>0/241</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/69</span>
+                <span class='fraction'>0/68</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/386</span>
+                <span class='fraction'>0/385</span>
             </div>
         
             
@@ -1422,7 +1422,9 @@
 <a name='L1357'></a><a href='#L1357'>1357</a>
 <a name='L1358'></a><a href='#L1358'>1358</a>
 <a name='L1359'></a><a href='#L1359'>1359</a>
-<a name='L1360'></a><a href='#L1360'>1360</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1360'></a><a href='#L1360'>1360</a>
+<a name='L1361'></a><a href='#L1361'>1361</a>
+<a name='L1362'></a><a href='#L1362'>1362</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2353,15 +2355,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -3712,20 +3716,22 @@ export interface PipelineServerConfig extends ServerConfig {
 <span class="cstat-no" title="statement not covered" >          providerId = serverCompatLayer.config.providerId;</span>
 <span class="cstat-no" title="statement not covered" >          console.log(`✅ [Router] 找到providerId: ${providerId}`);</span>
         } else {
-<span class="cstat-no" title="statement not covered" >          console.warn(`⚠️ [Router] 未找到server-compatibility层的providerId`);</span>
-          // 尝试从server层查找作为备选
-          const serverLayer = <span class="cstat-no" title="statement not covered" >routeConfig.pipeline.layers.find(<span class="fstat-no" title="function not covered" >(l</span>ayer: any) =&gt; <span class="cstat-no" title="statement not covered" >layer.layer === 'server')</span>;</span>
-<span class="cstat-no" title="statement not covered" >          if (serverLayer &amp;&amp; serverLayer.config &amp;&amp; serverLayer.config.providerId) {</span>
-<span class="cstat-no" title="statement not covered" >            providerId = serverLayer.config.providerId;</span>
-<span class="cstat-no" title="statement not covered" >            console.log(`🔄 [Router] 从server层找到providerId: ${providerId}`);</span>
-          }
+          // 🔧 ZERO FALLBACK POLICY: 直接使用selectedRoute作为providerId
+          // 因为根据demo1逻辑，selectedRoute就是provider名称
+<span class="cstat-no" title="statement not covered" >          providerId = selectedRoute;</span>
+<span class="cstat-no" title="statement not covered" >          console.log(`✅ [Router] 使用selectedRoute作为providerId: ${providerId}`);</span>
         }
       }
     }
 &nbsp;
+    // 🔧 ZERO FALLBACK POLICY: 确保providerId必须存在，不使用fallback
+<span class="cstat-no" title="statement not covered" >    if (!providerId) {</span>
+<span class="cstat-no" title="statement not covered" >      throw new Error(`路由配置错误：无法确定Provider ID，selectedRoute: ${selectedRoute}`);</span>
+    }
+&nbsp;
     const decision = <span class="cstat-no" title="statement not covered" >{</span>
       routeId: selectedRoute,
-      providerId: providerId || 'unknown-provider',
+      providerId: providerId,
       originalModel: requestedModel,
       mappedModel: mappedModel,
       selectionCriteria: routingRules.routeSelectionCriteria || {
@@ -4147,7 +4153,7 @@ export interface PipelineServerConfig extends ServerConfig {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-19T12:05:15.032Z
+                at 2025-08-19T15:57:58.380Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

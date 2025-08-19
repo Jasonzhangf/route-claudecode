@@ -3,12 +3,54 @@
  *
  * 负责Pipeline的创建、执行、监控和销毁
  *
+ * RCC v4.0 架构更新:
+ * - 初始化时创建所有流水线 (Provider.Model.APIKey组合)
+ * - 每条流水线在初始化时完成握手连接
+ * - Runtime状态管理和零Fallback策略
+ *
  * @author Jason Zhang
+ * @author RCC v4.0
  */
 import { EventEmitter } from 'events';
 import { PipelineConfig, ExecutionContext, ExecutionResult, ExecutionRecord, StandardPipelineFactory } from '../interfaces/pipeline/pipeline-framework';
-import { StandardPipeline } from './standard-pipeline';
+import { ModuleInterface } from '../interfaces/module/base-module';
 import { PipelineStatus } from '../interfaces/module/pipeline-module';
+import { RoutingTable } from '../interfaces/router/request-router';
+/**
+ * 完整流水线定义 (RCC v4.0)
+ */
+export interface CompletePipeline {
+    readonly pipelineId: string;
+    readonly virtualModel: string;
+    readonly provider: string;
+    readonly targetModel: string;
+    readonly apiKey: string;
+    readonly transformer: ModuleInterface;
+    readonly protocol: ModuleInterface;
+    readonly serverCompatibility: ModuleInterface;
+    readonly server: ModuleInterface;
+    status: 'initializing' | 'runtime' | 'error' | 'stopped';
+    lastHandshakeTime: Date;
+    execute(request: any): Promise<any>;
+    handshake(): Promise<void>;
+    healthCheck(): Promise<boolean>;
+    getStatus(): PipelineStatus;
+    stop(): Promise<void>;
+}
+/**
+ * 流水线创建配置 (RCC v4.0)
+ */
+export interface CompletePipelineConfig {
+    pipelineId: string;
+    virtualModel: string;
+    provider: string;
+    targetModel: string;
+    apiKey: string;
+    endpoint: string;
+    transformer: string;
+    protocol: string;
+    serverCompatibility: string;
+}
 /**
  * Pipeline管理器
  */
@@ -16,9 +58,23 @@ export declare class PipelineManager extends EventEmitter {
     private pipelines;
     private activeExecutions;
     private factory;
-    constructor(factory: StandardPipelineFactory);
+    private systemConfig;
+    private isInitialized;
+    constructor(factory: StandardPipelineFactory, systemConfig?: any);
     /**
-     * 创建Pipeline
+     * 初始化流水线系统 - 从Routing Table创建所有流水线 (RCC v4.0)
+     */
+    initializeFromRoutingTable(routingTable: RoutingTable): Promise<void>;
+    /**
+     * 创建完整流水线 (Provider.Model.APIKey组合)
+     */
+    private createCompletePipeline;
+    /**
+     * 检查系统是否已初始化
+     */
+    isSystemInitialized(): boolean;
+    /**
+     * 创建Pipeline (传统方法，保留向后兼容)
      */
     createPipeline(config: PipelineConfig): Promise<string>;
     /**
@@ -28,11 +84,11 @@ export declare class PipelineManager extends EventEmitter {
     /**
      * 获取Pipeline
      */
-    getPipeline(pipelineId: string): StandardPipeline | null;
+    getPipeline(pipelineId: string): CompletePipeline | null;
     /**
      * 获取所有Pipeline
      */
-    getAllPipelines(): Map<string, StandardPipeline>;
+    getAllPipelines(): Map<string, CompletePipeline>;
     /**
      * 执行Pipeline
      */

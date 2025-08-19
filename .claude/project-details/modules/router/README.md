@@ -1,62 +1,58 @@
-# 路由器模块 (Router Module) - 重构后设计
+# 路由器模块 (Router Module) - 流水线选择架构
 
 ## 模块概述
 
-路由器模块是RCC v4.0系统的**纯粹路由决策中心**，严格遵循单一职责原则，只负责路由决策，不包含协议转换、负载均衡或健康检查功能。
+路由器模块是RCC v4.0系统的**流水线选择器**，负责根据输入模型选择合适的流水线，而不是选择Provider。流水线在初始化时已经完全创建并握手连接完毕。
 
-## 重构后的模块职责
+## 核心架构原则
 
-### ✅ 核心职责（仅此三项）
-1. **路由决策**: 根据请求信息选择目标Provider和Model
-2. **路由规则管理**: 管理和更新路由规则配置
-3. **路由状态查询**: 提供当前路由状态信息
+### ✅ 正确的设计理念
+1. **路由选择流水线，不是Provider**: 每个Provider-APIKey组合对应一条独立流水线
+2. **初始化时创建所有流水线**: 服务器启动时根据routing table创建所有流水线 
+3. **流水线已完成握手**: 每条流水线包含完整的4层架构并已连接就绪
+4. **负载均衡管理流水线选择**: 具体选择哪条流水线由负载均衡器决定
 
-### ❌ 移除的职责（已分离到其他模块）
-- **协议转换** → 移至 `Transformer` 模块
-- **负载均衡** → 移至 `LoadBalancer` 模块  
-- **健康检查** → 移至 `HealthChecker` 模块
-- **配置加载** → 移至 `ConfigManager` 模块
-- **API调用** → 移至 `Provider` 模块
+### ❌ 废弃的错误设计
+- ~~**运行时选择Provider**~~ → 流水线初始化时已确定Provider
+- ~~**动态组装Transformer/Protocol**~~ → 流水线初始化时已组装完毕
+- ~~**运行时协议转换**~~ → 每条流水线包含固定的转换链
 
-## 重构后的模块结构
+## 正确的架构结构
 
 ```
-modules/routing/
+router/
 ├── README.md                    # 本模块设计文档
 ├── index.ts                     # 模块入口和导出  
-├── core-router.ts               # 核心路由器（唯一实现）
+├── pipeline-router.ts           # 流水线路由器（唯一实现）
 └── __tests__/
-    └── core-router.test.ts      # 核心路由器单元测试
+    └── pipeline-router.test.ts  # 流水线路由器单元测试
 ```
 
-### 删除的重复文件
-以下文件已被废弃，统一为核心路由器：
+### 删除的废弃文件
+以下错误设计文件已删除：
+- ~~`core-router.ts`~~ → 废弃（错误选择Provider的设计）
+- ~~`simple-router.ts`~~ → 废弃（错误的运行时决策）
 - ~~`hybrid-multi-provider-router.ts`~~ → 废弃
-- ~~`intelligent-key-router.ts`~~ → 废弃  
 - ~~`request-router.ts`~~ → 废弃
-- ~~`demo1-enhanced-router.ts`~~ → 废弃
-- ~~`simple-router.ts`~~ → 废弃
-- ~~`provider-router.ts`~~ → 废弃
 
 ## 核心组件
 
-### 核心路由器 (CoreRouter) - 唯一实现
-统一的路由决策器，严格遵循以下设计：
+### 流水线路由器 (PipelineRouter) - 唯一正确实现
+纯粹的流水线选择器，严格遵循以下设计：
 
 #### 功能范围
 ```typescript
-interface CoreRouter {
-  // ✅ 纯粹路由决策
-  route(request: RoutingRequest): Promise<RoutingDecision>;
+interface PipelineRouter {
+  // ✅ 流水线选择 - 返回可用流水线列表，不是具体选择
+  route(inputModel: string): PipelineRoutingDecision;
   
-  // ✅ 路由规则管理
-  updateRoutingRules(rules: RoutingRules): void;
-  updateAvailableRoutes(routes: RouteInfo[]): void;
+  // ✅ 路由表管理 - 更新流水线状态
+  updateRoutingTable(newRoutingTable: RoutingTable): void;
+  markPipelineHealthy(pipelineId: string): void;
+  markPipelineUnhealthy(pipelineId: string, reason: string): void;
   
-  // ✅ 状态查询
-  getAvailableRoutes(): RouteInfo[];
-  getStatus(): RouterStatus;
-  validateConfig(config: RouterConfig): ValidationResult;
+  // ✅ 状态查询 - 查看流水线健康状态
+  getRoutingTableStatus(): RoutingTableStatus;
 }
 ```
 
@@ -66,49 +62,38 @@ interface CoreRouter {
 - **单一职责**: 只做路由决策，不越权处理其他功能
 - **配置驱动**: 通过配置文件定义路由规则
 
-## 接口定义
+## 核心数据结构
 
-### 输入接口
+### 流水线路由信息
 ```typescript
-interface RoutingRequest {
-  readonly id: string;
-  readonly model: string;
-  readonly priority: RequestPriority;
-  readonly metadata: RequestMetadata;
-  readonly timestamp: Date;
-}
-
-interface RequestMetadata {
-  readonly originalFormat: 'anthropic' | 'openai';
-  readonly targetFormat: 'anthropic' | 'openai';
-  readonly userId?: string;
-  readonly sessionId?: string;
+interface PipelineRoute {
+  routeId: string;              // 路由ID
+  routeName: string;            // 路由名称(default/premium等)
+  virtualModel: string;         // 虚拟模型名
+  provider: string;             // Provider名称(lmstudio等)
+  apiKeyIndex: number;          // API Key索引
+  pipelineId: string;           // 对应的流水线ID
+  isActive: boolean;            // 是否活跃
+  health: 'healthy' | 'degraded' | 'unhealthy'; // 健康状态
 }
 ```
 
-### 输出接口
+### 路由表
 ```typescript
-interface RoutingDecision {
-  readonly routeId: string;
-  readonly providerId: string;
-  readonly providerType: 'anthropic' | 'openai';
-  readonly selectedModel: string;
-  readonly reasoning: string;
-  readonly estimatedLatency: number;
-  readonly timestamp: Date;
+interface RoutingTable {
+  routes: Record<string, PipelineRoute[]>; // virtualModel -> PipelineRoute[]
+  defaultRoute: string;                    // 默认路由
 }
 ```
 
-### 路由信息
+### 路由决策结果
 ```typescript
-interface RouteInfo {
-  readonly id: string;
-  readonly providerId: string;
-  readonly providerType: 'anthropic' | 'openai';
-  readonly supportedModels: string[];
-  readonly available: boolean;
-  readonly healthStatus: 'healthy' | 'unhealthy' | 'unknown';
-  readonly priority: number;
+interface PipelineRoutingDecision {
+  originalModel: string;        // 原始模型名
+  virtualModel: string;         // 映射的虚拟模型
+  availablePipelines: string[]; // 可用流水线ID列表
+  selectedPipeline?: string;    // 负载均衡器选择的流水线（可选）
+  reasoning: string;            // 决策原因
 }
 ```
 

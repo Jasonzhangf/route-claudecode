@@ -184,9 +184,15 @@ perform_p0_checks() {
         return 0
     fi
     
-    # 跳过编译产物目录
-    if [[ "$file_path" =~ ^dist/ ]] || [[ "$file_path" =~ ^node_modules/ ]]; then
-        echo "✅ [P0-红线强制执行] 跳过编译产物或依赖: $file_path" >&2
+    # 严禁修改编译产物目录 - 应该修改源码
+    if [[ "$file_path" =~ ^dist/ ]]; then
+        VIOLATION_FOUND=true
+        VIOLATION_MESSAGES+=("P0-DIST-VIOLATION: 严禁修改编译产物目录 $file_path - 请修改对应的TypeScript源文件")
+    fi
+    
+    # 跳过node_modules依赖目录
+    if [[ "$file_path" =~ ^node_modules/ ]]; then
+        echo "✅ [P0-红线强制执行] 跳过依赖目录: $file_path" >&2
         return 0
     fi
     
@@ -204,12 +210,23 @@ if command -v jq >/dev/null 2>&1; then
     tool_name=$(echo "$input" | jq -r '.tool_name // "unknown"')
     file_path=$(echo "$input" | jq -r '.tool_input.file_path // ""')
     content=$(echo "$input" | jq -r '.tool_input.content // ""')
+    new_string=$(echo "$input" | jq -r '.tool_input.new_string // ""')
+    
+    # Get content from appropriate field based on tool type
+    check_content=""
+    if [[ "$tool_name" == "Write" ]]; then
+        check_content="$content"
+    elif [[ "$tool_name" == "Edit" ]]; then
+        check_content="$new_string"
+    elif [[ "$tool_name" == "MultiEdit" ]]; then
+        check_content="$content"
+    fi
     
     # Only check Write/Edit/MultiEdit operations
-    if [[ "$tool_name" =~ ^(Write|Edit|MultiEdit)$ ]] && [[ -n "$file_path" ]] && [[ -n "$content" ]]; then
+    if [[ "$tool_name" =~ ^(Write|Edit|MultiEdit)$ ]] && [[ -n "$file_path" ]]; then
         
         # 执行P0红线检查
-        perform_p0_checks "$file_path" "$content"
+        perform_p0_checks "$file_path" "$check_content"
         
         # 检查是否发现违规
         if [ "$VIOLATION_FOUND" = true ]; then
@@ -232,6 +249,8 @@ if command -v jq >/dev/null 2>&1; then
             echo "  8. 使用TypeScript替代JavaScript"
             echo ""
             echo "⚠️  P0级规则违反将导致开发工作被立即拒绝！"
+        # Record statistics
+        /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "p0_violation" "${file_path:-unknown}"
             exit 1
         fi
         

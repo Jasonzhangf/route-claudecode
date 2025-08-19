@@ -61,8 +61,17 @@
       "endpoint": "http://localhost:1234/v1/chat/completions",
       "protocol": "openai",
       "transformer": "lmstudio-standard",
+      "serverCompatibility": "lmstudio",
       "timeout": 30000,
       "maxRetries": 2
+    },
+    "openai": {
+      "endpoint": "https://api.openai.com/v1/chat/completions",
+      "protocol": "openai",
+      "transformer": "openai-standard",
+      "serverCompatibility": "generic",
+      "timeout": 30000,
+      "maxRetries": 3
     }
   },
   "// Transformer配置": "",
@@ -133,6 +142,25 @@
     "server": {
       "module": "openai-server",
       "multiKeySupport": true
+    }
+  },
+  "// Server Compatibility模块定义": "",
+  "serverCompatibilityModules": {
+    "generic": {
+      "module": "GenericCompatibilityModule",
+      "description": "通用兼容性处理，适用于标准OpenAI格式API"
+    },
+    "lmstudio": {
+      "module": "LMStudioCompatibilityModule", 
+      "description": "LM Studio专用优化模块，特殊处理工具格式"
+    },
+    "anthropic": {
+      "module": "AnthropicCompatibilityModule",
+      "description": "Anthropic原生格式兼容性模块"
+    },
+    "ollama": {
+      "module": "OllamaCompatibilityModule",
+      "description": "Ollama本地模型兼容性处理"
     }
   },
   "// 连接握手配置": "",

@@ -275,15 +275,114 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
         }
         return msg.content && typeof msg.content === 'string' && msg.content.trim() && msg.role;
       });
+      
+      // 🔧 关键修复：如果过滤后messages为空，抛出错误而不是设置空数组
+      if (adaptedRequest.messages.length === 0) {
+        throw new Error('所有消息都无效或为空，无法处理请求');
+      }
     } else {
-      // 如果messages不是数组，初始化为空数组
-      adaptedRequest.messages = [];
+      // 如果messages不是数组或不存在，抛出错误
+      throw new Error('缺少有效的messages参数');
+    }
+
+    // 🔧 关键修复：确保tools格式正确适配LM Studio
+    if (adaptedRequest.tools && Array.isArray(adaptedRequest.tools)) {
+      adaptedRequest.tools = this.validateAndFixToolsForLMStudio(adaptedRequest.tools);
+    }
+
+    // 🔧 关键修复：确保tool_choice格式正确
+    if (adaptedRequest.tool_choice) {
+      adaptedRequest.tool_choice = this.validateAndFixToolChoiceForLMStudio(adaptedRequest.tool_choice);
     }
 
     console.log(
-      `🔧 LM Studio适配完成: max_tokens=${adaptedRequest.max_tokens}, messages=${adaptedRequest.messages?.length || 0}`
+      `🔧 LM Studio适配完成: max_tokens=${adaptedRequest.max_tokens}, messages=${adaptedRequest.messages?.length || 0}, tools=${adaptedRequest.tools?.length || 0}`
     );
     return adaptedRequest;
+  }
+
+  /**
+   * 验证和修复工具格式以确保LM Studio兼容性
+   */
+  private validateAndFixToolsForLMStudio(tools: any[]): any[] {
+    if (!tools || !Array.isArray(tools)) {
+      return [];
+    }
+
+    return tools.map((tool, index) => {
+      // 检查工具的基本结构
+      if (!tool || typeof tool !== 'object') {
+        console.warn(`🔧 工具 ${index} 格式无效，跳过`);
+        return null;
+      }
+
+      // 确保工具有正确的OpenAI格式
+      const fixedTool: any = {
+        type: 'function', // 强制设置为 'function'
+      };
+
+      // 处理function字段
+      if (tool.function && typeof tool.function === 'object') {
+        // 如果已经有function字段，验证其格式
+        fixedTool.function = {
+          name: tool.function.name || `tool_${index}`,
+          description: tool.function.description || 'Auto-generated tool',
+          parameters: tool.function.parameters || { type: 'object', properties: {} },
+        };
+      } else if (tool.name) {
+        // 如果是Anthropic格式，转换为OpenAI格式
+        fixedTool.function = {
+          name: tool.name,
+          description: tool.description || 'Auto-converted from Anthropic format',
+          parameters: tool.input_schema || { type: 'object', properties: {} },
+        };
+      } else {
+        // 无法识别的格式，创建默认工具
+        console.warn(`🔧 工具 ${index} 格式无法识别，使用默认格式`);
+        fixedTool.function = {
+          name: `unknown_tool_${index}`,
+          description: 'Unknown tool format, auto-generated',
+          parameters: { type: 'object', properties: {} },
+        };
+      }
+
+      // 验证必需字段
+      if (!fixedTool.function.name || typeof fixedTool.function.name !== 'string') {
+        console.warn(`🔧 工具 ${index} 缺少有效的name字段，跳过`);
+        return null;
+      }
+
+      console.log(`🔧 工具 ${index} 修复完成: ${fixedTool.function.name}`);
+      return fixedTool;
+    }).filter(tool => tool !== null); // 过滤掉无效工具
+  }
+
+  /**
+   * 验证和修复tool_choice格式以确保LM Studio兼容性
+   */
+  private validateAndFixToolChoiceForLMStudio(toolChoice: any): any {
+    // 如果是字符串类型的简单选择
+    if (typeof toolChoice === 'string') {
+      const validChoices = ['none', 'auto', 'required'];
+      if (validChoices.includes(toolChoice)) {
+        return toolChoice;
+      }
+      console.warn(`🔧 无效的tool_choice字符串: ${toolChoice}，使用auto`);
+      return 'auto';
+    }
+
+    // 如果是对象格式（指定特定函数）
+    if (typeof toolChoice === 'object' && toolChoice !== null) {
+      if (toolChoice.type === 'function' && toolChoice.function && toolChoice.function.name) {
+        return toolChoice;
+      }
+      console.warn(`🔧 无效的tool_choice对象格式，使用auto`);
+      return 'auto';
+    }
+
+    // 默认返回auto
+    console.warn(`🔧 未知的tool_choice格式，使用auto`);
+    return 'auto';
   }
 
   /**

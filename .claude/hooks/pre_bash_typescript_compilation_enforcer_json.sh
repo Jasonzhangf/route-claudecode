@@ -60,6 +60,8 @@ if command -v jq >/dev/null 2>&1; then
             else
                 echo "❌ [TypeScript编译检查] 错误：未找到TypeScript编译器" >&2
                 echo "📋 解决方案：npm install -g typescript 或 npm install typescript" >&2
+                # Record statistics
+                /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "typescript_compilation_error" "${command_text:-unknown}"
                 exit 1
             fi
             
@@ -91,6 +93,8 @@ if command -v jq >/dev/null 2>&1; then
                 echo "⚠️ 强制要求：必须解决TypeScript编译错误后才能启动服务"
                 echo ""
                 echo "🚫 服务启动被阻止，请先修复编译错误！"
+                # Record statistics
+                /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "typescript_compilation_error" "${command_text:-unknown}"
                 exit 1
             fi
         fi
