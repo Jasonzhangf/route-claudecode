@@ -1,18 +1,13 @@
 /**
  * 基础模块实现
- * 
+ *
  * 提供ModuleInterface的标准实现基类
- * 
+ *
  * @author Jason Zhang
  */
 
 import { EventEmitter } from 'events';
-import { 
-  ModuleInterface, 
-  ModuleType, 
-  ModuleStatus, 
-  ModuleMetrics 
-} from '../interfaces/module/base-module';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
 
 /**
  * 基础模块抽象类
@@ -30,11 +25,11 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     errorRate: 0,
     memoryUsage: 0,
     cpuUsage: 0,
-    lastProcessedAt: undefined
+    lastProcessedAt: undefined,
   };
   protected processingTimes: number[] = [];
   protected errors: Error[] = [];
-  
+
   constructor(id: string, name: string, type: ModuleType, version: string = '1.0.0') {
     super();
     this.id = id;
@@ -42,35 +37,35 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     this.type = type;
     this.version = version;
   }
-  
+
   /**
    * 获取模块ID
    */
   getId(): string {
     return this.id;
   }
-  
+
   /**
    * 获取模块名称
    */
   getName(): string {
     return this.name;
   }
-  
+
   /**
    * 获取模块类型
    */
   getType(): ModuleType {
     return this.type;
   }
-  
+
   /**
    * 获取模块版本
    */
   getVersion(): string {
     return this.version;
   }
-  
+
   /**
    * 获取模块状态
    */
@@ -82,17 +77,17 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
       status: this.status,
       health: this.calculateHealthStatus(),
       lastActivity: this.metrics.lastProcessedAt,
-      error: this.errors.length > 0 ? this.errors[this.errors.length - 1] : undefined
+      error: this.errors.length > 0 ? this.errors[this.errors.length - 1] : undefined,
     };
   }
-  
+
   /**
    * 获取模块指标
    */
   getMetrics(): ModuleMetrics {
     return { ...this.metrics };
   }
-  
+
   /**
    * 配置模块
    */
@@ -101,7 +96,7 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     await this.onConfigure(config);
     this.emit('configured', { config });
   }
-  
+
   /**
    * 启动模块
    */
@@ -109,13 +104,13 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     if (this.status === 'running') {
       return;
     }
-    
+
     try {
       this.status = 'starting';
       this.emit('statusChanged', { status: this.status });
-      
+
       await this.onStart();
-      
+
       this.status = 'running';
       this.emit('statusChanged', { status: this.status });
       this.emit('started');
@@ -126,7 +121,7 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
       throw error;
     }
   }
-  
+
   /**
    * 停止模块
    */
@@ -134,13 +129,13 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     if (this.status === 'stopped') {
       return;
     }
-    
+
     try {
       this.status = 'stopping';
       this.emit('statusChanged', { status: this.status });
-      
+
       await this.onStop();
-      
+
       this.status = 'stopped';
       this.emit('statusChanged', { status: this.status });
       this.emit('stopped');
@@ -151,7 +146,7 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
       throw error;
     }
   }
-  
+
   /**
    * 处理输入
    */
@@ -159,38 +154,37 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     if (this.status !== 'running') {
       throw new Error(`Module ${this.id} is not running (status: ${this.status})`);
     }
-    
+
     const startTime = Date.now();
-    
+
     try {
       this.emit('processingStarted', { input });
-      
+
       const result = await this.onProcess(input);
-      
+
       const processingTime = Date.now() - startTime;
       this.recordProcessingTime(processingTime);
-      
+
       this.emit('processingCompleted', { input, result, processingTime });
-      
+
       return result;
-      
     } catch (error) {
       const processingTime = Date.now() - startTime;
       this.recordError(error as Error);
       this.recordProcessingTime(processingTime);
-      
+
       this.emit('processingFailed', { input, error, processingTime });
       throw error;
     }
   }
-  
+
   /**
    * 重置模块
    */
   async reset(): Promise<void> {
     try {
       await this.onReset();
-      
+
       // 重置指标
       this.metrics = {
         requestsProcessed: 0,
@@ -198,19 +192,19 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
         errorRate: 0,
         memoryUsage: 0,
         cpuUsage: 0,
-        lastProcessedAt: undefined
+        lastProcessedAt: undefined,
       };
-      
+
       this.processingTimes = [];
       this.errors = [];
-      
+
       this.emit('reset');
     } catch (error) {
       this.recordError(error as Error);
       throw error;
     }
   }
-  
+
   /**
    * 清理资源
    */
@@ -224,7 +218,7 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
       throw error;
     }
   }
-  
+
   /**
    * 健康检查
    */
@@ -232,59 +226,59 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     try {
       const details = await this.onHealthCheck();
       const healthy = this.status === 'running' && this.calculateHealthStatus() === 'healthy';
-      
+
       return { healthy, details };
     } catch (error) {
       this.recordError(error as Error);
-      return { 
-        healthy: false, 
-        details: { error: error instanceof Error ? error.message : String(error) } 
+      return {
+        healthy: false,
+        details: { error: error instanceof Error ? error.message : String(error) },
       };
     }
   }
-  
+
   // 抽象方法 - 子类必须实现
-  
+
   /**
    * 配置处理 - 子类可重写
    */
   protected async onConfigure(config: any): Promise<void> {
     // 默认实现：无操作
   }
-  
+
   /**
    * 启动处理 - 子类可重写
    */
   protected async onStart(): Promise<void> {
     // 默认实现：无操作
   }
-  
+
   /**
    * 停止处理 - 子类可重写
    */
   protected async onStop(): Promise<void> {
     // 默认实现：无操作
   }
-  
+
   /**
    * 处理逻辑 - 子类必须实现
    */
   protected abstract onProcess(input: any): Promise<any>;
-  
+
   /**
    * 重置处理 - 子类可重写
    */
   protected async onReset(): Promise<void> {
     // 默认实现：无操作
   }
-  
+
   /**
    * 清理处理 - 子类可重写
    */
   protected async onCleanup(): Promise<void> {
     // 默认实现：无操作
   }
-  
+
   /**
    * 健康检查处理 - 子类可重写
    */
@@ -292,12 +286,12 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     return {
       status: this.status,
       metrics: this.metrics,
-      config: this.config
+      config: this.config,
     };
   }
-  
+
   // 私有方法
-  
+
   /**
    * 记录处理时间
    */
@@ -305,35 +299,35 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     this.processingTimes.push(time);
     this.metrics.requestsProcessed++;
     this.metrics.lastProcessedAt = new Date();
-    
+
     // 保持最近100次的处理时间
     if (this.processingTimes.length > 100) {
       this.processingTimes = this.processingTimes.slice(-100);
     }
-    
+
     // 更新平均处理时间
-    this.metrics.averageProcessingTime = 
+    this.metrics.averageProcessingTime =
       this.processingTimes.reduce((sum, time) => sum + time, 0) / this.processingTimes.length;
-    
+
     // 更新错误率
     this.updateErrorRate();
   }
-  
+
   /**
    * 记录错误
    */
   private recordError(error: Error): void {
     this.errors.push(error);
-    
+
     // 保持最近50个错误
     if (this.errors.length > 50) {
       this.errors = this.errors.slice(-50);
     }
-    
+
     this.updateErrorRate();
     this.emit('error', { error });
   }
-  
+
   /**
    * 更新错误率
    */
@@ -347,7 +341,7 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
       this.metrics.errorRate = recentErrors / recentRequests;
     }
   }
-  
+
   /**
    * 计算健康状态
    */
@@ -355,18 +349,20 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     if (this.status === 'error') {
       return 'unhealthy';
     }
-    
+
     if (this.status !== 'running') {
       return 'degraded';
     }
-    
+
     // 基于错误率判断健康状态
-    if (this.metrics.errorRate > 0.1) { // 错误率超过10%
+    if (this.metrics.errorRate > 0.1) {
+      // 错误率超过10%
       return 'unhealthy';
-    } else if (this.metrics.errorRate > 0.05) { // 错误率超过5%
+    } else if (this.metrics.errorRate > 0.05) {
+      // 错误率超过5%
       return 'degraded';
     }
-    
+
     return 'healthy';
   }
 }

@@ -1,9 +1,9 @@
 /**
  * Configuration Encryption Utility
- * 
+ *
  * 安全的配置文件加密和解密工具
  * 符合RCC v4.0安全要求
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -50,10 +50,8 @@ export class ConfigEncryptionManager {
    * 初始化主密钥
    */
   async initializeMasterKey(masterKeySource?: string): Promise<void> {
-    const masterKeyString = masterKeySource || 
-                           process.env.RCC_MASTER_KEY || 
-                           this.generateMasterKey();
-    
+    const masterKeyString = masterKeySource || process.env.RCC_MASTER_KEY || this.generateMasterKey();
+
     if (!masterKeyString) {
       throw new Error('Master key not provided. Set RCC_MASTER_KEY environment variable.');
     }
@@ -123,7 +121,7 @@ export class ConfigEncryptionManager {
       data: encrypted,
       iv: iv.toString('hex'),
       salt: salt.toString('hex'),
-      authTag: authTag.toString('hex')
+      authTag: authTag.toString('hex'),
     };
   }
 
@@ -153,7 +151,6 @@ export class ConfigEncryptionManager {
       decrypted += decipher.final('utf8');
 
       return decrypted;
-
     } catch (error) {
       throw new Error(`解密失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -183,9 +180,7 @@ export class ConfigEncryptionManager {
     }
 
     if (Array.isArray(obj)) {
-      return obj.map((item, index) => 
-        this.encryptConfigObject(item, `${prefix}[${index}]`)
-      );
+      return obj.map((item, index) => this.encryptConfigObject(item, `${prefix}[${index}]`));
     }
 
     if (typeof obj === 'object') {
@@ -209,8 +204,7 @@ export class ConfigEncryptionManager {
     }
 
     // 检查是否为加密数据对象
-    if (typeof obj === 'object' && 
-        obj.data && obj.iv && obj.salt && obj.authTag) {
+    if (typeof obj === 'object' && obj.data && obj.iv && obj.salt && obj.authTag) {
       try {
         return this.decrypt(obj as EncryptedData);
       } catch (error) {
@@ -248,8 +242,8 @@ export class ConfigEncryptionManager {
         version: '4.0.0',
         algorithm: this.config.algorithm,
         encrypted: true,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
 
     // 确保目录存在
@@ -261,7 +255,7 @@ export class ConfigEncryptionManager {
     // 安全地写入文件
     const tempPath = `${configPath}.tmp`;
     fs.writeFileSync(tempPath, JSON.stringify(configWithMetadata, null, 2), {
-      mode: 0o600 // 只有所有者可读写
+      mode: 0o600, // 只有所有者可读写
     });
 
     // 原子性地替换文件
@@ -353,7 +347,7 @@ export class SecureConfigManager {
         algorithm: 'pbkdf2',
         iterations: 100000,
         saltLength: 32,
-        keyLength: 32
+        keyLength: 32,
       },
       encryptedFields: [
         'apiKey',
@@ -363,8 +357,8 @@ export class SecureConfigManager {
         'privateKey',
         'connection.apiKey',
         'providers.*.connection.apiKey',
-        '*.apiKey'
-      ]
+        '*.apiKey',
+      ],
     };
 
     this.encryptionManager = new ConfigEncryptionManager(encryptionConfig);

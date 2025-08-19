@@ -5,8 +5,8 @@
  *
  * @author Jason Zhang
  */
-import { BaseModule } from '../base-module-impl';
-import { StandardResponse } from '../../interfaces/standard/response';
+import { IModuleInterface, ModuleType, IModuleStatus, IModuleMetrics } from '../../interfaces/core/module-implementation-interface';
+import { EventEmitter } from 'events';
 /**
  * Anthropic输出验证模块配置
  */
@@ -19,9 +19,31 @@ export interface AnthropicOutputValidatorConfig {
 /**
  * Anthropic输出验证模块
  */
-export declare class AnthropicOutputValidator extends BaseModule {
+export declare class AnthropicOutputValidator extends EventEmitter implements IModuleInterface {
+    protected readonly id: string;
+    protected readonly name: string;
+    protected readonly type: ModuleType;
+    protected readonly version: string;
+    protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+    protected metrics: IModuleMetrics;
+    getId(): string;
+    getName(): string;
+    getType(): ModuleType;
+    getVersion(): string;
+    getStatus(): IModuleStatus;
+    getMetrics(): IModuleMetrics;
+    configure(config: any): Promise<void>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    reset(): Promise<void>;
+    cleanup(): Promise<void>;
+    healthCheck(): Promise<{
+        healthy: boolean;
+        details: any;
+    }>;
+    process(input: any): Promise<any>;
     private validatorConfig;
-    constructor(id: string, config?: Partial<AnthropicOutputValidatorConfig>);
+    constructor(id?: string, config?: Partial<AnthropicOutputValidatorConfig>);
     /**
      * 配置处理
      */
@@ -29,7 +51,7 @@ export declare class AnthropicOutputValidator extends BaseModule {
     /**
      * 处理输出验证
      */
-    protected onProcess(input: any): Promise<StandardResponse>;
+    protected onProcess(input: any): Promise<any>;
     /**
      * 验证基本结构
      */

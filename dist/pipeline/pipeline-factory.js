@@ -13,7 +13,6 @@ const standard_pipeline_1 = require("./standard-pipeline");
  * 标准Pipeline工厂
  */
 class StandardPipelineFactoryImpl {
-    moduleRegistry;
     constructor(moduleRegistry) {
         this.moduleRegistry = moduleRegistry;
     }

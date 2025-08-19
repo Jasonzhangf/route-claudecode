@@ -86,6 +86,11 @@ export interface ServerStatus {
         status: 'healthy' | 'degraded' | 'unhealthy';
         checks: HealthCheck[];
     };
+    pipeline?: {
+        stats: any;
+        activeRequests: number;
+        layerHealth: any;
+    };
 }
 /**
  * 健康检查结果

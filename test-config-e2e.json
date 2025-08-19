@@ -1,0 +1,46 @@
+{
+  "version": "4.0",
+  "description": "RCC4 端到端测试配置",
+  
+  "providers": [
+    {
+      "name": "lmstudio-local",
+      "type": "openai",
+      "endpoint": "http://localhost:1234/v1/chat/completions",
+      "apiKey": "lm-studio",
+      "models": ["gpt-oss-20b-mlx", "qwen2.5-coder-7b-instruct", "llama-3.1-8b-instruct"],
+      "timeout": 30000,
+      "maxRetries": 3
+    },
+    {
+      "name": "lmstudio-compatibility", 
+      "type": "openai",
+      "endpoint": "http://localhost:1234/v1/chat/completions",
+      "apiKey": "lm-studio-compat",
+      "models": ["gpt-oss-20b-mlx", "qwen2.5-coder-7b-instruct"],
+      "timeout": 30000,
+      "maxRetries": 3
+    }
+  ],
+  
+  "router": {
+    "default": "lmstudio-local,gpt-oss-20b-mlx",
+    "background": "lmstudio-local,gpt-oss-20b-mlx",
+    "thinking": "lmstudio-local,gpt-oss-20b-mlx",
+    "longContext": "lmstudio-local,gpt-oss-20b-mlx",
+    "webSearch": "lmstudio-local,gpt-oss-20b-mlx"
+  },
+  
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "traceRequests": true,
+    "saveRequests": true
+  }
+}

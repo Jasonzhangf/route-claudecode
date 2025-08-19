@@ -5,7 +5,6 @@
  *
  * @author Jason Zhang
  */
-import { MiddlewareFunction } from '../server/http-server';
 /**
  * 日志级别
  */
@@ -28,5 +27,5 @@ export interface LoggerOptions {
 /**
  * 创建日志中间件
  */
-export declare function logger(options?: LoggerOptions): MiddlewareFunction;
+export declare function logger(options?: LoggerOptions): any;
 //# sourceMappingURL=logger.d.ts.map

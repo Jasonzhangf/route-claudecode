@@ -5,7 +5,7 @@
  *
  * @author Jason Zhang
  */
-import { MiddlewareFunction } from '../server/http-server';
+import { IMiddlewareFunction } from '../interfaces/core/server-interface';
 /**
  * 验证中间件配置
  */
@@ -20,17 +20,17 @@ export interface ValidationConfig {
 /**
  * 创建验证中间件
  */
-export declare function validation(config?: ValidationConfig): MiddlewareFunction;
+export declare function validation(config?: ValidationConfig): IMiddlewareFunction;
 /**
  * 创建Anthropic API验证中间件
  */
-export declare function anthropicValidation(): MiddlewareFunction;
+export declare function anthropicValidation(): any;
 /**
  * 创建OpenAI API验证中间件
  */
-export declare function openaiValidation(): MiddlewareFunction;
+export declare function openaiValidation(): any;
 /**
  * 创建Gemini API验证中间件
  */
-export declare function geminiValidation(): MiddlewareFunction;
+export declare function geminiValidation(): any;
 //# sourceMappingURL=validation.d.ts.map

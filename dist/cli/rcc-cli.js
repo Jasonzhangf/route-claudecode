@@ -11,14 +11,12 @@ exports.RCCCli = void 0;
 const command_parser_1 = require("./command-parser");
 const argument_validator_1 = require("./argument-validator");
 const config_loader_1 = require("./config-loader");
+const pipeline_lifecycle_manager_1 = require("../pipeline/pipeline-lifecycle-manager");
+const secure_logger_1 = require("../utils/secure-logger");
 /**
  * RCC主CLI类
  */
 class RCCCli {
-    parser;
-    validator;
-    configLoader;
-    options;
     constructor(options = {}) {
         this.parser = new command_parser_1.CommandParser();
         this.validator = new argument_validator_1.ArgumentValidator();
@@ -27,7 +25,7 @@ class RCCCli {
             exitOnError: true,
             suppressOutput: false,
             envPrefix: 'RCC',
-            ...options
+            ...options,
         };
     }
     /**
@@ -56,12 +54,12 @@ class RCCCli {
             const config = await this.configLoader.loadConfig(command, {
                 configPath: this.options.configPath,
                 envPrefix: this.options.envPrefix,
-                validateConfig: false // 暂时禁用验证以避免测试问题
+                validateConfig: false, // 暂时禁用验证以避免测试问题
             });
             // 4. 合并配置到命令选项
             const mergedCommand = {
                 ...command,
-                options: { ...config, ...validation.normalizedOptions }
+                options: { ...config, ...validation.normalizedOptions },
             };
             // 5. 执行命令
             await this.parser.executeCommand(mergedCommand);
@@ -222,15 +220,55 @@ class RCCCli {
      * 启动服务器（实际实现）
      */
     async startServer(options) {
-        // TODO: 实现HTTP服务器启动
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            // 初始化流水线生命周期管理器
+            this.pipelineManager = new pipeline_lifecycle_manager_1.PipelineLifecycleManager(options.config);
+            // 启动RCC v4.0流水线系统
+            const success = await this.pipelineManager.start();
+            if (!success) {
+                throw new Error('Pipeline system failed to start');
+            }
+            // 监听流水线事件
+            this.setupPipelineEventListeners();
+            secure_logger_1.secureLogger.info('RCC Server started with pipeline system', {
+                port: options.port || 5506,
+                host: options.host || '0.0.0.0',
+                config: options.config,
+                debug: options.debug,
+            });
+        }
+        catch (error) {
+            secure_logger_1.secureLogger.error('Failed to start RCC server', {
+                error: error.message,
+                stack: error.stack,
+            });
+            throw error;
+        }
     }
     /**
      * 停止服务器（实际实现）
      */
     async stopServer(options) {
-        // TODO: 实现服务器停止
-        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+            if (this.pipelineManager) {
+                await this.pipelineManager.stop();
+                this.pipelineManager = undefined;
+                secure_logger_1.secureLogger.info('RCC Server stopped', {
+                    port: options.port,
+                    force: options.force,
+                });
+            }
+            else {
+                secure_logger_1.secureLogger.warn('No pipeline manager instance to stop');
+            }
+        }
+        catch (error) {
+            secure_logger_1.secureLogger.error('Failed to stop RCC server', {
+                error: error.message,
+                stack: error.stack,
+            });
+            throw error;
+        }
     }
     /**
      * 启动客户端模式（实际实现）
@@ -245,7 +283,7 @@ class RCCCli {
     async exportClientConfig(options) {
         const envVars = [
             `export ANTHROPIC_BASE_URL=http://localhost:${options.port || 3456}`,
-            'export ANTHROPIC_API_KEY=rcc-proxy-key'
+            'export ANTHROPIC_API_KEY=rcc-proxy-key',
         ];
         if (!this.options.suppressOutput) {
             console.log('\n📋 Environment Variables:');
@@ -258,24 +296,61 @@ class RCCCli {
      * 获取服务器状态（实际实现）
      */
     async getServerStatus(options) {
-        // TODO: 实现实际的状态查询
+        if (!this.pipelineManager) {
+            return {
+                isRunning: false,
+                port: options.port || 5506,
+                host: 'localhost',
+                startTime: undefined,
+                version: '4.0.0-dev',
+                activePipelines: 0,
+                totalRequests: 0,
+                uptime: '0s',
+                health: {
+                    status: 'unhealthy',
+                    checks: [{ name: 'Pipeline Manager', status: 'fail', responseTime: 0 }],
+                },
+            };
+        }
+        const stats = this.pipelineManager.getStats();
+        const isRunning = this.pipelineManager.isSystemRunning();
+        const activeRequests = this.pipelineManager.getActiveRequests();
         return {
-            isRunning: true,
-            port: options.port || 3456,
+            isRunning,
+            port: options.port || 5506,
             host: 'localhost',
-            startTime: new Date(Date.now() - 3600000),
-            version: '4.0.0-alpha.1',
-            activePipelines: 3,
-            totalRequests: 1247,
-            uptime: '1h 0m 0s',
+            startTime: new Date(Date.now() - stats.uptime),
+            version: '4.0.0-dev',
+            activePipelines: Object.keys(stats.routerStats.virtualModels || {}).length,
+            totalRequests: stats.totalRequests,
+            uptime: this.formatUptime(stats.uptime),
             health: {
-                status: 'healthy',
+                status: isRunning ? 'healthy' : 'unhealthy',
                 checks: [
-                    { name: 'HTTP Server', status: 'pass', responseTime: 1 },
-                    { name: 'Pipeline Manager', status: 'pass', responseTime: 3 },
-                    { name: 'Configuration', status: 'pass', responseTime: 0 }
-                ]
-            }
+                    {
+                        name: 'Pipeline Manager',
+                        status: isRunning ? 'pass' : 'fail',
+                        responseTime: Math.round(stats.averageResponseTime || 0),
+                    },
+                    {
+                        name: 'Router System',
+                        status: stats.routerStats.totalProviders > 0 ? 'pass' : 'fail',
+                        responseTime: 1,
+                    },
+                    {
+                        name: 'Layer Health',
+                        status: Array.isArray(stats.layerHealth) && stats.layerHealth.every((l) => l.status === 'ready')
+                            ? 'pass'
+                            : 'warn',
+                        responseTime: 2,
+                    },
+                ],
+            },
+            pipeline: {
+                stats,
+                activeRequests: activeRequests.length,
+                layerHealth: stats.layerHealth,
+            },
         };
     }
     /**
@@ -305,10 +380,14 @@ class RCCCli {
      */
     getHealthStatusIcon(status) {
         switch (status) {
-            case 'healthy': return '🟢';
-            case 'degraded': return '🟡';
-            case 'unhealthy': return '🔴';
-            default: return '⚪';
+            case 'healthy':
+                return '🟢';
+            case 'degraded':
+                return '🟡';
+            case 'unhealthy':
+                return '🔴';
+            default:
+                return '⚪';
         }
     }
     /**
@@ -336,6 +415,59 @@ class RCCCli {
     async resetConfiguration() {
         if (!this.options.suppressOutput) {
             console.log('🔄 Configuration reset to defaults');
+        }
+    }
+    /**
+     * 设置流水线事件监听器
+     */
+    setupPipelineEventListeners() {
+        if (!this.pipelineManager) {
+            return;
+        }
+        this.pipelineManager.on('pipeline-started', () => {
+            secure_logger_1.secureLogger.info('Pipeline system started successfully');
+        });
+        this.pipelineManager.on('layers-ready', () => {
+            secure_logger_1.secureLogger.info('All pipeline layers are ready');
+        });
+        this.pipelineManager.on('layers-error', error => {
+            secure_logger_1.secureLogger.error('Pipeline layer error', { error: error.message });
+        });
+        this.pipelineManager.on('request-completed', data => {
+            secure_logger_1.secureLogger.debug('Request completed successfully', {
+                requestId: data.requestId,
+                success: data.success,
+            });
+        });
+        this.pipelineManager.on('request-failed', data => {
+            secure_logger_1.secureLogger.warn('Request failed', {
+                requestId: data.requestId,
+                error: data.error.message,
+            });
+        });
+        this.pipelineManager.on('pipeline-stopped', () => {
+            secure_logger_1.secureLogger.info('Pipeline system stopped');
+        });
+    }
+    /**
+     * 格式化运行时间
+     */
+    formatUptime(uptimeMs) {
+        const seconds = Math.floor(uptimeMs / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        if (days > 0) {
+            return `${days}d ${hours % 24}h ${minutes % 60}m`;
+        }
+        else if (hours > 0) {
+            return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+        }
+        else if (minutes > 0) {
+            return `${minutes}m ${seconds % 60}s`;
+        }
+        else {
+            return `${seconds}s`;
         }
     }
 }

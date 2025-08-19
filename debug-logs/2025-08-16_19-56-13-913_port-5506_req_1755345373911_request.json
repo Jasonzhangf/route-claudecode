@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-08-16T11:56:13.913Z",
+  "localTime": "2025-08-16_19-56-13-913",
+  "port": 5506,
+  "requestId": "req_1755345373911",
+  "type": "request",
+  "data": {
+    "headers": {
+      "host": "localhost:5506",
+      "connection": "keep-alive",
+      "accept": "application/json",
+      "x-stainless-retry-count": "0",
+      "x-stainless-timeout": "60",
+      "x-stainless-lang": "js",
+      "x-stainless-package-version": "0.55.1",
+      "x-stainless-os": "MacOS",
+      "x-stainless-arch": "arm64",
+      "x-stainless-runtime": "node",
+      "x-stainless-runtime-version": "v24.2.0",
+      "anthropic-dangerous-direct-browser-access": "true",
+      "anthropic-version": "2023-06-01",
+      "authorization": "Bearer undefined",
+      "x-api-key": "rcc-proxy-key",
+      "x-app": "cli",
+      "user-agent": "claude-cli/1.0.72 (external, cli)",
+      "content-type": "application/json",
+      "anthropic-beta": "fine-grained-tool-streaming-2025-05-14",
+      "x-stainless-helper-method": "stream",
+      "accept-language": "*",
+      "sec-fetch-mode": "cors",
+      "accept-encoding": "gzip, deflate",
+      "content-length": "676"
+    },
+    "body": {
+      "model": "claude-3-5-haiku-20241022",
+      "max_tokens": 512,
+      "messages": [
+        {
+          "role": "user",
+          "content": "1. 用rcc provider update更新maxtoken，你的maxtoken太小了"
+        }
+      ],
+      "system": [
+        {
+          "type": "text",
+          "text": "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with two fields: 'isNewTopic' (boolean) and 'title' (string, or null if isNewTopic is false). Only include these fields, no other text."
+        }
+      ],
+      "temperature": 0,
+      "metadata": {
+        "user_id": "user_0aa6ba833d6dc6ba802c7df4dc307544fbed72fda3244a1c0420844b23b5047f_account__session_6120be18-5b9f-4fe6-9fab-9feee387f8ff"
+      },
+      "stream": true
+    },
+    "url": "/v1/messages?beta=true",
+    "method": "POST"
+  }
+}

@@ -1,26 +1,19 @@
 /**
- * CLI模块主入口
- * 
- * 导出所有CLI相关的类和接口
- * 
+ * CLI模块入口文件
+ *
  * @author Jason Zhang
  */
 
-export { CommandParser } from './command-parser';
-export { ArgumentValidator, ValidationRule, ValidationResult } from './argument-validator';
-export { ConfigLoader, ConfigLoadOptions, ConfigSchema } from './config-loader';
-export { RCCCli } from './rcc-cli';
+export * from './rcc-cli';
+export * from './command-parser';
+export * from './argument-validator';
+export * from './config-loader';
 
-// 重新导出接口定义
-export {
-  CLICommands,
-  CLIHandler,
-  ParsedCommand,
-  StartOptions,
-  StopOptions,
-  CodeOptions,
-  StatusOptions,
-  ConfigOptions,
-  ServerStatus,
-  HealthCheck
-} from '../interfaces';
+// 模块版本信息
+export const CLI_MODULE_VERSION = '4.0.0-alpha.2';
+
+// 模块接口
+export interface CLIModuleInterface {
+  version: string;
+  run(args?: string[]): Promise<void>;
+}

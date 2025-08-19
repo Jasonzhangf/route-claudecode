@@ -1,9 +1,9 @@
 /**
  * 服务器模块接口定义
- * 
+ *
  * 定义HTTP服务器和Pipeline服务器的标准接口
  * 严格遵循模块边界，通过接口与其他模块通信
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -20,7 +20,7 @@ export enum HTTPMethod {
   DELETE = 'DELETE',
   PATCH = 'PATCH',
   OPTIONS = 'OPTIONS',
-  HEAD = 'HEAD'
+  HEAD = 'HEAD',
 }
 
 /**
@@ -62,10 +62,7 @@ export type IMiddlewareFunction = (
 /**
  * 路由处理函数类型
  */
-export type IRouteHandler = (
-  req: IRequestContext,
-  res: IResponseContext
-) => void | Promise<void>;
+export type IRouteHandler = (req: IRequestContext, res: IResponseContext) => void | Promise<void>;
 
 /**
  * 路由定义
@@ -121,13 +118,13 @@ export interface IServerStatus {
  */
 export interface IHTTPServer extends IModule {
   readonly config: ServerConfig;
-  
+
   /**
    * 添加全局中间件
    * @param middleware 中间件函数
    */
   use(middleware: IMiddlewareFunction): void;
-  
+
   /**
    * 添加路由
    * @param method HTTP方法
@@ -135,32 +132,27 @@ export interface IHTTPServer extends IModule {
    * @param handler 处理函数
    * @param middleware 路由级中间件
    */
-  addRoute(
-    method: HTTPMethod | string,
-    path: string,
-    handler: IRouteHandler,
-    middleware?: IMiddlewareFunction[]
-  ): void;
-  
+  addRoute(method: HTTPMethod | string, path: string, handler: IRouteHandler, middleware?: IMiddlewareFunction[]): void;
+
   /**
    * 移除路由
    * @param method HTTP方法
    * @param path 路径
    */
   removeRoute(method: HTTPMethod | string, path: string): void;
-  
+
   /**
    * 获取服务器状态
    * @returns IServerStatus 服务器状态
    */
   getServerStatus(): IServerStatus;
-  
+
   /**
    * 获取活跃连接数
    * @returns number 活跃连接数
    */
   getActiveConnections(): number;
-  
+
   /**
    * 获取请求统计
    * @returns any 请求统计信息
@@ -252,14 +244,14 @@ export interface IInternalPipelineManager {
    * @returns Promise<string> Pipeline ID
    */
   createPipeline(config: IPipelineConfig): Promise<string>;
-  
+
   /**
    * 销毁Pipeline实例
    * @param pipelineId Pipeline ID
    * @returns Promise<void>
    */
   destroyPipeline(pipelineId: string): Promise<void>;
-  
+
   /**
    * 执行Pipeline
    * @param pipelineId Pipeline ID
@@ -272,27 +264,27 @@ export interface IInternalPipelineManager {
     input: any,
     context: IPipelineExecutionContext
   ): Promise<IPipelineExecutionResult>;
-  
+
   /**
    * 获取Pipeline实例
    * @param pipelineId Pipeline ID
    * @returns any | null Pipeline实例
    */
   getPipeline(pipelineId: string): any | null;
-  
+
   /**
    * 获取所有Pipeline
    * @returns Map<string, any> Pipeline映射表
    */
   getAllPipelines(): Map<string, any>;
-  
+
   /**
    * 获取Pipeline状态
    * @param pipelineId Pipeline ID
    * @returns IPipelineStatus | null Pipeline状态
    */
   getPipelineStatus(pipelineId: string): IPipelineStatus | null;
-  
+
   /**
    * 获取所有Pipeline状态
    * @returns Map<string, IPipelineStatus> 状态映射表
@@ -306,19 +298,19 @@ export interface IInternalPipelineManager {
 export interface IPipelineServer extends IHTTPServer {
   readonly config: PipelineServerConfig;
   readonly pipelineManager: IInternalPipelineManager;
-  
+
   /**
    * 获取Pipeline管理器
    * @returns IInternalPipelineManager Pipeline管理器
    */
   getPipelineManager(): IInternalPipelineManager;
-  
+
   /**
    * 获取Pipeline配置列表
    * @returns IPipelineConfig[] Pipeline配置数组
    */
   getPipelineConfigs(): IPipelineConfig[];
-  
+
   /**
    * 处理Anthropic格式请求
    * @param req 请求上下文
@@ -326,7 +318,7 @@ export interface IPipelineServer extends IHTTPServer {
    * @returns Promise<void>
    */
   handleAnthropicRequest(req: IRequestContext, res: IResponseContext): Promise<void>;
-  
+
   /**
    * 处理OpenAI格式请求
    * @param req 请求上下文
@@ -334,7 +326,7 @@ export interface IPipelineServer extends IHTTPServer {
    * @returns Promise<void>
    */
   handleOpenAIRequest(req: IRequestContext, res: IResponseContext): Promise<void>;
-  
+
   /**
    * 处理Gemini格式请求
    * @param req 请求上下文
@@ -342,7 +334,7 @@ export interface IPipelineServer extends IHTTPServer {
    * @returns Promise<void>
    */
   handleGeminiRequest(req: IRequestContext, res: IResponseContext): Promise<void>;
-  
+
   /**
    * 处理直接Pipeline请求
    * @param req 请求上下文

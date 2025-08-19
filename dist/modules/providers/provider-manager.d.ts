@@ -5,11 +5,10 @@
  *
  * @author Jason Zhang
  */
-import { BaseModule } from '../base-module-impl';
+import { IModuleInterface } from '../../interfaces/core/module-implementation-interface';
 import { ProviderConfig, ProviderProtocolType } from './provider-factory';
 import { StandardRequest } from '../../interfaces/standard/request';
 import { StandardResponse } from '../../interfaces/standard/response';
-import { ModuleStatus } from '../../interfaces/module/base-module';
 /**
  * Provider路由策略
  */
@@ -22,12 +21,12 @@ export interface ProviderManagerConfig {
     routingStrategy: RoutingStrategy;
     /** 健康检查间隔(毫秒) */
     healthCheckInterval: number;
-    /** 故障转移启用 */
-    failoverEnabled: boolean;
-    /** 最大重试次数 */
+    /** 最大重试次数 (同一Provider) */
     maxRetries: number;
     /** 调试模式 */
     debug: boolean;
+    /** 严格错误报告 - RCC v4.0 Zero Fallback Policy */
+    strictErrorReporting: boolean;
 }
 /**
  * Provider路由信息
@@ -51,7 +50,7 @@ export interface ProviderRouteInfo {
  */
 export interface RouteResult {
     /** 选中的Provider */
-    provider: BaseModule;
+    provider: IModuleInterface;
     /** Provider信息 */
     info: ProviderRouteInfo;
     /** 路由决策原因 */
@@ -75,7 +74,7 @@ export declare class ProviderManager {
     /**
      * 注册Provider
      */
-    registerProvider(provider: BaseModule): Promise<void>;
+    registerProvider(provider: IModuleInterface): Promise<void>;
     /**
      * 注销Provider
      */
@@ -119,9 +118,7 @@ export declare class ProviderManager {
     /**
      * 获取所有Provider状态
      */
-    getProviderStatuses(): Array<ModuleStatus & {
-        routeInfo: ProviderRouteInfo;
-    }>;
+    getProviderStatuses(): Array<any>;
     /**
      * 获取健康的Provider数量
      */
@@ -134,14 +131,14 @@ export declare class ProviderManager {
         healthyProviders: number;
         unhealthyProviders: number;
         routingStrategy: RoutingStrategy;
-        failoverEnabled: boolean;
+        strictErrorReporting: boolean;
         healthCheckInterval: number;
         providers: {
-            id: string;
-            type: ProviderProtocolType;
-            healthy: boolean;
-            currentLoad: number;
-            status: "stopped" | "starting" | "running" | "stopping" | "error";
+            id: any;
+            type: any;
+            healthy: any;
+            currentLoad: any;
+            status: any;
         }[];
     };
     /**

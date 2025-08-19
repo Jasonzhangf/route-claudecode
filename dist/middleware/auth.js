@@ -16,7 +16,7 @@ exports.authentication = authentication;
  * 创建认证中间件
  */
 function auth(options) {
-    const { type, validate, headerName = 'Authorization', cookieName = 'auth-token', queryParam = 'token', required = true, message = 'Authentication required' } = options;
+    const { type, validate, headerName = 'Authorization', cookieName = 'auth-token', queryParam = 'token', required = true, message = 'Authentication required', } = options;
     return async (req, res, next) => {
         try {
             const token = extractToken(req, type, headerName, cookieName, queryParam);
@@ -45,7 +45,7 @@ function auth(options) {
             res.statusCode = 401;
             res.body = {
                 error: 'Unauthorized',
-                message: error instanceof Error ? error.message : 'Authentication failed'
+                message: error instanceof Error ? error.message : 'Authentication failed',
             };
         }
     };
@@ -114,7 +114,7 @@ function apiKeyAuth(validApiKeys) {
                 return { apiKey: token, type: 'api-key' };
             }
             return null;
-        }
+        },
     });
 }
 /**
@@ -123,7 +123,7 @@ function apiKeyAuth(validApiKeys) {
 function bearerAuth(validateToken) {
     return auth({
         type: 'bearer',
-        validate: validateToken
+        validate: validateToken,
     });
 }
 /**
@@ -144,14 +144,14 @@ function basicAuth(validateCredentials) {
             catch {
                 return null;
             }
-        }
+        },
     });
 }
 /**
  * 创建简单认证中间件 - 与PipelineServer兼容
  */
 function authentication(config = {}) {
-    const { required = false, apiKeyHeader = 'X-API-Key', bearerHeader = 'Authorization', basicAuth: enableBasic = true } = config;
+    const { required = false, apiKeyHeader = 'X-API-Key', bearerHeader = 'Authorization', basicAuth: enableBasic = true, } = config;
     return async (req, res, next) => {
         // 如果不要求认证，直接通过
         if (!required) {
@@ -179,7 +179,7 @@ function authentication(config = {}) {
             res.statusCode = 401;
             res.body = {
                 error: 'Unauthorized',
-                message: 'Authentication required'
+                message: 'Authentication required',
             };
             return;
         }

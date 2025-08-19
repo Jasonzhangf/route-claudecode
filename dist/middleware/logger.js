@@ -9,6 +9,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LogLevel = void 0;
 exports.logger = logger;
+// import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
 /**
  * 日志级别
  */
@@ -23,7 +24,7 @@ var LogLevel;
  * 创建日志中间件
  */
 function logger(options = {}) {
-    const { level = LogLevel.INFO, format = 'simple', includeHeaders = false, includeBody = false, excludePaths = ['/health', '/status'] } = options;
+    const { level = LogLevel.INFO, format = 'simple', includeHeaders = false, includeBody = false, excludePaths = ['/health', '/status'], } = options;
     return (req, res, next) => {
         // 检查是否应该排除此路径
         if (excludePaths.some(path => req.url.startsWith(path))) {
@@ -71,7 +72,7 @@ function logger(options = {}) {
                     duration,
                     userAgent: req.headers['user-agent'],
                     ...(includeHeaders && { headers: req.headers }),
-                    ...(includeBody && req.body && { body: req.body })
+                    ...(includeBody && req.body && { body: req.body }),
                 };
                 console.log(JSON.stringify(logEntry));
                 break;
@@ -96,8 +97,8 @@ function logger(options = {}) {
                     duration,
                     error: {
                         message: error.message,
-                        stack: error.stack
-                    }
+                        stack: error.stack,
+                    },
                 };
                 console.error(JSON.stringify(errorEntry, null, 2));
                 break;

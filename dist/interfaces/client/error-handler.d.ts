@@ -5,7 +5,14 @@
  *
  * @author Jason Zhang
  */
-import { RCCError } from '../../types';
+/**
+ * RCC错误基类
+ */
+export declare class RCCError extends Error {
+    readonly code: string;
+    readonly details?: Record<string, any>;
+    constructor(message: string, code: string, details?: Record<string, any>);
+}
 /**
  * 错误处理器接口
  */

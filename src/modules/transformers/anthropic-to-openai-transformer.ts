@@ -1,8 +1,23 @@
 /**
- * Anthropic到OpenAI格式转换器
+ * ⚠️ DEPRECATED - SECURITY VULNERABILITIES FOUND ⚠️
  *
- * 将Anthropic格式的请求转换为OpenAI兼容格式
+ * This transformer implementation has been deprecated due to critical security vulnerabilities
+ * identified in the security audit report. DO NOT USE in production.
  *
+ * Security Issues:
+ * - Hardcoded configuration values
+ * - Unsafe JSON parsing (lines 265, 361)
+ * - Missing input validation and boundary checks
+ * - No timeout protection
+ * - Business logic mixed with protocol conversion
+ * - Information disclosure in error messages
+ *
+ * Migration Path:
+ * Use SecureAnthropicToOpenAITransformer instead:
+ * import { SecureAnthropicToOpenAITransformer } from './secure-anthropic-openai-transformer';
+ *
+ * @deprecated Use SecureAnthropicToOpenAITransformer instead
+ * @security-risk HIGH - Multiple critical vulnerabilities
  * @author Jason Zhang
  */
 
@@ -13,7 +28,6 @@ import {
   IModuleMetrics,
 } from '../../interfaces/core/module-implementation-interface';
 import { EventEmitter } from 'events';
-import { modelMappingService } from '../../router/model-mapping-service';
 
 /**
  * Anthropic到OpenAI转换器配置
@@ -23,6 +37,9 @@ export interface AnthropicToOpenAITransformerConfig {
   preserveToolCalls: boolean;
   mapSystemMessage: boolean;
   defaultMaxTokens: number;
+  modelMapping?: { [key: string]: string }; // 模型映射信息
+  modelMaxTokens?: { [key: string]: number }; // 各模型的最大token配置
+  apiMaxTokens?: number; // API提供商的最大token限制（如ModelScope的8192）
 }
 
 /**
@@ -88,6 +105,7 @@ export class AnthropicToOpenAITransformer extends EventEmitter implements IModul
       preserveToolCalls: true,
       mapSystemMessage: true,
       defaultMaxTokens: 4096,
+      apiMaxTokens: 8192, // 默认API限制为8192（ModelScope兼容）
       ...config,
     };
   }
@@ -140,50 +158,24 @@ export class AnthropicToOpenAITransformer extends EventEmitter implements IModul
     console.log(`   系统消息: ${input.system ? '存在' : '无'}`);
     console.log(`   工具定义: ${input.tools?.length || 0} 个`);
 
-    // 动态模型映射：使用ModelMappingService
+    // Transformer层只负责协议转换，不进行模型映射
+    // 模型映射应该在路由层或配置层完成
     const inputModel = input.model || 'claude-3-5-sonnet-20241022'; // 默认模型
-    console.log(`🎯 [Transformer层] 准备执行动态模型映射: ${inputModel}`);
+    console.log(`🔄 [Transformer层] 保持原始模型进行协议转换: ${inputModel}`);
 
-    // 获取LM Studio可用模型列表（从配置或实时获取）
-    const availableModels = [
-      'gpt-oss-20b-mlx',
-      'text-embedding-nomic-embed-text-v1.5',
-      'gpt-oss-120b-mlx',
-      'qwen3-4b-thinking-2507-mlx',
-      'qwen3-30b-a3b-instruct-2507-mlx',
-      'glm-4.5-air@3bit',
-      'glm-4.5-air@8bit',
-      'qwen3-235b-a22b-instruct-2507-mlx',
-      'gemma-3n-e2b-it-mlx',
-      'bge-small-en-v1.5',
-      'nextcoder-32b-mlx',
-      'qwq-32b-mlx',
-      'gemma-3-27b-it-ud-q4_k_xl',
-      'qwen2.5-vl-72b-instruct',
-      'qwen3-30b-a3b-python-coder-mlx',
-    ];
-
-    // 执行动态映射
-    const mappingResult = modelMappingService.performMapping(inputModel, availableModels);
-
-    if (!mappingResult.isValid) {
-      console.error(`🚨 模型映射失败: ${mappingResult.error}`);
-      throw new Error(`Model mapping failed: ${mappingResult.error}`);
-    }
-
-    console.log(
-      `✅ [Transformer层] 模型映射成功: ${inputModel} -> ${mappingResult.targetModel} (分类: ${mappingResult.category})`
-    );
-    openaiRequest.model = mappingResult.targetModel;
+    // 直接传递模型名称，不做映射
+    openaiRequest.model = inputModel;
 
     // 转换消息格式
     openaiRequest.messages = this.convertMessages(input.messages);
 
-    // 转换参数
+    // 转换参数 - 智能max_tokens处理
     if (input.max_tokens) {
-      openaiRequest.max_tokens = input.max_tokens;
+      // 用户指定了max_tokens，需要检查是否超出API限制
+      openaiRequest.max_tokens = this.clampMaxTokens(input.max_tokens, openaiRequest.model);
     } else {
-      openaiRequest.max_tokens = this.transformerConfig.defaultMaxTokens;
+      // 用户未指定max_tokens，使用智能默认值
+      openaiRequest.max_tokens = this.getOptimalMaxTokens(openaiRequest.model);
     }
 
     if (input.temperature !== undefined) {
@@ -260,7 +252,7 @@ export class AnthropicToOpenAITransformer extends EventEmitter implements IModul
       id: openaiResponse.id,
       type: 'message',
       role: 'assistant',
-      model: openaiResponse.model,
+      model: openaiResponse.model, // Transformer只负责协议转换，模型名逆映射应在Router层处理
       content: [],
       stop_reason: this.convertStopReason(choice.finish_reason),
       stop_sequence: null,
@@ -434,5 +426,59 @@ export class AnthropicToOpenAITransformer extends EventEmitter implements IModul
     }
 
     return 'auto';
+  }
+
+  /**
+   * 限制max_tokens在API允许范围内
+   */
+  private clampMaxTokens(requestedTokens: number, targetModel: string): number {
+    const apiLimit = this.transformerConfig.apiMaxTokens || 8192;
+    const modelConfigLimit = this.getModelMaxTokensFromConfig(targetModel);
+
+    // 使用较小的限制值
+    const effectiveLimit = Math.min(apiLimit, modelConfigLimit);
+    const clampedTokens = Math.min(requestedTokens, effectiveLimit);
+
+    if (clampedTokens !== requestedTokens) {
+      console.log(
+        `🔧 [Transformer] max_tokens从${requestedTokens}调整到${clampedTokens} (API限制: ${apiLimit}, 模型限制: ${modelConfigLimit})`
+      );
+    }
+
+    return clampedTokens;
+  }
+
+  /**
+   * 获取最优的max_tokens默认值
+   */
+  private getOptimalMaxTokens(targetModel: string): number {
+    const apiLimit = this.transformerConfig.apiMaxTokens || 8192;
+    const modelConfigLimit = this.getModelMaxTokensFromConfig(targetModel);
+    const defaultLimit = this.transformerConfig.defaultMaxTokens;
+
+    // 选择一个安全的默认值：API限制的一半，但不超过配置的默认值
+    const safeDefault = Math.min(
+      Math.floor(apiLimit / 2), // API限制的一半
+      modelConfigLimit, // 模型配置限制
+      defaultLimit // 配置的默认值
+    );
+
+    console.log(
+      `🎯 [Transformer] 为模型${targetModel}选择最优max_tokens: ${safeDefault} (API: ${apiLimit}, 模型: ${modelConfigLimit}, 默认: ${defaultLimit})`
+    );
+
+    return safeDefault;
+  }
+
+  /**
+   * 从配置中获取模型的最大token限制
+   */
+  private getModelMaxTokensFromConfig(targetModel: string): number {
+    if (this.transformerConfig.modelMaxTokens && this.transformerConfig.modelMaxTokens[targetModel]) {
+      return this.transformerConfig.modelMaxTokens[targetModel];
+    }
+
+    // 如果配置中没有找到，返回一个保守的默认值
+    return this.transformerConfig.apiMaxTokens || 8192;
   }
 }

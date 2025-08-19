@@ -1,19 +1,19 @@
 /**
  * Provider指标收集器
- * 
+ *
  * 收集和聚合Provider性能指标，支持实时监控和历史数据分析
- * 
+ *
  * @author Jason Zhang
  */
 
 /**
  * 指标类型枚举
  */
-export type MetricType = 
-  | 'counter'      // 计数器
-  | 'gauge'        // 瞬时值
-  | 'histogram'    // 直方图
-  | 'summary';     // 摘要
+export type MetricType =
+  | 'counter' // 计数器
+  | 'gauge' // 瞬时值
+  | 'histogram' // 直方图
+  | 'summary'; // 摘要
 
 /**
  * 指标数据点
@@ -143,7 +143,7 @@ export class MetricsCollector {
    */
   public registerMetric(definition: MetricDefinition): void {
     this.definitions.set(definition.name, definition);
-    
+
     if (!this.metrics.has(definition.name)) {
       this.metrics.set(definition.name, []);
     }
@@ -152,11 +152,7 @@ export class MetricsCollector {
   /**
    * 记录指标数据点
    */
-  public recordMetric(
-    metricName: string, 
-    value: number, 
-    labels: Record<string, string> = {}
-  ): void {
+  public recordMetric(metricName: string, value: number, labels: Record<string, string> = {}): void {
     if (!this.definitions.has(metricName)) {
       console.warn(`[MetricsCollector] Unknown metric: ${metricName}`);
       return;
@@ -165,7 +161,7 @@ export class MetricsCollector {
     const dataPoint: MetricDataPoint = {
       timestamp: Date.now(),
       value,
-      labels
+      labels,
     };
 
     const dataPoints = this.metrics.get(metricName)!;
@@ -202,10 +198,7 @@ export class MetricsCollector {
   /**
    * 获取聚合指标
    */
-  public getAggregatedMetric(
-    metricName: string, 
-    timeRange?: { start: number; end: number }
-  ): AggregatedMetric | null {
+  public getAggregatedMetric(metricName: string, timeRange?: { start: number; end: number }): AggregatedMetric | null {
     const dataPoints = this.metrics.get(metricName);
     if (!dataPoints || dataPoints.length === 0) {
       return null;
@@ -214,8 +207,8 @@ export class MetricsCollector {
     // 过滤时间范围
     let filteredPoints = dataPoints;
     if (timeRange) {
-      filteredPoints = dataPoints.filter(point => 
-        point.timestamp >= timeRange.start && point.timestamp <= timeRange.end
+      filteredPoints = dataPoints.filter(
+        point => point.timestamp >= timeRange.start && point.timestamp <= timeRange.end
       );
     }
 
@@ -236,7 +229,7 @@ export class MetricsCollector {
       p50: this.calculatePercentile(sortedValues, 0.5),
       p90: this.calculatePercentile(sortedValues, 0.9),
       p95: this.calculatePercentile(sortedValues, 0.95),
-      p99: this.calculatePercentile(sortedValues, 0.99)
+      p99: this.calculatePercentile(sortedValues, 0.99),
     };
 
     return {
@@ -249,8 +242,8 @@ export class MetricsCollector {
       percentiles,
       timeRange: timeRange || {
         start: Math.min(...filteredPoints.map(p => p.timestamp)),
-        end: Math.max(...filteredPoints.map(p => p.timestamp))
-      }
+        end: Math.max(...filteredPoints.map(p => p.timestamp)),
+      },
     };
   }
 
@@ -260,17 +253,16 @@ export class MetricsCollector {
   public updateProviderHealth(providerId: string, healthStatus: Omit<ProviderHealthStatus, 'providerId'>): void {
     this.healthStatuses.set(providerId, {
       providerId,
-      ...healthStatus
+      ...healthStatus,
     });
 
     // 记录健康指标
     this.recordMetric('provider_health_response_time', healthStatus.responseTime, { provider: providerId });
     this.recordMetric('provider_health_error_rate', healthStatus.errorRate, { provider: providerId });
     this.recordMetric('provider_health_availability', healthStatus.availability, { provider: providerId });
-    
+
     // 记录状态指标
-    const statusValue = healthStatus.status === 'healthy' ? 1 : 
-                       healthStatus.status === 'degraded' ? 0.5 : 0;
+    const statusValue = healthStatus.status === 'healthy' ? 1 : healthStatus.status === 'degraded' ? 0.5 : 0;
     this.recordMetric('provider_health_status', statusValue, { provider: providerId });
   }
 
@@ -293,7 +285,7 @@ export class MetricsCollector {
    */
   public updateSystemMetrics(metrics: SystemMetrics): void {
     this.systemMetrics = metrics;
-    
+
     // 记录系统指标
     this.recordMetric('system_cpu_usage', metrics.cpuUsage);
     this.recordMetric('system_memory_usage', metrics.memoryUsage);
@@ -319,22 +311,18 @@ export class MetricsCollector {
     labels?: Record<string, string>
   ): MetricDataPoint[] {
     const dataPoints = this.metrics.get(metricName) || [];
-    
+
     let filtered = dataPoints;
 
     // 过滤时间范围
     if (timeRange) {
-      filtered = filtered.filter(point => 
-        point.timestamp >= timeRange.start && point.timestamp <= timeRange.end
-      );
+      filtered = filtered.filter(point => point.timestamp >= timeRange.start && point.timestamp <= timeRange.end);
     }
 
     // 过滤标签
     if (labels) {
       filtered = filtered.filter(point => {
-        return Object.entries(labels).every(([key, value]) => 
-          point.labels[key] === value
-        );
+        return Object.entries(labels).every(([key, value]) => point.labels[key] === value);
       });
     }
 
@@ -360,7 +348,7 @@ export class MetricsCollector {
    */
   public cleanup(): void {
     const cutoffTime = Date.now() - this.retentionPeriod;
-    
+
     for (const [metricName, dataPoints] of this.metrics.entries()) {
       const validPoints = dataPoints.filter(point => point.timestamp >= cutoffTime);
       this.metrics.set(metricName, validPoints);
@@ -386,13 +374,13 @@ export class MetricsCollector {
       timestamp: Date.now(),
       metrics: {},
       healthStatuses: Array.from(this.healthStatuses.values()),
-      systemMetrics: this.systemMetrics
+      systemMetrics: this.systemMetrics,
     };
 
     for (const [name, dataPoints] of this.metrics.entries()) {
       exportData.metrics[name] = {
         definition: this.definitions.get(name),
-        dataPoints: dataPoints.slice(-100) // 最近100个数据点
+        dataPoints: dataPoints.slice(-100), // 最近100个数据点
       };
     }
 
@@ -404,19 +392,17 @@ export class MetricsCollector {
    */
   private getLatestValue(metricName: string, labels: Record<string, string>): number | null {
     const dataPoints = this.metrics.get(metricName) || [];
-    
+
     // 从后往前查找匹配标签的最新数据点
     for (let i = dataPoints.length - 1; i >= 0; i--) {
       const point = dataPoints[i];
-      const labelsMatch = Object.entries(labels).every(([key, value]) => 
-        point.labels[key] === value
-      );
-      
+      const labelsMatch = Object.entries(labels).every(([key, value]) => point.labels[key] === value);
+
       if (labelsMatch) {
         return point.value;
       }
     }
-    
+
     return null;
   }
 
@@ -425,15 +411,15 @@ export class MetricsCollector {
    */
   private calculatePercentile(sortedValues: number[], percentile: number): number {
     if (sortedValues.length === 0) return 0;
-    
-    const index = (percentile * (sortedValues.length - 1));
+
+    const index = percentile * (sortedValues.length - 1);
     const lower = Math.floor(index);
     const upper = Math.ceil(index);
     const weight = index % 1;
-    
+
     if (upper >= sortedValues.length) return sortedValues[sortedValues.length - 1];
     if (lower === upper) return sortedValues[lower];
-    
+
     return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
   }
 
@@ -447,52 +433,54 @@ export class MetricsCollector {
         type: 'counter',
         description: 'Total number of requests processed by provider',
         unit: 'requests',
-        labelNames: ['provider', 'status']
+        labelNames: ['provider', 'status'],
       },
       {
         name: 'provider_request_duration_seconds',
         type: 'histogram',
         description: 'Request duration in seconds',
         unit: 'seconds',
-        labelNames: ['provider']
+        labelNames: ['provider'],
       },
       {
         name: 'provider_health_status',
         type: 'gauge',
         description: 'Provider health status (1=healthy, 0.5=degraded, 0=unhealthy)',
-        labelNames: ['provider']
+        labelNames: ['provider'],
       },
       {
         name: 'provider_health_response_time',
         type: 'gauge',
         description: 'Provider health check response time in milliseconds',
         unit: 'milliseconds',
-        labelNames: ['provider']
+        labelNames: ['provider'],
       },
       {
         name: 'provider_health_error_rate',
         type: 'gauge',
         description: 'Provider error rate (0-1)',
-        labelNames: ['provider']
+        labelNames: ['provider'],
       },
       {
         name: 'provider_health_availability',
         type: 'gauge',
         description: 'Provider availability (0-1)',
-        labelNames: ['provider']
+        labelNames: ['provider'],
       },
       {
         name: 'system_cpu_usage',
         type: 'gauge',
         description: 'System CPU usage percentage',
-        unit: 'percent'
+        unit: 'percent',
+        labelNames: [],
       },
       {
         name: 'system_memory_usage',
         type: 'gauge',
         description: 'System memory usage percentage',
-        unit: 'percent'
-      }
+        unit: 'percent',
+        labelNames: [],
+      },
     ];
 
     defaultMetrics.forEach(metric => this.registerMetric(metric));
@@ -503,26 +491,26 @@ export class MetricsCollector {
    */
   private exportPrometheusFormat(): string {
     const lines: string[] = [];
-    
+
     for (const [name, definition] of this.definitions.entries()) {
       lines.push(`# HELP ${name} ${definition.description}`);
       lines.push(`# TYPE ${name} ${definition.type}`);
-      
+
       const dataPoints = this.metrics.get(name) || [];
       const latestPoints = dataPoints.slice(-1); // 只导出最新值
-      
+
       for (const point of latestPoints) {
         const labelPairs = Object.entries(point.labels)
           .map(([key, value]) => `${key}="${value}"`)
           .join(',');
-        
+
         const labelString = labelPairs ? `{${labelPairs}}` : '';
         lines.push(`${name}${labelString} ${point.value} ${point.timestamp}`);
       }
-      
+
       lines.push('');
     }
-    
+
     return lines.join('\n');
   }
 
@@ -530,8 +518,11 @@ export class MetricsCollector {
    * 启动清理任务
    */
   private startCleanupTask(): void {
-    setInterval(() => {
-      this.cleanup();
-    }, 5 * 60 * 1000); // 每5分钟清理一次
+    setInterval(
+      () => {
+        this.cleanup();
+      },
+      5 * 60 * 1000
+    ); // 每5分钟清理一次
   }
 }

@@ -1,8 +1,6 @@
 "use strict";
 /**
- * 路由系统导出
- *
- * 提供HTTP服务器的路由功能
+ * 路由模块入口文件
  *
  * @author Jason Zhang
  */
@@ -21,7 +19,21 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./router"), exports);
+exports.ROUTES_MODULE_VERSION = void 0;
+__exportStar(require("./route-manager"), exports);
 __exportStar(require("./api-routes"), exports);
+__exportStar(require("./health-routes"), exports);
+__exportStar(require("./debug-routes"), exports);
+__exportStar(require("./admin-routes"), exports);
+__exportStar(require("./pipeline-routes"), exports);
+__exportStar(require("./provider-routes"), exports);
+__exportStar(require("./config-routes"), exports);
+__exportStar(require("./metrics-routes"), exports);
+__exportStar(require("./auth-routes"), exports);
 __exportStar(require("./proxy-routes"), exports);
+__exportStar(require("./webhook-routes"), exports);
+__exportStar(require("./param-validator"), exports);
+__exportStar(require("./route-matcher"), exports);
+// 模块版本信息
+exports.ROUTES_MODULE_VERSION = '4.0.0-alpha.2';
 //# sourceMappingURL=index.js.map

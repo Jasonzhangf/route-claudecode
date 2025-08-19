@@ -1,12 +1,12 @@
 /**
  * 认证中间件
- * 
+ *
  * 处理API密钥验证和用户认证
- * 
+ *
  * @author Jason Zhang
  */
 
-import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
+import { IMiddlewareFactory } from '../interfaces/core/middleware-interface';
 
 /**
  * 认证配置选项
@@ -24,7 +24,7 @@ export interface AuthOptions {
 /**
  * 创建认证中间件
  */
-export function auth(options: AuthOptions): IMiddlewareFunction {
+export function auth(options: AuthOptions): any {
   const {
     type,
     validate,
@@ -32,13 +32,13 @@ export function auth(options: AuthOptions): IMiddlewareFunction {
     cookieName = 'auth-token',
     queryParam = 'token',
     required = true,
-    message = 'Authentication required'
+    message = 'Authentication required',
   } = options;
-  
+
   return async (req, res, next) => {
     try {
       const token = extractToken(req, type, headerName, cookieName, queryParam);
-      
+
       if (!token) {
         if (required) {
           res.statusCode = 401;
@@ -48,26 +48,25 @@ export function auth(options: AuthOptions): IMiddlewareFunction {
           return next();
         }
       }
-      
+
       // 验证令牌
       const user = await validate(token);
-      
+
       if (!user) {
         res.statusCode = 401;
         res.body = { error: 'Unauthorized', message: 'Invalid credentials' };
         return;
       }
-      
+
       // 将用户信息附加到请求上下文
       req.user = user;
-      
+
       next();
-      
     } catch (error) {
       res.statusCode = 401;
-      res.body = { 
-        error: 'Unauthorized', 
-        message: error instanceof Error ? error.message : 'Authentication failed' 
+      res.body = {
+        error: 'Unauthorized',
+        message: error instanceof Error ? error.message : 'Authentication failed',
       };
     }
   };
@@ -92,13 +91,13 @@ function extractToken(
           return headerValue.substring(7);
         }
         break;
-        
+
       case 'basic':
         if (typeof headerValue === 'string' && headerValue.startsWith('Basic ')) {
           return headerValue.substring(6);
         }
         break;
-        
+
       case 'apikey':
         if (typeof headerValue === 'string') {
           return headerValue;
@@ -106,12 +105,12 @@ function extractToken(
         break;
     }
   }
-  
+
   // 从查询参数提取
   if (req.query[queryParam]) {
     return req.query[queryParam];
   }
-  
+
   // 从Cookie提取（简单实现）
   const cookieHeader = req.headers.cookie;
   if (cookieHeader && typeof cookieHeader === 'string') {
@@ -120,7 +119,7 @@ function extractToken(
       return cookies[cookieName];
     }
   }
-  
+
   return null;
 }
 
@@ -129,21 +128,21 @@ function extractToken(
  */
 function parseCookies(cookieHeader: string): Record<string, string> {
   const cookies: Record<string, string> = {};
-  
+
   cookieHeader.split(';').forEach(cookie => {
     const [name, value] = cookie.trim().split('=');
     if (name && value) {
       cookies[name] = decodeURIComponent(value);
     }
   });
-  
+
   return cookies;
 }
 
 /**
  * 创建API密钥认证中间件
  */
-export function apiKeyAuth(validApiKeys: string[]): IMiddlewareFunction {
+export function apiKeyAuth(validApiKeys: string[]): any {
   return auth({
     type: 'apikey',
     headerName: 'X-API-Key',
@@ -152,40 +151,40 @@ export function apiKeyAuth(validApiKeys: string[]): IMiddlewareFunction {
         return { apiKey: token, type: 'api-key' };
       }
       return null;
-    }
+    },
   });
 }
 
 /**
  * 创建Bearer令牌认证中间件
  */
-export function bearerAuth(validateToken: (token: string) => Promise<any> | any): IMiddlewareFunction {
+export function bearerAuth(validateToken: (token: string) => Promise<any> | any): any {
   return auth({
     type: 'bearer',
-    validate: validateToken
+    validate: validateToken,
   });
 }
 
 /**
  * 创建Basic认证中间件
  */
-export function basicAuth(validateCredentials: (username: string, password: string) => Promise<any> | any): IMiddlewareFunction {
+export function basicAuth(validateCredentials: (username: string, password: string) => Promise<any> | any): any {
   return auth({
     type: 'basic',
     validate: async (token: string) => {
       try {
         const credentials = Buffer.from(token, 'base64').toString('utf-8');
         const [username, password] = credentials.split(':');
-        
+
         if (!username || !password) {
           return null;
         }
-        
+
         return await validateCredentials(username, password);
       } catch {
         return null;
       }
-    }
+    },
   });
 }
 
@@ -202,12 +201,12 @@ export interface SimpleAuthConfig {
 /**
  * 创建简单认证中间件 - 与PipelineServer兼容
  */
-export function authentication(config: SimpleAuthConfig = {}): IMiddlewareFunction {
+export function authentication(config: SimpleAuthConfig = {}): any {
   const {
     required = false,
     apiKeyHeader = 'X-API-Key',
     bearerHeader = 'Authorization',
-    basicAuth: enableBasic = true
+    basicAuth: enableBasic = true,
   } = config;
 
   return async (req, res, next) => {
@@ -241,7 +240,7 @@ export function authentication(config: SimpleAuthConfig = {}): IMiddlewareFuncti
       res.statusCode = 401;
       res.body = {
         error: 'Unauthorized',
-        message: 'Authentication required'
+        message: 'Authentication required',
       };
       return;
     }

@@ -1,8 +1,8 @@
 /**
  * 服务器管理接口定义
- * 
+ *
  * 定义HTTP服务器的管理接口
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -16,27 +16,27 @@ export interface ServerManager {
    * 启动服务器
    */
   startServer(options: ServerStartOptions): Promise<void>;
-  
+
   /**
    * 停止服务器
    */
   stopServer(force?: boolean): Promise<void>;
-  
+
   /**
    * 获取服务器状态
    */
   getServerStatus(): Promise<ServerStatus>;
-  
+
   /**
    * 设置路由
    */
   setupRoutes(): void;
-  
+
   /**
    * 获取服务器实例
    */
   getServerInstance(): any;
-  
+
   /**
    * 重启服务器
    */
@@ -72,17 +72,17 @@ export interface RouteHandler {
    * 处理健康检查
    */
   handleHealthCheck(): Promise<any>;
-  
+
   /**
    * 处理聊天请求
    */
   handleChatRequest(request: any): Promise<any>;
-  
+
   /**
    * 处理状态查询
    */
   handleStatusRequest(): Promise<any>;
-  
+
   /**
    * 处理配置请求
    */
@@ -107,7 +107,7 @@ export interface RequestLoggingMiddleware extends Middleware {
    * 记录请求
    */
   logRequest(request: any): void;
-  
+
   /**
    * 记录响应
    */
@@ -122,7 +122,7 @@ export interface AuthenticationMiddleware extends Middleware {
    * 验证API密钥
    */
   validateApiKey(apiKey: string): boolean;
-  
+
   /**
    * 验证请求权限
    */

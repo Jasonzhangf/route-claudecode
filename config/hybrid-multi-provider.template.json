@@ -1,0 +1,139 @@
+{
+  "configVersion": "v3.0.2",
+  "architecture": "v3.0-six-layer",
+  "server": {
+    "port": 5509,
+    "host": "0.0.0.0",
+    "name": "hybrid-multi-provider-v3-server",
+    "environment": "multi-provider"
+  },
+  "providers": {
+    "google-gemini": {
+      "type": "gemini",
+      "priority": 1,
+      "tier": "premium",
+      "endpoint": "https://generativelanguage.googleapis.com",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKeys": [
+            "YOUR_GEMINI_API_KEY_1",
+            "YOUR_GEMINI_API_KEY_2",
+            "YOUR_GEMINI_API_KEY_3"
+          ]
+        }
+      },
+      "models": {
+        "longcontext": {
+          "primary": "gemini-2.5-pro",
+          "backup": [
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash-exp",
+            "gemini-2.0-flash"
+          ]
+        },
+        "general": {
+          "primary": "gemini-2.5-flash",
+          "backup": [
+            "gemini-2.5-flash-lite",
+            "gemini-2.0-flash-exp",
+            "gemini-2.0-flash"
+          ]
+        }
+      },
+      "timeout": 30000,
+      "maxRetries": 3,
+      "retryDelay": 2000
+    },
+    "modelscope-qwen": {
+      "type": "openai",
+      "priority": 2,
+      "tier": "standard", 
+      "endpoint": "https://api-inference.modelscope.cn/v1/chat/completions",
+      "authentication": {
+        "type": "bearer",
+        "credentials": {
+          "apiKeys": [
+            "YOUR_MODELSCOPE_API_KEY_1",
+            "YOUR_MODELSCOPE_API_KEY_2",
+            "YOUR_MODELSCOPE_API_KEY_3",
+            "YOUR_MODELSCOPE_API_KEY_4"
+          ]
+        }
+      },
+      "models": {
+        "coding": {
+          "primary": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "backup": [
+            "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+            "Qwen/Qwen2.5-Coder-32B-Instruct"
+          ]
+        },
+        "general": {
+          "primary": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "backup": [
+            "Qwen/Qwen2.5-72B-Instruct",
+            "Qwen/Qwen2.5-32B-Instruct"
+          ]
+        }
+      },
+      "timeout": 120000,
+      "maxRetries": 3,
+      "retryDelay": 1000
+    }
+  },
+  "routing": {
+    "strategy": "intelligent-hybrid",
+    "categories": {
+      "default": {
+        "primaryProvider": "modelscope-qwen",
+        "primaryModel": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "fallbackChain": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-2.5-flash"
+          }
+        ]
+      },
+      "coding": {
+        "primaryProvider": "modelscope-qwen", 
+        "primaryModel": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+        "fallbackChain": [
+          {
+            "provider": "google-gemini",
+            "model": "gemini-2.5-flash"
+          }
+        ]
+      },
+      "longcontext": {
+        "primaryProvider": "google-gemini",
+        "primaryModel": "gemini-2.5-pro",
+        "fallbackChain": [
+          {
+            "provider": "modelscope-qwen",
+            "model": "Qwen/Qwen3-235B-A22B-Instruct-2507"
+          }
+        ]
+      }
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "traceRequests": true,
+    "saveRequests": true,
+    "logDir": "~/.route-claudecode/logs"
+  },
+  "metadata": {
+    "version": "3.0.2",
+    "createdAt": "2025-08-16T01:15:00.000Z",
+    "description": "Template for hybrid multi-provider configuration - Replace YOUR_API_KEY placeholders with actual keys",
+    "architecture": "six-layer-v3.0.2",
+    "tags": [
+      "template",
+      "hybrid",
+      "multi-provider"
+    ]
+  }
+}

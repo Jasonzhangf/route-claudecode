@@ -15,18 +15,11 @@ const config_loader_1 = require("./config-loader");
  * Provider服务
  */
 class ProviderService {
-    config;
-    manager;
-    factory;
-    status;
-    startedAt;
-    stats;
-    requestTimes;
     constructor(config) {
         this.config = {
             autoStart: true,
             debug: false,
-            ...config
+            ...config,
         };
         this.manager = new provider_manager_1.ProviderManager(this.config.manager);
         this.factory = provider_factory_1.ProviderFactory.getInstance();
@@ -38,7 +31,7 @@ class ProviderService {
             successfulRequests: 0,
             failedRequests: 0,
             averageResponseTime: 0,
-            providerStats: {}
+            providerStats: {},
         };
         if (this.config.debug) {
             console.log('[ProviderService] Service initialized');
@@ -172,7 +165,7 @@ class ProviderService {
             try {
                 const configFile = await config_loader_1.ConfigLoader.loadConfig({
                     ...this.config.configLoader,
-                    debug: this.config.debug
+                    debug: this.config.debug,
                 });
                 providerConfigs = configFile.providers;
                 // 应用全局调试设置
@@ -208,8 +201,7 @@ class ProviderService {
             this.requestTimes = this.requestTimes.slice(-1000);
         }
         // 计算平均响应时间
-        this.stats.averageResponseTime =
-            this.requestTimes.reduce((sum, time) => sum + time, 0) / this.requestTimes.length;
+        this.stats.averageResponseTime = this.requestTimes.reduce((sum, time) => sum + time, 0) / this.requestTimes.length;
     }
     /**
      * 获取服务状态
@@ -249,7 +241,7 @@ class ProviderService {
         if (this.status !== 'running') {
             return {
                 healthy: false,
-                details: { error: `Service is not running (status: ${this.status})` }
+                details: { error: `Service is not running (status: ${this.status})` },
             };
         }
         const healthyProviders = this.getHealthyProviderCount();
@@ -264,11 +256,9 @@ class ProviderService {
                 totalProviders,
                 uptime: this.startedAt ? Date.now() - this.startedAt.getTime() : 0,
                 totalRequests: this.stats.totalRequests,
-                successRate: this.stats.totalRequests > 0
-                    ? this.stats.successfulRequests / this.stats.totalRequests
-                    : 0,
-                averageResponseTime: this.stats.averageResponseTime
-            }
+                successRate: this.stats.totalRequests > 0 ? this.stats.successfulRequests / this.stats.totalRequests : 0,
+                averageResponseTime: this.stats.averageResponseTime,
+            },
         };
     }
     /**
@@ -305,10 +295,10 @@ class ProviderService {
             configLoader: {
                 filePath: configFilePath,
                 validate: true,
-                debug: true
+                debug: true,
             },
             autoStart: true,
-            debug: true
+            debug: true,
         });
     }
 }

@@ -1,10 +1,13 @@
 /**
  * RCC v4.0 核心类型定义
- * 
+ *
  * 统一的类型系统，确保整个项目的类型一致性
- * 
+ *
  * @author Jason Zhang
  */
+
+// 模块版本信息
+export const TYPES_MODULE_VERSION = '4.0.0-alpha.2';
 
 // 基础类型定义
 export interface RCCConfig {
@@ -86,18 +89,8 @@ export interface ModuleConfig {
   [key: string]: any;
 }
 
-// 错误类型
-export class RCCError extends Error {
-  public readonly code: string;
-  public readonly details?: Record<string, any>;
-  
-  constructor(message: string, code: string, details?: Record<string, any>) {
-    super(message);
-    this.name = 'RCCError';
-    this.code = code;
-    this.details = details;
-  }
-}
+// 错误类型 - 从专用模块导入
+export * from './error';
 
 // 请求/响应类型
 export interface StandardRequest {
@@ -176,7 +169,7 @@ export interface ModuleInterface {
   getMetrics(): ModuleMetrics;
 }
 
-export type ModuleType = 
+export type ModuleType =
   | 'router'
   | 'input-transformer'
   | 'format-normalizer'
@@ -199,4 +192,9 @@ export interface ModuleMetrics {
   averageProcessingTime: number;
   errorCount: number;
   lastProcessedAt?: Date;
+}
+
+// 模块接口
+export interface TypesModuleInterface {
+  version: string;
 }

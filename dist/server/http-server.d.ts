@@ -7,30 +7,16 @@
  */
 import { EventEmitter } from 'events';
 import { ServerStatus } from '../interfaces';
+import { IRequestContext, IResponseContext } from '../interfaces/core/server-interface';
 /**
  * HTTP请求上下文
  */
-export interface RequestContext {
-    readonly id: string;
-    readonly startTime: Date;
-    readonly method: string;
-    readonly url: string;
-    readonly headers: Record<string, string | string[]>;
-    readonly query: Record<string, string>;
-    readonly params: Record<string, string>;
-    body?: any;
-    user?: any;
-    metadata?: Record<string, any>;
+export interface RequestContext extends IRequestContext {
 }
 /**
  * HTTP响应上下文
  */
-export interface ResponseContext {
-    readonly req: RequestContext;
-    statusCode: number;
-    headers: Record<string, string>;
-    body?: any;
-    sent: boolean;
+export interface ResponseContext extends IResponseContext {
 }
 /**
  * 中间件函数类型
@@ -148,6 +134,14 @@ export declare class HTTPServer extends EventEmitter {
      * 生成请求ID
      */
     private generateRequestId;
+    /**
+     * 设置内置路由
+     */
+    private setupBuiltinRoutes;
+    /**
+     * 获取活跃Pipeline数量
+     */
+    private getActivePipelineCount;
     /**
      * 计算运行时间
      */

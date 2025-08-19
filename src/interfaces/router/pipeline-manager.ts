@@ -1,8 +1,8 @@
 /**
  * 流水线管理器接口定义
- * 
+ *
  * 定义流水线生命周期管理的标准接口
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -75,32 +75,32 @@ export interface PipelineManager {
    * 创建流水线
    */
   createPipeline(provider: string, model: string, config?: PipelineCreateOptions): Promise<Pipeline>;
-  
+
   /**
    * 销毁流水线
    */
   destroyPipeline(pipelineId: string): Promise<void>;
-  
+
   /**
    * 获取流水线
    */
   getPipeline(pipelineId: string): Pipeline | null;
-  
+
   /**
    * 列出所有活跃流水线
    */
   listActivePipelines(): Pipeline[];
-  
+
   /**
    * 监控可用性
    */
   monitorAvailability(): void;
-  
+
   /**
    * 获取流水线统计信息
    */
   getPipelineStats(): PipelineManagerStats;
-  
+
   /**
    * 清理无用的流水线
    */
@@ -147,27 +147,27 @@ export interface PipelineLifecycleManager {
    * 初始化流水线
    */
   initialize(pipeline: Pipeline): Promise<void>;
-  
+
   /**
    * 启动流水线
    */
   start(pipeline: Pipeline): Promise<void>;
-  
+
   /**
    * 停止流水线
    */
   stop(pipeline: Pipeline): Promise<void>;
-  
+
   /**
    * 重启流水线
    */
   restart(pipeline: Pipeline): Promise<void>;
-  
+
   /**
    * 销毁流水线
    */
   destroy(pipeline: Pipeline): Promise<void>;
-  
+
   /**
    * 获取生命周期状态
    */
@@ -193,22 +193,22 @@ export interface PipelineMonitor {
    * 开始监控流水线
    */
   startMonitoring(pipeline: Pipeline): void;
-  
+
   /**
    * 停止监控流水线
    */
   stopMonitoring(pipelineId: string): void;
-  
+
   /**
    * 获取监控数据
    */
   getMonitoringData(pipelineId: string): MonitoringData;
-  
+
   /**
    * 设置告警规则
    */
   setAlertRules(rules: AlertRule[]): void;
-  
+
   /**
    * 触发告警
    */
@@ -274,17 +274,17 @@ export interface PipelineFactory {
    * 注册流水线构建器
    */
   registerBuilder(provider: string, builder: PipelineBuilder): void;
-  
+
   /**
    * 构建流水线
    */
   buildPipeline(provider: string, model: string, config: ProviderConfig): Promise<Pipeline>;
-  
+
   /**
    * 获取支持的Provider列表
    */
   getSupportedProviders(): string[];
-  
+
   /**
    * 验证Provider配置
    */
@@ -299,12 +299,12 @@ export interface PipelineBuilder {
    * 构建流水线
    */
   build(model: string, config: ProviderConfig): Promise<Pipeline>;
-  
+
   /**
    * 验证配置
    */
   validateConfig(config: ProviderConfig): boolean;
-  
+
   /**
    * 获取默认配置
    */

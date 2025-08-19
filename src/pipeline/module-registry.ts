@@ -257,10 +257,9 @@ export class ModuleRegistry extends EventEmitter {
     modulesByType: Record<ModuleType, number>;
     instancesByModule: Record<string, number>;
   } {
-    const modulesByType: Record<ModuleType, number> = {
+    const modulesByType: any = {
       transformer: 0,
       protocol: 0,
-      compatibility: 0,
       server: 0,
       validator: 0
     };

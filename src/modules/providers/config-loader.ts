@@ -1,15 +1,15 @@
 /**
  * Provider配置加载器
- * 
+ *
  * 从配置文件加载Provider配置，支持多种格式
- * 
+ *
  * @author Jason Zhang
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as JSON5 from 'json5';
-import * as yaml from 'yaml';
+// import * as yaml from 'yaml'; // TODO: 安装yaml包或使用替代方案
 import { ProviderConfig } from './provider-factory';
 
 /**
@@ -54,7 +54,6 @@ export interface ProviderConfigFile {
  * Provider配置加载器
  */
 export class ConfigLoader {
-  
   /**
    * 加载配置文件
    */
@@ -69,14 +68,14 @@ export class ConfigLoader {
 
       // 读取文件内容
       const fileContent = fs.readFileSync(filePath, 'utf8');
-      
+
       if (debug) {
         console.log(`[ConfigLoader] Loading configuration from: ${filePath}`);
       }
 
       // 解析配置
       const parsedConfig = this.parseConfig(fileContent, format || this.detectFormat(filePath));
-      
+
       // 应用环境变量覆盖
       if (envPrefix) {
         this.applyEnvironmentOverrides(parsedConfig, envPrefix);
@@ -92,7 +91,6 @@ export class ConfigLoader {
       }
 
       return parsedConfig;
-
     } catch (error) {
       if (debug) {
         console.error(`[ConfigLoader] Failed to load configuration:`, error);
@@ -106,7 +104,7 @@ export class ConfigLoader {
    */
   private static detectFormat(filePath: string): ConfigFormat {
     const ext = path.extname(filePath).toLowerCase();
-    
+
     switch (ext) {
       case '.json':
         return 'json';
@@ -128,14 +126,14 @@ export class ConfigLoader {
     switch (format) {
       case 'json':
         return JSON.parse(content);
-        
+
       case 'json5':
         return JSON5.parse(content);
-        
+
       case 'yaml':
       case 'yml':
-        return yaml.parse(content);
-        
+        throw new Error('YAML parsing not supported (yaml package not installed)');
+
       default:
         throw new Error(`Unsupported configuration format: ${format}`);
     }
@@ -146,7 +144,7 @@ export class ConfigLoader {
    */
   private static applyEnvironmentOverrides(config: ProviderConfigFile, envPrefix: string): void {
     const prefix = envPrefix.toUpperCase();
-    
+
     // 全局配置覆盖
     if (process.env[`${prefix}_DEBUG`]) {
       if (!config.global) config.global = {};
@@ -156,13 +154,13 @@ export class ConfigLoader {
     // Provider配置覆盖
     config.providers.forEach((provider, index) => {
       const providerPrefix = `${prefix}_PROVIDER_${index}`;
-      
+
       // API Key覆盖
       const apiKeyEnv = process.env[`${providerPrefix}_API_KEY`];
       if (apiKeyEnv && provider.config) {
         provider.config.apiKey = apiKeyEnv;
       }
-      
+
       // 启用状态覆盖
       const enabledEnv = process.env[`${providerPrefix}_ENABLED`];
       if (enabledEnv !== undefined) {
@@ -250,11 +248,7 @@ export class ConfigLoader {
   /**
    * 保存配置文件
    */
-  public static async saveConfig(
-    config: ProviderConfigFile, 
-    filePath: string, 
-    format?: ConfigFormat
-  ): Promise<void> {
+  public static async saveConfig(config: ProviderConfigFile, filePath: string, format?: ConfigFormat): Promise<void> {
     const configFormat = format || this.detectFormat(filePath);
     let content: string;
 
@@ -262,16 +256,16 @@ export class ConfigLoader {
       case 'json':
         content = JSON.stringify(config, null, 2);
         break;
-        
+
       case 'json5':
         content = JSON5.stringify(config, null, 2);
         break;
-        
+
       case 'yaml':
       case 'yml':
-        content = yaml.stringify(config);
+        throw new Error('YAML writing not supported (yaml package not installed)');
         break;
-        
+
       default:
         throw new Error(`Unsupported configuration format: ${configFormat}`);
     }
@@ -291,42 +285,42 @@ export class ConfigLoader {
    */
   public static createExampleConfig(): ProviderConfigFile {
     return {
-      version: "4.0.0",
+      version: '4.0.0',
       global: {
         debug: false,
-        logLevel: "info"
+        logLevel: 'info',
       },
       providers: [
         {
-          id: "openai-primary",
-          name: "OpenAI Primary",
-          type: "openai",
+          id: 'openai-primary',
+          name: 'OpenAI Primary',
+          type: 'openai',
           enabled: true,
           config: {
-            apiKey: "sk-your-openai-api-key",
-            defaultModel: "gpt-3.5-turbo",
+            apiKey: 'sk-your-openai-api-key',
+            defaultModel: 'gpt-3.5-turbo',
             timeout: 30000,
             maxRetries: 3,
             enableStreaming: true,
             enableToolCalls: true,
-            debug: false
-          }
+            debug: false,
+          },
         },
         {
-          id: "anthropic-primary",
-          name: "Anthropic Primary", 
-          type: "anthropic",
+          id: 'anthropic-primary',
+          name: 'Anthropic Primary',
+          type: 'anthropic',
           enabled: true,
           config: {
-            apiKey: "your-anthropic-api-key",
-            defaultModel: "claude-3-sonnet-20240229",
+            apiKey: 'your-anthropic-api-key',
+            defaultModel: 'claude-3-sonnet-20240229',
             timeout: 30000,
             maxRetries: 3,
             enableToolCalls: true,
-            debug: false
-          }
-        }
-      ]
+            debug: false,
+          },
+        },
+      ],
     };
   }
 
@@ -334,12 +328,12 @@ export class ConfigLoader {
    * 合并配置文件
    */
   public static mergeConfigs(
-    baseConfig: ProviderConfigFile, 
+    baseConfig: ProviderConfigFile,
     overrideConfig: Partial<ProviderConfigFile>
   ): ProviderConfigFile {
     const merged: ProviderConfigFile = {
       ...baseConfig,
-      ...overrideConfig
+      ...overrideConfig,
     };
 
     // 合并providers数组

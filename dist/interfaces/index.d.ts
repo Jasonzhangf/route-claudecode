@@ -6,9 +6,9 @@
  *
  * @author Jason Zhang
  */
-export type { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics, ModuleConfig, ModuleFactory, DataInterface, PipelineSpec, PipelineConfiguration, PipelineMetadata } from './module/base-module';
+export type { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics, ModuleConfig, ModuleFactory, DataInterface, PipelineSpec, PipelineConfiguration, PipelineMetadata, } from './module/base-module';
 export type { Pipeline, PipelineStatus } from './module/pipeline-module';
-export type { CLICommands, ServerStatus, CLIHandler, ParsedCommand, StartOptions, StopOptions, CodeOptions, StatusOptions, ConfigOptions, HealthCheck } from './client/cli-interface';
+export type { CLICommands, ServerStatus, CLIHandler, ParsedCommand, StartOptions, StopOptions, CodeOptions, StatusOptions, ConfigOptions, HealthCheck, } from './client/cli-interface';
 export type { ServerManager, RouteHandler } from './client/server-manager';
 export type { ErrorHandler, ErrorContext, ExtendedRCCError } from './client/error-handler';
 export type { ConfigManager, GeneratedRoutingTable } from './router/config-manager';

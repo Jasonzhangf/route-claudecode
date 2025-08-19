@@ -1,0 +1,118 @@
+{
+  "// 统一配置模板 - 包含所有默认值和搜索路径": "",
+  "// 配置文件路径": "",
+  "paths": {
+    "templateConfig": "config/unified-config-templates.json",
+    "systemConfig": "config/system-config.json",
+    "searchPaths": [
+      "./config.json",
+      "~/.route-claudecode/config.json", 
+      "/etc/route-claudecode/config.json"
+    ]
+  },
+  
+  "// 错误消息模板": "",
+  "errorMessages": {
+    "MISSING_FILE": "Configuration file not found: {path}. Use 'rcc4 template --create {path}' to create a default config.",
+    "INVALID_JSON": "Invalid JSON in config file: {path}. Error: {error}",
+    "MISSING_REQUIRED": "Missing required field: {field} in config file",
+    "INVALID_FORMAT": "Invalid config format. Expected virtualModels structure.",
+    "PROVIDER_ERROR": "Invalid provider configuration: {provider}. Check name, model, and apiKeys fields."
+  },
+  
+  "// 默认配置模板": "",
+  "defaultConfig": {
+    "version": "4.0",
+    "templateVersion": "1.0.0",
+    "virtualModels": {
+      "default": {
+        "providers": [
+          {
+            "name": "modelscope",
+            "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+            "weight": 100,
+            "apiKeys": ["your-api-key-here"]
+          }
+        ]
+      }
+    },
+    "blacklistSettings": {
+      "timeout429": 60000,
+      "timeoutError": 300000
+    },
+    "server": {
+      "port": 5506,
+      "host": "0.0.0.0",
+      "debug": false
+    }
+  },
+  
+  "// 验证规则": "",
+  "validationRules": {
+    "required": ["virtualModels"],
+    "virtualModels": {
+      "requiredModels": ["default"],
+      "providerFields": ["name", "model", "apiKeys"]
+    },
+    "server": {
+      "portRange": [1024, 65535],
+      "allowedHosts": ["0.0.0.0", "localhost", "127.0.0.1"]
+    }
+  },
+  
+  "// CLI系统配置": "",
+  "cliDefaults": {
+    "defaultPort": 5506,
+    "defaultHost": "0.0.0.0",
+    "version": "4.0.0",
+    "proxyApiKey": "rcc4-proxy-key"
+  },
+  
+  "// 健康检查配置": "",
+  "healthCheck": {
+    "defaultChecks": ["server", "pipeline"],
+    "statuses": {
+      "healthy": "healthy",
+      "degraded": "degraded", 
+      "unhealthy": "unhealthy"
+    },
+    "checkStatuses": {
+      "pass": "pass",
+      "fail": "fail",
+      "warn": "warn"
+    },
+    "messages": {
+      "serverNotRunning": "Server not running",
+      "noRunningInstance": "No running instance found but force flag used",
+      "statusCheckNonRunning": "Status check for non-running server"
+    }
+  },
+  
+  "// CLI消息模板": "",
+  "cliMessages": {
+    "startingServer": "Starting RCC v4.0 Server",
+    "serverStarted": "RCC v4.0 Server started successfully", 
+    "stoppingServer": "Stopping RCC v4.0 Server",
+    "serverStopped": "Server stopped successfully",
+    "startingProxy": "Starting Claude Code proxy mode",
+    "autoStarting": "Auto-starting RCC server for proxy mode",
+    "proxyConfigured": "Claude Code proxy configured successfully",
+    "configRequested": "Configuration management requested",
+    "statusRetrieved": "Server status retrieved",
+    "failedToStart": "Failed to start server",
+    "failedToStop": "Failed to stop server", 
+    "failedToGetStatus": "Failed to get server status",
+    "failedToConfigureProxy": "Failed to configure Claude Code proxy",
+    "serverAlreadyRunning": "Server already running on port",
+    "noServerFound": "No running server found on port",
+    "configNotImplemented": "Configuration management not yet implemented",
+    "failedToLoadTemplate": "Failed to load CLI template"
+  },
+  
+  "// URL模板": "",
+  "urlTemplates": {
+    "anthropicBaseUrlTemplate": "http://localhost:{port}",
+    "envVarComment": "# Environment variables for Claude Code:",
+    "envVarPrefix": "export "
+  }
+}

@@ -1,9 +1,9 @@
 /**
  * 中间件工厂实现
- * 
+ *
  * 实现中间件接口，创建各种中间件实例
  * 这是具体实现，应该通过接口被其他模块使用
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -15,12 +15,13 @@ import {
   AuthenticationOptions,
   ValidationOptions,
   RateLimitOptions,
-  IMiddlewareFunction
 } from '../interfaces/core/middleware-interface';
+
+import { IMiddlewareFunction } from '../interfaces/core/server-interface';
 
 // 导入具体的中间件实现
 import { cors } from './cors';
-import { logger } from './logger'; 
+import { logger } from './logger';
 import { authentication } from './auth';
 import { validation } from './validation';
 import { rateLimit } from './rate-limiter';
@@ -34,12 +35,12 @@ export class StandardMiddlewareFactory implements IMiddlewareFactory {
    */
   createCors(options?: CorsOptions): IMiddlewareFunction {
     return cors({
-      origin: options?.origin ?? true,
+      origin: (options?.origin as any) ?? true,
       credentials: options?.credentials ?? true,
       methods: options?.methods ?? ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: options?.allowedHeaders ?? ['Content-Type', 'Authorization', 'X-Requested-With'],
       exposedHeaders: options?.exposedHeaders,
-      maxAge: options?.maxAge
+      maxAge: options?.maxAge,
     });
   }
 
@@ -51,7 +52,7 @@ export class StandardMiddlewareFactory implements IMiddlewareFactory {
       level: options?.level ?? 1,
       format: options?.format ?? 'detailed',
       includeBody: options?.includeBody ?? false,
-      includeHeaders: options?.includeHeaders ?? false
+      includeHeaders: options?.includeHeaders ?? false,
     });
   }
 
@@ -62,9 +63,7 @@ export class StandardMiddlewareFactory implements IMiddlewareFactory {
     return authentication({
       required: options?.required ?? false,
       apiKeyHeader: options?.apiKeyHeader ?? 'Authorization',
-      bearerTokenHeader: options?.bearerTokenHeader,
-      secretKey: options?.secretKey,
-      algorithms: options?.algorithms
+      bearerHeader: options?.bearerTokenHeader,
     });
   }
 
@@ -76,7 +75,7 @@ export class StandardMiddlewareFactory implements IMiddlewareFactory {
       maxBodySize: options?.maxBodySize ?? 10 * 1024 * 1024,
       validateContentType: options?.validateContentType ?? true,
       allowedContentTypes: options?.allowedContentTypes,
-      requireContentLength: options?.requireContentLength ?? false
+      // requireContentLength: options?.requireContentLength ?? false
     });
   }
 
@@ -89,7 +88,7 @@ export class StandardMiddlewareFactory implements IMiddlewareFactory {
       windowMs: options?.windowMs ?? 60000,
       message: options?.message ?? 'Too many requests from this IP',
       keyGenerator: options?.keyGenerator,
-      skipSuccessfulRequests: options?.skipSuccessfulRequests ?? false
+      skipSuccessfulRequests: options?.skipSuccessfulRequests ?? false,
     });
   }
 
@@ -189,6 +188,22 @@ export class MiddlewareManager implements IMiddlewareManager {
     // TODO: 实现配置验证逻辑
     return true;
   }
+
+  createCors(options: any): any {
+    return cors(options);
+  }
+
+  createLogger(options: any): any {
+    return logger(options);
+  }
+
+  createRateLimit(options: any): any {
+    return rateLimit(options);
+  }
+
+  createAuth(options: any): any {
+    return authentication(options);
+  }
 }
 
 /**
@@ -198,3 +213,6 @@ export const defaultMiddlewareManager = new MiddlewareManager();
 
 // 设置默认工厂
 defaultMiddlewareManager.setFactory(new StandardMiddlewareFactory());
+
+// 导出别名以保持兼容性
+export const MiddlewareFactory = StandardMiddlewareFactory;

@@ -12,8 +12,8 @@ exports.ToolBuilder = void 0;
  * 工具构建器
  */
 class ToolBuilder {
-    tool = {};
     constructor() {
+        this.tool = {};
         this.tool = {
             type: 'function',
             function: {
@@ -22,9 +22,9 @@ class ToolBuilder {
                 parameters: {
                     type: 'object',
                     properties: {},
-                    required: []
-                }
-            }
+                    required: [],
+                },
+            },
         };
     }
     /**

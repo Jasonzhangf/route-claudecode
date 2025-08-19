@@ -1,9 +1,9 @@
 /**
  * 中间件接口定义
- * 
+ *
  * 定义所有中间件必须实现的标准接口
  * 确保服务器模块可以通过接口使用中间件，而不直接依赖具体实现
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -74,42 +74,42 @@ export interface IMiddlewareFactory {
    * @returns IMiddlewareFunction CORS中间件函数
    */
   createCors(options?: CorsOptions): IMiddlewareFunction;
-  
+
   /**
    * 创建日志中间件
    * @param options 日志配置
    * @returns IMiddlewareFunction 日志中间件函数
    */
   createLogger(options?: LoggerOptions): IMiddlewareFunction;
-  
+
   /**
    * 创建认证中间件
    * @param options 认证配置
    * @returns IMiddlewareFunction 认证中间件函数
    */
   createAuthentication(options?: AuthenticationOptions): IMiddlewareFunction;
-  
+
   /**
    * 创建验证中间件
    * @param options 验证配置
    * @returns IMiddlewareFunction 验证中间件函数
    */
   createValidation(options?: ValidationOptions): IMiddlewareFunction;
-  
+
   /**
    * 创建速率限制中间件
    * @param options 速率限制配置
    * @returns IMiddlewareFunction 速率限制中间件函数
    */
   createRateLimit(options?: RateLimitOptions): IMiddlewareFunction;
-  
+
   /**
    * 创建错误处理中间件
    * @param options 错误处理配置
    * @returns IMiddlewareFunction 错误处理中间件函数
    */
   createErrorHandler(options?: any): IMiddlewareFunction;
-  
+
   /**
    * 创建压缩中间件
    * @param options 压缩配置
@@ -128,13 +128,13 @@ export interface IMiddlewareManager {
    * @param factory 中间件工厂
    */
   setFactory(factory: IMiddlewareFactory): void;
-  
+
   /**
    * 获取中间件工厂
    * @returns IMiddlewareFactory 中间件工厂
    */
   getFactory(): IMiddlewareFactory | null;
-  
+
   /**
    * 创建标准中间件栈
    * @param options 中间件配置选项
@@ -147,13 +147,33 @@ export interface IMiddlewareManager {
     validation?: ValidationOptions;
     rateLimit?: RateLimitOptions;
   }): IMiddlewareFunction[];
-  
+
   /**
    * 验证中间件配置
    * @param options 中间件配置
    * @returns boolean 配置是否有效
    */
   validateConfiguration(options: any): boolean;
+
+  /**
+   * 创建CORS中间件
+   */
+  createCors(options: CorsOptions): IMiddlewareFunction;
+
+  /**
+   * 创建日志中间件
+   */
+  createLogger(options: LoggerOptions): IMiddlewareFunction;
+
+  /**
+   * 创建限流中间件
+   */
+  createRateLimit(options: RateLimitOptions): IMiddlewareFunction;
+
+  /**
+   * 创建认证中间件
+   */
+  createAuth(options: AuthenticationOptions): IMiddlewareFunction;
 }
 
 /**

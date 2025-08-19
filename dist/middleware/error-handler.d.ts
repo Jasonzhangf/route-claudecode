@@ -5,7 +5,6 @@
  *
  * @author Jason Zhang
  */
-import { MiddlewareFunction } from '../server/http-server';
 /**
  * 应用程序错误类
  */
@@ -58,13 +57,21 @@ export interface ErrorHandlerOptions {
 /**
  * 创建错误处理中间件
  */
-export declare function errorHandler(options?: ErrorHandlerOptions): MiddlewareFunction;
+export declare function errorHandler(options?: ErrorHandlerOptions): any;
+/**
+ * 静态错误处理器 - 用于非中间件上下文
+ */
+export declare class ErrorHandler {
+    static handle(error: any, context?: any): void;
+    handleError(error: any, context?: any): void;
+    static createError(message: string, code?: string, statusCode?: number): AppError;
+}
 /**
  * 异步错误包装器
  */
-export declare function asyncHandler(fn: Function): MiddlewareFunction;
+export declare function asyncHandler(fn: Function): any;
 /**
  * 创建404处理中间件
  */
-export declare function notFoundHandler(): MiddlewareFunction;
+export declare function notFoundHandler(): any;
 //# sourceMappingURL=error-handler.d.ts.map

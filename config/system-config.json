@@ -1,0 +1,145 @@
+{
+  "// 系统配置文件 - Provider端点和适配器配置，不包含具体模型": "",
+  "providerTypes": {
+    "modelscope": {
+      "endpoint": "https://api-inference.modelscope.cn/v1/chat/completions",
+      "protocol": "openai",
+      "transformer": "modelscope-enhancer",
+      "timeout": 30000,
+      "maxRetries": 2
+    },
+    "dashscope": {
+      "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions", 
+      "protocol": "openai",
+      "transformer": "dashscope-enhancer",
+      "timeout": 30000,
+      "maxRetries": 2
+    },
+    "openrouter": {
+      "endpoint": "https://openrouter.ai/api/v1/chat/completions",
+      "protocol": "openai", 
+      "transformer": "openrouter-standard",
+      "timeout": 60000,
+      "maxRetries": 3
+    },
+    "anthropic": {
+      "endpoint": "https://api.anthropic.com/v1/messages",
+      "protocol": "anthropic",
+      "transformer": "anthropic-standard", 
+      "timeout": 60000,
+      "maxRetries": 3
+    },
+    "deepseek": {
+      "endpoint": "https://api.deepseek.com/chat/completions",
+      "protocol": "openai",
+      "transformer": "deepseek-enhancer",
+      "timeout": 30000,
+      "maxRetries": 2
+    },
+    "gemini": {
+      "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/",
+      "protocol": "gemini",
+      "transformer": "gemini-standard",
+      "timeout": 30000,
+      "maxRetries": 2
+    },
+    "ollama": {
+      "endpoint": "http://localhost:11434/v1/chat/completions",
+      "protocol": "openai",
+      "transformer": "ollama-standard",
+      "timeout": 120000,
+      "maxRetries": 1
+    },
+    "shuaihong": {
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+      "protocol": "openai",
+      "transformer": "shuaihong-standard",
+      "timeout": 30000,
+      "maxRetries": 3
+    },
+    "lmstudio": {
+      "endpoint": "http://localhost:1234/v1/chat/completions",
+      "protocol": "openai",
+      "transformer": "lmstudio-standard",
+      "timeout": 30000,
+      "maxRetries": 2
+    }
+  },
+  "// Transformer配置": "",
+  "transformers": {
+    "modelscope-enhancer": {
+      "maxTokens": 65536,
+      "enhanceTools": true,
+      "formatters": ["max-token-optimizer", "tool-enhancer"]
+    },
+    "dashscope-enhancer": {
+      "maxTokens": 65536,
+      "enhanceTools": true,
+      "formatters": ["max-token-optimizer", "tool-enhancer"]
+    },
+    "openrouter-standard": {
+      "passthrough": true,
+      "formatters": ["openrouter-headers"]
+    },
+    "anthropic-standard": {
+      "protocol": "anthropic",
+      "formatters": ["anthropic-message-format"]
+    },
+    "deepseek-enhancer": {
+      "toolUseOptimization": true,
+      "formatters": ["deepseek-tool-optimizer"]
+    },
+    "gemini-standard": {
+      "protocol": "gemini",
+      "formatters": ["gemini-content-format"]
+    },
+    "ollama-standard": {
+      "timeout": 120000,
+      "formatters": ["ollama-local-optimizer"]
+    },
+    "shuaihong-standard": {
+      "passthrough": true,
+      "formatters": ["shuaihong-headers"],
+      "maxTokens": 8192
+    },
+    "lmstudio-standard": {
+      "maxTokens": 4096,
+      "passthrough": true,
+      "formatters": ["local-model-optimizer"]
+    }
+  },
+  "// Pipeline层配置": "",
+  "pipelineLayers": {
+    "client": {
+      "module": "http-client",
+      "validation": true
+    },
+    "router": {
+      "module": "simple-router",
+      "cacheEnabled": false
+    },
+    "transformer": { 
+      "module": "anthropic-to-openai-transformer",
+      "configurable": true
+    },
+    "protocol": {
+      "module": "openai-protocol",
+      "streamSupport": true
+    },
+    "server-compatibility": {
+      "module": "adaptive-compatibility",
+      "bidirectional": true
+    },
+    "server": {
+      "module": "openai-server",
+      "multiKeySupport": true
+    }
+  },
+  "// 连接握手配置": "",
+  "connectionHandshake": {
+    "enabled": true,
+    "healthCheckInterval": 300000,
+    "validateApiKeys": true,
+    "timeoutMs": 10000
+  }
+}

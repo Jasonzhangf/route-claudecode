@@ -5,7 +5,6 @@
  *
  * @author Jason Zhang
  */
-import { MiddlewareFunction } from '../server/http-server';
 /**
  * 速率限制配置
  */
@@ -27,7 +26,7 @@ interface RequestRecord {
 /**
  * 创建速率限制中间件
  */
-export declare function rateLimit(options?: RateLimitOptions): MiddlewareFunction;
+export declare function rateLimit(options?: RateLimitOptions): any;
 /**
  * 创建基于内存的速率限制存储
  */

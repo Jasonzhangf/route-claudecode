@@ -1,8 +1,8 @@
 /**
  * Provider工厂
- * 
+ *
  * 统一创建和管理各种Protocol处理器实例
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -84,14 +84,14 @@ export class ProviderFactory {
         case 'openai':
           provider = new OpenAIProtocolHandler(id, {
             ...config,
-            debug
+            debug,
           } as Partial<OpenAIProtocolConfig>);
           break;
 
         case 'anthropic':
           provider = new AnthropicProtocolHandler(id, {
             ...config,
-            debug
+            debug,
           } as Partial<AnthropicProtocolConfig>);
           break;
 
@@ -111,7 +111,6 @@ export class ProviderFactory {
       }
 
       return provider;
-
     } catch (error) {
       if (debug) {
         console.error(`[ProviderFactory] Failed to create ${type} provider with ID: ${id}`, error);
@@ -140,15 +139,14 @@ export class ProviderFactory {
           id: providerConfig.id,
           type: providerConfig.type,
           config: providerConfig.config,
-          debug
+          debug,
         });
 
         providers.push(provider);
-
       } catch (error) {
         const errorInfo = {
           id: providerConfig.id,
-          error: error as Error
+          error: error as Error,
         };
         errors.push(errorInfo);
 
@@ -160,11 +158,15 @@ export class ProviderFactory {
 
     // 如果有错误，记录但不阻止其他Provider的创建
     if (errors.length > 0) {
-      console.warn(`[ProviderFactory] Created ${providers.length} providers, failed to create ${errors.length} providers`);
-      
+      console.warn(
+        `[ProviderFactory] Created ${providers.length} providers, failed to create ${errors.length} providers`
+      );
+
       // 可以选择抛出聚合错误或只是警告
       if (providers.length === 0) {
-        throw new Error(`Failed to create any providers. Errors: ${errors.map(e => `${e.id}: ${e.error.message}`).join(', ')}`);
+        throw new Error(
+          `Failed to create any providers. Errors: ${errors.map(e => `${e.id}: ${e.error.message}`).join(', ')}`
+        );
       }
     }
 
@@ -197,7 +199,7 @@ export class ProviderFactory {
    */
   public async destroyProvider(id: string): Promise<boolean> {
     const provider = this.createdProviders.get(id);
-    
+
     if (!provider) {
       return false;
     }
@@ -205,13 +207,12 @@ export class ProviderFactory {
     try {
       // 停止Provider
       await provider.stop();
-      
+
       // 从缓存中移除
       this.createdProviders.delete(id);
-      
+
       console.log(`[ProviderFactory] Destroyed provider: ${id}`);
       return true;
-
     } catch (error) {
       console.error(`[ProviderFactory] Failed to destroy provider ${id}:`, error);
       return false;
@@ -222,12 +223,10 @@ export class ProviderFactory {
    * 销毁所有Provider实例
    */
   public async destroyAllProviders(): Promise<void> {
-    const destroyPromises = Array.from(this.createdProviders.keys()).map(id => 
-      this.destroyProvider(id)
-    );
+    const destroyPromises = Array.from(this.createdProviders.keys()).map(id => this.destroyProvider(id));
 
     await Promise.all(destroyPromises);
-    
+
     console.log(`[ProviderFactory] Destroyed all providers`);
   }
 
@@ -264,7 +263,7 @@ export class ProviderFactory {
     // 特定协议配置验证
     if (config.type === 'openai' || config.type === 'anthropic') {
       const protocolConfig = config.config as OpenAIProtocolConfig | AnthropicProtocolConfig;
-      
+
       if (!protocolConfig.apiKey) {
         errors.push(`${config.type} provider requires apiKey in config`);
       }
@@ -276,7 +275,7 @@ export class ProviderFactory {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -285,12 +284,12 @@ export class ProviderFactory {
    */
   public getFactoryStatus() {
     const providers = this.getAllProviders();
-    
+
     return {
       totalProviders: providers.length,
       providerIds: providers.map(p => p.getId()),
       supportedTypes: this.getSupportedTypes(),
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
   }
 }

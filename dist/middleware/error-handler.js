@@ -7,7 +7,7 @@
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RateLimitError = exports.NotFoundError = exports.AuthorizationError = exports.AuthenticationError = exports.ValidationError = exports.AppError = void 0;
+exports.ErrorHandler = exports.RateLimitError = exports.NotFoundError = exports.AuthorizationError = exports.AuthenticationError = exports.ValidationError = exports.AppError = void 0;
 exports.errorHandler = errorHandler;
 exports.asyncHandler = asyncHandler;
 exports.notFoundHandler = notFoundHandler;
@@ -15,9 +15,6 @@ exports.notFoundHandler = notFoundHandler;
  * 应用程序错误类
  */
 class AppError extends Error {
-    statusCode;
-    code;
-    isOperational;
     constructor(message, statusCode = 500, code = 'INTERNAL_ERROR', isOperational = true) {
         super(message);
         this.name = 'AppError';
@@ -32,7 +29,6 @@ exports.AppError = AppError;
  * 验证错误类
  */
 class ValidationError extends AppError {
-    fields;
     constructor(message, fields = []) {
         super(message, 400, 'VALIDATION_ERROR');
         this.fields = fields;
@@ -70,7 +66,6 @@ exports.NotFoundError = NotFoundError;
  * 速率限制错误类
  */
 class RateLimitError extends AppError {
-    retryAfter;
     constructor(retryAfter = 60) {
         super('Rate limit exceeded', 429, 'RATE_LIMIT_EXCEEDED');
         this.retryAfter = retryAfter;
@@ -81,7 +76,7 @@ exports.RateLimitError = RateLimitError;
  * 创建错误处理中间件
  */
 function errorHandler(options = {}) {
-    const { includeStack = process.env.NODE_ENV === 'development', logErrors = true, customErrorMap = new Map() } = options;
+    const { includeStack = process.env.NODE_ENV === 'development', logErrors = true, customErrorMap = new Map(), } = options;
     return (req, res, next) => {
         // 这个中间件应该在错误发生时被调用
         // 在实际使用中，通常会通过try-catch或Promise.catch来调用
@@ -107,8 +102,8 @@ function errorHandler(options = {}) {
                 error: {
                     name: error.name,
                     message: error.message,
-                    stack: error.stack
-                }
+                    stack: error.stack,
+                },
             });
         }
         // 确定错误响应
@@ -145,7 +140,7 @@ function errorHandler(options = {}) {
             error: errorCode,
             message,
             requestId: req.id,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
         };
         // 添加详细信息
         if (Object.keys(details).length > 0) {
@@ -161,6 +156,31 @@ function errorHandler(options = {}) {
         res.body = errorResponse;
     }
 }
+/**
+ * 静态错误处理器 - 用于非中间件上下文
+ */
+class ErrorHandler {
+    static handle(error, context) {
+        // 记录错误
+        console.error('ErrorHandler: Error occurred:', {
+            error: {
+                name: error.name,
+                message: error.message,
+                stack: error.stack,
+            },
+            context,
+        });
+        // 在实际应用中，这里可以发送到日志服务、监控系统等
+    }
+    // 实例方法
+    handleError(error, context) {
+        ErrorHandler.handle(error, context);
+    }
+    static createError(message, code, statusCode) {
+        return new AppError(message, statusCode, code);
+    }
+}
+exports.ErrorHandler = ErrorHandler;
 /**
  * 异步错误包装器
  */

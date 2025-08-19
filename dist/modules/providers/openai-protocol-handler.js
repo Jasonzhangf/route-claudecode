@@ -12,15 +12,65 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OpenAIProtocolHandler = void 0;
 const openai_1 = __importDefault(require("openai"));
-const base_module_impl_1 = require("../base-module-impl");
+const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const events_1 = require("events");
 /**
  * OpenAI Protocol处理器实现
  */
-class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
-    protocolConfig;
-    openaiClient;
-    constructor(id, config = {}) {
-        super(id, 'OpenAI Protocol Handler', 'protocol', '1.0.0');
+class OpenAIProtocolHandler extends events_1.EventEmitter {
+    getId() {
+        return this.id;
+    }
+    getName() {
+        return this.name;
+    }
+    getType() {
+        return this.type;
+    }
+    getVersion() {
+        return this.version;
+    }
+    getStatus() {
+        return { id: this.id, name: this.name, type: this.type, status: this.status, health: 'healthy' };
+    }
+    getMetrics() {
+        return { ...this.metrics };
+    }
+    async configure(config) { }
+    async start() {
+        this.status = 'running';
+    }
+    async stop() {
+        this.status = 'stopped';
+    }
+    async reset() { }
+    async cleanup() { }
+    async healthCheck() {
+        return { healthy: true, details: {} };
+    }
+    async process(input) {
+        return this.handleRequest(input);
+    }
+    async handleRequest(input) {
+        // 基础实现
+        return input;
+    }
+    constructor(id = 'openai-protocol-handler', config = {}) {
+        super();
+        this.id = 'openai-protocol-handler';
+        this.name = 'OpenAI Protocol Handler';
+        this.type = module_implementation_interface_1.ModuleType.PROTOCOL;
+        this.version = '1.0.0';
+        this.status = 'stopped';
+        this.metrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0,
+        };
+        this.processingTimes = [];
+        this.errors = [];
         this.protocolConfig = {
             apiKey: '',
             defaultModel: 'gpt-3.5-turbo',
@@ -29,7 +79,7 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
             enableStreaming: true,
             enableToolCalls: true,
             debug: false,
-            ...config
+            ...config,
         };
         this.initializeClient();
     }
@@ -63,7 +113,7 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                 baseURL: this.protocolConfig.baseURL || 'https://api.openai.com/v1',
                 model: this.protocolConfig.defaultModel,
                 enableStreaming: this.protocolConfig.enableStreaming,
-                enableToolCalls: this.protocolConfig.enableToolCalls
+                enableToolCalls: this.protocolConfig.enableToolCalls,
             });
         }
     }
@@ -130,18 +180,16 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                 const systemMsg = msg;
                 return {
                     role: 'system',
-                    content: systemMsg.content
+                    content: systemMsg.content,
                 };
             }
             else if (msg.role === 'user') {
                 const userMsg = msg;
                 // 简化处理：只支持文本内容，复杂内容转为JSON字符串
-                const content = typeof userMsg.content === 'string'
-                    ? userMsg.content
-                    : JSON.stringify(userMsg.content);
+                const content = typeof userMsg.content === 'string' ? userMsg.content : JSON.stringify(userMsg.content);
                 return {
                     role: 'user',
-                    content: content
+                    content: content,
                 };
             }
             else if (msg.role === 'assistant') {
@@ -149,10 +197,12 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                 // 简化处理assistant消息内容
                 const content = typeof assistantMsg.content === 'string'
                     ? assistantMsg.content
-                    : (assistantMsg.content ? JSON.stringify(assistantMsg.content) : null);
+                    : assistantMsg.content
+                        ? JSON.stringify(assistantMsg.content)
+                        : null;
                 const openaiMsg = {
                     role: 'assistant',
-                    content: content
+                    content: content,
                 };
                 // 处理工具调用
                 if (assistantMsg.toolCalls && this.protocolConfig.enableToolCalls) {
@@ -163,8 +213,8 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                             name: tc.function.name,
                             arguments: typeof tc.function.arguments === 'string'
                                 ? tc.function.arguments
-                                : JSON.stringify(tc.function.arguments)
-                        }
+                                : JSON.stringify(tc.function.arguments),
+                        },
                     }));
                 }
                 return openaiMsg;
@@ -174,7 +224,7 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                 return {
                     role: 'tool',
                     content: toolMsg.content,
-                    tool_call_id: toolMsg.toolCallId
+                    tool_call_id: toolMsg.toolCallId,
                 };
             }
             throw new Error(`Unsupported message role: ${msg.role}`);
@@ -189,8 +239,8 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
             function: {
                 name: tool.function.name,
                 description: tool.function.description,
-                parameters: tool.function.parameters
-            }
+                parameters: tool.function.parameters,
+            },
         }));
     }
     /**
@@ -213,8 +263,8 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
             return {
                 type: 'function',
                 function: {
-                    name: toolChoice.function.name
-                }
+                    name: toolChoice.function.name,
+                },
             };
         }
         return 'auto';
@@ -262,8 +312,8 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                         type: 'function',
                         function: {
                             name: tc.type === 'function' ? tc.function.name : '',
-                            arguments: tc.type === 'function' ? tc.function.arguments : '' // 保持为字符串格式
-                        }
+                            arguments: tc.type === 'function' ? tc.function.arguments : '', // 保持为字符串格式
+                        },
                     }));
                 }
                 message = assistantMessage;
@@ -272,19 +322,19 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                 // 处理其他类型的消息
                 message = {
                     role: choice.message.role,
-                    content: choice.message.content || ''
+                    content: choice.message.content || '',
                 };
             }
             return {
                 index,
                 message,
-                finishReason: this.mapFinishReason(choice.finish_reason)
+                finishReason: this.mapFinishReason(choice.finish_reason),
             };
         });
         const usage = {
             promptTokens: response.usage?.prompt_tokens || 0,
             completionTokens: response.usage?.completion_tokens || 0,
-            totalTokens: response.usage?.total_tokens || 0
+            totalTokens: response.usage?.total_tokens || 0,
         };
         const standardResponse = {
             id: response.id,
@@ -304,10 +354,10 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                     apiCallTime: 0, // 会在调用时设置
                     transformationTime: 0,
                     validationTime: 0,
-                    retryCount: 0
-                }
+                    retryCount: 0,
+                },
             },
-            timestamp: new Date()
+            timestamp: new Date(),
         };
         return standardResponse;
     }
@@ -316,11 +366,16 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
      */
     mapFinishReason(reason) {
         switch (reason) {
-            case 'stop': return 'stop';
-            case 'length': return 'length';
-            case 'tool_calls': return 'tool_calls';
-            case 'content_filter': return 'content_filter';
-            default: return 'stop';
+            case 'stop':
+                return 'stop';
+            case 'length':
+                return 'length';
+            case 'tool_calls':
+                return 'tool_calls';
+            case 'content_filter':
+                return 'content_filter';
+            default:
+                return 'stop';
         }
     }
     /**
@@ -369,7 +424,7 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
             if (!this.protocolConfig.apiKey) {
                 return {
                     healthy: false,
-                    details: { error: 'No API key configured' }
+                    details: { error: 'No API key configured' },
                 };
             }
             // 检查错误率
@@ -379,8 +434,8 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                     details: {
                         error: 'High error rate',
                         errorRate: this.metrics.errorRate,
-                        recentErrors: this.errors.slice(-5).map(e => e.message)
-                    }
+                        recentErrors: this.errors.slice(-5).map(e => e.message),
+                    },
                 };
             }
             // 检查平均响应时间
@@ -390,8 +445,8 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                     details: {
                         error: 'High response time',
                         averageTime: this.metrics.averageProcessingTime,
-                        timeout: this.protocolConfig.timeout
-                    }
+                        timeout: this.protocolConfig.timeout,
+                    },
                 };
             }
             return {
@@ -404,14 +459,14 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
                     errorRate: this.metrics.errorRate,
                     enableStreaming: this.protocolConfig.enableStreaming,
                     enableToolCalls: this.protocolConfig.enableToolCalls,
-                    sdkVersion: 'official'
-                }
+                    sdkVersion: 'official',
+                },
             };
         }
         catch (error) {
             return {
                 healthy: false,
-                details: { error: error instanceof Error ? error.message : String(error) }
+                details: { error: error instanceof Error ? error.message : String(error) },
             };
         }
     }
@@ -429,7 +484,7 @@ class OpenAIProtocolHandler extends base_module_impl_1.BaseModule {
             const testRequest = {
                 model: this.protocolConfig.defaultModel,
                 messages: [{ role: 'user', content: 'test' }],
-                max_tokens: 1
+                max_tokens: 1,
             };
             await this.callOpenAIAPI(testRequest);
             return true;

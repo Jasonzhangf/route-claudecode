@@ -1,9 +1,9 @@
 /**
  * 模块实现接口
- * 
+ *
  * 定义模块具体实现应该遵循的接口标准
  * 避免模块间直接依赖具体实现类
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -14,10 +14,10 @@ import { EventEmitter } from 'events';
  */
 export enum ModuleType {
   VALIDATOR = 'validator',
-  TRANSFORMER = 'transformer', 
+  TRANSFORMER = 'transformer',
   PROTOCOL = 'protocol',
-  COMPATIBILITY = 'compatibility',
-  SERVER = 'server'
+  SERVER_COMPATIBILITY = 'server-compatibility',
+  SERVER = 'server',
 }
 
 /**
@@ -54,62 +54,62 @@ export interface IModuleInterface extends EventEmitter {
    * 获取模块ID
    */
   getId(): string;
-  
+
   /**
    * 获取模块名称
    */
   getName(): string;
-  
+
   /**
    * 获取模块类型
    */
   getType(): ModuleType;
-  
+
   /**
    * 获取模块版本
    */
   getVersion(): string;
-  
+
   /**
    * 获取模块状态
    */
   getStatus(): IModuleStatus;
-  
+
   /**
    * 获取模块性能指标
    */
   getMetrics(): IModuleMetrics;
-  
+
   /**
    * 配置模块
    */
   configure(config: any): Promise<void>;
-  
+
   /**
    * 启动模块
    */
   start(): Promise<void>;
-  
+
   /**
    * 停止模块
    */
   stop(): Promise<void>;
-  
+
   /**
    * 处理数据
    */
   process(input: any): Promise<any>;
-  
+
   /**
    * 重置模块状态
    */
   reset(): Promise<void>;
-  
+
   /**
    * 清理模块资源
    */
   cleanup(): Promise<void>;
-  
+
   /**
    * 健康检查
    */
@@ -151,12 +151,12 @@ export interface IModuleFactory {
    * @param config 模块配置
    */
   createModule(type: ModuleType, config: any): Promise<IModuleInterface>;
-  
+
   /**
    * 获取支持的模块类型
    */
   getSupportedTypes(): ModuleType[];
-  
+
   /**
    * 验证模块配置
    */

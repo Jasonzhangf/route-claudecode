@@ -8,13 +8,14 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigLoader = void 0;
+const constants_1 = require("../constants");
 /**
  * 配置加载器
  */
 class ConfigLoader {
-    defaultConfig = {};
-    schema = {};
     constructor() {
+        this.defaultConfig = {};
+        this.schema = {};
         this.initializeDefaults();
         this.initializeSchema();
     }
@@ -52,8 +53,8 @@ class ConfigLoader {
     initializeDefaults() {
         this.defaultConfig = {
             // 服务器配置
-            port: 3456,
-            host: 'localhost',
+            port: (0, constants_1.getServerPort)(),
+            host: (0, constants_1.getServerHost)(),
             debug: false,
             // 客户端配置
             autoStart: false,
@@ -67,9 +68,9 @@ class ConfigLoader {
             validate: false,
             reset: false,
             // 通用配置
-            timeout: 30000,
+            timeout: (0, constants_1.getHttpRequestTimeout)(),
             retryCount: 3,
-            logLevel: 'info'
+            logLevel: 'info',
         };
     }
     /**
@@ -81,67 +82,67 @@ class ConfigLoader {
                 type: 'number',
                 envVar: 'RCC_PORT',
                 description: 'Server port number',
-                default: 3456
+                default: (0, constants_1.getServerPort)(),
             },
             host: {
                 type: 'string',
                 envVar: 'RCC_HOST',
                 description: 'Server host address',
-                default: 'localhost'
+                default: (0, constants_1.getServerHost)(),
             },
             debug: {
                 type: 'boolean',
                 envVar: 'RCC_DEBUG',
                 description: 'Enable debug mode',
-                default: false
+                default: false,
             },
             config: {
                 type: 'string',
                 envVar: 'RCC_CONFIG',
-                description: 'Configuration file path'
+                description: 'Configuration file path',
             },
             autoStart: {
                 type: 'boolean',
                 envVar: 'RCC_AUTO_START',
                 description: 'Auto start server if not running',
-                default: false
+                default: false,
             },
             export: {
                 type: 'boolean',
                 envVar: 'RCC_EXPORT',
                 description: 'Export configuration for environment variables',
-                default: false
+                default: false,
             },
             detailed: {
                 type: 'boolean',
                 envVar: 'RCC_DETAILED',
                 description: 'Show detailed status information',
-                default: false
+                default: false,
             },
             force: {
                 type: 'boolean',
                 envVar: 'RCC_FORCE',
                 description: 'Force operation without confirmation',
-                default: false
+                default: false,
             },
             timeout: {
                 type: 'number',
                 envVar: 'RCC_TIMEOUT',
                 description: 'Request timeout in milliseconds',
-                default: 30000
+                default: (0, constants_1.getHttpRequestTimeout)(),
             },
             retryCount: {
                 type: 'number',
                 envVar: 'RCC_RETRY_COUNT',
                 description: 'Number of retry attempts',
-                default: 3
+                default: 3,
             },
             logLevel: {
                 type: 'string',
                 envVar: 'RCC_LOG_LEVEL',
                 description: 'Logging level (error, warn, info, debug)',
-                default: 'info'
-            }
+                default: 'info',
+            },
         };
     }
     /**
@@ -211,7 +212,8 @@ class ConfigLoader {
         for (const [envKey, envValue] of Object.entries(process.env)) {
             if (envKey.startsWith(prefix + '_')) {
                 const configKey = this.envToConfigKey(envKey, prefix);
-                if (!envConfig[configKey]) { // 只有在schema中没有定义时才使用
+                if (!envConfig[configKey]) {
+                    // 只有在schema中没有定义时才使用
                     envConfig[configKey] = this.parseEnvValue(envValue, 'string');
                 }
             }

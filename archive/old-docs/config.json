@@ -1,0 +1,112 @@
+{
+  "configVersion": "4.0.0",
+  "architecture": "four-layer-v4.0",
+  "server": {
+    "port": 5506,
+    "host": "localhost",
+    "name": "rcc-default-server"
+  },
+  "standardProviders": {
+    "lmstudio": {
+      "id": "lmstudio",
+      "name": "LM Studio Local Server",
+      "protocol": "openai",
+      "type": "local",
+      "priority": 1,
+      "weight": 100,
+      "connection": {
+        "endpoint": "http://localhost:1234/v1/chat/completions",
+        "authentication": {
+          "type": "none"
+        }
+      },
+      "models": {
+        "supported": [
+          "qwen3-30b-a3b-instruct-2507-mlx",
+          "nextcoder-32b-mlx",
+          "qwen3-4b-thinking-2507-mlx",
+          "gpt-oss-20b-mlx"
+        ]
+      },
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "endpoint": "http://localhost:1234/v1/models"
+      }
+    }
+  },
+  "routing": {
+    "strategy": "single-provider",
+    "configuration": {
+      "zeroFallbackPolicy": true,
+      "strictErrorReporting": true
+    },
+    "routes": [
+      {
+        "id": "lmstudio-route",
+        "name": "LM Studio Route",
+        "priority": 1,
+        "weight": 100,
+        "conditions": {
+          "models": ["claude-3-5-sonnet-20241022", "claude-3-haiku-20240307"],
+          "categories": ["default", "coding", "thinking"]
+        },
+        "targets": ["lmstudio"]
+      }
+    ],
+    "routingRules": {
+      "modelMapping": {
+        "claude-3-5-sonnet-20241022": {
+          "preferredRoutes": ["lmstudio-route"],
+          "modelOverrides": {
+            "lmstudio-route": "qwen3-30b-a3b-instruct-2507-mlx"
+          }
+        },
+        "claude-3-haiku-20240307": {
+          "preferredRoutes": ["lmstudio-route"],
+          "modelOverrides": {
+            "lmstudio-route": "qwen3-4b-thinking-2507-mlx"
+          }
+        }
+      },
+      "categoryRouting": {
+        "default": {
+          "routes": ["lmstudio-route"],
+          "weights": [100],
+          "selection": "weighted-round-robin"
+        },
+        "coding": {
+          "routes": ["lmstudio-route"],
+          "weights": [100],
+          "selection": "performance-based"
+        },
+        "thinking": {
+          "routes": ["lmstudio-route"],
+          "weights": [100],
+          "selection": "capability-based"
+        }
+      }
+    }
+  },
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "logDir": "~/.route-claudecode/logs",
+    "enableRequestTracing": true,
+    "enablePerformanceMetrics": true
+  },
+  "security": {
+    "authentication": {
+      "enabled": false
+    },
+    "rateLimiting": {
+      "enabled": false
+    }
+  },
+  "metadata": {
+    "version": "4.0.0",
+    "createdAt": "2025-08-16T12:00:00.000Z",
+    "description": "Default RCC v4.0 configuration - LM Studio local server",
+    "tags": ["default", "lmstudio", "local"]
+  }
+}

@@ -1,9 +1,13 @@
 /**
- * 请求路由器接口定义
- * 
- * 定义请求路由和负载均衡的标准接口
- * 
- * @author Jason Zhang
+ * DEPRECATED: This file has been replaced by src/interfaces/router/core-router-interfaces.ts
+ *
+ * ❌ DO NOT USE: These request router interfaces are deprecated
+ * ✅ USE INSTEAD: src/interfaces/router/core-router-interfaces.ts
+ *
+ * The new CoreRouter interfaces provide a cleaner, more focused API.
+ *
+ * @deprecated Use interfaces from src/interfaces/router/core-router-interfaces.ts instead
+ * @see src/interfaces/router/core-router-interfaces.ts
  */
 
 // 内嵌必要的类型定义
@@ -70,22 +74,22 @@ export interface RequestRouter {
    * 路由请求到指定流水线
    */
   route(request: RCCRequest): Promise<Pipeline>;
-  
+
   /**
    * 根据类别选择流水线
    */
   selectPipeline(category: string, request?: RCCRequest): Promise<Pipeline>;
-  
+
   /**
    * 负载均衡选择
    */
   balanceLoad(pipelines: Pipeline[], request?: RCCRequest): Pipeline;
-  
+
   /**
    * 获取路由统计
    */
   getRoutingStats(): RoutingStats;
-  
+
   /**
    * 更新路由表
    */
@@ -134,17 +138,17 @@ export interface LoadBalancingStrategy {
    * 策略名称
    */
   readonly name: string;
-  
+
   /**
    * 选择流水线
    */
   select(pipelines: Pipeline[], request?: RCCRequest): Pipeline;
-  
+
   /**
    * 更新流水线权重
    */
   updateWeights(pipelineWeights: Record<string, number>): void;
-  
+
   /**
    * 获取策略配置
    */
@@ -186,12 +190,12 @@ export interface RoutingDecisionEngine {
    * 做出路由决策
    */
   makeDecision(request: RCCRequest, availablePipelines: Pipeline[]): Promise<RoutingDecision>;
-  
+
   /**
    * 评估流水线适合度
    */
   evaluatePipeline(pipeline: Pipeline, request: RCCRequest): Promise<number>;
-  
+
   /**
    * 获取决策历史
    */
@@ -219,17 +223,17 @@ export interface HealthChecker {
    * 检查流水线健康状态
    */
   checkHealth(pipeline: Pipeline): Promise<HealthStatus>;
-  
+
   /**
    * 检查所有流水线健康状态
    */
   checkAllPipelines(): Promise<Record<string, HealthStatus>>;
-  
+
   /**
    * 设置健康检查间隔
    */
   setCheckInterval(interval: number): void;
-  
+
   /**
    * 获取健康历史
    */

@@ -1,8 +1,8 @@
 /**
  * 配置管理器接口定义
- * 
+ *
  * 定义配置系统的标准接口
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -94,37 +94,37 @@ export interface ConfigManager {
    * 加载Provider配置
    */
   loadProviderConfig(): Promise<ProviderConfig[]>;
-  
+
   /**
    * 加载路由配置
    */
   loadRoutingConfig(): Promise<RoutingConfig>;
-  
+
   /**
    * 加载完整配置
    */
   loadConfig(): Promise<RCCConfig>;
-  
+
   /**
    * 生成路由表
    */
   generateRoutingTable(): Promise<GeneratedRoutingTable>;
-  
+
   /**
    * 监听配置变化
    */
   watchConfigChanges(callback: ConfigChangeCallback): void;
-  
+
   /**
    * 验证配置
    */
   validateConfig(config: RCCConfig): Promise<ConfigValidationResult>;
-  
+
   /**
    * 保存配置
    */
   saveConfig(config: RCCConfig): Promise<void>;
-  
+
   /**
    * 重置为默认配置
    */
@@ -209,17 +209,17 @@ export interface ConfigLoader {
    * 从文件加载配置
    */
   loadFromFile(filePath: string): Promise<any>;
-  
+
   /**
    * 从环境变量加载配置
    */
   loadFromEnv(): Promise<Partial<RCCConfig>>;
-  
+
   /**
    * 合并配置
    */
   mergeConfigs(configs: Partial<RCCConfig>[]): RCCConfig;
-  
+
   /**
    * 解析配置模板
    */
@@ -234,12 +234,12 @@ export interface ConfigWatcher {
    * 开始监听配置文件变化
    */
   startWatching(paths: string[], callback: ConfigChangeCallback): void;
-  
+
   /**
    * 停止监听
    */
   stopWatching(): void;
-  
+
   /**
    * 检查文件是否被监听
    */
@@ -254,17 +254,17 @@ export interface ConfigCache {
    * 获取缓存的配置
    */
   get<T>(key: string): T | null;
-  
+
   /**
    * 设置配置缓存
    */
   set<T>(key: string, value: T, ttl?: number): void;
-  
+
   /**
    * 清除缓存
    */
   clear(key?: string): void;
-  
+
   /**
    * 检查缓存是否存在
    */

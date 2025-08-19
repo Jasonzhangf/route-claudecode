@@ -1,13 +1,28 @@
 "use strict";
 /**
- * RCC v4.0 工具函数
- *
- * 通用工具函数和辅助方法
+ * 工具模块入口文件
  *
  * @author Jason Zhang
  */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UTILS_MODULE_VERSION = void 0;
-// TODO: 实现工具函数
-exports.UTILS_MODULE_VERSION = '4.0.0-alpha.1';
+__exportStar(require("./secure-logger"), exports);
+__exportStar(require("./config-encryption"), exports);
+__exportStar(require("./data-validator"), exports);
+// 模块版本信息
+exports.UTILS_MODULE_VERSION = '4.0.0-alpha.2';
 //# sourceMappingURL=index.js.map

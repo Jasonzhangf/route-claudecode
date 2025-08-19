@@ -5,7 +5,7 @@
  *
  * @author Jason Zhang
  */
-import { HTTPServer, MiddlewareFunction } from '../server/http-server';
+import { IHTTPServer, IMiddlewareFunction } from '../interfaces/core/server-interface';
 /**
  * 路由参数类型
  */
@@ -21,7 +21,7 @@ export interface RouteDefinition {
     method: string;
     path: string;
     handler: EnhancedRouteHandler;
-    middleware?: MiddlewareFunction[];
+    middleware?: IMiddlewareFunction[];
     name?: string;
     description?: string;
 }
@@ -30,7 +30,7 @@ export interface RouteDefinition {
  */
 export interface RouteGroup {
     prefix: string;
-    middleware?: MiddlewareFunction[];
+    middleware?: IMiddlewareFunction[];
     routes: RouteDefinition[];
 }
 /**
@@ -39,35 +39,35 @@ export interface RouteGroup {
 export declare class Router {
     private routes;
     private server;
-    constructor(server: HTTPServer);
+    constructor(server: IHTTPServer);
     /**
      * 添加GET路由
      */
-    get(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void;
+    get(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
     /**
      * 添加POST路由
      */
-    post(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void;
+    post(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
     /**
      * 添加PUT路由
      */
-    put(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void;
+    put(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
     /**
      * 添加DELETE路由
      */
-    delete(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void;
+    delete(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
     /**
      * 添加PATCH路由
      */
-    patch(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void;
+    patch(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
     /**
      * 添加所有HTTP方法的路由
      */
-    all(path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void;
+    all(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
     /**
      * 添加路由
      */
-    addRoute(method: string, path: string, handler: EnhancedRouteHandler, middleware?: MiddlewareFunction[]): void;
+    addRoute(method: string, path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
     /**
      * 添加路由组
      */

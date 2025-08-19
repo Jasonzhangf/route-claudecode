@@ -1,26 +1,26 @@
 /**
  * Provider告警管理器
- * 
+ *
  * 监控Provider指标并触发告警，支持多种告警渠道和规则配置
- * 
+ *
  * @author Jason Zhang
  */
 
 /**
  * 告警级别枚举
  */
-export type AlertLevel = 
-  | 'info'     // 信息
-  | 'warning'  // 警告
-  | 'error'    // 错误
+export type AlertLevel =
+  | 'info' // 信息
+  | 'warning' // 警告
+  | 'error' // 错误
   | 'critical'; // 严重
 
 /**
  * 告警状态枚举
  */
-export type AlertStatus = 
-  | 'active'    // 激活
-  | 'resolved'  // 已解决
+export type AlertStatus =
+  | 'active' // 激活
+  | 'resolved' // 已解决
   | 'silenced'; // 静默
 
 /**
@@ -105,21 +105,21 @@ export class ConsoleAlertChannel implements AlertChannel {
 
   public async send(alert: Alert): Promise<void> {
     const levelColors = {
-      info: '\x1b[34m',     // 蓝色
-      warning: '\x1b[33m',  // 黄色
-      error: '\x1b[31m',    // 红色
-      critical: '\x1b[35m'  // 紫色
+      info: '\x1b[34m', // 蓝色
+      warning: '\x1b[33m', // 黄色
+      error: '\x1b[31m', // 红色
+      critical: '\x1b[35m', // 紫色
     };
-    
+
     const reset = '\x1b[0m';
     const color = levelColors[alert.level];
-    
+
     console.log(`${color}[ALERT-${alert.level.toUpperCase()}]${reset} ${alert.title}`);
     console.log(`  Description: ${alert.description}`);
     console.log(`  Value: ${alert.value} (threshold: ${alert.threshold})`);
     console.log(`  Labels: ${JSON.stringify(alert.labels)}`);
     console.log(`  Triggered: ${new Date(alert.triggeredAt).toISOString()}`);
-    
+
     if (alert.resolvedAt) {
       console.log(`  Resolved: ${new Date(alert.resolvedAt).toISOString()}`);
     }
@@ -143,15 +143,15 @@ export class WebhookAlertChannel implements AlertChannel {
     try {
       const payload = {
         alert,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       const response = await fetch(this.webhookUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -202,10 +202,10 @@ export class AlertManager {
    */
   public removeRule(ruleId: string): void {
     this.rules.delete(ruleId);
-    
+
     // 清理相关的活跃条件
     this.activeConditions.delete(ruleId);
-    
+
     // 解决相关的告警
     for (const [alertId, alert] of this.alerts.entries()) {
       if (alert.ruleId === ruleId && alert.status === 'active') {
@@ -246,8 +246,7 @@ export class AlertManager {
    * 获取活跃告警
    */
   public getActiveAlerts(): Alert[] {
-    return Array.from(this.alerts.values())
-      .filter(alert => alert.status === 'active');
+    return Array.from(this.alerts.values()).filter(alert => alert.status === 'active');
   }
 
   /**
@@ -285,7 +284,7 @@ export class AlertManager {
     if (alert && alert.status === 'active') {
       alert.status = 'resolved';
       alert.resolvedAt = Date.now();
-      
+
       // 通知所有渠道
       this.notifyChannels(alert);
     }
@@ -321,7 +320,7 @@ export class AlertManager {
    */
   private checkAlerts(): void {
     const now = Date.now();
-    
+
     // 清理过期的静默告警
     for (const [alertId, alert] of this.alerts.entries()) {
       if (alert.status === 'silenced' && alert.silencedUntil && now > alert.silencedUntil) {
@@ -348,7 +347,7 @@ export class AlertManager {
   private evaluateRule(rule: AlertRule): void {
     const metrics = this.metricsCallback();
     const metricData = metrics.get(rule.metric);
-    
+
     if (!metricData || !metricData.dataPoints || metricData.dataPoints.length === 0) {
       return;
     }
@@ -357,9 +356,7 @@ export class AlertManager {
     const latestPoints = metricData.dataPoints
       .filter((point: any) => {
         if (rule.labels) {
-          return Object.entries(rule.labels).every(([key, value]) => 
-            point.labels[key] === value
-          );
+          return Object.entries(rule.labels).every(([key, value]) => point.labels[key] === value);
         }
         return true;
       })
@@ -407,11 +404,11 @@ export class AlertManager {
   private handleConditionMet(rule: AlertRule, dataPoint: any): void {
     const now = Date.now();
     const conditionKey = `${rule.id}_${JSON.stringify(dataPoint.labels)}`;
-    
+
     if (!this.activeConditions.has(conditionKey)) {
       this.activeConditions.set(conditionKey, {
         count: 1,
-        firstSeen: now
+        firstSeen: now,
       });
       return;
     }
@@ -431,9 +428,8 @@ export class AlertManager {
    */
   private handleConditionNotMet(rule: AlertRule): void {
     // 清理活跃条件
-    const keysToDelete = Array.from(this.activeConditions.keys())
-      .filter(key => key.startsWith(`${rule.id}_`));
-    
+    const keysToDelete = Array.from(this.activeConditions.keys()).filter(key => key.startsWith(`${rule.id}_`));
+
     keysToDelete.forEach(key => this.activeConditions.delete(key));
 
     // 解决相关的活跃告警
@@ -449,14 +445,14 @@ export class AlertManager {
    */
   private triggerAlert(rule: AlertRule, dataPoint: any): void {
     const alertId = `${rule.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
+
     // 检查静默窗口
     if (rule.silenceWindow) {
       const recentAlert = Array.from(this.alerts.values())
         .filter(alert => alert.ruleId === rule.id)
         .sort((a, b) => b.triggeredAt - a.triggeredAt)[0];
-      
-      if (recentAlert && (Date.now() - recentAlert.triggeredAt) < rule.silenceWindow) {
+
+      if (recentAlert && Date.now() - recentAlert.triggeredAt < rule.silenceWindow) {
         return; // 在静默窗口内，不触发告警
       }
     }
@@ -471,11 +467,11 @@ export class AlertManager {
       value: dataPoint.value,
       threshold: rule.condition.threshold,
       labels: dataPoint.labels,
-      triggeredAt: Date.now()
+      triggeredAt: Date.now(),
     };
 
     this.alerts.set(alertId, alert);
-    
+
     // 通知所有渠道
     this.notifyChannels(alert);
   }
@@ -484,7 +480,7 @@ export class AlertManager {
    * 通知所有渠道
    */
   private async notifyChannels(alert: Alert): Promise<void> {
-    const notifications = this.channels.map(async (channel) => {
+    const notifications = this.channels.map(async channel => {
       try {
         await channel.send(alert);
       } catch (error) {
@@ -508,11 +504,11 @@ export class AlertManager {
         condition: {
           operator: '>',
           threshold: 0.1, // 10%
-          duration: 60000 // 1分钟
+          duration: 60000, // 1分钟
         },
         level: 'warning',
         enabled: true,
-        silenceWindow: 300000 // 5分钟静默
+        silenceWindow: 300000, // 5分钟静默
       },
       {
         id: 'provider_unhealthy',
@@ -522,11 +518,11 @@ export class AlertManager {
         condition: {
           operator: '==',
           threshold: 0, // unhealthy
-          duration: 30000 // 30秒
+          duration: 30000, // 30秒
         },
         level: 'error',
         enabled: true,
-        silenceWindow: 180000 // 3分钟静默
+        silenceWindow: 180000, // 3分钟静默
       },
       {
         id: 'provider_slow_response',
@@ -536,10 +532,10 @@ export class AlertManager {
         condition: {
           operator: '>',
           threshold: 5000, // 5秒
-          duration: 120000 // 2分钟
+          duration: 120000, // 2分钟
         },
         level: 'warning',
-        enabled: true
+        enabled: true,
       },
       {
         id: 'system_high_cpu',
@@ -549,10 +545,10 @@ export class AlertManager {
         condition: {
           operator: '>',
           threshold: 80, // 80%
-          duration: 180000 // 3分钟
+          duration: 180000, // 3分钟
         },
         level: 'warning',
-        enabled: true
+        enabled: true,
       },
       {
         id: 'system_high_memory',
@@ -562,11 +558,11 @@ export class AlertManager {
         condition: {
           operator: '>',
           threshold: 90, // 90%
-          duration: 120000 // 2分钟
+          duration: 120000, // 2分钟
         },
         level: 'error',
-        enabled: true
-      }
+        enabled: true,
+      },
     ];
 
     defaultRules.forEach(rule => this.addRule(rule));

@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-08-19 16:34:36",
+  "scan_type": "comprehensive_architecture_scan",
+  "project_root": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude",
+  "statistics": {
+    "total_files_scanned": 1,
+    "total_violations": 11
+  },
+  "violations": [
+    {"priority": "P0", "type": "HARDCODING", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "硬编码模式: deepseek"},
+    {"priority": "P0", "type": "FALLBACK", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "Fallback机制: BackwardCompatibility"},
+    {"priority": "P0", "type": "FALLBACK", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "Fallback机制: DefaultsForBackward"},
+    {"priority": "P0", "type": "FALLBACK", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "Fallback机制: loadDefaults.*Compatibility"},
+    {"priority": "P0", "type": "FALLBACK", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "注释中的Fallback描述"},
+    {"priority": "P1", "type": "TYPESCRIPT", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "使用any类型，违反类型安全"},
+    {"priority": "P1", "type": "TYPESCRIPT", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "缺少返回类型注解"},
+    {"priority": "P1", "type": "ERROR_HANDLING", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "未使用标准错误处理架构"},
+    {"priority": "P1", "type": "INTERFACE", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "类未实现标准接口"},
+    {"priority": "P1", "type": "INTERFACE", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "管理器/处理器类未导入接口定义"},
+    {"priority": "P2", "type": "MONITORING", "file": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts", "description": "管理器类缺少性能监控"}
+  ],
+  "scan_status": "completed"
+}

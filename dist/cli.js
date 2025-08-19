@@ -1,108 +1,375 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * RCC v4.0 CLI入口点
+ * RCC v4.0 CLI入口 - 统一CLI系统
  *
- * 支持双模式运行：
- * - Server模式: rcc4 start (独立服务器)
- * - Client模式: rcc4 code (透明代理)
+ * 遵循.claude/rules/unified-cli-config-template.md永久模板规则
+ * 使用UnifiedCLI和UnifiedConfigLoader实现配置统一化
  *
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-const commander_1 = require("commander");
-const index_1 = require("./index");
-async function main() {
-    commander_1.program
-        .name('rcc4')
-        .description('Route Claude Code v4.0 - 高性能多AI提供商路由系统')
-        .version(index_1.VERSION);
-    // start命令 - 启动服务器模式
-    commander_1.program
-        .command('start')
-        .description('启动RCC服务器 (阻塞式运行)')
-        .option('-p, --port <port>', '服务器端口', '3456')
-        .option('-h, --host <host>', '服务器主机', 'localhost')
-        .option('-c, --config <path>', '配置文件路径')
-        .option('-d, --debug', '启用调试模式')
-        .action(async (options) => {
-        console.log('🚀 Starting RCC v4.0 Server...');
-        console.log('Options:', options);
-        // TODO: 实现服务器启动逻辑
-        process.exit(0);
-    });
-    // code命令 - 启动客户端模式
-    commander_1.program
-        .command('code')
-        .description('启动Claude Code并透明代理到RCC')
-        .option('-p, --port <port>', 'RCC服务器端口', '3456')
-        .option('--auto-start', '自动启动服务器如果未运行')
-        .action(async (options) => {
-        console.log('🔗 Starting Claude Code with RCC proxy...');
-        console.log('Options:', options);
-        // TODO: 实现客户端代理逻辑
-        process.exit(0);
-    });
-    // status命令 - 查看状态
-    commander_1.program
-        .command('status')
-        .description('查看RCC服务器状态')
-        .option('-p, --port <port>', '服务器端口', '3456')
-        .action(async (options) => {
-        console.log('📊 Checking RCC v4.0 Status...');
-        console.log('Options:', options);
-        // TODO: 实现状态检查逻辑
-        process.exit(0);
-    });
-    // stop命令 - 停止服务器
-    commander_1.program
-        .command('stop')
-        .description('停止RCC服务器')
-        .option('-p, --port <port>', '服务器端口', '3456')
-        .action(async (options) => {
-        console.log('🛑 Stopping RCC v4.0 Server...');
-        console.log('Options:', options);
-        // TODO: 实现停止服务器逻辑
-        process.exit(0);
-    });
-    // config命令 - 配置管理
-    commander_1.program
-        .command('config')
-        .description('配置管理命令')
-        .option('--list', '列出所有配置')
-        .option('--validate', '验证配置文件')
-        .option('--reset', '重置为默认配置')
-        .action(async (options) => {
-        console.log('⚙️  Managing RCC v4.0 Configuration...');
-        console.log('Options:', options);
-        // TODO: 实现配置管理逻辑
-        process.exit(0);
-    });
-    // 解析命令行参数
-    await commander_1.program.parseAsync(process.argv);
+exports.RCCv4CLIHandler = void 0;
+const unified_cli_1 = require("./cli/unified-cli");
+const secure_logger_1 = require("./utils/secure-logger");
+/**
+ * 参数解析器
+ */
+class ArgumentParser {
+    /**
+     * 解析命令行参数
+     */
+    parseArguments(args) {
+        const command = args[0] || 'help';
+        const options = {};
+        const remainingArgs = [];
+        for (let i = 1; i < args.length; i++) {
+            const arg = args[i];
+            const nextArg = args[i + 1];
+            if (arg.startsWith('--')) {
+                const key = arg.slice(2);
+                if (nextArg && !nextArg.startsWith('--')) {
+                    // 参数有值
+                    const value = this.parseValue(nextArg);
+                    options[key] = value;
+                    i++; // 跳过下一个参数
+                }
+                else {
+                    // 布尔标志
+                    options[key] = true;
+                }
+            }
+            else if (arg.startsWith('-')) {
+                // 短参数
+                const key = arg.slice(1);
+                options[key] = true;
+            }
+            else {
+                remainingArgs.push(arg);
+            }
+        }
+        return {
+            command,
+            options,
+            args: remainingArgs,
+        };
+    }
+    /**
+     * 解析参数值
+     */
+    parseValue(value) {
+        // 数字
+        if (/^\d+$/.test(value)) {
+            return parseInt(value, 10);
+        }
+        // 布尔值
+        if (value === 'true')
+            return true;
+        if (value === 'false')
+            return false;
+        // 字符串
+        return value;
+    }
 }
-// 错误处理
-process.on('uncaughtException', (error) => {
-    console.error('❌ Uncaught Exception:', error);
-    process.exit(1);
-});
-process.on('unhandledRejection', (reason) => {
-    console.error('❌ Unhandled Rejection:', reason);
-    process.exit(1);
-});
-// 优雅退出处理
-process.on('SIGINT', () => {
-    console.log('\n👋 RCC v4.0 shutting down gracefully...');
-    process.exit(0);
-});
+/**
+ * CLI处理器实现
+ */
+class RCCv4CLIHandler {
+    constructor() {
+        this.unifiedCLI = new unified_cli_1.UnifiedCLI();
+        this.argumentParser = new ArgumentParser();
+    }
+    /**
+     * 解析命令行参数
+     */
+    parseArguments(args) {
+        return this.argumentParser.parseArguments(args);
+    }
+    /**
+     * 执行命令
+     */
+    async executeCommand(parsedCommand) {
+        const { command, options } = parsedCommand;
+        try {
+            switch (command) {
+                case 'start':
+                    await this.handleStart(options);
+                    break;
+                case 'stop':
+                    await this.handleStop(options);
+                    break;
+                case 'status':
+                    await this.handleStatus(options);
+                    break;
+                case 'code':
+                    await this.handleCode(options);
+                    break;
+                case 'config':
+                    await this.handleConfig(options);
+                    break;
+                case 'help':
+                case '--help':
+                case '-h':
+                    this.showHelp();
+                    break;
+                case 'version':
+                case '--version':
+                case '-v':
+                    this.showVersion();
+                    break;
+                default:
+                    secure_logger_1.secureLogger.warn('Unknown command', { command });
+                    this.showHelp();
+                    process.exit(1);
+            }
+        }
+        catch (error) {
+            secure_logger_1.secureLogger.error('Command execution failed', {
+                command,
+                error: error.message,
+            });
+            throw error;
+        }
+    }
+    /**
+     * 处理start命令
+     */
+    async handleStart(options) {
+        const startOptions = {
+            port: options.port,
+            host: options.host,
+            config: options.config,
+            debug: options.debug,
+        };
+        await this.unifiedCLI.start(startOptions);
+    }
+    /**
+     * 处理stop命令
+     */
+    async handleStop(options) {
+        const stopOptions = {
+            port: options.port,
+            force: options.force,
+        };
+        await this.unifiedCLI.stop(stopOptions);
+    }
+    /**
+     * 处理status命令
+     */
+    async handleStatus(options) {
+        const statusOptions = {
+            port: options.port,
+            detailed: options.detailed,
+        };
+        const status = await this.unifiedCLI.status(statusOptions);
+        // 输出状态信息
+        process.stdout.write('RCC v4.0 Server Status:\n');
+        process.stdout.write(`  Running: ${status.isRunning}\n`);
+        process.stdout.write(`  Host: ${status.host}\n`);
+        process.stdout.write(`  Port: ${status.port}\n`);
+        process.stdout.write(`  Version: ${status.version}\n`);
+        if (status.isRunning) {
+            process.stdout.write(`  Uptime: ${status.uptime}\n`);
+            process.stdout.write(`  Health: ${status.health.status}\n`);
+            process.stdout.write(`  Active Pipelines: ${status.activePipelines}\n`);
+            process.stdout.write(`  Total Requests: ${status.totalRequests}\n`);
+            if (statusOptions.detailed && status.pipeline) {
+                process.stdout.write(`  Active Requests: ${status.pipeline.activeRequests}\n`);
+            }
+        }
+    }
+    /**
+     * 处理code命令
+     */
+    async handleCode(options) {
+        const codeOptions = {
+            port: options.port,
+            autoStart: options.autoStart || options['auto-start'],
+            export: options.export,
+        };
+        await this.unifiedCLI.code(codeOptions);
+    }
+    /**
+     * 处理config命令
+     */
+    async handleConfig(options) {
+        await this.unifiedCLI.config(options);
+    }
+    /**
+     * 显示帮助信息
+     */
+    showHelp(command) {
+        if (command) {
+            this.showCommandHelp(command);
+            return;
+        }
+        process.stdout.write(`
+RCC v4.0 - Route Claude Code Server
+
+Usage:
+  rcc4 <command> [options]
+
+Commands:
+  start                    Start RCC v4.0 server
+  stop                     Stop RCC v4.0 server  
+  status                   Show server status
+  code                     Start Claude Code proxy mode
+  config                   Configuration management
+  help [command]           Show help information
+  version                  Show version information
+
+Options:
+  --config <path>          Configuration file path
+  --port <number>          Server port (default: 5506)
+  --host <host>            Server host (default: 0.0.0.0)
+  --debug                  Enable debug mode
+  --force                  Force operation (for stop command)
+  --detailed               Show detailed information (for status command)
+  --auto-start             Auto-start server if needed (for code command)
+  --export                 Export environment variables (for code command)
+
+Examples:
+  rcc4 start --config ./config.json --port 5506 --debug
+  rcc4 stop --port 5506 --force
+  rcc4 status --port 5506 --detailed
+  rcc4 code --port 5506 --auto-start
+  rcc4 code --export
+
+For more information about each command, use:
+  rcc4 help <command>
+`);
+    }
+    /**
+     * 显示特定命令的帮助
+     */
+    showCommandHelp(command) {
+        switch (command) {
+            case 'start':
+                process.stdout.write(`
+rcc4 start - Start RCC v4.0 server
+
+Usage:
+  rcc4 start [options]
+
+Options:
+  --config <path>     Configuration file path (default: ./config.json)
+  --port <number>     Server port (default: 5506)
+  --host <host>       Server host (default: 0.0.0.0)
+  --debug             Enable debug mode with detailed logging
+
+Examples:
+  rcc4 start
+  rcc4 start --config ~/.route-claudecode/config.json
+  rcc4 start --port 8080 --debug
+`);
+                break;
+            case 'stop':
+                process.stdout.write(`
+rcc4 stop - Stop RCC v4.0 server
+
+Usage:
+  rcc4 stop [options]
+
+Options:
+  --port <number>     Server port (default: 5506)
+  --force             Force stop even if graceful shutdown fails
+
+Examples:
+  rcc4 stop
+  rcc4 stop --port 8080
+  rcc4 stop --force
+`);
+                break;
+            case 'status':
+                process.stdout.write(`
+rcc4 status - Show server status
+
+Usage:
+  rcc4 status [options]
+
+Options:
+  --port <number>     Server port (default: 5506)
+  --detailed          Show detailed pipeline information
+
+Examples:
+  rcc4 status
+  rcc4 status --port 8080
+  rcc4 status --detailed
+`);
+                break;
+            case 'code':
+                process.stdout.write(`
+rcc4 code - Start Claude Code proxy mode
+
+Usage:
+  rcc4 code [options]
+
+Options:
+  --port <number>     RCC proxy server port (default: 5506)
+  --auto-start        Auto-start RCC server if not running
+  --export            Export environment variables instead of starting Claude Code
+
+Examples:
+  rcc4 code
+  rcc4 code --port 8080
+  rcc4 code --auto-start
+  rcc4 code --export
+`);
+                break;
+            default:
+                process.stdout.write(`Unknown command: ${command}\n`);
+                this.showHelp();
+        }
+    }
+    /**
+     * 显示版本信息
+     */
+    showVersion() {
+        process.stdout.write('RCC v4.0.0\n');
+    }
+}
+exports.RCCv4CLIHandler = RCCv4CLIHandler;
+/**
+ * 主函数
+ */
+async function main() {
+    const cliHandler = new RCCv4CLIHandler();
+    try {
+        const args = process.argv.slice(2);
+        const parsedCommand = cliHandler.parseArguments(args);
+        secure_logger_1.secureLogger.info('CLI command executed', {
+            command: parsedCommand.command,
+            hasOptions: Object.keys(parsedCommand.options).length > 0,
+        });
+        await cliHandler.executeCommand(parsedCommand);
+    }
+    catch (error) {
+        secure_logger_1.secureLogger.error('CLI execution failed', { error: error.message });
+        process.exit(1);
+    }
+}
+// 优雅关闭处理
 process.on('SIGTERM', () => {
-    console.log('\n👋 RCC v4.0 received SIGTERM, shutting down gracefully...');
+    secure_logger_1.secureLogger.info('Received SIGTERM, exiting gracefully');
     process.exit(0);
 });
-// 运行主程序
+process.on('SIGINT', () => {
+    secure_logger_1.secureLogger.info('Received SIGINT, exiting gracefully');
+    process.exit(0);
+});
+// 未捕获异常处理
+process.on('uncaughtException', error => {
+    secure_logger_1.secureLogger.error('Uncaught exception', { error: error.message });
+    process.exit(1);
+});
+process.on('unhandledRejection', reason => {
+    secure_logger_1.secureLogger.error('Unhandled rejection', { reason });
+    process.exit(1);
+});
+// 执行主函数
 if (require.main === module) {
-    main().catch((error) => {
-        console.error('❌ CLI Error:', error);
+    main().catch(error => {
+        secure_logger_1.secureLogger.error('Fatal error in main', { error: error.message });
         process.exit(1);
     });
 }

@@ -7,4 +7,16 @@
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ModuleType = void 0;
+/**
+ * 模块类型枚举
+ */
+var ModuleType;
+(function (ModuleType) {
+    ModuleType["VALIDATOR"] = "validator";
+    ModuleType["TRANSFORMER"] = "transformer";
+    ModuleType["PROTOCOL"] = "protocol";
+    ModuleType["SERVER_COMPATIBILITY"] = "server-compatibility";
+    ModuleType["SERVER"] = "server";
+})(ModuleType || (exports.ModuleType = ModuleType = {}));
 //# sourceMappingURL=base-module.js.map

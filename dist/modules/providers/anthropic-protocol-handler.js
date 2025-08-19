@@ -12,23 +12,73 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicProtocolHandler = void 0;
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
-const base_module_impl_1 = require("../base-module-impl");
+const constants_1 = require("../../constants");
+const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const events_1 = require("events");
 /**
  * Anthropic Protocol处理器实现
  */
-class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
-    protocolConfig;
-    anthropicClient;
-    constructor(id, config = {}) {
-        super(id, 'Anthropic Protocol Handler', 'protocol', '1.0.0');
+class AnthropicProtocolHandler extends events_1.EventEmitter {
+    getId() {
+        return this.id;
+    }
+    getName() {
+        return this.name;
+    }
+    getType() {
+        return this.type;
+    }
+    getVersion() {
+        return this.version;
+    }
+    getStatus() {
+        return { id: this.id, name: this.name, type: this.type, status: this.status, health: 'healthy' };
+    }
+    getMetrics() {
+        return { ...this.metrics };
+    }
+    async configure(config) { }
+    async start() {
+        this.status = 'running';
+    }
+    async stop() {
+        this.status = 'stopped';
+    }
+    async reset() { }
+    async cleanup() { }
+    async healthCheck() {
+        return { healthy: true, details: {} };
+    }
+    async process(input) {
+        return this.handleRequest(input);
+    }
+    async handleRequest(input) {
+        return input;
+    }
+    constructor(id = 'anthropic-protocol-handler', config = {}) {
+        super();
+        this.id = 'anthropic-protocol-handler';
+        this.name = 'Anthropic Protocol Handler';
+        this.type = module_implementation_interface_1.ModuleType.PROTOCOL;
+        this.version = '1.0.0';
+        this.status = 'stopped';
+        this.metrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0,
+        };
+        this.processingTimes = [];
+        this.errors = [];
         this.protocolConfig = {
             apiKey: '',
             defaultModel: 'claude-3-sonnet-20240229',
-            timeout: 30000,
+            timeout: (0, constants_1.getProviderRequestTimeout)(),
             maxRetries: 3,
             enableToolCalls: true,
             debug: false,
-            ...config
+            ...config,
         };
         this.initializeClient();
     }
@@ -61,7 +111,7 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
             console.log(`[Anthropic Protocol] Configuration updated:`, {
                 baseURL: this.protocolConfig.baseURL || 'https://api.anthropic.com',
                 model: this.protocolConfig.defaultModel,
-                enableToolCalls: this.protocolConfig.enableToolCalls
+                enableToolCalls: this.protocolConfig.enableToolCalls,
             });
         }
     }
@@ -139,7 +189,7 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                 const userMessage = message;
                 anthropicMessages.push({
                     role: 'user',
-                    content: this.transformMessageContent(userMessage.content)
+                    content: this.transformMessageContent(userMessage.content),
                 });
             }
             else if (message.role === 'assistant') {
@@ -150,7 +200,7 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                     if (typeof assistantMessage.content === 'string') {
                         content.push({
                             type: 'text',
-                            text: assistantMessage.content
+                            text: assistantMessage.content,
                         });
                     }
                 }
@@ -163,26 +213,26 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                             name: toolCall.function.name,
                             input: typeof toolCall.function.arguments === 'string'
                                 ? JSON.parse(toolCall.function.arguments)
-                                : toolCall.function.arguments || {}
+                                : toolCall.function.arguments || {},
                         });
                     }
                 }
                 anthropicMessages.push({
                     role: 'assistant',
-                    content: content.length === 1 && content[0] && content[0].type === 'text'
-                        ? (content[0].text || '')
-                        : content
+                    content: content.length === 1 && content[0] && content[0].type === 'text' ? content[0].text || '' : content,
                 });
             }
             else if (message.role === 'tool') {
                 const toolMessage = message;
                 anthropicMessages.push({
                     role: 'user',
-                    content: [{
+                    content: [
+                        {
                             type: 'tool_result',
                             tool_use_id: toolMessage.toolCallId,
-                            content: toolMessage.content
-                        }]
+                            content: toolMessage.content,
+                        },
+                    ],
                 });
             }
         }
@@ -200,13 +250,13 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                 if (block.type === 'text') {
                     return {
                         type: 'text',
-                        text: block.text
+                        text: block.text,
                     };
                 }
                 else if (block.type === 'image') {
                     return {
                         type: 'image',
-                        source: block.source
+                        source: block.source,
                     };
                 }
                 return block;
@@ -224,8 +274,8 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
             input_schema: {
                 type: 'object',
                 properties: tool.function.parameters.properties || {},
-                required: tool.function.parameters.required || []
-            }
+                required: tool.function.parameters.required || [],
+            },
         }));
     }
     /**
@@ -247,7 +297,7 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
         if (typeof toolChoice === 'object' && toolChoice.type === 'function') {
             return {
                 type: 'tool',
-                name: toolChoice.function.name
+                name: toolChoice.function.name,
             };
         }
         return { type: 'auto' };
@@ -281,15 +331,17 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
      * 转换Anthropic响应到标准格式
      */
     async transformFromAnthropic(response, originalRequest) {
-        const choices = [{
+        const choices = [
+            {
                 index: 0,
                 message: this.transformAnthropicMessage(response),
-                finishReason: this.mapStopReason(response.stop_reason)
-            }];
+                finishReason: this.mapStopReason(response.stop_reason),
+            },
+        ];
         const usage = {
             promptTokens: response.usage.input_tokens,
             completionTokens: response.usage.output_tokens,
-            totalTokens: response.usage.input_tokens + response.usage.output_tokens
+            totalTokens: response.usage.input_tokens + response.usage.output_tokens,
         };
         const standardResponse = {
             id: response.id,
@@ -309,10 +361,10 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                     apiCallTime: 0, // 会在调用时设置
                     transformationTime: 0,
                     validationTime: 0,
-                    retryCount: 0
-                }
+                    retryCount: 0,
+                },
             },
-            timestamp: new Date()
+            timestamp: new Date(),
         };
         return standardResponse;
     }
@@ -323,7 +375,7 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
         const message = {
             role: 'assistant',
             content: '',
-            toolCalls: []
+            toolCalls: [],
         };
         // 处理内容
         const textBlocks = [];
@@ -338,10 +390,8 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                     type: 'function',
                     function: {
                         name: block.name,
-                        arguments: typeof block.input === 'string'
-                            ? block.input
-                            : JSON.stringify(block.input)
-                    }
+                        arguments: typeof block.input === 'string' ? block.input : JSON.stringify(block.input),
+                    },
                 });
             }
         }
@@ -356,11 +406,16 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
      */
     mapStopReason(reason) {
         switch (reason) {
-            case 'end_turn': return 'stop';
-            case 'max_tokens': return 'length';
-            case 'tool_use': return 'tool_calls';
-            case 'stop_sequence': return 'stop';
-            default: return 'stop';
+            case 'end_turn':
+                return 'stop';
+            case 'max_tokens':
+                return 'length';
+            case 'tool_use':
+                return 'tool_calls';
+            case 'stop_sequence':
+                return 'stop';
+            default:
+                return 'stop';
         }
     }
     /**
@@ -409,7 +464,7 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
             if (!this.protocolConfig.apiKey) {
                 return {
                     healthy: false,
-                    details: { error: 'No API key configured' }
+                    details: { error: 'No API key configured' },
                 };
             }
             // 检查错误率
@@ -419,8 +474,8 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                     details: {
                         error: 'High error rate',
                         errorRate: this.metrics.errorRate,
-                        recentErrors: this.errors.slice(-5).map(e => e.message)
-                    }
+                        recentErrors: this.errors.slice(-5).map(e => e.message),
+                    },
                 };
             }
             // 检查平均响应时间
@@ -430,8 +485,8 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                     details: {
                         error: 'High response time',
                         averageTime: this.metrics.averageProcessingTime,
-                        timeout: this.protocolConfig.timeout
-                    }
+                        timeout: this.protocolConfig.timeout,
+                    },
                 };
             }
             return {
@@ -443,14 +498,14 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
                     averageProcessingTime: this.metrics.averageProcessingTime,
                     errorRate: this.metrics.errorRate,
                     enableToolCalls: this.protocolConfig.enableToolCalls,
-                    sdkVersion: 'official'
-                }
+                    sdkVersion: 'official',
+                },
             };
         }
         catch (error) {
             return {
                 healthy: false,
-                details: { error: error instanceof Error ? error.message : String(error) }
+                details: { error: error instanceof Error ? error.message : String(error) },
             };
         }
     }
@@ -468,7 +523,7 @@ class AnthropicProtocolHandler extends base_module_impl_1.BaseModule {
             const testRequest = {
                 model: this.protocolConfig.defaultModel,
                 messages: [{ role: 'user', content: 'test' }],
-                max_tokens: 1
+                max_tokens: 1,
             };
             await this.callAnthropicAPI(testRequest);
             return true;

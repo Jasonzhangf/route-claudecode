@@ -1,8 +1,8 @@
 /**
  * Debug回放系统
- * 
+ *
  * 支持请求重放、测试生成和结果验证
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -63,11 +63,14 @@ export interface PerformanceReport {
   averageOriginalTime: number;
   averageReplayTime: number;
   performanceRatio: number;
-  modulePerformance: Map<string, {
-    averageOriginalTime: number;
-    averageReplayTime: number;
-    successRate: number;
-  }>;
+  modulePerformance: Map<
+    string,
+    {
+      averageOriginalTime: number;
+      averageReplayTime: number;
+      successRate: number;
+    }
+  >;
   recommendations: string[];
 }
 
@@ -92,7 +95,7 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
   constructor(recorder: DebugRecorder, pipelineManager?: PipelineManager) {
     super();
     this.recorder = recorder;
-    this.pipelineManager = pipelineManager || new PipelineManager();
+    this.pipelineManager = pipelineManager || new PipelineManager({} as any);
   }
 
   /**
@@ -119,10 +122,10 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
 
       // 加载原始记录
       const originalRecord = await this.recorder.loadRecord(requestId);
-      
+
       // 重建流水线环境
       const pipeline = await this.reconstructPipeline(originalRecord.pipeline);
-      
+
       // 执行回放
       const replayStartTime = Date.now();
       const replayResult = await this.executePipelineReplay(pipeline, originalRecord, options);
@@ -137,19 +140,14 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
         response: {
           ...originalRecord.response,
           body: replayResult,
-          duration: replayEndTime - replayStartTime
-        }
+          duration: replayEndTime - replayStartTime,
+        },
       };
 
       // 比较结果
-      const differences = this.findDifferences(
-        originalRecord.response.body,
-        replayResult,
-        options.compareOptions
-      );
-      
-      const isValid = options.validateOutput !== false ? 
-        this.validateReplay(originalRecord, replayedRecord) : true;
+      const differences = this.findDifferences(originalRecord.response.body, replayResult, options.compareOptions);
+
+      const isValid = options.validateOutput !== false ? this.validateReplay(originalRecord, replayedRecord) : true;
 
       const result: ReplayResult = {
         original: originalRecord.response.body,
@@ -159,9 +157,11 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
         performance: {
           originalDuration: originalRecord.response.duration,
           replayDuration: replayEndTime - replayStartTime,
-          performanceRatio: originalRecord.response.duration > 0 ? 
-            (replayEndTime - replayStartTime) / originalRecord.response.duration : 1
-        }
+          performanceRatio:
+            originalRecord.response.duration > 0
+              ? (replayEndTime - replayStartTime) / originalRecord.response.duration
+              : 1,
+        },
       };
 
       // 缓存结果
@@ -172,16 +172,15 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
         isValid,
         differences: differences.length,
         performanceRatio: result.performance.performanceRatio,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return result;
-
     } catch (error) {
       this.emit('replay-failed', {
         requestId,
         error: error.message,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
       throw new ReplayError(requestId, 'execution', error.message);
     }
@@ -193,20 +192,19 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
   async createUnitTest(requestId: string): Promise<string> {
     try {
       const record = await this.recorder.loadRecord(requestId);
-      
+
       const testCode = this.generateUnitTestCode(record);
-      
+
       // 保存测试文件
       const testPath = await this.saveTestFile(requestId, 'unit', testCode);
-      
+
       this.emit('unit-test-generated', {
         requestId,
         testPath,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return testCode;
-
     } catch (error) {
       throw new ReplayError(requestId, 'unit-test-generation', error.message);
     }
@@ -218,20 +216,19 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
   async createIntegrationTest(requestId: string): Promise<string> {
     try {
       const record = await this.recorder.loadRecord(requestId);
-      
+
       const testCode = this.generateIntegrationTestCode(record);
-      
+
       // 保存测试文件
       const testPath = await this.saveTestFile(requestId, 'integration', testCode);
-      
+
       this.emit('integration-test-generated', {
         requestId,
         testPath,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       return testCode;
-
     } catch (error) {
       throw new ReplayError(requestId, 'integration-test-generation', error.message);
     }
@@ -254,7 +251,6 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
 
       // 模块执行验证
       return this.compareModuleExecution(original.pipeline.modules, replayed.pipeline.modules);
-
     } catch (error) {
       console.error('验证回放结果失败:', error);
       return false;
@@ -267,16 +263,16 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
   async batchReplay(requestIds: string[]): Promise<Map<string, ReplayResult>> {
     const results = new Map<string, ReplayResult>();
     const concurrency = 3; // 限制并发数
-    
+
     this.emit('batch-replay-started', {
       totalRequests: requestIds.length,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     for (let i = 0; i < requestIds.length; i += concurrency) {
       const batch = requestIds.slice(i, i + concurrency);
-      
-      const batchPromises = batch.map(async (requestId) => {
+
+      const batchPromises = batch.map(async requestId => {
         try {
           const result = await this.replayRequest(requestId);
           results.set(requestId, result);
@@ -288,18 +284,18 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
       });
 
       const batchResults = await Promise.allSettled(batchPromises);
-      
+
       this.emit('batch-replay-progress', {
         completed: Math.min(i + concurrency, requestIds.length),
         total: requestIds.length,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
     this.emit('batch-replay-completed', {
       totalRequests: requestIds.length,
       successfulReplays: results.size,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     return results;
@@ -310,16 +306,19 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
    */
   async generatePerformanceReport(requestIds: string[]): Promise<PerformanceReport> {
     const replayResults = await this.batchReplay(requestIds);
-    
+
     let totalOriginalTime = 0;
     let totalReplayTime = 0;
     let successfulReplays = 0;
-    const moduleStats = new Map<string, {
-      originalTimes: number[];
-      replayTimes: number[];
-      successCount: number;
-      totalCount: number;
-    }>();
+    const moduleStats = new Map<
+      string,
+      {
+        originalTimes: number[];
+        replayTimes: number[];
+        successCount: number;
+        totalCount: number;
+      }
+    >();
 
     for (const [requestId, result] of replayResults) {
       if (result.isValid) {
@@ -336,10 +335,10 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
                 originalTimes: [],
                 replayTimes: [],
                 successCount: 0,
-                totalCount: 0
+                totalCount: 0,
               });
             }
-            
+
             const stats = moduleStats.get(module.moduleName)!;
             stats.originalTimes.push(module.duration);
             stats.replayTimes.push(module.duration); // 简化实现
@@ -353,17 +352,20 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
     }
 
     // 生成模块性能统计
-    const modulePerformance = new Map<string, {
-      averageOriginalTime: number;
-      averageReplayTime: number;
-      successRate: number;
-    }>();
+    const modulePerformance = new Map<
+      string,
+      {
+        averageOriginalTime: number;
+        averageReplayTime: number;
+        successRate: number;
+      }
+    >();
 
     for (const [moduleName, stats] of moduleStats) {
       modulePerformance.set(moduleName, {
         averageOriginalTime: stats.originalTimes.reduce((a, b) => a + b, 0) / stats.originalTimes.length,
         averageReplayTime: stats.replayTimes.reduce((a, b) => a + b, 0) / stats.replayTimes.length,
-        successRate: stats.successCount / stats.totalCount
+        successRate: stats.successCount / stats.totalCount,
       });
     }
 
@@ -373,7 +375,7 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
       successfulReplays,
       averageOriginalTime: totalOriginalTime / successfulReplays,
       averageReplayTime: totalReplayTime / successfulReplays,
-      modulePerformance
+      modulePerformance,
     });
 
     return {
@@ -384,7 +386,7 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
       averageReplayTime: totalReplayTime / successfulReplays,
       performanceRatio: totalOriginalTime > 0 ? totalReplayTime / totalOriginalTime : 1,
       modulePerformance,
-      recommendations
+      recommendations,
     };
   }
 
@@ -399,20 +401,22 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
       modules: pipelineInfo.modules.map(m => ({
         name: m.moduleName,
         version: m.metadata.version,
-        config: m.metadata.config
+        config: m.metadata.config,
       })),
       process: async (input: any) => {
         // 这里应该重建实际的流水线处理逻辑
         // 简化实现直接返回模拟结果
-        return { 
-          choices: [{ 
-            message: { 
-              content: 'Replayed response for testing',
-              role: 'assistant' 
-            }
-          }]
+        return {
+          choices: [
+            {
+              message: {
+                content: 'Replayed response for testing',
+                role: 'assistant',
+              },
+            },
+          ],
         };
-      }
+      },
     } as any; // 简化类型
   }
 
@@ -424,14 +428,14 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
     });
 
     // 执行回放
-    const replayPromise = pipeline.process(record.request.body);
+    const replayPromise = (pipeline as any).process(record.request.body);
 
     return Promise.race([replayPromise, timeoutPromise]);
   }
 
   private findDifferences(original: any, replayed: any, options?: CompareOptions): ReplayDifference[] {
     const differences: ReplayDifference[] = [];
-    
+
     try {
       this.compareObjects(original, replayed, '', differences, options);
     } catch (error) {
@@ -441,7 +445,13 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
     return differences;
   }
 
-  private compareObjects(obj1: any, obj2: any, path: string, differences: ReplayDifference[], options?: CompareOptions): void {
+  private compareObjects(
+    obj1: any,
+    obj2: any,
+    path: string,
+    differences: ReplayDifference[],
+    options?: CompareOptions
+  ): void {
     if (obj1 === obj2) return;
 
     if (typeof obj1 !== typeof obj2) {
@@ -449,7 +459,7 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
         path,
         originalValue: obj1,
         replayedValue: obj2,
-        type: 'modified'
+        type: 'modified',
       });
       return;
     }
@@ -461,23 +471,23 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
 
       for (const key of allKeys) {
         const newPath = path ? `${path}.${key}` : key;
-        
+
         // 跳过忽略的字段
         if (options?.ignoreFields?.includes(key)) continue;
-        
+
         if (!(key in obj1)) {
           differences.push({
             path: newPath,
             originalValue: undefined,
             replayedValue: obj2[key],
-            type: 'added'
+            type: 'added',
           });
         } else if (!(key in obj2)) {
           differences.push({
             path: newPath,
             originalValue: obj1[key],
             replayedValue: undefined,
-            type: 'removed'
+            type: 'removed',
           });
         } else {
           this.compareObjects(obj1[key], obj2[key], newPath, differences, options);
@@ -488,22 +498,21 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
         path,
         originalValue: obj1,
         replayedValue: obj2,
-        type: 'modified'
+        type: 'modified',
       });
     }
   }
 
   private compareStructure(original: any, replayed: any): boolean {
     if (typeof original !== typeof replayed) return false;
-    
+
     if (typeof original === 'object' && original !== null) {
       const keys1 = Object.keys(original);
       const keys2 = Object.keys(replayed);
-      
-      return keys1.length === keys2.length && 
-             keys1.every(key => key in replayed);
+
+      return keys1.length === keys2.length && keys1.every(key => key in replayed);
     }
-    
+
     return true;
   }
 
@@ -517,11 +526,11 @@ export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
 
   private compareModuleExecution(original: ModuleRecord[], replayed: ModuleRecord[]): boolean {
     if (original.length !== replayed.length) return false;
-    
+
     for (let i = 0; i < original.length; i++) {
       if (original[i].moduleName !== replayed[i].moduleName) return false;
     }
-    
+
     return true;
   }
 
@@ -548,14 +557,18 @@ describe('Pipeline Replay Test - ${record.requestId}', () => {
     const input = ${JSON.stringify(record.request.body, null, 4)};
     const expectedOutput = ${JSON.stringify(record.response.body, null, 4)};
 
-    ${record.pipeline.modules.map((module, index) => `
+    ${record.pipeline.modules
+      .map(
+        (module, index) => `
     // 步骤 ${index + 1}: ${module.moduleName}
     const step${index + 1}Input = ${index === 0 ? 'input' : `step${index}Output`};
     const step${index + 1}Output = await ${module.moduleName}.process(step${index + 1}Input);
     
     expect(step${index + 1}Output).toBeDefined();
     ${module.error ? `expect(() => { throw new Error('${module.error.message}'); }).toThrow();` : ''}
-    `).join('\n')}
+    `
+      )
+      .join('\n')}
 
     // 验证最终输出
     const finalOutput = step${record.pipeline.modules.length}Output;
@@ -633,10 +646,14 @@ describe('Integration Replay Test - ${record.requestId}', () => {
       expect(debugRecord.pipeline.modules).toHaveLength(${record.pipeline.modules.length});
       
       // 验证各模块执行
-      ${record.pipeline.modules.map((module, index) => `
+      ${record.pipeline.modules
+        .map(
+          (module, index) => `
       expect(debugRecord.pipeline.modules[${index}].moduleName).toBe('${module.moduleName}');
       expect(debugRecord.pipeline.modules[${index}].duration).toBeLessThan(${module.duration * 2});
-      `).join('')}
+      `
+        )
+        .join('')}
       
     } finally {
       await debugManager.endSession(session.sessionId);
@@ -645,17 +662,21 @@ describe('Integration Replay Test - ${record.requestId}', () => {
 
   test('should handle errors gracefully', async () => {
     // 测试错误处理
-    ${record.error ? `
+    ${
+      record.error
+        ? `
     const invalidInput = { invalid: 'data' };
     
     await expect(async () => {
       const pipeline = await pipelineManager.createPipeline('${record.pipeline.provider}', '${record.pipeline.model}');
       await pipeline.process(invalidInput);
     }).rejects.toThrow();
-    ` : `
+    `
+        : `
     // 原始请求无错误，跳过错误测试
     expect(true).toBe(true);
-    `}
+    `
+    }
   });
 });
 `.trim();
@@ -664,10 +685,10 @@ describe('Integration Replay Test - ${record.requestId}', () => {
   private async saveTestFile(requestId: string, testType: string, testCode: string): Promise<string> {
     const testDir = path.join(process.cwd(), 'tests', 'replay', testType);
     await mkdir(testDir, { recursive: true });
-    
+
     const testPath = path.join(testDir, `${requestId}-${testType}.test.ts`);
     await writeFile(testPath, testCode);
-    
+
     return testPath;
   }
 

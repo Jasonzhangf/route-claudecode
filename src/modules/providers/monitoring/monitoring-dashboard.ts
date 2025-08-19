@@ -1,8 +1,8 @@
 /**
  * Provider监控仪表板
- * 
+ *
  * 提供Web界面展示Provider监控数据、告警信息和系统状态
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -98,15 +98,17 @@ export class MonitoringDashboard {
       await new Promise<void>((resolve, reject) => {
         this.server.listen(this.config.port, this.config.host, () => {
           this.isRunning = true;
-          console.log(`[MonitoringDashboard] Started on http://${this.config.host}:${this.config.port}`);\n          resolve();
+          console.log(`[MonitoringDashboard] Started on http://${this.config.host}:${this.config.port}`);
+          resolve();
         });
-        
+
         this.server.on('error', (error: Error) => {
           reject(error);
         });
       });
     } catch (error) {
-      throw new Error(`Failed to start monitoring dashboard: ${error}`);\n    }
+      throw new Error(`Failed to start monitoring dashboard: ${error}`);
+    }
   }
 
   /**
@@ -117,7 +119,7 @@ export class MonitoringDashboard {
       return;
     }
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>(resolve => {
       this.server.close(() => {
         this.isRunning = false;
         console.log('[MonitoringDashboard] Stopped');
@@ -146,7 +148,7 @@ export class MonitoringDashboard {
       systemMetrics,
       activeAlerts,
       keyMetrics,
-      charts
+      charts,
     };
   }
 
@@ -287,7 +289,7 @@ export class MonitoringDashboard {
       status: 'ok',
       timestamp: Date.now(),
       uptime: process.uptime(),
-      version: '1.0.0'
+      version: '1.0.0',
     };
     this.sendResponse(res, 200, health);
   }
@@ -347,7 +349,7 @@ export class MonitoringDashboard {
       averageResponseTime,
       errorRate,
       healthyProviders,
-      totalProviders
+      totalProviders,
     };
   }
 
@@ -357,7 +359,7 @@ export class MonitoringDashboard {
   private getChartData(): DashboardData['charts'] {
     const timeRange = {
       start: Date.now() - 24 * 60 * 60 * 1000, // 24小时前
-      end: Date.now()
+      end: Date.now(),
     };
 
     const responseTimeChart = this.metricsCollector.getAggregatedMetric('provider_request_duration_seconds', timeRange);
@@ -367,7 +369,7 @@ export class MonitoringDashboard {
     return {
       responseTimeChart,
       errorRateChart,
-      throughputChart
+      throughputChart,
     };
   }
 

@@ -1,9 +1,9 @@
 /**
  * Debug系统接口定义
- * 
+ *
  * 定义Debug系统的标准接口，包括调试记录、回放系统、性能分析等功能
  * 严格遵循模块边界，不依赖其他模块的具体实现
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -16,9 +16,9 @@ import { RouteRequest, RouteResponse } from './router-interface';
 export enum DebugLevel {
   TRACE = 'trace',
   DEBUG = 'debug',
-  INFO = 'info', 
+  INFO = 'info',
   WARN = 'warn',
-  ERROR = 'error'
+  ERROR = 'error',
 }
 
 /**
@@ -30,7 +30,7 @@ export enum RecordType {
   PIPELINE = 'pipeline',
   ERROR = 'error',
   PERFORMANCE = 'performance',
-  SYSTEM = 'system'
+  SYSTEM = 'system',
 }
 
 /**
@@ -176,21 +176,21 @@ export interface IDebugRecorder {
    * @returns Promise<void>
    */
   record(record: DebugRecord): Promise<void>;
-  
+
   /**
    * 批量记录Debug信息
    * @param records Debug记录数组
    * @returns Promise<void>
    */
   recordBatch(records: DebugRecord[]): Promise<void>;
-  
+
   /**
    * 开始请求追踪
    * @param request 路由请求
    * @returns string 追踪ID
    */
   startRequestTrace(request: RouteRequest): string;
-  
+
   /**
    * 添加追踪步骤
    * @param traceId 追踪ID
@@ -198,7 +198,7 @@ export interface IDebugRecorder {
    * @returns Promise<void>
    */
   addTraceStep(traceId: string, step: TraceStep): Promise<void>;
-  
+
   /**
    * 结束请求追踪
    * @param traceId 追踪ID
@@ -207,7 +207,7 @@ export interface IDebugRecorder {
    * @returns Promise<RequestTrace> 完整追踪信息
    */
   endRequestTrace(traceId: string, response?: RouteResponse, error?: Error): Promise<RequestTrace>;
-  
+
   /**
    * 查询Debug记录
    * @param filters 查询过滤条件
@@ -222,7 +222,7 @@ export interface IDebugRecorder {
     endTime?: Date;
     limit?: number;
   }): Promise<DebugRecord[]>;
-  
+
   /**
    * 获取请求追踪
    * @param requestId 请求ID
@@ -241,19 +241,19 @@ export interface IReplaySystem {
    * @returns Promise<ReplayResult> 回放结果
    */
   startReplay(config: ReplayConfig): Promise<ReplayResult>;
-  
+
   /**
    * 停止回放
    * @returns Promise<void>
    */
   stopReplay(): Promise<void>;
-  
+
   /**
    * 获取回放状态
    * @returns any | null 回放状态
    */
   getReplayStatus(): any | null;
-  
+
   /**
    * 验证回放结果
    * @param originalTrace 原始追踪
@@ -261,7 +261,7 @@ export interface IReplaySystem {
    * @returns ReplayDifference[] 差异列表
    */
   validateReplayResult(originalTrace: RequestTrace, replayTrace: RequestTrace): ReplayDifference[];
-  
+
   /**
    * 导出回放报告
    * @param result 回放结果
@@ -281,21 +281,21 @@ export interface IPerformanceAnalyzer {
    * @returns Promise<void>
    */
   startProfiling(sessionId: string): Promise<void>;
-  
+
   /**
    * 停止性能分析
    * @param sessionId 会话ID
    * @returns Promise<PerformanceTrace[]> 性能数据
    */
   stopProfiling(sessionId: string): Promise<PerformanceTrace[]>;
-  
+
   /**
    * 分析性能数据
    * @param traces 性能追踪数据
    * @returns Promise<any> 分析结果
    */
   analyzePerformance(traces: PerformanceTrace[]): Promise<any>;
-  
+
   /**
    * 生成性能报告
    * @param analysis 性能分析结果
@@ -315,34 +315,34 @@ export interface IDebugManager {
    * @returns Promise<DebugSession> 会话信息
    */
   createSession(port: number): Promise<DebugSession>;
-  
+
   /**
    * 关闭Debug会话
    * @param sessionId 会话ID
    * @returns Promise<void>
    */
   closeSession(sessionId: string): Promise<void>;
-  
+
   /**
    * 获取Debug会话
    * @param sessionId 会话ID
    * @returns DebugSession | null 会话信息
    */
   getSession(sessionId: string): DebugSession | null;
-  
+
   /**
    * 获取所有活跃会话
    * @returns DebugSession[] 会话信息数组
    */
   getActiveSessions(): DebugSession[];
-  
+
   /**
    * 清理过期数据
    * @param olderThanDays 清理多少天前的数据
    * @returns Promise<number> 清理的记录数量
    */
   cleanup(olderThanDays: number): Promise<number>;
-  
+
   /**
    * 导出会话数据
    * @param sessionId 会话ID
@@ -350,7 +350,7 @@ export interface IDebugManager {
    * @returns Promise<string> 导出文件路径
    */
   exportSession(sessionId: string, format: 'json' | 'zip'): Promise<string>;
-  
+
   /**
    * 导入会话数据
    * @param filePath 导入文件路径
@@ -369,28 +369,28 @@ export interface IDebugModule extends IModule {
   readonly replaySystem: IReplaySystem;
   readonly performanceAnalyzer: IPerformanceAnalyzer;
   readonly debugManager: IDebugManager;
-  
+
   /**
    * 启用调试模式
    * @param sessionId 会话ID
    * @returns Promise<void>
    */
   enableDebugging(sessionId: string): Promise<void>;
-  
+
   /**
    * 禁用调试模式
    * @param sessionId 会话ID
    * @returns Promise<void>
    */
   disableDebugging(sessionId: string): Promise<void>;
-  
+
   /**
    * 设置调试级别
    * @param level Debug级别
    * @returns Promise<void>
    */
   setDebugLevel(level: DebugLevel): Promise<void>;
-  
+
   /**
    * 获取调试统计信息
    * @param sessionId 会话ID

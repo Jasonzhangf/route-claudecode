@@ -1,9 +1,9 @@
 /**
  * 客户端模块接口定义
- * 
+ *
  * 定义客户端模块的标准接口，包括CLI管理、服务器管理、会话管理等功能
  * 严格遵循模块边界，不允许直接调用其他模块的具体实现
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -14,11 +14,11 @@ import { IModule, ModuleConfig } from './module-interface';
  */
 export enum CLICommandType {
   START = 'start',
-  STOP = 'stop', 
+  STOP = 'stop',
   STATUS = 'status',
   CONFIG = 'config',
   DEBUG = 'debug',
-  VERSION = 'version'
+  VERSION = 'version',
 }
 
 /**
@@ -86,30 +86,27 @@ export interface ICLIManager {
    * @returns Promise<CLIResult> 执行结果
    */
   executeCommand(command: CLICommand): Promise<CLIResult>;
-  
+
   /**
    * 解析命令行参数
    * @param argv 命令行参数数组
    * @returns CLICommand 解析后的命令
    */
   parseArguments(argv: string[]): CLICommand;
-  
+
   /**
    * 获取命令帮助信息
    * @param commandType 命令类型
    * @returns string 帮助文本
    */
   getHelp(commandType?: CLICommandType): string;
-  
+
   /**
    * 注册命令处理器
    * @param commandType 命令类型
    * @param handler 处理函数
    */
-  registerCommandHandler(
-    commandType: CLICommandType, 
-    handler: (command: CLICommand) => Promise<CLIResult>
-  ): void;
+  registerCommandHandler(commandType: CLICommandType, handler: (command: CLICommand) => Promise<CLIResult>): void;
 }
 
 /**
@@ -123,25 +120,25 @@ export interface IServerManager {
    * @returns Promise<ServerInfo> 服务器信息
    */
   startServer(port: number, host: string): Promise<ServerInfo>;
-  
+
   /**
    * 停止RCC服务器
    * @returns Promise<void>
    */
   stopServer(): Promise<void>;
-  
+
   /**
    * 获取服务器状态
    * @returns Promise<ServerInfo> 服务器信息
    */
   getServerStatus(): Promise<ServerInfo>;
-  
+
   /**
    * 重启服务器
    * @returns Promise<ServerInfo> 新的服务器信息
    */
   restartServer(): Promise<ServerInfo>;
-  
+
   /**
    * 检查端口是否可用
    * @param port 端口号
@@ -160,27 +157,27 @@ export interface ISessionManager {
    * @returns Promise<SessionInfo> 会话信息
    */
   createSession(port: number): Promise<SessionInfo>;
-  
+
   /**
    * 获取会话信息
    * @param sessionId 会话ID
    * @returns SessionInfo | null 会话信息
    */
   getSession(sessionId: string): SessionInfo | null;
-  
+
   /**
    * 获取所有活跃会话
    * @returns SessionInfo[] 会话信息数组
    */
   getActiveSessions(): SessionInfo[];
-  
+
   /**
    * 关闭会话
    * @param sessionId 会话ID
    * @returns Promise<void>
    */
   closeSession(sessionId: string): Promise<void>;
-  
+
   /**
    * 清理过期会话
    * @returns Promise<string[]> 被清理的会话ID列表
@@ -199,7 +196,7 @@ export interface IClientErrorHandler {
    * @returns CLIResult 错误结果
    */
   handleCLIError(error: Error, command: CLICommand): CLIResult;
-  
+
   /**
    * 处理服务器错误
    * @param error 错误对象
@@ -207,7 +204,7 @@ export interface IClientErrorHandler {
    * @returns Promise<void>
    */
   handleServerError(error: Error, context: any): Promise<void>;
-  
+
   /**
    * 处理会话错误
    * @param error 错误对象
@@ -215,7 +212,7 @@ export interface IClientErrorHandler {
    * @returns Promise<void>
    */
   handleSessionError(error: Error, sessionId: string): Promise<void>;
-  
+
   /**
    * 记录错误日志
    * @param error 错误对象
@@ -235,14 +232,14 @@ export interface IClientModule extends IModule {
   readonly serverManager: IServerManager;
   readonly sessionManager: ISessionManager;
   readonly errorHandler: IClientErrorHandler;
-  
+
   /**
    * 处理CLI请求
    * @param argv 命令行参数
    * @returns Promise<CLIResult> 执行结果
    */
   handleCLIRequest(argv: string[]): Promise<CLIResult>;
-  
+
   /**
    * 启动客户端服务
    * @param port 端口号
@@ -250,13 +247,13 @@ export interface IClientModule extends IModule {
    * @returns Promise<void>
    */
   startService(port: number, host: string): Promise<void>;
-  
+
   /**
    * 停止客户端服务
    * @returns Promise<void>
    */
   stopService(): Promise<void>;
-  
+
   /**
    * 获取客户端状态摘要
    * @returns Promise<any> 状态信息

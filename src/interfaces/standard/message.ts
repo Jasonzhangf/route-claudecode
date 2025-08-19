@@ -1,8 +1,8 @@
 /**
  * 标准消息数据结构接口
- * 
+ *
  * 定义统一的消息格式，支持多种内容类型
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -39,14 +39,7 @@ export interface ContentBlock {
 /**
  * 内容块类型
  */
-export type ContentBlockType = 
-  | 'text'
-  | 'tool_use'
-  | 'tool_result'
-  | 'image'
-  | 'audio'
-  | 'video'
-  | 'document';
+export type ContentBlockType = 'text' | 'tool_use' | 'tool_result' | 'image' | 'audio' | 'video' | 'document';
 
 /**
  * 媒体源
@@ -172,18 +165,18 @@ interface MutableMessage {
  */
 export class MessageBuilder {
   private message: Partial<MutableMessage> = {};
-  
+
   constructor(role: MessageRole) {
     this.message = {
       role,
       content: '',
       metadata: {
         timestamp: new Date(),
-        source: 'api'
-      }
+        source: 'api',
+      },
     };
   }
-  
+
   /**
    * 设置文本内容
    */
@@ -191,7 +184,7 @@ export class MessageBuilder {
     this.message.content = text;
     return this;
   }
-  
+
   /**
    * 设置内容块列表
    */
@@ -199,7 +192,7 @@ export class MessageBuilder {
     this.message.content = blocks;
     return this;
   }
-  
+
   /**
    * 添加文本块
    */
@@ -207,11 +200,11 @@ export class MessageBuilder {
     this.ensureContentBlocksArray();
     (this.message.content as ContentBlock[]).push({
       type: 'text',
-      text
+      text,
     });
     return this;
   }
-  
+
   /**
    * 添加工具使用块
    */
@@ -221,11 +214,11 @@ export class MessageBuilder {
       type: 'tool_use',
       id,
       name,
-      input
+      input,
     });
     return this;
   }
-  
+
   /**
    * 添加工具结果块
    */
@@ -234,11 +227,11 @@ export class MessageBuilder {
     (this.message.content as ContentBlock[]).push({
       type: 'tool_result',
       toolUseId,
-      content
+      content,
     });
     return this;
   }
-  
+
   /**
    * 添加图片块
    */
@@ -247,11 +240,11 @@ export class MessageBuilder {
     (this.message.content as ContentBlock[]).push({
       type: 'image',
       source,
-      mediaType
+      mediaType,
     });
     return this;
   }
-  
+
   /**
    * 设置消息名称
    */
@@ -259,7 +252,7 @@ export class MessageBuilder {
     this.message.name = name;
     return this;
   }
-  
+
   /**
    * 设置元数据
    */
@@ -267,7 +260,7 @@ export class MessageBuilder {
     this.message.metadata = { ...this.message.metadata!, ...metadata };
     return this;
   }
-  
+
   /**
    * 添加标签
    */
@@ -281,7 +274,7 @@ export class MessageBuilder {
     this.message.metadata.tags.push(tag);
     return this;
   }
-  
+
   /**
    * 添加注释
    */
@@ -295,7 +288,7 @@ export class MessageBuilder {
     this.message.metadata.annotations.push(annotation);
     return this;
   }
-  
+
   /**
    * 构建消息
    */
@@ -303,10 +296,10 @@ export class MessageBuilder {
     if (!this.message.role || !this.message.content) {
       throw new Error('Missing required fields in Message');
     }
-    
+
     return this.message as Message;
   }
-  
+
   /**
    * 确保内容是块数组
    */
@@ -322,59 +315,55 @@ export class MessageBuilder {
       this.message.content = [];
     }
   }
-  
+
   /**
    * 从Anthropic格式创建
    */
   static fromAnthropic(anthropicMessage: any): MessageBuilder {
     const builder = new MessageBuilder(anthropicMessage.role);
-    
+
     if (typeof anthropicMessage.content === 'string') {
       builder.setText(anthropicMessage.content);
     } else if (Array.isArray(anthropicMessage.content)) {
       builder.setContentBlocks(anthropicMessage.content);
     }
-    
+
     if (anthropicMessage.name) {
       builder.setName(anthropicMessage.name);
     }
-    
+
     builder.setMetadata({
-      originalFormat: 'anthropic'
+      originalFormat: 'anthropic',
     });
-    
+
     return builder;
   }
-  
+
   /**
    * 从OpenAI格式创建
    */
   static fromOpenAI(openaiMessage: any): MessageBuilder {
     const builder = new MessageBuilder(openaiMessage.role);
-    
+
     if (openaiMessage.content) {
       builder.setText(openaiMessage.content);
     }
-    
+
     if (openaiMessage.name) {
       builder.setName(openaiMessage.name);
     }
-    
+
     // 处理工具调用
     if (openaiMessage.tool_calls) {
       for (const toolCall of openaiMessage.tool_calls) {
-        builder.addToolUseBlock(
-          toolCall.id,
-          toolCall.function.name,
-          JSON.parse(toolCall.function.arguments)
-        );
+        builder.addToolUseBlock(toolCall.id, toolCall.function.name, JSON.parse(toolCall.function.arguments));
       }
     }
-    
+
     builder.setMetadata({
-      originalFormat: 'openai'
+      originalFormat: 'openai',
     });
-    
+
     return builder;
   }
 }

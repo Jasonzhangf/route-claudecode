@@ -8,7 +8,13 @@
 /**
  * 模块类型枚举
  */
-export type ModuleType = 'validator' | 'transformer' | 'protocol' | 'compatibility' | 'server';
+export declare enum ModuleType {
+    VALIDATOR = "validator",
+    TRANSFORMER = "transformer",
+    PROTOCOL = "protocol",
+    SERVER_COMPATIBILITY = "server-compatibility",
+    SERVER = "server"
+}
 /**
  * 模块状态接口
  */

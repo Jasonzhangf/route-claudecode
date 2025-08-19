@@ -13,20 +13,14 @@ const provider_factory_1 = require("./provider-factory");
  * Provider管理器
  */
 class ProviderManager {
-    config;
-    factory;
-    providers;
-    routeInfos;
-    healthCheckTimer;
-    roundRobinIndex;
     constructor(config = {}) {
         this.config = {
             routingStrategy: 'round-robin',
             healthCheckInterval: 30000, // 30秒
-            failoverEnabled: true,
             maxRetries: 3,
             debug: false,
-            ...config
+            strictErrorReporting: true,
+            ...config,
         };
         this.factory = provider_factory_1.ProviderFactory.getInstance();
         this.providers = new Map();
@@ -44,11 +38,13 @@ class ProviderManager {
             // 验证所有Provider配置
             const validationResults = providerConfigs.map(config => ({
                 config,
-                validation: this.factory.validateProviderConfig(config)
+                validation: this.factory.validateProviderConfig(config),
             }));
             const invalidConfigs = validationResults.filter(result => !result.validation.valid);
             if (invalidConfigs.length > 0) {
-                const errors = invalidConfigs.map(result => `${result.config.id}: ${result.validation.errors.join(', ')}`).join('; ');
+                const errors = invalidConfigs
+                    .map(result => `${result.config.id}: ${result.validation.errors.join(', ')}`)
+                    .join('; ');
                 throw new Error(`Invalid provider configurations: ${errors}`);
             }
             // 创建Provider实例
@@ -87,7 +83,7 @@ class ProviderManager {
                 priority: 1,
                 weight: 1,
                 healthy: true,
-                currentLoad: 0
+                currentLoad: 0,
             });
             if (this.config.debug) {
                 console.log(`[ProviderManager] Registered provider: ${providerId}`);
@@ -159,24 +155,26 @@ class ProviderManager {
                 retryCount++;
                 // 更新负载计数
                 this.updateProviderLoad(info.id, -1);
-                // 标记Provider为不健康
-                if (this.config.failoverEnabled) {
+                // 标记Provider为不健康（仅用于监控，不影响路由）
+                if (this.config.strictErrorReporting) {
                     this.markProviderUnhealthy(info.id);
                 }
                 if (this.config.debug) {
                     console.warn(`[ProviderManager] Request failed on ${info.id}, attempt ${retryCount}:`, error);
                 }
-                // 如果启用故障转移，尝试其他Provider
-                if (this.config.failoverEnabled && retryCount <= this.config.maxRetries) {
-                    const fallbackRoute = this.selectProvider(request, [info.id]);
-                    if (fallbackRoute) {
-                        if (this.config.debug) {
-                            console.log(`[ProviderManager] Failing over to ${fallbackRoute.info.id}`);
-                        }
-                        // 更新路由信息继续重试
-                        Object.assign(routeResult, fallbackRoute);
-                    }
+                // 🚨 RCC v4.0 Zero Fallback Policy: 不允许故障转移，直接报告错误
+                // 记录失败信息用于监控和调试
+                const errorDetails = {
+                    providerId: info.id,
+                    attempt: retryCount,
+                    maxRetries: this.config.maxRetries,
+                    error: error.message,
+                    timestamp: new Date().toISOString(),
+                };
+                if (this.config.debug) {
+                    console.error(`[ProviderManager] Provider ${info.id} failed (attempt ${retryCount}/${this.config.maxRetries}):`, errorDetails);
                 }
+                // 不进行fallback，让错误向上传播以保持透明度
             }
         }
         throw lastError || new Error('Request failed after all retry attempts');
@@ -185,13 +183,9 @@ class ProviderManager {
      * 选择Provider
      */
     selectProvider(request, excludeIds = []) {
-        const availableProviders = Array.from(this.providers.entries())
-            .filter(([id, provider]) => {
+        const availableProviders = Array.from(this.providers.entries()).filter(([id, provider]) => {
             const routeInfo = this.routeInfos.get(id);
-            return routeInfo &&
-                routeInfo.healthy &&
-                !excludeIds.includes(id) &&
-                this.isProviderCompatible(provider, request);
+            return routeInfo && routeInfo.healthy && !excludeIds.includes(id) && this.isProviderCompatible(provider, request);
         });
         if (availableProviders.length === 0) {
             return null;
@@ -201,7 +195,7 @@ class ProviderManager {
         return {
             provider: selectedProvider,
             info: routeInfo,
-            reason: `Selected by ${this.config.routingStrategy} strategy`
+            reason: `Selected by ${this.config.routingStrategy} strategy`,
         };
     }
     /**
@@ -336,7 +330,7 @@ class ProviderManager {
             const routeInfo = this.routeInfos.get(id);
             return {
                 ...status,
-                routeInfo
+                routeInfo,
             };
         });
     }
@@ -358,15 +352,15 @@ class ProviderManager {
             healthyProviders: healthy,
             unhealthyProviders: unhealthy,
             routingStrategy: this.config.routingStrategy,
-            failoverEnabled: this.config.failoverEnabled,
+            strictErrorReporting: this.config.strictErrorReporting,
             healthCheckInterval: this.config.healthCheckInterval,
             providers: providers.map(p => ({
                 id: p.routeInfo.id,
                 type: p.routeInfo.type,
                 healthy: p.routeInfo.healthy,
                 currentLoad: p.routeInfo.currentLoad,
-                status: p.status
-            }))
+                status: p.status,
+            })),
         };
     }
     /**

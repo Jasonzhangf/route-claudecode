@@ -23,6 +23,7 @@ export declare class RCCCli implements CLICommands {
     private validator;
     private configLoader;
     private options;
+    private pipelineManager?;
     constructor(options?: CLIOptions);
     /**
      * 执行CLI命令
@@ -96,5 +97,13 @@ export declare class RCCCli implements CLICommands {
      * 重置配置
      */
     private resetConfiguration;
+    /**
+     * 设置流水线事件监听器
+     */
+    private setupPipelineEventListeners;
+    /**
+     * 格式化运行时间
+     */
+    private formatUptime;
 }
 //# sourceMappingURL=rcc-cli.d.ts.map

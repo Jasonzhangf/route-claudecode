@@ -1,8 +1,8 @@
 /**
  * Debug系统核心类型定义
- * 
+ *
  * 为Debug管理器、记录器和回放系统提供类型支持
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -15,10 +15,10 @@ import { Pipeline } from '../../pipeline/types';
 export interface DebugRecord {
   requestId: string;
   timestamp: number;
-  readableTime: string;        // 可读的当前时区时间: "2024-08-15 14:30:22 CST"
+  readableTime: string; // 可读的当前时区时间: "2024-08-15 14:30:22 CST"
   port: number;
   sessionId: string;
-  
+
   // 请求信息
   request: {
     method: string;
@@ -26,7 +26,7 @@ export interface DebugRecord {
     headers: Record<string, string>;
     body: any;
   };
-  
+
   // 流水线执行记录
   pipeline: {
     id: string;
@@ -34,7 +34,7 @@ export interface DebugRecord {
     model: string;
     modules: ModuleRecord[];
   };
-  
+
   // 响应信息
   response: {
     status: number;
@@ -42,7 +42,7 @@ export interface DebugRecord {
     body: any;
     duration: number;
   };
-  
+
   // 错误信息（如果有）
   error?: {
     type: string;
@@ -58,10 +58,10 @@ export interface DebugRecord {
 export interface ModuleRecord {
   moduleName: string;
   startTime: number;
-  startTimeReadable: string;   // 可读的开始时间
+  startTimeReadable: string; // 可读的开始时间
   endTime: number;
-  endTimeReadable: string;     // 可读的结束时间
-  duration: number;            // 处理时长(毫秒)
+  endTimeReadable: string; // 可读的结束时间
+  duration: number; // 处理时长(毫秒)
   input: any;
   output: any;
   error?: RCCError;
@@ -78,17 +78,17 @@ export interface DebugSession {
   sessionId: string;
   port: number;
   startTime: number;
-  startTimeReadable: string;   // 可读的开始时间: "2024-08-15 14:30:22 CST"
+  startTimeReadable: string; // 可读的开始时间: "2024-08-15 14:30:22 CST"
   endTime?: number;
-  endTimeReadable?: string;    // 可读的结束时间
-  duration?: number;           // 会话持续时间(毫秒)
+  endTimeReadable?: string; // 可读的结束时间
+  duration?: number; // 会话持续时间(毫秒)
   requestCount: number;
   errorCount: number;
   activePipelines: string[];
   metadata: {
     version: string;
     config: any;
-    timezone: string;          // 时区信息
+    timezone: string; // 时区信息
   };
 }
 
@@ -154,9 +154,12 @@ export interface DebugStatistics {
   totalErrors: number;
   averageResponseTime: number;
   diskUsage: number;
-  moduleStatistics: Map<string, {
-    recordCount: number;
-    errorCount: number;
-    averageDuration: number;
-  }>;
+  moduleStatistics: Map<
+    string,
+    {
+      recordCount: number;
+      errorCount: number;
+      averageDuration: number;
+    }
+  >;
 }

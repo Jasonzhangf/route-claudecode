@@ -1,9 +1,9 @@
 /**
  * 核心模块接口统一导出
- * 
+ *
  * 这个文件是RCC v4.0模块化架构的核心，定义了所有模块必须遵循的标准接口
  * 所有模块间的通信都必须通过这些接口进行，严禁直接调用具体实现
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -26,7 +26,7 @@ export * from './server-interface';
 export * from './middleware-interface';
 
 // 模块实现接口
-export * from './module-implementation-interface';
+export { IModuleInterface, IModuleStatus, IModuleMetrics } from './module-implementation-interface';
 
 /**
  * 模块接口版本信息
@@ -36,13 +36,7 @@ export const MODULE_INTERFACE_VERSION = '4.0.0-alpha.1';
 /**
  * 支持的模块类型列表
  */
-export const SUPPORTED_MODULE_TYPES = [
-  'client',
-  'router', 
-  'pipeline',
-  'debug',
-  'server'
-] as const;
+export const SUPPORTED_MODULE_TYPES = ['client', 'router', 'pipeline', 'debug', 'server'] as const;
 
 /**
  * 模块依赖关系图
@@ -53,7 +47,7 @@ export const MODULE_DEPENDENCY_GRAPH = {
   router: ['pipeline', 'debug'], // 路由器可以依赖流水线和Debug接口
   pipeline: ['debug'], // 流水线可以依赖Debug接口
   debug: [], // Debug系统不依赖其他模块
-  server: ['pipeline', 'debug'] // 服务器可以依赖流水线和Debug接口
+  server: ['pipeline', 'debug'], // 服务器可以依赖流水线和Debug接口
 } as const;
 
 /**
@@ -76,32 +70,32 @@ export function detectCircularDependencies(dependencies: Record<string, string[]
   const visited = new Set<string>();
   const recursionStack = new Set<string>();
   const path: string[] = [];
-  
+
   function dfs(node: string): boolean {
     if (recursionStack.has(node)) {
       return true; // 找到循环
     }
-    
+
     if (visited.has(node)) {
       return false;
     }
-    
+
     visited.add(node);
     recursionStack.add(node);
     path.push(node);
-    
+
     const deps = dependencies[node] || [];
     for (const dep of deps) {
       if (dfs(dep)) {
         return true;
       }
     }
-    
+
     recursionStack.delete(node);
     path.pop();
     return false;
   }
-  
+
   for (const node of Object.keys(dependencies)) {
     if (!visited.has(node)) {
       if (dfs(node)) {
@@ -109,6 +103,6 @@ export function detectCircularDependencies(dependencies: Record<string, string[]
       }
     }
   }
-  
+
   return [];
 }

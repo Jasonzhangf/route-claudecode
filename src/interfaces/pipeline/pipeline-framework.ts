@@ -1,20 +1,15 @@
 /**
  * 流水线框架接口定义
- * 
+ *
  * 定义11模块流水线的标准框架接口
- * 
+ *
  * @author Jason Zhang
  */
 
 /**
  * 模块类型枚举
  */
-export type ModuleType = 
-  | 'validator'
-  | 'transformer'
-  | 'protocol'
-  | 'compatibility'
-  | 'server';
+export type ModuleType = 'validator' | 'transformer' | 'protocol' | 'compatibility' | 'server';
 
 /**
  * 模块状态接口
@@ -110,7 +105,7 @@ export interface Pipeline {
 export interface PipelineStatus {
   id: string;
   name: string;
-  status: 'idle' | 'running' | 'busy' | 'error' | 'stopped';
+  status: 'idle' | 'starting' | 'running' | 'busy' | 'stopping' | 'error' | 'stopped';
   provider: string;
   model: string;
   activeConnections: number;
@@ -119,7 +114,11 @@ export interface PipelineStatus {
   errorRequests: number;
   averageResponseTime: number;
   lastActivity: Date;
-  health: 'healthy' | 'degraded' | 'unhealthy';
+  health: {
+    healthy: boolean;
+    lastHealthCheck: Date;
+    issues: string[];
+  };
 }
 
 /**
@@ -127,7 +126,7 @@ export interface PipelineStatus {
  */
 export interface PipelineFramework extends Pipeline {
   readonly id: string;
-  
+
   /**
    * 事件监听器方法
    */
@@ -139,42 +138,42 @@ export interface PipelineFramework extends Pipeline {
    * 添加模块到流水线
    */
   addModule(module: ModuleInterface): void;
-  
+
   /**
    * 移除模块
    */
   removeModule(moduleId: string): void;
-  
+
   /**
    * 获取模块
    */
   getModule(moduleId: string): ModuleInterface | null;
-  
+
   /**
    * 获取所有模块
    */
   getAllModules(): ModuleInterface[];
-  
+
   /**
    * 设置模块顺序
    */
   setModuleOrder(moduleIds: string[]): void;
-  
+
   /**
    * 执行单个模块
    */
   executeModule(moduleId: string, input: any): Promise<any>;
-  
+
   /**
    * 获取执行历史
    */
   getExecutionHistory(): ExecutionRecord[];
-  
+
   /**
    * 重置流水线状态
    */
   reset(): Promise<void>;
-  
+
   /**
    * 清理资源
    */
@@ -327,22 +326,22 @@ export interface PipelineExecutor {
    * 执行流水线
    */
   execute(input: any, context?: ExecutionContext): Promise<ExecutionResult>;
-  
+
   /**
    * 取消执行
    */
   cancel(executionId: string): Promise<boolean>;
-  
+
   /**
    * 暂停执行
    */
   pause(executionId: string): Promise<boolean>;
-  
+
   /**
    * 恢复执行
    */
   resume(executionId: string): Promise<boolean>;
-  
+
   /**
    * 获取执行状态
    */
@@ -414,17 +413,17 @@ export interface PipelineValidator {
    * 验证流水线配置
    */
   validateConfig(config: PipelineConfig): ValidationResult;
-  
+
   /**
    * 验证模块依赖
    */
   validateDependencies(modules: ModuleConfig[]): ValidationResult;
-  
+
   /**
    * 验证模块兼容性
    */
   validateCompatibility(modules: ModuleInterface[]): ValidationResult;
-  
+
   /**
    * 验证流水线完整性
    */
@@ -470,27 +469,27 @@ export interface StandardPipelineFactory {
    * 创建标准流水线
    */
   createStandardPipeline(config: PipelineConfig): Promise<PipelineFramework>;
-  
+
   /**
    * 创建LM Studio流水线
    */
   createLMStudioPipeline(model: string): Promise<PipelineFramework>;
-  
+
   /**
    * 创建OpenAI流水线
    */
   createOpenAIPipeline(model: string): Promise<PipelineFramework>;
-  
+
   /**
    * 创建Anthropic流水线
    */
   createAnthropicPipeline(model: string): Promise<PipelineFramework>;
-  
+
   /**
    * 从规范创建流水线
    */
   createFromSpec(spec: PipelineSpec): Promise<PipelineFramework>;
-  
+
   /**
    * 克隆流水线
    */

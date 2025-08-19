@@ -1,0 +1,68 @@
+{
+  "// === RCC v4.0 Demo1增强版配置文件 ===": "",
+  "// 基于demo1设计，保持原有路由逻辑，添加多key支持": "",
+  
+  "version": "4.0",
+  "templateVersion": "1.0.0", 
+  "description": "lmstudio本地模型配置 - Demo1增强版格式",
+  "lastUpdated": "2025-08-19T12:30:00Z",
+
+  "// === PROVIDERS 区 ===": "",
+  "// 完全按照demo1格式定义Provider": "",
+  "Providers": [
+    {
+      "name": "lmstudio",
+      "api_base_url": "http://localhost:1234/v1/chat/completions",
+      "api_key": "lm-studio",
+      "models": ["llama-3.1-8b-instruct", "qwen2.5-coder-7b-instruct", "gpt-oss-20b-mlx"]
+    }
+  ],
+
+  "// === ROUTER 区 ===": "",
+  "// 完全按照demo1的路由判断逻辑和优先级": "",
+  "Router": {
+    "// 🎯 默认路由 - 当无匹配条件时使用": "",
+    "default": "lmstudio,gpt-oss-20b-mlx",
+    
+    "// 📚 长文档处理 - 条件: tokenCount > 60000": "",
+    "longContext": "lmstudio,gpt-oss-20b-mlx",
+    
+    "// ⚡ 轻量任务 - 条件: model.startsWith('claude-3-5-haiku')": "",
+    "background": "lmstudio,gpt-oss-20b-mlx",
+    
+    "// 🧠 深度思考 - 条件: req.body.thinking存在": "",
+    "think": "lmstudio,gpt-oss-20b-mlx",
+    
+    "// 🔍 网络搜索 - 条件: tools包含web_search类型": "",
+    "webSearch": "lmstudio,gpt-oss-20b-mlx"
+  },
+
+  "// === 多Key轮询配置 ===": "",
+  "MultiKeyConfig": {
+    "// Key轮询策略": "",
+    "rotationStrategy": "round-robin",
+    "// Key失败处理": "",
+    "keyFailureHandling": {
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "blacklistDuration": 300000
+    },
+    "// 负载均衡": "",
+    "loadBalancing": {
+      "enabled": true,
+      "trackUsage": true,
+      "resetInterval": 3600000
+    }
+  },
+
+  "// === 服务器配置 ===": "",
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+
+  "// === Demo1兼容性配置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0"
+}

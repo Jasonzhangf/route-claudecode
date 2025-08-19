@@ -1,0 +1,180 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "4.0.0",
+  "description": "LM Studio RCC v4.0 配置 - 基于demo1增强版改造",
+  "lastUpdated": "2025-08-19T12:30:00Z",
+  
+  "zeroFallbackPolicy": {
+    "enabled": true,
+    "strictMode": true,
+    "errorOnFailure": true,
+    "maxRetries": 0
+  },
+  
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "enableCors": true,
+    "corsOptions": {
+      "origin": "*",
+      "methods": ["GET", "POST", "OPTIONS"],
+      "allowedHeaders": ["Content-Type", "Authorization"]
+    }
+  },
+  
+  "pipeline": {
+    "enabled": true,
+    "layers": [
+      {
+        "id": "client",
+        "type": "http-client",
+        "enabled": true
+      },
+      {
+        "id": "router", 
+        "type": "simple-router",
+        "enabled": true
+      },
+      {
+        "id": "transformer",
+        "type": "anthropic-to-openai-transformer", 
+        "enabled": true
+      },
+      {
+        "id": "protocol",
+        "type": "openai-protocol",
+        "enabled": true
+      },
+      {
+        "id": "server-compatibility",
+        "type": "lmstudio-compatibility",
+        "enabled": true
+      },
+      {
+        "id": "server",
+        "type": "openai-server",
+        "enabled": true,
+        "config": {
+          "baseUrl": "http://localhost:1234/v1",
+          "timeout": 30000,
+          "maxRetries": 3,
+          "retryDelay": 1000
+        }
+      }
+    ]
+  },
+  
+  "providers": {
+    "lmstudio": {
+      "id": "lmstudio-provider",
+      "name": "LM Studio Local Provider",
+      "enabled": true,
+      "type": "server-compatibility",
+      "protocol": "openai-compatible",
+      "connection": {
+        "baseUrl": "http://localhost:1234/v1",
+        "apiKey": "lm-studio",
+        "timeout": 30000,
+        "maxRetries": 3,
+        "retryDelay": 1000,
+        "keepAlive": true
+      },
+      "models": {
+        "supportedModels": [
+          "llama-3.1-8b-instruct",
+          "qwen2.5-coder-7b-instruct", 
+          "gpt-oss-20b-mlx",
+          "glm-4.5v"
+        ],
+        "defaultModel": "gpt-oss-20b-mlx"
+      },
+      "features": {
+        "chat": true,
+        "tools": true,
+        "streaming": true,
+        "embedding": false,
+        "vision": false
+      },
+      "healthCheck": {
+        "enabled": true,
+        "interval": 30000,
+        "timeout": 5000,
+        "endpoint": "/models"
+      }
+    }
+  },
+  
+  "routing": {
+    "strategy": "single-provider",
+    "defaultProvider": "lmstudio",
+    "rules": [
+      {
+        "id": "default-rule",
+        "name": "Default Routing",
+        "enabled": true,
+        "priority": 1,
+        "conditions": [],
+        "targetProvider": "lmstudio",
+        "targetModel": "gpt-oss-20b-mlx"
+      },
+      {
+        "id": "coding-rule", 
+        "name": "Coding Tasks",
+        "enabled": true,
+        "priority": 10,
+        "conditions": [
+          {
+            "field": "category",
+            "operator": "equals",
+            "value": "coding"
+          }
+        ],
+        "targetProvider": "lmstudio",
+        "targetModel": "gpt-oss-20b-mlx"
+      },
+      {
+        "id": "long-context-rule",
+        "name": "Long Context Tasks", 
+        "enabled": true,
+        "priority": 5,
+        "conditions": [
+          {
+            "field": "tokenCount",
+            "operator": "greater_than",
+            "value": "60000"
+          }
+        ],
+        "targetProvider": "lmstudio",
+        "targetModel": "gpt-oss-20b-mlx"
+      }
+    ]
+  },
+  
+  "debug": {
+    "enabled": true,
+    "logLevel": "info",
+    "outputDirectory": "./debug-logs",
+    "maxLogFiles": 100,
+    "logRotation": true
+  },
+  
+  "auth": {
+    "enabled": true,
+    "allowedKeys": ["rcc4-proxy-key"],
+    "defaultKey": "rcc4-proxy-key"
+  },
+  
+  "monitoring": {
+    "enabled": true,
+    "metrics": {
+      "collectRequestMetrics": true,
+      "collectProviderMetrics": true,
+      "collectPerformanceMetrics": true
+    },
+    "healthCheck": {
+      "enabled": true,
+      "interval": 30000,
+      "endpoints": ["/health", "/v1/models"]
+    }
+  }
+}

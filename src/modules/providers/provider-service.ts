@@ -1,8 +1,8 @@
 /**
  * Provider服务
- * 
+ *
  * 统一的Provider服务入口点，整合工厂、管理器和配置加载
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -72,21 +72,21 @@ export class ProviderService {
     this.config = {
       autoStart: true,
       debug: false,
-      ...config
+      ...config,
     };
 
     this.manager = new ProviderManager(this.config.manager);
     this.factory = ProviderFactory.getInstance();
     this.status = 'stopped';
     this.requestTimes = [];
-    
+
     this.stats = {
       status: this.status,
       totalRequests: 0,
       successfulRequests: 0,
       failedRequests: 0,
       averageResponseTime: 0,
-      providerStats: {}
+      providerStats: {},
     };
 
     if (this.config.debug) {
@@ -106,7 +106,7 @@ export class ProviderService {
     }
 
     this.status = 'starting';
-    
+
     try {
       if (this.config.debug) {
         console.log('[ProviderService] Starting Provider service...');
@@ -114,7 +114,7 @@ export class ProviderService {
 
       // 加载配置
       const providerConfigs = await this.loadProviderConfigs();
-      
+
       if (providerConfigs.length === 0) {
         throw new Error('No provider configurations found');
       }
@@ -131,15 +131,14 @@ export class ProviderService {
       if (this.config.debug) {
         console.log(`[ProviderService] Service started successfully with ${providerConfigs.length} providers`);
       }
-
     } catch (error) {
       this.status = 'error';
       this.stats.status = this.status;
-      
+
       if (this.config.debug) {
         console.error('[ProviderService] Failed to start service:', error);
       }
-      
+
       throw error;
     }
   }
@@ -173,15 +172,14 @@ export class ProviderService {
       if (this.config.debug) {
         console.log('[ProviderService] Service stopped successfully');
       }
-
     } catch (error) {
       this.status = 'error';
       this.stats.status = this.status;
-      
+
       if (this.config.debug) {
         console.error('[ProviderService] Failed to stop service:', error);
       }
-      
+
       throw error;
     }
   }
@@ -207,7 +205,7 @@ export class ProviderService {
     }
 
     const startTime = Date.now();
-    
+
     try {
       // 更新统计
       this.stats.totalRequests++;
@@ -217,7 +215,7 @@ export class ProviderService {
 
       // 更新成功统计
       this.stats.successfulRequests++;
-      
+
       // 记录响应时间
       const responseTime = Date.now() - startTime;
       this.updateResponseTime(responseTime);
@@ -227,11 +225,10 @@ export class ProviderService {
       }
 
       return response;
-
     } catch (error) {
       // 更新失败统计
       this.stats.failedRequests++;
-      
+
       const responseTime = Date.now() - startTime;
       this.updateResponseTime(responseTime);
 
@@ -254,16 +251,15 @@ export class ProviderService {
       try {
         const configFile = await ConfigLoader.loadConfig({
           ...this.config.configLoader,
-          debug: this.config.debug
+          debug: this.config.debug,
         });
-        
+
         providerConfigs = configFile.providers;
-        
+
         // 应用全局调试设置
         if (configFile.global?.debug !== undefined) {
           this.config.debug = configFile.global.debug;
         }
-
       } catch (error) {
         if (this.config.debug) {
           console.error('[ProviderService] Failed to load configuration file:', error);
@@ -281,7 +277,9 @@ export class ProviderService {
     const enabledProviders = providerConfigs.filter(config => config.enabled);
 
     if (this.config.debug) {
-      console.log(`[ProviderService] Loaded ${enabledProviders.length} enabled providers (${providerConfigs.length} total)`);
+      console.log(
+        `[ProviderService] Loaded ${enabledProviders.length} enabled providers (${providerConfigs.length} total)`
+      );
     }
 
     return enabledProviders;
@@ -292,15 +290,14 @@ export class ProviderService {
    */
   private updateResponseTime(responseTime: number): void {
     this.requestTimes.push(responseTime);
-    
+
     // 保持最近1000次请求的时间记录
     if (this.requestTimes.length > 1000) {
       this.requestTimes = this.requestTimes.slice(-1000);
     }
 
     // 计算平均响应时间
-    this.stats.averageResponseTime = 
-      this.requestTimes.reduce((sum, time) => sum + time, 0) / this.requestTimes.length;
+    this.stats.averageResponseTime = this.requestTimes.reduce((sum, time) => sum + time, 0) / this.requestTimes.length;
   }
 
   /**
@@ -315,7 +312,7 @@ export class ProviderService {
    */
   public getStats(): ProviderServiceStats {
     const stats = { ...this.stats };
-    
+
     // 计算运行时间
     if (this.startedAt) {
       stats.uptime = Date.now() - this.startedAt.getTime();
@@ -348,13 +345,13 @@ export class ProviderService {
     if (this.status !== 'running') {
       return {
         healthy: false,
-        details: { error: `Service is not running (status: ${this.status})` }
+        details: { error: `Service is not running (status: ${this.status})` },
       };
     }
 
     const healthyProviders = this.getHealthyProviderCount();
     const totalProviders = this.getProviderStatuses().length;
-    
+
     // 如果至少有一个健康的Provider，服务就是健康的
     const healthy = healthyProviders > 0;
 
@@ -366,11 +363,9 @@ export class ProviderService {
         totalProviders,
         uptime: this.startedAt ? Date.now() - this.startedAt.getTime() : 0,
         totalRequests: this.stats.totalRequests,
-        successRate: this.stats.totalRequests > 0 
-          ? this.stats.successfulRequests / this.stats.totalRequests 
-          : 0,
-        averageResponseTime: this.stats.averageResponseTime
-      }
+        successRate: this.stats.totalRequests > 0 ? this.stats.successfulRequests / this.stats.totalRequests : 0,
+        averageResponseTime: this.stats.averageResponseTime,
+      },
     };
   }
 
@@ -391,7 +386,7 @@ export class ProviderService {
    */
   public static create(config: ProviderServiceConfig): ProviderService {
     const service = new ProviderService(config);
-    
+
     if (config.autoStart) {
       // 异步启动
       service.start().catch(error => {
@@ -400,7 +395,7 @@ export class ProviderService {
         }
       });
     }
-    
+
     return service;
   }
 
@@ -408,7 +403,7 @@ export class ProviderService {
    * 创建带配置文件的服务实例
    */
   public static createFromConfigFile(
-    configFilePath: string, 
+    configFilePath: string,
     managerConfig?: Partial<ProviderManagerConfig>
   ): ProviderService {
     return ProviderService.create({
@@ -416,10 +411,10 @@ export class ProviderService {
       configLoader: {
         filePath: configFilePath,
         validate: true,
-        debug: true
+        debug: true,
       },
       autoStart: true,
-      debug: true
+      debug: true,
     });
   }
 }

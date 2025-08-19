@@ -1,12 +1,12 @@
 /**
  * 请求验证中间件
- * 
+ *
  * 提供请求格式验证、内容类型检查和安全验证功能
- * 
+ *
  * @author Jason Zhang
  */
 
-import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
+import { IMiddlewareFunction } from '../interfaces/core/server-interface';
 
 /**
  * 验证中间件配置
@@ -31,11 +31,11 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
       'application/json',
       'application/x-www-form-urlencoded',
       'text/plain',
-      'multipart/form-data'
+      'multipart/form-data',
     ],
     validateJson = true,
     requireAuth = false,
-    customValidators = []
+    customValidators = [],
   } = config;
 
   return async (req, res, next) => {
@@ -47,7 +47,7 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
           res.statusCode = 413;
           res.body = {
             error: 'Payload Too Large',
-            message: `Request body size (${bodySize} bytes) exceeds maximum allowed size (${maxBodySize} bytes)`
+            message: `Request body size (${bodySize} bytes) exceeds maximum allowed size (${maxBodySize} bytes)`,
           };
           return;
         }
@@ -56,15 +56,15 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
       // 2. 验证Content-Type
       if (validateContentType && req.method !== 'GET' && req.method !== 'HEAD') {
         const contentType = req.headers['content-type'] as string;
-        
+
         if (contentType) {
           const baseContentType = contentType.split(';')[0]?.trim();
-          
+
           if (baseContentType && !allowedContentTypes.includes(baseContentType)) {
             res.statusCode = 415;
             res.body = {
               error: 'Unsupported Media Type',
-              message: `Content-Type '${baseContentType}' is not supported. Allowed types: ${allowedContentTypes.join(', ')}`
+              message: `Content-Type '${baseContentType}' is not supported. Allowed types: ${allowedContentTypes.join(', ')}`,
             };
             return;
           }
@@ -79,7 +79,7 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
           res.statusCode = 400;
           res.body = {
             error: 'Bad Request',
-            message: 'Invalid JSON format in request body'
+            message: 'Invalid JSON format in request body',
           };
           return;
         }
@@ -88,12 +88,12 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
       // 4. 认证检查
       if (requireAuth) {
         const authHeader = req.headers['authorization'] as string;
-        
+
         if (!authHeader) {
           res.statusCode = 401;
           res.body = {
             error: 'Unauthorized',
-            message: 'Authorization header is required'
+            message: 'Authorization header is required',
           };
           return;
         }
@@ -102,7 +102,7 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
           res.statusCode = 401;
           res.body = {
             error: 'Unauthorized',
-            message: 'Invalid authorization header format. Expected Bearer or Basic authentication'
+            message: 'Invalid authorization header format. Expected Bearer or Basic authentication',
           };
           return;
         }
@@ -111,12 +111,12 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
       // 5. 自定义验证器
       for (const validator of customValidators) {
         const result = validator(req);
-        
+
         if (result !== true) {
           res.statusCode = 400;
           res.body = {
             error: 'Validation Failed',
-            message: typeof result === 'string' ? result : 'Custom validation failed'
+            message: typeof result === 'string' ? result : 'Custom validation failed',
           };
           return;
         }
@@ -126,12 +126,11 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
       await validateApiRequest(req, res);
 
       next();
-      
     } catch (error) {
       res.statusCode = 500;
       res.body = {
         error: 'Internal Server Error',
-        message: 'Validation middleware error'
+        message: 'Validation middleware error',
       };
       next(error as Error);
     }
@@ -152,7 +151,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
       res.statusCode = 400;
       res.body = {
         error: 'Bad Request',
-        message: 'Invalid Anthropic request: messages array is required'
+        message: 'Invalid Anthropic request: messages array is required',
       };
       return;
     }
@@ -162,7 +161,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
         res.statusCode = 400;
         res.body = {
           error: 'Bad Request',
-          message: 'Invalid message format: role and content are required'
+          message: 'Invalid message format: role and content are required',
         };
         return;
       }
@@ -171,7 +170,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
         res.statusCode = 400;
         res.body = {
           error: 'Bad Request',
-          message: `Invalid message role: ${message.role}. Must be user, assistant, or system`
+          message: `Invalid message role: ${message.role}. Must be user, assistant, or system`,
         };
         return;
       }
@@ -181,7 +180,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
       res.statusCode = 400;
       res.body = {
         error: 'Bad Request',
-        message: 'Model must be a string'
+        message: 'Model must be a string',
       };
       return;
     }
@@ -190,7 +189,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
       res.statusCode = 400;
       res.body = {
         error: 'Bad Request',
-        message: 'max_tokens must be a positive number'
+        message: 'max_tokens must be a positive number',
       };
       return;
     }
@@ -202,7 +201,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
       res.statusCode = 400;
       res.body = {
         error: 'Bad Request',
-        message: 'Invalid OpenAI request: messages array is required'
+        message: 'Invalid OpenAI request: messages array is required',
       };
       return;
     }
@@ -212,7 +211,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
         res.statusCode = 400;
         res.body = {
           error: 'Bad Request',
-          message: 'Invalid message format: role and content are required'
+          message: 'Invalid message format: role and content are required',
         };
         return;
       }
@@ -221,7 +220,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
         res.statusCode = 400;
         res.body = {
           error: 'Bad Request',
-          message: `Invalid message role: ${message.role}. Must be user, assistant, system, or tool`
+          message: `Invalid message role: ${message.role}. Must be user, assistant, system, or tool`,
         };
         return;
       }
@@ -231,7 +230,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
       res.statusCode = 400;
       res.body = {
         error: 'Bad Request',
-        message: 'Model parameter is required and must be a string'
+        message: 'Model parameter is required and must be a string',
       };
       return;
     }
@@ -243,7 +242,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
       res.statusCode = 400;
       res.body = {
         error: 'Bad Request',
-        message: 'Invalid Gemini request: contents array is required'
+        message: 'Invalid Gemini request: contents array is required',
       };
       return;
     }
@@ -253,7 +252,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
         res.statusCode = 400;
         res.body = {
           error: 'Bad Request',
-          message: 'Invalid content format: parts array is required'
+          message: 'Invalid content format: parts array is required',
         };
         return;
       }
@@ -263,7 +262,7 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
           res.statusCode = 400;
           res.body = {
             error: 'Bad Request',
-            message: 'Invalid part format: text or inlineData is required'
+            message: 'Invalid part format: text or inlineData is required',
           };
           return;
         }
@@ -275,11 +274,11 @@ async function validateApiRequest(req: any, res: any): Promise<void> {
 /**
  * 创建Anthropic API验证中间件
  */
-export function anthropicValidation(): MiddlewareFunction {
+export function anthropicValidation(): any {
   return validation({
     validateJson: true,
     customValidators: [
-      (req) => {
+      req => {
         if (req.url === '/v1/messages' && req.method === 'POST') {
           const body = req.body;
           if (!body || !body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
@@ -287,19 +286,19 @@ export function anthropicValidation(): MiddlewareFunction {
           }
         }
         return true;
-      }
-    ]
+      },
+    ],
   });
 }
 
 /**
  * 创建OpenAI API验证中间件
  */
-export function openaiValidation(): MiddlewareFunction {
+export function openaiValidation(): any {
   return validation({
     validateJson: true,
     customValidators: [
-      (req) => {
+      req => {
         if (req.url === '/v1/chat/completions' && req.method === 'POST') {
           const body = req.body;
           if (!body || !body.model || typeof body.model !== 'string') {
@@ -310,19 +309,19 @@ export function openaiValidation(): MiddlewareFunction {
           }
         }
         return true;
-      }
-    ]
+      },
+    ],
   });
 }
 
 /**
  * 创建Gemini API验证中间件
  */
-export function geminiValidation(): MiddlewareFunction {
+export function geminiValidation(): any {
   return validation({
     validateJson: true,
     customValidators: [
-      (req) => {
+      req => {
         if (req.url.includes('/generateContent') && req.method === 'POST') {
           const body = req.body;
           if (!body || !body.contents || !Array.isArray(body.contents) || body.contents.length === 0) {
@@ -330,7 +329,7 @@ export function geminiValidation(): MiddlewareFunction {
           }
         }
         return true;
-      }
-    ]
+      },
+    ],
   });
 }

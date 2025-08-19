@@ -34,7 +34,6 @@ exports.ConfigLoader = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const JSON5 = __importStar(require("json5"));
-const yaml = __importStar(require("yaml"));
 /**
  * Provider配置加载器
  */
@@ -105,7 +104,7 @@ class ConfigLoader {
                 return JSON5.parse(content);
             case 'yaml':
             case 'yml':
-                return yaml.parse(content);
+                throw new Error('YAML parsing not supported (yaml package not installed)');
             default:
                 throw new Error(`Unsupported configuration format: ${format}`);
         }
@@ -218,7 +217,7 @@ class ConfigLoader {
                 break;
             case 'yaml':
             case 'yml':
-                content = yaml.stringify(config);
+                throw new Error('YAML writing not supported (yaml package not installed)');
                 break;
             default:
                 throw new Error(`Unsupported configuration format: ${configFormat}`);
@@ -236,42 +235,42 @@ class ConfigLoader {
      */
     static createExampleConfig() {
         return {
-            version: "4.0.0",
+            version: '4.0.0',
             global: {
                 debug: false,
-                logLevel: "info"
+                logLevel: 'info',
             },
             providers: [
                 {
-                    id: "openai-primary",
-                    name: "OpenAI Primary",
-                    type: "openai",
+                    id: 'openai-primary',
+                    name: 'OpenAI Primary',
+                    type: 'openai',
                     enabled: true,
                     config: {
-                        apiKey: "sk-your-openai-api-key",
-                        defaultModel: "gpt-3.5-turbo",
+                        apiKey: 'sk-your-openai-api-key',
+                        defaultModel: 'gpt-3.5-turbo',
                         timeout: 30000,
                         maxRetries: 3,
                         enableStreaming: true,
                         enableToolCalls: true,
-                        debug: false
-                    }
+                        debug: false,
+                    },
                 },
                 {
-                    id: "anthropic-primary",
-                    name: "Anthropic Primary",
-                    type: "anthropic",
+                    id: 'anthropic-primary',
+                    name: 'Anthropic Primary',
+                    type: 'anthropic',
                     enabled: true,
                     config: {
-                        apiKey: "your-anthropic-api-key",
-                        defaultModel: "claude-3-sonnet-20240229",
+                        apiKey: 'your-anthropic-api-key',
+                        defaultModel: 'claude-3-sonnet-20240229',
                         timeout: 30000,
                         maxRetries: 3,
                         enableToolCalls: true,
-                        debug: false
-                    }
-                }
-            ]
+                        debug: false,
+                    },
+                },
+            ],
         };
     }
     /**
@@ -280,7 +279,7 @@ class ConfigLoader {
     static mergeConfigs(baseConfig, overrideConfig) {
         const merged = {
             ...baseConfig,
-            ...overrideConfig
+            ...overrideConfig,
         };
         // 合并providers数组
         if (overrideConfig.providers) {

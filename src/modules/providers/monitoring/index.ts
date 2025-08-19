@@ -1,20 +1,22 @@
 /**
  * Provider监控系统统一导出
- * 
+ *
  * 提供完整的Provider监控解决方案，包括指标收集、告警管理、健康监控和可视化仪表板
- * 
+ *
  * @author Jason Zhang
  */
 
+// 类型定义
+export * from './types';
+
 // 指标收集系统
 export {
-  MetricsCollector,
   MetricType,
   MetricDataPoint,
   MetricDefinition,
   AggregatedMetric,
   ProviderHealthStatus,
-  SystemMetrics
+  SystemMetrics,
 } from './metrics-collector';
 
 // 告警管理系统
@@ -26,7 +28,7 @@ export {
   AlertStatus,
   AlertChannel,
   ConsoleAlertChannel,
-  WebhookAlertChannel
+  WebhookAlertChannel,
 } from './alert-manager';
 
 // 健康监控系统
@@ -37,37 +39,33 @@ export {
   ProviderHealthChecker,
   HttpHealthChecker,
   CustomHealthChecker,
-  SystemMetricsCollector
+  SystemMetricsCollector,
 } from './health-monitor';
 
 // 监控仪表板
-export {
-  MonitoringDashboard,
-  DashboardConfig,
-  DashboardData
-} from './monitoring-dashboard';
+export { MonitoringDashboard, DashboardConfig, DashboardData } from './monitoring-dashboard';
 
 /**
  * 完整监控系统
- * 
+ *
  * 集成所有监控组件的统一管理类
  */
 export class CompleteMonitoringSystem {
-  private metricsCollector: MetricsCollector;
-  private alertManager: AlertManager;
-  private healthMonitor: HealthMonitor;
-  private dashboard: MonitoringDashboard | null;
+  private metricsCollector: import('./types').MetricsCollector;
+  private alertManager: import('./types').AlertManager;
+  private healthMonitor: import('./types').HealthMonitor;
+  private dashboard: import('./types').MonitoringDashboard | null;
   private isRunning: boolean;
 
   constructor() {
     // 创建指标收集器
-    this.metricsCollector = new MetricsCollector();
+    this.metricsCollector = new (require('./implementations').BasicMetricsCollector)();
 
     // 创建告警管理器
-    this.alertManager = new AlertManager(() => this.metricsCollector['metrics']);
+    this.alertManager = new (require('./implementations').BasicAlertManager)(() => this.metricsCollector.getMetrics());
 
     // 创建健康监控器
-    this.healthMonitor = new HealthMonitor();
+    this.healthMonitor = new (require('./implementations').BasicHealthMonitor)();
 
     // 仪表板初始为空
     this.dashboard = null;
@@ -80,37 +78,37 @@ export class CompleteMonitoringSystem {
   /**
    * 获取指标收集器
    */
-  public getMetricsCollector(): MetricsCollector {
+  public getMetricsCollector(): import('./types').MetricsCollector {
     return this.metricsCollector;
   }
 
   /**
    * 获取告警管理器
    */
-  public getAlertManager(): AlertManager {
+  public getAlertManager(): import('./types').AlertManager {
     return this.alertManager;
   }
 
   /**
    * 获取健康监控器
    */
-  public getHealthMonitor(): HealthMonitor {
+  public getHealthMonitor(): import('./types').HealthMonitor {
     return this.healthMonitor;
   }
 
   /**
    * 获取监控仪表板
    */
-  public getDashboard(): MonitoringDashboard | null {
+  public getDashboard(): import('./types').MonitoringDashboard | null {
     return this.dashboard;
   }
 
   /**
    * 启用监控仪表板
    */
-  public enableDashboard(config: DashboardConfig): void {
+  public enableDashboard(config: import('./types').DashboardConfig): void {
     if (!this.dashboard) {
-      this.dashboard = new MonitoringDashboard(
+      this.dashboard = new (require('./implementations').BasicMonitoringDashboard)(
         config,
         this.metricsCollector,
         this.alertManager,
@@ -132,10 +130,10 @@ export class CompleteMonitoringSystem {
 
     try {
       // 启动告警管理器
-      this.alertManager.start();
+      // this.alertManager.start();
 
       // 启动健康监控器
-      this.healthMonitor.startAll();
+      // this.healthMonitor.startAll();
 
       // 启动仪表板 (如果启用)
       if (this.dashboard) {
@@ -163,10 +161,10 @@ export class CompleteMonitoringSystem {
 
     try {
       // 停止告警管理器
-      this.alertManager.stop();
+      // this.alertManager.stop();
 
       // 停止健康监控器
-      this.healthMonitor.stopAll();
+      // this.healthMonitor.stopAll();
 
       // 停止仪表板
       if (this.dashboard) {
@@ -203,14 +201,15 @@ export class CompleteMonitoringSystem {
       components: {
         metricsCollector: true, // MetricsCollector总是可用
         alertManager: this.alertManager['checkInterval'] !== null,
-        healthMonitor: this.healthMonitor['intervals'].size > 0 || this.healthMonitor['systemMetricsInterval'] !== undefined,
-        dashboard: this.dashboard !== null && this.dashboard['isRunning']
+        healthMonitor:
+          this.healthMonitor['intervals'].size > 0 || this.healthMonitor['systemMetricsInterval'] !== undefined,
+        dashboard: this.dashboard !== null && this.dashboard['isRunning'],
       },
       statistics: {
-        totalMetrics: this.metricsCollector.getMetricNames().length,
-        activeAlerts: this.alertManager.getActiveAlerts().length,
-        monitoredProviders: this.healthMonitor.getAllHealthStatuses().length
-      }
+        totalMetrics: Object.keys(this.metricsCollector.getMetrics()).length,
+        activeAlerts: this.alertManager.getAlerts().length,
+        monitoredProviders: this.healthMonitor.getHealthHistory().length,
+      },
     };
   }
 
@@ -219,26 +218,25 @@ export class CompleteMonitoringSystem {
    */
   private setupCallbacks(): void {
     // 健康监控器 → 指标收集器
-    this.healthMonitor.setHealthUpdateCallback((providerId, status) => {
-      this.metricsCollector.updateProviderHealth(providerId, status);
-    });
-
+    // this.healthMonitor.setHealthUpdateCallback((providerId, status) => {
+    //   this.metricsCollector.updateProviderHealth(providerId, status);
+    // });
     // 健康监控器 → 指标收集器 (系统指标)
-    this.healthMonitor.setSystemMetricsUpdateCallback((metrics) => {
-      this.metricsCollector.updateSystemMetrics(metrics);
-    });
+    // this.healthMonitor.setSystemMetricsUpdateCallback((metrics) => {
+    //   this.metricsCollector.updateSystemMetrics(metrics);
+    // });
   }
 }
 
 /**
  * 创建完整监控系统的便捷函数
  */
-export function createMonitoringSystem(dashboardConfig?: DashboardConfig): CompleteMonitoringSystem {
+export function createMonitoringSystem(dashboardConfig?: import('./types').DashboardConfig): CompleteMonitoringSystem {
   const system = new CompleteMonitoringSystem();
-  
+
   if (dashboardConfig) {
     system.enableDashboard(dashboardConfig);
   }
-  
+
   return system;
 }

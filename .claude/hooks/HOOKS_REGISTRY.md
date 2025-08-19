@@ -74,3 +74,83 @@
 ---
 **更新时间**: 2025-08-18  
 **版本**: v2.0 - 项目特定hooks版本
+
+## Path Configuration Update (v2.1)
+
+**Date**: 2025-08-19 16:56:22  
+**Update**: Hook path configuration fix
+
+### Issue Resolved
+Hook execution was failing with 'No such file or directory' error when using relative paths:
+```
+bash: .claude/hooks/pre_bash_e2e_verification_enforcer_hook.sh: No such file or directory
+```
+
+### Solution Applied
+Updated `.claude/settings.json` to use absolute paths instead of relative paths:
+
+**Before (v2.0)**:
+```json
+"command": "bash .claude/hooks/pre_bash_e2e_verification_enforcer_hook.sh"
+```
+
+**After (v2.1)**:
+```json
+"command": "bash /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_bash_e2e_verification_enforcer_hook.sh"
+```
+
+### Verification
+All hooks now execute correctly from any working directory:
+✅ PreToolUse hooks: E2E verification, anti-fraud detection
+✅ PostToolUse hooks: Compliance scanning
+✅ Stop hooks: Build reminder, debug enforcement
+
+**Status**: RESOLVED - Hook system fully operational
+
+
+
+## Configuration Conflict Resolution (v2.2)
+
+**Date**: 2025-08-19 16:59:35  
+**Update**: settings.local.json configuration conflict resolved
+
+### Issue Identified
+Even after fixing absolute paths in `.claude/settings.json`, hooks were still failing:
+```
+bash: .claude/hooks/stop_universal_build_reminder_hook.sh: No such file or directory
+```
+
+### Root Cause Analysis
+Found conflicting hook configuration in `.claude/settings.local.json`:
+```json
+{
+  "hooks": {
+    "pre_bash": "hooks/local-projects/...",
+    "stop_universal_build_reminder": "hooks/local-projects/...",
+    "stop_universal_debug_enforcer": "hooks/local-projects/..."
+  }
+}
+```
+
+This old-format configuration was overriding the corrected main settings.
+
+### Solution Applied
+Removed conflicting hook configuration from `.claude/settings.local.json`, keeping only:
+```json
+{
+  "permissions": {
+    "allow": ["Bash(git init:*)"],
+    "deny": [],
+    "additionalDirectories": ["/Users/fanzhang/.route-claudecode"]
+  }
+}
+```
+
+### Final Status
+✅ All hooks now execute correctly with absolute paths
+✅ No configuration conflicts between settings files
+✅ Stop hooks functioning properly
+✅ Hook system fully operational
+
+**Status**: RESOLVED - Configuration conflicts eliminated, all hooks working
+

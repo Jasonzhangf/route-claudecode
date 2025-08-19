@@ -1,13 +1,14 @@
 "use strict";
 /**
- * RCC v4.0 Debug系统
- *
- * 处理数据记录、回放测试和调试支持
+ * Debug系统模块入口文件
  *
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEBUG_MODULE_VERSION = void 0;
-// TODO: 实现Debug系统
-exports.DEBUG_MODULE_VERSION = '4.0.0-alpha.1';
+exports.DebugManagerImpl = exports.DEBUG_MODULE_VERSION = void 0;
+// 模块版本信息
+exports.DEBUG_MODULE_VERSION = '4.0.0-alpha.2';
+// 选择性导出避免名称冲突
+var debug_manager_1 = require("./debug-manager");
+Object.defineProperty(exports, "DebugManagerImpl", { enumerable: true, get: function () { return debug_manager_1.DebugManagerImpl; } });
 //# sourceMappingURL=index.js.map

@@ -7,7 +7,7 @@
  */
 import { OpenAIProtocolConfig } from './openai-protocol-handler';
 import { AnthropicProtocolConfig } from './anthropic-protocol-handler';
-import { BaseModule } from '../base-module-impl';
+import { IModuleInterface } from '../../interfaces/core/module-implementation-interface';
 /**
  * 支持的Provider Protocol类型
  */
@@ -54,19 +54,19 @@ export declare class ProviderFactory {
     /**
      * 创建Provider实例
      */
-    createProvider(options: ProviderCreateOptions): BaseModule;
+    createProvider(options: ProviderCreateOptions): IModuleInterface;
     /**
      * 批量创建Provider实例
      */
-    createProviders(configs: ProviderConfig[], debug?: boolean): BaseModule[];
+    createProviders(configs: ProviderConfig[], debug?: boolean): IModuleInterface[];
     /**
      * 获取已创建的Provider
      */
-    getProvider(id: string): BaseModule | undefined;
+    getProvider(id: string): IModuleInterface | undefined;
     /**
      * 获取所有已创建的Provider
      */
-    getAllProviders(): BaseModule[];
+    getAllProviders(): IModuleInterface[];
     /**
      * 检查Provider是否存在
      */

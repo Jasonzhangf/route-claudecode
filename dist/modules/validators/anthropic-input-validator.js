@@ -8,22 +8,155 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicInputValidator = void 0;
-const base_module_impl_1 = require("../base-module-impl");
+const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const events_1 = require("events");
 /**
  * Anthropic输入验证模块
  */
-class AnthropicInputValidator extends base_module_impl_1.BaseModule {
-    validatorConfig;
-    constructor(id, config = {}) {
-        super(id, 'Anthropic Input Validator', 'validator', '1.0.0');
+class AnthropicInputValidator extends events_1.EventEmitter {
+    constructor(config = {}) {
+        super();
+        this.id = 'anthropic-input-validator';
+        this.name = 'Anthropic Input Validator';
+        this.type = module_implementation_interface_1.ModuleType.VALIDATOR;
+        this.version = '1.0.0';
+        this.status = 'stopped';
+        this.config = {
+            strictMode: true,
+            allowExtraFields: false,
+            maxMessagesLength: 100,
+            maxMessageLength: 100000,
+            maxToolsLength: 50,
+        };
+        this.metrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0,
+        };
         this.validatorConfig = {
             strictMode: true,
             allowExtraFields: false,
             maxMessagesLength: 100,
             maxMessageLength: 100000,
             maxToolsLength: 20,
-            ...config
+            ...config,
         };
+    }
+    // 实现IModuleInterface接口方法
+    getId() {
+        return this.id;
+    }
+    getName() {
+        return this.name;
+    }
+    getType() {
+        return this.type;
+    }
+    getVersion() {
+        return this.version;
+    }
+    getStatus() {
+        return {
+            id: this.id,
+            name: this.name,
+            type: this.type,
+            status: this.status,
+            health: this.status === 'running' ? 'healthy' : 'unhealthy',
+            lastActivity: this.metrics.lastProcessedAt,
+        };
+    }
+    getMetrics() {
+        return { ...this.metrics };
+    }
+    async configure(config) {
+        this.validatorConfig = { ...this.validatorConfig, ...config };
+    }
+    async start() {
+        this.status = 'starting';
+        this.status = 'running';
+        this.emit('started');
+    }
+    async stop() {
+        this.status = 'stopping';
+        this.status = 'stopped';
+        this.emit('stopped');
+    }
+    async reset() {
+        this.metrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0,
+        };
+    }
+    async cleanup() {
+        await this.stop();
+        this.removeAllListeners();
+    }
+    async healthCheck() {
+        return {
+            healthy: this.status === 'running',
+            details: {
+                status: this.status,
+                metrics: this.metrics,
+            },
+        };
+    }
+    async process(input) {
+        const startTime = Date.now();
+        try {
+            const result = await this.validateInput(input);
+            this.updateMetrics(Date.now() - startTime, false);
+            return result;
+        }
+        catch (error) {
+            this.updateMetrics(Date.now() - startTime, true);
+            throw error;
+        }
+    }
+    updateMetrics(processingTime, isError) {
+        this.metrics.requestsProcessed++;
+        this.metrics.lastProcessedAt = new Date();
+        // 更新平均处理时间
+        const totalTime = this.metrics.averageProcessingTime * (this.metrics.requestsProcessed - 1) + processingTime;
+        this.metrics.averageProcessingTime = totalTime / this.metrics.requestsProcessed;
+        // 更新错误率
+        if (isError) {
+            this.metrics.errorRate =
+                (this.metrics.errorRate * (this.metrics.requestsProcessed - 1) + 1) / this.metrics.requestsProcessed;
+        }
+        else {
+            this.metrics.errorRate =
+                (this.metrics.errorRate * (this.metrics.requestsProcessed - 1)) / this.metrics.requestsProcessed;
+        }
+    }
+    async validateInput(input) {
+        // 原有的验证逻辑
+        if (!input) {
+            return { valid: false, errors: ['Input is required'] };
+        }
+        const errors = [];
+        try {
+            this.validateBasicStructure(input);
+            this.validateRequiredFields(input);
+            if (input.messages) {
+                this.validateMessages(input.messages);
+            }
+            if (input.tools) {
+                this.validateTools(input.tools);
+            }
+            this.validateParameterRanges(input);
+            return { valid: true, errors: [] };
+        }
+        catch (error) {
+            return {
+                valid: false,
+                errors: [error instanceof Error ? error.message : String(error)],
+            };
+        }
     }
     /**
      * 配置处理
@@ -265,8 +398,18 @@ class AnthropicInputValidator extends base_module_impl_1.BaseModule {
      */
     validateNoExtraFields(input) {
         const allowedFields = [
-            'model', 'messages', 'max_tokens', 'temperature', 'top_p', 'top_k',
-            'stop', 'stream', 'system', 'tools', 'tool_choice', 'metadata'
+            'model',
+            'messages',
+            'max_tokens',
+            'temperature',
+            'top_p',
+            'top_k',
+            'stop',
+            'stream',
+            'system',
+            'tools',
+            'tool_choice',
+            'metadata',
         ];
         for (const field in input) {
             if (!allowedFields.includes(field)) {

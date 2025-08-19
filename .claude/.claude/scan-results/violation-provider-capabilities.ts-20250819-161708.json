@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-08-19 16:17:08",
+  "file_path": "src/modules/pipeline-modules/server-compatibility/provider-capabilities.ts",
+  "violation_count": 4,
+  "violations": [
+    "FALLBACK: 发现��式"
+,
+    "FALLBACK: 发现��式"
+,
+    "FALLBACK: 发现��式"
+,
+    "FALLBACK-COMMENT: 注释中包含fallback描述"
+  ],
+  "scan_type": "full_file",
+  "status": "violation_detected"
+}

@@ -5,8 +5,59 @@
  *
  * @author Jason Zhang
  */
-import { Pipeline, PipelineStatus } from '../module/pipeline-module';
-import { ProviderConfig } from '../../types';
+/**
+ * 流水线接口
+ */
+export interface Pipeline {
+    readonly id: string;
+    readonly provider: string;
+    readonly model: string;
+    process(input: any): Promise<any>;
+    validate(): Promise<boolean>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    getStatus(): PipelineStatus;
+    getMetrics(): any;
+}
+/**
+ * 流水线状态
+ */
+export interface PipelineStatus {
+    id: string;
+    status: 'idle' | 'running' | 'busy' | 'error' | 'stopped';
+    health: 'healthy' | 'degraded' | 'unhealthy';
+    lastActivity?: Date;
+    error?: Error;
+}
+/**
+ * Provider配置
+ */
+export interface ProviderConfig {
+    id: string;
+    name: string;
+    protocol: 'openai' | 'anthropic' | 'gemini';
+    baseUrl: string;
+    apiKey: string;
+    models: ModelConfig[];
+    healthCheck?: HealthCheckConfig;
+    rateLimit?: RateLimitConfig;
+}
+export interface ModelConfig {
+    id: string;
+    name: string;
+    maxTokens: number;
+    supportsFunctions: boolean;
+    supportsStreaming: boolean;
+}
+export interface HealthCheckConfig {
+    enabled: boolean;
+    interval: number;
+    endpoint: string;
+}
+export interface RateLimitConfig {
+    requestsPerMinute: number;
+    tokensPerMinute: number;
+}
 /**
  * 流水线管理器接口
  */

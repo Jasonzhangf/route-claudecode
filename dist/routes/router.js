@@ -12,9 +12,8 @@ exports.Router = void 0;
  * 高级路由管理器
  */
 class Router {
-    routes = [];
-    server;
     constructor(server) {
+        this.routes = [];
         this.server = server;
     }
     /**
@@ -64,7 +63,7 @@ class Router {
             method: method.toUpperCase(),
             path: this.normalizePath(path),
             handler,
-            middleware
+            middleware,
         };
         this.routes.push(route);
         // 在HTTP服务器上注册路由
@@ -76,10 +75,7 @@ class Router {
     group(groupConfig) {
         groupConfig.routes.forEach(route => {
             const fullPath = this.joinPaths(groupConfig.prefix, route.path);
-            const combinedMiddleware = [
-                ...(groupConfig.middleware || []),
-                ...(route.middleware || [])
-            ];
+            const combinedMiddleware = [...(groupConfig.middleware || []), ...(route.middleware || [])];
             this.addRoute(route.method, fullPath, route.handler, combinedMiddleware);
         });
     }

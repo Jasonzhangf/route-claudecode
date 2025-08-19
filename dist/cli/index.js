@@ -1,19 +1,29 @@
 "use strict";
 /**
- * CLI模块主入口
- *
- * 导出所有CLI相关的类和接口
+ * CLI模块入口文件
  *
  * @author Jason Zhang
  */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RCCCli = exports.ConfigLoader = exports.ArgumentValidator = exports.CommandParser = void 0;
-var command_parser_1 = require("./command-parser");
-Object.defineProperty(exports, "CommandParser", { enumerable: true, get: function () { return command_parser_1.CommandParser; } });
-var argument_validator_1 = require("./argument-validator");
-Object.defineProperty(exports, "ArgumentValidator", { enumerable: true, get: function () { return argument_validator_1.ArgumentValidator; } });
-var config_loader_1 = require("./config-loader");
-Object.defineProperty(exports, "ConfigLoader", { enumerable: true, get: function () { return config_loader_1.ConfigLoader; } });
-var rcc_cli_1 = require("./rcc-cli");
-Object.defineProperty(exports, "RCCCli", { enumerable: true, get: function () { return rcc_cli_1.RCCCli; } });
+exports.CLI_MODULE_VERSION = void 0;
+__exportStar(require("./rcc-cli"), exports);
+__exportStar(require("./command-parser"), exports);
+__exportStar(require("./argument-validator"), exports);
+__exportStar(require("./config-loader"), exports);
+// 模块版本信息
+exports.CLI_MODULE_VERSION = '4.0.0-alpha.2';
 //# sourceMappingURL=index.js.map

@@ -1,0 +1,116 @@
+{
+  "// 用户配置文件 - 参考demo1设计，简单易用": "",
+  "virtualModels": {
+    "default": {
+      "providers": [
+        {
+          "name": "modelscope",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "weight": 50,
+          "apiKeys": ["your-modelscope-key1", "your-modelscope-key2"]
+        },
+        {
+          "name": "dashscope", 
+          "model": "qwen3-coder-plus",
+          "weight": 30,
+          "apiKeys": ["your-dashscope-key"]
+        }
+      ]
+    },
+    "premium": {
+      "providers": [
+        {
+          "name": "openrouter",
+          "model": "anthropic/claude-sonnet-4", 
+          "weight": 70,
+          "apiKeys": ["your-openrouter-key"]
+        },
+        {
+          "name": "anthropic",
+          "model": "claude-3-5-sonnet-20241022",
+          "weight": 30,
+          "apiKeys": ["your-anthropic-key"]
+        }
+      ]
+    },
+    "coding": {
+      "providers": [
+        {
+          "name": "modelscope",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "weight": 60,
+          "apiKeys": ["your-modelscope-key1", "your-modelscope-key2"]
+        },
+        {
+          "name": "deepseek",
+          "model": "deepseek-chat",
+          "weight": 40, 
+          "apiKeys": ["your-deepseek-key"]
+        }
+      ]
+    },
+    "reasoning": {
+      "providers": [
+        {
+          "name": "deepseek",
+          "model": "deepseek-reasoner",
+          "weight": 80,
+          "apiKeys": ["your-deepseek-key"]
+        },
+        {
+          "name": "openrouter",
+          "model": "anthropic/claude-3.7-sonnet:thinking",
+          "weight": 20,
+          "apiKeys": ["your-openrouter-key"]
+        }
+      ]
+    },
+    "longContext": {
+      "providers": [
+        {
+          "name": "openrouter",
+          "model": "google/gemini-2.5-pro-preview",
+          "weight": 60,
+          "apiKeys": ["your-openrouter-key"]
+        },
+        {
+          "name": "gemini",
+          "model": "gemini-2.5-pro", 
+          "weight": 40,
+          "apiKeys": ["your-gemini-key"]
+        }
+      ]
+    },
+    "webSearch": {
+      "providers": [
+        {
+          "name": "openrouter",
+          "model": "google/gemini-2.5-flash",
+          "weight": 100,
+          "apiKeys": ["your-openrouter-key"]
+        }
+      ]
+    },
+    "background": {
+      "providers": [
+        {
+          "name": "ollama",
+          "model": "qwen2.5-coder:latest",
+          "weight": 100,
+          "apiKeys": ["ollama"]
+        }
+      ]
+    }
+  },
+  "// 错误处理配置": "",
+  "blacklistSettings": {
+    "timeout429": 60000,
+    "timeoutError": 300000
+  },
+  "// API服务器配置": "",
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "debug": true
+  }
+}

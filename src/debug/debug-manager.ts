@@ -1,8 +1,8 @@
 /**
  * Debug管理器
- * 
+ *
  * 负责Debug系统的核心管理功能，包括模块注册、开关控制和记录管理
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -43,7 +43,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
   constructor(config?: Partial<DebugConfig>) {
     super();
     this.startTime = Date.now();
-    
+
     // 默认配置
     this.config = {
       enabled: true,
@@ -53,15 +53,15 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
       compressionEnabled: true,
       storageBasePath: '~/.route-claudecode/debug',
       modules: {
-        'client': { enabled: true, logLevel: 'info' },
-        'router': { enabled: true, logLevel: 'info' },
-        'pipeline': { enabled: true, logLevel: 'debug' },
-        'transformer': { enabled: true, logLevel: 'debug' },
-        'protocol': { enabled: true, logLevel: 'debug' },
+        client: { enabled: true, logLevel: 'info' },
+        router: { enabled: true, logLevel: 'info' },
+        pipeline: { enabled: true, logLevel: 'debug' },
+        transformer: { enabled: true, logLevel: 'debug' },
+        protocol: { enabled: true, logLevel: 'debug' },
         'server-compatibility': { enabled: true, logLevel: 'debug' },
-        'server': { enabled: true, logLevel: 'info' }
+        server: { enabled: true, logLevel: 'info' },
       },
-      ...config
+      ...config,
     };
 
     this.recorder = new DebugRecorderImpl(this.config);
@@ -72,8 +72,17 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
 
     this.emit('debug-manager-initialized', {
       config: this.config,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
+  }
+
+  /**
+   * 初始化Debug管理器
+   */
+  async initialize(port?: number): Promise<void> {
+    // 初始化逻辑
+    console.log(`Debug manager initialized for port ${port || 'default'}`);
+    this.emit('initialized', { port: port || 'default' });
   }
 
   /**
@@ -88,11 +97,11 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
     const moduleInfo: ModuleDebugInfo = {
       name: moduleName,
       port,
-      registeredAt: Date.now()
+      registeredAt: Date.now(),
     };
 
     this.registeredModules.set(moduleName, moduleInfo);
-    
+
     // 应用配置中的默认启用状态
     const moduleConfig = this.config.modules[moduleName];
     this.debugEnabled.set(moduleName, moduleConfig?.enabled ?? true);
@@ -101,7 +110,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
       moduleName,
       port,
       enabled: this.debugEnabled.get(moduleName),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     console.log(`📦 Debug模块已注册: ${moduleName} (端口: ${port})`);
@@ -114,12 +123,12 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
     if (!this.registeredModules.has(moduleName)) {
       throw new Error(`Module ${moduleName} not registered`);
     }
-    
+
     this.debugEnabled.set(moduleName, true);
-    
+
     this.emit('debug-enabled', {
       moduleName,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     console.log(`🔍 Debug已启用: ${moduleName}`);
@@ -130,10 +139,10 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
    */
   disableDebug(moduleName: string): void {
     this.debugEnabled.set(moduleName, false);
-    
+
     this.emit('debug-disabled', {
       moduleName,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
 
     console.log(`🔕 Debug已禁用: ${moduleName}`);
@@ -147,12 +156,12 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
 
     try {
       this.recorder.recordModuleInput(moduleName, requestId, input);
-      
+
       this.emit('input-recorded', {
         moduleName,
         requestId,
         timestamp: Date.now(),
-        dataSize: JSON.stringify(input).length
+        dataSize: JSON.stringify(input).length,
       });
     } catch (error) {
       console.error(`记录输入失败 [${moduleName}]:`, error);
@@ -167,12 +176,12 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
 
     try {
       this.recorder.recordModuleOutput(moduleName, requestId, output);
-      
+
       this.emit('output-recorded', {
         moduleName,
         requestId,
         timestamp: Date.now(),
-        dataSize: JSON.stringify(output).length
+        dataSize: JSON.stringify(output).length,
       });
     } catch (error) {
       console.error(`记录输出失败 [${moduleName}]:`, error);
@@ -185,12 +194,12 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
   recordError(moduleName: string, requestId: string, error: RCCError): void {
     try {
       this.recorder.recordModuleError(moduleName, requestId, error);
-      
+
       this.emit('error-recorded', {
         moduleName,
         requestId,
         error: error.message,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
 
       console.error(`❌ Debug错误记录 [${moduleName}]: ${error.message}`);
@@ -205,7 +214,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
   createSession(port: number): DebugSession {
     const now = Date.now();
     const sessionId = `session-${this.formatReadableTime(now).replace(/[:\s]/g, '-')}`;
-    
+
     const session: DebugSession = {
       sessionId,
       port,
@@ -217,8 +226,8 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
       metadata: {
         version: '4.0.0',
         config: this.config,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
-      }
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
     };
 
     this.activeSessions.set(sessionId, session);
@@ -227,7 +236,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
     this.emit('session-created', {
       sessionId,
       port,
-      timestamp: now
+      timestamp: now,
     });
 
     console.log(`🎯 Debug会话已创建: ${sessionId} (端口: ${port})`);
@@ -257,7 +266,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
         duration: session.duration,
         requestCount: session.requestCount,
         errorCount: session.errorCount,
-        timestamp: now
+        timestamp: now,
       });
 
       console.log(`🏁 Debug会话已结束: ${sessionId} (持续: ${session.duration}ms)`);
@@ -271,18 +280,21 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
    * 获取Debug统计信息
    */
   getStatistics(): DebugStatistics {
-    const moduleStats = new Map<string, {
-      recordCount: number;
-      errorCount: number;
-      averageDuration: number;
-    }>();
+    const moduleStats = new Map<
+      string,
+      {
+        recordCount: number;
+        errorCount: number;
+        averageDuration: number;
+      }
+    >();
 
     // 收集模块统计信息
     for (const [moduleName] of this.registeredModules) {
       moduleStats.set(moduleName, {
         recordCount: 0,
         errorCount: 0,
-        averageDuration: 0
+        averageDuration: 0,
       });
     }
 
@@ -290,10 +302,10 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
       totalSessions: this.activeSessions.size,
       activeSessions: this.activeSessions.size,
       totalRecords: 0, // 由recorder提供
-      totalErrors: 0, // 由recorder提供  
+      totalErrors: 0, // 由recorder提供
       averageResponseTime: 0, // 由recorder提供
       diskUsage: 0, // 由recorder提供
-      moduleStatistics: moduleStats
+      moduleStatistics: moduleStats,
     };
   }
 
@@ -333,7 +345,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
 
     this.emit('debug-manager-cleanup', {
       timestamp: Date.now(),
-      duration: Date.now() - this.startTime
+      duration: Date.now() - this.startTime,
     });
 
     console.log('✅ Debug系统清理完成');
@@ -361,13 +373,16 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
    */
   private startCleanupScheduler(): void {
     // 每小时检查一次过期记录
-    const cleanupInterval = setInterval(async () => {
-      try {
-        await this.recorder.cleanupExpiredRecords();
-      } catch (error) {
-        console.error('定期清理失败:', error);
-      }
-    }, 60 * 60 * 1000); // 1小时
+    const cleanupInterval = setInterval(
+      async () => {
+        try {
+          await this.recorder.cleanupExpiredRecords();
+        } catch (error) {
+          console.error('定期清理失败:', error);
+        }
+      },
+      60 * 60 * 1000
+    ); // 1小时
 
     // 清理器在进程退出时停止
     process.once('exit', () => {

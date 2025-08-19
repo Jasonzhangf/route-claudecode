@@ -1,8 +1,8 @@
 /**
  * 错误处理接口定义
- * 
+ *
  * 定义统一的错误处理接口，确保零静默失败
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -12,7 +12,7 @@
 export class RCCError extends Error {
   public readonly code: string;
   public readonly details?: Record<string, any>;
-  
+
   constructor(message: string, code: string, details?: Record<string, any>) {
     super(message);
     this.name = 'RCCError';
@@ -29,22 +29,22 @@ export interface ErrorHandler {
    * 处理错误
    */
   handleError(error: RCCError | Error, context?: ErrorContext): void;
-  
+
   /**
    * 格式化错误信息
    */
   formatError(error: RCCError | Error): string;
-  
+
   /**
    * 记录错误日志
    */
   logError(error: RCCError | Error, context?: ErrorContext): void;
-  
+
   /**
    * 向用户报告错误
    */
   reportToUser(error: RCCError | Error): void;
-  
+
   /**
    * 创建RCC错误
    */
@@ -71,7 +71,7 @@ export type ErrorLevel = 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 /**
  * 错误分类
  */
-export type ErrorCategory = 
+export type ErrorCategory =
   | 'validation'
   | 'configuration'
   | 'network'
@@ -101,12 +101,12 @@ export interface ErrorRecoveryStrategy {
    * 检查是否可以恢复
    */
   canRecover(error: RCCError): boolean;
-  
+
   /**
    * 执行恢复操作
    */
   recover(error: RCCError, context?: ErrorContext): Promise<boolean>;
-  
+
   /**
    * 获取恢复建议
    */
@@ -121,12 +121,12 @@ export interface ErrorReporter {
    * 报告错误到外部系统
    */
   reportError(error: ExtendedRCCError): Promise<void>;
-  
+
   /**
    * 获取错误统计
    */
   getErrorStats(): ErrorStats;
-  
+
   /**
    * 清理旧的错误记录
    */

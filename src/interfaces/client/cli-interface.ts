@@ -1,8 +1,8 @@
 /**
  * CLI接口定义
- * 
+ *
  * 定义RCC v4.0的CLI命令接口
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -14,22 +14,22 @@ export interface CLICommands {
    * 启动服务器模式
    */
   start(options: StartOptions): Promise<void>;
-  
+
   /**
    * 停止服务器
    */
   stop(options: StopOptions): Promise<void>;
-  
+
   /**
    * 启动客户端模式 (透明代理Claude Code)
    */
   code(options: CodeOptions): Promise<void>;
-  
+
   /**
    * 查看服务器状态
    */
   status(options: StatusOptions): Promise<ServerStatus>;
-  
+
   /**
    * 配置管理
    */
@@ -97,6 +97,11 @@ export interface ServerStatus {
     status: 'healthy' | 'degraded' | 'unhealthy';
     checks: HealthCheck[];
   };
+  pipeline?: {
+    stats: any;
+    activeRequests: number;
+    layerHealth: any;
+  };
 }
 
 /**
@@ -117,17 +122,17 @@ export interface CLIHandler {
    * 解析命令行参数
    */
   parseArguments(args: string[]): ParsedCommand;
-  
+
   /**
    * 执行命令
    */
   executeCommand(command: ParsedCommand): Promise<void>;
-  
+
   /**
    * 显示帮助信息
    */
   showHelp(command?: string): void;
-  
+
   /**
    * 显示版本信息
    */

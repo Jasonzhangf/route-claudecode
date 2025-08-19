@@ -14,8 +14,6 @@ const anthropic_protocol_handler_1 = require("./anthropic-protocol-handler");
  * Provider工厂类
  */
 class ProviderFactory {
-    static instance;
-    createdProviders;
     constructor() {
         this.createdProviders = new Map();
     }
@@ -43,13 +41,13 @@ class ProviderFactory {
                 case 'openai':
                     provider = new openai_protocol_handler_1.OpenAIProtocolHandler(id, {
                         ...config,
-                        debug
+                        debug,
                     });
                     break;
                 case 'anthropic':
                     provider = new anthropic_protocol_handler_1.AnthropicProtocolHandler(id, {
                         ...config,
-                        debug
+                        debug,
                     });
                     break;
                 case 'gemini':
@@ -90,14 +88,14 @@ class ProviderFactory {
                     id: providerConfig.id,
                     type: providerConfig.type,
                     config: providerConfig.config,
-                    debug
+                    debug,
                 });
                 providers.push(provider);
             }
             catch (error) {
                 const errorInfo = {
                     id: providerConfig.id,
-                    error: error
+                    error: error,
                 };
                 errors.push(errorInfo);
                 if (debug) {
@@ -198,7 +196,7 @@ class ProviderFactory {
         }
         return {
             valid: errors.length === 0,
-            errors
+            errors,
         };
     }
     /**
@@ -210,7 +208,7 @@ class ProviderFactory {
             totalProviders: providers.length,
             providerIds: providers.map(p => p.getId()),
             supportedTypes: this.getSupportedTypes(),
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
         };
     }
 }

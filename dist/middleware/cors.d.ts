@@ -5,7 +5,6 @@
  *
  * @author Jason Zhang
  */
-import { MiddlewareFunction } from '../server/http-server';
 /**
  * CORS配置选项
  */
@@ -21,5 +20,5 @@ export interface CORSOptions {
 /**
  * 创建CORS中间件
  */
-export declare function cors(options?: CORSOptions): MiddlewareFunction;
+export declare function cors(options?: CORSOptions): any;
 //# sourceMappingURL=cors.d.ts.map

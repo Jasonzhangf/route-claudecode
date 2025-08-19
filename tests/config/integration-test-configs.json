@@ -1,0 +1,168 @@
+{
+  "systemConfig": {
+    "providerTypes": {
+      "test-provider": {
+        "endpoint": "test-endpoint-url",
+        "protocol": "openai",
+        "transformer": "anthropic-to-openai",
+        "timeout": 30000,
+        "maxRetries": 3
+      },
+      "modelscope": {
+        "endpoint": "dashscope-endpoint",
+        "protocol": "openai", 
+        "transformer": "anthropic-to-openai",
+        "timeout": 30000,
+        "maxRetries": 3
+      }
+    },
+    "transformers": {
+      "anthropic-to-openai": {
+        "inputTransforms": ["message-format", "parameter-mapping"],
+        "outputTransforms": ["response-format", "stream-format"]
+      }
+    },
+    "pipelineLayers": {
+      "router": { "enabled": true },
+      "transformer": { "enabled": true },
+      "protocol": { "enabled": true },
+      "server-compatibility": { "enabled": true }
+    },
+    "connectionHandshake": {
+      "enabled": true,
+      "healthCheckInterval": 30000,
+      "validateApiKeys": true,
+      "timeoutMs": 5000
+    }
+  },
+  "userConfigs": {
+    "basic": {
+      "virtualModels": {
+        "default": {
+          "providers": [{
+            "name": "test-provider",
+            "model": "test-model",
+            "weight": 100,
+            "apiKeys": ["user-api-key-123"]
+          }]
+        }
+      },
+      "server": {
+        "port": 5506,
+        "host": "0.0.0.0",
+        "debug": false
+      }
+    },
+    "advanced": {
+      "virtualModels": {
+        "default": {
+          "providers": [{
+            "name": "modelscope",
+            "model": "qwen-plus",
+            "weight": 100,
+            "apiKeys": ["user-api-key-123"]
+          }]
+        },
+        "custom": {
+          "providers": [{
+            "name": "modelscope",
+            "model": "qwen-max",
+            "weight": 80,
+            "apiKeys": ["user-api-key-456"]
+          }]
+        }
+      },
+      "blacklistSettings": {
+        "timeout429": 120000,
+        "timeoutError": 600000
+      },
+      "server": {
+        "port": 8080,
+        "host": "127.0.0.1",
+        "debug": true
+      }
+    },
+    "invalid": {
+      "virtualModels": {
+        "custom": {
+          "providers": [{
+            "name": "test-provider",
+            "apiKeys": ["test-key"]
+          }]
+        }
+      }
+    }
+  },
+  "templates": {
+    "basic": {
+      "paths": {
+        "templateConfig": "config/unified-config-templates.json",
+        "systemConfig": "",
+        "searchPaths": [""]
+      },
+      "defaultConfig": {
+        "version": "4.0.0",
+        "templateVersion": "1.0.0",
+        "virtualModels": {
+          "default": {
+            "providers": [{
+              "name": "test-provider",
+              "model": "test-model",
+              "weight": 100,
+              "apiKeys": ["test-key"]
+            }]
+          }
+        },
+        "blacklistSettings": {
+          "timeout429": 60000,
+          "timeoutError": 300000
+        },
+        "server": {
+          "port": 5506,
+          "host": "0.0.0.0",
+          "debug": false
+        }
+      },
+      "validationRules": {
+        "required": ["virtualModels"],
+        "virtualModels": {
+          "requiredModels": ["default"],
+          "providerFields": ["name", "model", "apiKeys"]
+        },
+        "server": {
+          "portRange": [1024, 65535],
+          "allowedHosts": ["0.0.0.0", "127.0.0.1"]
+        }
+      }
+    },
+    "validation": {
+      "paths": {
+        "templateConfig": "config/unified-config-templates.json",
+        "systemConfig": "",
+        "searchPaths": [""]
+      },
+      "defaultConfig": {},
+      "validationRules": {
+        "required": ["virtualModels"],
+        "virtualModels": {
+          "requiredModels": ["default"],
+          "providerFields": ["name", "model", "apiKeys"]
+        }
+      }
+    }
+  },
+  "testPaths": {
+    "tempDir": "../temp",
+    "nonExistentConfig": "../temp/non-existent-config.json",
+    "systemConfigFile": "system-config.json",
+    "userConfigFile": "user-config.json",
+    "templateFile": "test-template.json",
+    "invalidUserConfigFile": "invalid-user-config.json"
+  },
+  "testMessages": {
+    "configTemplateError": "Failed to load config template",
+    "validationError": "default virtual model is required",
+    "expectedErrorMessage": "Expected error to be thrown",
+    "expectedValidationErrorMessage": "Expected validation error to be thrown"
+  }
+}

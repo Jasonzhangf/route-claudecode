@@ -1,8 +1,8 @@
 /**
  * 标准响应数据结构接口
- * 
+ *
  * 定义系统内部使用的标准化响应格式
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -172,7 +172,7 @@ interface MutableStandardResponse {
  */
 export class StandardResponseBuilder {
   private response: Partial<MutableStandardResponse> = {};
-  
+
   constructor(id: string) {
     this.response = {
       id,
@@ -190,12 +190,12 @@ export class StandardResponseBuilder {
           apiCallTime: 0,
           transformationTime: 0,
           validationTime: 0,
-          retryCount: 0
-        }
-      }
+          retryCount: 0,
+        },
+      },
     };
   }
-  
+
   /**
    * 设置选择项列表
    */
@@ -203,7 +203,7 @@ export class StandardResponseBuilder {
     this.response.choices = choices;
     return this;
   }
-  
+
   /**
    * 添加选择项
    */
@@ -214,7 +214,7 @@ export class StandardResponseBuilder {
     this.response.choices.push(choice);
     return this;
   }
-  
+
   /**
    * 设置使用统计
    */
@@ -222,7 +222,7 @@ export class StandardResponseBuilder {
     this.response.usage = usage;
     return this;
   }
-  
+
   /**
    * 设置模型名称
    */
@@ -230,7 +230,7 @@ export class StandardResponseBuilder {
     this.response.model = model;
     return this;
   }
-  
+
   /**
    * 设置创建时间
    */
@@ -238,7 +238,7 @@ export class StandardResponseBuilder {
     this.response.created = created;
     return this;
   }
-  
+
   /**
    * 设置元数据
    */
@@ -246,7 +246,7 @@ export class StandardResponseBuilder {
     this.response.metadata = { ...this.response.metadata!, ...metadata };
     return this;
   }
-  
+
   /**
    * 添加处理步骤
    */
@@ -260,7 +260,7 @@ export class StandardResponseBuilder {
     this.response.metadata.processingSteps.push(step);
     return this;
   }
-  
+
   /**
    * 设置性能指标
    */
@@ -268,13 +268,13 @@ export class StandardResponseBuilder {
     if (!this.response.metadata) {
       this.response.metadata = {} as ResponseMetadata;
     }
-    this.response.metadata.performance = { 
-      ...this.response.metadata.performance, 
-      ...metrics 
+    this.response.metadata.performance = {
+      ...this.response.metadata.performance,
+      ...metrics,
     };
     return this;
   }
-  
+
   /**
    * 构建响应
    */
@@ -283,81 +283,84 @@ export class StandardResponseBuilder {
     if (!this.response.id || !this.response.choices || !this.response.metadata) {
       throw new Error('Missing required fields in StandardResponse');
     }
-    
+
     return this.response as StandardResponse;
   }
-  
+
   /**
    * 从Anthropic格式创建
    */
   static fromAnthropic(anthropicResponse: any): StandardResponseBuilder {
     const builder = new StandardResponseBuilder(anthropicResponse.id);
-    
+
     // 转换选择项
-    const choices: Choice[] = [{
-      index: 0,
-      message: {
-        role: 'assistant',
-        content: anthropicResponse.content || []
+    const choices: Choice[] = [
+      {
+        index: 0,
+        message: {
+          role: 'assistant',
+          content: anthropicResponse.content || [],
+        },
+        finishReason: mapAnthropicStopReason(anthropicResponse.stop_reason),
       },
-      finishReason: mapAnthropicStopReason(anthropicResponse.stop_reason)
-    }];
-    
+    ];
+
     builder.setChoices(choices);
-    
+
     if (anthropicResponse.usage) {
       builder.setUsage({
         promptTokens: anthropicResponse.usage.input_tokens || 0,
         completionTokens: anthropicResponse.usage.output_tokens || 0,
-        totalTokens: (anthropicResponse.usage.input_tokens || 0) + (anthropicResponse.usage.output_tokens || 0)
+        totalTokens: (anthropicResponse.usage.input_tokens || 0) + (anthropicResponse.usage.output_tokens || 0),
       });
     }
-    
+
     if (anthropicResponse.model) {
       builder.setModel(anthropicResponse.model);
     }
-    
+
     builder.setMetadata({
       originalFormat: 'anthropic',
-      targetFormat: 'anthropic'
+      targetFormat: 'anthropic',
     });
-    
+
     return builder;
   }
-  
+
   /**
    * 从OpenAI格式创建
    */
   static fromOpenAI(openaiResponse: any): StandardResponseBuilder {
     const builder = new StandardResponseBuilder(openaiResponse.id);
-    
+
     // 转换选择项
-    const choices: Choice[] = openaiResponse.choices?.map((choice: any) => ({
-      index: choice.index,
-      message: choice.message,
-      finishReason: choice.finish_reason,
-      logprobs: choice.logprobs
-    })) || [];
-    
+    const choices: Choice[] =
+      openaiResponse.choices?.map((choice: any) => ({
+        index: choice.index,
+        message: choice.message,
+        finishReason: choice.finish_reason,
+        logprobs: choice.logprobs,
+      })) || [];
+
     builder.setChoices(choices);
-    
+
     if (openaiResponse.usage) {
       builder.setUsage(openaiResponse.usage);
     }
-    
+
     if (openaiResponse.model) {
       builder.setModel(openaiResponse.model);
     }
-    
+
     if (openaiResponse.created) {
       builder.setCreated(openaiResponse.created);
     }
-    
+
     builder.setMetadata({
       originalFormat: 'openai',
-      targetFormat: 'openai'
+      targetFormat: 'openai',
     });
-    
+
     return builder;
   }
 }

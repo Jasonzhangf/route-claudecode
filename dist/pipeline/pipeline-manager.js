@@ -13,11 +13,10 @@ const events_1 = require("events");
  * Pipeline管理器
  */
 class PipelineManager extends events_1.EventEmitter {
-    pipelines = new Map();
-    activeExecutions = new Map();
-    factory;
     constructor(factory) {
         super();
+        this.pipelines = new Map();
+        this.activeExecutions = new Map();
         this.factory = factory;
     }
     /**

@@ -1,1 +1,1 @@
-{"version":3,"file":"proxy-routes.d.ts","sourceRoot":"","sources":["../../src/routes/proxy-routes.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,OAAO,EAAE,MAAM,EAAE,MAAM,UAAU,CAAC;AAGlC;;GAEG;AACH,wBAAgB,gBAAgB,CAAC,MAAM,EAAE,MAAM,GAAG,IAAI,CAkFrD"}
+{"version":3,"file":"proxy-routes.d.ts","sourceRoot":"","sources":["../../src/routes/proxy-routes.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,OAAO,EAAE,MAAM,EAAE,MAAM,UAAU,CAAC;AAClC,OAAO,EAAE,kBAAkB,EAAE,MAAM,yCAAyC,CAAC;AAE7E;;GAEG;AACH,wBAAgB,gBAAgB,CAAC,MAAM,EAAE,MAAM,EAAE,iBAAiB,EAAE,kBAAkB,GAAG,IAAI,CAiG5F"}

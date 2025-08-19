@@ -6,12 +6,14 @@
  * @author Jason Zhang
  */
 import { CLIHandler, ParsedCommand } from '../interfaces';
+import { ICommandExecutor } from '../interfaces/core/cli-abstraction';
 /**
  * CLI命令解析器实现
  */
 export declare class CommandParser implements CLIHandler {
     private commands;
-    constructor();
+    private commandExecutor?;
+    constructor(commandExecutor?: ICommandExecutor);
     /**
      * 解析命令行参数
      */
@@ -52,22 +54,6 @@ export declare class CommandParser implements CLIHandler {
      * 显示具体命令帮助
      */
     private showCommandHelp;
-    /**
-     * 执行启动命令
-     */
-    private executeStartCommand;
-    /**
-     * 执行停止命令
-     */
-    private executeStopCommand;
-    /**
-     * 执行客户端命令
-     */
-    private executeCodeCommand;
-    /**
-     * 执行状态命令
-     */
-    private executeStatusCommand;
     /**
      * 执行配置命令
      */

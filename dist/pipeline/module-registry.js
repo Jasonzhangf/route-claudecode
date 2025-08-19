@@ -13,8 +13,11 @@ const events_1 = require("events");
  * 模块注册表
  */
 class ModuleRegistry extends events_1.EventEmitter {
-    modules = new Map();
-    instances = new Map();
+    constructor() {
+        super(...arguments);
+        this.modules = new Map();
+        this.instances = new Map();
+    }
     /**
      * 注册模块
      */
@@ -197,7 +200,6 @@ class ModuleRegistry extends events_1.EventEmitter {
         const modulesByType = {
             transformer: 0,
             protocol: 0,
-            compatibility: 0,
             server: 0,
             validator: 0
         };

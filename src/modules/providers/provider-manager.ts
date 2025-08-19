@@ -1,8 +1,8 @@
 /**
  * Provider管理器
- * 
+ *
  * 统一管理Provider实例的生命周期、路由和负载均衡
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -25,12 +25,13 @@ export interface ProviderManagerConfig {
   routingStrategy: RoutingStrategy;
   /** 健康检查间隔(毫秒) */
   healthCheckInterval: number;
-  /** 故障转移启用 */
-  failoverEnabled: boolean;
-  /** 最大重试次数 */
+  /** 最大重试次数 (同一Provider) */
   maxRetries: number;
   /** 调试模式 */
   debug: boolean;
+  /** 严格错误报告 - RCC v4.0 Zero Fallback Policy */
+  strictErrorReporting: boolean;
+  /** 注意: failoverEnabled 已移除 - RCC v4.0 Zero Fallback Policy */
 }
 
 /**
@@ -76,12 +77,12 @@ export class ProviderManager {
 
   constructor(config: Partial<ProviderManagerConfig> = {}) {
     this.config = {
-      routingStrategy: 'round-robin',
+      routingStrategy: 'round-robin' as any,
       healthCheckInterval: 30000, // 30秒
-      failoverEnabled: true,
       maxRetries: 3,
       debug: false,
-      ...config
+      strictErrorReporting: true,
+      ...config,
     };
 
     this.factory = ProviderFactory.getInstance();
@@ -102,20 +103,20 @@ export class ProviderManager {
       // 验证所有Provider配置
       const validationResults = providerConfigs.map(config => ({
         config,
-        validation: this.factory.validateProviderConfig(config)
+        validation: this.factory.validateProviderConfig(config),
       }));
 
       const invalidConfigs = validationResults.filter(result => !result.validation.valid);
       if (invalidConfigs.length > 0) {
-        const errors = invalidConfigs.map(result => 
-          `${result.config.id}: ${result.validation.errors.join(', ')}`
-        ).join('; ');
+        const errors = invalidConfigs
+          .map(result => `${result.config.id}: ${result.validation.errors.join(', ')}`)
+          .join('; ');
         throw new Error(`Invalid provider configurations: ${errors}`);
       }
 
       // 创建Provider实例
       const providers = this.factory.createProviders(providerConfigs, this.config.debug);
-      
+
       // 注册Provider
       for (const provider of providers) {
         await this.registerProvider(provider);
@@ -127,7 +128,6 @@ export class ProviderManager {
       if (this.config.debug) {
         console.log(`[ProviderManager] Initialized successfully with ${this.providers.size} providers`);
       }
-
     } catch (error) {
       if (this.config.debug) {
         console.error('[ProviderManager] Initialization failed:', error);
@@ -156,13 +156,12 @@ export class ProviderManager {
         priority: 1,
         weight: 1,
         healthy: true,
-        currentLoad: 0
+        currentLoad: 0,
       });
 
       if (this.config.debug) {
         console.log(`[ProviderManager] Registered provider: ${providerId}`);
       }
-
     } catch (error) {
       if (this.config.debug) {
         console.error(`[ProviderManager] Failed to register provider ${providerId}:`, error);
@@ -176,7 +175,7 @@ export class ProviderManager {
    */
   public async unregisterProvider(providerId: string): Promise<boolean> {
     const provider = this.providers.get(providerId);
-    
+
     if (!provider) {
       return false;
     }
@@ -194,7 +193,6 @@ export class ProviderManager {
       }
 
       return true;
-
     } catch (error) {
       if (this.config.debug) {
         console.error(`[ProviderManager] Failed to unregister provider ${providerId}:`, error);
@@ -208,7 +206,7 @@ export class ProviderManager {
    */
   public async routeRequest(request: StandardRequest): Promise<StandardResponse> {
     const routeResult = this.selectProvider(request);
-    
+
     if (!routeResult) {
       throw new Error('No healthy provider available for request');
     }
@@ -239,7 +237,6 @@ export class ProviderManager {
         }
 
         return response;
-
       } catch (error) {
         lastError = error as Error;
         retryCount++;
@@ -247,8 +244,8 @@ export class ProviderManager {
         // 更新负载计数
         this.updateProviderLoad(info.id, -1);
 
-        // 标记Provider为不健康
-        if (this.config.failoverEnabled) {
+        // 标记Provider为不健康（仅用于监控，不影响路由）
+        if (this.config.strictErrorReporting) {
           this.markProviderUnhealthy(info.id);
         }
 
@@ -256,17 +253,24 @@ export class ProviderManager {
           console.warn(`[ProviderManager] Request failed on ${info.id}, attempt ${retryCount}:`, error);
         }
 
-        // 如果启用故障转移，尝试其他Provider
-        if (this.config.failoverEnabled && retryCount <= this.config.maxRetries) {
-          const fallbackRoute = this.selectProvider(request, [info.id]);
-          if (fallbackRoute) {
-            if (this.config.debug) {
-              console.log(`[ProviderManager] Failing over to ${fallbackRoute.info.id}`);
-            }
-            // 更新路由信息继续重试
-            Object.assign(routeResult, fallbackRoute);
-          }
+        // 🚨 RCC v4.0 Zero Fallback Policy: 不允许故障转移，直接报告错误
+        // 记录失败信息用于监控和调试
+        const errorDetails = {
+          providerId: info.id,
+          attempt: retryCount,
+          maxRetries: this.config.maxRetries,
+          error: error.message,
+          timestamp: new Date().toISOString(),
+        };
+
+        if (this.config.debug) {
+          console.error(
+            `[ProviderManager] Provider ${info.id} failed (attempt ${retryCount}/${this.config.maxRetries}):`,
+            errorDetails
+          );
         }
+
+        // 不进行fallback，让错误向上传播以保持透明度
       }
     }
 
@@ -277,14 +281,10 @@ export class ProviderManager {
    * 选择Provider
    */
   private selectProvider(request: StandardRequest, excludeIds: string[] = []): RouteResult | null {
-    const availableProviders = Array.from(this.providers.entries())
-      .filter(([id, provider]) => {
-        const routeInfo = this.routeInfos.get(id);
-        return routeInfo && 
-               routeInfo.healthy && 
-               !excludeIds.includes(id) &&
-               this.isProviderCompatible(provider, request);
-      });
+    const availableProviders = Array.from(this.providers.entries()).filter(([id, provider]) => {
+      const routeInfo = this.routeInfos.get(id);
+      return routeInfo && routeInfo.healthy && !excludeIds.includes(id) && this.isProviderCompatible(provider, request);
+    });
 
     if (availableProviders.length === 0) {
       return null;
@@ -296,7 +296,7 @@ export class ProviderManager {
     return {
       provider: selectedProvider,
       info: routeInfo,
-      reason: `Selected by ${this.config.routingStrategy} strategy`
+      reason: `Selected by ${this.config.routingStrategy} strategy`,
     };
   }
 
@@ -348,7 +348,7 @@ export class ProviderManager {
 
     // TODO: 可以添加更多兼容性检查
     // 例如：模型支持、工具调用支持等
-    
+
     return true;
   }
 
@@ -397,11 +397,11 @@ export class ProviderManager {
       try {
         const healthResult = await provider.healthCheck();
         const routeInfo = this.routeInfos.get(id);
-        
+
         if (routeInfo) {
           const wasHealthy = routeInfo.healthy;
           routeInfo.healthy = healthResult.healthy;
-          
+
           // 记录健康状态变化
           if (wasHealthy !== healthResult.healthy) {
             const status = healthResult.healthy ? 'healthy' : 'unhealthy';
@@ -415,7 +415,7 @@ export class ProviderManager {
         if (routeInfo) {
           routeInfo.healthy = false;
         }
-        
+
         if (this.config.debug) {
           console.warn(`[ProviderManager] Health check failed for provider ${id}:`, error);
         }
@@ -443,14 +443,14 @@ export class ProviderManager {
   /**
    * 获取所有Provider状态
    */
-  public getProviderStatuses(): Array<ModuleStatus & { routeInfo: ProviderRouteInfo }> {
+  public getProviderStatuses(): Array<any> {
     return Array.from(this.providers.entries()).map(([id, provider]) => {
       const status = provider.getStatus();
       const routeInfo = this.routeInfos.get(id)!;
-      
+
       return {
         ...status,
-        routeInfo
+        routeInfo,
       };
     });
   }
@@ -469,21 +469,21 @@ export class ProviderManager {
     const providers = this.getProviderStatuses();
     const healthy = providers.filter(p => p.routeInfo.healthy).length;
     const unhealthy = providers.length - healthy;
-    
+
     return {
       totalProviders: providers.length,
       healthyProviders: healthy,
       unhealthyProviders: unhealthy,
       routingStrategy: this.config.routingStrategy,
-      failoverEnabled: this.config.failoverEnabled,
+      strictErrorReporting: this.config.strictErrorReporting,
       healthCheckInterval: this.config.healthCheckInterval,
       providers: providers.map(p => ({
         id: p.routeInfo.id,
         type: p.routeInfo.type,
         healthy: p.routeInfo.healthy,
         currentLoad: p.routeInfo.currentLoad,
-        status: p.status
-      }))
+        status: p.status,
+      })),
     };
   }
 
@@ -498,9 +498,7 @@ export class ProviderManager {
     }
 
     // 停止所有Provider
-    const stopPromises = Array.from(this.providers.keys()).map(id => 
-      this.unregisterProvider(id)
-    );
+    const stopPromises = Array.from(this.providers.keys()).map(id => this.unregisterProvider(id));
 
     await Promise.all(stopPromises);
 

@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+// RCC v4.0 直接可执行文件
+const path = require('path');
+const fs = require('fs');
+
+// 查找rcc-simple.js
+const scriptDir = __dirname;
+const rccSimplePath = path.join(scriptDir, 'rcc-simple.js');
+
+if (fs.existsSync(rccSimplePath)) {
+    // 执行rcc-simple.js
+    require(rccSimplePath);
+} else {
+    console.error('❌ rcc-simple.js not found in', scriptDir);
+    process.exit(1);
+}

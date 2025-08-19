@@ -12,8 +12,8 @@ exports.ArgumentValidator = void 0;
  * 参数验证器
  */
 class ArgumentValidator {
-    commandRules = new Map();
     constructor() {
+        this.commandRules = new Map();
         this.initializeValidationRules();
     }
     /**
@@ -32,7 +32,7 @@ class ArgumentValidator {
                 errors.push({
                     field: rule.field,
                     message: result.error,
-                    value
+                    value,
                 });
             }
             else if (result.normalized !== undefined) {
@@ -42,7 +42,7 @@ class ArgumentValidator {
                 warnings.push({
                     field: rule.field,
                     message: result.warning,
-                    suggestion: result.suggestion
+                    suggestion: result.suggestion,
                 });
             }
         }
@@ -53,7 +53,7 @@ class ArgumentValidator {
                 warnings.push({
                     field,
                     message: `Unknown option: ${field}`,
-                    suggestion: `Remove --${this.kebabCase(field)} or check command help`
+                    suggestion: `Remove --${this.kebabCase(field)} or check command help`,
                 });
             }
         }
@@ -61,7 +61,7 @@ class ArgumentValidator {
             valid: errors.length === 0,
             errors,
             warnings,
-            normalizedOptions
+            normalizedOptions,
         };
     }
     /**
@@ -75,38 +75,38 @@ class ArgumentValidator {
                 type: 'port',
                 min: 1024,
                 max: 65535,
-                custom: (value) => {
+                custom: value => {
                     if (value && this.isPortInUse(value)) {
                         return `Port ${value} is already in use`;
                     }
                     return true;
-                }
+                },
             },
             {
                 field: 'host',
                 type: 'string',
                 pattern: /^([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+$|^localhost$|^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/,
-                custom: (value) => {
+                custom: value => {
                     if (value && value !== 'localhost' && !this.isValidIP(value) && !this.isValidHostname(value)) {
                         return 'Invalid host format';
                     }
                     return true;
-                }
+                },
             },
             {
                 field: 'config',
                 type: 'path',
-                custom: (value) => {
+                custom: value => {
                     if (value && !this.fileExists(value)) {
                         return `Configuration file not found: ${value}`;
                     }
                     return true;
-                }
+                },
             },
             {
                 field: 'debug',
-                type: 'boolean'
-            }
+                type: 'boolean',
+            },
         ]);
         // Stop 命令验证规则
         this.commandRules.set('stop', [
@@ -114,12 +114,12 @@ class ArgumentValidator {
                 field: 'port',
                 type: 'port',
                 min: 1024,
-                max: 65535
+                max: 65535,
             },
             {
                 field: 'force',
-                type: 'boolean'
-            }
+                type: 'boolean',
+            },
         ]);
         // Code 命令验证规则
         this.commandRules.set('code', [
@@ -127,16 +127,16 @@ class ArgumentValidator {
                 field: 'port',
                 type: 'port',
                 min: 1024,
-                max: 65535
+                max: 65535,
             },
             {
                 field: 'autoStart',
-                type: 'boolean'
+                type: 'boolean',
             },
             {
                 field: 'export',
-                type: 'boolean'
-            }
+                type: 'boolean',
+            },
         ]);
         // Status 命令验证规则
         this.commandRules.set('status', [
@@ -144,31 +144,31 @@ class ArgumentValidator {
                 field: 'port',
                 type: 'port',
                 min: 1024,
-                max: 65535
+                max: 65535,
             },
             {
                 field: 'detailed',
-                type: 'boolean'
-            }
+                type: 'boolean',
+            },
         ]);
         // Config 命令验证规则
         this.commandRules.set('config', [
             {
                 field: 'list',
-                type: 'boolean'
+                type: 'boolean',
             },
             {
                 field: 'validate',
-                type: 'boolean'
+                type: 'boolean',
             },
             {
                 field: 'reset',
-                type: 'boolean'
+                type: 'boolean',
             },
             {
                 field: 'path',
-                type: 'path'
-            }
+                type: 'path',
+            },
         ]);
     }
     /**
@@ -179,7 +179,7 @@ class ArgumentValidator {
         if (rule.required && (value === undefined || value === null)) {
             return {
                 valid: false,
-                error: `Field ${rule.field} is required`
+                error: `Field ${rule.field} is required`,
             };
         }
         // 如果值为空且不是必需的，跳过验证
@@ -203,7 +203,7 @@ class ArgumentValidator {
             if (!rule.pattern.test(value)) {
                 return {
                     valid: false,
-                    error: `Field ${rule.field} does not match required pattern`
+                    error: `Field ${rule.field} does not match required pattern`,
                 };
             }
         }
@@ -211,7 +211,7 @@ class ArgumentValidator {
         if (rule.enum && !rule.enum.includes(value)) {
             return {
                 valid: false,
-                error: `Field ${rule.field} must be one of: ${rule.enum.join(', ')}`
+                error: `Field ${rule.field} must be one of: ${rule.enum.join(', ')}`,
             };
         }
         // 自定义验证
@@ -220,13 +220,13 @@ class ArgumentValidator {
             if (typeof customResult === 'string') {
                 return {
                     valid: false,
-                    error: customResult
+                    error: customResult,
                 };
             }
             if (!customResult) {
                 return {
                     valid: false,
-                    error: `Field ${rule.field} failed custom validation`
+                    error: `Field ${rule.field} failed custom validation`,
                 };
             }
         }
@@ -241,7 +241,7 @@ class ArgumentValidator {
                 if (typeof value !== 'string') {
                     return {
                         valid: false,
-                        error: `Field ${rule.field} must be a string`
+                        error: `Field ${rule.field} must be a string`,
                     };
                 }
                 break;
@@ -249,7 +249,7 @@ class ArgumentValidator {
                 if (typeof value !== 'number' || isNaN(value)) {
                     return {
                         valid: false,
-                        error: `Field ${rule.field} must be a number`
+                        error: `Field ${rule.field} must be a number`,
                     };
                 }
                 break;
@@ -257,7 +257,7 @@ class ArgumentValidator {
                 if (typeof value !== 'boolean') {
                     return {
                         valid: false,
-                        error: `Field ${rule.field} must be a boolean`
+                        error: `Field ${rule.field} must be a boolean`,
                     };
                 }
                 break;
@@ -265,7 +265,7 @@ class ArgumentValidator {
                 if (typeof value !== 'number' || !Number.isInteger(value)) {
                     return {
                         valid: false,
-                        error: `Field ${rule.field} must be a valid port number`
+                        error: `Field ${rule.field} must be a valid port number`,
                     };
                 }
                 break;
@@ -273,7 +273,7 @@ class ArgumentValidator {
                 if (typeof value !== 'string') {
                     return {
                         valid: false,
-                        error: `Field ${rule.field} must be a valid file path`
+                        error: `Field ${rule.field} must be a valid file path`,
                     };
                 }
                 break;
@@ -281,7 +281,7 @@ class ArgumentValidator {
                 if (typeof value !== 'string' || !this.isValidURL(value)) {
                     return {
                         valid: false,
-                        error: `Field ${rule.field} must be a valid URL`
+                        error: `Field ${rule.field} must be a valid URL`,
                     };
                 }
                 break;
@@ -296,13 +296,13 @@ class ArgumentValidator {
             if (rule.min !== undefined && value < rule.min) {
                 return {
                     valid: false,
-                    error: `Field ${rule.field} must be at least ${rule.min}`
+                    error: `Field ${rule.field} must be at least ${rule.min}`,
                 };
             }
             if (rule.max !== undefined && value > rule.max) {
                 return {
                     valid: false,
-                    error: `Field ${rule.field} must be at most ${rule.max}`
+                    error: `Field ${rule.field} must be at most ${rule.max}`,
                 };
             }
         }
@@ -310,13 +310,13 @@ class ArgumentValidator {
             if (rule.min !== undefined && value.length < rule.min) {
                 return {
                     valid: false,
-                    error: `Field ${rule.field} must be at least ${rule.min} characters long`
+                    error: `Field ${rule.field} must be at least ${rule.min} characters long`,
                 };
             }
             if (rule.max !== undefined && value.length > rule.max) {
                 return {
                     valid: false,
-                    error: `Field ${rule.field} must be at most ${rule.max} characters long`
+                    error: `Field ${rule.field} must be at most ${rule.max} characters long`,
                 };
             }
         }

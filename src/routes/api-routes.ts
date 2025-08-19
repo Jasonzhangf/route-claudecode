@@ -1,13 +1,14 @@
 /**
  * API路由定义
- * 
+ *
  * 定义RCC v4.0的核心API端点
- * 
+ *
  * @author Jason Zhang
  */
 
 import { Router, RouteGroup } from './router';
 import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
+import { SERVER_DEFAULTS, getCorsConfig, getRateLimitConfig } from '../constants';
 
 /**
  * 配置API路由
@@ -18,12 +19,12 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
     prefix: '/api/v1',
     middleware: [
       middlewareManager.createCors({
-        origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+        origin: getCorsConfig().origin as any,
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
-        credentials: true
+        credentials: true,
       }),
       middlewareManager.createLogger({ level: 2, format: 'detailed' }),
-      middlewareManager.createRateLimit({ maxRequests: 1000, windowMs: 60000 }) // 1000 req/min
+      middlewareManager.createRateLimit({ maxRequests: 1000, windowMs: 60000 }), // 1000 req/min
     ],
     routes: [
       // 系统信息
@@ -41,7 +42,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
               'Rate limiting',
               'Authentication',
               'Debug system',
-              'Pipeline management'
+              'Pipeline management',
             ],
             endpoints: {
               health: '/health',
@@ -49,208 +50,445 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
               version: '/version',
               providers: '/api/v1/providers',
               pipelines: '/api/v1/pipelines',
-              config: '/api/v1/config'
-            }
+              config: '/api/v1/config',
+            },
           };
         },
         name: 'api-info',
-        description: 'Get API information'
+        description: 'Get API information',
       },
-      
+
       // Provider管理
       {
         method: 'GET',
         path: '/providers',
         handler: async (req, res, params) => {
-          // TODO: 实现Provider列表查询
-          res.body = {
-            providers: [
-              {
-                id: 'anthropic',
-                name: 'Anthropic',
-                type: 'anthropic',
-                status: 'active',
-                models: ['claude-3-sonnet', 'claude-3-haiku'],
-                config: {
-                  endpoint: 'https://api.anthropic.com/v1/messages',
-                  version: '2023-06-01'
-                }
-              },
-              {
-                id: 'openai',
-                name: 'OpenAI',
-                type: 'openai',
-                status: 'active',
-                models: ['gpt-4', 'gpt-3.5-turbo'],
-                config: {
-                  endpoint: 'https://api.openai.com/v1/chat/completions'
-                }
-              }
-            ],
-            total: 2
-          };
+          try {
+            // 从全局服务获取Provider管理器
+            const { getGlobalProviderManager } = await import('../services/global-service-registry');
+            const providerManager = getGlobalProviderManager();
+
+            if (!providerManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Provider manager not initialized',
+              };
+              return;
+            }
+
+            const providerStatuses = providerManager.getProviderStatuses();
+            const providers = providerStatuses.map(status => ({
+              id: status.routeInfo.id,
+              name: status.name,
+              type: status.routeInfo.type,
+              status: status.status,
+              healthy: status.routeInfo.healthy,
+              currentLoad: status.routeInfo.currentLoad,
+              priority: status.routeInfo.priority,
+              weight: status.routeInfo.weight,
+              uptime: (status as any).uptime || 0,
+              lastUpdated: (status as any).lastUpdated || new Date(),
+            }));
+
+            res.body = {
+              providers,
+              total: providers.length,
+              healthy: providers.filter(p => p.healthy).length,
+              unhealthy: providers.filter(p => !p.healthy).length,
+            };
+          } catch (error) {
+            console.error('Failed to get providers:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: 'Failed to retrieve provider list',
+            };
+          }
         },
         name: 'list-providers',
-        description: 'List all available providers'
+        description: 'List all available providers',
       },
-      
+
       {
         method: 'GET',
         path: '/providers/:id',
         handler: async (req, res, params) => {
           const providerId = params.id;
-          
-          // TODO: 实现Provider详情查询
-          if (providerId === 'anthropic') {
+
+          if (!providerId) {
+            res.statusCode = 400;
             res.body = {
-              id: 'anthropic',
-              name: 'Anthropic',
-              type: 'anthropic',
-              status: 'active',
-              models: ['claude-3-sonnet', 'claude-3-haiku'],
-              config: {
-                endpoint: 'https://api.anthropic.com/v1/messages',
-                version: '2023-06-01'
-              },
-              stats: {
-                totalRequests: 1247,
-                successRate: 99.2,
-                avgResponseTime: 1250
-              }
+              error: 'Bad Request',
+              message: 'Provider ID is required',
             };
-          } else {
-            res.statusCode = 404;
-            res.body = { error: 'Provider not found' };
+            return;
+          }
+
+          try {
+            const { getGlobalProviderManager } = await import('../services/global-service-registry');
+            const providerManager = getGlobalProviderManager();
+
+            if (!providerManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Provider manager not initialized',
+              };
+              return;
+            }
+
+            const providerStatuses = providerManager.getProviderStatuses();
+            const providerStatus = providerStatuses.find(s => s.routeInfo.id === providerId);
+
+            if (!providerStatus) {
+              res.statusCode = 404;
+              res.body = {
+                error: 'Not Found',
+                message: `Provider '${providerId}' not found`,
+              };
+              return;
+            }
+
+            res.body = {
+              id: providerStatus.routeInfo.id,
+              name: providerStatus.name,
+              type: providerStatus.routeInfo.type,
+              status: providerStatus.status,
+              healthy: providerStatus.routeInfo.healthy,
+              currentLoad: providerStatus.routeInfo.currentLoad,
+              priority: providerStatus.routeInfo.priority,
+              weight: providerStatus.routeInfo.weight,
+              uptime: (providerStatus as any).uptime || 0,
+              lastUpdated: (providerStatus as any).lastUpdated || new Date(),
+              stats: {
+                memoryUsage: (providerStatus as any).memoryUsage || 0,
+                cpuUsage: (providerStatus as any).cpuUsage || 0,
+              },
+            };
+          } catch (error) {
+            console.error(`Failed to get provider ${providerId}:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: 'Failed to retrieve provider details',
+            };
           }
         },
         name: 'get-provider',
-        description: 'Get provider details'
+        description: 'Get provider details',
       },
-      
+
       // Pipeline管理
       {
         method: 'GET',
         path: '/pipelines',
         handler: async (req, res, params) => {
-          // TODO: 实现Pipeline列表查询
-          res.body = {
-            pipelines: [
-              {
-                id: 'anthropic-claude-3-sonnet',
-                provider: 'anthropic',
-                model: 'claude-3-sonnet',
-                status: 'running',
-                activeRequests: 3,
-                totalProcessed: 856,
-                avgProcessingTime: 1200
-              },
-              {
-                id: 'openai-gpt-4',
-                provider: 'openai',
-                model: 'gpt-4',
-                status: 'running',
-                activeRequests: 1,
-                totalProcessed: 391,
-                avgProcessingTime: 2100
-              }
-            ],
-            total: 2
-          };
+          try {
+            const { getGlobalPipelineManager } = await import('../services/global-service-registry');
+            const pipelineManager = getGlobalPipelineManager();
+
+            if (!pipelineManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Pipeline manager not initialized',
+              };
+              return;
+            }
+
+            const allPipelineStatus = pipelineManager.getAllPipelineStatus();
+            const activeExecutions = pipelineManager.getActiveExecutions();
+
+            const pipelines = Object.entries(allPipelineStatus).map(([id, status]) => {
+              const pipelineActiveExecutions = activeExecutions.filter(exec => exec.pipelineId === id);
+              const executionHistory = pipelineManager.getExecutionHistory(id);
+
+              // 计算统计信息
+              const completedExecutions = executionHistory.filter(exec => exec.status === 'completed');
+              const avgProcessingTime =
+                completedExecutions.length > 0
+                  ? Math.round(
+                      completedExecutions.reduce((sum, exec) => sum + (exec.totalTime || 0), 0) /
+                        completedExecutions.length
+                    )
+                  : 0;
+
+              return {
+                id,
+                status: status.status,
+                moduleCount: (status as any).moduleCount || 0,
+                activeRequests: pipelineActiveExecutions.length,
+                totalProcessed: executionHistory.length,
+                avgProcessingTime,
+                lastExecuted:
+                  executionHistory.length > 0 ? executionHistory[executionHistory.length - 1].startTime : null,
+                errorRate:
+                  executionHistory.length > 0
+                    ? Math.round(
+                        (executionHistory.filter(exec => exec.status === 'failed').length / executionHistory.length) *
+                          100 *
+                          100
+                      ) / 100
+                    : 0,
+              };
+            });
+
+            res.body = {
+              pipelines,
+              total: pipelines.length,
+              running: pipelines.filter(p => p.status === 'running').length,
+              stopped: pipelines.filter(p => p.status === 'stopped').length,
+              totalActiveRequests: pipelines.reduce((sum, p) => sum + p.activeRequests, 0),
+            };
+          } catch (error) {
+            console.error('Failed to get pipelines:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: 'Failed to retrieve pipeline list',
+            };
+          }
         },
         name: 'list-pipelines',
-        description: 'List all active pipelines'
+        description: 'List all active pipelines',
       },
-      
+
       {
         method: 'GET',
         path: '/pipelines/:id',
         handler: async (req, res, params) => {
           const pipelineId = params.id;
-          
-          // TODO: 实现Pipeline详情查询
-          res.body = {
-            id: pipelineId,
-            provider: 'anthropic',
-            model: 'claude-3-sonnet',
-            status: 'running',
-            modules: [
-              { name: 'transformer', status: 'healthy', responseTime: 5 },
-              { name: 'protocol', status: 'healthy', responseTime: 12 },
-              { name: 'server-compatibility', status: 'healthy', responseTime: 8 },
-              { name: 'server', status: 'healthy', responseTime: 1180 }
-            ],
-            stats: {
-              activeRequests: 3,
-              totalProcessed: 856,
-              avgProcessingTime: 1200,
-              errorRate: 0.8
+
+          if (!pipelineId) {
+            res.statusCode = 400;
+            res.body = {
+              error: 'Bad Request',
+              message: 'Pipeline ID is required',
+            };
+            return;
+          }
+
+          try {
+            const { getGlobalPipelineManager } = await import('../services/global-service-registry');
+            const pipelineManager = getGlobalPipelineManager();
+
+            if (!pipelineManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Pipeline manager not initialized',
+              };
+              return;
             }
-          };
+
+            const pipeline = pipelineManager.getPipeline(pipelineId);
+            if (!pipeline) {
+              res.statusCode = 404;
+              res.body = {
+                error: 'Not Found',
+                message: `Pipeline '${pipelineId}' not found`,
+              };
+              return;
+            }
+
+            const status = pipelineManager.getPipelineStatus(pipelineId);
+            const activeExecutions = pipelineManager
+              .getActiveExecutions()
+              .filter(exec => exec.pipelineId === pipelineId);
+            const executionHistory = pipelineManager.getExecutionHistory(pipelineId);
+
+            // 获取模块状态信息
+            const modules =
+              (status as any)?.modules?.map((module: any) => ({
+                name: module.name,
+                id: module.id,
+                type: module.type,
+                status: module.status,
+                version: module.version,
+                uptime: module.uptime,
+              })) || [];
+
+            // 计算统计信息
+            const completedExecutions = executionHistory.filter(exec => exec.status === 'completed');
+            const failedExecutions = executionHistory.filter(exec => exec.status === 'failed');
+            const avgProcessingTime =
+              completedExecutions.length > 0
+                ? Math.round(
+                    completedExecutions.reduce((sum, exec) => sum + (exec.totalTime || 0), 0) /
+                      completedExecutions.length
+                  )
+                : 0;
+
+            res.body = {
+              id: pipelineId,
+              status: status?.status || 'unknown',
+              moduleCount: (status as any)?.moduleCount || 0,
+              modules,
+              stats: {
+                activeRequests: activeExecutions.length,
+                totalProcessed: executionHistory.length,
+                successfulRequests: completedExecutions.length,
+                failedRequests: failedExecutions.length,
+                avgProcessingTime,
+                errorRate:
+                  executionHistory.length > 0
+                    ? Math.round((failedExecutions.length / executionHistory.length) * 100 * 100) / 100
+                    : 0,
+                lastExecuted:
+                  executionHistory.length > 0 ? executionHistory[executionHistory.length - 1].startTime : null,
+              },
+            };
+          } catch (error) {
+            console.error(`Failed to get pipeline ${pipelineId}:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: 'Failed to retrieve pipeline details',
+            };
+          }
         },
         name: 'get-pipeline',
-        description: 'Get pipeline details'
+        description: 'Get pipeline details',
       },
-      
+
       // 配置管理
       {
         method: 'GET',
         path: '/config',
         handler: async (req, res, params) => {
-          // TODO: 实现配置查询
-          res.body = {
-            server: {
-              port: 3456,
-              host: 'localhost',
-              debug: false
-            },
-            routing: {
-              defaultProvider: 'anthropic',
-              fallbackEnabled: false,
-              loadBalancing: 'round-robin'
-            },
-            rateLimit: {
-              maxRequests: 1000,
-              windowMs: 60000
-            },
-            auth: {
-              enabled: false,
-              type: 'apikey'
+          try {
+            const { getGlobalConfigManager } = await import('../services/global-service-registry');
+            const configManager = getGlobalConfigManager();
+
+            if (!configManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Configuration manager not initialized',
+              };
+              return;
             }
-          };
+
+            const config = await configManager.getCurrentConfig();
+
+            // 过滤敏感信息（如API密钥）
+            const safeConfig = {
+              server: {
+                port: config.server?.port || SERVER_DEFAULTS.HTTP.PORT,
+                host: config.server?.host || SERVER_DEFAULTS.HTTP.HOST,
+                debug: config.server?.debug || false,
+                maxRequestSize: config.server?.maxRequestSize,
+                timeout: config.server?.timeout,
+              },
+              routing: {
+                defaultStrategy: config.routing?.defaultStrategy,
+                loadBalancing: config.routing?.loadBalancing,
+                healthCheckInterval: config.routing?.healthCheckInterval,
+                maxRetries: config.routing?.maxRetries,
+                strictErrorReporting: config.routing?.strictErrorReporting,
+              },
+              middleware: {
+                rateLimit: {
+                  enabled: config.middleware?.rateLimit?.enabled,
+                  maxRequests: config.middleware?.rateLimit?.maxRequests,
+                  windowMs: config.middleware?.rateLimit?.windowMs,
+                },
+                cors: {
+                  enabled: config.middleware?.cors?.enabled,
+                  origin: config.middleware?.cors?.origin,
+                  credentials: config.middleware?.cors?.credentials,
+                },
+                auth: {
+                  enabled: config.middleware?.auth?.enabled,
+                  type: config.middleware?.auth?.type,
+                  // 不返回实际的密钥
+                },
+              },
+              providers: Object.keys(config.providers || {}),
+              pipelines: Object.keys(config.pipelines || {}),
+            };
+
+            res.body = safeConfig;
+          } catch (error) {
+            console.error('Failed to get configuration:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: 'Failed to retrieve configuration',
+            };
+          }
         },
         name: 'get-config',
-        description: 'Get current configuration'
+        description: 'Get current configuration',
       },
-      
+
       {
         method: 'PUT',
         path: '/config',
         handler: async (req, res, params) => {
-          // TODO: 实现配置更新
-          const config = req.body;
-          
-          // 验证配置
-          if (!config) {
+          const newConfig = req.body;
+
+          if (!newConfig) {
             res.statusCode = 400;
-            res.body = { error: 'Configuration data required' };
+            res.body = {
+              error: 'Bad Request',
+              message: 'Configuration data required',
+            };
             return;
           }
-          
-          // 应用配置
-          res.body = {
-            message: 'Configuration updated successfully',
-            config
-          };
+
+          try {
+            const { getGlobalConfigManager } = await import('../services/global-service-registry');
+            const configManager = getGlobalConfigManager();
+
+            if (!configManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Configuration manager not initialized',
+              };
+              return;
+            }
+
+            // 验证配置格式
+            const validationResult = await configManager.validateConfig(newConfig);
+            if (!validationResult.valid) {
+              res.statusCode = 400;
+              res.body = {
+                error: 'Bad Request',
+                message: 'Invalid configuration',
+                details: validationResult.errors,
+              };
+              return;
+            }
+
+            // 应用配置更新
+            await configManager.updateConfig(newConfig);
+
+            res.body = {
+              success: true,
+              message: 'Configuration updated successfully',
+              timestamp: new Date().toISOString(),
+            };
+          } catch (error) {
+            console.error('Failed to update configuration:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to update configuration',
+            };
+          }
         },
         name: 'update-config',
-        description: 'Update configuration'
-      }
-    ]
+        description: 'Update configuration',
+      },
+    ],
   };
-  
+
   // 注册API路由组
   router.group(apiV1Routes);
-  
+
   // 管理API路由组（需要认证）
   const adminRoutes: RouteGroup = {
     prefix: '/api/admin',
@@ -258,7 +496,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
       middlewareManager.createCors({ origin: false }), // 仅允许同源请求
       middlewareManager.createLogger({ level: 2, format: 'json' }),
       middlewareManager.createRateLimit({ maxRequests: 100, windowMs: 60000 }), // 更严格的限制
-      middlewareManager.createAuth({ type: 'apikey', keys: ['admin-key-123'] }) // 需要管理员API密钥
+      middlewareManager.createAuth({ required: true }), // 需要管理员API密钥
     ],
     routes: [
       // 重启服务
@@ -266,53 +504,129 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         method: 'POST',
         path: '/restart',
         handler: async (req, res, params) => {
-          // TODO: 实现服务重启
-          res.body = {
-            message: 'Server restart initiated',
-            estimatedDowntime: '5-10 seconds'
-          };
+          try {
+            const { getGlobalServerManager } = await import('../services/global-service-registry');
+            const serverManager = getGlobalServerManager();
+
+            if (!serverManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Server manager not initialized',
+              };
+              return;
+            }
+
+            // 执行服务重启
+            const restartResult = await serverManager.restart();
+
+            res.body = {
+              success: true,
+              message: 'Server restart initiated successfully',
+              restartId: restartResult.restartId,
+              estimatedDowntime: restartResult.estimatedDowntime,
+              timestamp: new Date().toISOString(),
+            };
+          } catch (error) {
+            console.error('Failed to restart server:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to restart server',
+            };
+          }
         },
         name: 'restart-server',
-        description: 'Restart the server'
+        description: 'Restart the server',
       },
-      
+
       // 清除缓存
       {
         method: 'POST',
         path: '/cache/clear',
         handler: async (req, res, params) => {
-          // TODO: 实现缓存清除
-          res.body = {
-            message: 'Cache cleared successfully',
-            itemsCleared: 0
-          };
+          try {
+            const { getGlobalCacheManager } = await import('../services/global-service-registry');
+            const cacheManager = getGlobalCacheManager();
+
+            if (!cacheManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Cache manager not initialized',
+              };
+              return;
+            }
+
+            // 执行缓存清除
+            const clearResult = await cacheManager.clearAll();
+
+            res.body = {
+              success: true,
+              message: 'Cache cleared successfully',
+              itemsCleared: clearResult.itemsCleared,
+              cacheTypes: clearResult.cacheTypes,
+              timestamp: new Date().toISOString(),
+            };
+          } catch (error) {
+            console.error('Failed to clear cache:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to clear cache',
+            };
+          }
         },
         name: 'clear-cache',
-        description: 'Clear all caches'
+        description: 'Clear all caches',
       },
-      
+
       // 导出配置
       {
         method: 'GET',
         path: '/config/export',
         handler: async (req, res, params) => {
-          // TODO: 实现配置导出
-          res.headers['Content-Type'] = 'application/json';
-          res.headers['Content-Disposition'] = 'attachment; filename=\"rcc-config.json\"';
-          res.body = {
-            exportedAt: new Date().toISOString(),
-            version: '4.0.0-alpha.1',
-            config: {
-              // 配置数据
+          try {
+            const { getGlobalConfigManager } = await import('../services/global-service-registry');
+            const configManager = getGlobalConfigManager();
+
+            if (!configManager) {
+              res.statusCode = 503;
+              res.body = {
+                error: 'Service Unavailable',
+                message: 'Configuration manager not initialized',
+              };
+              return;
             }
-          };
+
+            // 导出完整配置
+            const fullConfig = await configManager.exportConfig();
+            const exportData = {
+              exportedAt: new Date().toISOString(),
+              version: '4.0.0-alpha.1',
+              exportType: 'full',
+              config: fullConfig,
+            };
+
+            res.headers['Content-Type'] = 'application/json';
+            res.headers['Content-Disposition'] =
+              `attachment; filename="rcc-config-${new Date().toISOString().split('T')[0]}.json"`;
+            res.body = exportData;
+          } catch (error) {
+            console.error('Failed to export configuration:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to export configuration',
+            };
+          }
         },
         name: 'export-config',
-        description: 'Export configuration as JSON'
-      }
-    ]
+        description: 'Export configuration as JSON',
+      },
+    ],
   };
-  
+
   // 注册管理API路由组
   router.group(adminRoutes);
 }

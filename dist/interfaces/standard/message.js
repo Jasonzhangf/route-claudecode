@@ -12,15 +12,15 @@ exports.MessageBuilder = void 0;
  * 消息构建器
  */
 class MessageBuilder {
-    message = {};
     constructor(role) {
+        this.message = {};
         this.message = {
             role,
             content: '',
             metadata: {
                 timestamp: new Date(),
-                source: 'api'
-            }
+                source: 'api',
+            },
         };
     }
     /**
@@ -44,7 +44,7 @@ class MessageBuilder {
         this.ensureContentBlocksArray();
         this.message.content.push({
             type: 'text',
-            text
+            text,
         });
         return this;
     }
@@ -57,7 +57,7 @@ class MessageBuilder {
             type: 'tool_use',
             id,
             name,
-            input
+            input,
         });
         return this;
     }
@@ -69,7 +69,7 @@ class MessageBuilder {
         this.message.content.push({
             type: 'tool_result',
             toolUseId,
-            content
+            content,
         });
         return this;
     }
@@ -81,7 +81,7 @@ class MessageBuilder {
         this.message.content.push({
             type: 'image',
             source,
-            mediaType
+            mediaType,
         });
         return this;
     }
@@ -166,7 +166,7 @@ class MessageBuilder {
             builder.setName(anthropicMessage.name);
         }
         builder.setMetadata({
-            originalFormat: 'anthropic'
+            originalFormat: 'anthropic',
         });
         return builder;
     }
@@ -188,7 +188,7 @@ class MessageBuilder {
             }
         }
         builder.setMetadata({
-            originalFormat: 'openai'
+            originalFormat: 'openai',
         });
         return builder;
     }

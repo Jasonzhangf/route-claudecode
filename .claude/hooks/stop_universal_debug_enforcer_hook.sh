@@ -18,10 +18,7 @@ if command -v jq >/dev/null 2>&1; then
         echo "" >&2
         echo "⚠️ 系统强制要求: 必须完成RCC debug系统端到端验证" >&2
         echo "" >&2
-        echo "🎯 强制执行的验证脚本:" >&2
-        echo "   ./scripts/verify-e2e-debug-system.sh" >&2
-        echo "" >&2
-        echo "📋 脚本内部执行的验证命令:" >&2
+        echo "🎯 强制执行的验证命令:" >&2
         echo "   ANTHROPIC_BASE_URL=http://localhost:5506 ANTHROPIC_API_KEY=rcc4-proxy-key claude --print \"测试修复后的debug系统：请列出当前目录下的文件\" --timeout 15" >&2
         echo "" >&2
         echo "📋 此命令验证的关键功能:" >&2

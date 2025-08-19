@@ -5,7 +5,8 @@
  *
  * @author Jason Zhang
  */
-import { BaseModule } from '../base-module-impl';
+import { IModuleInterface, ModuleType, IModuleStatus, IModuleMetrics } from '../../interfaces/core/module-implementation-interface';
+import { EventEmitter } from 'events';
 import { StandardRequest } from '../../interfaces/standard/request';
 import { StandardResponse } from '../../interfaces/standard/response';
 /**
@@ -32,10 +33,35 @@ export interface OpenAIProtocolConfig {
 /**
  * OpenAI Protocol处理器实现
  */
-export declare class OpenAIProtocolHandler extends BaseModule {
+export declare class OpenAIProtocolHandler extends EventEmitter implements IModuleInterface {
+    protected readonly id: string;
+    protected readonly name: string;
+    protected readonly type: ModuleType;
+    protected readonly version: string;
+    protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+    protected metrics: IModuleMetrics;
+    private processingTimes;
+    private errors;
+    getId(): string;
+    getName(): string;
+    getType(): ModuleType;
+    getVersion(): string;
+    getStatus(): IModuleStatus;
+    getMetrics(): IModuleMetrics;
+    configure(config: any): Promise<void>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    reset(): Promise<void>;
+    cleanup(): Promise<void>;
+    healthCheck(): Promise<{
+        healthy: boolean;
+        details: any;
+    }>;
+    process(input: any): Promise<any>;
+    private handleRequest;
     private protocolConfig;
     private openaiClient;
-    constructor(id: string, config?: Partial<OpenAIProtocolConfig>);
+    constructor(id?: string, config?: Partial<OpenAIProtocolConfig>);
     /**
      * 初始化OpenAI客户端
      */

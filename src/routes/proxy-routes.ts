@@ -1,8 +1,8 @@
 /**
  * 代理路由定义
- * 
+ *
  * 定义RCC v4.0的AI模型代理端点
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -13,87 +13,102 @@ import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
  * 配置代理路由
  */
 export function setupProxyRoutes(router: Router, middlewareManager: IMiddlewareManager): void {
-  
   // Anthropic兼容端点
-  router.post('/v1/messages', async (req, res, params) => {
-    try {
-      await handleAnthropicProxy(req, res);
-    } catch (error) {
-      res.statusCode = 500;
-      res.body = {
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }, [
-    middlewareManager.createCors({ origin: true, credentials: true }),
-    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
-    middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 })
-  ]);
-  
+  router.post(
+    '/v1/messages',
+    async (req, res, params) => {
+      try {
+        await handleAnthropicProxy(req, res);
+      } catch (error) {
+        res.statusCode = 500;
+        res.body = {
+          error: 'Internal Server Error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+    [
+      middlewareManager.createCors({ origin: true, credentials: true }),
+      middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+      middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 }),
+    ]
+  );
+
   // OpenAI兼容端点
-  router.post('/v1/chat/completions', async (req, res, params) => {
-    try {
-      await handleOpenAIProxy(req, res);
-    } catch (error) {
-      res.statusCode = 500;
-      res.body = {
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }, [
-    middlewareManager.createCors({ origin: true, credentials: true }),
-    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
-    middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 })
-  ]);
-  
+  router.post(
+    '/v1/chat/completions',
+    async (req, res, params) => {
+      try {
+        await handleOpenAIProxy(req, res);
+      } catch (error) {
+        res.statusCode = 500;
+        res.body = {
+          error: 'Internal Server Error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        };
+      }
+    },
+    [
+      middlewareManager.createCors({ origin: true, credentials: true }),
+      middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+      middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 }),
+    ]
+  );
+
   // Google Gemini兼容端点
-  router.post('/v1beta/models/:model/generateContent', async (req, res, params) => {
-    try {
-      const model = params.model;
-      if (!model) {
-        res.statusCode = 400;
-        res.body = { error: 'Model parameter is required' };
-        return;
+  router.post(
+    '/v1beta/models/:model/generateContent',
+    async (req, res, params) => {
+      try {
+        const model = params.model;
+        if (!model) {
+          res.statusCode = 400;
+          res.body = { error: 'Model parameter is required' };
+          return;
+        }
+        await handleGeminiProxy(req, res, model);
+      } catch (error) {
+        res.statusCode = 500;
+        res.body = {
+          error: 'Internal Server Error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        };
       }
-      await handleGeminiProxy(req, res, model);
-    } catch (error) {
-      res.statusCode = 500;
-      res.body = {
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }, [
-    middlewareManager.createCors({ origin: true, credentials: true }),
-    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
-    middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 })
-  ]);
-  
+    },
+    [
+      middlewareManager.createCors({ origin: true, credentials: true }),
+      middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+      middlewareManager.createRateLimit({ maxRequests: 200, windowMs: 60000 }),
+    ]
+  );
+
   // 统一代理端点
-  router.post('/v1/proxy/:provider/:model', async (req, res, params) => {
-    try {
-      const provider = params.provider;
-      const model = params.model;
-      if (!provider || !model) {
-        res.statusCode = 400;
-        res.body = { error: 'Provider and model parameters are required' };
-        return;
+  router.post(
+    '/v1/proxy/:provider/:model',
+    async (req, res, params) => {
+      try {
+        const provider = params.provider;
+        const model = params.model;
+        if (!provider || !model) {
+          res.statusCode = 400;
+          res.body = { error: 'Provider and model parameters are required' };
+          return;
+        }
+        await handleUniversalProxy(req, res, provider, model);
+      } catch (error) {
+        res.statusCode = 500;
+        res.body = {
+          error: 'Internal Server Error',
+          message: error instanceof Error ? error.message : 'Unknown error',
+        };
       }
-      await handleUniversalProxy(req, res, provider, model);
-    } catch (error) {
-      res.statusCode = 500;
-      res.body = {
-        error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }, [
-    middlewareManager.createCors({ origin: true, credentials: true }),
-    middlewareManager.createLogger({ level: 2, format: 'detailed' }),
-    middlewareManager.createRateLimit({ maxRequests: 150, windowMs: 60000 })
-  ]);
+    },
+    [
+      middlewareManager.createCors({ origin: true, credentials: true }),
+      middlewareManager.createLogger({ level: 2, format: 'detailed' }),
+      middlewareManager.createRateLimit({ maxRequests: 150, windowMs: 60000 }),
+    ]
+  );
 }
 
 /**
@@ -101,43 +116,87 @@ export function setupProxyRoutes(router: Router, middlewareManager: IMiddlewareM
  */
 async function handleAnthropicProxy(req: any, res: any): Promise<void> {
   const requestBody = req.body;
-  
+
   // 验证请求格式
   if (!requestBody || !requestBody.messages) {
     res.statusCode = 400;
     res.body = {
       error: 'Bad Request',
-      message: 'Invalid request format. Expected Anthropic messages format.'
+      message: 'Invalid request format. Expected Anthropic messages format.',
     };
     return;
   }
-  
-  // TODO: 实现实际的Anthropic代理逻辑
-  // 1. 请求验证和预处理
-  // 2. 路由到合适的Provider
-  // 3. 格式转换
-  // 4. 发送到目标API
-  // 5. 响应转换和返回
-  
-  // 模拟响应
-  res.body = {
-    id: `msg_${Date.now()}`,
-    type: 'message',
-    role: 'assistant',
-    content: [
-      {
-        type: 'text',
-        text: 'This is a simulated response from RCC v4.0 Anthropic proxy. The actual implementation will route to real providers.'
-      }
-    ],
-    model: requestBody.model || 'claude-3-sonnet-20240229',
-    stop_reason: 'end_turn',
-    stop_sequence: null,
-    usage: {
-      input_tokens: 10,
-      output_tokens: 25
+
+  try {
+    // 获取全局Pipeline服务
+    const { getGlobalPipelineManager } = await import('../services/global-service-registry');
+    const pipelineManager = getGlobalPipelineManager();
+
+    if (!pipelineManager) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: 'Pipeline manager not initialized',
+      };
+      return;
     }
-  };
+
+    // 创建执行上下文
+    const executionContext = {
+      requestId: `anthropic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      priority: 'normal' as const,
+      debug: false,
+      metadata: {
+        protocol: 'anthropic',
+        model: requestBody.model,
+        clientInfo: req.headers?.['user-agent'],
+        originalFormat: 'anthropic',
+      },
+    };
+
+    // 查找适合的Pipeline来处理Anthropic请求
+    const allPipelines = pipelineManager.getAllPipelines();
+    let targetPipelineId: string | null = null;
+
+    // 找到支持Anthropic协议的Pipeline
+    for (const [pipelineId, pipeline] of allPipelines) {
+      const status = pipeline.getStatus();
+      if (status.status === 'running' && (status as any).protocols?.includes('anthropic')) {
+        targetPipelineId = pipelineId;
+        break;
+      }
+    }
+
+    if (!targetPipelineId) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: 'No available pipeline for Anthropic protocol',
+      };
+      return;
+    }
+
+    // 执行Pipeline处理
+    const result = await pipelineManager.executePipeline(targetPipelineId, requestBody, executionContext);
+
+    // 返回结果
+    res.body = result.result;
+    res.headers = {
+      ...res.headers,
+      'X-Pipeline-ID': targetPipelineId,
+      'X-Execution-ID': result.executionId,
+      'X-Processing-Time': `${result.performance.totalTime}ms`,
+      'X-RCC-Version': '4.0.0-alpha.1',
+    };
+  } catch (error) {
+    console.error('Anthropic proxy processing failed:', error);
+    res.statusCode = 500;
+    res.body = {
+      error: 'Internal Server Error',
+      message: error instanceof Error ? error.message : 'Pipeline execution failed',
+      type: 'proxy_error',
+    };
+  }
 }
 
 /**
@@ -145,41 +204,88 @@ async function handleAnthropicProxy(req: any, res: any): Promise<void> {
  */
 async function handleOpenAIProxy(req: any, res: any): Promise<void> {
   const requestBody = req.body;
-  
+
   // 验证请求格式
   if (!requestBody || !requestBody.messages) {
     res.statusCode = 400;
     res.body = {
       error: 'Bad Request',
-      message: 'Invalid request format. Expected OpenAI chat completions format.'
+      message: 'Invalid request format. Expected OpenAI chat completions format.',
     };
     return;
   }
-  
-  // TODO: 实现实际的OpenAI代理逻辑
-  
-  // 模拟响应
-  res.body = {
-    id: `chatcmpl-${Date.now()}`,
-    object: 'chat.completion',
-    created: Math.floor(Date.now() / 1000),
-    model: requestBody.model || 'gpt-4',
-    choices: [
-      {
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: 'This is a simulated response from RCC v4.0 OpenAI proxy. The actual implementation will route to real providers.'
-        },
-        finish_reason: 'stop'
-      }
-    ],
-    usage: {
-      prompt_tokens: 10,
-      completion_tokens: 25,
-      total_tokens: 35
+
+  try {
+    // 获取全局Pipeline服务
+    const { getGlobalPipelineManager } = await import('../services/global-service-registry');
+    const pipelineManager = getGlobalPipelineManager();
+
+    if (!pipelineManager) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: 'Pipeline manager not initialized',
+      };
+      return;
     }
-  };
+
+    // 创建执行上下文
+    const executionContext = {
+      requestId: `openai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      priority: 'normal' as const,
+      debug: false,
+      metadata: {
+        protocol: 'openai',
+        model: requestBody.model,
+        clientInfo: req.headers?.['user-agent'],
+        originalFormat: 'openai',
+        stream: requestBody.stream || false,
+      },
+    };
+
+    // 查找适合的Pipeline来处理OpenAI请求
+    const allPipelines = pipelineManager.getAllPipelines();
+    let targetPipelineId: string | null = null;
+
+    // 找到支持OpenAI协议的Pipeline
+    for (const [pipelineId, pipeline] of allPipelines) {
+      const status = pipeline.getStatus();
+      if (status.status === 'running' && (status as any).protocols?.includes('openai')) {
+        targetPipelineId = pipelineId;
+        break;
+      }
+    }
+
+    if (!targetPipelineId) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: 'No available pipeline for OpenAI protocol',
+      };
+      return;
+    }
+
+    // 执行Pipeline处理
+    const result = await pipelineManager.executePipeline(targetPipelineId, requestBody, executionContext);
+
+    // 返回结果
+    res.body = result.result;
+    res.headers = {
+      ...res.headers,
+      'X-Pipeline-ID': targetPipelineId,
+      'X-Execution-ID': result.executionId,
+      'X-Processing-Time': `${result.performance.totalTime}ms`,
+      'X-RCC-Version': '4.0.0-alpha.1',
+    };
+  } catch (error) {
+    console.error('OpenAI proxy processing failed:', error);
+    res.statusCode = 500;
+    res.body = {
+      error: 'Internal Server Error',
+      message: error instanceof Error ? error.message : 'Pipeline execution failed',
+      type: 'proxy_error',
+    };
+  }
 }
 
 /**
@@ -187,59 +293,87 @@ async function handleOpenAIProxy(req: any, res: any): Promise<void> {
  */
 async function handleGeminiProxy(req: any, res: any, model: string): Promise<void> {
   const requestBody = req.body;
-  
+
   // 验证请求格式
   if (!requestBody || !requestBody.contents) {
     res.statusCode = 400;
     res.body = {
       error: 'Bad Request',
-      message: 'Invalid request format. Expected Gemini generateContent format.'
+      message: 'Invalid request format. Expected Gemini generateContent format.',
     };
     return;
   }
-  
-  // TODO: 实现实际的Gemini代理逻辑
-  
-  // 模拟响应
-  res.body = {
-    candidates: [
-      {
-        content: {
-          parts: [
-            {
-              text: `This is a simulated response from RCC v4.0 Gemini proxy for model ${model}. The actual implementation will route to real providers.`
-            }
-          ],
-          role: 'model'
-        },
-        finishReason: 'STOP',
-        index: 0,
-        safetyRatings: [
-          {
-            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-            probability: 'NEGLIGIBLE'
-          },
-          {
-            category: 'HARM_CATEGORY_HATE_SPEECH',
-            probability: 'NEGLIGIBLE'
-          },
-          {
-            category: 'HARM_CATEGORY_HARASSMENT',
-            probability: 'NEGLIGIBLE'
-          },
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            probability: 'NEGLIGIBLE'
-          }
-        ]
-      }
-    ],
-    usageMetadata: {
-      promptTokenCount: 10,
-      candidatesTokenCount: 25,
-      totalTokenCount: 35
+
+  try {
+    // 获取全局Pipeline服务
+    const { getGlobalPipelineManager } = await import('../services/global-service-registry');
+    const pipelineManager = getGlobalPipelineManager();
+
+    if (!pipelineManager) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: 'Pipeline manager not initialized',
+      };
+      return;
     }
-  };
+
+    // 创建执行上下文
+    const executionContext = {
+      requestId: `gemini_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      priority: 'normal' as const,
+      debug: false,
+      metadata: {
+        protocol: 'gemini',
+        model: model,
+        clientInfo: req.headers?.['user-agent'],
+        originalFormat: 'gemini',
+      },
+    };
+
+    // 查找适合的Pipeline来处理Gemini请求
+    const allPipelines = pipelineManager.getAllPipelines();
+    let targetPipelineId: string | null = null;
+
+    // 找到支持Gemini协议的Pipeline
+    for (const [pipelineId, pipeline] of allPipelines) {
+      const status = pipeline.getStatus();
+      if (status.status === 'running' && (status as any).protocols?.includes('gemini')) {
+        targetPipelineId = pipelineId;
+        break;
+      }
+    }
+
+    if (!targetPipelineId) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: 'No available pipeline for Gemini protocol',
+      };
+      return;
+    }
+
+    // 执行Pipeline处理
+    const result = await pipelineManager.executePipeline(targetPipelineId, { ...requestBody, model }, executionContext);
+
+    // 返回结果
+    res.body = result.result;
+    res.headers = {
+      ...res.headers,
+      'X-Pipeline-ID': targetPipelineId,
+      'X-Execution-ID': result.executionId,
+      'X-Processing-Time': `${result.performance.totalTime}ms`,
+      'X-RCC-Version': '4.0.0-alpha.1',
+    };
+  } catch (error) {
+    console.error('Gemini proxy processing failed:', error);
+    res.statusCode = 500;
+    res.body = {
+      error: 'Internal Server Error',
+      message: error instanceof Error ? error.message : 'Pipeline execution failed',
+      type: 'proxy_error',
+    };
+  }
 }
 
 /**
@@ -247,41 +381,133 @@ async function handleGeminiProxy(req: any, res: any, model: string): Promise<voi
  */
 async function handleUniversalProxy(req: any, res: any, provider: string, model: string): Promise<void> {
   const requestBody = req.body;
-  
+
   // 验证请求
   if (!requestBody) {
     res.statusCode = 400;
     res.body = {
       error: 'Bad Request',
-      message: 'Request body is required.'
+      message: 'Request body is required.',
     };
     return;
   }
-  
-  // TODO: 实现统一代理逻辑
-  // 1. 识别请求格式
-  // 2. 转换为标准格式
-  // 3. 路由到指定Provider
-  // 4. 处理响应并转换为请求的格式
-  
-  // 模拟响应
-  res.body = {
-    provider,
-    model,
-    request_id: `req_${Date.now()}`,
-    response: {
-      content: `This is a simulated response from RCC v4.0 universal proxy for ${provider}/${model}. The actual implementation will route to real providers.`,
-      role: 'assistant'
-    },
-    usage: {
-      input_tokens: 10,
-      output_tokens: 25,
-      total_tokens: 35
-    },
-    metadata: {
-      processing_time_ms: 1200,
-      pipeline_id: `${provider}-${model}`,
-      rcc_version: '4.0.0-alpha.1'
+
+  try {
+    // 获取全局Pipeline服务
+    const { getGlobalPipelineManager, getGlobalProviderManager } = await import('../services/global-service-registry');
+    const pipelineManager = getGlobalPipelineManager();
+    const providerManager = getGlobalProviderManager();
+
+    if (!pipelineManager || !providerManager) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: 'Required services not initialized',
+      };
+      return;
     }
-  };
+
+    // 验证Provider是否存在
+    const providerStatuses = providerManager.getProviderStatuses();
+    const targetProvider = providerStatuses.find(p => p.routeInfo.id === provider);
+
+    if (!targetProvider) {
+      res.statusCode = 404;
+      res.body = {
+        error: 'Not Found',
+        message: `Provider '${provider}' not found`,
+      };
+      return;
+    }
+
+    if (!targetProvider.routeInfo.healthy) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: `Provider '${provider}' is not healthy`,
+      };
+      return;
+    }
+
+    // 创建执行上下文
+    const executionContext = {
+      requestId: `universal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      priority: 'normal' as const,
+      debug: false,
+      metadata: {
+        protocol: 'universal',
+        provider: provider,
+        model: model,
+        clientInfo: req.headers?.['user-agent'],
+        originalFormat: 'universal',
+      },
+    };
+
+    // 查找适合的Pipeline
+    const allPipelines = pipelineManager.getAllPipelines();
+    let targetPipelineId: string | null = null;
+
+    // 找到支持指定Provider的Pipeline
+    for (const [pipelineId, pipeline] of allPipelines) {
+      const status = pipeline.getStatus();
+      if (status.status === 'running' && (status as any).supportedProviders?.includes(provider)) {
+        targetPipelineId = pipelineId;
+        break;
+      }
+    }
+
+    if (!targetPipelineId) {
+      res.statusCode = 503;
+      res.body = {
+        error: 'Service Unavailable',
+        message: `No available pipeline for provider '${provider}'`,
+      };
+      return;
+    }
+
+    // 执行Pipeline处理
+    const result = await pipelineManager.executePipeline(
+      targetPipelineId,
+      { ...requestBody, provider, model },
+      executionContext
+    );
+
+    // 返回统一格式的响应
+    res.body = {
+      success: true,
+      provider,
+      model,
+      request_id: executionContext.requestId,
+      execution_id: result.executionId,
+      response: result.result,
+      usage: result.performance,
+      metadata: {
+        processing_time_ms: result.performance.totalTime,
+        pipeline_id: targetPipelineId,
+        rcc_version: '4.0.0-alpha.1',
+        provider_healthy: targetProvider.routeInfo.healthy,
+        provider_load: targetProvider.routeInfo.currentLoad,
+      },
+    };
+
+    res.headers = {
+      ...res.headers,
+      'X-Pipeline-ID': targetPipelineId,
+      'X-Execution-ID': result.executionId,
+      'X-Processing-Time': `${result.performance.totalTime}ms`,
+      'X-Provider': provider,
+      'X-Model': model,
+      'X-RCC-Version': '4.0.0-alpha.1',
+    };
+  } catch (error) {
+    console.error('Universal proxy processing failed:', error);
+    res.statusCode = 500;
+    res.body = {
+      error: 'Internal Server Error',
+      message: error instanceof Error ? error.message : 'Pipeline execution failed',
+      type: 'proxy_error',
+      provider,
+      model,
+    };
+  }
 }

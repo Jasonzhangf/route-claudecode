@@ -1,0 +1,97 @@
+{
+  "// === RCC v4.0 最终配置 - 基于demo1 + 多key支持 ===": "",
+  
+  "// === PROVIDERS 区 ===": "",
+  "// 完全保持demo1格式，只添加多key支持": "",
+  "Providers": [
+    {
+      "name": "通义千问",
+      "api_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "api_key": [
+        "sk-dashscope-key-1",
+        "sk-dashscope-key-2", 
+        "sk-dashscope-key-3"
+      ],
+      "models": ["qwen-plus", "qwen-max", "qwen-coder-plus"],
+      "transformer": {
+        "use": [
+          ["maxtoken", { "max_tokens": 8192 }],
+          "enhancetool"
+        ]
+      }
+    },
+    {
+      "name": "智谱清言",
+      "api_base_url": "https://ai.shuaihong.fun/v1/chat/completions",
+      "api_key": [
+        "sk-zhipu-key-1",
+        "sk-zhipu-key-2"
+      ],
+      "models": ["gpt-4o", "gpt-4o-mini", "claude-3-sonnet"],
+      "transformer": {
+        "use": ["shuaihong"]
+      }
+    },
+    {
+      "name": "OpenAI",
+      "api_base_url": "https://api.openai.com/v1/chat/completions",
+      "api_key": "sk-single-openai-key",
+      "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+      "transformer": {
+        "use": ["openai"]
+      }
+    },
+    {
+      "name": "本地模型",
+      "api_base_url": "http://localhost:11434/v1/chat/completions",
+      "api_key": "ollama",
+      "models": ["qwen2.5-coder:latest", "llama3.1:latest"]
+    },
+    {
+      "name": "ModelScope",
+      "api_base_url": "https://api-inference.modelscope.cn/v1/chat/completions",
+      "api_key": "",
+      "models": ["Qwen/Qwen3-Coder-480B-A35B-Instruct"],
+      "transformer": {
+        "use": [
+          ["maxtoken", { "max_tokens": 65536 }],
+          "enhancetool"
+        ]
+      }
+    }
+  ],
+
+  "// === ROUTER 区 ===": "",
+  "// 完全保持demo1的判断逻辑和优先级": "",
+  "Router": {
+    "default": "通义千问,qwen-plus",
+    "longContext": "ModelScope,Qwen/Qwen3-Coder-480B-A35B-Instruct", 
+    "background": "本地模型,qwen2.5-coder:latest",
+    "think": "智谱清言,gpt-4o",
+    "webSearch": "OpenAI,gpt-4"
+  },
+
+  "// === 多Key轮询配置 ===": "",
+  "MultiKeyConfig": {
+    "// Key轮询策略": "",
+    "rotationStrategy": "round-robin",
+    "// Key失败处理": "",
+    "keyFailureHandling": {
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "blacklistDuration": 300000
+    },
+    "// 负载均衡": "",
+    "loadBalancing": {
+      "enabled": true,
+      "trackUsage": true,
+      "resetInterval": 3600000
+    }
+  },
+
+  "// === 系统设置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0",
+  "PORT": 5506,
+  "DEBUG": true
+}

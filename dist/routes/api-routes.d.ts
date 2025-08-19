@@ -6,8 +6,9 @@
  * @author Jason Zhang
  */
 import { Router } from './router';
+import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
 /**
  * 配置API路由
  */
-export declare function setupApiRoutes(router: Router): void;
+export declare function setupApiRoutes(router: Router, middlewareManager: IMiddlewareManager): void;
 //# sourceMappingURL=api-routes.d.ts.map

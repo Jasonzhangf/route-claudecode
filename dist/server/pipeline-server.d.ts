@@ -6,9 +6,10 @@
  * @author Jason Zhang
  */
 import { ServerConfig, MiddlewareFunction, RouteHandler } from './http-server';
-import { PipelineManager } from '../pipeline/pipeline-manager';
 import { PipelineConfig } from '../interfaces/pipeline/pipeline-framework';
+import { IMiddlewareManager } from '../interfaces/core';
 import { ServerStatus } from '../interfaces';
+import { IPipelineService } from '../interfaces/core/pipeline-abstraction';
 import { EventEmitter } from 'events';
 /**
  * Pipeline服务器配置
@@ -19,6 +20,9 @@ export interface PipelineServerConfig extends ServerConfig {
     enableValidation?: boolean;
     enableCors?: boolean;
     logLevel?: 'debug' | 'info' | 'warn' | 'error';
+    configPath?: string;
+    routingRules?: any;
+    serverCompatibilityProviders?: any;
 }
 /**
  * Pipeline集成HTTP服务器
@@ -26,10 +30,15 @@ export interface PipelineServerConfig extends ServerConfig {
  */
 export declare class PipelineServer extends EventEmitter {
     private httpServer;
-    private pipelineManager;
-    private pipelineConfigs;
+    private pipelineService;
     private serverConfig;
-    constructor(config: PipelineServerConfig);
+    private middlewareManager;
+    private debugRecorder;
+    constructor(config: PipelineServerConfig, middlewareManager: IMiddlewareManager, pipelineService?: IPipelineService);
+    /**
+     * 初始化服务器
+     */
+    initialize(): Promise<void>;
     /**
      * 初始化Pipeline相关路由
      */
@@ -47,19 +56,7 @@ export declare class PipelineServer extends EventEmitter {
      */
     stop(): Promise<void>;
     /**
-     * 初始化所有Pipeline
-     */
-    private initializePipelines;
-    /**
-     * 清理所有Pipeline
-     */
-    private cleanupPipelines;
-    /**
-     * 设置Pipeline事件监听
-     */
-    private setupPipelineEventListeners;
-    /**
-     * 处理Anthropic格式请求
+     * 处理Anthropic格式请求 - 带完整6层Pipeline Debug记录
      */
     private handleAnthropicRequest;
     /**
@@ -91,21 +88,42 @@ export declare class PipelineServer extends EventEmitter {
      */
     private handleStopPipeline;
     /**
-     * 根据协议和模型查找Pipeline
-     */
-    private findPipelineByProtocol;
-    /**
      * 提取路径参数
      */
     private extractPathParam;
     /**
+     * 创建默认Pipeline服务
+     */
+    private createDefaultPipelineService;
+    /**
+     * 获取Pipeline服务
+     */
+    getPipelineService(): IPipelineService;
+    /**
      * 获取Pipeline管理器
      */
-    getPipelineManager(): PipelineManager;
+    getPipelineManager(): import("../interfaces/core/pipeline-abstraction").IPipelineManager;
     /**
      * 获取Pipeline配置
      */
     getPipelineConfigs(): PipelineConfig[];
+    /**
+     * 基于配置文件进行真实的路由决策
+     */
+    private makeRoutingDecision;
+    /**
+     * 根据Provider ID获取兼容性信息
+     */
+    private getCompatibilityInfo;
+    /**
+     * 获取模型映射（支持简化和复杂两种配置格式）
+     */
+    private getModelMapping;
+    /**
+     * 记录真实的Pipeline层级处理和响应 (Layer 2-5)
+     * 返回转换后的Anthropic格式响应
+     */
+    private recordRealPipelineLayers;
     /**
      * 获取服务器状态
      * 委托给HTTPServer并添加Pipeline相关信息
@@ -121,5 +139,10 @@ export declare class PipelineServer extends EventEmitter {
      * 添加路由 - 委托给HTTPServer
      */
     addRoute(method: string, path: string, handler: RouteHandler, middleware?: MiddlewareFunction[]): void;
+    /**
+     * 处理流式响应
+     * 根据协议类型和客户端请求参数，将非流式响应转换为流式响应
+     */
+    private handleStreamingResponse;
 }
 //# sourceMappingURL=pipeline-server.d.ts.map

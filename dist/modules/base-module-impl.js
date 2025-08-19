@@ -13,24 +13,20 @@ const events_1 = require("events");
  * 基础模块抽象类
  */
 class BaseModule extends events_1.EventEmitter {
-    id;
-    name;
-    type;
-    version;
-    status = 'stopped';
-    config = {};
-    metrics = {
-        requestsProcessed: 0,
-        averageProcessingTime: 0,
-        errorRate: 0,
-        memoryUsage: 0,
-        cpuUsage: 0,
-        lastProcessedAt: undefined
-    };
-    processingTimes = [];
-    errors = [];
     constructor(id, name, type, version = '1.0.0') {
         super();
+        this.status = 'stopped';
+        this.config = {};
+        this.metrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0,
+            lastProcessedAt: undefined,
+        };
+        this.processingTimes = [];
+        this.errors = [];
         this.id = id;
         this.name = name;
         this.type = type;
@@ -71,7 +67,7 @@ class BaseModule extends events_1.EventEmitter {
             status: this.status,
             health: this.calculateHealthStatus(),
             lastActivity: this.metrics.lastProcessedAt,
-            error: this.errors.length > 0 ? this.errors[this.errors.length - 1] : undefined
+            error: this.errors.length > 0 ? this.errors[this.errors.length - 1] : undefined,
         };
     }
     /**
@@ -169,7 +165,7 @@ class BaseModule extends events_1.EventEmitter {
                 errorRate: 0,
                 memoryUsage: 0,
                 cpuUsage: 0,
-                lastProcessedAt: undefined
+                lastProcessedAt: undefined,
             };
             this.processingTimes = [];
             this.errors = [];
@@ -207,7 +203,7 @@ class BaseModule extends events_1.EventEmitter {
             this.recordError(error);
             return {
                 healthy: false,
-                details: { error: error instanceof Error ? error.message : String(error) }
+                details: { error: error instanceof Error ? error.message : String(error) },
             };
         }
     }
@@ -249,7 +245,7 @@ class BaseModule extends events_1.EventEmitter {
         return {
             status: this.status,
             metrics: this.metrics,
-            config: this.config
+            config: this.config,
         };
     }
     // 私有方法
@@ -307,10 +303,12 @@ class BaseModule extends events_1.EventEmitter {
             return 'degraded';
         }
         // 基于错误率判断健康状态
-        if (this.metrics.errorRate > 0.1) { // 错误率超过10%
+        if (this.metrics.errorRate > 0.1) {
+            // 错误率超过10%
             return 'unhealthy';
         }
-        else if (this.metrics.errorRate > 0.05) { // 错误率超过5%
+        else if (this.metrics.errorRate > 0.05) {
+            // 错误率超过5%
             return 'degraded';
         }
         return 'healthy';

@@ -12,8 +12,9 @@ exports.CommandParser = void 0;
  * CLI命令解析器实现
  */
 class CommandParser {
-    commands = new Map();
-    constructor() {
+    constructor(commandExecutor) {
+        this.commands = new Map();
+        this.commandExecutor = commandExecutor;
         this.initializeCommands();
     }
     /**
@@ -43,31 +44,38 @@ class CommandParser {
             command,
             subcommand,
             options,
-            args: parsedArgs
+            args: parsedArgs,
         };
     }
     /**
      * 执行命令
      */
     async executeCommand(command) {
+        // 处理不需要命令执行器的命令
         switch (command.command) {
             case 'help':
                 this.showHelp(command.args[0]);
-                break;
+                return;
             case 'version':
                 this.showVersion();
-                break;
+                return;
+        }
+        // 其他命令需要命令执行器
+        if (!this.commandExecutor) {
+            throw new Error('Command executor not available. CLI is in parse-only mode.');
+        }
+        switch (command.command) {
             case 'start':
-                await this.executeStartCommand(command);
+                await this.commandExecutor.executeStart(command.options);
                 break;
             case 'stop':
-                await this.executeStopCommand(command);
+                await this.commandExecutor.executeStop(command.options);
                 break;
             case 'code':
-                await this.executeCodeCommand(command);
+                await this.commandExecutor.executeCode(command.options);
                 break;
             case 'status':
-                await this.executeStatusCommand(command);
+                await this.commandExecutor.executeStatus(command.options);
                 break;
             case 'config':
                 await this.executeConfigCommand(command);
@@ -106,26 +114,18 @@ class CommandParser {
                 { name: 'port', alias: 'p', type: 'number', description: 'Server port (default: 3456)' },
                 { name: 'host', alias: 'H', type: 'string', description: 'Server host (default: localhost)' },
                 { name: 'config', alias: 'c', type: 'string', description: 'Configuration file path' },
-                { name: 'debug', alias: 'd', type: 'boolean', description: 'Enable debug mode' }
+                { name: 'debug', alias: 'd', type: 'boolean', description: 'Enable debug mode' },
             ],
-            examples: [
-                'rcc start',
-                'rcc start --port 3457 --debug',
-                'rcc start --config /path/to/config.json'
-            ]
+            examples: ['rcc start', 'rcc start --port 3457 --debug', 'rcc start --config /path/to/config.json'],
         });
         this.commands.set('stop', {
             name: 'stop',
             description: 'Stop the RCC proxy server',
             options: [
                 { name: 'port', alias: 'p', type: 'number', description: 'Server port to stop' },
-                { name: 'force', alias: 'f', type: 'boolean', description: 'Force stop without graceful shutdown' }
+                { name: 'force', alias: 'f', type: 'boolean', description: 'Force stop without graceful shutdown' },
             ],
-            examples: [
-                'rcc stop',
-                'rcc stop --port 3457',
-                'rcc stop --force'
-            ]
+            examples: ['rcc stop', 'rcc stop --port 3457', 'rcc stop --force'],
         });
         this.commands.set('code', {
             name: 'code',
@@ -133,26 +133,18 @@ class CommandParser {
             options: [
                 { name: 'port', alias: 'p', type: 'number', description: 'Connect to server port (default: 3456)' },
                 { name: 'auto-start', alias: 'a', type: 'boolean', description: 'Auto start server if not running' },
-                { name: 'export', alias: 'e', type: 'boolean', description: 'Export configuration for environment variables' }
+                { name: 'export', alias: 'e', type: 'boolean', description: 'Export configuration for environment variables' },
             ],
-            examples: [
-                'rcc code',
-                'rcc code --port 3457',
-                'rcc code --auto-start'
-            ]
+            examples: ['rcc code', 'rcc code --port 3457', 'rcc code --auto-start'],
         });
         this.commands.set('status', {
             name: 'status',
             description: 'Show server status and health information',
             options: [
                 { name: 'port', alias: 'p', type: 'number', description: 'Server port to check' },
-                { name: 'detailed', alias: 'd', type: 'boolean', description: 'Show detailed status information' }
+                { name: 'detailed', alias: 'd', type: 'boolean', description: 'Show detailed status information' },
             ],
-            examples: [
-                'rcc status',
-                'rcc status --detailed',
-                'rcc status --port 3457'
-            ]
+            examples: ['rcc status', 'rcc status --detailed', 'rcc status --port 3457'],
         });
         this.commands.set('config', {
             name: 'config',
@@ -161,13 +153,9 @@ class CommandParser {
                 { name: 'list', alias: 'l', type: 'boolean', description: 'List all configuration files' },
                 { name: 'validate', alias: 'v', type: 'boolean', description: 'Validate configuration file' },
                 { name: 'reset', alias: 'r', type: 'boolean', description: 'Reset to default configuration' },
-                { name: 'path', alias: 'p', type: 'string', description: 'Configuration file path' }
+                { name: 'path', alias: 'p', type: 'string', description: 'Configuration file path' },
             ],
-            examples: [
-                'rcc config --list',
-                'rcc config --validate --path config.json',
-                'rcc config --reset'
-            ]
+            examples: ['rcc config --list', 'rcc config --validate --path config.json', 'rcc config --reset'],
         });
     }
     /**
@@ -317,49 +305,25 @@ class CommandParser {
         }
     }
     /**
-     * 执行启动命令
-     */
-    async executeStartCommand(command) {
-        console.log('Starting RCC server...');
-        console.log('Options:', command.options);
-        // TODO: 实现实际的启动逻辑
-        throw new Error('Start command implementation pending');
-    }
-    /**
-     * 执行停止命令
-     */
-    async executeStopCommand(command) {
-        console.log('Stopping RCC server...');
-        console.log('Options:', command.options);
-        // TODO: 实现实际的停止逻辑
-        throw new Error('Stop command implementation pending');
-    }
-    /**
-     * 执行客户端命令
-     */
-    async executeCodeCommand(command) {
-        console.log('Starting Claude Code client mode...');
-        console.log('Options:', command.options);
-        // TODO: 实现实际的客户端逻辑
-        throw new Error('Code command implementation pending');
-    }
-    /**
-     * 执行状态命令
-     */
-    async executeStatusCommand(command) {
-        console.log('Checking server status...');
-        console.log('Options:', command.options);
-        // TODO: 实现实际的状态查询逻辑
-        throw new Error('Status command implementation pending');
-    }
-    /**
      * 执行配置命令
      */
     async executeConfigCommand(command) {
-        console.log('Managing configuration...');
-        console.log('Options:', command.options);
-        // TODO: 实现实际的配置管理逻辑
-        throw new Error('Config command implementation pending');
+        if (!this.commandExecutor) {
+            throw new Error('Command executor not available');
+        }
+        const options = command.options;
+        // 确定配置操作类型
+        let action = 'show';
+        if (options.list) {
+            action = 'list';
+        }
+        else if (options.validate) {
+            action = 'validate';
+        }
+        else if (options.reset) {
+            action = 'reset';
+        }
+        await this.commandExecutor.executeConfig(action, options);
     }
 }
 exports.CommandParser = CommandParser;

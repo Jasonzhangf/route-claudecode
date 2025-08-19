@@ -1,8 +1,8 @@
 /**
  * 标准请求数据结构接口
- * 
+ *
  * 定义系统内部使用的标准化请求格式
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -33,12 +33,16 @@ export interface StandardRequest {
 /**
  * 工具选择设置
  */
-export type ToolChoice = 'auto' | 'required' | 'none' | {
-  type: 'function';
-  function: {
-    name: string;
-  };
-};
+export type ToolChoice =
+  | 'auto'
+  | 'required'
+  | 'none'
+  | {
+      type: 'function';
+      function: {
+        name: string;
+      };
+    };
 
 /**
  * 请求元数据
@@ -106,7 +110,7 @@ interface MutableStandardRequest {
  */
 export class StandardRequestBuilder {
   private request: Partial<MutableStandardRequest> = {};
-  
+
   constructor(id: string, model: string) {
     this.request = {
       id,
@@ -118,11 +122,11 @@ export class StandardRequestBuilder {
         targetFormat: 'anthropic',
         provider: '',
         category: 'default',
-        processingSteps: []
-      }
+        processingSteps: [],
+      },
     };
   }
-  
+
   /**
    * 设置消息列表
    */
@@ -130,7 +134,7 @@ export class StandardRequestBuilder {
     this.request.messages = messages;
     return this;
   }
-  
+
   /**
    * 添加消息
    */
@@ -141,7 +145,7 @@ export class StandardRequestBuilder {
     this.request.messages.push(message);
     return this;
   }
-  
+
   /**
    * 设置温度参数
    */
@@ -149,7 +153,7 @@ export class StandardRequestBuilder {
     this.request.temperature = temperature;
     return this;
   }
-  
+
   /**
    * 设置最大令牌数
    */
@@ -157,7 +161,7 @@ export class StandardRequestBuilder {
     this.request.maxTokens = maxTokens;
     return this;
   }
-  
+
   /**
    * 设置流式模式
    */
@@ -165,7 +169,7 @@ export class StandardRequestBuilder {
     this.request.stream = stream;
     return this;
   }
-  
+
   /**
    * 设置工具列表
    */
@@ -173,7 +177,7 @@ export class StandardRequestBuilder {
     this.request.tools = tools;
     return this;
   }
-  
+
   /**
    * 设置工具选择
    */
@@ -181,7 +185,7 @@ export class StandardRequestBuilder {
     this.request.toolChoice = toolChoice;
     return this;
   }
-  
+
   /**
    * 设置停止词
    */
@@ -189,7 +193,7 @@ export class StandardRequestBuilder {
     this.request.stop = stop;
     return this;
   }
-  
+
   /**
    * 设置元数据
    */
@@ -197,7 +201,7 @@ export class StandardRequestBuilder {
     this.request.metadata = { ...this.request.metadata!, ...metadata };
     return this;
   }
-  
+
   /**
    * 设置路由提示
    */
@@ -208,7 +212,7 @@ export class StandardRequestBuilder {
     this.request.metadata.routingHints = hints;
     return this;
   }
-  
+
   /**
    * 构建请求
    */
@@ -217,19 +221,16 @@ export class StandardRequestBuilder {
     if (!this.request.id || !this.request.model || !this.request.messages || !this.request.metadata) {
       throw new Error('Missing required fields in StandardRequest');
     }
-    
+
     return this.request as StandardRequest;
   }
-  
+
   /**
    * 从Anthropic格式创建
    */
   static fromAnthropic(anthropicRequest: any): StandardRequestBuilder {
-    const builder = new StandardRequestBuilder(
-      anthropicRequest.id || generateRequestId(),
-      anthropicRequest.model
-    );
-    
+    const builder = new StandardRequestBuilder(anthropicRequest.id || generateRequestId(), anthropicRequest.model);
+
     builder
       .setMessages(anthropicRequest.messages || [])
       .setMaxTokens(anthropicRequest.max_tokens)
@@ -239,29 +240,26 @@ export class StandardRequestBuilder {
         originalFormat: 'anthropic',
         targetFormat: 'anthropic',
         provider: '',
-        category: 'default'
+        category: 'default',
       });
-    
+
     if (anthropicRequest.tools) {
       builder.setTools(anthropicRequest.tools);
     }
-    
+
     if (anthropicRequest.tool_choice) {
       builder.setToolChoice(anthropicRequest.tool_choice);
     }
-    
+
     return builder;
   }
-  
+
   /**
    * 从OpenAI格式创建
    */
   static fromOpenAI(openaiRequest: any): StandardRequestBuilder {
-    const builder = new StandardRequestBuilder(
-      openaiRequest.id || generateRequestId(),
-      openaiRequest.model
-    );
-    
+    const builder = new StandardRequestBuilder(openaiRequest.id || generateRequestId(), openaiRequest.model);
+
     builder
       .setMessages(openaiRequest.messages || [])
       .setMaxTokens(openaiRequest.max_tokens)
@@ -271,21 +269,21 @@ export class StandardRequestBuilder {
         originalFormat: 'openai',
         targetFormat: 'openai',
         provider: '',
-        category: 'default'
+        category: 'default',
       });
-    
+
     if (openaiRequest.tools) {
       builder.setTools(openaiRequest.tools);
     }
-    
+
     if (openaiRequest.tool_choice) {
       builder.setToolChoice(openaiRequest.tool_choice);
     }
-    
+
     if (openaiRequest.stop) {
       builder.setStop(openaiRequest.stop);
     }
-    
+
     return builder;
   }
 }

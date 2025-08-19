@@ -1,0 +1,11 @@
+{
+  "timestamp": "2025-08-19 16:17:23",
+  "scan_type": "full_project_scan",
+  "statistics": {
+    "total_files_scanned": 1,
+    "files_with_violations": 0,
+    "clean_files": 1,
+    "violation_rate": "0%"
+  },
+  "scan_status": "completed"
+}

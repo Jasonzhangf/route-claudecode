@@ -8,20 +8,65 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicOutputValidator = void 0;
-const base_module_impl_1 = require("../base-module-impl");
+const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const events_1 = require("events");
 /**
  * Anthropic输出验证模块
  */
-class AnthropicOutputValidator extends base_module_impl_1.BaseModule {
-    validatorConfig;
-    constructor(id, config = {}) {
-        super(id, 'Anthropic Output Validator', 'validator', '1.0.0');
+class AnthropicOutputValidator extends events_1.EventEmitter {
+    getId() {
+        return this.id;
+    }
+    getName() {
+        return this.name;
+    }
+    getType() {
+        return this.type;
+    }
+    getVersion() {
+        return this.version;
+    }
+    getStatus() {
+        return { id: this.id, name: this.name, type: this.type, status: this.status, health: 'healthy' };
+    }
+    getMetrics() {
+        return { ...this.metrics };
+    }
+    async configure(config) { }
+    async start() {
+        this.status = 'running';
+    }
+    async stop() {
+        this.status = 'stopped';
+    }
+    async reset() { }
+    async cleanup() { }
+    async healthCheck() {
+        return { healthy: true, details: {} };
+    }
+    async process(input) {
+        return this.onProcess(input);
+    }
+    constructor(id = 'anthropic-output-validator', config = {}) {
+        super();
+        this.id = 'anthropic-output-validator';
+        this.name = 'Anthropic Output Validator';
+        this.type = module_implementation_interface_1.ModuleType.VALIDATOR;
+        this.version = '1.0.0';
+        this.status = 'stopped';
+        this.metrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0,
+        };
         this.validatorConfig = {
             strictMode: true,
             validateTokens: true,
             validateTimestamp: false,
             allowEmptyContent: false,
-            ...config
+            ...config,
         };
     }
     /**
@@ -198,13 +243,7 @@ class AnthropicOutputValidator extends base_module_impl_1.BaseModule {
         if (typeof stopReason !== 'string') {
             throw new Error('stop_reason must be a string');
         }
-        const validStopReasons = [
-            'end_turn',
-            'max_tokens',
-            'stop_sequence',
-            'tool_use',
-            'content_filter'
-        ];
+        const validStopReasons = ['end_turn', 'max_tokens', 'stop_sequence', 'tool_use', 'content_filter'];
         if (!validStopReasons.includes(stopReason)) {
             throw new Error(`Invalid stop_reason: ${stopReason}. Must be one of: ${validStopReasons.join(', ')}`);
         }
@@ -236,8 +275,15 @@ class AnthropicOutputValidator extends base_module_impl_1.BaseModule {
      */
     validateNoExtraFields(input) {
         const allowedFields = [
-            'id', 'type', 'role', 'content', 'model', 'stop_reason',
-            'usage', 'created_at', 'system_fingerprint'
+            'id',
+            'type',
+            'role',
+            'content',
+            'model',
+            'stop_reason',
+            'usage',
+            'created_at',
+            'system_fingerprint',
         ];
         for (const field in input) {
             if (!allowedFields.includes(field)) {

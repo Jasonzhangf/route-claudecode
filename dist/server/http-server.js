@@ -34,25 +34,25 @@ exports.HTTPServer = void 0;
 const http = __importStar(require("http"));
 const url = __importStar(require("url"));
 const events_1 = require("events");
+const constants_1 = require("../constants");
 /**
  * HTTP服务器核心类
  */
 class HTTPServer extends events_1.EventEmitter {
-    server = null;
-    routes = new Map();
-    middleware = [];
-    config;
-    isRunning = false;
-    startTime = null;
-    requestCount = 0;
     constructor(config) {
         super();
+        this.server = null;
+        this.routes = new Map();
+        this.middleware = [];
+        this.isRunning = false;
+        this.startTime = null;
+        this.requestCount = 0;
         this.config = {
-            maxRequestSize: 10 * 1024 * 1024, // 10MB
-            timeout: 30000, // 30秒
-            keepAliveTimeout: 5000, // 5秒
+            maxRequestSize: (0, constants_1.getMaxRequestSize)(), // 10MB
+            timeout: (0, constants_1.getHttpRequestTimeout)(), // 30秒
+            keepAliveTimeout: (0, constants_1.getKeepAliveTimeout)(), // 5秒
             debug: false,
-            ...config
+            ...config,
         };
         this.initializeRoutes();
     }
@@ -99,6 +99,8 @@ class HTTPServer extends events_1.EventEmitter {
         if (this.isRunning) {
             throw new Error('Server is already running');
         }
+        // 设置内置路由
+        this.setupBuiltinRoutes();
         return new Promise((resolve, reject) => {
             this.server = http.createServer((req, res) => {
                 this.handleRequest(req, res).catch(error => {
@@ -108,20 +110,22 @@ class HTTPServer extends events_1.EventEmitter {
             // 配置服务器选项
             this.server.timeout = this.config.timeout;
             this.server.keepAliveTimeout = this.config.keepAliveTimeout;
-            this.server.on('error', (error) => {
+            this.server.on('error', error => {
                 this.emit('error', error);
                 reject(error);
             });
+            // 添加详细的启动日志
+            console.log(`🚀 Attempting to start HTTP Server on ${this.config.host}:${this.config.port}`);
+            console.log(`🔧 Server config: port=${this.config.port}, host=${this.config.host}, debug=${this.config.debug}`);
             this.server.listen(this.config.port, this.config.host, () => {
                 this.isRunning = true;
                 this.startTime = new Date();
                 this.emit('started', {
                     host: this.config.host,
-                    port: this.config.port
+                    port: this.config.port,
                 });
-                if (this.config.debug) {
-                    console.log(`🚀 HTTP Server started on http://${this.config.host}:${this.config.port}`);
-                }
+                console.log(`✅ HTTP Server successfully started on http://${this.config.host}:${this.config.port}`);
+                console.log(`🌐 Server is listening and ready to accept connections`);
                 resolve();
             });
         });
@@ -134,7 +138,7 @@ class HTTPServer extends events_1.EventEmitter {
             throw new Error('Server is not running');
         }
         return new Promise((resolve, reject) => {
-            this.server.close((error) => {
+            this.server.close(error => {
                 if (error) {
                     this.emit('error', error);
                     reject(error);
@@ -161,13 +165,13 @@ class HTTPServer extends events_1.EventEmitter {
             host: this.config.host,
             startTime: this.startTime || undefined,
             version: '4.0.0-alpha.1',
-            activePipelines: 0, // TODO: 实现流水线计数
+            activePipelines: this.getActivePipelineCount(),
             totalRequests: this.requestCount,
             uptime: this.calculateUptime(),
             health: {
                 status: this.isRunning ? 'healthy' : 'unhealthy',
-                checks: this.performHealthChecks()
-            }
+                checks: this.performHealthChecks(),
+            },
         };
     }
     /**
@@ -179,17 +183,14 @@ class HTTPServer extends events_1.EventEmitter {
         const requestContext = this.createRequestContext(req);
         const responseContext = this.createResponseContext(requestContext);
         try {
-            if (this.config.debug) {
-                console.log(`📥 ${requestContext.method} ${requestContext.url} [${requestContext.id}]`);
-            }
             // 解析请求体
             await this.parseRequestBody(req, requestContext);
-            // 执行中间件链
+            // 执行中间件
             await this.executeMiddleware(requestContext, responseContext);
-            // 查找并执行路由处理器
+            // 执行路由处理器
             await this.executeRoute(requestContext, responseContext);
             // 发送响应
-            this.sendResponse(res, responseContext);
+            await this.sendResponse(res, responseContext);
         }
         catch (error) {
             this.handleError(error, req, res);
@@ -204,12 +205,12 @@ class HTTPServer extends events_1.EventEmitter {
         return {
             id: requestId,
             startTime: new Date(),
-            method: req.method || 'GET',
+            method: (req.method || 'GET'),
             url: req.url || '/',
             headers: req.headers,
             query: parsedUrl.query,
             params: {},
-            metadata: {}
+            metadata: {},
         };
     }
     /**
@@ -221,9 +222,9 @@ class HTTPServer extends events_1.EventEmitter {
             statusCode: 200,
             headers: {
                 'Content-Type': 'application/json',
-                'X-Request-ID': req.id
+                'X-Request-ID': req.id,
             },
-            sent: false
+            sent: false,
         };
     }
     /**
@@ -402,19 +403,43 @@ class HTTPServer extends events_1.EventEmitter {
     /**
      * 发送响应
      */
-    sendResponse(res, context) {
+    async sendResponse(res, context) {
         if (context.sent) {
             return;
         }
         context.sent = true;
         // 设置响应头
         for (const [key, value] of Object.entries(context.headers)) {
-            res.setHeader(key, value);
+            if (value !== undefined && value !== null) {
+                res.setHeader(key, value);
+            }
         }
         res.statusCode = context.statusCode;
         // 发送响应体
         if (context.body !== undefined) {
-            if (typeof context.body === 'object') {
+            // 检查是否为流式响应
+            if (typeof context.body === 'object' && context.body !== null && 'chunks' in context.body) {
+                // 处理流式响应
+                const streamResponse = context.body;
+                if (Array.isArray(streamResponse.chunks)) {
+                    // 设置流式响应头
+                    res.setHeader('Content-Type', 'text/event-stream');
+                    res.setHeader('Cache-Control', 'no-cache');
+                    res.setHeader('Connection', 'keep-alive');
+                    // 发送每个chunk
+                    for (const chunk of streamResponse.chunks) {
+                        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+                        // 简单延迟以模拟流式传输
+                        await new Promise(resolve => setTimeout(resolve, 10));
+                    }
+                    res.end();
+                }
+                else {
+                    // 如果chunks不是数组，回退到普通JSON响应
+                    res.end(JSON.stringify(context.body, null, 2));
+                }
+            }
+            else if (typeof context.body === 'object') {
                 res.end(JSON.stringify(context.body, null, 2));
             }
             else {
@@ -444,7 +469,7 @@ class HTTPServer extends events_1.EventEmitter {
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({
                 error: 'Internal Server Error',
-                message: this.config.debug ? message : 'An unexpected error occurred'
+                message: this.config.debug ? message : 'An unexpected error occurred',
             }, null, 2));
         }
         this.emit('error', error);
@@ -454,6 +479,94 @@ class HTTPServer extends events_1.EventEmitter {
      */
     generateRequestId() {
         return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+    /**
+     * 设置内置路由
+     */
+    setupBuiltinRoutes() {
+        // 健康检查端点
+        this.addRoute('GET', '/health', async (req, res) => {
+            try {
+                const { healthCheckServices } = await Promise.resolve().then(() => __importStar(require('../services/service-initializer')));
+                const healthCheck = await healthCheckServices();
+                res.statusCode = healthCheck.healthy ? 200 : 503;
+                res.body = {
+                    status: healthCheck.healthy ? 'healthy' : 'unhealthy',
+                    timestamp: new Date().toISOString(),
+                    services: healthCheck.services,
+                    issues: healthCheck.issues,
+                    version: '4.0.0-alpha.1',
+                };
+            }
+            catch (error) {
+                res.statusCode = 503;
+                res.body = {
+                    status: 'unhealthy',
+                    timestamp: new Date().toISOString(),
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    version: '4.0.0-alpha.1',
+                };
+            }
+        });
+        // 详细状态端点
+        this.addRoute('GET', '/status', async (req, res) => {
+            try {
+                const { getServiceRegistry } = await Promise.resolve().then(() => __importStar(require('../services/global-service-registry')));
+                const { healthCheckServices } = await Promise.resolve().then(() => __importStar(require('../services/service-initializer')));
+                const registry = getServiceRegistry();
+                const healthCheck = await healthCheckServices();
+                const serverStatus = this.getStatus();
+                res.body = {
+                    server: {
+                        status: serverStatus.isRunning ? 'running' : 'stopped',
+                        host: serverStatus.host,
+                        port: serverStatus.port,
+                        uptime: serverStatus.uptime,
+                        totalRequests: serverStatus.totalRequests,
+                        startTime: serverStatus.startTime,
+                        version: serverStatus.version,
+                    },
+                    health: {
+                        overall: healthCheck.healthy ? 'healthy' : 'unhealthy',
+                        issues: healthCheck.issues,
+                    },
+                    services: registry.services,
+                    activePipelines: serverStatus.activePipelines,
+                    performance: {
+                        memoryUsage: process.memoryUsage().heapUsed,
+                        cpuUsage: process.cpuUsage(),
+                        averageResponseTime: 0, // 可以在未来实现
+                    },
+                    timestamp: new Date().toISOString(),
+                };
+            }
+            catch (error) {
+                res.statusCode = 500;
+                res.body = {
+                    error: 'Failed to get server status',
+                    message: error instanceof Error ? error.message : 'Unknown error',
+                    timestamp: new Date().toISOString(),
+                };
+            }
+        });
+    }
+    /**
+     * 获取活跃Pipeline数量
+     */
+    getActivePipelineCount() {
+        try {
+            // 动态导入以避免循环依赖
+            const { getGlobalPipelineManager } = require('../services/global-service-registry');
+            const pipelineManager = getGlobalPipelineManager();
+            if (!pipelineManager) {
+                return 0;
+            }
+            const allPipelineStatus = pipelineManager.getAllPipelineStatus();
+            return Object.values(allPipelineStatus).filter((status) => status.status === 'running').length;
+        }
+        catch (error) {
+            return 0;
+        }
     }
     /**
      * 计算运行时间
@@ -487,7 +600,7 @@ class HTTPServer extends events_1.EventEmitter {
         checks.push({
             name: 'HTTP Server',
             status: this.isRunning ? 'pass' : 'fail',
-            responseTime: Date.now() - start
+            responseTime: Date.now() - start,
         });
         // 内存检查
         const memStart = Date.now();
@@ -496,7 +609,7 @@ class HTTPServer extends events_1.EventEmitter {
         checks.push({
             name: 'Memory Usage',
             status: memUsage.heapUsed < maxMemory ? 'pass' : 'warn',
-            responseTime: Date.now() - memStart
+            responseTime: Date.now() - memStart,
         });
         return checks;
     }
@@ -509,7 +622,7 @@ class HTTPServer extends events_1.EventEmitter {
         res.body = {
             status: overallStatus,
             timestamp: new Date().toISOString(),
-            checks: health
+            checks: health,
         };
     }
     /**
@@ -526,7 +639,7 @@ class HTTPServer extends events_1.EventEmitter {
             name: 'RCC (Route Claude Code)',
             version: '4.0.0-alpha.1',
             description: 'Modular AI routing proxy system',
-            author: 'Jason Zhang'
+            author: 'Jason Zhang',
         };
     }
 }

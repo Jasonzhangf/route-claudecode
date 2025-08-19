@@ -1,0 +1,141 @@
+{
+  "// === RCC v4.0 用户配置文件 ===": "",
+  "// 参考demo1设计，分为Provider区和Router区": "",
+  
+  "version": "4.0",
+  "description": "用户配置文件 - 定义可用的AI提供商和路由规则",
+  "lastUpdated": "2025-08-19T12:00:00Z",
+
+  "// === PROVIDER 区 ===": "",
+  "// 定义你可以使用的所有AI提供商，用户可以自由添加任何provider": "",
+  "Providers": [
+    {
+      "name": "通义千问",
+      "api_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "api_key": "sk-your-dashscope-api-key",
+      "models": ["qwen-plus", "qwen-max", "qwen-coder-plus"],
+      "transformer": {
+        "use": [
+          ["maxtoken", { "max_tokens": 8192 }],
+          "enhancetool"
+        ]
+      }
+    },
+    {
+      "name": "智谱清言",
+      "api_base_url": "https://ai.shuaihong.fun/v1/chat/completions", 
+      "api_key": "sk-your-zhipu-api-key",
+      "models": ["gpt-4o", "gpt-4o-mini", "claude-3-sonnet"],
+      "transformer": {
+        "use": ["shuaihong"]
+      }
+    },
+    {
+      "name": "OpenAI",
+      "api_base_url": "https://api.openai.com/v1/chat/completions",
+      "api_key": "sk-your-openai-api-key", 
+      "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"],
+      "transformer": {
+        "use": ["openai"]
+      }
+    },
+    {
+      "name": "Claude官方",
+      "api_base_url": "https://api.anthropic.com/v1/messages",
+      "api_key": "sk-your-anthropic-api-key",
+      "models": ["claude-3-sonnet", "claude-3-haiku", "claude-sonnet-4"],
+      "transformer": {
+        "use": ["anthropic"]
+      }
+    },
+    {
+      "name": "Gemini官方", 
+      "api_base_url": "https://generativelanguage.googleapis.com/v1beta/models/",
+      "api_key": "your-gemini-api-key",
+      "models": ["gemini-1.5-pro", "gemini-1.5-flash"],
+      "transformer": {
+        "use": ["gemini"]
+      }
+    },
+    {
+      "name": "本地Ollama",
+      "api_base_url": "http://localhost:11434/v1/chat/completions",
+      "api_key": "ollama",
+      "models": ["qwen2.5-coder:latest", "llama3.1:latest"]
+    },
+    {
+      "name": "ModelScope",
+      "api_base_url": "https://api-inference.modelscope.cn/v1/chat/completions", 
+      "api_key": "",
+      "models": ["Qwen/Qwen3-Coder-480B-A35B-Instruct"],
+      "transformer": {
+        "use": [
+          ["maxtoken", { "max_tokens": 65536 }],
+          "enhancetool"
+        ]
+      }
+    }
+  ],
+
+  "// === ROUTER 区 ===": "",
+  "// 定义路由规则：什么情况下使用哪个Provider的哪个模型": "",
+  "// 格式: 'provider名称,模型名称'": "",
+  "Router": {
+    "// 🤖 通用对话 - 日常聊天、简单问答": "",
+    "general": "通义千问,qwen-plus",
+    
+    "// 💰 高级模型 - 复杂任务、最强AI能力": "", 
+    "premium": "OpenAI,gpt-4",
+    
+    "// 👨‍💻 编程助手 - 代码生成、debug、技术问题": "",
+    "coding": "智谱清言,gpt-4o",
+    
+    "// 🧠 深度思考 - 复杂推理、分析、研究": "",
+    "reasoning": "Claude官方,claude-3-sonnet",
+    
+    "// 📚 长文档处理 - 大文件分析、长对话": "",
+    "longContext": "Gemini官方,gemini-1.5-pro",
+    
+    "// 🔍 网络搜索 - 实时信息、联网查询": "",
+    "webSearch": "OpenAI,gpt-4",
+    
+    "// ⚡ 快速任务 - 背景任务、简单处理": "",
+    "background": "本地Ollama,qwen2.5-coder:latest",
+    
+    "// 🎯 默认路由 - 当无法确定分类时使用": "",
+    "default": "通义千问,qwen-plus"
+  },
+
+  "// === 系统设置 ===": "",
+  "settings": {
+    "// 自动路由选择规则": "",
+    "autoRouting": {
+      "enabled": true,
+      "// 超过30K tokens自动使用长文档": "",
+      "longContextThreshold": 30000,
+      "// 包含工具调用自动使用编程": "",
+      "codingOnToolCalls": true,
+      "// 包含thinking自动使用推理": "",
+      "reasoningOnThinking": true
+    },
+    
+    "// 错误处理": "",
+    "errorHandling": {
+      "maxRetries": 3,
+      "timeoutMs": 30000,
+      "// 零fallback策略": "",
+      "fallbackStrategy": "none"
+    }
+  },
+
+  "// === 服务器配置 ===": "",
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0", 
+    "debug": true
+  },
+
+  "// === 用户认证 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0"
+}

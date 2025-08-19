@@ -1,9 +1,9 @@
 /**
  * Provider配置验证和诊断工具
- * 
+ *
  * 验证Provider配置文件的完整性和正确性
  * 提供配置诊断和修复建议
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -57,23 +57,17 @@ export interface ProviderConfigSchema {
  */
 export class ProviderConfigValidator {
   private schema: ProviderConfigSchema;
-  
+
   constructor() {
     this.schema = this.defineSchema();
   }
-  
+
   /**
    * 定义配置架构
    */
   private defineSchema(): ProviderConfigSchema {
     return {
-      required: [
-        'provider.id',
-        'provider.name', 
-        'provider.type',
-        'connection.endpoint',
-        'models.default'
-      ],
+      required: ['provider.id', 'provider.name', 'provider.type', 'connection.endpoint', 'models.default'],
       optional: [
         'provider.description',
         'provider.version',
@@ -85,7 +79,7 @@ export class ProviderConfigValidator {
         'performance.maxConcurrentRequests',
         'errorHandling.maxRetries',
         'cache.enabled',
-        'monitoring.enabled'
+        'monitoring.enabled',
       ],
       types: {
         'provider.id': 'string',
@@ -103,7 +97,7 @@ export class ProviderConfigValidator {
         'errorHandling.maxRetries': 'number',
         'cache.enabled': 'boolean',
         'cache.ttl': 'number',
-        'monitoring.enabled': 'boolean'
+        'monitoring.enabled': 'boolean',
       },
       defaults: {
         'provider.enabled': true,
@@ -116,7 +110,7 @@ export class ProviderConfigValidator {
         'errorHandling.maxRetries': 3,
         'cache.enabled': true,
         'cache.ttl': 300000,
-        'monitoring.enabled': true
+        'monitoring.enabled': true,
       },
       validation: {
         'provider.type': (value: string) => ['anthropic', 'openai', 'gemini'].includes(value),
@@ -126,11 +120,11 @@ export class ProviderConfigValidator {
         'defaults.top_p': (value: number) => value >= 0 && value <= 1,
         'performance.maxConcurrentRequests': (value: number) => value > 0 && value <= 100,
         'errorHandling.maxRetries': (value: number) => value >= 0 && value <= 10,
-        'cache.ttl': (value: number) => value > 0 && value <= 3600000 // 1小时以内
-      }
+        'cache.ttl': (value: number) => value > 0 && value <= 3600000, // 1小时以内
+      },
     };
   }
-  
+
   /**
    * 验证配置文件
    */
@@ -140,9 +134,9 @@ export class ProviderConfigValidator {
       errors: [],
       warnings: [],
       suggestions: [],
-      score: 100
+      score: 100,
     };
-    
+
     try {
       // 读取配置文件
       if (!fs.existsSync(configPath)) {
@@ -150,16 +144,16 @@ export class ProviderConfigValidator {
           field: 'file',
           message: '配置文件不存在',
           severity: 'critical',
-          suggestion: '请检查文件路径是否正确'
+          suggestion: '请检查文件路径是否正确',
         });
         result.valid = false;
         result.score = 0;
         return result;
       }
-      
+
       const content = fs.readFileSync(configPath, 'utf-8');
       let config: any;
-      
+
       try {
         config = JSON5.parse(content);
       } catch (parseError) {
@@ -167,42 +161,41 @@ export class ProviderConfigValidator {
           field: 'syntax',
           message: 'JSON5语法错误: ' + (parseError as Error).message,
           severity: 'critical',
-          suggestion: '请检查配置文件的JSON5语法'
+          suggestion: '请检查配置文件的JSON5语法',
         });
         result.valid = false;
         result.score = 0;
         return result;
       }
-      
+
       // 验证必需字段
       this.validateRequiredFields(config, result);
-      
+
       // 验证字段类型
       this.validateFieldTypes(config, result);
-      
+
       // 验证字段值
       this.validateFieldValues(config, result);
-      
+
       // 检查最佳实践
       this.checkBestPractices(config, result);
-      
+
       // 计算最终评分
       this.calculateScore(result);
-      
+
       return result;
-      
     } catch (error) {
       result.errors.push({
         field: 'unknown',
         message: '验证过程中发生错误: ' + (error as Error).message,
-        severity: 'critical'
+        severity: 'critical',
       });
       result.valid = false;
       result.score = 0;
       return result;
     }
   }
-  
+
   /**
    * 验证必需字段
    */
@@ -214,13 +207,13 @@ export class ProviderConfigValidator {
           field,
           message: `必需字段缺失: ${field}`,
           severity: 'major',
-          suggestion: `请添加 ${field} 字段`
+          suggestion: `请添加 ${field} 字段`,
         });
         result.valid = false;
       }
     }
   }
-  
+
   /**
    * 验证字段类型
    */
@@ -234,13 +227,13 @@ export class ProviderConfigValidator {
             field,
             message: `字段类型错误: ${field} 期望 ${expectedType}，实际 ${actualType}`,
             severity: 'major',
-            suggestion: `请将 ${field} 设置为 ${expectedType} 类型`
+            suggestion: `请将 ${field} 设置为 ${expectedType} 类型`,
           });
         }
       }
     }
   }
-  
+
   /**
    * 验证字段值
    */
@@ -252,12 +245,12 @@ export class ProviderConfigValidator {
           field,
           message: `字段值验证失败: ${field} = ${value}`,
           severity: 'minor',
-          suggestion: this.getValidationSuggestion(field)
+          suggestion: this.getValidationSuggestion(field),
         });
       }
     }
   }
-  
+
   /**
    * 检查最佳实践
    */
@@ -269,40 +262,40 @@ export class ProviderConfigValidator {
         result.warnings.push({
           field,
           message: `未设置 ${field}，将使用默认值 ${defaultValue}`,
-          recommendation: `建议显式设置 ${field} 字段以提高配置清晰度`
+          recommendation: `建议显式设置 ${field} 字段以提高配置清晰度`,
         });
       }
     }
-    
+
     // 检查性能相关配置
     const maxConcurrent = this.getNestedValue(config, 'performance.maxConcurrentRequests');
     const timeout = this.getNestedValue(config, 'connection.timeout');
-    
+
     if (maxConcurrent && timeout && maxConcurrent > 10 && timeout < 10000) {
       result.warnings.push({
         field: 'performance',
         message: '高并发请求配置了较短的超时时间',
-        recommendation: '建议增加超时时间以适配高并发场景'
+        recommendation: '建议增加超时时间以适配高并发场景',
       });
     }
-    
+
     // 检查安全性
     const logRequests = this.getNestedValue(config, 'debug.logRequests');
     if (logRequests === true) {
       result.warnings.push({
         field: 'debug.logRequests',
         message: '启用了请求日志记录',
-        recommendation: '生产环境建议关闭请求日志以避免敏感信息泄露'
+        recommendation: '生产环境建议关闭请求日志以避免敏感信息泄露',
       });
     }
   }
-  
+
   /**
    * 计算配置质量评分
    */
   private calculateScore(result: ValidationResult): void {
     let score = 100;
-    
+
     // 错误扣分
     for (const error of result.errors) {
       switch (error.severity) {
@@ -317,12 +310,12 @@ export class ProviderConfigValidator {
           break;
       }
     }
-    
+
     // 警告扣分
     score -= result.warnings.length * 2;
-    
+
     result.score = Math.max(0, score);
-    
+
     if (result.score < 60) {
       result.suggestions.push('配置质量较低，建议进行全面检查和修复');
     } else if (result.score < 80) {
@@ -333,14 +326,14 @@ export class ProviderConfigValidator {
       result.suggestions.push('配置质量优秀！');
     }
   }
-  
+
   /**
    * 获取嵌套对象的值
    */
   private getNestedValue(obj: any, path: string): any {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   }
-  
+
   /**
    * 获取验证建议
    */
@@ -353,34 +346,32 @@ export class ProviderConfigValidator {
       'defaults.top_p': 'top_p值应在0-1之间',
       'performance.maxConcurrentRequests': '建议设置在1-100之间',
       'errorHandling.maxRetries': '重试次数建议在0-10之间',
-      'cache.ttl': '缓存时间建议在1000-3600000毫秒之间'
+      'cache.ttl': '缓存时间建议在1000-3600000毫秒之间',
     };
-    
+
     return suggestions[field] || '请检查字段值是否符合要求';
   }
-  
+
   /**
    * 验证目录中的所有配置文件
    */
   public validateDirectory(dirPath: string): Record<string, ValidationResult> {
     const results: Record<string, ValidationResult> = {};
-    
+
     if (!fs.existsSync(dirPath)) {
       return results;
     }
-    
-    const files = fs.readdirSync(dirPath).filter(file => 
-      file.endsWith('.json') || file.endsWith('.json5')
-    );
-    
+
+    const files = fs.readdirSync(dirPath).filter(file => file.endsWith('.json') || file.endsWith('.json5'));
+
     for (const file of files) {
       const filePath = path.join(dirPath, file);
       results[file] = this.validateConfig(filePath);
     }
-    
+
     return results;
   }
-  
+
   /**
    * 生成配置模板
    */
@@ -392,48 +383,50 @@ export class ProviderConfigValidator {
         type: providerType,
         description: `${providerType} API Provider`,
         version: '1.0.0',
-        enabled: true
+        enabled: true,
       },
       connection: {
-        endpoint: providerType === 'anthropic' 
-          ? 'https://api.anthropic.com/v1/messages'
-          : providerType === 'openai'
-          ? 'https://api.openai.com/v1/chat/completions' 
-          : 'https://generativelanguage.googleapis.com/v1beta/models',
+        endpoint:
+          providerType === 'anthropic'
+            ? 'https://api.anthropic.com/v1/messages'
+            : providerType === 'openai'
+              ? 'https://api.openai.com/v1/chat/completions'
+              : 'https://generativelanguage.googleapis.com/v1beta/models',
         timeout: 30000,
-        retries: 3
+        retries: 3,
       },
       auth: {
         type: 'api_key',
-        apiKey: 'your-api-key-here'
+        apiKey: 'your-api-key-here',
       },
       models: {
-        default: providerType === 'anthropic' 
-          ? 'claude-3-sonnet-20240229'
-          : providerType === 'openai'
-          ? 'gpt-4'
-          : 'gemini-pro'
+        default:
+          providerType === 'anthropic'
+            ? 'claude-3-sonnet-20240229'
+            : providerType === 'openai'
+              ? 'gpt-4'
+              : 'gemini-pro',
       },
       defaults: this.schema.defaults,
       performance: {
         maxConcurrentRequests: 5,
         requestQueueSize: 20,
-        responseTimeout: 60000
+        responseTimeout: 60000,
       },
       errorHandling: {
         maxRetries: 3,
-        retryBackoff: 'exponential'
+        retryBackoff: 'exponential',
       },
       cache: {
         enabled: true,
-        ttl: 300000
+        ttl: 300000,
       },
       monitoring: {
         enabled: true,
-        metricsCollection: true
-      }
+        metricsCollection: true,
+      },
     };
-    
+
     return JSON5.stringify(baseTemplate, null, 2);
   }
 }

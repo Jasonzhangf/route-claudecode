@@ -1,8 +1,8 @@
 /**
  * 标准工具数据结构接口
- * 
+ *
  * 定义工具调用和工具定义的标准格式
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -153,22 +153,22 @@ export interface ToolExecutor {
    * 执行工具
    */
   execute(tool: Tool, input: Record<string, any>, context?: ToolExecutionContext): Promise<ToolUseResult>;
-  
+
   /**
    * 验证工具输入
    */
   validateInput(tool: Tool, input: Record<string, any>): ValidationResult;
-  
+
   /**
    * 获取工具状态
    */
   getToolStatus(toolName: string): AvailabilityInfo;
-  
+
   /**
    * 列出可用工具
    */
   listAvailableTools(): Tool[];
-  
+
   /**
    * 取消工具执行
    */
@@ -235,27 +235,27 @@ export interface ToolRegistry {
    * 注册工具
    */
   register(tool: Tool): void;
-  
+
   /**
    * 注销工具
    */
   unregister(toolName: string): void;
-  
+
   /**
    * 获取工具
    */
   getTool(toolName: string): Tool | null;
-  
+
   /**
    * 列出所有工具
    */
   listTools(): Tool[];
-  
+
   /**
    * 搜索工具
    */
   searchTools(query: string): Tool[];
-  
+
   /**
    * 验证工具定义
    */
@@ -288,7 +288,7 @@ interface MutableFunctionDefinition {
  */
 export class ToolBuilder {
   private tool: Partial<MutableTool> = {};
-  
+
   constructor() {
     this.tool = {
       type: 'function',
@@ -298,12 +298,12 @@ export class ToolBuilder {
         parameters: {
           type: 'object',
           properties: {},
-          required: []
-        }
-      }
+          required: [],
+        },
+      },
     };
   }
-  
+
   /**
    * 设置函数名称
    */
@@ -314,7 +314,7 @@ export class ToolBuilder {
     this.tool.function.name = name;
     return this;
   }
-  
+
   /**
    * 设置函数描述
    */
@@ -325,7 +325,7 @@ export class ToolBuilder {
     this.tool.function.description = description;
     return this;
   }
-  
+
   /**
    * 添加参数
    */
@@ -336,19 +336,19 @@ export class ToolBuilder {
     if (!this.tool.function.parameters.properties) {
       this.tool.function.parameters.properties = {};
     }
-    
+
     this.tool.function.parameters.properties[name] = schema;
-    
+
     if (required) {
       if (!this.tool.function.parameters.required) {
         this.tool.function.parameters.required = [];
       }
       this.tool.function.parameters.required.push(name);
     }
-    
+
     return this;
   }
-  
+
   /**
    * 设置参数模式
    */
@@ -359,7 +359,7 @@ export class ToolBuilder {
     this.tool.function.parameters = schema;
     return this;
   }
-  
+
   /**
    * 添加示例
    */
@@ -373,7 +373,7 @@ export class ToolBuilder {
     this.tool.function.examples.push(example);
     return this;
   }
-  
+
   /**
    * 设置元数据
    */
@@ -381,7 +381,7 @@ export class ToolBuilder {
     this.tool.metadata = metadata;
     return this;
   }
-  
+
   /**
    * 设置风险级别
    */
@@ -392,7 +392,7 @@ export class ToolBuilder {
     this.tool.metadata.riskLevel = level;
     return this;
   }
-  
+
   /**
    * 添加标签
    */
@@ -406,7 +406,7 @@ export class ToolBuilder {
     this.tool.metadata.tags.push(tag);
     return this;
   }
-  
+
   /**
    * 构建工具
    */
@@ -414,37 +414,37 @@ export class ToolBuilder {
     if (!this.tool.function?.name || !this.tool.function?.description) {
       throw new Error('Missing required fields in Tool');
     }
-    
+
     return this.tool as Tool;
   }
-  
+
   /**
    * 从OpenAI格式创建
    */
   static fromOpenAI(openaiTool: any): ToolBuilder {
     const builder = new ToolBuilder();
-    
+
     if (openaiTool.function) {
       builder
         .setName(openaiTool.function.name)
         .setDescription(openaiTool.function.description)
         .setParameterSchema(openaiTool.function.parameters);
     }
-    
+
     return builder;
   }
-  
+
   /**
    * 从Anthropic格式创建
    */
   static fromAnthropic(anthropicTool: any): ToolBuilder {
     const builder = new ToolBuilder();
-    
+
     builder
       .setName(anthropicTool.name)
       .setDescription(anthropicTool.description)
       .setParameterSchema(anthropicTool.input_schema);
-    
+
     return builder;
   }
 }

@@ -12,7 +12,7 @@ exports.cors = cors;
  * 创建CORS中间件
  */
 function cors(options = {}) {
-    const { origin = '*', methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders = ['Content-Type', 'Authorization', 'X-Request-ID'], exposedHeaders = ['X-Request-ID'], credentials = false, maxAge = 86400 // 24小时
+    const { origin = '*', methods = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders = ['Content-Type', 'Authorization', 'X-Request-ID'], exposedHeaders = ['X-Request-ID'], credentials = false, maxAge = 86400, // 24小时
      } = options;
     return (req, res, next) => {
         // 设置Access-Control-Allow-Origin

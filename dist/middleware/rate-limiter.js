@@ -14,7 +14,7 @@ exports.rateLimit = rateLimit;
  */
 function rateLimit(options = {}) {
     const { windowMs = 15 * 60 * 1000, // 15分钟
-    maxRequests = 100, keyGenerator = (req) => req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || '127.0.0.1', skipSuccessfulRequests = false, skipFailedRequests = false, message = 'Too many requests, please try again later.' } = options;
+    maxRequests = 100, keyGenerator = req => req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || '127.0.0.1', skipSuccessfulRequests = false, skipFailedRequests = false, message = 'Too many requests, please try again later.', } = options;
     const store = new Map();
     return (req, res, next) => {
         const key = keyGenerator(req);
@@ -73,7 +73,9 @@ function rateLimit(options = {}) {
  * 创建基于内存的速率限制存储
  */
 class MemoryRateLimitStore {
-    store = new Map();
+    constructor() {
+        this.store = new Map();
+    }
     get(key) {
         return this.store.get(key);
     }

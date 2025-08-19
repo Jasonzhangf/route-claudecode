@@ -12,8 +12,8 @@ exports.StandardResponseBuilder = void 0;
  * 标准响应构建器
  */
 class StandardResponseBuilder {
-    response = {};
     constructor(id) {
+        this.response = {};
         this.response = {
             id,
             choices: [],
@@ -30,9 +30,9 @@ class StandardResponseBuilder {
                     apiCallTime: 0,
                     transformationTime: 0,
                     validationTime: 0,
-                    retryCount: 0
-                }
-            }
+                    retryCount: 0,
+                },
+            },
         };
     }
     /**
@@ -102,7 +102,7 @@ class StandardResponseBuilder {
         }
         this.response.metadata.performance = {
             ...this.response.metadata.performance,
-            ...metrics
+            ...metrics,
         };
         return this;
     }
@@ -122,20 +122,22 @@ class StandardResponseBuilder {
     static fromAnthropic(anthropicResponse) {
         const builder = new StandardResponseBuilder(anthropicResponse.id);
         // 转换选择项
-        const choices = [{
+        const choices = [
+            {
                 index: 0,
                 message: {
                     role: 'assistant',
-                    content: anthropicResponse.content || []
+                    content: anthropicResponse.content || [],
                 },
-                finishReason: mapAnthropicStopReason(anthropicResponse.stop_reason)
-            }];
+                finishReason: mapAnthropicStopReason(anthropicResponse.stop_reason),
+            },
+        ];
         builder.setChoices(choices);
         if (anthropicResponse.usage) {
             builder.setUsage({
                 promptTokens: anthropicResponse.usage.input_tokens || 0,
                 completionTokens: anthropicResponse.usage.output_tokens || 0,
-                totalTokens: (anthropicResponse.usage.input_tokens || 0) + (anthropicResponse.usage.output_tokens || 0)
+                totalTokens: (anthropicResponse.usage.input_tokens || 0) + (anthropicResponse.usage.output_tokens || 0),
             });
         }
         if (anthropicResponse.model) {
@@ -143,7 +145,7 @@ class StandardResponseBuilder {
         }
         builder.setMetadata({
             originalFormat: 'anthropic',
-            targetFormat: 'anthropic'
+            targetFormat: 'anthropic',
         });
         return builder;
     }
@@ -157,7 +159,7 @@ class StandardResponseBuilder {
             index: choice.index,
             message: choice.message,
             finishReason: choice.finish_reason,
-            logprobs: choice.logprobs
+            logprobs: choice.logprobs,
         })) || [];
         builder.setChoices(choices);
         if (openaiResponse.usage) {
@@ -171,7 +173,7 @@ class StandardResponseBuilder {
         }
         builder.setMetadata({
             originalFormat: 'openai',
-            targetFormat: 'openai'
+            targetFormat: 'openai',
         });
         return builder;
     }

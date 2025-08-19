@@ -6,8 +6,9 @@
  * @author Jason Zhang
  */
 import { Router } from './router';
+import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
 /**
  * 配置代理路由
  */
-export declare function setupProxyRoutes(router: Router): void;
+export declare function setupProxyRoutes(router: Router, middlewareManager: IMiddlewareManager): void;
 //# sourceMappingURL=proxy-routes.d.ts.map

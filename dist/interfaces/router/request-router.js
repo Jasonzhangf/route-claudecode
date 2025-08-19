@@ -1,10 +1,14 @@
 "use strict";
 /**
- * 请求路由器接口定义
+ * DEPRECATED: This file has been replaced by src/interfaces/router/core-router-interfaces.ts
  *
- * 定义请求路由和负载均衡的标准接口
+ * ❌ DO NOT USE: These request router interfaces are deprecated
+ * ✅ USE INSTEAD: src/interfaces/router/core-router-interfaces.ts
  *
- * @author Jason Zhang
+ * The new CoreRouter interfaces provide a cleaner, more focused API.
+ *
+ * @deprecated Use interfaces from src/interfaces/router/core-router-interfaces.ts instead
+ * @see src/interfaces/router/core-router-interfaces.ts
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 //# sourceMappingURL=request-router.js.map

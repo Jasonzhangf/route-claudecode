@@ -1,0 +1,19 @@
+{
+  "virtualModels": {
+    "default": {
+      "providers": [
+        {
+          "name": "modelscope",
+          "model": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "weight": 100,
+          "apiKeys": ["test-key"]
+        }
+      ]
+    }
+  },
+  "server": {
+    "port": 5506,
+    "host": "localhost",
+    "debug": true
+  }
+}

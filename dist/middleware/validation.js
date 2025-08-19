@@ -20,8 +20,8 @@ function validation(config = {}) {
         'application/json',
         'application/x-www-form-urlencoded',
         'text/plain',
-        'multipart/form-data'
-    ], validateJson = true, requireAuth = false, customValidators = [] } = config;
+        'multipart/form-data',
+    ], validateJson = true, requireAuth = false, customValidators = [], } = config;
     return async (req, res, next) => {
         try {
             // 1. 检查请求体大小
@@ -31,7 +31,7 @@ function validation(config = {}) {
                     res.statusCode = 413;
                     res.body = {
                         error: 'Payload Too Large',
-                        message: `Request body size (${bodySize} bytes) exceeds maximum allowed size (${maxBodySize} bytes)`
+                        message: `Request body size (${bodySize} bytes) exceeds maximum allowed size (${maxBodySize} bytes)`,
                     };
                     return;
                 }
@@ -45,7 +45,7 @@ function validation(config = {}) {
                         res.statusCode = 415;
                         res.body = {
                             error: 'Unsupported Media Type',
-                            message: `Content-Type '${baseContentType}' is not supported. Allowed types: ${allowedContentTypes.join(', ')}`
+                            message: `Content-Type '${baseContentType}' is not supported. Allowed types: ${allowedContentTypes.join(', ')}`,
                         };
                         return;
                     }
@@ -60,7 +60,7 @@ function validation(config = {}) {
                     res.statusCode = 400;
                     res.body = {
                         error: 'Bad Request',
-                        message: 'Invalid JSON format in request body'
+                        message: 'Invalid JSON format in request body',
                     };
                     return;
                 }
@@ -72,7 +72,7 @@ function validation(config = {}) {
                     res.statusCode = 401;
                     res.body = {
                         error: 'Unauthorized',
-                        message: 'Authorization header is required'
+                        message: 'Authorization header is required',
                     };
                     return;
                 }
@@ -80,7 +80,7 @@ function validation(config = {}) {
                     res.statusCode = 401;
                     res.body = {
                         error: 'Unauthorized',
-                        message: 'Invalid authorization header format. Expected Bearer or Basic authentication'
+                        message: 'Invalid authorization header format. Expected Bearer or Basic authentication',
                     };
                     return;
                 }
@@ -92,7 +92,7 @@ function validation(config = {}) {
                     res.statusCode = 400;
                     res.body = {
                         error: 'Validation Failed',
-                        message: typeof result === 'string' ? result : 'Custom validation failed'
+                        message: typeof result === 'string' ? result : 'Custom validation failed',
                     };
                     return;
                 }
@@ -105,7 +105,7 @@ function validation(config = {}) {
             res.statusCode = 500;
             res.body = {
                 error: 'Internal Server Error',
-                message: 'Validation middleware error'
+                message: 'Validation middleware error',
             };
             next(error);
         }
@@ -124,7 +124,7 @@ async function validateApiRequest(req, res) {
             res.statusCode = 400;
             res.body = {
                 error: 'Bad Request',
-                message: 'Invalid Anthropic request: messages array is required'
+                message: 'Invalid Anthropic request: messages array is required',
             };
             return;
         }
@@ -133,7 +133,7 @@ async function validateApiRequest(req, res) {
                 res.statusCode = 400;
                 res.body = {
                     error: 'Bad Request',
-                    message: 'Invalid message format: role and content are required'
+                    message: 'Invalid message format: role and content are required',
                 };
                 return;
             }
@@ -141,7 +141,7 @@ async function validateApiRequest(req, res) {
                 res.statusCode = 400;
                 res.body = {
                     error: 'Bad Request',
-                    message: `Invalid message role: ${message.role}. Must be user, assistant, or system`
+                    message: `Invalid message role: ${message.role}. Must be user, assistant, or system`,
                 };
                 return;
             }
@@ -150,7 +150,7 @@ async function validateApiRequest(req, res) {
             res.statusCode = 400;
             res.body = {
                 error: 'Bad Request',
-                message: 'Model must be a string'
+                message: 'Model must be a string',
             };
             return;
         }
@@ -158,7 +158,7 @@ async function validateApiRequest(req, res) {
             res.statusCode = 400;
             res.body = {
                 error: 'Bad Request',
-                message: 'max_tokens must be a positive number'
+                message: 'max_tokens must be a positive number',
             };
             return;
         }
@@ -169,7 +169,7 @@ async function validateApiRequest(req, res) {
             res.statusCode = 400;
             res.body = {
                 error: 'Bad Request',
-                message: 'Invalid OpenAI request: messages array is required'
+                message: 'Invalid OpenAI request: messages array is required',
             };
             return;
         }
@@ -178,7 +178,7 @@ async function validateApiRequest(req, res) {
                 res.statusCode = 400;
                 res.body = {
                     error: 'Bad Request',
-                    message: 'Invalid message format: role and content are required'
+                    message: 'Invalid message format: role and content are required',
                 };
                 return;
             }
@@ -186,7 +186,7 @@ async function validateApiRequest(req, res) {
                 res.statusCode = 400;
                 res.body = {
                     error: 'Bad Request',
-                    message: `Invalid message role: ${message.role}. Must be user, assistant, system, or tool`
+                    message: `Invalid message role: ${message.role}. Must be user, assistant, system, or tool`,
                 };
                 return;
             }
@@ -195,7 +195,7 @@ async function validateApiRequest(req, res) {
             res.statusCode = 400;
             res.body = {
                 error: 'Bad Request',
-                message: 'Model parameter is required and must be a string'
+                message: 'Model parameter is required and must be a string',
             };
             return;
         }
@@ -206,7 +206,7 @@ async function validateApiRequest(req, res) {
             res.statusCode = 400;
             res.body = {
                 error: 'Bad Request',
-                message: 'Invalid Gemini request: contents array is required'
+                message: 'Invalid Gemini request: contents array is required',
             };
             return;
         }
@@ -215,7 +215,7 @@ async function validateApiRequest(req, res) {
                 res.statusCode = 400;
                 res.body = {
                     error: 'Bad Request',
-                    message: 'Invalid content format: parts array is required'
+                    message: 'Invalid content format: parts array is required',
                 };
                 return;
             }
@@ -224,7 +224,7 @@ async function validateApiRequest(req, res) {
                     res.statusCode = 400;
                     res.body = {
                         error: 'Bad Request',
-                        message: 'Invalid part format: text or inlineData is required'
+                        message: 'Invalid part format: text or inlineData is required',
                     };
                     return;
                 }
@@ -239,7 +239,7 @@ function anthropicValidation() {
     return validation({
         validateJson: true,
         customValidators: [
-            (req) => {
+            req => {
                 if (req.url === '/v1/messages' && req.method === 'POST') {
                     const body = req.body;
                     if (!body || !body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
@@ -247,8 +247,8 @@ function anthropicValidation() {
                     }
                 }
                 return true;
-            }
-        ]
+            },
+        ],
     });
 }
 /**
@@ -258,7 +258,7 @@ function openaiValidation() {
     return validation({
         validateJson: true,
         customValidators: [
-            (req) => {
+            req => {
                 if (req.url === '/v1/chat/completions' && req.method === 'POST') {
                     const body = req.body;
                     if (!body || !body.model || typeof body.model !== 'string') {
@@ -269,8 +269,8 @@ function openaiValidation() {
                     }
                 }
                 return true;
-            }
-        ]
+            },
+        ],
     });
 }
 /**
@@ -280,7 +280,7 @@ function geminiValidation() {
     return validation({
         validateJson: true,
         customValidators: [
-            (req) => {
+            req => {
                 if (req.url.includes('/generateContent') && req.method === 'POST') {
                     const body = req.body;
                     if (!body || !body.contents || !Array.isArray(body.contents) || body.contents.length === 0) {
@@ -288,8 +288,8 @@ function geminiValidation() {
                     }
                 }
                 return true;
-            }
-        ]
+            },
+        ],
     });
 }
 //# sourceMappingURL=validation.js.map

@@ -1,8 +1,8 @@
 /**
  * Provider健康监控器
- * 
+ *
  * 监控Provider健康状态，执行定期健康检查并更新指标
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -66,7 +66,7 @@ export class HttpHealthChecker implements ProviderHealthChecker {
 
   public async check(): Promise<HealthCheckResult> {
     const startTime = Date.now();
-    
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -74,13 +74,13 @@ export class HttpHealthChecker implements ProviderHealthChecker {
       const response = await fetch(this.endpoint, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        signal: controller.signal
+        signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-      
+
       const responseTime = Date.now() - startTime;
 
       if (response.ok) {
@@ -89,14 +89,14 @@ export class HttpHealthChecker implements ProviderHealthChecker {
           responseTime,
           data: {
             status: response.status,
-            statusText: response.statusText
-          }
+            statusText: response.statusText,
+          },
         };
       } else {
         return {
           success: false,
           responseTime,
-          error: `HTTP ${response.status}: ${response.statusText}`
+          error: `HTTP ${response.status}: ${response.statusText}`,
         };
       }
     } catch (error) {
@@ -104,7 +104,7 @@ export class HttpHealthChecker implements ProviderHealthChecker {
       return {
         success: false,
         responseTime,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -129,7 +129,7 @@ export class CustomHealthChecker implements ProviderHealthChecker {
       return {
         success: false,
         responseTime: 0,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -150,7 +150,7 @@ export class SystemMetricsCollector {
 
       // CPU使用率计算
       const cpuUsage = await this.getCpuUsage();
-      
+
       // 内存使用率
       const totalMemory = os.totalmem();
       const freeMemory = os.freemem();
@@ -162,7 +162,7 @@ export class SystemMetricsCollector {
       // 网络流量 (模拟值)
       const networkTraffic = {
         bytesIn: Math.floor(Math.random() * 1000000),
-        bytesOut: Math.floor(Math.random() * 1000000)
+        bytesOut: Math.floor(Math.random() * 1000000),
       };
 
       // 活跃连接数 (模拟值)
@@ -173,11 +173,11 @@ export class SystemMetricsCollector {
         memoryUsage,
         diskUsage,
         networkTraffic,
-        activeConnections
+        activeConnections,
       };
     } catch (error) {
       console.error('[SystemMetricsCollector] Failed to collect system metrics:', error);
-      
+
       // 返回默认值
       return {
         cpuUsage: 0,
@@ -185,9 +185,9 @@ export class SystemMetricsCollector {
         diskUsage: 0,
         networkTraffic: {
           bytesIn: 0,
-          bytesOut: 0
+          bytesOut: 0,
         },
-        activeConnections: 0
+        activeConnections: 0,
       };
     }
   }
@@ -198,10 +198,10 @@ export class SystemMetricsCollector {
   private async getCpuUsage(): Promise<number> {
     try {
       const os = await import('os');
-      
+
       const cpus = os.cpus();
       const startTime = Date.now();
-      
+
       // 获取CPU信息
       const startCpus = cpus.map(cpu => {
         const total = Object.values(cpu.times).reduce((acc, time) => acc + time, 0);
@@ -223,10 +223,10 @@ export class SystemMetricsCollector {
       for (let i = 0; i < startCpus.length; i++) {
         const startCpu = startCpus[i];
         const endCpu = endCpus[i];
-        
+
         const totalDiff = endCpu.total - startCpu.total;
         const idleDiff = endCpu.idle - startCpu.idle;
-        
+
         if (totalDiff > 0) {
           const usage = 100 * (1 - idleDiff / totalDiff);
           totalUsage += usage;
@@ -390,7 +390,7 @@ export class HealthMonitor {
    */
   public startAll(): void {
     console.log(`[HealthMonitor] Starting monitoring for ${this.checkers.size} providers`);
-    
+
     // 启动所有Provider健康检查
     for (const [providerId, config] of this.configs.entries()) {
       if (config.enabled) {
@@ -423,7 +423,7 @@ export class HealthMonitor {
   private async executeHealthCheck(providerId: string): Promise<void> {
     const checker = this.checkers.get(providerId);
     const config = this.configs.get(providerId);
-    
+
     if (!checker || !config) {
       return;
     }
@@ -435,7 +435,7 @@ export class HealthMonitor {
     while (attempts <= config.retries) {
       try {
         lastResult = await checker.check();
-        
+
         if (lastResult.success) {
           break; // 成功则退出重试循环
         }
@@ -443,12 +443,12 @@ export class HealthMonitor {
         lastResult = {
           success: false,
           responseTime: 0,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
         };
       }
 
       attempts++;
-      
+
       // 如果不是最后一次尝试，等待重试延迟
       if (attempts <= config.retries) {
         await new Promise(resolve => setTimeout(resolve, config.retryDelay));
@@ -500,10 +500,22 @@ export class HealthMonitor {
       availability: finalAvailability,
       details: {
         lastError: result.error,
-        successCount: currentStatus ? (result.success ? currentStatus.details.successCount + 1 : currentStatus.details.successCount) : (result.success ? 1 : 0),
-        errorCount: currentStatus ? (!result.success ? currentStatus.details.errorCount + 1 : currentStatus.details.errorCount) : (!result.success ? 1 : 0),
-        data: result.data
-      }
+        successCount: currentStatus
+          ? result.success
+            ? currentStatus.details.successCount + 1
+            : currentStatus.details.successCount
+          : result.success
+            ? 1
+            : 0,
+        errorCount: currentStatus
+          ? !result.success
+            ? currentStatus.details.errorCount + 1
+            : currentStatus.details.errorCount
+          : !result.success
+            ? 1
+            : 0,
+        data: result.data,
+      },
     };
 
     this.healthStatuses.set(providerId, healthStatus);
@@ -520,7 +532,7 @@ export class HealthMonitor {
   private async collectSystemMetrics(): Promise<void> {
     try {
       const metrics = await this.systemMetricsCollector.getSystemMetrics();
-      
+
       // 触发回调
       if (this.onSystemMetricsUpdate) {
         this.onSystemMetricsUpdate(metrics);

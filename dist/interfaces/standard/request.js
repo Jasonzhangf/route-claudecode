@@ -12,8 +12,8 @@ exports.StandardRequestBuilder = void 0;
  * 标准请求构建器
  */
 class StandardRequestBuilder {
-    request = {};
     constructor(id, model) {
+        this.request = {};
         this.request = {
             id,
             model,
@@ -24,8 +24,8 @@ class StandardRequestBuilder {
                 targetFormat: 'anthropic',
                 provider: '',
                 category: 'default',
-                processingSteps: []
-            }
+                processingSteps: [],
+            },
         };
     }
     /**
@@ -128,7 +128,7 @@ class StandardRequestBuilder {
             originalFormat: 'anthropic',
             targetFormat: 'anthropic',
             provider: '',
-            category: 'default'
+            category: 'default',
         });
         if (anthropicRequest.tools) {
             builder.setTools(anthropicRequest.tools);
@@ -152,7 +152,7 @@ class StandardRequestBuilder {
             originalFormat: 'openai',
             targetFormat: 'openai',
             provider: '',
-            category: 'default'
+            category: 'default',
         });
         if (openaiRequest.tools) {
             builder.setTools(openaiRequest.tools);

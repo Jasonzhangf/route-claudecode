@@ -5,6 +5,7 @@
  *
  * @author Jason Zhang
  */
+export declare const TYPES_MODULE_VERSION = "4.0.0-alpha.2";
 export interface RCCConfig {
     version: string;
     debug?: DebugConfig;
@@ -72,11 +73,7 @@ export interface ModuleConfig {
     enabled: boolean;
     [key: string]: any;
 }
-export declare class RCCError extends Error {
-    readonly code: string;
-    readonly details?: Record<string, any>;
-    constructor(message: string, code: string, details?: Record<string, any>);
-}
+export * from './error';
 export interface StandardRequest {
     id: string;
     model: string;
@@ -153,5 +150,8 @@ export interface ModuleMetrics {
     averageProcessingTime: number;
     errorCount: number;
     lastProcessedAt?: Date;
+}
+export interface TypesModuleInterface {
+    version: string;
 }
 //# sourceMappingURL=index.d.ts.map

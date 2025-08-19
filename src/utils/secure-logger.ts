@@ -1,9 +1,9 @@
 /**
  * Secure Logger Utility
- * 
+ *
  * 安全的日志记录工具，自动过滤敏感信息
  * 符合RCC v4.0安全要求
- * 
+ *
  * @author Jason Zhang
  */
 
@@ -14,7 +14,7 @@ export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
-  ERROR = 3
+  ERROR = 3,
 }
 
 /**
@@ -35,17 +35,13 @@ const SENSITIVE_PATTERNS = [
   /accesstoken/i,
   /access_token/i,
   /refreshtoken/i,
-  /refresh_token/i
+  /refresh_token/i,
 ];
 
 /**
  * 敏感URL模式
  */
-const SENSITIVE_URL_PATTERNS = [
-  /\/api\/.*\/key/i,
-  /\/auth\/.*\/token/i,
-  /\/oauth\/.*\/secret/i
-];
+const SENSITIVE_URL_PATTERNS = [/\/api\/.*\/key/i, /\/auth\/.*\/token/i, /\/oauth\/.*\/secret/i];
 
 /**
  * 安全日志配置
@@ -89,7 +85,7 @@ export class SecureLogger {
       maxLogLength: 5000,
       includeTimestamp: true,
       includeLevel: true,
-      ...config
+      ...config,
     };
   }
 
@@ -130,12 +126,12 @@ export class SecureLogger {
       level: 'AUDIT',
       message: `Security Event: ${event}`,
       data: this.sanitizeData(details),
-      source: source || 'unknown'
+      source: source || 'unknown',
     };
 
     if (this.config.enableAuditLog) {
       this.auditLog.push(auditEntry);
-      
+
       // 保持审计日志大小
       if (this.auditLog.length > 1000) {
         this.auditLog = this.auditLog.slice(-500);
@@ -159,7 +155,7 @@ export class SecureLogger {
       level: this.config.includeLevel ? LogLevel[level] : '',
       message: this.sanitizeMessage(message),
       data: this.config.enableSanitization ? this.sanitizeData(data) : data,
-      source: source
+      source: source,
     };
 
     // 截断过长的消息
@@ -237,7 +233,7 @@ export class SecureLogger {
     });
 
     // 清理可能的API密钥模式
-    sanitized = sanitized.replace(/[a-zA-Z0-9]{32,}/g, (match) => {
+    sanitized = sanitized.replace(/[a-zA-Z0-9]{32,}/g, match => {
       // 如果看起来像API密钥，则替换
       if (match.length >= 32 && /^[a-zA-Z0-9_-]+$/.test(match)) {
         return this.config.sensitiveFieldReplacement;
@@ -270,7 +266,7 @@ export class SecureLogger {
 
     if (typeof data === 'object') {
       const sanitized: any = {};
-      
+
       for (const [key, value] of Object.entries(data)) {
         // 检查字段名是否敏感
         if (this.isSensitiveField(key)) {
@@ -279,7 +275,7 @@ export class SecureLogger {
           sanitized[key] = this.sanitizeData(value);
         }
       }
-      
+
       return sanitized;
     }
 
@@ -356,7 +352,7 @@ export class RequestLogger {
 export const secureLogger = new SecureLogger({
   level: process.env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO,
   enableSanitization: true,
-  enableAuditLog: true
+  enableAuditLog: true,
 });
 
 /**
@@ -367,5 +363,5 @@ export const log = {
   info: (message: string, data?: any, source?: string) => secureLogger.info(message, data, source),
   warn: (message: string, data?: any, source?: string) => secureLogger.warn(message, data, source),
   error: (message: string, data?: any, source?: string) => secureLogger.error(message, data, source),
-  audit: (event: string, details: any, source?: string) => secureLogger.audit(event, details, source)
+  audit: (event: string, details: any, source?: string) => secureLogger.audit(event, details, source),
 };

@@ -1,12 +1,64 @@
 /**
- * 请求路由器接口定义
+ * DEPRECATED: This file has been replaced by src/interfaces/router/core-router-interfaces.ts
  *
- * 定义请求路由和负载均衡的标准接口
+ * ❌ DO NOT USE: These request router interfaces are deprecated
+ * ✅ USE INSTEAD: src/interfaces/router/core-router-interfaces.ts
  *
- * @author Jason Zhang
+ * The new CoreRouter interfaces provide a cleaner, more focused API.
+ *
+ * @deprecated Use interfaces from src/interfaces/router/core-router-interfaces.ts instead
+ * @see src/interfaces/router/core-router-interfaces.ts
  */
-import { Pipeline } from '../module/pipeline-module';
-import { StandardRequest } from '../standard/request';
+/**
+ * 流水线接口
+ */
+export interface Pipeline {
+    readonly id: string;
+    readonly provider: string;
+    readonly model: string;
+    process(input: any): Promise<any>;
+    validate(): Promise<boolean>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    getStatus(): PipelineStatus;
+    getMetrics(): any;
+}
+/**
+ * 流水线状态
+ */
+export interface PipelineStatus {
+    id: string;
+    status: 'idle' | 'running' | 'busy' | 'error' | 'stopped';
+    health: 'healthy' | 'degraded' | 'unhealthy';
+    lastActivity?: Date;
+    error?: Error;
+}
+/**
+ * 标准请求接口
+ */
+export interface StandardRequest {
+    readonly id: string;
+    readonly model: string;
+    readonly messages: any[];
+    readonly temperature?: number;
+    readonly maxTokens?: number;
+    readonly stream?: boolean;
+    readonly tools?: any[];
+    readonly metadata: RequestMetadata;
+    readonly timestamp: Date;
+}
+/**
+ * 请求元数据
+ */
+export interface RequestMetadata {
+    originalFormat: 'anthropic' | 'openai' | 'gemini';
+    targetFormat: 'anthropic' | 'openai' | 'gemini';
+    provider: string;
+    category: string;
+    debugEnabled?: boolean;
+    captureLevel?: 'basic' | 'full';
+    processingSteps?: string[];
+}
 /**
  * 请求路由器接口
  */

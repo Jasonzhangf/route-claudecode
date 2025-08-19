@@ -1,0 +1,163 @@
+{
+  "// RCC v4.0 用户配置文件模板": "",
+  "// 用户可以直接配置所有providers和模型分类": "",
+  
+  "version": "4.0",
+  "description": "用户自定义AI模型配置 - 简化版",
+  "lastUpdated": "2025-08-19T12:00:00Z",
+
+  "// === AI模型分类配置 ===": "",
+  "// 每个分类对应不同的使用场景，用户可以为每个分类配置多个备选模型": "",
+  
+  "modelCategories": {
+    
+    "// 🤖 通用对话 - 日常聊天、简单问答": "",
+    "general": {
+      "description": "通用对话和简单问答，适合日常聊天",
+      "providers": [
+        {
+          "name": "通义千问",
+          "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+          "model": "qwen-plus",
+          "apiKey": "your-dashscope-api-key",
+          "weight": 100,
+          "maxTokens": 8192
+        }
+      ]
+    },
+
+    "// 💰 高级模型 - 复杂任务、最强AI能力": "",
+    "premium": {
+      "description": "最强AI模型，适合复杂任务和高质量输出",
+      "providers": [
+        {
+          "name": "GPT-4",
+          "endpoint": "https://api.openai.com/v1/chat/completions",
+          "model": "gpt-4",
+          "apiKey": "your-openai-api-key",
+          "weight": 100,
+          "maxTokens": 8192
+        }
+      ]
+    },
+
+    "// 👨‍💻 编程助手 - 代码生成、debug、技术问题": "",
+    "coding": {
+      "description": "专门用于编程、代码生成和技术问题",
+      "providers": [
+        {
+          "name": "智谱编程",
+          "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+          "model": "gpt-4o",
+          "apiKey": "your-zhipu-api-key",
+          "weight": 80,
+          "maxTokens": 8192
+        },
+        {
+          "name": "通义千问代码",
+          "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+          "model": "qwen-coder-plus",
+          "apiKey": "your-dashscope-api-key",
+          "weight": 20,
+          "maxTokens": 8192
+        }
+      ]
+    },
+
+    "// 🧠 深度思考 - 复杂推理、分析、研究": "",
+    "reasoning": {
+      "description": "复杂推理和深度分析任务",
+      "providers": [
+        {
+          "name": "Claude推理",
+          "endpoint": "https://api.anthropic.com/v1/messages",
+          "model": "claude-3-sonnet",
+          "apiKey": "your-anthropic-api-key",
+          "weight": 100,
+          "maxTokens": 4096
+        }
+      ]
+    },
+
+    "// 📚 长文档处理 - 大文件分析、长对话": "",
+    "longDocument": {
+      "description": "处理长文档和大量文本，支持超长上下文",
+      "providers": [
+        {
+          "name": "Gemini长文档",
+          "endpoint": "https://generativelanguage.googleapis.com/v1beta/models/",
+          "model": "gemini-1.5-pro",
+          "apiKey": "your-gemini-api-key",
+          "weight": 100,
+          "maxTokens": 32768
+        }
+      ]
+    },
+
+    "// 🔍 网络搜索 - 实时信息、联网查询": "",
+    "webSearch": {
+      "description": "需要联网搜索和实时信息的任务",
+      "providers": [
+        {
+          "name": "联网GPT",
+          "endpoint": "https://api.openai.com/v1/chat/completions",
+          "model": "gpt-4",
+          "apiKey": "your-openai-api-key",
+          "weight": 100,
+          "maxTokens": 4096
+        }
+      ]
+    }
+  },
+
+  "// === 系统设置 ===": "",
+  "settings": {
+    "// 自动模型选择规则": "",
+    "autoSelection": {
+      "enabled": true,
+      "rules": [
+        {
+          "condition": "tokenCount > 30000",
+          "useCategory": "longDocument"
+        },
+        {
+          "condition": "hasToolCalls && toolTypes.includes('web_search')",
+          "useCategory": "webSearch"
+        },
+        {
+          "condition": "hasToolCalls",
+          "useCategory": "coding"
+        },
+        {
+          "condition": "hasThinking || complexity === 'high'",
+          "useCategory": "reasoning"
+        },
+        {
+          "condition": "inputModel.includes('gpt-4')",
+          "useCategory": "premium"
+        }
+      ],
+      "defaultCategory": "general"
+    },
+
+    "// 错误处理": "",
+    "errorHandling": {
+      "maxRetries": 3,
+      "timeoutMs": 30000,
+      "fallbackStrategy": "none"
+    },
+
+    "// 负载均衡": "",
+    "loadBalancing": {
+      "strategy": "weighted",
+      "keyRotation": true
+    }
+  },
+
+  "// === 服务器配置 ===": "",
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "debug": true
+  }
+}
