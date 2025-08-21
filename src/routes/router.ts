@@ -1,273 +1,129 @@
 /**
- * 高级路由管理器
- *
- * 支持路径参数、中间件组合、路由组等高级功能
- *
- * @author Jason Zhang
+ * 简单路由器实现
+ * 
+ * 提供基础的路由定义功能
+ * 
+ * @author RCC v4.0 Team
  */
 
-import { IHTTPServer, IRouteHandler, IMiddlewareFunction } from '../interfaces/core/server-interface';
+export interface RouteHandler {
+  (req: any, res: any, next?: any): void | Promise<void>;
+}
 
-/**
- * 路由参数类型
- */
-export type RouteParams = Record<string, string>;
+// 兼容中间件类型
+export interface IMiddlewareFunction extends RouteHandler {}
 
-/**
- * 增强的路由处理器
- */
-export type EnhancedRouteHandler = (req: any, res: any, params: RouteParams) => void | Promise<void>;
-
-/**
- * 路由定义接口
- */
 export interface RouteDefinition {
-  method: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
   path: string;
-  handler: EnhancedRouteHandler;
-  middleware?: IMiddlewareFunction[];
-  name?: string;
-  description?: string;
+  handler: RouteHandler;
+  middleware?: RouteHandler[];
+  name?: string; // 路由名称，可选
+  description?: string; // 路由描述，可选
 }
 
-/**
- * 路由组配置
- */
-export interface RouteGroup {
-  prefix: string;
-  middleware?: IMiddlewareFunction[];
-  routes: RouteDefinition[];
-}
-
-/**
- * 路径匹配结果
- */
-interface PathMatch {
-  matched: boolean;
-  params: RouteParams;
-}
-
-/**
- * 高级路由管理器
- */
 export class Router {
   private routes: RouteDefinition[] = [];
-  private server: IHTTPServer;
 
-  constructor(server: IHTTPServer) {
-    this.server = server;
+  get(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void {
+    const middlewareArray = Array.isArray(middleware) ? middleware : middleware ? [middleware] : undefined;
+    this.routes.push({ method: 'GET', path, handler, middleware: middlewareArray });
   }
 
-  /**
-   * 添加GET路由
-   */
-  get(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
-    this.addRoute('GET', path, handler, middleware);
+  post(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void {
+    const middlewareArray = Array.isArray(middleware) ? middleware : middleware ? [middleware] : undefined;
+    this.routes.push({ method: 'POST', path, handler, middleware: middlewareArray });
   }
 
-  /**
-   * 添加POST路由
-   */
-  post(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
-    this.addRoute('POST', path, handler, middleware);
+  put(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void {
+    const middlewareArray = Array.isArray(middleware) ? middleware : middleware ? [middleware] : undefined;
+    this.routes.push({ method: 'PUT', path, handler, middleware: middlewareArray });
   }
 
-  /**
-   * 添加PUT路由
-   */
-  put(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
-    this.addRoute('PUT', path, handler, middleware);
+  delete(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void {
+    const middlewareArray = Array.isArray(middleware) ? middleware : middleware ? [middleware] : undefined;
+    this.routes.push({ method: 'DELETE', path, handler, middleware: middlewareArray });
   }
 
-  /**
-   * 添加DELETE路由
-   */
-  delete(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
-    this.addRoute('DELETE', path, handler, middleware);
+  patch(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void {
+    const middlewareArray = Array.isArray(middleware) ? middleware : middleware ? [middleware] : undefined;
+    this.routes.push({ method: 'PATCH', path, handler, middleware: middlewareArray });
   }
 
-  /**
-   * 添加PATCH路由
-   */
-  patch(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
-    this.addRoute('PATCH', path, handler, middleware);
+  options(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void {
+    const middlewareArray = Array.isArray(middleware) ? middleware : middleware ? [middleware] : undefined;
+    this.routes.push({ method: 'OPTIONS', path, handler, middleware: middlewareArray });
   }
 
-  /**
-   * 添加所有HTTP方法的路由
-   */
-  all(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
-    const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'];
-    methods.forEach(method => {
-      this.addRoute(method, path, handler, middleware);
-    });
-  }
-
-  /**
-   * 添加路由
-   */
-  addRoute(method: string, path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void {
-    const route: RouteDefinition = {
-      method: method.toUpperCase(),
-      path: this.normalizePath(path),
-      handler,
-      middleware,
-    };
-
-    this.routes.push(route);
-
-    // 在HTTP服务器上注册路由
-    this.server.addRoute(route.method, route.path, this.createRouteHandler(route), middleware);
-  }
-
-  /**
-   * 添加路由组
-   */
-  group(groupConfig: RouteGroup): void {
-    groupConfig.routes.forEach(route => {
-      const fullPath = this.joinPaths(groupConfig.prefix, route.path);
-      const combinedMiddleware = [...(groupConfig.middleware || []), ...(route.middleware || [])];
-
-      this.addRoute(route.method, fullPath, route.handler, combinedMiddleware);
-    });
-  }
-
-  /**
-   * 创建路由处理器包装器
-   */
-  private createRouteHandler(route: RouteDefinition): IRouteHandler {
-    return async (req, res) => {
-      // 解析路径参数
-      const url = req.url || '/';
-      const path = url.split('?')[0] || '/';
-      const pathMatch = this.matchPath(route.path, path);
-
-      if (!pathMatch.matched) {
-        res.statusCode = 404;
-        res.body = { error: 'Not Found' };
-        return;
+  group(prefixOrGroup: string | RouteGroup, options?: { middleware?: RouteHandler[] }): RouteGroup {
+    if (typeof prefixOrGroup === 'string') {
+      return new RouteGroupClass(prefixOrGroup, options?.middleware);
+    } else {
+      // Handle RouteGroup object registration
+      const routeGroup = prefixOrGroup;
+      if (routeGroup.routes) {
+        routeGroup.routes.forEach(route => {
+          this.routes.push({
+            ...route,
+            path: `${routeGroup.prefix || ''}${route.path}`,
+            middleware: [...(routeGroup.middleware || []), ...(route.middleware || [])]
+          });
+        });
       }
-
-      // 调用增强的路由处理器
-      await route.handler(req, res, pathMatch.params);
-    };
+      return routeGroup;
+    }
   }
 
-  /**
-   * 标准化路径
-   */
-  private normalizePath(path: string): string {
-    // 确保路径以/开头
-    if (!path.startsWith('/')) {
-      path = '/' + path;
-    }
-
-    // 移除尾部的/（除非是根路径）
-    if (path.length > 1 && path.endsWith('/')) {
-      path = path.slice(0, -1);
-    }
-
-    return path;
-  }
-
-  /**
-   * 连接路径
-   */
-  private joinPaths(prefix: string, path: string): string {
-    const normalizedPrefix = this.normalizePath(prefix);
-    const normalizedPath = this.normalizePath(path);
-
-    if (normalizedPath === '/') {
-      return normalizedPrefix;
-    }
-
-    return normalizedPrefix + normalizedPath;
-  }
-
-  /**
-   * 匹配路径并提取参数
-   */
-  private matchPath(routePath: string, requestPath: string): PathMatch {
-    const routeSegments = routePath.split('/').filter(Boolean);
-    const requestSegments = requestPath.split('/').filter(Boolean);
-
-    // 检查段数是否匹配
-    if (routeSegments.length !== requestSegments.length) {
-      return { matched: false, params: {} };
-    }
-
-    const params: RouteParams = {};
-
-    for (let i = 0; i < routeSegments.length; i++) {
-      const routeSegment = routeSegments[i];
-      const requestSegment = requestSegments[i];
-
-      if (!routeSegment || !requestSegment) {
-        return { matched: false, params: {} };
-      }
-
-      if (routeSegment.startsWith(':')) {
-        // 参数段
-        const paramName = routeSegment.slice(1);
-        params[paramName] = decodeURIComponent(requestSegment);
-      } else if (routeSegment !== requestSegment) {
-        // 静态段不匹配
-        return { matched: false, params: {} };
-      }
-    }
-
-    return { matched: true, params };
-  }
-
-  /**
-   * 获取所有路由信息
-   */
   getRoutes(): RouteDefinition[] {
     return [...this.routes];
   }
+}
 
-  /**
-   * 根据名称查找路由
-   */
-  findRoute(name: string): RouteDefinition | undefined {
-    return this.routes.find(route => route.name === name);
+// RouteGroup接口，支持对象字面量和类实例
+export interface RouteGroup {
+  prefix: string;
+  middleware?: RouteHandler[];
+  routes?: RouteDefinition[];
+}
+
+export class RouteGroupClass implements RouteGroup {
+  public prefix: string;
+  private router: Router;
+  public middleware?: RouteHandler[];
+  public routes?: RouteDefinition[];
+
+  constructor(prefix: string, middleware?: RouteHandler[]) {
+    this.prefix = prefix;
+    this.router = new Router();
+    this.middleware = middleware;
+    this.routes = [];
   }
 
-  /**
-   * 生成路由URL
-   */
-  generateUrl(routeName: string, params: RouteParams = {}): string {
-    const route = this.findRoute(routeName);
-    if (!route) {
-      throw new Error(`Route '${routeName}' not found`);
-    }
-
-    let url = route.path;
-
-    // 替换路径参数
-    for (const [key, value] of Object.entries(params)) {
-      url = url.replace(`:${key}`, encodeURIComponent(value));
-    }
-
-    return url;
+  get(path: string, handler: RouteHandler): void {
+    this.router.get(`${this.prefix}${path}`, handler);
   }
 
-  /**
-   * 打印路由表
-   */
-  printRoutes(): void {
-    console.log('\\n📋 Registered Routes:');
-    console.log('════════════════════════════════════════');
+  post(path: string, handler: RouteHandler): void {
+    this.router.post(`${this.prefix}${path}`, handler);
+  }
 
-    this.routes.forEach(route => {
-      const middlewareInfo = route.middleware ? ` (${route.middleware.length} middleware)` : '';
-      console.log(`${route.method.padEnd(7)} ${route.path}${middlewareInfo}`);
+  put(path: string, handler: RouteHandler): void {
+    this.router.put(`${this.prefix}${path}`, handler);
+  }
 
-      if (route.description) {
-        console.log(`        ${route.description}`);
-      }
-    });
+  delete(path: string, handler: RouteHandler): void {
+    this.router.delete(`${this.prefix}${path}`, handler);
+  }
 
-    console.log('════════════════════════════════════════\\n');
+  patch(path: string, handler: RouteHandler): void {
+    this.router.patch(`${this.prefix}${path}`, handler);
+  }
+
+  options(path: string, handler: RouteHandler): void {
+    this.router.options(`${this.prefix}${path}`, handler);
+  }
+
+  getRoutes(): RouteDefinition[] {
+    return this.router.getRoutes();
   }
 }

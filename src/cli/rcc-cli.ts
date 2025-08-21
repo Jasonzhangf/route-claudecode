@@ -15,7 +15,7 @@ import {
   StatusOptions,
   ConfigOptions,
   ServerStatus,
-} from '../interfaces';
+} from '../interfaces/client/cli-interface';
 import { CommandParser } from './command-parser';
 import { ArgumentValidator } from './argument-validator';
 import { ConfigReader } from '../config/config-reader';

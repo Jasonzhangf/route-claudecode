@@ -202,7 +202,7 @@ main() {
     if [ -z "$file_path" ] || [ -z "$file_content" ]; then
         echo "❌ [合规扫描器] Hook参数错误" >&2
         log_scan_result "参数错误: 缺少文件路径或内容"
-        exit 1
+        exit 2
     fi
     
     # 执行完整合规扫描
@@ -236,7 +236,7 @@ main() {
         echo "⚠️ 必须修复所有违规才能继续开发工作！" >&2
         
         log_scan_result "扫描完成: $file_path - 发现 ${#VIOLATION_MESSAGES[@]} 个违规"
-        exit 1
+        exit 2
     fi
     
     echo "✅ [合规扫描器] 合规检查通过，无违规发现" >&2

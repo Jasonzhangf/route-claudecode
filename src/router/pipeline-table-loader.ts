@@ -12,6 +12,8 @@ import * as os from 'os';
 import { secureLogger } from '../utils/secure-logger';
 import { PipelineTableData, PipelineTableEntry } from '../pipeline/pipeline-manager';
 import { RoutingTable, PipelineRoute } from './pipeline-router';
+import { ROUTING_TABLE_DEFAULTS } from '../constants/router-defaults';
+import { ERROR_MESSAGES } from '../constants/error-messages';
 
 /**
  * 流水线表加载器
@@ -101,15 +103,15 @@ export class PipelineTableLoader {
    */
   private static validatePipelineTableData(data: PipelineTableData): void {
     if (!data.configName) {
-      throw new Error('Invalid pipeline table: missing configName');
+      throw new Error(ERROR_MESSAGES.CONFIG_INVALID);
     }
 
     if (!data.allPipelines || !Array.isArray(data.allPipelines)) {
-      throw new Error('Invalid pipeline table: missing or invalid allPipelines');
+      throw new Error(ERROR_MESSAGES.INVALID_CONFIG_FORMAT);
     }
 
     if (!data.pipelinesGroupedByVirtualModel || typeof data.pipelinesGroupedByVirtualModel !== 'object') {
-      throw new Error('Invalid pipeline table: missing or invalid pipelinesGroupedByVirtualModel');
+      throw new Error(ERROR_MESSAGES.INVALID_CONFIG_FORMAT);
     }
 
     // 验证每个流水线条目
@@ -199,7 +201,7 @@ export class PipelineTableLoader {
    * @param maxAge 最大年龄（毫秒）
    * @returns 是否需要刷新
    */
-  static isPipelineTableStale(configName: string, maxAge: number = 300000): boolean { // 默认5分钟
+  static isPipelineTableStale(configName: string, maxAge: number = ROUTING_TABLE_DEFAULTS.CACHE_TTL): boolean {
     const generatedDir = path.join(os.homedir(), '.route-claudecode', 'config', 'generated');
     const fileName = `${configName}-pipeline-table.json`;
     const filePath = path.join(generatedDir, fileName);

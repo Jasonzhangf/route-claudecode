@@ -13,6 +13,7 @@ export declare enum ModuleType {
     TRANSFORMER = "transformer",
     PROTOCOL = "protocol",
     SERVER_COMPATIBILITY = "server-compatibility",
+    COMPATIBILITY = "compatibility",
     SERVER = "server"
 }
 /**
@@ -22,7 +23,7 @@ export interface ModuleStatus {
     id: string;
     name: string;
     type: ModuleType;
-    status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+    status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
     health: 'healthy' | 'degraded' | 'unhealthy';
     lastActivity?: Date;
     error?: Error;
@@ -37,6 +38,26 @@ export interface ModuleMetrics {
     memoryUsage: number;
     cpuUsage: number;
     lastProcessedAt?: Date;
+}
+/**
+ * 验证结果接口
+ */
+export interface IValidationResult {
+    valid: boolean;
+    errors: string[];
+    warnings?: string[];
+}
+/**
+ * 标准请求接口
+ */
+export interface IStandardRequest {
+    id?: string;
+    model?: string;
+    messages: any[];
+    temperature?: number;
+    max_tokens?: number;
+    stream?: boolean;
+    tools?: any[];
 }
 /**
  * 模块接口定义
@@ -127,6 +148,11 @@ export interface ModuleFactory {
     createModule(type: ModuleType, config: any): Promise<ModuleInterface>;
 }
 /**
+ * 模块工厂接口别名（向后兼容）
+ */
+export interface IModuleFactory extends ModuleFactory {
+}
+/**
  * 流水线规范接口
  */
 export interface PipelineSpec {
@@ -162,5 +188,50 @@ export interface PipelineMetadata {
     author: string;
     created: number;
     tags: string[];
+}
+/**
+ * 模块执行上下文
+ */
+export interface ModuleExecutionContext {
+    requestId: string;
+    moduleId: string;
+    parentContext?: any;
+    metadata?: Record<string, any>;
+    timeout?: number;
+    debug?: boolean;
+}
+/**
+ * 模块执行结果
+ */
+export interface ModuleExecutionResult {
+    success: boolean;
+    data?: any;
+    error?: Error;
+    processingTime: number;
+    metadata?: Record<string, any>;
+}
+/**
+ * 模块事件类型
+ */
+export declare enum ModuleEventType {
+    STARTED = "started",
+    STOPPED = "stopped",
+    ERROR = "error",
+    STATUS_CHANGED = "statusChanged",
+    CONFIG_UPDATED = "configUpdated",
+    PROCESSING_STARTED = "processingStarted",
+    PROCESSING_COMPLETED = "processingCompleted",
+    PROCESSING_FAILED = "processingFailed",
+    HEALTH_CHECK_FAILED = "healthCheckFailed"
+}
+/**
+ * 模块事件数据
+ */
+export interface ModuleEventData {
+    moduleId: string;
+    moduleName: string;
+    eventType: ModuleEventType;
+    timestamp: Date;
+    data?: any;
 }
 //# sourceMappingURL=base-module.d.ts.map

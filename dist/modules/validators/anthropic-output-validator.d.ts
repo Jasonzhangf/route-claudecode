@@ -5,7 +5,7 @@
  *
  * @author Jason Zhang
  */
-import { IModuleInterface, ModuleType, IModuleStatus, IModuleMetrics } from '../../interfaces/core/module-implementation-interface';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 /**
  * Anthropic输出验证模块配置
@@ -19,19 +19,19 @@ export interface AnthropicOutputValidatorConfig {
 /**
  * Anthropic输出验证模块
  */
-export declare class AnthropicOutputValidator extends EventEmitter implements IModuleInterface {
+export declare class AnthropicOutputValidator extends EventEmitter implements ModuleInterface {
     protected readonly id: string;
     protected readonly name: string;
     protected readonly type: ModuleType;
     protected readonly version: string;
     protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
-    protected metrics: IModuleMetrics;
+    protected metrics: ModuleMetrics;
     getId(): string;
     getName(): string;
     getType(): ModuleType;
     getVersion(): string;
-    getStatus(): IModuleStatus;
-    getMetrics(): IModuleMetrics;
+    getStatus(): ModuleStatus;
+    getMetrics(): ModuleMetrics;
     configure(config: any): Promise<void>;
     start(): Promise<void>;
     stop(): Promise<void>;

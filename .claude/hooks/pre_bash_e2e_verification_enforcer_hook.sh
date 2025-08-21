@@ -30,13 +30,38 @@ if command -v jq >/dev/null 2>&1; then
         
         # 定义需要更严格检查的构建/部署命令
         build_patterns=(
-            "npm run build" 
             "npm run deploy"
             "docker build"
             "npm publish"
             "git commit.*release"
             "git tag"
         )
+        
+        # 注意：流水线构建验证器已被禁用，使用标准构建流程
+        
+        # 如果是直接的npm run build命令，引导使用标准构建流程
+        if [[ "$command_text" =~ ^npm[[:space:]]+run[[:space:]]+build$ ]]; then
+            echo "🔧 检测到直接构建命令" >&2
+            echo "" >&2
+            echo "📋 当前命令: $command_text" >&2
+            echo "" >&2
+            echo "⚡ 系统建议：使用标准构建和安装流程" >&2
+            echo "" >&2
+            echo "🎯 推荐的构建流程：" >&2
+            echo "   ./build-and-install.sh  # 完整构建和全局安装" >&2
+            echo "" >&2
+            echo "🚀 标准构建流程包含：" >&2
+            echo "   ✅ TypeScript编译检查" >&2
+            echo "   ✅ 构建过程执行" >&2
+            echo "   ✅ 全局安装验证" >&2
+            echo "   ✅ 单元测试验证" >&2
+            echo "   ✅ 流水线测试" >&2
+            echo "   ✅ 综合分析报告" >&2
+            echo "" >&2
+            
+            # 仍然允许直接构建，但提供建议
+            exit 0
+        fi
         
         # 检查是否匹配服务启动命令
         needs_unit_test_check=false

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">7.22% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/180</span>
+                <span class='fraction'>13/180</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">2.98% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/67</span>
+                <span class='fraction'>2/67</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">3.03% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/33</span>
+                <span class='fraction'>1/33</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">7.6% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/171</span>
+                <span class='fraction'>13/171</span>
             </div>
         
             
@@ -799,17 +799,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -870,25 +870,25 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-yes">34x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1527,17 +1527,17 @@
  * @author Jason Zhang
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import { EventEmitter } from 'events';</span>
-<span class="cstat-no" title="statement not covered" >import * as fs from 'fs';</span>
-<span class="cstat-no" title="statement not covered" >import * as path from 'path';</span>
-<span class="cstat-no" title="statement not covered" >import { promisify } from 'util';</span>
+import { EventEmitter } from 'events';
+import * as fs from 'fs';
+import * as path from 'path';
+import { promisify } from 'util';
 import { DebugRecord, ModuleRecord, ReplayResult, ReplayDifference } from './types/debug-types';
 import { DebugRecorder } from './debug-recorder';
 import { Pipeline } from '../pipeline/types';
-<span class="cstat-no" title="statement not covered" >import { PipelineManager } from '../pipeline/pipeline-manager';</span>
+import { PipelineManager } from '../pipeline/pipeline-manager';
 &nbsp;
-const writeFile = <span class="cstat-no" title="statement not covered" >promisify(fs.writeFile);</span>
-const mkdir = <span class="cstat-no" title="statement not covered" >promisify(fs.mkdir);</span>
+const writeFile = promisify(fs.writeFile);
+const mkdir = promisify(fs.mkdir);
 &nbsp;
 /**
  * 回放系统接口
@@ -1598,7 +1598,7 @@ export interface PerformanceReport {
 /**
  * 回放错误
  */
-<span class="cstat-no" title="statement not covered" >export class R</span>eplayError extends Error {
+export class ReplayError extends Error {
 <span class="fstat-no" title="function not covered" >  constructor(r</span>equestId: string, operation: string, message: string) {
 <span class="cstat-no" title="statement not covered" >    super(`Replay ${operation} failed for ${requestId}: ${message}`);</span>
 <span class="cstat-no" title="statement not covered" >    this.name = 'ReplayError';</span>
@@ -1608,15 +1608,15 @@ export interface PerformanceReport {
 /**
  * 回放系统实现
  */
-<span class="cstat-no" title="statement not covered" >export class R</span>eplaySystemImpl extends EventEmitter implements ReplaySystem {
+export class ReplaySystemImpl extends EventEmitter implements ReplaySystem {
   private recorder: DebugRecorder;
   private pipelineManager: PipelineManager;
-  private <span class="cstat-no" title="statement not covered" >replayCache: Map&lt;string, ReplayResult&gt; = new Map();</span>
+  private replayCache: Map&lt;string, ReplayResult&gt; = new Map();
 &nbsp;
-<span class="fstat-no" title="function not covered" >  constructor(r</span>ecorder: DebugRecorder, pipelineManager?: PipelineManager) {
-<span class="cstat-no" title="statement not covered" >    super();</span>
-<span class="cstat-no" title="statement not covered" >    this.recorder = recorder;</span>
-<span class="cstat-no" title="statement not covered" >    this.pipelineManager = pipelineManager || new PipelineManager({} as any);</span>
+  constructor(recorder: DebugRecorder, pipelineManager?: PipelineManager) {
+    super();
+    this.recorder = recorder;
+    this.pipelineManager = pipelineManager || new PipelineManager({} as any);
   }
 &nbsp;
   /**
@@ -2254,7 +2254,7 @@ describe('Integration Replay Test - ${record.requestId}', () =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-19T15:57:58.380Z
+                at 2025-08-21T03:37:37.074Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

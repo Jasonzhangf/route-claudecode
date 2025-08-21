@@ -7,25 +7,40 @@
  * @author Jason Zhang
  */
 
-// 基础模块接口
-export * from '../module/base-module';
+// 基础模块接口（只导出类型，避免重复）
+export type {
+  ModuleInterface,
+  ModuleConfig,
+  ModuleMetrics,
+  ModuleStatus,
+  ModuleType,
+  ModuleFactory,
+  DataInterface,
+  PipelineSpec,
+  PipelineConfiguration,
+  PipelineMetadata
+} from '../module/base-module';
 
-// 核心模块接口已移至base-module
-// export { 
-//   ModuleEventType, 
-//   ModuleEventData,
-//   ModuleExecutionContext,
-//   ModuleExecutionResult
-// } from './module-interface';
-
-// 模块实现接口 - 已合并到base-module
-// export * from './module-implementation-interface';
-
-// 客户端模块接口
-export * from './client-interface';
+// CLI模块接口
+export type {
+  CLIModuleInterface,
+  CLIModuleConfig,
+  CLIModuleMetrics,
+  ParsedCommand,
+  ExecutionResult,
+  CLIHandler
+} from './cli-interface';
 
 // 路由器模块接口
-export * from './router-interface';
+export type {
+  RouterModuleInterface,
+  RouterModuleConfig,
+  RouterModuleMetrics,
+  RCCRequest,
+  RCCResponse,
+  PipelineWorker,
+  RoutingTable
+} from './router-interface';
 
 // Debug系统接口
 export * from './debug-interface';

@@ -8,7 +8,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicInputValidator = void 0;
-const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const base_module_1 = require("../../interfaces/module/base-module");
 const events_1 = require("events");
 /**
  * Anthropic输入验证模块
@@ -18,7 +18,7 @@ class AnthropicInputValidator extends events_1.EventEmitter {
         super();
         this.id = 'anthropic-input-validator';
         this.name = 'Anthropic Input Validator';
-        this.type = module_implementation_interface_1.ModuleType.VALIDATOR;
+        this.type = base_module_1.ModuleType.VALIDATOR;
         this.version = '1.0.0';
         this.status = 'stopped';
         this.config = {
@@ -44,7 +44,7 @@ class AnthropicInputValidator extends events_1.EventEmitter {
             ...config,
         };
     }
-    // 实现IModuleInterface接口方法
+    // 实现ModuleInterface接口方法
     getId() {
         return this.id;
     }

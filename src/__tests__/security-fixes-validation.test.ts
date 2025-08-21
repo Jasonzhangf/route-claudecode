@@ -12,7 +12,14 @@ import * as path from 'path';
 import { SecureConfigManager } from '../utils/config-encryption';
 import { secureLogger, LogLevel } from '../utils/secure-logger';
 import { ConfigReader } from '../config/config-reader';
-import { ProviderManagerConfig } from '../modules/providers/provider-manager';
+// 临时定义用于测试的配置接口
+interface ProviderManagerConfig {
+  routingStrategy: string;
+  healthCheckInterval: number;
+  maxRetries: number;
+  debug: boolean;
+  strictErrorReporting: boolean;
+}
 
 describe('Security Fixes Validation', () => {
   describe('CRITICAL Level Fixes', () => {

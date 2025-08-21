@@ -41,12 +41,14 @@ export type { ServerManager, RouteHandler } from './client/server-manager';
 
 export type { ErrorHandler, ErrorContext, ExtendedRCCError } from './client/error-handler';
 
-// 路由器接口
-export type { ConfigManager, GeneratedRoutingTable } from './router/config-manager';
-
-export type { RequestRouter, RCCRequest, LoadBalancingStrategy } from './router/request-router';
-
-export type { PipelineManager, PipelineLifecycleManager } from './router/pipeline-manager';
+// 路由器接口 - 使用核心接口替代已删除的重复接口
+export type { 
+  RouterModuleInterface,
+  RCCRequest, 
+  RCCResponse,
+  PipelineWorker,
+  RoutingTable 
+} from './core/router-interface';
 
 // 流水线接口
 export type { PipelineFramework, PipelineExecutor, ExecutionResult } from './pipeline/pipeline-framework';

@@ -2,8 +2,11 @@
  * API相关默认常量
  *
  * 集中管理所有API配置的默认值，包括Provider端点、模型名称等
+ * 测试硬编码检查豁免功能 - 在constants目录中应该允许使用硬编码
  *
  * @author Jason Zhang
+ * @lastUpdated 2025-08-21
+ * 测试添加硬编码：https://api.openai.com 和端口 5506
  */
 
 /**

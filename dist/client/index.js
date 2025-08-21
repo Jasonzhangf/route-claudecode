@@ -21,23 +21,16 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HttpError = exports.SessionError = exports.ClientModule = exports.CLIENT_MODULE_VERSION = exports.ConfigManager = exports.ServerController = exports.CLIError = exports.CommandExecutor = exports.CLI = void 0;
+exports.CLIError = exports.HttpError = exports.SessionError = exports.ClientModule = exports.CLIENT_MODULE_VERSION = void 0;
 exports.createClientModule = createClientModule;
 exports.createClient = createClient;
-// 导出CLI功能 - 选择性导出以避免冲突
-var cli_1 = require("./cli");
-Object.defineProperty(exports, "CLI", { enumerable: true, get: function () { return cli_1.CLI; } });
-Object.defineProperty(exports, "CommandExecutor", { enumerable: true, get: function () { return cli_1.CommandExecutor; } });
-Object.defineProperty(exports, "CLIError", { enumerable: true, get: function () { return cli_1.CLIError; } });
-Object.defineProperty(exports, "ServerController", { enumerable: true, get: function () { return cli_1.ServerController; } });
-Object.defineProperty(exports, "ConfigManager", { enumerable: true, get: function () { return cli_1.ConfigManager; } });
+// 导出客户端功能
 __exportStar(require("./session"), exports);
 __exportStar(require("./http"), exports);
 __exportStar(require("./client-manager"), exports);
 // 模块版本信息
 exports.CLIENT_MODULE_VERSION = '4.0.0-alpha.2';
 // 导入核心类
-const cli_2 = require("./cli");
 const session_1 = require("./session");
 Object.defineProperty(exports, "SessionError", { enumerable: true, get: function () { return session_1.SessionError; } });
 const http_1 = require("./http");
@@ -58,12 +51,6 @@ class ClientModule {
         this.httpClient = new http_1.HttpClient(this.sessionManager, this.errorHandler);
         this.proxy = new client_manager_1.ClientProxy();
         this.envExporter = new client_manager_1.EnvironmentExporter();
-        // 创建服务器控制器和配置管理器
-        const serverController = new cli_2.ServerController(this.errorHandler);
-        const configManager = new cli_2.ConfigManager(this.errorHandler);
-        // 创建命令执行器和CLI
-        const commandExecutor = new cli_2.CommandExecutor(serverController, configManager, this.errorHandler);
-        this.cli = new cli_2.CLI(commandExecutor, this.errorHandler);
     }
     /**
      * 初始化模块
@@ -129,7 +116,8 @@ class ClientModule {
                 argv.push(`--${key}`, String(value));
             }
         }
-        await this.cli.run(argv);
+        // CLI功能已迁移到主CLI模块，这里暂时简化实现
+        console.log('CLI command execution:', argv);
     }
     /**
      * 创建新会话
@@ -254,4 +242,7 @@ async function createClient(config = {}) {
     await client.initialize();
     return client;
 }
+// 导出CLI错误类
+var error_1 = require("../types/error");
+Object.defineProperty(exports, "CLIError", { enumerable: true, get: function () { return error_1.CLIError; } });
 //# sourceMappingURL=index.js.map

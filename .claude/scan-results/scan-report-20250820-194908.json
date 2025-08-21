@@ -1,0 +1,60 @@
+{
+  "timestamp": "2025-08-20 19:49:08",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh",
+  "violations_found": true,
+  "violation_count": 26,
+  "violations": [
+    "UNREAL-IMPL: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现虚假实现: spyOn"
+,
+    "UNREAL-IMPL: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现虚假实现: return.*test"
+,
+    "UNREAL-IMPL: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现虚假实现: 虚假"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: fallback"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: backup"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: secondary"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: emergency"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: 兜底"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: 降级"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: 备用"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: CrossProviderFallback"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: ConditionalFallback"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: AdaptiveFallback"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: FallbackStrategy"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: FallbackResolver"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: FallbackManager"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: BackwardCompatibility"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: DefaultsForBackward"
+,
+    "FALLBACK-VIOLATION: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现Fallback机制: loadDefaults.*Compatibility"
+,
+    "FALLBACK-COMMENT: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现注释中的Fallback描述"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现硬编码: claude-3"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现硬编码: gpt-4"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现硬编码: 3456"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现硬编码: 5506"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现硬编码: 8080"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/post_tool_use_p0_redline_enforcer_json.sh 中发现硬编码: 3000"
+  ],
+  "scan_status": "completed"
+}

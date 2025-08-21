@@ -7,6 +7,38 @@
  */
 
 /**
+ * CLI配置接口 - 从cli-config-manager.ts迁移
+ */
+export interface CLIConfig {
+  configVersion?: string;
+  version?: string;
+  server?: {
+    port?: number;
+    host?: string;
+  };
+  routing?: any; // 简化的路由配置
+  standardProviders?: Record<string, any>;
+  serverCompatibilityProviders?: Record<string, any>;
+}
+
+/**
+ * 配置加载结果 - 从cli-config-manager.ts迁移
+ */
+export interface ConfigLoadResult {
+  config: CLIConfig;
+  configPath: string;
+  source: 'specified' | 'auto-detected';
+}
+
+/**
+ * 配置搜索位置 - 从cli-config-manager.ts迁移
+ */
+export interface ConfigSearchLocation {
+  path: string;
+  desc: string;
+}
+
+/**
  * v4配置结构
  */
 export interface RCCv4Config {

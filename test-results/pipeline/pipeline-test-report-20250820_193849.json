@@ -1,0 +1,25 @@
+{
+  "test_session": {
+  "id": "D8A16C00-98F9-4DD8-B059-05AD6403BBB8",
+  "timestamp": "2025-08-20T11:38:49Z",
+  "module": "pipeline",
+  "data_source": "live",
+  "mode": "e2e",
+  "config": {
+    "port": 5506,
+    "timeout": 60,
+    "rcc_config": ""
+  }
+},
+  "results": {
+    "timestamp": "2025-08-20T11:38:49Z",
+    "status": "completed",
+    "module_tested": "pipeline",
+    "data_source": "live",
+    "mode": "e2e"
+  },
+  "logs": {
+    "log_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/logs/pipeline-tests/pipeline-test-20250820.log",
+    "results_dir": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/test-results/pipeline"
+  }
+}

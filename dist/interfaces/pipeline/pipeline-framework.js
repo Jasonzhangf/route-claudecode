@@ -7,4 +7,10 @@
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.ModuleType = void 0;
+/**
+ * 导入base-module中的类型定义
+ */
+const base_module_1 = require("../module/base-module");
+Object.defineProperty(exports, "ModuleType", { enumerable: true, get: function () { return base_module_1.ModuleType; } });
 //# sourceMappingURL=pipeline-framework.js.map

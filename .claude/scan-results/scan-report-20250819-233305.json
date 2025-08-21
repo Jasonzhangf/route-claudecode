@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-08-19 23:33:05",
+  "scanned_file": "test_post_compliance.ts",
+  "violations_found": true,
+  "violation_count": 2,
+  "violations": [
+    "FALLBACK-VIOLATION: 在 test_post_compliance.ts 中发现Fallback机制: fallback"
+,
+    "FALLBACK-COMMENT: 在 test_post_compliance.ts 中发现注释中的Fallback描述"
+  ],
+  "scan_status": "completed"
+}

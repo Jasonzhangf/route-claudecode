@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-20 13:51:58",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/routing/core-router.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

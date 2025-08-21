@@ -1,29 +1,22 @@
 "use strict";
 /**
- * CLI模块入口文件
+ * RCC v4.0 CLI模块导出
  *
- * @author Jason Zhang
+ * 基于新的标准化接口架构:
+ * - CLIModuleInterface: 标准CLI接口
+ * - CommandParser: 命令解析器
+ * - ArgumentValidator: 参数验证器
+ * - CommandExecutor: 命令执行器
+ * - 统一的配置和错误处理
+ *
+ * @version 4.0.0-beta.1
+ * @author RCC v4.0 Team
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CLI_MODULE_VERSION = void 0;
-__exportStar(require("./rcc-cli"), exports);
-__exportStar(require("./command-parser"), exports);
-__exportStar(require("./argument-validator"), exports);
-__exportStar(require("./config-loader"), exports);
+exports.CLI_MODULE_VERSION = exports.RCCCli = void 0;
+// RCC v4.0 CLI核心组件
+var rcc_cli_1 = require("./rcc-cli");
+Object.defineProperty(exports, "RCCCli", { enumerable: true, get: function () { return rcc_cli_1.RCCCli; } });
 // 模块版本信息
-exports.CLI_MODULE_VERSION = '4.0.0-alpha.2';
+exports.CLI_MODULE_VERSION = '4.0.0-beta.1';
 //# sourceMappingURL=index.js.map

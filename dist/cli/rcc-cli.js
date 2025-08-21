@@ -10,7 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RCCCli = void 0;
 const command_parser_1 = require("./command-parser");
 const argument_validator_1 = require("./argument-validator");
-const config_loader_1 = require("./config-loader");
+const config_reader_1 = require("../config/config-reader");
 const pipeline_lifecycle_manager_1 = require("../pipeline/pipeline-lifecycle-manager");
 const secure_logger_1 = require("../utils/secure-logger");
 /**
@@ -20,7 +20,7 @@ class RCCCli {
     constructor(options = {}) {
         this.parser = new command_parser_1.CommandParser();
         this.validator = new argument_validator_1.ArgumentValidator();
-        this.configLoader = new config_loader_1.ConfigLoader();
+        this.configReader = new config_reader_1.ConfigReader();
         this.options = {
             exitOnError: true,
             suppressOutput: false,
@@ -51,11 +51,7 @@ class RCCCli {
                 }
             }
             // 3. 加载配置
-            const config = await this.configLoader.loadConfig(command, {
-                configPath: this.options.configPath,
-                envPrefix: this.options.envPrefix,
-                validateConfig: false, // 暂时禁用验证以避免测试问题
-            });
+            const config = config_reader_1.ConfigReader.loadConfig(this.options.configPath || 'config/default.json', 'config/system-config.json');
             // 4. 合并配置到命令选项
             const mergedCommand = {
                 ...command,

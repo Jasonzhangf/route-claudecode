@@ -201,7 +201,7 @@ main() {
     
     if [ -z "$file_path" ] || [ -z "$file_content" ]; then
         echo "❌ [P0-红线强制执行] Hook参数错误"
-        exit 1
+        exit 2
     fi
     
     # 执行P0红线检查
@@ -228,7 +228,7 @@ main() {
         echo "  8. 使用TypeScript替代JavaScript"
         echo ""
         echo "⚠️  P0级规则违反将导致开发工作被立即拒绝！"
-        exit 1
+        exit 2
     fi
     
     echo "✅ [P0-红线强制执行] 所有P0级检查通过"

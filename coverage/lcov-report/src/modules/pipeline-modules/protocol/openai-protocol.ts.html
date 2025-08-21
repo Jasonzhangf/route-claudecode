@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">12.06% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/116</span>
+                <span class='fraction'>14/116</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">22.72% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/22</span>
+                <span class='fraction'>5/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">12.28% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/114</span>
+                <span class='fraction'>14/114</span>
             </div>
         
             
@@ -645,8 +645,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -775,16 +775,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-yes">13x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1150,15 +1150,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1166,7 +1166,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1218,8 +1218,8 @@
  * @author Jason Zhang
  */
 &nbsp;
-<span class="cstat-no" title="statement not covered" >import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';</span>
-<span class="cstat-no" title="statement not covered" >import { EventEmitter } from 'events';</span>
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { EventEmitter } from 'events';
 &nbsp;
 /**
  * 流式请求格式
@@ -1348,16 +1348,16 @@ export interface StreamResponse {
 /**
  * OpenAI协议模块
  */
-<span class="cstat-no" title="statement not covered" >export class O</span>penAIProtocolModule extends EventEmitter implements ModuleInterface {
-  private readonly <span class="cstat-no" title="statement not covered" >id: string = 'openai-protocol-module';</span>
-  private readonly <span class="cstat-no" title="statement not covered" >name: string = 'OpenAI Protocol Module';</span>
-  private readonly <span class="cstat-no" title="statement not covered" >type: any = 'protocol';</span>
-  private readonly <span class="cstat-no" title="statement not covered" >version: string = '1.0.0';</span>
-  private <span class="cstat-no" title="statement not covered" >status: ModuleStatus['health'] = 'healthy';</span>
+export class OpenAIProtocolModule extends EventEmitter implements ModuleInterface {
+  private readonly id: string = 'openai-protocol-module';
+  private readonly name: string = 'OpenAI Protocol Module';
+  private readonly type: any = 'protocol';
+  private readonly version: string = '1.0.0';
+  private status: ModuleStatus['health'] = 'healthy';
 &nbsp;
-<span class="fstat-no" title="function not covered" >  constructor() {</span>
-<span class="cstat-no" title="statement not covered" >    super();</span>
-<span class="cstat-no" title="statement not covered" >    console.log(`🌐 初始化OpenAI协议模块`);</span>
+  constructor() {
+    super();
+    console.log(`🌐 初始化OpenAI协议模块`);
   }
 &nbsp;
   // 移除重复的ModuleInterface实现
@@ -1722,24 +1722,24 @@ export interface StreamResponse {
   }
 &nbsp;
   // ModuleInterface 实现
-<span class="fstat-no" title="function not covered" >  getId(</span>): string {
-<span class="cstat-no" title="statement not covered" >    return this.id;</span>
+  getId(): string {
+    return this.id;
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  getName(</span>): string {
-<span class="cstat-no" title="statement not covered" >    return this.name;</span>
+  getName(): string {
+    return this.name;
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  getType(</span>): ModuleType {
-<span class="cstat-no" title="statement not covered" >    return ModuleType.PROTOCOL;</span>
+  getType(): ModuleType {
+    return ModuleType.PROTOCOL;
   }
 &nbsp;
 <span class="fstat-no" title="function not covered" >  getVersion(</span>): string {
 <span class="cstat-no" title="statement not covered" >    return this.version;</span>
   }
 &nbsp;
-<span class="fstat-no" title="function not covered" >  getStatus(</span>): ModuleStatus {
-<span class="cstat-no" title="statement not covered" >    return {</span>
+  getStatus(): ModuleStatus {
+    return {
       id: this.id,
       name: this.name,
       type: ModuleType.PROTOCOL,
@@ -1789,7 +1789,7 @@ export interface StreamResponse {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-19T15:57:58.380Z
+                at 2025-08-21T03:37:37.074Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

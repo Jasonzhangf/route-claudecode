@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/394</span>
+                <span class='fraction'>0/400</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/241</span>
+                <span class='fraction'>0/246</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/68</span>
+                <span class='fraction'>0/70</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/385</span>
+                <span class='fraction'>0/391</span>
             </div>
         
             
@@ -1424,7 +1424,21 @@
 <a name='L1359'></a><a href='#L1359'>1359</a>
 <a name='L1360'></a><a href='#L1360'>1360</a>
 <a name='L1361'></a><a href='#L1361'>1361</a>
-<a name='L1362'></a><a href='#L1362'>1362</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1362'></a><a href='#L1362'>1362</a>
+<a name='L1363'></a><a href='#L1363'>1363</a>
+<a name='L1364'></a><a href='#L1364'>1364</a>
+<a name='L1365'></a><a href='#L1365'>1365</a>
+<a name='L1366'></a><a href='#L1366'>1366</a>
+<a name='L1367'></a><a href='#L1367'>1367</a>
+<a name='L1368'></a><a href='#L1368'>1368</a>
+<a name='L1369'></a><a href='#L1369'>1369</a>
+<a name='L1370'></a><a href='#L1370'>1370</a>
+<a name='L1371'></a><a href='#L1371'>1371</a>
+<a name='L1372'></a><a href='#L1372'>1372</a>
+<a name='L1373'></a><a href='#L1373'>1373</a>
+<a name='L1374'></a><a href='#L1374'>1374</a>
+<a name='L1375'></a><a href='#L1375'>1375</a>
+<a name='L1376'></a><a href='#L1376'>1376</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2356,9 +2370,23 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -3699,27 +3727,41 @@ export interface PipelineServerConfig extends ServerConfig {
 <span class="cstat-no" title="statement not covered" >          console.log(`🔍 [Router] Layer ${index}: ${layer.layer}, moduleId: ${layer.moduleId}, config:`, layer.config);</span>
         });
 &nbsp;
-        // 查找server-compatibility层的providerId
-        const serverCompatLayer = <span class="cstat-no" title="statement not covered" >routeConfig.pipeline.layers.find(</span>
-<span class="fstat-no" title="function not covered" >          (l</span>ayer: any) =&gt; <span class="cstat-no" title="statement not covered" >layer.layer === 'server-compatibility'</span>
+        // 查找protocol层的providerId - 这里包含了真正的provider配置
+        const protocolLayer = <span class="cstat-no" title="statement not covered" >routeConfig.pipeline.layers.find(</span>
+<span class="fstat-no" title="function not covered" >          (l</span>ayer: any) =&gt; <span class="cstat-no" title="statement not covered" >layer.layer === 'protocol'</span>
         );
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        console.log(`🔍 [Router] Server-compatibility层查找结果:`, {</span>
-          found: !!serverCompatLayer,
-          layer: serverCompatLayer?.layer,
-          moduleId: serverCompatLayer?.moduleId,
-          config: serverCompatLayer?.config,
-          hasProviderId: !!serverCompatLayer?.config?.providerId,
+<span class="cstat-no" title="statement not covered" >        console.log(`🔍 [Router] Protocol层查找结果:`, {</span>
+          found: !!protocolLayer,
+          layer: protocolLayer?.layer,
+          moduleId: protocolLayer?.moduleId,
+          config: protocolLayer?.config,
+          hasProviderId: !!protocolLayer?.config?.providerId,
         });
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        if (serverCompatLayer &amp;&amp; serverCompatLayer.config &amp;&amp; serverCompatLayer.config.providerId) {</span>
-<span class="cstat-no" title="statement not covered" >          providerId = serverCompatLayer.config.providerId;</span>
-<span class="cstat-no" title="statement not covered" >          console.log(`✅ [Router] 找到providerId: ${providerId}`);</span>
+<span class="cstat-no" title="statement not covered" >        if (protocolLayer &amp;&amp; protocolLayer.config &amp;&amp; protocolLayer.config.providerId) {</span>
+<span class="cstat-no" title="statement not covered" >          providerId = protocolLayer.config.providerId;</span>
+<span class="cstat-no" title="statement not covered" >          console.log(`✅ [Router] 从protocol层找到providerId: ${providerId}`);</span>
         } else {
-          // 🔧 ZERO FALLBACK POLICY: 直接使用selectedRoute作为providerId
-          // 因为根据demo1逻辑，selectedRoute就是provider名称
-<span class="cstat-no" title="statement not covered" >          providerId = selectedRoute;</span>
-<span class="cstat-no" title="statement not covered" >          console.log(`✅ [Router] 使用selectedRoute作为providerId: ${providerId}`);</span>
+          // 如果protocol层没有providerId，尝试从server-compatibility层获取
+          const serverCompatLayer = <span class="cstat-no" title="statement not covered" >routeConfig.pipeline.layers.find(</span>
+<span class="fstat-no" title="function not covered" >            (l</span>ayer: any) =&gt; <span class="cstat-no" title="statement not covered" >layer.layer === 'server-compatibility'</span>
+          );
+&nbsp;
+<span class="cstat-no" title="statement not covered" >          if (serverCompatLayer &amp;&amp; serverCompatLayer.config &amp;&amp; serverCompatLayer.config.providerId) {</span>
+<span class="cstat-no" title="statement not covered" >            providerId = serverCompatLayer.config.providerId;</span>
+<span class="cstat-no" title="statement not covered" >            console.log(`✅ [Router] 从server-compatibility层找到providerId: ${providerId}`);</span>
+          } else {
+            // 🔧 ZERO FALLBACK POLICY: 如果都找不到，这是配置错误
+<span class="cstat-no" title="statement not covered" >            console.error(`❌ [Router] 无法从pipeline配置中找到providerId:`, {</span>
+              selectedRoute,
+              protocolLayer: protocolLayer?.config,
+              serverCompatLayer: serverCompatLayer?.config,
+              allLayers: routeConfig.pipeline.layers.map(<span class="fstat-no" title="function not covered" >(l</span>: any) =&gt; (<span class="cstat-no" title="statement not covered" >{ layer: l.layer, moduleId: l.moduleId })</span>)
+            });
+<span class="cstat-no" title="statement not covered" >            throw new Error(`Pipeline配置错误：无法从route '${selectedRoute}' 的pipeline层级中找到providerId`);</span>
+          }
         }
       }
     }
@@ -3896,10 +3938,10 @@ export interface PipelineServerConfig extends ServerConfig {
 <span class="cstat-no" title="statement not covered" >      if (finalResponse) {</span>
 <span class="cstat-no" title="statement not covered" >        try {</span>
           // 创建临时transformer实例进行响应转换
-          const { AnthropicToOpenAITransformer } = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >await import(</span></span>
-            '../modules/transformers/anthropic-to-openai-transformer'
+          const { SecureAnthropicToOpenAITransformer } = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >await import(</span></span>
+            '../modules/transformers/secure-anthropic-openai-transformer'
           );
-          const responseTransformer = <span class="cstat-no" title="statement not covered" >new AnthropicToOpenAITransformer();</span>
+          const responseTransformer = <span class="cstat-no" title="statement not covered" >new SecureAnthropicToOpenAITransformer();</span>
 &nbsp;
           // 调用响应转换
 <span class="cstat-no" title="statement not covered" >          transformerResponseOutput = await responseTransformer.process(finalResponse);</span>
@@ -4153,7 +4195,7 @@ export interface PipelineServerConfig extends ServerConfig {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-19T15:57:58.380Z
+                at 2025-08-21T03:37:37.074Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

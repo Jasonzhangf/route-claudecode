@@ -12,7 +12,7 @@ import {
   OpenAIStandardResponse,
   DebugRecorder,
 } from '../enhanced-compatibility';
-// import { ModuleType } from '../../../interfaces/module/base-module';
+import { ModuleType } from '../../../../interfaces/module/base-module';
 
 describe('EnhancedServerCompatibilityModule', () => {
   let module: EnhancedServerCompatibilityModule;

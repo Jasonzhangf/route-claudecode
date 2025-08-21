@@ -9,7 +9,7 @@
  * @author Jason Zhang
  */
 
-import { UnifiedCLI } from './cli/unified-cli';
+import { RCCCli } from './cli/rcc-cli';
 import {
   ParsedCommand,
   CLIHandler,
@@ -86,11 +86,11 @@ class ArgumentParser {
  * CLI处理器实现
  */
 class RCCv4CLIHandler implements CLIHandler {
-  private unifiedCLI: UnifiedCLI;
+  private rccCLI: RCCCli;
   private argumentParser: ArgumentParser;
 
   constructor() {
-    this.unifiedCLI = new UnifiedCLI();
+    this.rccCLI = new RCCCli();
     this.argumentParser = new ArgumentParser();
   }
 
@@ -183,7 +183,7 @@ class RCCv4CLIHandler implements CLIHandler {
     process.stdout.write(`🔍 [DEBUG] start选项: ${JSON.stringify(startOptions)}\n`);
     process.stdout.write('🔍 [DEBUG] 调用unifiedCLI.start()\n');
     
-    await this.unifiedCLI.start(startOptions);
+    await this.rccCLI.start(startOptions);
     process.stdout.write('🔍 [DEBUG] unifiedCLI.start()完成\n');
   }
 
@@ -196,7 +196,7 @@ class RCCv4CLIHandler implements CLIHandler {
       force: options.force,
     };
 
-    await this.unifiedCLI.stop(stopOptions);
+    await this.rccCLI.stop(stopOptions);
   }
 
   /**
@@ -208,7 +208,7 @@ class RCCv4CLIHandler implements CLIHandler {
       detailed: options.detailed,
     };
 
-    const status = await this.unifiedCLI.status(statusOptions);
+    const status = await this.rccCLI.status(statusOptions);
 
     // 输出状态信息
     process.stdout.write('RCC v4.0 Server Status:\n');
@@ -239,14 +239,14 @@ class RCCv4CLIHandler implements CLIHandler {
       export: options.export,
     };
 
-    await this.unifiedCLI.code(codeOptions);
+    await this.rccCLI.code(codeOptions);
   }
 
   /**
    * 处理config命令
    */
   private async handleConfig(options: Record<string, any>): Promise<void> {
-    await this.unifiedCLI.config(options);
+    await this.rccCLI.config(options);
   }
 
   /**

@@ -7,7 +7,7 @@
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ModuleType = void 0;
+exports.ModuleEventType = exports.ModuleType = void 0;
 /**
  * 模块类型枚举
  */
@@ -17,6 +17,22 @@ var ModuleType;
     ModuleType["TRANSFORMER"] = "transformer";
     ModuleType["PROTOCOL"] = "protocol";
     ModuleType["SERVER_COMPATIBILITY"] = "server-compatibility";
+    ModuleType["COMPATIBILITY"] = "compatibility";
     ModuleType["SERVER"] = "server";
 })(ModuleType || (exports.ModuleType = ModuleType = {}));
+/**
+ * 模块事件类型
+ */
+var ModuleEventType;
+(function (ModuleEventType) {
+    ModuleEventType["STARTED"] = "started";
+    ModuleEventType["STOPPED"] = "stopped";
+    ModuleEventType["ERROR"] = "error";
+    ModuleEventType["STATUS_CHANGED"] = "statusChanged";
+    ModuleEventType["CONFIG_UPDATED"] = "configUpdated";
+    ModuleEventType["PROCESSING_STARTED"] = "processingStarted";
+    ModuleEventType["PROCESSING_COMPLETED"] = "processingCompleted";
+    ModuleEventType["PROCESSING_FAILED"] = "processingFailed";
+    ModuleEventType["HEALTH_CHECK_FAILED"] = "healthCheckFailed";
+})(ModuleEventType || (exports.ModuleEventType = ModuleEventType = {}));
 //# sourceMappingURL=base-module.js.map

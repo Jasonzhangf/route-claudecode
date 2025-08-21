@@ -1,26 +1,32 @@
 /**
- * 常量模块统一导出
- *
- * 提供所有系统常量的统一访问点
- *
- * @author Jason Zhang
+ * Constants统一导出文件
+ * 
+ * 统一导出所有常量模块，方便其他模块导入
+ * 
+ * @module Constants
+ * @version 1.0.0
+ * @lastUpdated 2024-08-21
  */
 
-// 服务器相关常量
-export * from './server-defaults';
-
-// 超时相关常量
-export * from './timeout-defaults';
-
-// API相关常量
+// 导出所有常量模块
 export * from './api-defaults';
+export * from './server-defaults';
+export * from './timeout-defaults';
+export * from './error-messages';
+export * from './model-mappings';
+export * from './router-defaults';
+export * from './cli-defaults';
+export * from './refactoring-constants';
 
-/**
- * 所有常量的命名空间导出
- */
-export { SERVER_DEFAULTS } from './server-defaults';
-export { TIMEOUT_DEFAULTS } from './timeout-defaults';
+// 重新导出主要常量对象以便快速访问
 export { API_DEFAULTS } from './api-defaults';
+export { SERVER_DEFAULTS } from './server-defaults';
+export { TIMEOUT_DEFAULTS, getProviderRequestTimeout, getHttpRequestTimeout } from './timeout-defaults';
+export { ERROR_MESSAGES } from './error-messages';
+export { SUPPORTED_MODELS, VIRTUAL_MODELS, MODEL_CAPABILITIES } from './model-mappings';
+export { ROUTER_DEFAULTS, LOAD_BALANCER_DEFAULTS, PIPELINE_DEFAULTS } from './router-defaults';
+export { CLI_DEFAULTS, CLI_COMMANDS, CLI_MESSAGES } from './cli-defaults';
+export { REFACTORING_GOALS, REFACTORING_PRINCIPLES, REFACTORING_PHASES } from './refactoring-constants';
 
 // 导入常量用于内部使用
 import { SERVER_DEFAULTS } from './server-defaults';
@@ -78,9 +84,9 @@ export const CONSTANTS_VALIDATION = {
         gemini: process.env.GEMINI_BASE_URL || API_DEFAULTS.PROVIDERS.GEMINI.BASE_URL,
       },
       timeouts: {
-        httpRequest: process.env.RCC_HTTP_REQUEST_TIMEOUT || TIMEOUT_DEFAULTS.HTTP.REQUEST_TIMEOUT,
-        connection: process.env.RCC_CONNECTION_TIMEOUT || TIMEOUT_DEFAULTS.HTTP.CONNECTION_TIMEOUT,
-        healthCheck: process.env.RCC_HEALTH_CHECK_INTERVAL || TIMEOUT_DEFAULTS.HEALTH_CHECK.INTERVAL,
+        httpRequest: process.env.RCC_HTTP_REQUEST_TIMEOUT || SERVER_DEFAULTS.HTTP.REQUEST_TIMEOUT,
+        connection: process.env.RCC_CONNECTION_TIMEOUT || SERVER_DEFAULTS.HTTP.CONNECTION_TIMEOUT,
+        healthCheck: process.env.RCC_HEALTH_CHECK_INTERVAL || TIMEOUT_DEFAULTS.COMMAND_TIMEOUT,
       },
     };
   },

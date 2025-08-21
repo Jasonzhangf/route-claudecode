@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OpenAIProtocolHandler = void 0;
 const openai_1 = __importDefault(require("openai"));
-const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const base_module_1 = require("../../interfaces/module/base-module");
 const events_1 = require("events");
 /**
  * OpenAI Protocol处理器实现
@@ -59,7 +59,7 @@ class OpenAIProtocolHandler extends events_1.EventEmitter {
         super();
         this.id = 'openai-protocol-handler';
         this.name = 'OpenAI Protocol Handler';
-        this.type = module_implementation_interface_1.ModuleType.PROTOCOL;
+        this.type = base_module_1.ModuleType.PROTOCOL;
         this.version = '1.0.0';
         this.status = 'stopped';
         this.metrics = {

@@ -1,24 +1,26 @@
 /**
  * RCC v4.0 Router模块导出
  *
- * 新架构组件:
+ * 基于新的标准化接口架构:
+ * - RouterModuleInterface: 标准路由器接口
  * - PipelineRouter: 流水线选择路由器
  * - LoadBalancer: APIKey级负载均衡器
- * - Config系统: 配置加载和管理
+ * - 统一的配置和错误处理
  *
- * @author RCC v4.0
+ * @version 4.0.0-beta.1
+ * @author RCC v4.0 Team
  */
+export * from '../interfaces/core/router-interface';
 export { PipelineRouter } from './pipeline-router';
 export { LoadBalancer, DEFAULT_LOAD_BALANCER_CONFIG } from './load-balancer';
-export { ConfigLoader } from './config-loader';
-export type { LoadBalancingStats, PipelineWeight, LoadBalancingStrategy, LoadBalancerConfig } from './load-balancer';
-export type { RoutingTable, PipelineRoute } from '../interfaces/router/request-router';
+export { SimpleRouter } from './simple-router';
+export { VirtualModelMappingRule, VirtualModelType, VIRTUAL_MODEL_MAPPING_RULES } from './virtual-model-mapping';
+export * from './session-control';
+import { PipelineRouter } from './pipeline-router';
+import { LoadBalancer } from './load-balancer';
+export type { RouterModuleInterface, RouterModuleConfig, RouterModuleMetrics, RCCRequest, RCCResponse, PipelineWorker, RoutingTable, PipelineRoute, LoadBalancingStats, HealthStatus, SessionInfo } from '../interfaces/core/router-interface';
+export type { LoadBalancingStats as LegacyLoadBalancingStats, PipelineWeight, LoadBalancingStrategy, LoadBalancerConfig } from './load-balancer';
 export declare const ROUTER_MODULE_VERSION = "4.0.0-beta.1";
-export interface RouterModuleInterface {
-    version: string;
-    initialize(): Promise<void>;
-    routeRequest(request: any): Promise<any>;
-}
 /**
  * RCC v4.0 Router模块工厂
  */

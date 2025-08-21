@@ -13,7 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicProtocolHandler = void 0;
 const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const constants_1 = require("../../constants");
-const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const base_module_1 = require("../../interfaces/module/base-module");
 const events_1 = require("events");
 /**
  * Anthropic Protocol处理器实现
@@ -59,7 +59,7 @@ class AnthropicProtocolHandler extends events_1.EventEmitter {
         super();
         this.id = 'anthropic-protocol-handler';
         this.name = 'Anthropic Protocol Handler';
-        this.type = module_implementation_interface_1.ModuleType.PROTOCOL;
+        this.type = base_module_1.ModuleType.PROTOCOL;
         this.version = '1.0.0';
         this.status = 'stopped';
         this.metrics = {

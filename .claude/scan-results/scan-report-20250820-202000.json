@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-20 20:20:00",
+  "scanned_file": "/tmp/fix-exit-codes.sh",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

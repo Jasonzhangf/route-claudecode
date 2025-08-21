@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-19 23:23:23",
+  "scanned_file": "test_mockup_file.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

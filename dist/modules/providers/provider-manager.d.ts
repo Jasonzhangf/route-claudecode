@@ -5,7 +5,7 @@
  *
  * @author Jason Zhang
  */
-import { IModuleInterface } from '../../interfaces/core/module-implementation-interface';
+import { ModuleInterface } from '../../interfaces/module/base-module';
 import { ProviderConfig, ProviderProtocolType } from './provider-factory';
 import { StandardRequest } from '../../interfaces/standard/request';
 import { StandardResponse } from '../../interfaces/standard/response';
@@ -50,7 +50,7 @@ export interface ProviderRouteInfo {
  */
 export interface RouteResult {
     /** 选中的Provider */
-    provider: IModuleInterface;
+    provider: ModuleInterface;
     /** Provider信息 */
     info: ProviderRouteInfo;
     /** 路由决策原因 */
@@ -74,7 +74,7 @@ export declare class ProviderManager {
     /**
      * 注册Provider
      */
-    registerProvider(provider: IModuleInterface): Promise<void>;
+    registerProvider(provider: ModuleInterface): Promise<void>;
     /**
      * 注销Provider
      */

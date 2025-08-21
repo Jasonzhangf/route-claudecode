@@ -17,6 +17,7 @@ import {
   ClientProxyConfig,
   ConfigAction,
 } from '../interfaces/core/cli-abstraction';
+import { ERROR_MESSAGES } from '../constants/error-messages';
 
 /**
  * CLI命令执行器实现
@@ -70,7 +71,7 @@ export class CommandExecutor implements ICommandExecutor {
         if (!validation.valid) {
           console.error('❌ Configuration validation failed:');
           validation.errors.forEach(error => console.error(`   ${error}`));
-          throw new Error('Invalid configuration');
+          throw new Error(ERROR_MESSAGES.CONFIG_VALIDATION_FAILED);
         }
 
         if (validation.warnings.length > 0) {

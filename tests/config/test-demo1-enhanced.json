@@ -1,0 +1,73 @@
+{
+  "// === Demo1增强版测试配置 ===": "",
+  
+  "Providers": [
+    {
+      "name": "通义千问",
+      "api_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "api_key": [
+        "sk-dashscope-key-1",
+        "sk-dashscope-key-2",
+        "sk-dashscope-key-3"
+      ],
+      "models": ["qwen-plus"],
+      "transformer": {
+        "use": [["maxtoken", { "max_tokens": 8192 }], "enhancetool"]
+      }
+    },
+    {
+      "name": "智谱清言",
+      "api_base_url": "https://ai.shuaihong.fun/v1/chat/completions",
+      "api_key": [
+        "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl",
+        "sk-backup-key-2"
+      ],
+      "models": ["gpt-4o"],
+      "transformer": {
+        "use": ["shuaihong"]
+      }
+    },
+    {
+      "name": "ModelScope",
+      "api_base_url": "https://api-inference.modelscope.cn/v1/chat/completions",
+      "api_key": "",
+      "models": ["Qwen/Qwen3-Coder-480B-A35B-Instruct"],
+      "transformer": {
+        "use": [["maxtoken", { "max_tokens": 65536 }], "enhancetool"]
+      }
+    },
+    {
+      "name": "本地模型",
+      "api_base_url": "http://localhost:11434/v1/chat/completions",
+      "api_key": "ollama",
+      "models": ["qwen2.5-coder:latest"]
+    }
+  ],
+
+  "Router": {
+    "default": "通义千问,qwen-plus",
+    "longContext": "ModelScope,Qwen/Qwen3-Coder-480B-A35B-Instruct", 
+    "background": "本地模型,qwen2.5-coder:latest",
+    "think": "智谱清言,gpt-4o",
+    "webSearch": "智谱清言,gpt-4o"
+  },
+
+  "MultiKeyConfig": {
+    "rotationStrategy": "round-robin",
+    "keyFailureHandling": {
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "blacklistDuration": 300000
+    },
+    "loadBalancing": {
+      "enabled": true,
+      "trackUsage": true,
+      "resetInterval": 3600000
+    }
+  },
+
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0",
+  "PORT": 5507,
+  "DEBUG": true
+}

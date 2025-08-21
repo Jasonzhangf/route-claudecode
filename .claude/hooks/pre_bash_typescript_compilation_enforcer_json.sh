@@ -60,9 +60,8 @@ if command -v jq >/dev/null 2>&1; then
             else
                 echo "❌ [TypeScript编译检查] 错误：未找到TypeScript编译器" >&2
                 echo "📋 解决方案：npm install -g typescript 或 npm install typescript" >&2
-                # Record statistics
-                /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "typescript_compilation_error" "${command_text:-unknown}"
-                exit 1
+            # Record statistics
+            /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "${violation_type:-unknown}" "${file_path:-unknown}" >/dev/null 2>&1                exit 2
             fi
             
             if [ $tsc_exit_code -eq 0 ]; then
@@ -83,19 +82,34 @@ if command -v jq >/dev/null 2>&1; then
                     echo "   ... (显示前20行，完整错误请运行: npx tsc --noEmit)"
                     echo ""
                 fi
-                echo "📋 解决方案："
-                echo "  1. 修复所有TypeScript编译错误"
-                echo "  2. 不要使用 --skipLibCheck 或其他绕过标志"
-                echo "  3. 确保类型定义正确和完整"
-                echo "  4. 运行: npx tsc --noEmit 查看详细错误"
-                echo "  5. 修复错误后再启动服务"
+                echo "📋 推荐解决方案："
+                echo "  🎯 使用标准化流水线测试脚本 (推荐):"
+                echo "     ./scripts/pipeline-test-runner.sh basic"
+                if echo "$command_text" | grep -qE -- "--config[[:space:]]+[^[:space:]]+"; then
+                    config_file=$(echo "$command_text" | grep -oE -- "--config[[:space:]]+[^[:space:]]+" | awk '{print $2}')
+                    echo "     ./scripts/pipeline-test-runner.sh --config $config_file --mode integration"
+                else
+                    echo "     ./scripts/pipeline-test-runner.sh --config ~/.route-claudecode/config/v4/single-provider/lmstudio-v4-5506.json"
+                fi
                 echo ""
-                echo "⚠️ 强制要求：必须解决TypeScript编译错误后才能启动服务"
+                echo "  🔧 手动修复TypeScript错误:"
+                echo "     1. 运行: npx tsc --noEmit 查看详细错误"
+                echo "     2. 修复所有编译错误"
+                echo "     3. 不要使用 --skipLibCheck 等绕过标志"
+                echo "     4. 确保类型定义正确和完整"
                 echo ""
-                echo "🚫 服务启动被阻止，请先修复编译错误！"
-                # Record statistics
-                /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "typescript_compilation_error" "${command_text:-unknown}"
-                exit 1
+                echo "💡 为什么使用测试脚本?"
+                echo "   • 自动进行TypeScript编译检查"
+                echo "   • 模块化测试各个组件"
+                echo "   • 生成详细的测试报告和日志"
+                echo "   • 支持多种测试模式和数据源"
+                echo "   • 避免启动有问题的服务"
+                echo ""
+                echo "⚠️ 直接服务启动被阻止 - 请使用标准化测试流程！"
+                echo ""
+                echo "🚫 使用测试脚本确保系统稳定性！"
+            # Record statistics
+            /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "${violation_type:-unknown}" "${file_path:-unknown}" >/dev/null 2>&1                exit 2
             fi
         fi
         
@@ -103,4 +117,5 @@ if command -v jq >/dev/null 2>&1; then
     fi
 fi
 
+# 注意：只有当所有检查都通过时才到达这里
 exit 0

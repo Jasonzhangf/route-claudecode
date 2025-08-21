@@ -104,6 +104,8 @@ src/[module-name]/
 
 ### 1. 零硬编码原则（最高优先级）
 
+**🚨 强制规则**: 所有硬编码值必须放入 `src/constants/` 目录下的专用文件中
+
 #### 绝对禁止的硬编码
 ```typescript
 // ❌ 严重违规：硬编码URL、端口、密钥
@@ -118,36 +120,224 @@ if (model === "gpt-4") {
 
 // ❌ 严重违规：硬编码文件路径
 const configPath = "/home/user/.route-claudecode/config";
+
+// ❌ 严重违规：硬编码错误消息
+throw new Error("Configuration file not found");
+
+// ❌ 严重违规：硬编码超时时间
+setTimeout(callback, 5000);
 ```
 
-#### 正确的配置驱动方式
+#### 强制Constants目录结构
+```
+src/constants/
+├── index.ts                     # 统一导出所有常量
+├── api-defaults.ts              # API相关默认值
+├── server-defaults.ts           # 服务器相关默认值
+├── timeout-defaults.ts          # 超时相关默认值
+├── error-messages.ts            # 错误消息常量
+├── file-paths.ts                # 文件路径常量
+├── model-mappings.ts            # 模型映射常量
+└── validation-rules.ts          # 验证规则常量
+```
+
+#### 正确的Constants使用方式
 ```typescript
-// ✅ 正确：配置驱动
-interface ProviderConfig {
-  baseUrl: string;
-  apiKey: string;
-  models: string[];
-  defaultPort: number;
-}
+// ✅ 正确：src/constants/api-defaults.ts
+export const API_DEFAULTS = {
+  OPENAI_BASE_URL: 'https://api.openai.com/v1',
+  ANTHROPIC_BASE_URL: 'https://api.anthropic.com',
+  DEFAULT_MAX_TOKENS: 4096,
+  DEFAULT_TEMPERATURE: 0.7,
+} as const;
+
+export const SUPPORTED_MODELS = {
+  OPENAI: ['gpt-4', 'gpt-3.5-turbo'] as const,
+  ANTHROPIC: ['claude-3-sonnet', 'claude-3-haiku'] as const,
+  GEMINI: ['gemini-pro', 'gemini-pro-vision'] as const,
+} as const;
+
+// ✅ 正确：src/constants/server-defaults.ts
+export const SERVER_DEFAULTS = {
+  DEFAULT_PORT: 5506,
+  DEFAULT_HOST: '0.0.0.0',
+  MAX_CONNECTIONS: 1000,
+  KEEP_ALIVE_TIMEOUT: 30000,
+} as const;
+
+// ✅ 正确：src/constants/timeout-defaults.ts
+export const TIMEOUT_DEFAULTS = {
+  REQUEST_TIMEOUT: 30000,
+  CONNECTION_TIMEOUT: 5000,
+  HEALTH_CHECK_INTERVAL: 10000,
+  RETRY_DELAY: 1000,
+} as const;
+
+// ✅ 正确：src/constants/error-messages.ts
+export const ERROR_MESSAGES = {
+  CONFIG_NOT_FOUND: 'Configuration file not found',
+  PROVIDER_NOT_CONFIGURED: 'Provider not configured',
+  INVALID_MODEL: 'Invalid model specified',
+  CONNECTION_FAILED: 'Failed to connect to provider',
+} as const;
+
+// ✅ 正确：src/constants/file-paths.ts
+export const FILE_PATHS = {
+  DEFAULT_CONFIG_DIR: '~/.route-claudecode',
+  DEFAULT_LOG_DIR: '~/.route-claudecode/logs',
+  DEFAULT_CONFIG_FILE: 'config.json',
+  GENERATED_CONFIGS_DIR: './generated',
+} as const;
+
+// ✅ 正确：在代码中使用常量
+import { API_DEFAULTS, SERVER_DEFAULTS, ERROR_MESSAGES } from '../constants';
 
 class ConfigManager {
   private config: ProviderConfig;
   
-  constructor(configPath: string) {
+  constructor(configPath: string = FILE_PATHS.DEFAULT_CONFIG_FILE) {
     this.config = this.loadConfig(configPath);
   }
   
   getProviderUrl(provider: string): string {
-    return this.config.providers[provider]?.baseUrl || 
-           throw new ConfigError(`Provider ${provider} not configured`);
+    const url = this.config.providers[provider]?.baseUrl;
+    if (!url) {
+      throw new ConfigError(ERROR_MESSAGES.PROVIDER_NOT_CONFIGURED);
+    }
+    return url;
+  }
+  
+  getDefaultTimeout(): number {
+    return this.config.timeout || TIMEOUT_DEFAULTS.REQUEST_TIMEOUT;
   }
 }
 
-// ✅ 正确：环境变量替换
+// ✅ 正确：环境变量替换（配置模板仍使用constants）
 const configTemplate = {
   apiKey: "${OPENAI_API_KEY}",
-  baseUrl: "${API_BASE_URL:-https://api.openai.com/v1}"
+  baseUrl: `\${API_BASE_URL:-${API_DEFAULTS.OPENAI_BASE_URL}}`
 };
+```
+
+#### Constants文件编写规范
+```typescript
+// 每个constants文件必须遵循以下结构
+// src/constants/example-defaults.ts
+
+/**
+ * [模块名称] 默认值常量
+ * 
+ * 包含所有与[模块功能]相关的硬编码值
+ * 任何涉及[具体范围]的常量都应定义在此文件中
+ * 
+ * @module ExampleDefaults
+ * @version 1.0.0
+ * @lastUpdated 2024-08-21
+ */
+
+// 使用 as const 确保类型安全
+export const EXAMPLE_DEFAULTS = {
+  // 分组相关常量，添加注释说明用途
+  
+  // 网络相关
+  DEFAULT_PORT: 5506,                    // 默认服务端口
+  MAX_CONNECTIONS: 1000,                 // 最大连接数
+  
+  // 超时相关  
+  CONNECTION_TIMEOUT: 5000,              // 连接超时（毫秒）
+  REQUEST_TIMEOUT: 30000,                // 请求超时（毫秒）
+  
+  // 重试相关
+  MAX_RETRIES: 3,                        // 最大重试次数
+  RETRY_DELAY: 1000,                     // 重试延迟（毫秒）
+  
+} as const;
+
+// 枚举类型常量使用对象形式
+export const STATUS_CODES = {
+  SUCCESS: 200,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  NOT_FOUND: 404,
+  INTERNAL_ERROR: 500,
+} as const;
+
+// 字符串常量数组
+export const SUPPORTED_FORMATS = [
+  'json',
+  'yaml',
+  'toml'
+] as const;
+
+// 导出类型以便TypeScript类型检查
+export type ExampleDefaultsType = typeof EXAMPLE_DEFAULTS;
+export type StatusCode = typeof STATUS_CODES[keyof typeof STATUS_CODES];
+export type SupportedFormat = typeof SUPPORTED_FORMATS[number];
+```
+
+#### Constants使用检查脚本
+```bash
+#!/bin/bash
+# scripts/check-hardcoding.sh
+
+echo "🔍 检查硬编码违规..."
+
+# 检查是否有硬编码的URL
+check_hardcoded_urls() {
+    echo "📡 检查硬编码URL..."
+    
+    local url_patterns=(
+        "https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+        "localhost:[0-9]+"
+        "127\.0\.0\.1:[0-9]+"
+    )
+    
+    for pattern in "${url_patterns[@]}"; do
+        # 排除constants目录和测试文件
+        if git ls-files "src/**/*.ts" | grep -v "constants" | grep -v "__tests__" | xargs grep -l "$pattern" 2>/dev/null; then
+            echo "❌ 发现硬编码URL: $pattern"
+            git ls-files "src/**/*.ts" | grep -v "constants" | grep -v "__tests__" | xargs grep -l "$pattern" | sed 's/^/   - /'
+            return 1
+        fi
+    done
+    
+    echo "✅ URL检查通过"
+}
+
+# 检查是否有硬编码的端口号
+check_hardcoded_ports() {
+    echo "🔌 检查硬编码端口..."
+    
+    # 查找数字端口号（排除constants目录）
+    if git ls-files "src/**/*.ts" | grep -v "constants" | grep -v "__tests__" | xargs grep -l ":[0-9]\{4,5\}" 2>/dev/null; then
+        echo "❌ 发现硬编码端口号"
+        git ls-files "src/**/*.ts" | grep -v "constants" | grep -v "__tests__" | xargs grep -l ":[0-9]\{4,5\}" | sed 's/^/   - /'
+        return 1
+    fi
+    
+    echo "✅ 端口检查通过"
+}
+
+# 检查是否有硬编码的错误消息
+check_hardcoded_errors() {
+    echo "⚠️  检查硬编码错误消息..."
+    
+    # 查找硬编码的Error构造函数
+    if git ls-files "src/**/*.ts" | grep -v "constants" | grep -v "__tests__" | xargs grep -l "new Error(" 2>/dev/null; then
+        echo "❌ 发现硬编码错误消息"
+        git ls-files "src/**/*.ts" | grep -v "constants" | grep -v "__tests__" | xargs grep -l "new Error(" | sed 's/^/   - /'
+        return 1
+    fi
+    
+    echo "✅ 错误消息检查通过"
+}
+
+# 执行所有检查
+check_hardcoded_urls
+check_hardcoded_ports  
+check_hardcoded_errors
+
+echo "🎉 硬编码检查完成"
 ```
 
 ### 2. 零静默失败原则

@@ -239,10 +239,8 @@ if command -v jq >/dev/null 2>&1; then
             echo "⚠️ 必须修复所有违规才能继续开发工作！" >&2
             
             log_scan_result "扫描完成: $file_path - 发现 ${#VIOLATION_MESSAGES[@]} 个违规"
-            
             # Record statistics
-            /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "post_write_compliance_scanner_json" "compliance_violation" "${file_path:-unknown}"
-            exit 1
+            /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "${violation_type:-unknown}" "${file_path:-unknown}" >/dev/null 2>&1            exit 2
         fi
         
         echo "✅ [合规扫描器] 合规检查通过，无违规发现" >&2

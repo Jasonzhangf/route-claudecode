@@ -131,6 +131,7 @@ export interface Usage {
     completion_tokens: number;
     total_tokens: number;
 }
+import { ModuleType } from '../interfaces/module/base-module';
 export interface ModuleInterface {
     id: string;
     name: string;
@@ -140,7 +141,7 @@ export interface ModuleInterface {
     validate(input: any): Promise<ValidationResult>;
     getMetrics(): ModuleMetrics;
 }
-export type ModuleType = 'router' | 'input-transformer' | 'format-normalizer' | 'preprocessor' | 'protocol' | 'response-interceptor' | 'postprocessor' | 'output-transformer' | 'debug' | 'error-capture' | 'unit-test';
+export { ModuleType } from '../interfaces/module/base-module';
 export interface ValidationResult {
     valid: boolean;
     errors: string[];

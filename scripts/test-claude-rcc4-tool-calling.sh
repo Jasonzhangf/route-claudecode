@@ -6,11 +6,11 @@
 
 set -e
 
-# 脚本配置 - 使用默认推荐配置，不接受命令行参数
+# 脚本配置 - 直接修改以下变量来自定义测试参数
 DEFAULT_PORT="5506"
-DEFAULT_API_KEY="test"
-DEFAULT_CONFIG="~/.route-claudecode/config/v4/single-provider/modelscope-v4-5508.json"
-TEST_COMMAND="列出本目录中所有文件夹"
+DEFAULT_API_KEY="rcc4-proxy-key"
+DEFAULT_CONFIG="~/.route-claudecode/config/v4/single-provider/lmstudio-v4-5506-demo1-enhanced.json"
+TEST_COMMAND="请列出本地文件"
 
 echo "🧪 RCC4 Claude Code Router 端到端测试"
 echo "========================================"

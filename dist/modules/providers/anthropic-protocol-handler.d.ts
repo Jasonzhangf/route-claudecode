@@ -5,7 +5,7 @@
  *
  * @author Jason Zhang
  */
-import { IModuleInterface, ModuleType, IModuleStatus, IModuleMetrics } from '../../interfaces/core/module-implementation-interface';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { StandardRequest } from '../../interfaces/standard/request';
 import { StandardResponse } from '../../interfaces/standard/response';
@@ -31,21 +31,21 @@ export interface AnthropicProtocolConfig {
 /**
  * Anthropic Protocol处理器实现
  */
-export declare class AnthropicProtocolHandler extends EventEmitter implements IModuleInterface {
+export declare class AnthropicProtocolHandler extends EventEmitter implements ModuleInterface {
     protected readonly id: string;
     protected readonly name: string;
     protected readonly type: ModuleType;
     protected readonly version: string;
     protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
-    protected metrics: IModuleMetrics;
+    protected metrics: ModuleMetrics;
     private processingTimes;
     private errors;
     getId(): string;
     getName(): string;
     getType(): ModuleType;
     getVersion(): string;
-    getStatus(): IModuleStatus;
-    getMetrics(): IModuleMetrics;
+    getStatus(): ModuleStatus;
+    getMetrics(): ModuleMetrics;
     configure(config: any): Promise<void>;
     start(): Promise<void>;
     stop(): Promise<void>;

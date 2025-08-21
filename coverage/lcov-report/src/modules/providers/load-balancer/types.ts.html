@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -303,28 +303,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -532,28 +532,28 @@
 /**
  * 负载均衡策略枚举
  */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum L</span>oadBalancingStrategy {</span>
-<span class="cstat-no" title="statement not covered" >  ROUND_ROBIN = 'round_robin',</span>
-<span class="cstat-no" title="statement not covered" >  WEIGHTED_ROUND_ROBIN = 'weighted_round_robin',</span>
-<span class="cstat-no" title="statement not covered" >  LEAST_CONNECTIONS = 'least_connections',</span>
-<span class="cstat-no" title="statement not covered" >  LEAST_RESPONSE_TIME = 'least_response_time',</span>
-<span class="cstat-no" title="statement not covered" >  WEIGHTED_LEAST_CONNECTIONS = 'weighted_least_connections',</span>
-<span class="cstat-no" title="statement not covered" >  RANDOM = 'random',</span>
-<span class="cstat-no" title="statement not covered" >  WEIGHTED_RANDOM = 'weighted_random',</span>
-<span class="cstat-no" title="statement not covered" >  HASH = 'hash',</span>
-<span class="cstat-no" title="statement not covered" >  GEOGRAPHIC = 'geographic',</span>
-<span class="cstat-no" title="statement not covered" >  ADAPTIVE = 'adaptive',</span>
+export enum LoadBalancingStrategy {
+  ROUND_ROBIN = 'round_robin',
+  WEIGHTED_ROUND_ROBIN = 'weighted_round_robin',
+  LEAST_CONNECTIONS = 'least_connections',
+  LEAST_RESPONSE_TIME = 'least_response_time',
+  WEIGHTED_LEAST_CONNECTIONS = 'weighted_least_connections',
+  RANDOM = 'random',
+  WEIGHTED_RANDOM = 'weighted_random',
+  HASH = 'hash',
+  GEOGRAPHIC = 'geographic',
+  ADAPTIVE = 'adaptive',
 }
 &nbsp;
 /**
  * Provider健康状态
  */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum P</span>roviderHealthStatus {</span>
-<span class="cstat-no" title="statement not covered" >  HEALTHY = 'healthy',</span>
-<span class="cstat-no" title="statement not covered" >  UNHEALTHY = 'unhealthy',</span>
-<span class="cstat-no" title="statement not covered" >  DEGRADED = 'degraded',</span>
-<span class="cstat-no" title="statement not covered" >  UNKNOWN = 'unknown',</span>
-<span class="cstat-no" title="statement not covered" >  MAINTENANCE = 'maintenance',</span>
+export enum ProviderHealthStatus {
+  HEALTHY = 'healthy',
+  UNHEALTHY = 'unhealthy',
+  DEGRADED = 'degraded',
+  UNKNOWN = 'unknown',
+  MAINTENANCE = 'maintenance',
 }
 &nbsp;
 /**
@@ -757,7 +757,7 @@ export interface IMetricsCollector {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-19T15:57:58.380Z
+                at 2025-08-21T03:37:37.074Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

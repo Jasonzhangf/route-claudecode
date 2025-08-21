@@ -8,7 +8,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicOutputValidator = void 0;
-const module_implementation_interface_1 = require("../../interfaces/core/module-implementation-interface");
+const base_module_1 = require("../../interfaces/module/base-module");
 const events_1 = require("events");
 /**
  * Anthropic输出验证模块
@@ -51,7 +51,7 @@ class AnthropicOutputValidator extends events_1.EventEmitter {
         super();
         this.id = 'anthropic-output-validator';
         this.name = 'Anthropic Output Validator';
-        this.type = module_implementation_interface_1.ModuleType.VALIDATOR;
+        this.type = base_module_1.ModuleType.VALIDATOR;
         this.version = '1.0.0';
         this.status = 'stopped';
         this.metrics = {

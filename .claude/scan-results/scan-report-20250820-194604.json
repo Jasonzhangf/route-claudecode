@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-20 19:46:04",
+  "scanned_file": "/tmp/test-hook-input.json",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

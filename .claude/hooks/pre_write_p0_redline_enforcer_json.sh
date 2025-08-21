@@ -171,6 +171,74 @@ check_typescript_only_violations() {
     fi
 }
 
+# 检查JSON处理强制规范违规
+check_json_processing_violations() {
+    local file_content="$1"
+    local file_path="$2"
+    
+    # P0 JSON处理强制检查 - 必须使用jq
+    local prohibited_json_patterns=(
+        "JSON\.parse\("
+        "JSON\.stringify\("
+        "JSON\.parse\s*\("
+        "JSON\.stringify\s*\("
+        "JSON\s*\.\s*parse"
+        "JSON\s*\.\s*stringify"
+        "\$\{.*\}"
+        "echo.*\{.*\}"
+        "cat.*\{.*\}"
+        "echo.*\[.*\]"
+        "cat.*\[.*\]"
+        ">\s*[^>]*\.json"
+        ">>.*\.json"
+        "tee.*\.json"
+        "printf.*\{.*\}"
+        "printf.*\[.*\]"
+    )
+    
+    # 检查是否包含JSON内容但未使用jq
+    local has_json_content=false
+    local uses_jq=false
+    
+    # 检查是否包含JSON结构
+    if echo "$file_content" | grep -qE '(\{[^}]*\}|\[[^\]]*\])'; then
+        has_json_content=true
+    fi
+    
+    # 检查是否使用jq
+    if echo "$file_content" | grep -qE 'jq\s+'; then
+        uses_jq=true
+    fi
+    
+    # 如果有JSON内容但不使用jq，检查违规模式
+    if [ "$has_json_content" = true ] && [ "$uses_jq" = false ]; then
+        for pattern in "${prohibited_json_patterns[@]}"; do
+            if echo "$file_content" | grep -qE "$pattern"; then
+                VIOLATION_FOUND=true
+                VIOLATION_MESSAGES+=("P0-JSON-PROCESSING: 在 $file_path 中发现禁止的JSON处理模式: $pattern，必须使用jq")
+            fi
+        done
+    fi
+    
+    # 特别检查：禁止手动构造JSON字符串
+    if echo "$file_content" | grep -qE "(echo|printf).*[\"']\s*\{.*[\"']"; then
+        VIOLATION_FOUND=true
+        VIOLATION_MESSAGES+=("P0-JSON-PROCESSING: 在 $file_path 中发现手动构造JSON字符串，必须使用jq构造")
+    fi
+    
+    # 检查：禁止直接写入JSON文件而不使用jq
+    if echo "$file_content" | grep -qE "(echo|printf|cat).*\{.*\}.*>.*\.json"; then
+        VIOLATION_FOUND=true
+        VIOLATION_MESSAGES+=("P0-JSON-PROCESSING: 在 $file_path 中发现直接写入JSON文件，必须使用jq生成")
+    fi
+    
+    # 检查：Node.js/TypeScript中的JSON操作必须有错误处理
+    if echo "$file_content" | grep -qE "JSON\.(parse|stringify)" && ! echo "$file_content" | grep -qE "(try|catch|\.catch\()"; then
+        VIOLATION_FOUND=true
+        VIOLATION_MESSAGES+=("P0-JSON-PROCESSING: 在 $file_path 中发现未包装错误处理的JSON操作")
+    fi
+}
+
 # 主要检查函数
 perform_p0_checks() {
     local file_path="$1"
@@ -198,6 +266,7 @@ perform_p0_checks() {
     
     # 执行P0级检查
     check_typescript_only_violations "$file_path"
+    check_json_processing_violations "$file_content" "$file_path"
     check_hardcoding_violations "$file_content" "$file_path"
     check_silent_failure_violations "$file_content" "$file_path"
     check_unreal_response_violations "$file_content" "$file_path"
@@ -247,11 +316,18 @@ if command -v jq >/dev/null 2>&1; then
             echo "  6. 遵循模块边界约束"
             echo "  7. 移除所有Fallback机制"
             echo "  8. 使用TypeScript替代JavaScript"
+            echo "  9. 强制使用jq处理所有JSON操作"
+            echo ""
+            echo "🔧 JSON处理规范:"
+            echo "  • Bash脚本: 使用 'jq' 命令解析和生成JSON"
+            echo "  • TypeScript: JSON.parse/stringify必须包装try-catch"
+            echo "  • 禁止: echo/printf手动构造JSON字符串"
+            echo "  • 禁止: 直接重定向到.json文件"
+            echo "  • 示例: jq -n '{\"key\": \"value\"}' > output.json"
             echo ""
             echo "⚠️  P0级规则违反将导致开发工作被立即拒绝！"
-        # Record statistics
-        /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "p0_violation" "${file_path:-unknown}"
-            exit 1
+            # Record statistics
+            /Users/fanzhang/.claude/hooks/hook-statistics-manager.sh block "$HOOK_NAME" "${violation_type:-unknown}" "${file_path:-unknown}" >/dev/null 2>&1            exit 2
         fi
         
         echo "✅ [P0-红线强制执行] 所有P0级检查通过" >&2

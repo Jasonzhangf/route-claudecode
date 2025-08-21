@@ -5,7 +5,6 @@
  *
  * @author Jason Zhang
  */
-export { CLI, CommandExecutor, CLIError, ServerController, ConfigManager } from './cli';
 export * from './session';
 export * from './http';
 export * from './client-manager';
@@ -41,17 +40,16 @@ export interface ClientModuleConfig {
 /**
  * 客户端模块主类
  */
-export declare class ClientModule implements ClientModuleInterface {
+export declare class ClientModule {
     private config;
     private errorHandler;
     readonly version = "4.0.0-alpha.2";
-    private cli;
     private sessionManager;
     private httpClient;
     private proxy;
     private envExporter;
     private initialized;
-    constructor(config: ClientModuleConfig, errorHandler: ErrorHandler);
+    constructor(config: any, errorHandler: ErrorHandler);
     /**
      * 初始化模块
      */
@@ -90,7 +88,7 @@ export declare class ClientModule implements ClientModuleInterface {
     getStats(): {
         sessions: import("./session").SessionStats;
         http: import("./http").RequestStats;
-        proxy: import("./cli").ClientProxyStatus;
+        proxy: import("../interfaces/core/cli-abstraction").ClientProxyStatus;
     };
     /**
      * 清理模块资源
@@ -106,4 +104,5 @@ export declare function createClientModule(config: ClientModuleConfig, errorHand
  */
 export declare function createClient(config?: ClientModuleConfig): Promise<ClientModule>;
 export { SessionError, HttpError };
+export { CLIError } from '../types/error';
 //# sourceMappingURL=index.d.ts.map

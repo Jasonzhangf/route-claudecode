@@ -11,7 +11,7 @@ file_content="$2"
 
 if [ -z "$file_path" ] || [ -z "$file_content" ]; then
     echo "❌ [FALLBACK-BLOCKER] Hook参数错误"
-    exit 1
+    exit 2
 fi
 
 echo "🔍 [FALLBACK-BLOCKER] 检查文件: $file_path" >&2
@@ -63,7 +63,7 @@ for pattern in "${FALLBACK_PATTERNS[@]}"; do
             echo ""
             echo "⚠️  P0级规则违反：FALLBACK机制严禁使用！"
             echo ""
-            exit 1
+            exit 2
         fi
     fi
 done

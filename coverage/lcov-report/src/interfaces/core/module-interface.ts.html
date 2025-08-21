@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
@@ -299,10 +299,7 @@
 <a name='L234'></a><a href='#L234'>234</a>
 <a name='L235'></a><a href='#L235'>235</a>
 <a name='L236'></a><a href='#L236'>236</a>
-<a name='L237'></a><a href='#L237'>237</a>
-<a name='L238'></a><a href='#L238'>238</a>
-<a name='L239'></a><a href='#L239'>239</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L237'></a><a href='#L237'>237</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -319,14 +316,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -479,9 +468,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -542,249 +538,247 @@
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * 核心模块接口定义
  *
- * 定义RCC v4.0所有模块必须遵循的标准接口
- * 确保模块间只能通过接口通信，严禁直接调用具体实现
+ * 定义RCC v4.0系统中所有模块的基础接口
  *
- * @author Jason Zhang
+ * @author RCC v4.0
  */
 &nbsp;
 import { EventEmitter } from 'events';
 &nbsp;
 /**
- * 模块状态枚举
- */
-<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum M</span>oduleStatus {</span>
-<span class="cstat-no" title="statement not covered" >  IDLE = 'idle',</span>
-<span class="cstat-no" title="statement not covered" >  STARTING = 'starting',</span>
-<span class="cstat-no" title="statement not covered" >  RUNNING = 'running',</span>
-<span class="cstat-no" title="statement not covered" >  STOPPING = 'stopping',</span>
-<span class="cstat-no" title="statement not covered" >  STOPPED = 'stopped',</span>
-<span class="cstat-no" title="statement not covered" >  ERROR = 'error',</span>
-}
-&nbsp;
-/**
- * 模块类型枚举
+ * 模块类型
  */
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum M</span>oduleType {</span>
-<span class="cstat-no" title="statement not covered" >  CLIENT = 'client',</span>
-<span class="cstat-no" title="statement not covered" >  ROUTER = 'router',</span>
+<span class="cstat-no" title="statement not covered" >  TRANSFORMER = 'transformer',</span>
+<span class="cstat-no" title="statement not covered" >  PROTOCOL_HANDLER = 'protocol_handler',</span>
+<span class="cstat-no" title="statement not covered" >  SERVER_COMPATIBILITY = 'server_compatibility',</span>
+<span class="cstat-no" title="statement not covered" >  VALIDATOR = 'validator',</span>
 <span class="cstat-no" title="statement not covered" >  PIPELINE = 'pipeline',</span>
+<span class="cstat-no" title="statement not covered" >  ROUTER = 'router',</span>
+<span class="cstat-no" title="statement not covered" >  LOAD_BALANCER = 'load_balancer',</span>
 <span class="cstat-no" title="statement not covered" >  DEBUG = 'debug',</span>
-<span class="cstat-no" title="statement not covered" >  SERVER = 'server',</span>
+<span class="cstat-no" title="statement not covered" >  OTHER = 'other'</span>
 }
 &nbsp;
 /**
- * 模块配置基础接口
+ * 模块状态
+ */
+export interface ModuleStatus {
+  id: string;
+  name: string;
+  type: ModuleType;
+  health: 'healthy' | 'degraded' | 'unhealthy';
+  status: 'initializing' | 'idle' | 'running' | 'error' | 'stopped';
+  lastActivity?: Date;
+  metrics?: {
+    requestsProcessed: number;
+    averageProcessingTime: number;
+    errorCount: number;
+    lastError?: string;
+  };
+  configuration?: Record&lt;string, any&gt;;
+}
+&nbsp;
+/**
+ * 模块配置接口
  */
 export interface ModuleConfig {
-  readonly id: string;
-  readonly type: ModuleType;
-  readonly name: string;
-  readonly version: string;
-  readonly debug?: boolean;
-  readonly metadata?: Record&lt;string, any&gt;;
+  id: string;
+  name: string;
+  type: ModuleType;
+  enabled: boolean;
+  settings: Record&lt;string, any&gt;;
+  dependencies?: string[];
+  version?: string;
+  description?: string;
 }
 &nbsp;
 /**
- * 模块健康检查结果
+ * 模块执行上下文
  */
-export interface HealthCheck {
-  readonly status: 'healthy' | 'degraded' | 'unhealthy';
-  readonly timestamp: Date;
-  readonly checks: Array&lt;{
-    name: string;
-    status: 'pass' | 'warn' | 'fail';
-    responseTime: number;
-    message?: string;
-  }&gt;;
+export interface ModuleExecutionContext {
+  requestId: string;
+  moduleId: string;
+  parentContext?: any;
+  metadata?: Record&lt;string, any&gt;;
+  timeout?: number;
+  debug?: boolean;
 }
 &nbsp;
 /**
- * 模块性能指标
+ * 模块执行结果
  */
-export interface PerformanceMetrics {
-  readonly uptime: number;
-  readonly requestCount: number;
-  readonly errorCount: number;
-  readonly averageResponseTime: number;
-  readonly memoryUsage: number;
+export interface ModuleExecutionResult {
+  success: boolean;
+  data?: any;
+  error?: Error;
+  processingTime: number;
+  metadata?: Record&lt;string, any&gt;;
 }
 &nbsp;
 /**
- * 标准模块接口
- * 所有RCC模块必须实现此接口
+ * 基础模块接口
  */
-export interface IModule extends EventEmitter {
+export interface ModuleInterface extends EventEmitter {
   /**
-   * 模块配置（只读）
+   * 获取模块ID
    */
-  readonly config: ModuleConfig;
+  getId(): string;
 &nbsp;
   /**
-   * 模块当前状态
+   * 获取模块名称
    */
-  readonly status: ModuleStatus;
+  getName(): string;
+&nbsp;
+  /**
+   * 获取模块类型
+   */
+  getType(): ModuleType;
+&nbsp;
+  /**
+   * 获取模块版本
+   */
+  getVersion(): string;
+&nbsp;
+  /**
+   * 获取模块状态
+   */
+  getStatus(): ModuleStatus;
+&nbsp;
+  /**
+   * 初始化模块
+   */
+  initialize(config: ModuleConfig): Promise&lt;void&gt;;
 &nbsp;
   /**
    * 启动模块
-   * @returns Promise&lt;void&gt;
    */
   start(): Promise&lt;void&gt;;
 &nbsp;
   /**
    * 停止模块
-   * @returns Promise&lt;void&gt;
    */
   stop(): Promise&lt;void&gt;;
 &nbsp;
   /**
-   * 重启模块
-   * @returns Promise&lt;void&gt;
+   * 处理请求
    */
-  restart(): Promise&lt;void&gt;;
+  process(input: any, context?: ModuleExecutionContext): Promise&lt;ModuleExecutionResult&gt;;
 &nbsp;
   /**
-   * 获取模块健康状态
-   * @returns Promise&lt;HealthCheck&gt;
+   * 健康检查
    */
-  getHealth(): Promise&lt;HealthCheck&gt;;
+  healthCheck(): Promise&lt;boolean&gt;;
 &nbsp;
   /**
-   * 获取性能指标
-   * @returns Promise&lt;PerformanceMetrics&gt;
+   * 重置模块状态
    */
-  getMetrics(): Promise&lt;PerformanceMetrics&gt;;
+  reset(): Promise&lt;void&gt;;
 &nbsp;
   /**
-   * 更新模块配置
-   * @param config 部分配置更新
-   * @returns Promise&lt;void&gt;
+   * 更新配置
    */
   updateConfig(config: Partial&lt;ModuleConfig&gt;): Promise&lt;void&gt;;
-}
-&nbsp;
-/**
- * 模块管理器接口
- * 负责管理所有模块的生命周期
- */
-export interface IModuleManager extends EventEmitter {
-  /**
-   * 注册模块
-   * @param module 模块实例
-   */
-  register(module: IModule): Promise&lt;void&gt;;
 &nbsp;
   /**
-   * 注销模块
-   * @param moduleId 模块ID
+   * 获取配置
    */
-  unregister(moduleId: string): Promise&lt;void&gt;;
+  getConfig(): ModuleConfig;
 &nbsp;
   /**
-   * 获取模块实例
-   * @param moduleId 模块ID
-   * @returns 模块实例或null
+   * 获取指标数据
    */
-  getModule(moduleId: string): IModule | null;
+  getMetrics(): Record&lt;string, any&gt;;
 &nbsp;
   /**
-   * 获取所有模块
-   * @returns 模块映射表
+   * 验证输入数据
    */
-  getAllModules(): Map&lt;string, IModule&gt;;
+  validateInput(input: any): boolean;
 &nbsp;
   /**
-   * 按类型获取模块
-   * @param type 模块类型
-   * @returns 模块数组
+   * 验证输出数据
    */
-  getModulesByType(type: ModuleType): IModule[];
-&nbsp;
-  /**
-   * 启动所有模块
-   */
-  startAll(): Promise&lt;void&gt;;
-&nbsp;
-  /**
-   * 停止所有模块
-   */
-  stopAll(): Promise&lt;void&gt;;
-&nbsp;
-  /**
-   * 获取全局健康状态
-   */
-  getGlobalHealth(): Promise&lt;HealthCheck&gt;;
-}
-&nbsp;
-/**
- * 模块间通信接口
- */
-export interface IModuleCommunication {
-  /**
-   * 发送消息给目标模块
-   * @param targetModuleId 目标模块ID
-   * @param message 消息内容
-   * @param timeout 超时时间(毫秒)
-   * @returns Promise&lt;any&gt; 响应数据
-   */
-  sendMessage(targetModuleId: string, message: any, timeout?: number): Promise&lt;any&gt;;
-&nbsp;
-  /**
-   * 广播消息给所有模块
-   * @param message 消息内容
-   * @param excludeModules 排除的模块ID列表
-   */
-  broadcast(message: any, excludeModules?: string[]): Promise&lt;void&gt;;
-&nbsp;
-  /**
-   * 监听来自其他模块的消息
-   * @param handler 消息处理函数
-   */
-  onMessage(handler: (sourceModuleId: string, message: any) =&gt; Promise&lt;any&gt;): void;
+  validateOutput(output: any): boolean;
 }
 &nbsp;
 /**
  * 模块事件类型
  */
-export interface ModuleEvents {
-  'status-changed': (moduleId: string, oldStatus: ModuleStatus, newStatus: ModuleStatus) =&gt; void;
-  error: (moduleId: string, error: Error) =&gt; void;
-  'health-changed': (moduleId: string, health: HealthCheck) =&gt; void;
-  'metrics-updated': (moduleId: string, metrics: PerformanceMetrics) =&gt; void;
+<span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export enum M</span>oduleEventType {</span>
+<span class="cstat-no" title="statement not covered" >  STARTED = 'started',</span>
+<span class="cstat-no" title="statement not covered" >  STOPPED = 'stopped',</span>
+<span class="cstat-no" title="statement not covered" >  ERROR = 'error',</span>
+<span class="cstat-no" title="statement not covered" >  STATUS_CHANGED = 'statusChanged',</span>
+<span class="cstat-no" title="statement not covered" >  CONFIG_UPDATED = 'configUpdated',</span>
+<span class="cstat-no" title="statement not covered" >  PROCESSING_STARTED = 'processingStarted',</span>
+<span class="cstat-no" title="statement not covered" >  PROCESSING_COMPLETED = 'processingCompleted',</span>
+<span class="cstat-no" title="statement not covered" >  PROCESSING_FAILED = 'processingFailed',</span>
+<span class="cstat-no" title="statement not covered" >  HEALTH_CHECK_FAILED = 'healthCheckFailed'</span>
+}
+&nbsp;
+/**
+ * 模块事件数据
+ */
+export interface ModuleEventData {
+  moduleId: string;
+  moduleName: string;
+  eventType: ModuleEventType;
+  timestamp: Date;
+  data?: any;
+  error?: Error;
 }
 &nbsp;
 /**
  * 模块工厂接口
  */
-export interface IModuleFactory {
+export interface ModuleFactory {
   /**
    * 创建模块实例
-   * @param config 模块配置
-   * @returns 模块实例
    */
-  createModule(config: ModuleConfig): Promise&lt;IModule&gt;;
+  createModule(type: ModuleType, config: ModuleConfig): Promise&lt;ModuleInterface&gt;;
 &nbsp;
   /**
    * 获取支持的模块类型
-   * @returns 支持的模块类型数组
    */
   getSupportedTypes(): ModuleType[];
 &nbsp;
   /**
    * 验证模块配置
-   * @param config 模块配置
-   * @returns 是否有效
    */
   validateConfig(config: ModuleConfig): boolean;
 }
-&nbsp;</pre></td></tr></table></pre>
+&nbsp;
+/**
+ * 模块注册表接口
+ */
+export interface ModuleRegistry {
+  /**
+   * 注册模块工厂
+   */
+  registerFactory(type: ModuleType, factory: ModuleFactory): void;
+&nbsp;
+  /**
+   * 创建模块
+   */
+  createModule(type: ModuleType, config: ModuleConfig): Promise&lt;ModuleInterface&gt;;
+&nbsp;
+  /**
+   * 获取已注册的模块类型
+   */
+  getRegisteredTypes(): ModuleType[];
+&nbsp;
+  /**
+   * 检查模块类型是否已注册
+   */
+  isTypeRegistered(type: ModuleType): boolean;
+}</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-19T15:57:58.380Z
+                at 2025-08-20T06:34:19.932Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

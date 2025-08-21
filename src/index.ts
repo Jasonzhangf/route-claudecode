@@ -19,9 +19,9 @@ export { ClientModule, createClientModule, createClient, SessionManager, HttpCli
 // 服务器模块导出
 export { HTTPServer, PipelineServer } from './server';
 
-// 路由器模块导出 - 使用新的核心路由器
-export { CoreRouter } from './modules/routing';
-export { RouterConfig, RoutingRequest, RoutingDecision, RouteInfo } from './interfaces/router/core-router-interfaces';
+// 路由器模块导出 - 使用统一的路由器
+export { PipelineRouter } from './router/pipeline-router';
+export { SimpleRouter } from './router/simple-router';
 
 // DEPRECATED: 旧路由器模块导出已移除
 // export * from './router'; // DEPRECATED: Use CoreRouter instead

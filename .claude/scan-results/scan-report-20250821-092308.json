@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-21 09:23:08",
+  "scanned_file": "/Users/fanzhang/.claude/settings.json",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

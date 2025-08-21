@@ -1,108 +1,53 @@
 /**
- * 高级路由管理器
+ * 简单路由器实现
  *
- * 支持路径参数、中间件组合、路由组等高级功能
+ * 提供基础的路由定义功能
  *
- * @author Jason Zhang
+ * @author RCC v4.0 Team
  */
-import { IHTTPServer, IMiddlewareFunction } from '../interfaces/core/server-interface';
-/**
- * 路由参数类型
- */
-export type RouteParams = Record<string, string>;
-/**
- * 增强的路由处理器
- */
-export type EnhancedRouteHandler = (req: any, res: any, params: RouteParams) => void | Promise<void>;
-/**
- * 路由定义接口
- */
+export interface RouteHandler {
+    (req: any, res: any, next?: any): void | Promise<void>;
+}
+export interface IMiddlewareFunction extends RouteHandler {
+}
 export interface RouteDefinition {
-    method: string;
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
     path: string;
-    handler: EnhancedRouteHandler;
-    middleware?: IMiddlewareFunction[];
+    handler: RouteHandler;
+    middleware?: RouteHandler[];
     name?: string;
     description?: string;
 }
-/**
- * 路由组配置
- */
-export interface RouteGroup {
-    prefix: string;
-    middleware?: IMiddlewareFunction[];
-    routes: RouteDefinition[];
-}
-/**
- * 高级路由管理器
- */
 export declare class Router {
     private routes;
-    private server;
-    constructor(server: IHTTPServer);
-    /**
-     * 添加GET路由
-     */
-    get(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
-    /**
-     * 添加POST路由
-     */
-    post(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
-    /**
-     * 添加PUT路由
-     */
-    put(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
-    /**
-     * 添加DELETE路由
-     */
-    delete(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
-    /**
-     * 添加PATCH路由
-     */
-    patch(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
-    /**
-     * 添加所有HTTP方法的路由
-     */
-    all(path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
-    /**
-     * 添加路由
-     */
-    addRoute(method: string, path: string, handler: EnhancedRouteHandler, middleware?: IMiddlewareFunction[]): void;
-    /**
-     * 添加路由组
-     */
-    group(groupConfig: RouteGroup): void;
-    /**
-     * 创建路由处理器包装器
-     */
-    private createRouteHandler;
-    /**
-     * 标准化路径
-     */
-    private normalizePath;
-    /**
-     * 连接路径
-     */
-    private joinPaths;
-    /**
-     * 匹配路径并提取参数
-     */
-    private matchPath;
-    /**
-     * 获取所有路由信息
-     */
+    get(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void;
+    post(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void;
+    put(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void;
+    delete(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void;
+    patch(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void;
+    options(path: string, handler: RouteHandler, middleware?: RouteHandler | RouteHandler[]): void;
+    group(prefixOrGroup: string | RouteGroup, options?: {
+        middleware?: RouteHandler[];
+    }): RouteGroup;
     getRoutes(): RouteDefinition[];
-    /**
-     * 根据名称查找路由
-     */
-    findRoute(name: string): RouteDefinition | undefined;
-    /**
-     * 生成路由URL
-     */
-    generateUrl(routeName: string, params?: RouteParams): string;
-    /**
-     * 打印路由表
-     */
-    printRoutes(): void;
+}
+export interface RouteGroup {
+    prefix: string;
+    middleware?: RouteHandler[];
+    routes?: RouteDefinition[];
+}
+export declare class RouteGroupClass implements RouteGroup {
+    prefix: string;
+    private router;
+    middleware?: RouteHandler[];
+    routes?: RouteDefinition[];
+    constructor(prefix: string, middleware?: RouteHandler[]);
+    get(path: string, handler: RouteHandler): void;
+    post(path: string, handler: RouteHandler): void;
+    put(path: string, handler: RouteHandler): void;
+    delete(path: string, handler: RouteHandler): void;
+    patch(path: string, handler: RouteHandler): void;
+    options(path: string, handler: RouteHandler): void;
+    getRoutes(): RouteDefinition[];
 }
 //# sourceMappingURL=router.d.ts.map

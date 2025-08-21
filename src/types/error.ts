@@ -138,6 +138,19 @@ export class TimeoutError extends RCCError {
 }
 
 /**
+ * CLI错误
+ */
+export class CLIError extends RCCError {
+  public readonly details?: Record<string, any>;
+
+  constructor(message: string, details?: Record<string, any>) {
+    super(message, 'CLI_ERROR', 'cli', details);
+    this.name = 'CLIError';
+    this.details = details;
+  }
+}
+
+/**
  * 错误码常量
  */
 export const ERROR_CODES = {

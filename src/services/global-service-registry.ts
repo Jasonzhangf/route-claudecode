@@ -16,7 +16,7 @@ import { ConfigReader, MergedConfig } from '../config/config-reader';
 interface GlobalServices {
   providerManager: ProviderManager | null;
   pipelineManager: PipelineManager | null;
-  configManager: MergedConfig | null;
+  configManager: IConfigManager | null;
   serverManager: IServerManager | null;
   cacheManager: ICacheManager | null;
 }

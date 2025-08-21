@@ -3,7 +3,7 @@
  * RCC v4.0 CLI入口 - 统一CLI系统
  *
  * 遵循.claude/rules/unified-cli-config-template.md永久模板规则
- * 使用UnifiedCLI和UnifiedConfigLoader实现配置统一化
+ * 使用UnifiedCLI和ConfigReader实现配置统一化
  *
  * @author Jason Zhang
  */
@@ -12,7 +12,7 @@ import { ParsedCommand, CLIHandler } from './interfaces/client/cli-interface';
  * CLI处理器实现
  */
 declare class RCCv4CLIHandler implements CLIHandler {
-    private unifiedCLI;
+    private rccCLI;
     private argumentParser;
     constructor();
     /**

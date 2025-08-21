@@ -1,0 +1,34 @@
+[0;34m[INFO][0m 应用预设配置: full
+[0;34m[INFO][0m 🚀 开始RCC4流水线测试...
+[0;34m[INFO][0m 模块: pipeline, 数据源: live, 模式: e2e
+[0;34m[INFO][0m 测试配置已生成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.rcc-pipeline-test/test-config-20250820_172343.json
+[0;34m[INFO][0m 开始 pipeline 模块测试...
+[0;34m[INFO][0m 测试流水线模块...
+[0;34m[INFO][0m 执行端到端流水线测试...
+[0;32m[SUCCESS][0m 流水线模块测试完成
+[0;32m[SUCCESS][0m ✅ 流水线测试成功完成！
+{
+  "test_session": {
+  "id": "E74419E2-6712-43BD-86E1-013F36DB8883",
+  "timestamp": "2025-08-20T09:23:43Z",
+  "module": "pipeline",
+  "data_source": "live",
+  "mode": "e2e",
+  "config": {
+    "port": 5506,
+    "timeout": 60,
+    "rcc_config": ""
+  }
+},
+  "results": {
+    "timestamp": "2025-08-20T09:23:43Z",
+    "status": "completed",
+    "module_tested": "pipeline",
+    "data_source": "live",
+    "mode": "e2e"
+  },
+  "logs": {
+    "log_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/logs/pipeline-tests/pipeline-test-20250820.log",
+    "results_dir": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/test-results/pipeline"
+  }
+}

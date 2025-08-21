@@ -5,7 +5,7 @@
  *
  * @author Jason Zhang
  */
-import { CLICommands, StartOptions, StopOptions, CodeOptions, StatusOptions, ConfigOptions, ServerStatus } from '../interfaces';
+import { CLICommands, StartOptions, StopOptions, CodeOptions, StatusOptions, ConfigOptions, ServerStatus } from '../interfaces/client/cli-interface';
 /**
  * CLI执行选项
  */
@@ -21,7 +21,7 @@ export interface CLIOptions {
 export declare class RCCCli implements CLICommands {
     private parser;
     private validator;
-    private configLoader;
+    private configReader;
     private options;
     private pipelineManager?;
     constructor(options?: CLIOptions);

@@ -4,13 +4,13 @@
  * RCC v4.0 CLI入口 - 统一CLI系统
  *
  * 遵循.claude/rules/unified-cli-config-template.md永久模板规则
- * 使用UnifiedCLI和UnifiedConfigLoader实现配置统一化
+ * 使用UnifiedCLI和ConfigReader实现配置统一化
  *
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RCCv4CLIHandler = void 0;
-const unified_cli_1 = require("./cli/unified-cli");
+const rcc_cli_1 = require("./cli/rcc-cli");
 const secure_logger_1 = require("./utils/secure-logger");
 /**
  * 参数解析器
@@ -76,7 +76,7 @@ class ArgumentParser {
  */
 class RCCv4CLIHandler {
     constructor() {
-        this.unifiedCLI = new unified_cli_1.UnifiedCLI();
+        this.rccCLI = new rcc_cli_1.RCCCli();
         this.argumentParser = new ArgumentParser();
     }
     /**
@@ -90,40 +90,52 @@ class RCCv4CLIHandler {
      */
     async executeCommand(parsedCommand) {
         const { command, options } = parsedCommand;
+        process.stdout.write(`🔍 [DEBUG] 执行命令: ${command}\n`);
         try {
             switch (command) {
                 case 'start':
+                    process.stdout.write('🔍 [DEBUG] 处理start命令\n');
                     await this.handleStart(options);
                     break;
                 case 'stop':
+                    process.stdout.write('🔍 [DEBUG] 处理stop命令\n');
                     await this.handleStop(options);
                     break;
                 case 'status':
+                    process.stdout.write('🔍 [DEBUG] 处理status命令\n');
                     await this.handleStatus(options);
                     break;
                 case 'code':
+                    process.stdout.write('🔍 [DEBUG] 处理code命令\n');
                     await this.handleCode(options);
                     break;
                 case 'config':
+                    process.stdout.write('🔍 [DEBUG] 处理config命令\n');
                     await this.handleConfig(options);
                     break;
                 case 'help':
                 case '--help':
                 case '-h':
+                    process.stdout.write('🔍 [DEBUG] 处理help命令\n');
                     this.showHelp();
                     break;
                 case 'version':
                 case '--version':
                 case '-v':
+                    process.stdout.write('🔍 [DEBUG] 处理version命令\n');
                     this.showVersion();
                     break;
                 default:
+                    process.stdout.write(`🔍 [DEBUG] 未知命令: ${command}\n`);
                     secure_logger_1.secureLogger.warn('Unknown command', { command });
                     this.showHelp();
                     process.exit(1);
             }
+            process.stdout.write(`🔍 [DEBUG] 命令${command}执行完成\n`);
         }
         catch (error) {
+            process.stderr.write(`❌ [DEBUG] 命令${command}执行失败: ${error.message}\n`);
+            process.stderr.write(`❌ [DEBUG] 错误堆栈: ${error.stack}\n`);
             secure_logger_1.secureLogger.error('Command execution failed', {
                 command,
                 error: error.message,
@@ -135,13 +147,17 @@ class RCCv4CLIHandler {
      * 处理start命令
      */
     async handleStart(options) {
+        process.stdout.write('🔍 [DEBUG] handleStart开始\n');
         const startOptions = {
             port: options.port,
             host: options.host,
             config: options.config,
             debug: options.debug,
         };
-        await this.unifiedCLI.start(startOptions);
+        process.stdout.write(`🔍 [DEBUG] start选项: ${JSON.stringify(startOptions)}\n`);
+        process.stdout.write('🔍 [DEBUG] 调用unifiedCLI.start()\n');
+        await this.rccCLI.start(startOptions);
+        process.stdout.write('🔍 [DEBUG] unifiedCLI.start()完成\n');
     }
     /**
      * 处理stop命令
@@ -151,7 +167,7 @@ class RCCv4CLIHandler {
             port: options.port,
             force: options.force,
         };
-        await this.unifiedCLI.stop(stopOptions);
+        await this.rccCLI.stop(stopOptions);
     }
     /**
      * 处理status命令
@@ -161,7 +177,7 @@ class RCCv4CLIHandler {
             port: options.port,
             detailed: options.detailed,
         };
-        const status = await this.unifiedCLI.status(statusOptions);
+        const status = await this.rccCLI.status(statusOptions);
         // 输出状态信息
         process.stdout.write('RCC v4.0 Server Status:\n');
         process.stdout.write(`  Running: ${status.isRunning}\n`);
@@ -187,13 +203,13 @@ class RCCv4CLIHandler {
             autoStart: options.autoStart || options['auto-start'],
             export: options.export,
         };
-        await this.unifiedCLI.code(codeOptions);
+        await this.rccCLI.code(codeOptions);
     }
     /**
      * 处理config命令
      */
     async handleConfig(options) {
-        await this.unifiedCLI.config(options);
+        await this.rccCLI.config(options);
     }
     /**
      * 显示帮助信息
@@ -333,17 +349,25 @@ exports.RCCv4CLIHandler = RCCv4CLIHandler;
  * 主函数
  */
 async function main() {
+    process.stdout.write('🔍 [DEBUG] RCC4 CLI启动\n');
     const cliHandler = new RCCv4CLIHandler();
+    process.stdout.write('🔍 [DEBUG] CLI处理器创建成功\n');
     try {
         const args = process.argv.slice(2);
+        process.stdout.write(`🔍 [DEBUG] 解析参数: ${args.join(' ')}\n`);
         const parsedCommand = cliHandler.parseArguments(args);
+        process.stdout.write(`🔍 [DEBUG] 命令解析成功: ${parsedCommand.command}\n`);
         secure_logger_1.secureLogger.info('CLI command executed', {
             command: parsedCommand.command,
             hasOptions: Object.keys(parsedCommand.options).length > 0,
         });
+        process.stdout.write('🔍 [DEBUG] 开始执行命令...\n');
         await cliHandler.executeCommand(parsedCommand);
+        process.stdout.write('🔍 [DEBUG] 命令执行完成\n');
     }
     catch (error) {
+        process.stderr.write(`❌ [DEBUG] CLI执行失败: ${error.message}\n`);
+        process.stderr.write(`❌ [DEBUG] 错误堆栈: ${error.stack}\n`);
         secure_logger_1.secureLogger.error('CLI execution failed', { error: error.message });
         process.exit(1);
     }

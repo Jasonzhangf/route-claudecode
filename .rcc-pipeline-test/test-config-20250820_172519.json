@@ -1,0 +1,39 @@
+{
+  "test_session": {
+    "id": "FEFA3FFD-853A-4274-8136-413BB0E74995",
+    "timestamp": "2025-08-20T09:25:19Z",
+    "module": "router",
+    "data_source": "file",
+    "mode": "integration",
+    "config": {
+      "port": 5506,
+      "timeout": 15,
+      "rcc_config": ""
+    }
+  },
+  "test_data": {
+    "requests": [
+      {
+        "type": "claude_code_request",
+        "prompt": "列出本目录中所有文件夹",
+        "tools": ["LS", "Bash"],
+        "expected_tools": ["LS"]
+      },
+      {
+        "type": "tool_calling_test",
+        "prompt": "检查项目的TypeScript编译状态",
+        "tools": ["Bash"],
+        "expected_commands": ["tsc", "npm"]
+      }
+    ]
+  },
+  "validation": {
+    "check_response_format": true,
+    "check_tool_execution": true,
+    "check_debug_logs": true,
+    "performance_thresholds": {
+      "response_time_ms": 5000,
+      "memory_usage_mb": 500
+    }
+  }
+}

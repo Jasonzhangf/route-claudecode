@@ -1,46 +1,63 @@
 /**
  * RCC v4.0 Router模块导出
  * 
- * 新架构组件:
+ * 基于新的标准化接口架构:
+ * - RouterModuleInterface: 标准路由器接口
  * - PipelineRouter: 流水线选择路由器
  * - LoadBalancer: APIKey级负载均衡器
- * - Config系统: 配置加载和管理
+ * - 统一的配置和错误处理
  * 
- * @author RCC v4.0
+ * @version 4.0.0-beta.1
+ * @author RCC v4.0 Team
  */
+
+// 标准接口导出
+export * from '../interfaces/core/router-interface';
 
 // RCC v4.0 核心组件
 export { PipelineRouter } from './pipeline-router';
 export { LoadBalancer, DEFAULT_LOAD_BALANCER_CONFIG } from './load-balancer';
+export { SimpleRouter } from './simple-router';
+export { VirtualModelMappingRule, VirtualModelType, VIRTUAL_MODEL_MAPPING_RULES } from './virtual-model-mapping';
+
+// 会话控制组件
+export * from './session-control';
 
 // 导入用于类型注解
 import { PipelineRouter } from './pipeline-router';
 import { LoadBalancer } from './load-balancer';
+import { 
+  RouterModuleInterface, 
+  RouterModuleConfig,
+  RouterModuleMetrics,
+  BaseRouterModule
+} from '../interfaces/core/router-interface';
 
-// 类型定义
+// 重新导出标准接口类型
 export type {
+  RouterModuleInterface,
+  RouterModuleConfig,
+  RouterModuleMetrics,
+  RCCRequest,
+  RCCResponse,
+  PipelineWorker,
+  RoutingTable,
+  PipelineRoute,
   LoadBalancingStats,
+  HealthStatus,
+  SessionInfo
+} from '../interfaces/core/router-interface';
+
+// Legacy类型兼容（废弃）
+export type {
+  LoadBalancingStats as LegacyLoadBalancingStats,
   PipelineWeight,
   LoadBalancingStrategy,
   LoadBalancerConfig
 } from './load-balancer';
 
-export type {
-  RoutingTable,
-  PipelineRoute
-} from '../interfaces/router/request-router';
-
-// 废弃的CoreRouter已删除 - 使用PipelineRouter代替
-
 // 模块版本信息
 export const ROUTER_MODULE_VERSION = '4.0.0-beta.1';
-
-// 模块接口
-export interface RouterModuleInterface {
-  version: string;
-  initialize(): Promise<void>;
-  routeRequest(request: any): Promise<any>;
-}
 
 /**
  * RCC v4.0 Router模块工厂

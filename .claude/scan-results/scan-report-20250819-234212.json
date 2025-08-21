@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-08-19 23:42:12",
+  "scanned_file": "/tmp/test-blocking.ts",
+  "violations_found": true,
+  "violation_count": 1,
+  "violations": [
+    "FALLBACK-VIOLATION: 在 /tmp/test-blocking.ts 中发现Fallback机制: fallback"
+  ],
+  "scan_status": "completed"
+}

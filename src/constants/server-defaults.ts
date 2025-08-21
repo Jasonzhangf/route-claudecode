@@ -1,21 +1,28 @@
 /**
- * 服务器相关默认常量
- *
- * 集中管理所有服务器配置的默认值，支持环境变量覆盖
- *
- * @author Jason Zhang
+ * 服务器默认值常量
+ * 
+ * 包含所有服务器相关的默认配置值
+ * 任何涉及服务器端口、主机、连接的硬编码都应定义在此文件中
+ * 
+ * @module ServerDefaults
+ * @version 1.0.0
+ * @lastUpdated 2024-08-21
  */
 
 /**
- * 服务器默认配置常量
+ * 基础服务器默认配置常量
  */
 export const SERVER_DEFAULTS = {
   // HTTP服务器配置
   HTTP: {
-    PORT: 3456,
-    HOST: 'localhost',
-    MAX_REQUEST_SIZE: 10 * 1024 * 1024, // 10MB
+    PORT: 5506,              // 主要端口，统一使用5506
+    FALLBACK_PORT: 3456,     // 备用端口，向后兼容
+    HOST: '0.0.0.0',         // 默认绑定所有接口
+    MAX_REQUEST_SIZE: 50 * 1024 * 1024, // 50MB，增加到50MB
     KEEP_ALIVE_TIMEOUT: 30000, // 30秒
+    CONNECTION_TIMEOUT: 5000,   // 5秒连接超时
+    REQUEST_TIMEOUT: 30000,     // 30秒请求超时
+    SHUTDOWN_TIMEOUT: 10000,    // 10秒优雅关闭超时
   },
 
   // CORS配置

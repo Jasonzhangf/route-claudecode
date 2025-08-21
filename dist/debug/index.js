@@ -17,6 +17,9 @@ var pipeline_debug_system_1 = require("./pipeline-debug-system");
 Object.defineProperty(exports, "PipelineDebugSystem", { enumerable: true, get: function () { return pipeline_debug_system_1.PipelineDebugSystem; } });
 var request_test_system_1 = require("./request-test-system");
 Object.defineProperty(exports, "RequestTestSystem", { enumerable: true, get: function () { return request_test_system_1.RequestTestSystem; } });
+// 导入用于类型注解
+const pipeline_debug_system_2 = require("./pipeline-debug-system");
+const request_test_system_2 = require("./request-test-system");
 /**
  * Pipeline调试系统工厂
  *
@@ -27,8 +30,8 @@ class PipelineDebugSystemFactory {
      * 创建完整的Pipeline调试系统
      */
     static createDebugSystem(pipelineManager, pipelineRouter, loadBalancer) {
-        const pipelineDebug = new PipelineDebugSystem(pipelineManager);
-        const requestTest = new RequestTestSystem(pipelineManager, pipelineRouter, loadBalancer);
+        const pipelineDebug = new pipeline_debug_system_2.PipelineDebugSystem(pipelineManager);
+        const requestTest = new request_test_system_2.RequestTestSystem(pipelineManager, pipelineRouter, loadBalancer);
         return {
             pipelineDebug,
             requestTest
@@ -38,13 +41,13 @@ class PipelineDebugSystemFactory {
      * 创建基础Pipeline调试系统
      */
     static createPipelineDebugSystem(pipelineManager) {
-        return new PipelineDebugSystem(pipelineManager);
+        return new pipeline_debug_system_2.PipelineDebugSystem(pipelineManager);
     }
     /**
      * 创建请求测试系统
      */
     static createRequestTestSystem(pipelineManager, pipelineRouter, loadBalancer) {
-        return new RequestTestSystem(pipelineManager, pipelineRouter, loadBalancer);
+        return new request_test_system_2.RequestTestSystem(pipelineManager, pipelineRouter, loadBalancer);
     }
 }
 exports.PipelineDebugSystemFactory = PipelineDebugSystemFactory;

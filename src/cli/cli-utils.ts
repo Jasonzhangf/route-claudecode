@@ -7,6 +7,7 @@
  */
 
 import { getServerHost, getServerPort } from '../constants';
+import { CLI_DEFAULTS } from '../constants/cli-defaults';
 
 /**
  * 服务器状态检查结果
@@ -140,7 +141,7 @@ export async function getServerDetailedStatus(
 export async function gracefulStopServer(
   host: string = getServerHost(),
   port: number = getServerPort(),
-  timeout: number = 30000
+  timeout: number = CLI_DEFAULTS.TIMEOUT
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const controller = new AbortController();

@@ -8,7 +8,7 @@
  */
 
 import { ModuleInterface, ModuleConfig } from '../module/base-module';
-import { RouteRequest, RouteResponse } from './router-interface';
+import { RCCRequest, RCCResponse } from './router-interface';
 
 /**
  * Debug级别枚举
@@ -55,8 +55,8 @@ export interface RequestTrace {
   readonly sessionId: string;
   readonly startTime: Date;
   readonly endTime?: Date;
-  readonly request: RouteRequest;
-  readonly response?: RouteResponse;
+  readonly request: RCCRequest;
+  readonly response?: RCCResponse;
   readonly pipelineId?: string;
   readonly steps: TraceStep[];
   readonly error?: Error;
@@ -189,7 +189,7 @@ export interface IDebugRecorder {
    * @param request 路由请求
    * @returns string 追踪ID
    */
-  startRequestTrace(request: RouteRequest): string;
+  startRequestTrace(request: RCCRequest): string;
 
   /**
    * 添加追踪步骤
@@ -206,7 +206,7 @@ export interface IDebugRecorder {
    * @param error 错误信息
    * @returns Promise<RequestTrace> 完整追踪信息
    */
-  endRequestTrace(traceId: string, response?: RouteResponse, error?: Error): Promise<RequestTrace>;
+  endRequestTrace(traceId: string, response?: RCCResponse, error?: Error): Promise<RequestTrace>;
 
   /**
    * 查询Debug记录
@@ -406,7 +406,7 @@ export interface DebugEvents {
   'session-created': (session: DebugSession) => void;
   'session-closed': (sessionId: string) => void;
   'record-created': (record: DebugRecord) => void;
-  'trace-started': (traceId: string, request: RouteRequest) => void;
+  'trace-started': (traceId: string, request: RCCRequest) => void;
   'trace-completed': (trace: RequestTrace) => void;
   'replay-started': (config: ReplayConfig) => void;
   'replay-completed': (result: ReplayResult) => void;
