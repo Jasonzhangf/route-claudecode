@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { RCCv4Config } from '../../config/v4-config-loader';
+import { RCCv4Config } from '../../config/config-types';
 import { getHealthCheckInterval, getHttpRequestTimeout } from '../../constants';
 
 /**

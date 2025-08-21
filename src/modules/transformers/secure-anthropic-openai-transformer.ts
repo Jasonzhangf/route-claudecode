@@ -17,12 +17,12 @@
  */
 
 import {
-  IModuleInterface,
+  ModuleInterface,
   ModuleType,
-  IModuleStatus,
-  IModuleMetrics,
+  ModuleStatus,
+  ModuleMetrics,
   IValidationResult,
-} from '../../interfaces/core/module-implementation-interface';
+} from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
 /**
@@ -215,7 +215,7 @@ export interface AnthropicResponse {
  * - 资源使用控制和超时保护
  * - 纯协议转换，无业务逻辑
  */
-export class SecureAnthropicToOpenAITransformer extends EventEmitter implements IModuleInterface {
+export class SecureAnthropicToOpenAITransformer extends EventEmitter implements ModuleInterface {
   private readonly id: string = 'secure-anthropic-openai-transformer';
   private readonly name: string = 'Secure Anthropic OpenAI Transformer';
   private readonly type: ModuleType = ModuleType.TRANSFORMER;
@@ -223,7 +223,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   private status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
 
   private readonly config: SecureTransformerConfig;
-  private readonly metrics: IModuleMetrics;
+  private readonly metrics: ModuleMetrics;
   private readonly securityLogger: (event: string, details: any) => void;
 
   constructor(config: Partial<SecureTransformerConfig> = {}) {
@@ -290,7 +290,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   }
 
   // ============================================================================
-  // IModuleInterface 实现
+  // ModuleInterface 实现
   // ============================================================================
 
   getId(): string {
@@ -309,7 +309,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     return this.version;
   }
 
-  getStatus(): IModuleStatus {
+  getStatus(): ModuleStatus {
     return {
       id: this.id,
       name: this.name,
@@ -320,7 +320,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     };
   }
 
-  getMetrics(): IModuleMetrics {
+  getMetrics(): ModuleMetrics {
     return { ...this.metrics };
   }
 

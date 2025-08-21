@@ -55,8 +55,8 @@ export {
  * 迁移到安全实现：
  *
  * ```typescript
- * // ❌ 不要使用废弃的实现
- * import { AnthropicToOpenAITransformer } from './anthropic-to-openai-transformer';
+ * // ❌ 不要使用废弃的实现（已移除）
+ * // import { AnthropicToOpenAITransformer } from './anthropic-to-openai-transformer';
  *
  * // ✅ 使用新的安全实现
  * import {

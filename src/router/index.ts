@@ -12,7 +12,10 @@
 // RCC v4.0 核心组件
 export { PipelineRouter } from './pipeline-router';
 export { LoadBalancer, DEFAULT_LOAD_BALANCER_CONFIG } from './load-balancer';
-export { ConfigLoader } from './config-loader';
+
+// 导入用于类型注解
+import { PipelineRouter } from './pipeline-router';
+import { LoadBalancer } from './load-balancer';
 
 // 类型定义
 export type {

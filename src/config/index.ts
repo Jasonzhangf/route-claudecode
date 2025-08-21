@@ -8,7 +8,7 @@
 
 // 核心模块 (推荐使用)
 export { ConfigManager, getConfigManager, setConfigManager, cleanupGlobalConfigManager } from './config-manager';
-export { ConfigLoader } from './config-loader';
+export { ConfigReader } from './config-reader';
 export { ConfigParser } from './config-parser';
 export { ConfigValidator } from './config-validator';
 export { ConfigTransformer } from './config-transformer';
@@ -17,7 +17,6 @@ export { ConfigTransformer } from './config-transformer';
 export * from './config-types';
 
 // 向后兼容模块 (已弃用)
-export { RCCv4ConfigLoader } from './v4-config-loader';
 export * from './user-config-loader';
 
 // 默认导出配置管理器

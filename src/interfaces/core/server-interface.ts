@@ -7,7 +7,7 @@
  * @author Jason Zhang
  */
 
-import { IModule, ModuleConfig } from './module-interface';
+import { ModuleInterface, ModuleConfig } from '../module/base-module';
 import { EventEmitter } from 'events';
 
 /**
@@ -116,7 +116,7 @@ export interface IServerStatus {
 /**
  * HTTP服务器接口
  */
-export interface IHTTPServer extends IModule {
+export interface IHTTPServer extends ModuleInterface {
   readonly config: ServerConfig;
 
   /**

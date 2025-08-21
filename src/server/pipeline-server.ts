@@ -912,27 +912,41 @@ export class PipelineServer extends EventEmitter {
           console.log(`🔍 [Router] Layer ${index}: ${layer.layer}, moduleId: ${layer.moduleId}, config:`, layer.config);
         });
 
-        // 查找server-compatibility层的providerId
-        const serverCompatLayer = routeConfig.pipeline.layers.find(
-          (layer: any) => layer.layer === 'server-compatibility'
+        // 查找protocol层的providerId - 这里包含了真正的provider配置
+        const protocolLayer = routeConfig.pipeline.layers.find(
+          (layer: any) => layer.layer === 'protocol'
         );
 
-        console.log(`🔍 [Router] Server-compatibility层查找结果:`, {
-          found: !!serverCompatLayer,
-          layer: serverCompatLayer?.layer,
-          moduleId: serverCompatLayer?.moduleId,
-          config: serverCompatLayer?.config,
-          hasProviderId: !!serverCompatLayer?.config?.providerId,
+        console.log(`🔍 [Router] Protocol层查找结果:`, {
+          found: !!protocolLayer,
+          layer: protocolLayer?.layer,
+          moduleId: protocolLayer?.moduleId,
+          config: protocolLayer?.config,
+          hasProviderId: !!protocolLayer?.config?.providerId,
         });
 
-        if (serverCompatLayer && serverCompatLayer.config && serverCompatLayer.config.providerId) {
-          providerId = serverCompatLayer.config.providerId;
-          console.log(`✅ [Router] 找到providerId: ${providerId}`);
+        if (protocolLayer && protocolLayer.config && protocolLayer.config.providerId) {
+          providerId = protocolLayer.config.providerId;
+          console.log(`✅ [Router] 从protocol层找到providerId: ${providerId}`);
         } else {
-          // 🔧 ZERO FALLBACK POLICY: 直接使用selectedRoute作为providerId
-          // 因为根据demo1逻辑，selectedRoute就是provider名称
-          providerId = selectedRoute;
-          console.log(`✅ [Router] 使用selectedRoute作为providerId: ${providerId}`);
+          // 如果protocol层没有providerId，尝试从server-compatibility层获取
+          const serverCompatLayer = routeConfig.pipeline.layers.find(
+            (layer: any) => layer.layer === 'server-compatibility'
+          );
+
+          if (serverCompatLayer && serverCompatLayer.config && serverCompatLayer.config.providerId) {
+            providerId = serverCompatLayer.config.providerId;
+            console.log(`✅ [Router] 从server-compatibility层找到providerId: ${providerId}`);
+          } else {
+            // 🔧 ZERO FALLBACK POLICY: 如果都找不到，这是配置错误
+            console.error(`❌ [Router] 无法从pipeline配置中找到providerId:`, {
+              selectedRoute,
+              protocolLayer: protocolLayer?.config,
+              serverCompatLayer: serverCompatLayer?.config,
+              allLayers: routeConfig.pipeline.layers.map((l: any) => ({ layer: l.layer, moduleId: l.moduleId }))
+            });
+            throw new Error(`Pipeline配置错误：无法从route '${selectedRoute}' 的pipeline层级中找到providerId`);
+          }
         }
       }
     }
@@ -1109,10 +1123,10 @@ export class PipelineServer extends EventEmitter {
       if (finalResponse) {
         try {
           // 创建临时transformer实例进行响应转换
-          const { AnthropicToOpenAITransformer } = await import(
-            '../modules/transformers/anthropic-to-openai-transformer'
+          const { SecureAnthropicToOpenAITransformer } = await import(
+            '../modules/transformers/secure-anthropic-openai-transformer'
           );
-          const responseTransformer = new AnthropicToOpenAITransformer();
+          const responseTransformer = new SecureAnthropicToOpenAITransformer();
 
           // 调用响应转换
           transformerResponseOutput = await responseTransformer.process(finalResponse);

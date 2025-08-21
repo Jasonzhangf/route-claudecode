@@ -16,10 +16,11 @@ import {
 } from '../../interfaces/pipeline/pipeline-framework';
 
 // 导入四层模块
-import { AnthropicToOpenAITransformer } from './transformer/anthropic-to-openai';
+import { SecureAnthropicToOpenAITransformer } from '../transformers/secure-anthropic-openai-transformer';
 import { OpenAIProtocolModule } from './protocol/openai-protocol';
 import { LMStudioCompatibilityModule } from './server-compatibility/lmstudio-compatibility';
 import { OpenAIServerModule } from './server/openai-server';
+import { getSafeMaxTokens, validateMaxTokens } from '../../constants/api-defaults';
 
 /**
  * LM Studio流水线配置
@@ -33,6 +34,7 @@ export interface LMStudioPipelineConfig {
   maxRetries: number;
   supportedModels: string[];
   targetModel?: string; // 目标模型名
+  maxTokens?: number; // 用户配置的maxTokens限制
 }
 
 /**
@@ -55,7 +57,7 @@ export class LMStudioPipeline extends EventEmitter {
   private readonly config: LMStudioPipelineConfig;
 
   // 四层模块
-  private transformerModule: AnthropicToOpenAITransformer;
+  private transformerModule: SecureAnthropicToOpenAITransformer;
   private protocolModule: OpenAIProtocolModule;
   private compatibilityModule: LMStudioCompatibilityModule;
   private serverModule: OpenAIServerModule;
@@ -82,8 +84,17 @@ export class LMStudioPipeline extends EventEmitter {
     // 设置目标模型
     this.targetModel = this.config.targetModel || '';
 
-    // 1. Transformer模块
-    this.transformerModule = new AnthropicToOpenAITransformer({ targetModel: this.targetModel });
+    // 1. Transformer模块 - 传递用户的maxTokens配置
+    const userMaxTokens = this.config.maxTokens;
+    const safeMaxTokens = getSafeMaxTokens(userMaxTokens, 'lmstudio');
+    
+    this.transformerModule = new SecureAnthropicToOpenAITransformer({
+      // 关键：将用户的maxTokens配置作为apiMaxTokens传递
+      apiMaxTokens: safeMaxTokens,
+      defaultMaxTokens: safeMaxTokens,
+      strictValidation: true,
+      logSecurityEvents: true,
+    });
 
     // 2. Protocol模块
     this.protocolModule = new OpenAIProtocolModule();

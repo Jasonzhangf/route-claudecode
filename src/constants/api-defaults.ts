@@ -37,6 +37,47 @@ export const API_DEFAULTS = {
     },
   },
 
+  // Provider映射配置
+  PROVIDER_MAPPING: {
+    // 模型名称到Provider的映射
+    MODEL_TO_PROVIDER: {
+      // OpenAI模型
+      'gpt': 'openai',
+      'openai': 'openai',
+      'text-davinci': 'openai',
+      'text-curie': 'openai',
+      'text-babbage': 'openai',
+      'text-ada': 'openai',
+      
+      // Anthropic模型
+      'claude': 'anthropic',
+      'anthropic': 'anthropic',
+      
+      // Google模型
+      'gemini': 'gemini',
+      'google': 'gemini',
+      'palm': 'gemini',
+      
+      // LM Studio模型（使用openai兼容接口）
+      'llama': 'openai',
+      'mistral': 'openai',
+      'qwen': 'openai',
+      'deepseek': 'openai',
+      'gpt-oss': 'openai',
+    },
+    
+    // Provider默认映射
+    DEFAULT_PROVIDER: 'openai', // 默认使用OpenAI兼容接口
+    
+    // Provider别名映射
+    PROVIDER_ALIASES: {
+      'lmstudio': 'openai',
+      'local': 'openai',
+      'ollama': 'openai',
+      'vllm': 'openai',
+    },
+  },
+
   // RCC内部API端点
   RCC: {
     API_VERSION: 'v1',
@@ -50,6 +91,27 @@ export const API_DEFAULTS = {
       METRICS: '/v1/metrics', // 指标收集
       DEBUG: '/v1/debug', // 调试接口
     },
+  },
+
+  // Token限制和配置
+  TOKEN_LIMITS: {
+    // 默认值 - 如果用户未指定则使用
+    DEFAULT_MAX_TOKENS: 4096,
+    
+    // Provider默认最大限制 (仅用于安全检查，用户配置优先)
+    PROVIDER_DEFAULTS: {
+      LMSTUDIO: 131072, // LM Studio通常支持长上下文
+      ANTHROPIC: 100000, // Claude-3系列支持长上下文
+      OPENAI: 128000,    // GPT-4系列支持长上下文
+      GEMINI: 1048576,   // Gemini支持超长上下文
+      GENERIC: 8192,     // 通用默认值
+    },
+    
+    // 绝对最大限制 (安全上限)
+    ABSOLUTE_MAX: 2000000,
+    
+    // 最小值
+    MIN_TOKENS: 1,
   },
 
   // HTTP状态码
@@ -334,4 +396,54 @@ export function isRetryableError(statusCode: number): boolean {
     statusCode === API_DEFAULTS.HTTP_STATUS.SERVICE_UNAVAILABLE ||
     statusCode === API_DEFAULTS.HTTP_STATUS.GATEWAY_TIMEOUT
   );
+}
+
+/**
+ * 获取安全的MaxTokens值
+ * 优先级: 用户配置 > Provider默认值 > 通用默认值
+ */
+export function getSafeMaxTokens(
+  userMaxTokens?: number,
+  provider?: 'lmstudio' | 'anthropic' | 'openai' | 'gemini'
+): number {
+  // 如果用户指定了值，验证并返回
+  if (userMaxTokens && userMaxTokens > 0) {
+    return Math.min(userMaxTokens, API_DEFAULTS.TOKEN_LIMITS.ABSOLUTE_MAX);
+  }
+
+  // 如果指定了provider，使用provider默认值
+  if (provider) {
+    const providerKey = provider.toUpperCase() as keyof typeof API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS;
+    return API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS[providerKey] || API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS.GENERIC;
+  }
+
+  // 返回通用默认值
+  return API_DEFAULTS.TOKEN_LIMITS.DEFAULT_MAX_TOKENS;
+}
+
+/**
+ * 验证MaxTokens值是否合法
+ */
+export function validateMaxTokens(maxTokens: number): { valid: boolean; message?: string } {
+  if (!Number.isInteger(maxTokens)) {
+    return { valid: false, message: 'maxTokens must be an integer' };
+  }
+
+  if (maxTokens < API_DEFAULTS.TOKEN_LIMITS.MIN_TOKENS) {
+    return { valid: false, message: `maxTokens must be >= ${API_DEFAULTS.TOKEN_LIMITS.MIN_TOKENS}` };
+  }
+
+  if (maxTokens > API_DEFAULTS.TOKEN_LIMITS.ABSOLUTE_MAX) {
+    return { valid: false, message: `maxTokens must be <= ${API_DEFAULTS.TOKEN_LIMITS.ABSOLUTE_MAX}` };
+  }
+
+  return { valid: true };
+}
+
+/**
+ * 获取Provider推荐的MaxTokens值
+ */
+export function getRecommendedMaxTokens(provider: 'lmstudio' | 'anthropic' | 'openai' | 'gemini'): number {
+  const providerKey = provider.toUpperCase() as keyof typeof API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS;
+  return API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS[providerKey] || API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS.GENERIC;
 }

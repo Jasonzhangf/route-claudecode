@@ -7,7 +7,7 @@
  */
 
 import { secureLogger } from '../utils/secure-logger';
-import { ConfigLoader, LoaderOptions, LoadResult } from './config-loader';
+import { ConfigReader, MergedConfig } from './config-reader';
 import { ConfigValidator, ValidationRules } from './config-validator';
 import { ConfigTransformer, EnvTransformOptions } from './config-transformer';
 import {
@@ -18,6 +18,15 @@ import {
   ConfigValidationResult,
   ConfigLoadOptions,
 } from './config-types';
+import { LoaderOptions } from '../interfaces/router/config-manager-interfaces';
+
+// Simple type for backward compatibility
+interface LoadResult {
+  config?: any;
+  loadTime?: number;
+  success?: boolean;
+  fromCache?: boolean;
+}
 
 /**
  * 配置管理器选项
@@ -61,7 +70,7 @@ export interface ConfigChangeEvent {
  * 配置管理器
  */
 export class ConfigManager {
-  private loader: ConfigLoader;
+  private configReader: ConfigReader;
   private validator: ConfigValidator;
   private transformer: ConfigTransformer;
   private currentConfig: RCCv4Config | null = null;
@@ -78,7 +87,7 @@ export class ConfigManager {
       ...options,
     };
 
-    this.loader = new ConfigLoader(this.options.loaderOptions);
+    this.configReader = new ConfigReader();
     this.validator = new ConfigValidator(this.options.validationRules);
     this.transformer = new ConfigTransformer();
 
@@ -99,7 +108,7 @@ export class ConfigManager {
    * 初始化配置管理器
    */
   async initialize(): Promise<void> {
-    await this.loader.initialize();
+    // ConfigReader doesn't need initialization
     secureLogger.info('🔧 配置管理器已初始化');
   }
 
@@ -112,15 +121,15 @@ export class ConfigManager {
 
     try {
       const startTime = Date.now();
-      const result = await this.loader.loadConfig(targetDir, options);
+      const result = ConfigReader.loadConfig(targetDir, 'config/system-config.json');
 
       // 更新当前配置
-      this.currentConfig = result.config;
+      this.currentConfig = result as any; // Type assertion for now
       this.currentConfigDir = targetDir;
 
       // 更新统计信息
       if (this.options.enableMetrics) {
-        this.updateLoadStats(result, startTime);
+        this.updateLoadStats(result as any, startTime);
       }
 
       // 触发事件
@@ -133,11 +142,11 @@ export class ConfigManager {
 
       secureLogger.info('✅ 配置加载成功', {
         configDir: targetDir,
-        loadTime: result.loadTime,
-        fromCache: result.fromCache,
+        loadTime: Date.now() - startTime,
+        fromCache: false, // ConfigReader doesn't use cache
       });
 
-      return result.config;
+      return result as any; // MergedConfig is the result directly
     } catch (error) {
       secureLogger.error('❌ 配置加载失败', {
         configDir: targetDir,
@@ -164,10 +173,10 @@ export class ConfigManager {
     secureLogger.info(`🔄 重新加载配置: ${targetDir}`);
 
     try {
-      const result = await this.loader.reloadConfig(targetDir);
+      const result = ConfigReader.loadConfig(targetDir, 'config/system-config.json');
 
       // 更新当前配置
-      this.currentConfig = result.config;
+      this.currentConfig = result as any;
       this.currentConfigDir = targetDir;
 
       // 更新统计信息
@@ -187,10 +196,10 @@ export class ConfigManager {
 
       secureLogger.info('✅ 配置重新加载成功', {
         configDir: targetDir,
-        loadTime: result.loadTime,
+        loadTime: 'N/A', // ConfigReader doesn't track load time
       });
 
-      return result.config;
+      return result as any;
     } catch (error) {
       secureLogger.error('❌ 配置重新加载失败', {
         configDir: targetDir,
@@ -379,7 +388,8 @@ export class ConfigManager {
   async preloadConfig(configDirs: string[]): Promise<void> {
     secureLogger.info(`📋 预加载 ${configDirs.length} 个配置目录`);
 
-    const promises = configDirs.map(dir => this.loader.preloadConfig(dir));
+    // Simplified: ConfigReader doesn't need preloading
+    const promises = configDirs.map(dir => Promise.resolve());
     await Promise.allSettled(promises);
 
     secureLogger.info('✅ 配置预加载完成');
@@ -392,7 +402,13 @@ export class ConfigManager {
     configDir?: string
   ): Promise<{ isValid: boolean; missing: string[]; issues: string[] }> {
     const targetDir = configDir || this.currentConfigDir || this.options.defaultConfigDir!;
-    return this.loader.validateConfigStructure(targetDir);
+    // Simplified validation - just check if config can be loaded
+    try {
+      ConfigReader.loadConfig(targetDir, 'config/system-config.json');
+      return { isValid: true, missing: [], issues: [] };
+    } catch (error) {
+      return { isValid: false, missing: [], issues: [error.message] };
+    }
   }
 
   /**
@@ -429,7 +445,7 @@ export class ConfigManager {
    * 清除缓存
    */
   clearCache(configDir?: string): void {
-    this.loader.clearCache(configDir);
+    // ConfigReader doesn't use cache currently
 
     if (this.options.enableMetrics) {
       this.updateCacheStats();
@@ -499,7 +515,8 @@ export class ConfigManager {
    * 更新缓存统计信息
    */
   private updateCacheStats(): void {
-    this.stats.cacheStats = this.loader.getCacheStats();
+    // ConfigReader doesn't provide cache stats currently
+    this.stats.cacheStats = { size: 0, items: [] };
   }
 
   /**
@@ -872,8 +889,7 @@ export class ConfigManager {
    * 清理资源
    */
   cleanup(): void {
-    // 清理加载器
-    this.loader.cleanup();
+    // ConfigReader doesn't need cleanup
 
     // 清除事件监听器
     this.eventListeners.clear();

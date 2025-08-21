@@ -4,7 +4,7 @@
  * RCC v4.0 CLI入口 - 统一CLI系统
  *
  * 遵循.claude/rules/unified-cli-config-template.md永久模板规则
- * 使用UnifiedCLI和UnifiedConfigLoader实现配置统一化
+ * 使用UnifiedCLI和ConfigReader实现配置统一化
  *
  * @author Jason Zhang
  */
@@ -106,47 +106,59 @@ class RCCv4CLIHandler implements CLIHandler {
    */
   async executeCommand(parsedCommand: ParsedCommand): Promise<void> {
     const { command, options } = parsedCommand;
+    process.stdout.write(`🔍 [DEBUG] 执行命令: ${command}\n`);
 
     try {
       switch (command) {
         case 'start':
+          process.stdout.write('🔍 [DEBUG] 处理start命令\n');
           await this.handleStart(options);
           break;
 
         case 'stop':
+          process.stdout.write('🔍 [DEBUG] 处理stop命令\n');
           await this.handleStop(options);
           break;
 
         case 'status':
+          process.stdout.write('🔍 [DEBUG] 处理status命令\n');
           await this.handleStatus(options);
           break;
 
         case 'code':
+          process.stdout.write('🔍 [DEBUG] 处理code命令\n');
           await this.handleCode(options);
           break;
 
         case 'config':
+          process.stdout.write('🔍 [DEBUG] 处理config命令\n');
           await this.handleConfig(options);
           break;
 
         case 'help':
         case '--help':
         case '-h':
+          process.stdout.write('🔍 [DEBUG] 处理help命令\n');
           this.showHelp();
           break;
 
         case 'version':
         case '--version':
         case '-v':
+          process.stdout.write('🔍 [DEBUG] 处理version命令\n');
           this.showVersion();
           break;
 
         default:
+          process.stdout.write(`🔍 [DEBUG] 未知命令: ${command}\n`);
           secureLogger.warn('Unknown command', { command });
           this.showHelp();
           process.exit(1);
       }
+      process.stdout.write(`🔍 [DEBUG] 命令${command}执行完成\n`);
     } catch (error) {
+      process.stderr.write(`❌ [DEBUG] 命令${command}执行失败: ${error.message}\n`);
+      process.stderr.write(`❌ [DEBUG] 错误堆栈: ${error.stack}\n`);
       secureLogger.error('Command execution failed', {
         command,
         error: error.message,
@@ -159,14 +171,20 @@ class RCCv4CLIHandler implements CLIHandler {
    * 处理start命令
    */
   private async handleStart(options: Record<string, any>): Promise<void> {
+    process.stdout.write('🔍 [DEBUG] handleStart开始\n');
+    
     const startOptions: StartOptions = {
       port: options.port,
       host: options.host,
       config: options.config,
       debug: options.debug,
     };
-
+    
+    process.stdout.write(`🔍 [DEBUG] start选项: ${JSON.stringify(startOptions)}\n`);
+    process.stdout.write('🔍 [DEBUG] 调用unifiedCLI.start()\n');
+    
     await this.unifiedCLI.start(startOptions);
+    process.stdout.write('🔍 [DEBUG] unifiedCLI.start()完成\n');
   }
 
   /**
@@ -376,19 +394,29 @@ Examples:
  * 主函数
  */
 async function main(): Promise<void> {
+  process.stdout.write('🔍 [DEBUG] RCC4 CLI启动\n');
+  
   const cliHandler = new RCCv4CLIHandler();
+  process.stdout.write('🔍 [DEBUG] CLI处理器创建成功\n');
 
   try {
     const args = process.argv.slice(2);
+    process.stdout.write(`🔍 [DEBUG] 解析参数: ${args.join(' ')}\n`);
+    
     const parsedCommand = cliHandler.parseArguments(args);
+    process.stdout.write(`🔍 [DEBUG] 命令解析成功: ${parsedCommand.command}\n`);
 
     secureLogger.info('CLI command executed', {
       command: parsedCommand.command,
       hasOptions: Object.keys(parsedCommand.options).length > 0,
     });
 
+    process.stdout.write('🔍 [DEBUG] 开始执行命令...\n');
     await cliHandler.executeCommand(parsedCommand);
+    process.stdout.write('🔍 [DEBUG] 命令执行完成\n');
   } catch (error) {
+    process.stderr.write(`❌ [DEBUG] CLI执行失败: ${error.message}\n`);
+    process.stderr.write(`❌ [DEBUG] 错误堆栈: ${error.stack}\n`);
     secureLogger.error('CLI execution failed', { error: error.message });
     process.exit(1);
   }

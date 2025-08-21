@@ -11,7 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { SecureConfigManager } from '../utils/config-encryption';
 import { secureLogger, LogLevel } from '../utils/secure-logger';
-import { RCCv4ConfigLoader } from '../config/v4-config-loader';
+import { ConfigReader } from '../config/config-reader';
 import { ProviderManagerConfig } from '../modules/providers/provider-manager';
 
 describe('Security Fixes Validation', () => {

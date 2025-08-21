@@ -7,7 +7,7 @@
  * @author Jason Zhang
  */
 
-import { IModule, ModuleConfig } from './module-interface';
+import { ModuleInterface, ModuleConfig } from '../module/base-module';
 import { RouteRequest, RouteResponse } from './router-interface';
 
 /**
@@ -363,7 +363,7 @@ export interface IDebugManager {
  * Debug模块接口
  * 继承标准模块接口，提供Debug系统特有的功能
  */
-export interface IDebugModule extends IModule {
+export interface IDebugModule extends ModuleInterface {
   readonly config: DebugConfig;
   readonly recorder: IDebugRecorder;
   readonly replaySystem: IReplaySystem;

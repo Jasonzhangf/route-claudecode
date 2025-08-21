@@ -8,7 +8,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { IModuleInterface } from '../interfaces/core/module-implementation-interface';
+import { ModuleInterface } from '../interfaces/module/base-module';
 
 /**
  * 性能指标

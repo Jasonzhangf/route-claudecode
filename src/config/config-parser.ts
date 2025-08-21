@@ -1,7 +1,8 @@
 /**
- * RCC v4.0 Configuration Parser
+ * RCC v4.0 Configuration Parser (强制jq版本)
  *
  * 处理配置文件的解析、格式转换和基础验证
+ * 所有JSON解析强制使用jq确保配置文件处理一致性
  *
  * @author Jason Zhang
  */
@@ -9,6 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 支持的配置文件格式
@@ -118,6 +120,49 @@ export class ConfigParser {
   }
 
   /**
+   * 解析Demo1格式配置文件 (使用jq强制解析)
+   */
+  async parseDemo1Config<T = any>(filePath: string, options: ParseOptions = {}): Promise<ParseResult<T>> {
+    secureLogger.info(`📄 使用jq解析Demo1格式配置: ${filePath}`);
+
+    try {
+      // 检查文件是否存在
+      await this.ensureFileExists(filePath);
+
+      // 使用jq直接解析文件
+      const data = JQJsonHandler.parseJsonFile<T>(filePath);
+
+      // 验证Demo1配置格式
+      if (!this.isValidDemo1Config(data)) {
+        throw new Error('配置文件不符合Demo1格式规范');
+      }
+
+      const result: ParseResult<T> = {
+        data,
+        format: 'json',
+        filePath,
+        parsedAt: new Date(),
+      };
+
+      secureLogger.info(`✅ Demo1配置解析成功: ${filePath}`);
+      return result;
+    } catch (error) {
+      secureLogger.error(`❌ Demo1配置解析失败: ${filePath}`, { error: error.message });
+      throw new Error(`Failed to parse Demo1 config ${filePath}: ${error.message}`);
+    }
+  }
+
+  /**
+   * 验证Demo1配置格式
+   */
+  private isValidDemo1Config(data: any): boolean {
+    return data && 
+           Array.isArray(data.Providers) && 
+           data.Router && 
+           typeof data.APIKEY === 'string';
+  }
+
+  /**
    * 检查是否为支持的格式
    */
   private isSupportedFormat(format: string): boolean {
@@ -181,7 +226,7 @@ export class ConfigParser {
   }
 
   /**
-   * 解析JSON内容
+   * 解析JSON内容 (强制使用jq)
    */
   private parseJSON<T>(content: string, options: ParseOptions): T {
     try {
@@ -190,9 +235,11 @@ export class ConfigParser {
         content = this.removeJSONComments(content);
       }
 
-      return JSON.parse(content) as T;
+      // 强制使用jq解析JSON确保一致性
+      secureLogger.debug('🔧 使用jq强制解析JSON配置内容');
+      return JQJsonHandler.parseJsonString<T>(content);
     } catch (error) {
-      throw new Error(`Invalid JSON format: ${error.message}`);
+      throw new Error(`jq JSON解析失败: ${error.message}`);
     }
   }
 

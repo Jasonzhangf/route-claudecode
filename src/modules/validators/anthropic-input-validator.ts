@@ -7,13 +7,13 @@
  */
 
 import {
-  IModuleInterface,
+  ModuleInterface,
   ModuleType,
-  IModuleStatus,
-  IModuleMetrics,
+  ModuleStatus,
+  ModuleMetrics,
   IStandardRequest,
   IValidationResult,
-} from '../../interfaces/core/module-implementation-interface';
+} from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
 /**
@@ -30,7 +30,7 @@ export interface AnthropicInputValidatorConfig {
 /**
  * Anthropic输入验证模块
  */
-export class AnthropicInputValidator extends EventEmitter implements IModuleInterface {
+export class AnthropicInputValidator extends EventEmitter implements ModuleInterface {
   protected readonly id: string = 'anthropic-input-validator';
   protected readonly name: string = 'Anthropic Input Validator';
   protected readonly type: ModuleType = ModuleType.VALIDATOR;
@@ -43,7 +43,7 @@ export class AnthropicInputValidator extends EventEmitter implements IModuleInte
     maxMessageLength: 100000,
     maxToolsLength: 50,
   };
-  protected metrics: IModuleMetrics = {
+  protected metrics: ModuleMetrics = {
     requestsProcessed: 0,
     averageProcessingTime: 0,
     errorRate: 0,
@@ -65,7 +65,7 @@ export class AnthropicInputValidator extends EventEmitter implements IModuleInte
     };
   }
 
-  // 实现IModuleInterface接口方法
+  // 实现ModuleInterface接口方法
   getId(): string {
     return this.id;
   }
@@ -79,7 +79,7 @@ export class AnthropicInputValidator extends EventEmitter implements IModuleInte
     return this.version;
   }
 
-  getStatus(): IModuleStatus {
+  getStatus(): ModuleStatus {
     return {
       id: this.id,
       name: this.name,
@@ -90,7 +90,7 @@ export class AnthropicInputValidator extends EventEmitter implements IModuleInte
     };
   }
 
-  getMetrics(): IModuleMetrics {
+  getMetrics(): ModuleMetrics {
     return { ...this.metrics };
   }
 

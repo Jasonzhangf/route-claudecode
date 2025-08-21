@@ -31,6 +31,10 @@ export { ReplaySystem } from './replay-system';
 export { PipelineDebugSystem } from './pipeline-debug-system';
 export { RequestTestSystem } from './request-test-system';
 
+// 导入用于类型注解
+import { PipelineDebugSystem } from './pipeline-debug-system';
+import { RequestTestSystem } from './request-test-system';
+
 // Pipeline调试接口和类型
 export type {
   PipelineDebugInfo,

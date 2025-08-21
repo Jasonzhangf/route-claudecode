@@ -44,7 +44,7 @@ export interface Pipeline {
 export interface PipelineStatus {
   id: string;
   name: string;
-  status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+  status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
   modules: Record<string, import('./base-module').ModuleStatus>;
   lastExecution?: any;
   uptime: number;

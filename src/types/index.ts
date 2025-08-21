@@ -158,6 +158,9 @@ export interface Usage {
   total_tokens: number;
 }
 
+// Import ModuleType from base module
+import { ModuleType } from '../interfaces/module/base-module';
+
 // 模块接口类型
 export interface ModuleInterface {
   id: string;
@@ -169,18 +172,8 @@ export interface ModuleInterface {
   getMetrics(): ModuleMetrics;
 }
 
-export type ModuleType =
-  | 'router'
-  | 'input-transformer'
-  | 'format-normalizer'
-  | 'preprocessor'
-  | 'protocol'
-  | 'response-interceptor'
-  | 'postprocessor'
-  | 'output-transformer'
-  | 'debug'
-  | 'error-capture'
-  | 'unit-test';
+// 导入标准ModuleType定义
+export { ModuleType } from '../interfaces/module/base-module';
 
 export interface ValidationResult {
   valid: boolean;

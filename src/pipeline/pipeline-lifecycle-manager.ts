@@ -13,10 +13,11 @@
 
 import { EventEmitter } from 'events';
 import { ConnectionHandshakeManager, HandshakeConfig, PipelineConfiguration } from './connection-handshake';
-import { SimpleRouter, RoutingConfig, RouterError } from '../router/simple-router';
-import { ConfigLoader, MergedConfig } from '../router/config-loader';
+import { PipelineRouter } from '../router/pipeline-router';
+import { ConfigReader, MergedConfig } from '../config/config-reader';
 import { secureLogger } from '../utils/secure-logger';
 import { PipelineServer, PipelineServerConfig } from '../server/pipeline-server';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 import { IMiddlewareManager, IMiddlewareFactory } from '../interfaces/core/middleware-interface';
 import { IMiddlewareFunction } from '../interfaces/core/server-interface';
 import { CorsOptions, LoggerOptions, AuthenticationOptions, ValidationOptions, RateLimitOptions } from '../interfaces/core/middleware-interface';
@@ -103,7 +104,7 @@ export interface RequestContext {
 export class PipelineLifecycleManager extends EventEmitter {
   private config: MergedConfig;
   private handshakeManager: ConnectionHandshakeManager;
-  private router: SimpleRouter;
+  private router: PipelineRouter;
   private isRunning = false;
   private startTime?: Date;
   private stats: PipelineStats;
@@ -115,15 +116,15 @@ export class PipelineLifecycleManager extends EventEmitter {
 
     // 加载配置 - 如果已经有配置则不重新加载
     if (!(this as any).config) {
-      this.config = ConfigLoader.loadConfig(userConfigPath, systemConfigPath);
+      this.config = ConfigReader.loadConfig(userConfigPath, systemConfigPath);
       console.log('🔧 PipelineLifecycleManager loaded config from:', {
         userConfigPath: userConfigPath || 'default',
         systemConfigPath: systemConfigPath || 'default',
-        virtualModels: Object.keys(this.config.virtualModels)
+        routerRules: Object.keys(this.config.router)
       });
     } else {
       console.log('🔧 PipelineLifecycleManager using pre-set config:', {
-        virtualModels: Object.keys(this.config.virtualModels)
+        routerRules: Object.keys(this.config.router)
       });
     }
 
@@ -141,13 +142,13 @@ export class PipelineLifecycleManager extends EventEmitter {
     // 初始化握手管理器
     this.handshakeManager = new ConnectionHandshakeManager(this.config.systemConfig.connectionHandshake);
 
-    // 初始化路由器
-    this.router = new SimpleRouter(this.config);
+    // 初始化路由器 - 注意：router将在启动时根据配置文件动态创建
+    // 在start()方法中会调用initializeRouter()来正确设置router
 
     secureLogger.info('PipelineLifecycleManager initialized', {
       userConfigPath,
       systemConfigPath,
-      totalVirtualModels: Object.keys(this.config.virtualModels).length,
+      totalRouterRules: Object.keys(this.config.router).length,
       serverPort: this.config.server.port,
       handshakeEnabled: this.config.systemConfig.connectionHandshake.enabled,
     });
@@ -180,13 +181,19 @@ export class PipelineLifecycleManager extends EventEmitter {
         throw new Error('Pipeline handshake initialization failed');
       }
 
-      // Step 2: 验证路由器配置
+      // Step 2: 初始化PipelineManager并生成流水线表
+      await this.initializePipelineManager();
+
+      // Step 3: 初始化路由器（从生成的流水线表加载）
+      await this.initializeRouter();
+
+      // Step 3.1: 验证路由器配置
       this.validateRouterConfiguration();
 
-      // Step 3: 启动统计监控
+      // Step 4: 启动统计监控
       this.startStatsMonitoring();
 
-      // Step 4: 初始化并启动Pipeline服务器
+      // Step 5: 初始化并启动Pipeline服务器
       secureLogger.info('About to initialize and start server');
       await this.initializeAndStartServer();
       secureLogger.info('Finished initializing and starting server');
@@ -196,7 +203,7 @@ export class PipelineLifecycleManager extends EventEmitter {
       secureLogger.info('RCC v4.0 pipeline system started successfully', {
         startTime: this.startTime,
         pipelineReady: this.handshakeManager.isPipelineReady(),
-        routerStats: this.router.getStatistics(),
+        routerStats: {}, // PipelineRouter doesn't have getStatistics method
       });
 
       this.emit('pipeline-started');
@@ -490,7 +497,7 @@ export class PipelineLifecycleManager extends EventEmitter {
 
       // Step 1: Router层 - 路由决策
       const routingStart = Date.now();
-      const routingDecision = this.router.route(inputModel, request);
+      const routingDecision = this.router.route(inputModel);
       context.layerTimings.router = Date.now() - routingStart;
       context.routingDecision = routingDecision;
 
@@ -499,8 +506,8 @@ export class PipelineLifecycleManager extends EventEmitter {
         routingDecision: {
           originalModel: routingDecision.originalModel,
           virtualModel: routingDecision.virtualModel,
-          selectedProvider: routingDecision.selectedProvider,
-          selectedModel: routingDecision.selectedModel,
+          availablePipelines: routingDecision.availablePipelines,
+          reasoning: routingDecision.reasoning,
         },
         timing: context.layerTimings.router,
       });
@@ -539,7 +546,7 @@ export class PipelineLifecycleManager extends EventEmitter {
         requestId,
         totalTime,
         layerTimings: context.layerTimings,
-        responseSize: JSON.stringify(response).length,
+        responseSize: JQJsonHandler.stringifyJson(response, true).length,
       });
 
       this.emit('request-completed', { requestId, context, response, success: true });
@@ -561,7 +568,7 @@ export class PipelineLifecycleManager extends EventEmitter {
       });
 
       // 如果是路由错误，考虑blacklist处理
-      if (error instanceof RouterError && context.routingDecision) {
+      if (error && context.routingDecision) {
         this.handleRoutingError(context.routingDecision, error);
       }
 
@@ -576,20 +583,26 @@ export class PipelineLifecycleManager extends EventEmitter {
    * 处理Transformer层
    */
   private async processTransformerLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
-    const providerInfo = ConfigLoader.getProviderInfo(
-      this.config.systemConfig,
-      routingDecision.selectedProvider.split('-')[0]
-    );
-    const transformerInfo = ConfigLoader.getTransformerInfo(this.config.systemConfig, providerInfo.transformer);
+    // PipelineRouter返回的routingDecision包含模型信息和可用流水线列表
+    // 我们需要根据模型类型来确定Provider信息
+    const modelType = routingDecision.virtualModel;
+    
+    // 从配置中获取第一个可用的流水线对应的Provider信息
+    // 这是简化的实现，实际应该由负载均衡器选择具体流水线
+    const firstPipelineId = routingDecision.availablePipelines[0];
+    const provider = this.extractProviderFromPipelineId(firstPipelineId);
+    
+    const providerInfo = this.config.systemConfig.providerTypes[provider];
+    if (!providerInfo) {
+      throw new Error(`Provider type '${provider}' not found in system config`);
+    }
+    const transformerInfo = this.config.systemConfig.transformers[providerInfo.transformer];
 
-    // 获取用户配置的maxTokens - 从虚拟模型配置中查找
+    // 获取用户配置的maxTokens - 从provider配置中查找
     let userMaxTokens: number | undefined;
-    for (const [virtualModelName, virtualModelConfig] of Object.entries(this.config.virtualModels)) {
-      const provider = virtualModelConfig.providers.find(p => p.providerId === routingDecision.selectedProvider);
-      if (provider && provider.maxTokens) {
-        userMaxTokens = provider.maxTokens;
-        break;
-      }
+    const providerConfig = this.config.providers.find(p => p.name === provider);
+    if (providerConfig && providerConfig.maxTokens) {
+      userMaxTokens = providerConfig.maxTokens;
     }
 
     context.transformations.push({
@@ -602,6 +615,8 @@ export class PipelineLifecycleManager extends EventEmitter {
 
     secureLogger.debug('Transformer layer processing', {
       requestId: context.requestId,
+      modelType,
+      provider,
       transformerType: providerInfo.transformer,
       userMaxTokens,
       systemMaxTokens: transformerInfo.maxTokens,
@@ -609,9 +624,11 @@ export class PipelineLifecycleManager extends EventEmitter {
 
     // 应用用户配置的max_tokens，如果没有用户配置则使用系统默认值
     const effectiveMaxTokens = userMaxTokens || transformerInfo.maxTokens || 4096;
+    const targetModel = this.extractModelFromPipelineId(firstPipelineId);
+    
     const transformedRequest = {
       ...request,
-      model: routingDecision.selectedModel,
+      model: targetModel,
       // 应用max_tokens限制 - 优先使用用户配置，避免硬编码
       max_tokens: Math.min(request.max_tokens || effectiveMaxTokens, effectiveMaxTokens),
     };
@@ -620,31 +637,66 @@ export class PipelineLifecycleManager extends EventEmitter {
   }
 
   /**
+   * 从流水线ID中提取Provider名称
+   * 例如：lmstudio-llama-3.1-8b-key0 -> lmstudio
+   */
+  private extractProviderFromPipelineId(pipelineId: string): string {
+    return pipelineId.split('-')[0];
+  }
+
+  /**
+   * 从流水线ID中提取目标模型名称
+   * 例如：lmstudio-llama-3.1-8b-key0 -> llama-3.1-8b
+   */
+  private extractModelFromPipelineId(pipelineId: string): string {
+    const parts = pipelineId.split('-');
+    // 移除第一个部分（provider）和最后一个部分（keyX）
+    return parts.slice(1, -1).join('-');
+  }
+
+  /**
    * 处理Protocol层
    */
   private async processProtocolLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
-    const providerType = routingDecision.selectedProvider.split('-')[0];
-    const providerInfo = ConfigLoader.getProviderInfo(this.config.systemConfig, providerType);
+    const firstPipelineId = routingDecision.availablePipelines[0];
+    const providerType = this.extractProviderFromPipelineId(firstPipelineId);
+    const providerInfo = this.config.systemConfig.providerTypes[providerType];
+    if (!providerInfo) {
+      throw new Error(`Provider type '${providerType}' not found in system config`);
+    }
+
+    // 从系统配置中获取端点信息
+    const endpoint = providerInfo.endpoint;
+    
+    // 从配置中获取对应的API密钥
+    let apiKey = this.config.apiKey || 'default-key';
+    
+    // 尝试从provider配置中获取API密钥
+    const providerConfig = this.config.providers.find(p => p.name.startsWith(providerType));
+    if (providerConfig && providerConfig.api_key) {
+      apiKey = providerConfig.api_key;
+    }
 
     context.transformations.push({
       layer: 'protocol',
       protocolType: providerInfo.protocol,
-      endpoint: routingDecision.selectedEndpoint,
+      endpoint: endpoint,
       timestamp: new Date(),
     });
 
     secureLogger.debug('Protocol layer processing', {
       requestId: context.requestId,
       protocolType: providerInfo.protocol,
-      endpoint: routingDecision.selectedEndpoint,
+      endpoint: endpoint,
+      providerType,
     });
 
     // 添加认证头和端点信息
     const protocolRequest = {
       ...request,
       __internal: {
-        endpoint: routingDecision.selectedEndpoint,
-        apiKey: routingDecision.selectedApiKey,
+        endpoint: endpoint,
+        apiKey: apiKey,
         protocol: providerInfo.protocol,
         timeout: providerInfo.timeout,
         maxRetries: providerInfo.maxRetries,
@@ -655,6 +707,15 @@ export class PipelineLifecycleManager extends EventEmitter {
   }
 
   /**
+   * 从流水线ID中提取API密钥索引
+   * 例如：lmstudio-llama-3.1-8b-key2 -> 2
+   */
+  private extractKeyIndexFromPipelineId(pipelineId: string): number {
+    const match = pipelineId.match(/-key(\d+)$/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
+
+  /**
    * 处理Server Compatibility层 - 配置驱动的模块选择
    */
   private async processServerCompatibilityLayer(
@@ -662,8 +723,12 @@ export class PipelineLifecycleManager extends EventEmitter {
     routingDecision: any,
     context: RequestContext
   ): Promise<any> {
-    const providerType = routingDecision.selectedProvider.split('-')[0];
-    const providerInfo = ConfigLoader.getProviderInfo(this.config.systemConfig, providerType);
+    const firstPipelineId = routingDecision.availablePipelines[0];
+    const providerType = this.extractProviderFromPipelineId(firstPipelineId);
+    const providerInfo = this.config.systemConfig.providerTypes[providerType];
+    if (!providerInfo) {
+      throw new Error(`Provider type '${providerType}' not found in system config`);
+    }
     
     // 获取server compatibility模块标签
     const compatibilityTag = providerInfo.serverCompatibility || 'generic';
@@ -695,13 +760,14 @@ export class PipelineLifecycleManager extends EventEmitter {
 
       try {
         const { LMStudioCompatibilityModule } = require('../modules/pipeline-modules/server-compatibility/lmstudio-compatibility');
+        const targetModel = this.extractModelFromPipelineId(firstPipelineId);
         const lmstudioConfig = {
-          baseUrl: routingDecision.selectedEndpoint,
-          apiKey: routingDecision.selectedApiKey,
+          baseUrl: request.__internal.endpoint,
+          apiKey: request.__internal.apiKey,
           timeout: 30000,
           maxRetries: 3,
           retryDelay: 1000,
-          models: [routingDecision.selectedModel],
+          models: [targetModel],
           maxTokens: {}
         };
 
@@ -878,7 +944,7 @@ export class PipelineLifecycleManager extends EventEmitter {
         Authorization: `Bearer ${apiKey}`,
         'User-Agent': 'RCC-v4.0-Pipeline',
       },
-      body: JSON.stringify({
+      body: JQJsonHandler.stringifyJson({
         model: request.model,
         messages: request.messages,
         max_tokens: request.max_tokens,
@@ -911,7 +977,7 @@ export class PipelineLifecycleManager extends EventEmitter {
         });
 
         // 解析响应
-        const responseData = JSON.parse(response.body);
+        const responseData = JQJsonHandler.parseJsonString(response.body);
 
         // 🔍 调试日志：记录LM Studio实际返回的响应格式
         secureLogger.info('LM Studio响应格式检查', {
@@ -920,7 +986,7 @@ export class PipelineLifecycleManager extends EventEmitter {
           hasChoices: !!responseData.choices,
           choicesType: Array.isArray(responseData.choices) ? 'array' : typeof responseData.choices,
           choicesLength: Array.isArray(responseData.choices) ? responseData.choices.length : 'n/a',
-          responsePreview: JSON.stringify(responseData).substring(0, 200) + '...',
+          responsePreview: JQJsonHandler.stringifyJson(responseData, true).substring(0, 200) + '...',
         });
 
         // 验证响应格式
@@ -950,12 +1016,8 @@ export class PipelineLifecycleManager extends EventEmitter {
 
         // 如果是429错误，blacklist这个API key
         if (error.message.includes('429') && context.routingDecision) {
-          this.router.blacklistKey(
-            context.routingDecision.selectedProvider,
-            0, // 简化版本，假设当前使用的是第一个key
-            '429',
-            'Rate limit exceeded'
-          );
+          // PipelineRouter doesn't have blacklistKey method
+          // this.router.blacklistKey(...)
         }
 
         // 如果不是最后一次尝试，等待后重试
@@ -1028,7 +1090,7 @@ export class PipelineLifecycleManager extends EventEmitter {
   /**
    * 处理路由错误
    */
-  private handleRoutingError(routingDecision: any, error: RouterError): void {
+  private handleRoutingError(routingDecision: any, error: any): void {
     if (error.errorType === 'ALL_BLACKLISTED') {
       secureLogger.warn('All providers blacklisted for virtual model', {
         virtualModel: routingDecision.virtualModel,
@@ -1038,21 +1100,238 @@ export class PipelineLifecycleManager extends EventEmitter {
   }
 
   /**
+   * 初始化PipelineManager并生成流水线表
+   * 这必须在Router初始化之前执行
+   */
+  private async initializePipelineManager(): Promise<void> {
+    try {
+      secureLogger.info('Initializing PipelineManager and generating pipeline tables');
+
+      // 导入必要的类
+      const { PipelineManager } = require('../pipeline/pipeline-manager');
+      const { StandardPipelineFactoryImpl } = require('../pipeline/pipeline-factory');
+      const { ConfigReader } = require('../config/config-reader');
+
+      // 创建PipelineManager
+      const factory = new StandardPipelineFactoryImpl();
+      const pipelineManager = new PipelineManager(factory, this.config.systemConfig);
+
+      // 从用户配置创建RoutingTable
+      const routingTable = this.createRoutingTableFromConfig(this.config);
+
+      // 提取配置信息
+      const configName = this.extractConfigNameFromConfig();
+      const configInfo = {
+        name: configName,
+        file: 'loaded-from-config',
+        port: this.config.server.port
+      };
+
+      // 初始化PipelineManager，这会创建所有流水线并生成流水线表
+      await pipelineManager.initializeFromRoutingTable(routingTable, configInfo);
+
+      secureLogger.info('PipelineManager initialized and pipeline tables generated', {
+        configName,
+        totalPipelines: pipelineManager.getAllPipelines().size
+      });
+
+    } catch (error) {
+      secureLogger.error('Failed to initialize PipelineManager', {
+        error: error.message,
+        stack: error.stack
+      });
+      throw new Error(`PipelineManager initialization failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * 初始化路由器
+   * 根据配置文件生成的流水线表创建PipelineRouter
+   */
+  private async initializeRouter(): Promise<void> {
+    try {
+      // 从用户配置中提取配置名称
+      // 假设配置文件路径类似 ~/.route-claudecode/config/v4/single-provider/lmstudio-v4-5506.json
+      // 我们需要提取 "lmstudio-v4-5506" 作为配置名称
+      
+      const configName = this.extractConfigNameFromConfig();
+      
+      secureLogger.info('Initializing router with config', {
+        configName,
+        serverPort: this.config.server.port
+      });
+
+      // 尝试从generated目录加载流水线表
+      this.router = PipelineRouter.fromConfigName(configName);
+      
+      secureLogger.info('Router initialized successfully', {
+        configName,
+        routeCount: this.router.getStatistics().totalRoutes
+      });
+
+    } catch (error) {
+      secureLogger.error('Failed to initialize router', {
+        error: error.message,
+        stack: error.stack
+      });
+      throw new Error(`Router initialization failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * 从用户配置创建RoutingTable
+   */
+  private createRoutingTableFromConfig(config: any): any {
+    const routes: Record<string, any[]> = {};
+    
+    // 🔍 调试：记录Demo1配置结构 (直接读取，无转换)
+    secureLogger.info('🔍 Creating routing table from Demo1 config format', {
+      hasProviders: !!config.providers,
+      hasRouter: !!config.router,
+      providersCount: config.providers ? config.providers.length : 0,
+      routerKeys: config.router ? Object.keys(config.router) : []
+    });
+    
+    // 从Demo1格式直接创建路由 (providers + router)
+    for (const [modelTypeName, routeString] of Object.entries(config.router)) {
+      const routeList: any[] = [];
+      
+      // 解析Demo1路由字符串 "provider,model"
+      const [providerName, targetModel] = (routeString as string).split(',');
+      
+      // 🔍 调试：记录每个路由配置的结构
+      secureLogger.info('🔍 Processing Demo1 route', {
+        modelTypeName,
+        routeString,
+        providerName,
+        targetModel
+      });
+      
+      // 查找匹配的Provider配置
+      const provider = config.providers.find((p: any) => p.name === providerName);
+      if (!provider) {
+        throw new Error(`Provider '${providerName}' not found for route '${modelTypeName}'`);
+      }
+      
+      // 验证模型是否在Provider支持的models列表中
+      if (!provider.models.includes(targetModel)) {
+        throw new Error(`Model '${targetModel}' not supported by provider '${providerName}'`);
+      }
+      
+      // 创建路由对象 (直接从Demo1格式构建)
+      const route = {
+        provider: providerName,
+        model: targetModel,
+        api_base_url: provider.api_base_url,
+        api_key: provider.api_key,
+        maxTokens: provider.maxTokens || 4096,
+        serverCompatibility: provider.serverCompatibility || 'generic',
+        weight: provider.weight || 100
+      };
+        
+        // 验证必需字段
+        if (route.provider && route.model && route.api_base_url) {
+          const routeId = `${modelTypeName}-${route.provider}-0`;
+          const pipelineId = `${route.provider}-key0`;
+          
+          routeList.push({
+            routeId,
+            routeName: `${modelTypeName} via ${route.provider}`,
+            virtualModel: modelTypeName,  // 🐛 关键修复：添加virtualModel字段
+            provider: route.provider,
+            targetModel: route.model,
+            apiKeyIndex: 0,
+            pipelineId,
+            isActive: true,
+            health: 'healthy' as const,
+            // 🐛 关键修复：添加PipelineManager期望的apiKeys字段
+            apiKeys: [route.api_key || 'lm-studio-key-1'],
+            // 附加配置信息（用于调试）
+            apiBaseUrl: route.api_base_url,
+            apiKey: route.api_key,
+            maxTokens: route.maxTokens || 4096,
+            serverCompatibility: route.serverCompatibility || 'generic',
+            weight: route.weight || 100
+          });
+          
+          secureLogger.info('✅ Created route entry', {
+            routeId,
+            modelTypeName,
+            provider: route.provider,
+            targetModel: route.model
+          });
+        } else {
+          secureLogger.warn('⚠️ Invalid route config - missing required fields', {
+            modelTypeName,
+            hasProvider: !!route.provider,
+            hasModel: !!route.model,
+            hasApiBaseUrl: !!route.api_base_url
+          });
+        }
+      
+      routes[modelTypeName] = routeList;
+    }
+
+    // 🐛 调试：记录最终路由表统计
+    const totalRoutes = Object.values(routes).reduce((sum, routeList) => sum + routeList.length, 0);
+    secureLogger.info('📊 Routing table creation complete', {
+      totalModelTypes: Object.keys(routes).length,
+      totalRoutes,
+      routeBreakdown: Object.fromEntries(
+        Object.entries(routes).map(([key, routeList]) => [key, routeList.length])
+      )
+    });
+    
+    return {
+      routes,
+      defaultRoute: 'default',
+    };
+  }
+
+  /**
+   * 从配置中提取配置名称
+   * 这是一个简化的实现，实际应该根据配置文件路径或其他标识符确定
+   */
+  private extractConfigNameFromConfig(): string {
+    // 从服务器端口推断配置名称（临时方案）
+    const port = this.config.server.port;
+    
+    // 根据端口号映射到对应的配置名称
+    const portToConfigMap: Record<number, string> = {
+      5506: 'lmstudio-v4-5506',
+      5507: 'lmstudio-v4-5507',
+      5508: 'lmstudio-v4-5508',
+    };
+
+    const configName = portToConfigMap[port];
+    if (!configName) {
+      // 如果没有映射，使用默认命名模式
+      return `lmstudio-v4-${port}`;
+    }
+
+    return configName;
+  }
+
+  /**
    * 验证路由器配置
    */
   private validateRouterConfiguration(): void {
+    if (!this.router) {
+      throw new Error('Router not initialized');
+    }
+
     const routerStats = this.router.getStatistics();
 
     if (routerStats.totalProviders === 0) {
       throw new Error('No providers configured in router');
     }
 
-    if (!this.config.virtualModels.default) {
+    if (!this.config.router.default) {
       throw new Error('Default virtual model must be configured');
     }
 
     secureLogger.info('Router configuration validated', {
-      totalVirtualModels: Object.keys(this.config.virtualModels).length,
+      totalRouterRules: Object.keys(this.config.router).length,
       totalProviders: routerStats.totalProviders,
       blacklistedKeys: routerStats.totalBlacklisted,
     });

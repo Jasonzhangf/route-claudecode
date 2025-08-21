@@ -8,7 +8,18 @@
  */
 
 // 基础模块接口
-export * from './module-interface';
+export * from '../module/base-module';
+
+// 核心模块接口已移至base-module
+// export { 
+//   ModuleEventType, 
+//   ModuleEventData,
+//   ModuleExecutionContext,
+//   ModuleExecutionResult
+// } from './module-interface';
+
+// 模块实现接口 - 已合并到base-module
+// export * from './module-implementation-interface';
 
 // 客户端模块接口
 export * from './client-interface';
@@ -25,8 +36,8 @@ export * from './server-interface';
 // 中间件接口
 export * from './middleware-interface';
 
-// 模块实现接口
-export { IModuleInterface, IModuleStatus, IModuleMetrics } from './module-implementation-interface';
+// 模块实现接口 - 已合并到base-module
+// export { ModuleInterface, ModuleStatus, ModuleMetrics } from './module-implementation-interface';
 
 /**
  * 模块接口版本信息

@@ -16,7 +16,7 @@ import {
   PipelineRouting,
   SecurityConfig,
   ValidationConfig,
-} from '../config/v4-config-loader';
+} from '../config/config-types';
 
 export interface ValidationResult {
   valid: boolean;

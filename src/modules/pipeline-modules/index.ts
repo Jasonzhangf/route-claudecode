@@ -6,8 +6,8 @@
  * @author Jason Zhang
  */
 
-// Transformer层
-export { AnthropicToOpenAITransformer } from './transformer/anthropic-to-openai';
+// Transformer层 - 使用安全的transformer实现
+// export { AnthropicToOpenAITransformer } from './transformer/anthropic-to-openai'; // DEPRECATED - 已删除
 
 // Protocol层
 export { OpenAIProtocolModule } from './protocol/openai-protocol';
@@ -24,13 +24,13 @@ export { OpenAIServerModule } from './server/openai-server';
 export { LMStudioPipeline } from './lmstudio-pipeline';
 
 // 类型定义
-export type {
-  // Transformer类型
-  AnthropicRequest,
-  OpenAIRequest,
-  AnthropicResponse,
-  OpenAIResponse,
-} from './transformer/anthropic-to-openai';
+// export type {
+//   // Transformer类型 - DEPRECATED - 已删除
+//   AnthropicRequest,
+//   OpenAIRequest,
+//   AnthropicResponse,
+//   OpenAIResponse,
+// } from './transformer/anthropic-to-openai';
 
 export type {
   // Protocol类型

@@ -8,7 +8,7 @@
 
 import { OpenAIProtocolHandler, OpenAIProtocolConfig } from './openai-protocol-handler';
 import { AnthropicProtocolHandler, AnthropicProtocolConfig } from './anthropic-protocol-handler';
-import { IModuleInterface } from '../../interfaces/core/module-implementation-interface';
+import { ModuleInterface } from '../../interfaces/module/base-module';
 
 /**
  * 支持的Provider Protocol类型
@@ -50,7 +50,7 @@ export interface ProviderCreateOptions {
  */
 export class ProviderFactory {
   private static instance: ProviderFactory;
-  private createdProviders: Map<string, IModuleInterface>;
+  private createdProviders: Map<string, ModuleInterface>;
 
   private constructor() {
     this.createdProviders = new Map();
@@ -69,7 +69,7 @@ export class ProviderFactory {
   /**
    * 创建Provider实例
    */
-  public createProvider(options: ProviderCreateOptions): IModuleInterface {
+  public createProvider(options: ProviderCreateOptions): ModuleInterface {
     const { id, type, config, debug = false } = options;
 
     // 检查是否已经创建过相同ID的Provider
@@ -77,7 +77,7 @@ export class ProviderFactory {
       throw new Error(`Provider with ID '${id}' already exists`);
     }
 
-    let provider: IModuleInterface;
+    let provider: ModuleInterface;
 
     try {
       switch (type) {
@@ -122,8 +122,8 @@ export class ProviderFactory {
   /**
    * 批量创建Provider实例
    */
-  public createProviders(configs: ProviderConfig[], debug: boolean = false): IModuleInterface[] {
-    const providers: IModuleInterface[] = [];
+  public createProviders(configs: ProviderConfig[], debug: boolean = false): ModuleInterface[] {
+    const providers: ModuleInterface[] = [];
     const errors: Array<{ id: string; error: Error }> = [];
 
     for (const providerConfig of configs) {
@@ -176,14 +176,14 @@ export class ProviderFactory {
   /**
    * 获取已创建的Provider
    */
-  public getProvider(id: string): IModuleInterface | undefined {
+  public getProvider(id: string): ModuleInterface | undefined {
     return this.createdProviders.get(id);
   }
 
   /**
    * 获取所有已创建的Provider
    */
-  public getAllProviders(): IModuleInterface[] {
+  public getAllProviders(): ModuleInterface[] {
     return Array.from(this.createdProviders.values());
   }
 

@@ -8,11 +8,11 @@
 
 import OpenAI from 'openai';
 import {
-  IModuleInterface,
+  ModuleInterface,
   ModuleType,
-  IModuleStatus,
-  IModuleMetrics,
-} from '../../interfaces/core/module-implementation-interface';
+  ModuleStatus,
+  ModuleMetrics,
+} from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { StandardRequest } from '../../interfaces/standard/request';
 import { StandardResponse, Choice, Usage, FinishReason } from '../../interfaces/standard/response';
@@ -51,13 +51,13 @@ export interface OpenAIProtocolConfig {
 /**
  * OpenAI Protocol处理器实现
  */
-export class OpenAIProtocolHandler extends EventEmitter implements IModuleInterface {
+export class OpenAIProtocolHandler extends EventEmitter implements ModuleInterface {
   protected readonly id: string = 'openai-protocol-handler';
   protected readonly name: string = 'OpenAI Protocol Handler';
   protected readonly type: ModuleType = ModuleType.PROTOCOL;
   protected readonly version: string = '1.0.0';
   protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
-  protected metrics: IModuleMetrics = {
+  protected metrics: ModuleMetrics = {
     requestsProcessed: 0,
     averageProcessingTime: 0,
     errorRate: 0,
@@ -79,10 +79,10 @@ export class OpenAIProtocolHandler extends EventEmitter implements IModuleInterf
   getVersion(): string {
     return this.version;
   }
-  getStatus(): IModuleStatus {
+  getStatus(): ModuleStatus {
     return { id: this.id, name: this.name, type: this.type, status: this.status, health: 'healthy' };
   }
-  getMetrics(): IModuleMetrics {
+  getMetrics(): ModuleMetrics {
     return { ...this.metrics };
   }
   async configure(config: any): Promise<void> {}

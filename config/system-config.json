@@ -60,7 +60,7 @@
     "lmstudio": {
       "endpoint": "http://localhost:1234/v1/chat/completions",
       "protocol": "openai",
-      "transformer": "lmstudio-standard",
+      "transformer": "anthropic-to-openai-transformer",
       "serverCompatibility": "lmstudio",
       "timeout": 30000,
       "maxRetries": 2
@@ -77,12 +77,10 @@
   "// Transformer配置": "",
   "transformers": {
     "modelscope-enhancer": {
-      "maxTokens": 65536,
       "enhanceTools": true,
       "formatters": ["max-token-optimizer", "tool-enhancer"]
     },
     "dashscope-enhancer": {
-      "maxTokens": 65536,
       "enhanceTools": true,
       "formatters": ["max-token-optimizer", "tool-enhancer"]
     },
@@ -108,13 +106,20 @@
     },
     "shuaihong-standard": {
       "passthrough": true,
-      "formatters": ["shuaihong-headers"],
-      "maxTokens": 8192
+      "formatters": ["shuaihong-headers"]
     },
     "lmstudio-standard": {
-      "maxTokens": 4096,
       "passthrough": true,
       "formatters": ["local-model-optimizer"]
+    },
+    "anthropic-to-openai-transformer": {
+      "protocol": "openai",
+      "transforms": ["anthropic-to-openai-format"],
+      "formatters": ["openai-compatible-format", "tool-format-optimizer"]
+    },
+    "openai-standard": {
+      "passthrough": true,
+      "formatters": ["openai-standard-format"]
     }
   },
   "// Pipeline层配置": "",

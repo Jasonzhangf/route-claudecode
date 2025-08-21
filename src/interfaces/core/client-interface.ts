@@ -7,7 +7,7 @@
  * @author Jason Zhang
  */
 
-import { IModule, ModuleConfig } from './module-interface';
+import { ModuleInterface, ModuleConfig } from '../module/base-module';
 
 /**
  * CLI命令类型枚举
@@ -226,7 +226,7 @@ export interface IClientErrorHandler {
  * 客户端模块接口
  * 继承标准模块接口，提供客户端特有的功能
  */
-export interface IClientModule extends IModule {
+export interface IClientModule extends ModuleInterface {
   readonly config: ClientConfig;
   readonly cliManager: ICLIManager;
   readonly serverManager: IServerManager;

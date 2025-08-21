@@ -8,6 +8,8 @@ import {
   RequestPriority,
 } from './types';
 import { ErrorHandler } from '../../middleware/error-handler';
+import { defaultProviderMapper } from '../../utils/provider-mapper';
+import { API_DEFAULTS } from '../../constants/api-defaults';
 
 export interface RequestProcessorConfig {
   requestId: string;
@@ -145,44 +147,23 @@ export class RequestProcessorImpl implements RequestProcessor {
   }
 
   private extractTargetProvider(): string {
-    // 从请求头或URL中提取目标Provider
-    const headers = this.request.headers || {};
-
-    // 优先级：明确指定的Provider > URL路径 > 默认Provider
-    const explicitProvider = headers['x-provider'] || headers['X-Provider'];
-    if (explicitProvider) {
-      return explicitProvider;
-    }
-
-    // 从URL路径中提取Provider
-    const urlMatch = this.request.url?.match(/\/api\/v1\/providers\/([^\/]+)/);
-    if (urlMatch) {
-      return urlMatch[1];
-    }
-
-    // 根据请求内容智能选择Provider
+    // 解析请求体以获取模型信息
+    let modelName: string | undefined;
     if (this.request.body) {
-      const body = typeof this.request.body === 'string' ? JSON.parse(this.request.body) : this.request.body;
-
-      // 检查模型名称来推断Provider
-      if (body.model) {
-        if (body.model.includes('gpt') || body.model.includes('openai')) {
-          return 'openai';
-        }
-        if (body.model.includes('claude') || body.model.includes('anthropic')) {
-          return 'anthropic';
-        }
-        if (body.model.includes('gemini') || body.model.includes('google')) {
-          return 'gemini';
-        }
-        if (body.model.includes('llama') || body.model.includes('mistral')) {
-          return 'lmstudio';
-        }
+      try {
+        const body = typeof this.request.body === 'string' ? JSON.parse(this.request.body) : this.request.body;
+        modelName = body.model;
+      } catch (error) {
+        console.warn(`Failed to parse request body: ${error}`);
       }
     }
 
-    // 默认使用LM Studio
-    return 'lmstudio';
+    // 使用配置驱动的Provider映射器
+    return defaultProviderMapper.extractTargetProvider({
+      headers: this.request.headers,
+      url: this.request.url,
+      model: modelName,
+    });
   }
 
   private async callProvider(provider: string): Promise<any> {
@@ -228,28 +209,31 @@ export class RequestProcessorImpl implements RequestProcessor {
   }
 
   private async getProviderConfig(provider: string): Promise<any> {
-    // 简化的Provider配置获取
-    // 在实际实现中应该通过ConfigManager获取
-    const configs: Record<string, any> = {
-      lmstudio: {
-        baseUrl: 'http://localhost:1234/v1',
-        apiKey: null,
-      },
+    // 使用配置驱动的Provider配置获取
+    // 在实际实现中应该通过ConfigManager获取完整配置
+    const resolvedProvider = defaultProviderMapper.resolveProviderAlias(provider);
+    
+    // 从API_DEFAULTS获取基础配置
+    const providerConfigs: Record<string, any> = {
       openai: {
-        baseUrl: 'https://api.openai.com/v1',
+        baseUrl: process.env.OPENAI_BASE_URL || API_DEFAULTS.PROVIDERS.OPENAI.BASE_URL,
         apiKey: process.env.OPENAI_API_KEY,
       },
       anthropic: {
-        baseUrl: 'https://api.anthropic.com/v1',
+        baseUrl: process.env.ANTHROPIC_BASE_URL || API_DEFAULTS.PROVIDERS.ANTHROPIC.BASE_URL,
         apiKey: process.env.ANTHROPIC_API_KEY,
       },
       gemini: {
-        baseUrl: 'https://generativelanguage.googleapis.com/v1',
+        baseUrl: process.env.GEMINI_BASE_URL || API_DEFAULTS.PROVIDERS.GEMINI.BASE_URL,
         apiKey: process.env.GOOGLE_API_KEY,
+      },
+      lmstudio: {
+        baseUrl: process.env.LMSTUDIO_BASE_URL || API_DEFAULTS.PROVIDERS.LMSTUDIO.BASE_URL,
+        apiKey: null,
       },
     };
 
-    return configs[provider];
+    return providerConfigs[resolvedProvider] || providerConfigs.openai;
   }
 
   private createProcessingError(error: any): ProcessingError {

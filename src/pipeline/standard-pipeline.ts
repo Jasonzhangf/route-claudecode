@@ -400,4 +400,42 @@ export class StandardPipeline extends EventEmitter implements PipelineFramework 
       });
     });
   }
+
+  /**
+   * 获取流水线ID - PipelineFramework接口要求
+   */
+  getId(): string {
+    return this.id;
+  }
+
+  /**
+   * 获取流水线名称 - PipelineFramework接口要求
+   */
+  getName(): string {
+    return this.name;
+  }
+
+  /**
+   * 获取Provider - PipelineFramework接口要求
+   */
+  getProvider(): string {
+    return this.config.provider;
+  }
+
+  /**
+   * 获取模型 - PipelineFramework接口要求
+   */
+  getModel(): string {
+    return this.config.model;
+  }
+
+  /**
+   * 清理资源 - PipelineFramework接口要求
+   */
+  async cleanup(): Promise<void> {
+    await this.reset();
+    this.moduleMap.clear();
+    this.moduleOrder = [];
+    this.removeAllListeners();
+  }
 }

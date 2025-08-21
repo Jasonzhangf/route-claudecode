@@ -7,43 +7,14 @@
  */
 
 /**
- * 模块类型枚举
+ * 导入base-module中的类型定义
  */
-export type ModuleType = 'validator' | 'transformer' | 'protocol' | 'compatibility' | 'server';
+import { ModuleType, ModuleStatus, ModuleInterface } from '../module/base-module';
 
 /**
- * 模块状态接口
+ * 重新导出供外部使用
  */
-export interface ModuleStatus {
-  id: string;
-  name: string;
-  type: ModuleType;
-  status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
-  health: 'healthy' | 'degraded' | 'unhealthy';
-  lastActivity?: Date;
-  error?: Error;
-}
-
-/**
- * 模块接口定义
- */
-export interface ModuleInterface {
-  getId(): string;
-  getName(): string;
-  getType(): ModuleType;
-  getVersion(): string;
-  getStatus(): ModuleStatus;
-  getMetrics(): any;
-  configure(config: any): Promise<void>;
-  start(): Promise<void>;
-  stop(): Promise<void>;
-  process(input: any): Promise<any>;
-  reset(): Promise<void>;
-  cleanup(): Promise<void>;
-  healthCheck(): Promise<{ healthy: boolean; details: any }>;
-  on(event: string, listener: (...args: any[]) => void): void;
-  removeAllListeners(): void;
-}
+export { ModuleType, ModuleStatus, ModuleInterface };
 
 /**
  * 流水线规范接口
@@ -106,15 +77,24 @@ export interface PipelineStatus {
   id: string;
   name: string;
   status: 'idle' | 'starting' | 'running' | 'busy' | 'stopping' | 'error' | 'stopped';
-  provider: string;
-  model: string;
-  activeConnections: number;
-  totalRequests: number;
-  successRequests: number;
-  errorRequests: number;
-  averageResponseTime: number;
-  lastActivity: Date;
-  health: {
+  provider?: string;
+  model?: string;
+  activeConnections?: number;
+  totalRequests?: number;
+  successRequests?: number;
+  errorRequests?: number;
+  averageResponseTime?: number;
+  lastActivity?: Date;
+  lastExecution?: ExecutionRecord;
+  modules?: Record<string, ModuleStatus>;
+  uptime?: number;
+  performance?: {
+    requestsProcessed: number;
+    averageProcessingTime: number;
+    errorRate: number;
+    throughput: number;
+  };
+  health?: {
     healthy: boolean;
     lastHealthCheck: Date;
     issues: string[];
@@ -352,10 +332,10 @@ export interface PipelineExecutor {
  * 执行上下文
  */
 export interface ExecutionContext {
-  requestId: string;
+  requestId?: string;
   userId?: string;
   sessionId?: string;
-  priority: 'low' | 'normal' | 'high';
+  priority?: 'low' | 'normal' | 'high';
   timeout?: number;
   debug?: boolean;
   traceId?: string;

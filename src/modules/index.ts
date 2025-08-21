@@ -4,25 +4,38 @@
  * @author Jason Zhang
  */
 
-// 导出存在的模块 - 使用选择性导出避免冲突
+// 核心模块实现
 export * from './base-module-impl';
+
+// 核心功能模块
 export * from './providers';
 export * from './validators';
+export * from './routing';
 
-// 选择性导出pipeline-modules，避免与transformers冲突
-export { LMStudioPipeline } from './pipeline-modules';
+// Transformers - 选择性导出避免冲突
+export {
+  SecureAnthropicToOpenAITransformer,
+  SecureTransformerFactory,
+  createSecureTransformerFactory,
+  getGlobalTransformerFactory,
+  resetGlobalTransformerFactory,
+  isSecureTransformer,
+  validateSecurityConfig,
+  createDefaultSecurityConfig,
+  SECURITY_LIMITS,
+  SUPPORTED_SECURE_VERSIONS,
+  DEPRECATED_TRANSFORMER_IDS
+} from './transformers';
 
-// 选择性导出transformers，避免重复
-export { AnthropicToOpenAITransformer } from './transformers/anthropic-to-openai-transformer';
-
-// 注释掉不存在的模块
-// export * from './module-registry';
-// export * from './module-factory';
-// export * from './base-module';
-// export * from './module-loader';
-// export * from './module-validator';
-// export * from './provider-modules';
-// export * from './validation-modules';
+// Pipeline模块系统 - 选择性导出避免冲突
+export {
+  LMStudioPipeline,
+  OpenAIProtocolModule,
+  LMStudioCompatibilityModule,
+  OllamaCompatibilityModule,
+  VLLMCompatibilityModule,
+  OpenAIServerModule
+} from './pipeline-modules';
 
 // 模块版本信息
 export const MODULES_MODULE_VERSION = '4.0.0-alpha.2';

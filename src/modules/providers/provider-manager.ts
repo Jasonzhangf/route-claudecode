@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { IModuleInterface } from '../../interfaces/core/module-implementation-interface';
+import { ModuleInterface } from '../../interfaces/module/base-module';
 import { ProviderFactory, ProviderConfig, ProviderProtocolType } from './provider-factory';
 import { StandardRequest } from '../../interfaces/standard/request';
 import { StandardResponse } from '../../interfaces/standard/response';
@@ -57,7 +57,7 @@ export interface ProviderRouteInfo {
  */
 export interface RouteResult {
   /** 选中的Provider */
-  provider: IModuleInterface;
+  provider: ModuleInterface;
   /** Provider信息 */
   info: ProviderRouteInfo;
   /** 路由决策原因 */
@@ -70,7 +70,7 @@ export interface RouteResult {
 export class ProviderManager {
   private config: ProviderManagerConfig;
   private factory: ProviderFactory;
-  private providers: Map<string, IModuleInterface>;
+  private providers: Map<string, ModuleInterface>;
   private routeInfos: Map<string, ProviderRouteInfo>;
   private healthCheckTimer?: NodeJS.Timeout;
   private roundRobinIndex: number;
@@ -139,7 +139,7 @@ export class ProviderManager {
   /**
    * 注册Provider
    */
-  public async registerProvider(provider: IModuleInterface): Promise<void> {
+  public async registerProvider(provider: ModuleInterface): Promise<void> {
     const providerId = provider.getId();
 
     try {
@@ -303,7 +303,7 @@ export class ProviderManager {
   /**
    * 应用路由策略
    */
-  private applyRoutingStrategy(providers: [string, IModuleInterface][]): [string, IModuleInterface] {
+  private applyRoutingStrategy(providers: [string, ModuleInterface][]): [string, ModuleInterface] {
     if (providers.length === 0) {
       throw new Error('No providers available for routing');
     }
@@ -339,7 +339,7 @@ export class ProviderManager {
   /**
    * 检查Provider兼容性
    */
-  private isProviderCompatible(provider: IModuleInterface, request: StandardRequest): boolean {
+  private isProviderCompatible(provider: ModuleInterface, request: StandardRequest): boolean {
     // 基础检查：Provider必须在运行状态
     const status = provider.getStatus();
     if (status.status !== 'running') {
@@ -428,7 +428,7 @@ export class ProviderManager {
   /**
    * 获取Provider类型
    */
-  private getProviderType(provider: IModuleInterface): ProviderProtocolType {
+  private getProviderType(provider: ModuleInterface): ProviderProtocolType {
     const name = provider.getName().toLowerCase();
     if (name.includes('openai')) {
       return 'openai';

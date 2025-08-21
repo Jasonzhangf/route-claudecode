@@ -18,7 +18,7 @@ import {
 } from '../interfaces';
 import { CommandParser } from './command-parser';
 import { ArgumentValidator } from './argument-validator';
-import { ConfigLoader } from './config-loader';
+import { ConfigReader } from '../config/config-reader';
 import { PipelineLifecycleManager } from '../pipeline/pipeline-lifecycle-manager';
 import { secureLogger } from '../utils/secure-logger';
 
@@ -38,14 +38,14 @@ export interface CLIOptions {
 export class RCCCli implements CLICommands {
   private parser: CommandParser;
   private validator: ArgumentValidator;
-  private configLoader: ConfigLoader;
+  private configReader: ConfigReader;
   private options: CLIOptions;
   private pipelineManager?: PipelineLifecycleManager;
 
   constructor(options: CLIOptions = {}) {
     this.parser = new CommandParser();
     this.validator = new ArgumentValidator();
-    this.configLoader = new ConfigLoader();
+    this.configReader = new ConfigReader();
     this.options = {
       exitOnError: true,
       suppressOutput: false,
@@ -80,11 +80,10 @@ export class RCCCli implements CLICommands {
       }
 
       // 3. 加载配置
-      const config = await this.configLoader.loadConfig(command, {
-        configPath: this.options.configPath,
-        envPrefix: this.options.envPrefix,
-        validateConfig: false, // 暂时禁用验证以避免测试问题
-      });
+      const config = ConfigReader.loadConfig(
+        this.options.configPath || 'config/default.json',
+        'config/system-config.json'
+      );
 
       // 4. 合并配置到命令选项
       const mergedCommand: ParsedCommand = {

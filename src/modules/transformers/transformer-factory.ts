@@ -9,12 +9,13 @@
  * @security-reviewed 2025-08-19
  */
 
-import { IModuleInterface, ModuleType, IModuleFactory } from '../../interfaces/core/module-implementation-interface';
+import { ModuleInterface, ModuleType, IModuleFactory } from '../../interfaces/module/base-module';
 import {
   SecureAnthropicToOpenAITransformer,
   SecureTransformerConfig,
   TransformerSecurityError,
 } from './secure-anthropic-openai-transformer';
+import { getSafeMaxTokens, validateMaxTokens } from '../../constants/api-defaults';
 
 /**
  * 支持的安全Transformer类型
@@ -54,7 +55,7 @@ export interface TransformerFactoryConfig {
  */
 export class SecureTransformerFactory implements IModuleFactory {
   private readonly config: TransformerFactoryConfig;
-  private readonly createdInstances: Map<string, IModuleInterface> = new Map();
+  private readonly createdInstances: Map<string, ModuleInterface> = new Map();
 
   constructor(config: TransformerFactoryConfig) {
     this.config = {
@@ -78,7 +79,7 @@ export class SecureTransformerFactory implements IModuleFactory {
   /**
    * 创建安全的Transformer模块
    */
-  async createModule(type: ModuleType, config: any): Promise<IModuleInterface> {
+  async createModule(type: ModuleType, config: any): Promise<ModuleInterface> {
     if (type !== ModuleType.TRANSFORMER) {
       throw new TransformerSecurityError('Factory only supports TRANSFORMER module type', 'INVALID_MODULE_TYPE', {
         requestedType: type,
@@ -94,7 +95,7 @@ export class SecureTransformerFactory implements IModuleFactory {
   async createTransformer(
     transformerType: SecureTransformerType,
     config: Partial<SecureTransformerConfig> = {}
-  ): Promise<IModuleInterface> {
+  ): Promise<ModuleInterface> {
     // 验证transformer类型
     this.validateTransformerType(transformerType);
 
@@ -104,7 +105,7 @@ export class SecureTransformerFactory implements IModuleFactory {
     // 验证配置安全性
     this.validateConfigSecurity(secureConfig);
 
-    let transformer: IModuleInterface;
+    let transformer: ModuleInterface;
 
     switch (transformerType) {
       case SecureTransformerType.ANTHROPIC_TO_OPENAI:
@@ -166,7 +167,7 @@ export class SecureTransformerFactory implements IModuleFactory {
   /**
    * 获取已创建的实例列表
    */
-  getCreatedInstances(): IModuleInterface[] {
+  getCreatedInstances(): ModuleInterface[] {
     return Array.from(this.createdInstances.values());
   }
 
@@ -219,12 +220,16 @@ export class SecureTransformerFactory implements IModuleFactory {
   private createSecureConfig(userConfig: Partial<SecureTransformerConfig>): SecureTransformerConfig {
     const defaultConfig = this.config.defaultSecurityConfig;
 
+    // 动态计算apiMaxTokens - 优先使用用户配置，否则使用常量中的默认值
+    const userApiMaxTokens = userConfig.apiMaxTokens || defaultConfig?.apiMaxTokens;
+    const calculatedApiMaxTokens = getSafeMaxTokens(userApiMaxTokens, 'lmstudio'); // 默认使用lmstudio的限制
+
     // 合并配置，确保安全默认值
     const mergedConfig: SecureTransformerConfig = {
       // 基础配置
       preserveToolCalls: true,
       mapSystemMessage: true,
-      defaultMaxTokens: 4096,
+      defaultMaxTokens: getSafeMaxTokens(userConfig.defaultMaxTokens),
 
       // 安全限制
       maxMessageCount: 50,
@@ -233,8 +238,7 @@ export class SecureTransformerFactory implements IModuleFactory {
       maxToolsCount: 20,
       processingTimeoutMs: 30000, // 30秒
 
-      // API限制
-      apiMaxTokens: 8192,
+      // API限制 - 稍后设置以避免重复
       modelMaxTokens: new Map(),
 
       // 验证选项
@@ -245,8 +249,13 @@ export class SecureTransformerFactory implements IModuleFactory {
       // 覆盖默认配置
       ...defaultConfig,
 
-      // 覆盖用户配置
-      ...userConfig,
+      // 覆盖用户配置（除了apiMaxTokens之外）
+      ...Object.fromEntries(
+        Object.entries(userConfig).filter(([key]) => key !== 'apiMaxTokens')
+      ),
+      
+      // 最终确保使用用户指定的值（如果存在）或计算后的值
+      apiMaxTokens: userApiMaxTokens || calculatedApiMaxTokens,
     };
 
     return mergedConfig;
@@ -287,7 +296,7 @@ export class SecureTransformerFactory implements IModuleFactory {
     }
   }
 
-  private registerInstance(transformer: IModuleInterface): void {
+  private registerInstance(transformer: ModuleInterface): void {
     const id = transformer.getId();
 
     if (this.createdInstances.has(id)) {
@@ -352,7 +361,8 @@ export function createSecureTransformerFactory(
 ): SecureTransformerFactory {
   const defaultConfig: TransformerFactoryConfig = {
     defaultSecurityConfig: {
-      apiMaxTokens: 8192,
+      // 使用动态计算而不是硬编码
+      apiMaxTokens: getSafeMaxTokens(config.defaultSecurityConfig?.apiMaxTokens, 'lmstudio'),
       processingTimeoutMs: 30000,
       strictValidation: true,
       logSecurityEvents: true,

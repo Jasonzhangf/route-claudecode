@@ -8,7 +8,7 @@
 
 import { ProviderManager } from '../modules/providers/provider-manager';
 import { PipelineManager } from '../pipeline/pipeline-manager';
-import { RCCv4ConfigLoader } from '../config/v4-config-loader';
+import { ConfigReader, MergedConfig } from '../config/config-reader';
 
 /**
  * 全局服务实例
@@ -16,7 +16,7 @@ import { RCCv4ConfigLoader } from '../config/v4-config-loader';
 interface GlobalServices {
   providerManager: ProviderManager | null;
   pipelineManager: PipelineManager | null;
-  configManager: RCCv4ConfigLoader | null;
+  configManager: MergedConfig | null;
   serverManager: IServerManager | null;
   cacheManager: ICacheManager | null;
 }
@@ -42,7 +42,7 @@ export interface ICacheManager {
 /**
  * 配置管理器扩展接口
  */
-export interface IConfigManager extends RCCv4ConfigLoader {
+export interface IConfigManager {
   getCurrentConfig(): Promise<any>;
   validateConfig(config: any): Promise<{ valid: boolean; errors: string[] }>;
   updateConfig(config: any): Promise<void>;

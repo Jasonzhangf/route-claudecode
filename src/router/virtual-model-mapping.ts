@@ -25,12 +25,10 @@ export interface VirtualModelMappingRule {
 
 export enum VirtualModelType {
   DEFAULT = 'default',
-  PREMIUM = 'premium',
   CODING = 'coding',
   REASONING = 'reasoning',
   LONG_CONTEXT = 'longContext',
   WEB_SEARCH = 'webSearch',
-  BACKGROUND = 'background',
 }
 
 /**
@@ -69,46 +67,19 @@ export const VIRTUAL_MODEL_MAPPING_RULES: VirtualModelMappingRule[] = [
     priority: 3,
   },
 
-  // Claude 3.5 Haiku → 背景任务
+  // 编程相关模型 - 有工具调用通常是编程任务
   {
-    inputModel: 'claude-3-5-haiku*', // 支持通配符
-    conditions: {},
-    virtualModel: VirtualModelType.BACKGROUND,
-    priority: 4,
-  },
-
-  // 编程相关模型
-  {
-    inputModel: 'claude-3-5-sonnet',
+    inputModel: '*',
     conditions: {
-      hasTools: true, // 有工具调用通常是编程任务
+      hasTools: true,
+      customCondition: (request: any) => {
+        // 排除web搜索工具，那些属于WEB_SEARCH类型
+        const toolTypes = request.tools?.map((tool: any) => tool.type || tool.name || '').join(' ').toLowerCase();
+        return !toolTypes.includes('web') && !toolTypes.includes('search') && !toolTypes.includes('browser');
+      }
     },
     virtualModel: VirtualModelType.CODING,
-    priority: 5,
-  },
-
-  // GPT-4系列 → Premium
-  {
-    inputModel: 'gpt-4*',
-    conditions: {},
-    virtualModel: VirtualModelType.PREMIUM,
-    priority: 6,
-  },
-
-  // Claude Sonnet 4 → Premium
-  {
-    inputModel: 'claude-sonnet-4',
-    conditions: {},
-    virtualModel: VirtualModelType.PREMIUM,
-    priority: 7,
-  },
-
-  // Claude 3.5 Sonnet → Premium
-  {
-    inputModel: 'claude-3-5-sonnet',
-    conditions: {},
-    virtualModel: VirtualModelType.PREMIUM,
-    priority: 8,
+    priority: 4,
   },
 
   // 默认规则 (必须放在最后)

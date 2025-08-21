@@ -18,7 +18,7 @@ import {
 
 import { ProviderManager } from '../modules/providers/provider-manager';
 import { PipelineManager } from '../pipeline/pipeline-manager';
-import { RCCv4ConfigLoader } from '../config/v4-config-loader';
+import { ConfigReader } from '../config/config-reader';
 import { ServerManager } from './server-manager';
 import { CacheManager } from './cache-manager';
 import { StandardPipelineFactoryImpl } from '../pipeline/pipeline-factory';
@@ -50,12 +50,13 @@ export async function initializeServices(configPath?: string): Promise<ServiceIn
 
     // 1. 初始化配置管理器
     console.log('📋 Initializing configuration manager...');
-    const configManager = new RCCv4ConfigLoader();
-    await configManager.initialize();
-
+    
     // 加载配置
-    const config = await configManager.loadConfig(configPath || 'config/v4');
-    registerConfigManager(configManager as IConfigManager);
+    const config = ConfigReader.loadConfig(
+      configPath || 'config/v4/single-provider/lmstudio-v4-5506-demo1-enhanced.json',
+      'config/system-config.json'
+    );
+    // registerConfigManager(config); // TODO: 重构服务注册
     console.log('✅ Configuration manager initialized');
 
     // 2. 初始化缓存管理器
@@ -67,11 +68,11 @@ export async function initializeServices(configPath?: string): Promise<ServiceIn
     // 3. 初始化Provider管理器
     console.log('🔌 Initializing provider manager...');
     const providerManager = new ProviderManager({
-      routingStrategy: config.routing?.defaultStrategy || ('round_robin' as any),
-      healthCheckInterval: config.routing?.healthCheckInterval || 30000,
-      maxRetries: config.routing?.maxRetries || 3,
+      routingStrategy: 'round_robin' as any, // Default strategy
+      healthCheckInterval: 30000, // Default health check interval
+      maxRetries: 3, // Default max retries
       debug: config.server?.debug || false,
-      strictErrorReporting: config.routing?.strictErrorReporting !== false,
+      strictErrorReporting: true, // Default strict error reporting
     });
 
     // 加载Provider配置并初始化
@@ -92,11 +93,8 @@ export async function initializeServices(configPath?: string): Promise<ServiceIn
     const pipelineFactory = new StandardPipelineFactoryImpl(moduleRegistry);
     const pipelineManager = new PipelineManager(pipelineFactory);
 
-    // 创建Pipeline
-    const pipelineConfigs = Object.entries(config.pipelines || {}).map(([id, pipelineConfig]: [string, any]) => ({
-      id,
-      ...pipelineConfig,
-    }));
+    // 创建Pipeline - simplified approach
+    const pipelineConfigs: any[] = []; // No pipeline configs in MergedConfig currently
 
     for (const pipelineConfig of pipelineConfigs) {
       try {
@@ -137,7 +135,7 @@ export async function initializeServices(configPath?: string): Promise<ServiceIn
       services: {
         providerManager,
         pipelineManager,
-        configManager: configManager as IConfigManager,
+        configManager: null as any, // ConfigManager not used currently
         serverManager,
         cacheManager,
       },

@@ -7,7 +7,7 @@
  * @author Jason Zhang
  */
 
-import { IModule, ModuleConfig } from './module-interface';
+import { ModuleInterface, ModuleConfig } from '../module/base-module';
 
 /**
  * 路由策略枚举
@@ -323,7 +323,7 @@ export interface ISessionFlowController {
  * 路由器模块接口
  * 继承标准模块接口，提供路由器特有的功能
  */
-export interface IRouterModule extends IModule {
+export interface IRouterModule extends ModuleInterface {
   readonly config: RouterConfig;
   readonly requestRouter: IRequestRouter;
   readonly configManager: IConfigManager;
