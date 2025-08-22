@@ -56,7 +56,7 @@ export class JQJsonHandler {
             // 直接使用jq的输出，避免二次解析
             return this.parseJqOutput<T>(result.trim());
         } catch (error) {
-            // 如果jq解析失败，尝试更容错的解析
+            // 如果jq解析失败，使用更容错的解析
             return this.fallbackJsonParse<T>(jsonString, error);
         }
     }
@@ -341,6 +341,7 @@ export class JQJsonHandler {
         // 基本的手动序列化
         return this.createBasicJson(data);
     }
+
 }
 
 /**
