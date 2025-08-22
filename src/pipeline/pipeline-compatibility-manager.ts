@@ -13,6 +13,7 @@ import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
 import { MergedConfig } from '../config/config-reader';
 import { RequestContext } from './pipeline-request-processor';
+import { ModuleProcessingContext, unifiedConfigManager } from '../config/unified-config-manager';
 import {
   COMPATIBILITY_TAGS,
   PROVIDER_NAMES,
@@ -101,8 +102,42 @@ export class PipelineCompatibilityManager extends EventEmitter {
         hasCompatibilityOptions: Object.keys(compatibilityOptions).length > 0
       });
 
-      // 🔧 关键修复：确保__internal对象完整保留
+      // 🎯 Architecture Engineer设计：使用Context传递配置，避免__internal对象
       let processedRequest = { ...request };
+      
+      // 🔧 关键修复：从原始context中复制protocolConfig，避免context对象分离
+      const originalProtocolConfig = context.metadata?.protocolConfig || {};
+      
+      secureLogger.info('🔥🔥 [COMPATIBILITY-CONTEXT-FIX] 检查原始context的protocolConfig', {
+        requestId: context.requestId,
+        hasOriginalMetadata: !!context.metadata,
+        hasOriginalProtocolConfig: !!context.metadata?.protocolConfig,
+        originalProtocolConfigKeys: context.metadata?.protocolConfig ? Object.keys(context.metadata.protocolConfig) : 'no-config',
+        hasOriginalCustomHeaders: !!(context.metadata?.protocolConfig?.customHeaders),
+        originalCustomHeadersKeys: context.metadata?.protocolConfig?.customHeaders ? Object.keys(context.metadata.protocolConfig.customHeaders) : 'no-headers'
+      });
+
+      // 创建ModuleProcessingContext传递给兼容性模块
+      const moduleContext: ModuleProcessingContext = {
+        requestId: context.requestId,
+        providerName: providerType,
+        protocol: 'openai', // ServerCompatibility层后都是OpenAI格式
+        config: {
+          endpoint: matchingProvider?.api_base_url,
+          apiKey: Array.isArray(matchingProvider?.api_key) ? matchingProvider.api_key[0] : matchingProvider?.api_key,
+          timeout: 30000,
+          maxRetries: 3,
+          actualModel: request.model, // TODO: 需要从上层传递真实的actualModel
+          originalModel: request.model,
+          serverCompatibility: compatibilityTag
+        },
+        metadata: {
+          architecture: 'six-layer-enterprise',
+          layer: 'server-compatibility',
+          // 🔑 关键修复：复制原始context中的protocolConfig，确保context连续性
+          protocolConfig: { ...originalProtocolConfig }
+        }
+      };
       
       // 动态加载兼容性模块
       const compatibilityModule = await this.loadCompatibilityModule(
@@ -114,18 +149,52 @@ export class PipelineCompatibilityManager extends EventEmitter {
       );
 
       if (compatibilityModule) {
-        // 使用兼容性模块处理请求
-        processedRequest = await compatibilityModule.process(request);
-        
-        // 🔧 关键修复：确保__internal对象被正确保留
-        if (request.__internal && !processedRequest.__internal) {
-          processedRequest.__internal = request.__internal;
-          secureLogger.debug(`${LAYER_NAMES.SERVER_COMPATIBILITY}层：恢复__internal对象`, {
+        // 🎯 Architecture Engineer设计：传递Context而不是__internal对象
+        if (typeof compatibilityModule.processRequest === 'function') {
+          // 新的Context接口
+          processedRequest = await compatibilityModule.processRequest(request, routingDecision, moduleContext);
+        } else if (typeof compatibilityModule.process === 'function') {
+          // 兼容旧接口，但传递Context
+          processedRequest = await compatibilityModule.process(request, moduleContext);
+        } else {
+          secureLogger.warn('兼容性模块无有效的process方法', {
             requestId: context.requestId,
-            hasInternalBefore: !!request.__internal,
-            hasInternalAfter: !!processedRequest.__internal,
+            compatibilityTag,
+            availableMethods: Object.getOwnPropertyNames(compatibilityModule)
+          });
+          processedRequest = request;
+        }
+        
+        // 🔑 关键修复：将兼容性模块修改后的protocolConfig复制回原始context
+        // 确保Pipeline Request Processor能够访问到自定义头部等配置
+        if (moduleContext.metadata?.protocolConfig) {
+          if (!context.metadata) {
+            context.metadata = {};
+          }
+          context.metadata.protocolConfig = { ...moduleContext.metadata.protocolConfig };
+          
+          secureLogger.info('🔥🔥 [COMPATIBILITY-CONTEXT-FIX] 复制protocolConfig回原始context', {
+            requestId: context.requestId,
+            hasCustomHeaders: !!(context.metadata.protocolConfig.customHeaders),
+            customHeadersKeys: context.metadata.protocolConfig.customHeaders ? Object.keys(context.metadata.protocolConfig.customHeaders) : 'no-headers',
+            contextSynchronized: true
           });
         }
+        
+        // 🎯 移除任何可能的内部字段，确保输出纯净
+        delete (processedRequest as any).__internal;
+        delete (processedRequest as any).anthropic;
+        delete (processedRequest as any)._metadata;
+        delete (processedRequest as any)._config;
+        
+        secureLogger.debug(`${LAYER_NAMES.SERVER_COMPATIBILITY}层：Context模式处理完成`, {
+          requestId: context.requestId,
+          compatibilityTag,
+          dataIsPure: !('__internal' in processedRequest),
+          hasContext: !!moduleContext,
+          providerName: moduleContext.providerName,
+          protocolConfigSynced: !!(context.metadata?.protocolConfig)
+        });
 
         context.transformations.push({
           layer: LAYER_NAMES.SERVER_COMPATIBILITY,
@@ -133,11 +202,6 @@ export class PipelineCompatibilityManager extends EventEmitter {
           timestamp: new Date(),
         });
 
-        secureLogger.debug(`${LAYER_NAMES.SERVER_COMPATIBILITY}层处理完成`, {
-          requestId: context.requestId,
-          compatibilityTag,
-          hasInternalConfig: !!processedRequest.__internal,
-        });
       } else {
         // 如果没有找到兼容性模块，使用透传模式
         secureLogger.debug(`${LAYER_NAMES.SERVER_COMPATIBILITY}层：使用${PROCESSING_MODES.PASSTHROUGH}模式`, {

@@ -5,6 +5,7 @@
  */
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleProcessingContext } from '../../../config/unified-config-manager';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../../utils/secure-logger';
 import * as fs from 'fs/promises';
@@ -198,51 +199,46 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
     }
   }
 
-  async processRequest(request: any, routingDecision: any, context: any): Promise<any> {
+  async processRequest(request: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
     try {
-      // 从__internal中获取指定的认证文件名
-      const authFileName = request.__internal?.apiKey || 'qwen-auth-1';
+      // 🎯 Architecture Engineer设计：从Context获取认证文件信息
+      // Context应该包含authFileName，但当前调用方还未更新，使用默认值
+      const authFileName = context?.config?.apiKey || context?.metadata?.authFileName || 'qwen-auth-1';
       
-      secureLogger.debug('🔥🔥 Qwen兼容性处理开始', {
+      secureLogger.debug('🔥🔥 Qwen兼容性处理开始 - Context模式', {
         requestId: context.requestId,
         authFileName,
         pipelineId: routingDecision?.selectedPipeline || 'unknown',
         originalModel: request.model,
-        hasInternalActualModel: !!request.__internal?.actualModel,
-        internalActualModel: request.__internal?.actualModel,
-        internalKeys: Object.keys(request.__internal || {})
+        hasContextActualModel: !!context?.config?.actualModel,
+        contextActualModel: context?.config?.actualModel,
+        providerName: context?.providerName,
+        serverCompatibility: context?.config?.serverCompatibility
       });
 
       // 获取有效的OAuth2 token
       const authConfig = await this.getValidAuthConfig(authFileName);
       
-      // 注入认证信息到请求
-      const processedRequest = {
-        ...request,
-        __internal: {
-          ...request.__internal,
-          apiKey: authConfig.access_token,
-          endpoint: this.config.baseUrl,
-          authType: 'oauth2',
-          authFileName: authFileName
-        }
-      };
+      // 🎯 Architecture Engineer设计：使用Context传递配置，避免污染API数据
+      const processedRequest = { ...request };
 
-      // 🔧 关键修复：如果当前模型是映射模型，需要获取实际的模型名
-      if (request.__internal?.actualModel) {
-        processedRequest.model = request.__internal.actualModel;
-        secureLogger.info('🔥🔥 Qwen模型名映射成功', {
+      // 🔧 模型名映射：从Context获取actualModel而不是__internal
+      // 注意：Context应该通过上层传递下来，这里暂时使用request.model
+      // TODO: 需要修改调用方传递ModuleProcessingContext
+      if (context?.config?.actualModel) {
+        processedRequest.model = context.config.actualModel;
+        secureLogger.info('🔥🔥 Qwen模型名映射成功 - Context传递', {
           requestId: context.requestId,
           originalModel: request.model,
-          actualModel: request.__internal.actualModel,
+          actualModel: context.config.actualModel,
           finalRequestModel: processedRequest.model
         });
       } else {
-        secureLogger.warn('🚨🚨 Qwen模型名映射失败 - 没有找到actualModel', {
+        secureLogger.warn('🚨🚨 Qwen模型名映射失败 - Context中没有actualModel', {
           requestId: context.requestId,
           originalModel: request.model,
-          hasInternal: !!request.__internal,
-          internalKeys: Object.keys(request.__internal || {}),
+          hasContext: !!context,
+          hasContextConfig: !!context?.config,
           finalRequestModel: processedRequest.model
         });
       }
@@ -280,11 +276,120 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
         }
       }
 
+      // 🔥🔥 关键修复：注入Qwen特定的HTTP配置到Context
+      // 参考CLIProxyAPI的成功实现，设置正确的HTTP头部和认证
+      
+      // 🚨 ULTRA DEBUG：检查context结构
+      secureLogger.info('🚨 [QWEN-ULTRA-DEBUG] Context结构检查', {
+        requestId: context.requestId,
+        hasContext: !!context,
+        hasMetadata: !!context?.metadata,
+        hasProtocolConfig: !!context?.metadata?.protocolConfig,
+        metadataKeys: context?.metadata ? Object.keys(context.metadata) : 'no-metadata',
+        protocolConfigKeys: context?.metadata?.protocolConfig ? Object.keys(context.metadata.protocolConfig) : 'no-protocol-config'
+      });
+      
+      if (context.metadata) {
+        secureLogger.info('🚨 [QWEN-ULTRA-DEBUG] metadata存在，检查protocolConfig', {
+          requestId: context.requestId,
+          metadataType: typeof context.metadata,
+          hasProtocolConfig: !!context.metadata.protocolConfig,
+          protocolConfigType: typeof context.metadata.protocolConfig
+        });
+        
+        // 🔧 关键修复：确保protocolConfig存在
+        if (!context.metadata.protocolConfig) {
+          secureLogger.warn('🚨 [QWEN-FIX] protocolConfig不存在，创建默认配置', {
+            requestId: context.requestId
+          });
+          context.metadata.protocolConfig = {
+            endpoint: 'https://portal.qwen.ai/v1',
+            apiKey: '',
+            protocol: 'openai',
+            timeout: 120000,
+            maxRetries: 3
+          };
+        }
+        
+        // 注入Qwen OAuth2 token到apiKey配置
+        if (context.metadata.protocolConfig) {
+          secureLogger.info('🚨 [QWEN-ULTRA-DEBUG] protocolConfig存在，开始注入', {
+            requestId: context.requestId,
+            originalApiKey: context.metadata.protocolConfig.apiKey,
+            newToken: authConfig.access_token.substring(0, 20) + '...'
+          });
+          
+          context.metadata.protocolConfig.apiKey = authConfig.access_token;
+          
+          // 🔑 注入Qwen特定的HTTP头部 - 参考CLIProxyAPI
+          const qwenHeaders = {
+            'User-Agent': 'google-api-nodejs-client/9.15.1',
+            'X-Goog-Api-Client': 'gl-node/22.17.0',
+            'Client-Metadata': 'ideType=IDE_UNSPECIFIED,platform=PLATFORM_UNSPECIFIED,pluginType=GEMINI',
+            'Accept': 'application/json'
+          };
+          
+          context.metadata.protocolConfig.customHeaders = qwenHeaders;
+          
+          // 🔥🔥 详细调试：验证HTTP头部注入
+          secureLogger.info('🔥🔥 [QWEN-DEBUG] HTTP头部详细注入验证', {
+            requestId: context.requestId,
+            'before_injection': !!context.metadata.protocolConfig.customHeaders,
+            'qwen_headers_object': qwenHeaders,
+            'injected_headers': context.metadata.protocolConfig.customHeaders,
+            'headers_match': JSON.stringify(context.metadata.protocolConfig.customHeaders) === JSON.stringify(qwenHeaders),
+            'context_metadata_exists': !!context.metadata,
+            'protocolConfig_exists': !!context.metadata.protocolConfig
+          });
+
+          // 🚨 ULTRA DEBUG: 验证注入后的对象完整性
+          secureLogger.info('🚨 [QWEN-INJECT-VERIFY] 注入后完整验证', {
+            requestId: context.requestId,
+            'protocolConfig_after_injection': {
+              'hasApiKey': !!context.metadata.protocolConfig.apiKey,
+              'hasCustomHeaders': !!context.metadata.protocolConfig.customHeaders,
+              'customHeadersType': typeof context.metadata.protocolConfig.customHeaders,
+              'customHeadersKeys': context.metadata.protocolConfig.customHeaders ? Object.keys(context.metadata.protocolConfig.customHeaders) : 'no-keys',
+              'customHeadersAsString': context.metadata.protocolConfig.customHeaders ? JSON.stringify(context.metadata.protocolConfig.customHeaders) : 'no-custom-headers'
+            }
+          });
+
+          // 🌐 修正端点URL - 根据resource_url或使用默认端点
+          if (authConfig.resource_url && authConfig.resource_url.trim() !== '') {
+            context.metadata.protocolConfig.endpoint = `https://${authConfig.resource_url}/v1`;
+          } else {
+            context.metadata.protocolConfig.endpoint = 'https://portal.qwen.ai/v1';
+          }
+
+          secureLogger.info('🔥🔥 Qwen HTTP配置注入完成', {
+            requestId: context.requestId,
+            authFileName,
+            hasToken: !!authConfig.access_token,
+            endpoint: context.metadata.protocolConfig.endpoint,
+            customHeaders: Object.keys(context.metadata.protocolConfig.customHeaders),
+            resourceUrl: authConfig.resource_url
+          });
+        } else {
+          secureLogger.error('🚨 [QWEN-ULTRA-DEBUG] protocolConfig不存在！', {
+            requestId: context.requestId,
+            metadataKeys: Object.keys(context.metadata),
+            protocolConfig: context.metadata.protocolConfig
+          });
+        }
+      } else {
+        secureLogger.error('🚨 [QWEN-ULTRA-DEBUG] metadata不存在！', {
+          requestId: context.requestId,
+          contextKeys: Object.keys(context),
+          metadata: context.metadata
+        });
+      }
+
       secureLogger.info('🔥🔥 Qwen OAuth2认证注入完成', {
         requestId: context.requestId,
         authFileName,
         hasToken: !!authConfig.access_token,
         endpoint: authConfig.resource_url,
+        resourceUrl: authConfig.resource_url ? `https://${authConfig.resource_url}/v1/chat/completions` : undefined,
         model: processedRequest.model,
         finalModel: processedRequest.model,
         hasModelField: 'model' in processedRequest,

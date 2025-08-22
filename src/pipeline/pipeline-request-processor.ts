@@ -19,6 +19,9 @@ import { PipelineDebugRecorder } from '../debug/pipeline-debug-recorder';
 import https from 'https';
 import http from 'http';
 
+// 导入验证器
+import { protocolTransformerValidator, ValidationResult } from '../validation/protocol-transformer-validator';
+
 export interface RequestContext {
   requestId: string;
   startTime: Date;
@@ -27,6 +30,25 @@ export interface RequestContext {
   transformations: any[];
   errors: any[];
   metadata: any;
+}
+
+/**
+ * Module Processing Context - Architecture Engineer 设计
+ * 用于在各层之间传递配置信息，避免污染API数据
+ */
+export interface ModuleProcessingContext {
+  readonly requestId: string;
+  readonly providerName?: string;
+  readonly protocol?: string;
+  readonly config?: {
+    readonly endpoint?: string;
+    readonly apiKey?: string;
+    readonly timeout?: number;
+    readonly maxRetries?: number;
+    readonly actualModel?: string;
+    readonly originalModel?: string;
+  };
+  readonly metadata?: Record<string, any>;
 }
 
 export interface PipelineStats {
@@ -155,6 +177,30 @@ export class PipelineRequestProcessor extends EventEmitter {
       this.debugManager.recordOutput('transformer', requestId, transformedRequest);
       context.layerTimings.transformer = Date.now() - transformerStart;
 
+      // 🔍 验证: Transformer → Protocol (必须是OpenAI格式)
+      const transformerValidation = protocolTransformerValidator.validateTransformerToProtocol(transformedRequest, {
+        requestId,
+        step: 'transformer-to-protocol'
+      });
+      
+      if (!transformerValidation.isValid) {
+        const errorMsg = `Transformer输出格式验证失败: ${transformerValidation.errors.join(', ')}`;
+        secureLogger.error('❌ [Pipeline] Transformer输出格式验证失败', {
+          requestId,
+          errors: transformerValidation.errors,
+          warnings: transformerValidation.warnings,
+          summary: transformerValidation.summary
+        });
+        this.stats.failedRequests++;
+        throw new Error(errorMsg);
+      }
+      
+      secureLogger.info('✅ [Pipeline] Transformer输出验证通过', {
+        requestId,
+        format: transformerValidation.format,
+        summary: transformerValidation.summary
+      });
+
       // Step 3: Protocol层 - 协议处理
       const protocolStart = Date.now();
       this.debugManager.recordInput('protocol', requestId, { transformedRequest, routingDecision });
@@ -166,6 +212,33 @@ export class PipelineRequestProcessor extends EventEmitter {
       this.debugManager.recordOutput('protocol', requestId, protocolRequest);
       context.layerTimings.protocol = Date.now() - protocolStart;
 
+      // 🔍 验证: Protocol → ServerCompatibility (必须是Protocol格式，不是Anthropic)
+      if (protocolRequest && typeof protocolRequest === 'object') {
+        const hasAnthropicFields = (protocolRequest as any).type === 'message' || 
+                                  (protocolRequest as any).stop_reason ||
+                                  ((protocolRequest as any).content && Array.isArray((protocolRequest as any).content));
+        
+        if (hasAnthropicFields) {
+          const errorMsg = `Protocol输出仍然是Anthropic格式，应该是OpenAI/Protocol格式`;
+          secureLogger.error('❌ [Pipeline] Protocol输出格式错误', {
+            requestId,
+            error: errorMsg,
+            hasType: !!(protocolRequest as any).type,
+            hasStopReason: !!(protocolRequest as any).stop_reason,
+            hasContentArray: Array.isArray((protocolRequest as any).content)
+          });
+          this.stats.failedRequests++;
+          throw new Error(errorMsg);
+        }
+        
+        secureLogger.info('✅ [Pipeline] Protocol输出验证通过（非Anthropic格式）', {
+          requestId,
+          hasModel: !!(protocolRequest as any).model,
+          hasMessages: !!(protocolRequest as any).messages,
+          isOpenAIFormat: !!(protocolRequest as any).model && !!(protocolRequest as any).messages
+        });
+      }
+
       // Step 4: Server-Compatibility层 - 兼容性处理
       const compatibilityStart = Date.now();
       this.debugManager.recordInput('server-compatibility', requestId, { protocolRequest, routingDecision });
@@ -176,6 +249,30 @@ export class PipelineRequestProcessor extends EventEmitter {
       );
       this.debugManager.recordOutput('server-compatibility', requestId, compatibleRequest);
       context.layerTimings.serverCompatibility = Date.now() - compatibilityStart;
+
+      // 🔍 验证: ServerCompatibility → Server (必须是OpenAI格式，不是兼容格式)
+      const compatibilityValidation = protocolTransformerValidator.validateTransformerToProtocol(compatibleRequest, {
+        requestId,
+        step: 'compatibility-to-server'
+      });
+      
+      if (!compatibilityValidation.isValid) {
+        const errorMsg = `ServerCompatibility输出格式验证失败: ${compatibilityValidation.errors.join(', ')}`;
+        secureLogger.error('❌ [Pipeline] ServerCompatibility输出格式验证失败', {
+          requestId,
+          errors: compatibilityValidation.errors,
+          warnings: compatibilityValidation.warnings,
+          summary: compatibilityValidation.summary
+        });
+        this.stats.failedRequests++;
+        throw new Error(errorMsg);
+      }
+      
+      secureLogger.info('✅ [Pipeline] ServerCompatibility输出验证通过', {
+        requestId,
+        format: compatibilityValidation.format,
+        summary: compatibilityValidation.summary
+      });
 
       // Step 5: Server层 - 实际API调用
       const serverStart = Date.now();
@@ -508,17 +605,23 @@ export class PipelineRequestProcessor extends EventEmitter {
       }
     }
 
-    // 添加认证头和端点信息
+    // 🔒 CRITICAL FIX: Protocol层必须符合目标协议的API标准
+    // 根据CLAUDE.md六层架构规范，禁止传递非标准字段如__internal
+    // 将模型映射结果直接更新到标准model字段
     const protocolRequest = {
       ...request,
-      __internal: {
-        endpoint: endpoint,
-        apiKey: apiKey,
-        protocol: providerInfo.protocol,
-        timeout: providerInfo.timeout,
-        maxRetries: providerInfo.maxRetries,
-        actualModel: actualModel, // 🔧 关键修复：传递实际的模型名给后续层
-      },
+      model: actualModel, // 🔧 关键修复：直接使用实际模型名，符合目标协议标准
+    };
+
+    // 🔧 将配置信息存储在RequestContext中，避免违反目标协议API标准
+    context.metadata.protocolConfig = {
+      endpoint: endpoint,
+      apiKey: apiKey,
+      protocol: providerInfo.protocol, // 🔒 使用配置的协议类型（openai/anthropic/gemini等）
+      timeout: providerInfo.timeout,
+      maxRetries: providerInfo.maxRetries,
+      originalModel: request.model,
+      actualModel: actualModel,
     };
 
     return protocolRequest;
@@ -528,14 +631,12 @@ export class PipelineRequestProcessor extends EventEmitter {
    * 处理Server层 - 实际HTTP API调用
    */
   private async processServerLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
-    // 🔧 关键调试：检查request对象的完整内容
+    // 🔧 关键调试：检查request对象的完整内容（符合OpenAI标准）
     secureLogger.info('🔥🔥 Server层接收到的request对象完整调试', {
       requestId: context.requestId,
       hasModel: 'model' in request,
       modelValue: request.model,
-      hasInternal: '__internal' in request,
-      internalKeys: request.__internal ? Object.keys(request.__internal) : 'no-internal',
-      actualModelFromInternal: request.__internal?.actualModel,
+      hasProtocolConfig: !!context.metadata.protocolConfig,
       requestKeys: Object.keys(request),
       requestPreview: {
         model: request.model,
@@ -544,16 +645,17 @@ export class PipelineRequestProcessor extends EventEmitter {
       }
     });
 
-    // 🔧 关键修复：防御性检查__internal对象
-    if (!request.__internal) {
-      throw new Error(`Server layer requires __internal configuration but it was not found. Request may have been improperly processed by compatibility layer.`);
+    // 🔧 关键修复：从context.metadata获取协议配置，符合OpenAI API标准
+    const protocolConfig = context.metadata.protocolConfig;
+    if (!protocolConfig) {
+      throw new Error(`Server layer requires protocol configuration but it was not found in context metadata. Request may have been improperly processed by protocol layer.`);
     }
 
-    const { endpoint, apiKey, protocol, timeout, maxRetries } = request.__internal;
+    const { endpoint, apiKey, protocol, timeout, maxRetries } = protocolConfig;
 
     // 🔧 关键修复：防御性检查endpoint
     if (!endpoint) {
-      throw new Error(`Server layer requires endpoint configuration but it was not found in __internal object.`);
+      throw new Error(`Server layer requires endpoint configuration but it was not found in protocol configuration.`);
     }
 
     // 🔧 关键修复：通用端点处理，基于配置而非硬编码
@@ -608,14 +710,44 @@ export class PipelineRequestProcessor extends EventEmitter {
       modelValueInSerialized: serializedBody.includes(`"model":"${requestBody.model}"`),
     });
 
-    // 构建HTTP请求
+    // 构建HTTP请求 - 支持Qwen等Provider的自定义头部
+    const defaultHeaders = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'User-Agent': 'RCC-v4.0-Pipeline',
+    };
+
+    // 🔑 关键修复：合并自定义头部（用于Qwen等需要特殊头部的Provider）
+    // 🔥🔥 ULTRA DEBUG: 检查protocolConfig.customHeaders详细结构
+    secureLogger.info('🚨 [PIPELINE-ULTRA-DEBUG] protocolConfig结构完整检查', {
+      requestId: context.requestId,
+      hasProtocolConfig: !!protocolConfig,
+      protocolConfigKeys: protocolConfig ? Object.keys(protocolConfig) : 'no-config',
+      hasCustomHeadersField: 'customHeaders' in protocolConfig,
+      customHeadersType: typeof protocolConfig.customHeaders,
+      customHeadersValue: protocolConfig.customHeaders,
+      customHeadersIsObject: protocolConfig.customHeaders && typeof protocolConfig.customHeaders === 'object',
+      customHeadersIsNull: protocolConfig.customHeaders === null,
+      customHeadersIsUndefined: protocolConfig.customHeaders === undefined,
+      customHeadersAsString: protocolConfig.customHeaders ? JSON.stringify(protocolConfig.customHeaders) : 'no-custom-headers'
+    });
+
+    const customHeaders = protocolConfig.customHeaders || {};
+    const finalHeaders = { ...defaultHeaders, ...customHeaders };
+
+    // 🔥🔥 记录HTTP头部配置
+    secureLogger.info('🔥🔥 HTTP头部构建完成', {
+      requestId: context.requestId,
+      hasCustomHeaders: Object.keys(customHeaders).length > 0,
+      customHeaderKeys: Object.keys(customHeaders),
+      finalHeaderKeys: Object.keys(finalHeaders),
+      userAgent: finalHeaders['User-Agent'],
+      hasAuth: !!finalHeaders['Authorization']
+    });
+
     const httpOptions = {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-        'User-Agent': 'RCC-v4.0-Pipeline',
-      },
+      headers: finalHeaders,
       body: serializedBody,
       timeout,
     };
@@ -874,6 +1006,19 @@ export class PipelineRequestProcessor extends EventEmitter {
    */
   private transformOpenAIToAnthropic(openaiResponse: any, context: RequestContext): any {
     try {
+      // 🔧 修复：检查是否为错误响应
+      if (openaiResponse.error) {
+        // 将OpenAI错误格式转换为Anthropic错误格式
+        // 参考Anthropic官方错误格式规范
+        return {
+          type: 'error',
+          error: {
+            type: 'api_error',
+            message: openaiResponse.error.message || 'Unknown API error'
+          }
+        };
+      }
+
       // 提取OpenAI响应的内容
       const choice = openaiResponse.choices?.[0];
       const message = choice?.message;
