@@ -80,6 +80,9 @@ class CommandParser {
             case 'config':
                 await this.executeConfigCommand(command);
                 break;
+            case 'auth':
+                await this.executeAuthCommand(command);
+                break;
             default:
                 throw new Error(`Command execution not implemented: ${command.command}`);
         }
@@ -156,6 +159,21 @@ class CommandParser {
                 { name: 'path', alias: 'p', type: 'string', description: 'Configuration file path' },
             ],
             examples: ['rcc config --list', 'rcc config --validate --path config.json', 'rcc config --reset'],
+        });
+        this.commands.set('auth', {
+            name: 'auth',
+            description: 'Manage provider authentication (OAuth2, API keys)',
+            options: [
+                { name: 'list', alias: 'l', type: 'boolean', description: 'List all authentication files' },
+                { name: 'remove', alias: 'r', type: 'boolean', description: 'Remove authentication file' },
+                { name: 'refresh', alias: 'f', type: 'boolean', description: 'Refresh authentication token' },
+            ],
+            examples: [
+                'rcc4 auth qwen 1',
+                'rcc4 auth qwen --list',
+                'rcc4 auth qwen 2 --remove',
+                'rcc4 auth qwen 1 --refresh'
+            ],
         });
     }
     /**
@@ -324,6 +342,32 @@ class CommandParser {
             action = 'reset';
         }
         await this.commandExecutor.executeConfig(action, options);
+    }
+    /**
+     * 执行认证命令
+     */
+    async executeAuthCommand(command) {
+        if (!this.commandExecutor) {
+            throw new Error('Command executor not available');
+        }
+        const args = command.args;
+        const options = command.options;
+        // 解析provider和index参数
+        if (args.length === 0) {
+            throw new Error('Provider is required. Usage: rcc4 auth <provider> <index>');
+        }
+        const provider = args[0];
+        const index = args.length > 1 ? parseInt(args[1], 10) : undefined;
+        // 验证provider
+        const supportedProviders = ['qwen', 'gemini', 'claude'];
+        if (!supportedProviders.includes(provider.toLowerCase())) {
+            throw new Error(`Unsupported provider: ${provider}. Supported: ${supportedProviders.join(', ')}`);
+        }
+        // 验证index（如果需要）
+        if (!options.list && (!index || index < 1 || index > 99)) {
+            throw new Error('Index must be between 1 and 99. Usage: rcc4 auth <provider> <index>');
+        }
+        await this.commandExecutor.executeAuth(provider, index, options);
     }
 }
 exports.CommandParser = CommandParser;

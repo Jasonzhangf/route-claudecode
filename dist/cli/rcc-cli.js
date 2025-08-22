@@ -6,6 +6,29 @@
  *
  * @author Jason Zhang
  */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RCCCli = void 0;
 const command_parser_1 = require("./command-parser");
@@ -13,6 +36,10 @@ const argument_validator_1 = require("./argument-validator");
 const config_reader_1 = require("../config/config-reader");
 const pipeline_lifecycle_manager_1 = require("../pipeline/pipeline-lifecycle-manager");
 const secure_logger_1 = require("../utils/secure-logger");
+const jq_json_handler_1 = require("../utils/jq-json-handler");
+const qwen_auth_manager_1 = require("./auth/qwen-auth-manager");
+const path = __importStar(require("path"));
+const os = __importStar(require("os"));
 /**
  * RCC主CLI类
  */
@@ -21,6 +48,7 @@ class RCCCli {
         this.parser = new command_parser_1.CommandParser();
         this.validator = new argument_validator_1.ArgumentValidator();
         this.configReader = new config_reader_1.ConfigReader();
+        this.qwenAuthManager = new qwen_auth_manager_1.QwenAuthManager();
         this.options = {
             exitOnError: true,
             suppressOutput: false,
@@ -51,7 +79,8 @@ class RCCCli {
                 }
             }
             // 3. 加载配置
-            const config = config_reader_1.ConfigReader.loadConfig(this.options.configPath || 'config/default.json', 'config/system-config.json');
+            const systemConfigPath = this.getSystemConfigPath();
+            const config = config_reader_1.ConfigReader.loadConfig(this.options.configPath || 'config/default.json', systemConfigPath);
             // 4. 合并配置到命令选项
             const mergedCommand = {
                 ...command,
@@ -69,22 +98,41 @@ class RCCCli {
      */
     async start(options) {
         try {
+            // 验证必需参数
+            if (!options.config) {
+                throw new Error('Configuration file is required. Please specify --config <path>');
+            }
+            // 读取配置文件获取端口（如果命令行没有提供）
+            let effectivePort = options.port;
+            if (!effectivePort) {
+                try {
+                    const systemConfigPath = this.getSystemConfigPath();
+                    const config = config_reader_1.ConfigReader.loadConfig(options.config, systemConfigPath);
+                    effectivePort = config.server?.port;
+                    if (!effectivePort) {
+                        throw new Error('Port not found in configuration file and not specified via --port <number>');
+                    }
+                }
+                catch (error) {
+                    throw new Error('Port is required. Please specify --port <number> or ensure port is configured in the configuration file');
+                }
+            }
+            // 更新options对象以包含有效端口
+            options.port = effectivePort;
             if (!this.options.suppressOutput) {
                 console.log('🚀 Starting RCC Server...');
-                console.log(`   Port: ${options.port || 3456}`);
+                console.log(`   Port: ${options.port}`);
                 console.log(`   Host: ${options.host || 'localhost'}`);
                 if (options.debug) {
                     console.log('   Debug: enabled');
                 }
-                if (options.config) {
-                    console.log(`   Config: ${options.config}`);
-                }
+                console.log(`   Config: ${options.config}`);
             }
             // TODO: 实现实际的服务器启动逻辑
             await this.startServer(options);
             if (!this.options.suppressOutput) {
                 console.log('✅ RCC Server started successfully');
-                console.log(`🌐 Server running at http://${options.host || 'localhost'}:${options.port || 3456}`);
+                console.log(`🌐 Server running at http://${options.host || 'localhost'}:${options.port}`);
             }
         }
         catch (error) {
@@ -121,7 +169,7 @@ class RCCCli {
         try {
             if (!this.options.suppressOutput) {
                 console.log('🔧 Starting Claude Code Client Mode...');
-                console.log(`   Target Port: ${options.port || 3456}`);
+                console.log(`   Target Port: ${options.port || 5506}`);
                 if (options.autoStart) {
                     console.log('   Auto Start: enabled');
                 }
@@ -198,6 +246,120 @@ class RCCCli {
         }
     }
     /**
+     * 处理认证命令
+     */
+    async auth(provider, index, options) {
+        try {
+            // 参数验证
+            if (!provider) {
+                throw new Error('Provider is required. Usage: rcc4 auth <provider> <index>');
+            }
+            // 支持的provider检查
+            const supportedProviders = ['qwen', 'gemini', 'claude'];
+            if (!supportedProviders.includes(provider.toLowerCase())) {
+                throw new Error(`Unsupported provider: ${provider}. Supported: ${supportedProviders.join(', ')}`);
+            }
+            // 处理不同的选项
+            if (options?.list) {
+                await this.listAuthFiles(provider);
+                return;
+            }
+            if (options?.remove && index) {
+                await this.removeAuthFile(provider, index);
+                return;
+            }
+            if (options?.refresh && index) {
+                await this.refreshAuthFile(provider, index);
+                return;
+            }
+            // 默认认证流程
+            if (!index) {
+                // 提供更智能的提示
+                const availableIndexes = await this.qwenAuthManager.getAvailableAuthIndexes();
+                const nextIndex = await this.qwenAuthManager.getNextAvailableIndex();
+                if (availableIndexes.length === 0) {
+                    throw new Error(`序号是必需的。建议使用: rcc4 auth ${provider} ${nextIndex}`);
+                }
+                else {
+                    throw new Error(`序号是必需的。现有序号: [${availableIndexes.join(', ')}]，建议新序号: ${nextIndex}`);
+                }
+            }
+            if (index < 1 || index > 99) {
+                throw new Error('Index must be between 1 and 99');
+            }
+            await this.authenticateProvider(provider, index);
+        }
+        catch (error) {
+            this.handleError(error);
+        }
+    }
+    /**
+     * 执行provider认证
+     */
+    async authenticateProvider(provider, index) {
+        switch (provider.toLowerCase()) {
+            case 'qwen':
+                // 检查文件是否已存在
+                const validation = await this.qwenAuthManager.validateAuthIndex(index);
+                if (validation.exists) {
+                    if (validation.isExpired) {
+                        console.log(`⚠️ 认证文件 qwen-auth-${index}.json 已存在但已过期`);
+                        console.log(`💡 使用 "rcc4 auth qwen ${index} --refresh" 刷新，或选择其他序号`);
+                        return;
+                    }
+                    else {
+                        console.log(`⚠️ 认证文件 qwen-auth-${index}.json 已存在且仍然有效`);
+                        console.log(`💡 如需重新认证，请先删除: "rcc4 auth qwen ${index} --remove"`);
+                        return;
+                    }
+                }
+                await this.qwenAuthManager.authenticate(index);
+                break;
+            case 'gemini':
+                throw new Error('Gemini authentication not yet implemented');
+            case 'claude':
+                throw new Error('Claude authentication not yet implemented');
+            default:
+                throw new Error(`Unsupported provider: ${provider}`);
+        }
+    }
+    /**
+     * 列出认证文件
+     */
+    async listAuthFiles(provider) {
+        switch (provider.toLowerCase()) {
+            case 'qwen':
+                await this.qwenAuthManager.listAuthFiles();
+                break;
+            default:
+                console.log(`📝 ${provider} authentication files listing not yet implemented`);
+        }
+    }
+    /**
+     * 删除认证文件
+     */
+    async removeAuthFile(provider, index) {
+        switch (provider.toLowerCase()) {
+            case 'qwen':
+                await this.qwenAuthManager.removeAuthFile(index);
+                break;
+            default:
+                console.log(`🗑️ ${provider} authentication file removal not yet implemented`);
+        }
+    }
+    /**
+     * 刷新认证文件
+     */
+    async refreshAuthFile(provider, index) {
+        switch (provider.toLowerCase()) {
+            case 'qwen':
+                await this.qwenAuthManager.refreshAuthFile(index);
+                break;
+            default:
+                console.log(`🔄 ${provider} authentication file refresh not yet implemented`);
+        }
+    }
+    /**
      * 处理错误
      */
     handleError(error) {
@@ -218,7 +380,11 @@ class RCCCli {
     async startServer(options) {
         try {
             // 初始化流水线生命周期管理器
-            this.pipelineManager = new pipeline_lifecycle_manager_1.PipelineLifecycleManager(options.config);
+            // 需要系统配置路径，使用正确的绝对路径，并传递debug选项
+            const systemConfigPath = this.getSystemConfigPath();
+            this.pipelineManager = new pipeline_lifecycle_manager_1.PipelineLifecycleManager(options.config, systemConfigPath, options.debug);
+            // 将实例保存到全局变量，以便信号处理程序能够访问
+            global.pipelineLifecycleManager = this.pipelineManager;
             // 启动RCC v4.0流水线系统
             const success = await this.pipelineManager.start();
             if (!success) {
@@ -227,7 +393,7 @@ class RCCCli {
             // 监听流水线事件
             this.setupPipelineEventListeners();
             secure_logger_1.secureLogger.info('RCC Server started with pipeline system', {
-                port: options.port || 5506,
+                port: options.port,
                 host: options.host || '0.0.0.0',
                 config: options.config,
                 debug: options.debug,
@@ -245,18 +411,51 @@ class RCCCli {
      * 停止服务器（实际实现）
      */
     async stopServer(options) {
+        let effectivePort = options.port;
+        // 如果没有指定端口，尝试使用默认的常用端口
+        if (!effectivePort) {
+            // 对于stop操作，我们可以尝试一些常用端口
+            // 或者要求用户明确指定端口以避免误操作
+            throw new Error('Port is required for stop operation. Please specify --port <number>');
+        }
+        const port = effectivePort;
         try {
+            // 首先尝试通过HTTP端点优雅停止
+            await this.attemptGracefulStop(port);
+            // 等待一段时间让服务器优雅关闭
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            // 检查是否还有进程占用端口
+            const pid = await this.findProcessOnPort(port);
+            if (pid) {
+                if (options.force) {
+                    // 强制终止进程
+                    await this.forceKillProcess(pid);
+                    secure_logger_1.secureLogger.info('RCC Server force killed', { port, pid });
+                }
+                else {
+                    // 发送TERM信号尝试优雅关闭
+                    await this.sendTermSignal(pid);
+                    // 等待进程关闭
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // 再次检查，如果还在运行则强制终止
+                    const stillRunning = await this.findProcessOnPort(port);
+                    if (stillRunning) {
+                        await this.forceKillProcess(stillRunning);
+                        secure_logger_1.secureLogger.info('RCC Server force killed after TERM timeout', { port, pid: stillRunning });
+                    }
+                }
+            }
+            // 清理本地实例
             if (this.pipelineManager) {
                 await this.pipelineManager.stop();
                 this.pipelineManager = undefined;
-                secure_logger_1.secureLogger.info('RCC Server stopped', {
-                    port: options.port,
-                    force: options.force,
-                });
             }
-            else {
-                secure_logger_1.secureLogger.warn('No pipeline manager instance to stop');
-            }
+            // 清理全局实例
+            global.pipelineLifecycleManager = undefined;
+            secure_logger_1.secureLogger.info('RCC Server stopped successfully', {
+                port,
+                force: options.force,
+            });
         }
         catch (error) {
             secure_logger_1.secureLogger.error('Failed to stop RCC server', {
@@ -267,18 +466,169 @@ class RCCCli {
         }
     }
     /**
+     * 尝试通过HTTP端点优雅停止服务器
+     */
+    async attemptGracefulStop(port) {
+        try {
+            const http = require('http');
+            const postData = jq_json_handler_1.JQJsonHandler.stringifyJson({ action: 'shutdown' });
+            const options = {
+                hostname: 'localhost',
+                port: port,
+                path: '/shutdown',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(postData)
+                },
+                timeout: 3000
+            };
+            await new Promise((resolve, reject) => {
+                const req = http.request(options, (res) => {
+                    res.on('data', () => { });
+                    res.on('end', () => resolve(undefined));
+                });
+                req.on('error', (err) => {
+                    // 如果HTTP请求失败，继续其他停止方法
+                    resolve(undefined);
+                });
+                req.on('timeout', () => {
+                    req.destroy();
+                    resolve(undefined);
+                });
+                req.write(postData);
+                req.end();
+            });
+        }
+        catch (error) {
+            // 忽略HTTP停止失败，继续其他方法
+        }
+    }
+    /**
+     * 查找占用指定端口的进程ID
+     */
+    async findProcessOnPort(port) {
+        try {
+            const { execSync } = require('child_process');
+            const result = execSync(`lsof -ti :${port}`, { encoding: 'utf8', timeout: 5000 });
+            const pid = parseInt(result.trim());
+            return isNaN(pid) ? null : pid;
+        }
+        catch (error) {
+            return null;
+        }
+    }
+    /**
+     * 发送TERM信号给进程
+     */
+    async sendTermSignal(pid) {
+        try {
+            const { execSync } = require('child_process');
+            execSync(`kill -TERM ${pid}`, { timeout: 5000 });
+        }
+        catch (error) {
+            // 忽略错误，后续会强制终止
+        }
+    }
+    /**
+     * 强制终止进程
+     */
+    async forceKillProcess(pid) {
+        try {
+            const { execSync } = require('child_process');
+            execSync(`kill -9 ${pid}`, { timeout: 5000 });
+        }
+        catch (error) {
+            throw new Error(`Failed to force kill process ${pid}: ${error.message}`);
+        }
+    }
+    /**
      * 启动客户端模式（实际实现）
      */
     async startClientMode(options) {
-        // TODO: 实现客户端模式
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const port = options.port || 5506;
+        const baseUrl = `http://localhost:${port}`;
+        const apiKey = 'rcc4-proxy-key';
+        // 设置环境变量
+        process.env.ANTHROPIC_BASE_URL = baseUrl;
+        process.env.ANTHROPIC_API_KEY = apiKey;
+        secure_logger_1.secureLogger.info('启动Claude Code客户端模式', {
+            baseUrl,
+            port,
+            apiKey: 'rcc4-proxy-key'
+        });
+        // 启动 claude 子进程
+        const spawn = require('child_process').spawn;
+        try {
+            // 传递所有命令行参数给 claude，除了 rcc4 特定的参数
+            const originalArgs = process.argv.slice(2);
+            const claudeArgs = [];
+            // 跳过 rcc4 特定参数和它们的值
+            for (let i = 0; i < originalArgs.length; i++) {
+                const arg = originalArgs[i];
+                const nextArg = originalArgs[i + 1];
+                if (arg === 'code') {
+                    // 跳过code命令
+                    continue;
+                }
+                else if (arg === '--port' && nextArg) {
+                    // 跳过--port及其值
+                    i++; // 跳过下一个参数（端口号）
+                    continue;
+                }
+                else if (arg === '--auto-start' || arg === '--export') {
+                    // 跳过这些标志
+                    continue;
+                }
+                else if (arg.startsWith('--port=')) {
+                    // 跳过--port=5506格式
+                    continue;
+                }
+                else {
+                    // 保留其他所有参数
+                    claudeArgs.push(arg);
+                }
+            }
+            // 如果没有参数，让 claude 使用默认行为
+            // 不需要添加 --interactive，claude 会自动进入交互模式
+            secure_logger_1.secureLogger.info('启动claude命令', {
+                claudeArgs,
+                env: {
+                    ANTHROPIC_BASE_URL: baseUrl,
+                    ANTHROPIC_API_KEY: apiKey
+                }
+            });
+            const claude = spawn('claude', claudeArgs, {
+                stdio: 'inherit', // 继承stdio，让claude直接与终端交互
+                env: {
+                    ...process.env,
+                    ANTHROPIC_BASE_URL: baseUrl,
+                    ANTHROPIC_API_KEY: apiKey
+                }
+            });
+            claude.on('close', (code) => {
+                secure_logger_1.secureLogger.info('Claude进程退出', { exitCode: code });
+                process.exit(code || 0);
+            });
+            claude.on('error', (error) => {
+                secure_logger_1.secureLogger.error('Claude进程错误', { error: error.message });
+                console.error(`❌ Failed to start claude: ${error.message}`);
+                process.exit(1);
+            });
+            // 等待一小段时间确保claude启动
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        catch (error) {
+            secure_logger_1.secureLogger.error('启动claude客户端失败', { error: error.message });
+            throw new Error(`Failed to start claude client: ${error.message}`);
+        }
     }
     /**
      * 导出客户端配置
      */
     async exportClientConfig(options) {
         const envVars = [
-            `export ANTHROPIC_BASE_URL=http://localhost:${options.port || 3456}`,
+            `export ANTHROPIC_BASE_URL=http://localhost:${options.port || 5506}`,
             'export ANTHROPIC_API_KEY=rcc-proxy-key',
         ];
         if (!this.options.suppressOutput) {
@@ -295,7 +645,7 @@ class RCCCli {
         if (!this.pipelineManager) {
             return {
                 isRunning: false,
-                port: options.port || 5506,
+                port: options.port || 0,
                 host: 'localhost',
                 startTime: undefined,
                 version: '4.0.0-dev',
@@ -310,14 +660,14 @@ class RCCCli {
         }
         const stats = this.pipelineManager.getStats();
         const isRunning = this.pipelineManager.isSystemRunning();
-        const activeRequests = this.pipelineManager.getActiveRequests();
+        const systemInfo = this.pipelineManager.getSystemInfo();
         return {
             isRunning,
-            port: options.port || 5506,
+            port: options.port || 0,
             host: 'localhost',
             startTime: new Date(Date.now() - stats.uptime),
             version: '4.0.0-dev',
-            activePipelines: Object.keys(stats.routerStats.virtualModels || {}).length,
+            activePipelines: stats.routingTableStats.virtualModels.length,
             totalRequests: stats.totalRequests,
             uptime: this.formatUptime(stats.uptime),
             health: {
@@ -330,12 +680,12 @@ class RCCCli {
                     },
                     {
                         name: 'Router System',
-                        status: stats.routerStats.totalProviders > 0 ? 'pass' : 'fail',
+                        status: stats.serverMetrics.routerStats ? 'pass' : 'fail',
                         responseTime: 1,
                     },
                     {
                         name: 'Layer Health',
-                        status: Array.isArray(stats.layerHealth) && stats.layerHealth.every((l) => l.status === 'ready')
+                        status: stats.requestProcessorStats.layerHealth && Object.keys(stats.requestProcessorStats.layerHealth).length > 0
                             ? 'pass'
                             : 'warn',
                         responseTime: 2,
@@ -344,8 +694,8 @@ class RCCCli {
             },
             pipeline: {
                 stats,
-                activeRequests: activeRequests.length,
-                layerHealth: stats.layerHealth,
+                activeRequests: 0, // No longer tracking active requests in new structure
+                layerHealth: stats.requestProcessorStats.layerHealth,
             },
         };
     }
@@ -403,6 +753,30 @@ class RCCCli {
     async validateConfiguration(path) {
         if (!this.options.suppressOutput) {
             console.log(`✅ Configuration ${path || 'default'} is valid`);
+        }
+    }
+    /**
+     * 获取系统配置文件路径
+     */
+    getSystemConfigPath() {
+        // 优先级：环境变量 > ~/.route-claudecode/config > 开发环境路径
+        if (process.env.RCC_SYSTEM_CONFIG_PATH) {
+            return process.env.RCC_SYSTEM_CONFIG_PATH;
+        }
+        // 用户级系统配置路径
+        const userConfigPath = path.join(os.homedir(), '.route-claudecode', 'config', 'system-config.json');
+        // 检查文件是否存在，如果存在则使用
+        try {
+            require('fs').accessSync(userConfigPath);
+            return userConfigPath;
+        }
+        catch (error) {
+            // 文件不存在，使用开发环境路径作为fallback
+            secure_logger_1.secureLogger.warn('User system config not found, using development path', {
+                attempted: userConfigPath,
+                fallback: 'config/system-config.json'
+            });
+            return 'config/system-config.json';
         }
     }
     /**

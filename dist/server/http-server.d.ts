@@ -57,6 +57,7 @@ export declare class HTTPServer extends EventEmitter {
     private isRunning;
     private startTime;
     private requestCount;
+    private connections;
     constructor(config: ServerConfig);
     /**
      * 初始化默认路由

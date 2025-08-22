@@ -34,6 +34,7 @@ export declare class PipelineServer extends EventEmitter {
     private serverConfig;
     private middlewareManager;
     private debugRecorder;
+    private router?;
     constructor(config: PipelineServerConfig, middlewareManager: IMiddlewareManager, pipelineService?: IPipelineService);
     /**
      * 初始化服务器
@@ -108,7 +109,11 @@ export declare class PipelineServer extends EventEmitter {
      */
     getPipelineConfigs(): PipelineConfig[];
     /**
-     * 基于配置文件进行真实的路由决策
+     * 设置路由器实例 - 用于路由决策
+     */
+    setRouter(router: any): void;
+    /**
+     * 基于配置文件进行真实的路由决策 - 使用新的虚拟模型映射系统
      */
     private makeRoutingDecision;
     /**

@@ -107,7 +107,10 @@ class PipelineManager extends events_1.EventEmitter {
                             provider: route.provider,
                             targetModel: route.targetModel,
                             apiKey: route.apiKeys[keyIndex],
-                            endpoint: providerType.endpoint,
+                            // 🐛 关键修复：必须使用用户配置的apiBaseUrl，确保所有provider内容来自配置文件
+                            endpoint: route.apiBaseUrl || (() => {
+                                throw new Error(`Missing api_base_url for provider ${route.provider}. All endpoint information must come from user config.`);
+                            })(),
                             transformer: providerType.transformer,
                             protocol: providerType.protocol,
                             // 🐛 关键修复：使用路由中的实际serverCompatibility而不是系统默认值

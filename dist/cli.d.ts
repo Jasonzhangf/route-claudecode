@@ -44,6 +44,10 @@ declare class RCCv4CLIHandler implements CLIHandler {
      */
     private handleConfig;
     /**
+     * 处理auth命令
+     */
+    private handleAuth;
+    /**
      * 显示帮助信息
      */
     showHelp(command?: string): void;

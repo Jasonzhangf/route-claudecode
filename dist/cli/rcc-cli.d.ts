@@ -24,6 +24,7 @@ export declare class RCCCli implements CLICommands {
     private configReader;
     private options;
     private pipelineManager?;
+    private qwenAuthManager;
     constructor(options?: CLIOptions);
     /**
      * 执行CLI命令
@@ -54,6 +55,26 @@ export declare class RCCCli implements CLICommands {
      */
     private handleValidationErrors;
     /**
+     * 处理认证命令
+     */
+    auth(provider: string, index?: number, options?: any): Promise<void>;
+    /**
+     * 执行provider认证
+     */
+    private authenticateProvider;
+    /**
+     * 列出认证文件
+     */
+    private listAuthFiles;
+    /**
+     * 删除认证文件
+     */
+    private removeAuthFile;
+    /**
+     * 刷新认证文件
+     */
+    private refreshAuthFile;
+    /**
      * 处理错误
      */
     private handleError;
@@ -65,6 +86,22 @@ export declare class RCCCli implements CLICommands {
      * 停止服务器（实际实现）
      */
     private stopServer;
+    /**
+     * 尝试通过HTTP端点优雅停止服务器
+     */
+    private attemptGracefulStop;
+    /**
+     * 查找占用指定端口的进程ID
+     */
+    private findProcessOnPort;
+    /**
+     * 发送TERM信号给进程
+     */
+    private sendTermSignal;
+    /**
+     * 强制终止进程
+     */
+    private forceKillProcess;
     /**
      * 启动客户端模式（实际实现）
      */
@@ -93,6 +130,10 @@ export declare class RCCCli implements CLICommands {
      * 验证配置文件
      */
     private validateConfiguration;
+    /**
+     * 获取系统配置文件路径
+     */
+    private getSystemConfigPath;
     /**
      * 重置配置
      */

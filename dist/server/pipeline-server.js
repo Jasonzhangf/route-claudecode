@@ -701,115 +701,53 @@ class PipelineServer extends events_1.EventEmitter {
         return [...this.serverConfig.pipelines];
     }
     /**
-     * 基于配置文件进行真实的路由决策
+     * 设置路由器实例 - 用于路由决策
+     */
+    setRouter(router) {
+        this.router = router;
+    }
+    /**
+     * 基于配置文件进行真实的路由决策 - 使用新的虚拟模型映射系统
      */
     makeRoutingDecision(requestedModel) {
-        const routingRules = this.serverConfig.routingRules;
-        if (!routingRules) {
-            throw new Error('缺少路由配置：无法进行路由决策');
-        }
-        // 获取模型映射和路由信息
-        let selectedRoute = null;
-        let mappedModel = requestedModel;
-        let providerId = null;
-        // 方法1: 检查复杂v4配置格式的模型映射
-        if (routingRules.modelMapping && routingRules.modelMapping[requestedModel]) {
-            const modelConfig = routingRules.modelMapping[requestedModel];
-            const preferredRoutes = modelConfig.preferredRoutes || [];
-            // 选择第一个可用的路由
-            if (preferredRoutes.length > 0) {
-                selectedRoute = preferredRoutes[0];
-                // 获取模型映射
-                if (modelConfig.modelOverrides && modelConfig.modelOverrides[selectedRoute]) {
-                    mappedModel = modelConfig.modelOverrides[selectedRoute];
-                }
+        // 使用新的虚拟模型映射系统
+        try {
+            // 1. 使用VirtualModelMapper将输入模型映射到虚拟模型
+            const { VirtualModelMapper } = require('../router/virtual-model-mapping');
+            const virtualModel = VirtualModelMapper.mapToVirtual(requestedModel, { model: requestedModel });
+            console.log(`🎯 [Router] 虚拟模型映射: ${requestedModel} → ${virtualModel}`);
+            // 2. 使用PipelineRouter获取可用的流水线列表
+            if (!this.router) {
+                throw new Error('PipelineRouter未初始化 - 请先调用setRouter()方法');
             }
-        }
-        // 方法2: 使用默认路由（如果没有特定的模型映射）
-        if (!selectedRoute && routingRules.defaultRoute) {
-            selectedRoute = routingRules.defaultRoute;
-        }
-        // 方法3: 如果仍然没有路由，从可用路由中选择第一个
-        if (!selectedRoute && routingRules.routes && routingRules.routes.length > 0) {
-            selectedRoute = routingRules.routes[0].id;
-            console.warn(`⚠️  未找到模型${requestedModel}的特定路由，使用第一个可用路由: ${selectedRoute}`);
-        }
-        if (!selectedRoute) {
-            throw new Error(`无法为模型${requestedModel}找到合适的路由`);
-        }
-        // 查找路由对应的Provider信息
-        if (routingRules.routes) {
-            const routeConfig = routingRules.routes.find((route) => route.id === selectedRoute);
-            console.log(`🔍 [Router] 查找路由配置:`, {
-                selectedRoute,
-                foundRoute: !!routeConfig,
-                routeConfigId: routeConfig?.id,
-                hasPipeline: !!routeConfig?.pipeline,
-                hasLayers: !!routeConfig?.pipeline?.layers,
-                layersCount: routeConfig?.pipeline?.layers?.length,
-            });
-            if (routeConfig && routeConfig.pipeline && routeConfig.pipeline.layers) {
-                // 打印所有层级信息用于调试
-                routeConfig.pipeline.layers.forEach((layer, index) => {
-                    console.log(`🔍 [Router] Layer ${index}: ${layer.layer}, moduleId: ${layer.moduleId}, config:`, layer.config);
-                });
-                // 查找protocol层的providerId - 这里包含了真正的provider配置
-                const protocolLayer = routeConfig.pipeline.layers.find((layer) => layer.layer === 'protocol');
-                console.log(`🔍 [Router] Protocol层查找结果:`, {
-                    found: !!protocolLayer,
-                    layer: protocolLayer?.layer,
-                    moduleId: protocolLayer?.moduleId,
-                    config: protocolLayer?.config,
-                    hasProviderId: !!protocolLayer?.config?.providerId,
-                });
-                if (protocolLayer && protocolLayer.config && protocolLayer.config.providerId) {
-                    providerId = protocolLayer.config.providerId;
-                    console.log(`✅ [Router] 从protocol层找到providerId: ${providerId}`);
-                }
-                else {
-                    // 如果protocol层没有providerId，尝试从server-compatibility层获取
-                    const serverCompatLayer = routeConfig.pipeline.layers.find((layer) => layer.layer === 'server-compatibility');
-                    if (serverCompatLayer && serverCompatLayer.config && serverCompatLayer.config.providerId) {
-                        providerId = serverCompatLayer.config.providerId;
-                        console.log(`✅ [Router] 从server-compatibility层找到providerId: ${providerId}`);
-                    }
-                    else {
-                        // 🔧 ZERO FALLBACK POLICY: 如果都找不到，这是配置错误
-                        console.error(`❌ [Router] 无法从pipeline配置中找到providerId:`, {
-                            selectedRoute,
-                            protocolLayer: protocolLayer?.config,
-                            serverCompatLayer: serverCompatLayer?.config,
-                            allLayers: routeConfig.pipeline.layers.map((l) => ({ layer: l.layer, moduleId: l.moduleId }))
-                        });
-                        throw new Error(`Pipeline配置错误：无法从route '${selectedRoute}' 的pipeline层级中找到providerId`);
-                    }
-                }
+            const routingDecision = this.router.route(requestedModel);
+            const availablePipelines = routingDecision.availablePipelines;
+            if (!availablePipelines || availablePipelines.length === 0) {
+                throw new Error(`没有可用的流水线处理模型: ${requestedModel} (虚拟模型: ${virtualModel})`);
             }
+            // 3. 选择第一个可用的流水线 (负载均衡器稍后处理)
+            const selectedPipeline = availablePipelines[0];
+            console.log(`✅ [Router] 路由决策完成: ${requestedModel} → ${virtualModel} → ${selectedPipeline}`);
+            return {
+                routeId: virtualModel,
+                providerId: selectedPipeline.split('-')[0], // 从pipelineId提取provider名称
+                originalModel: requestedModel,
+                mappedModel: selectedPipeline.split('-')[1] || requestedModel, // 提取目标模型名称
+                virtualModel: virtualModel,
+                selectedPipeline: selectedPipeline,
+                availablePipelines: availablePipelines,
+                selectionCriteria: {
+                    primary: 'virtual-model-mapping',
+                    secondary: 'pipeline-availability',
+                    tertiary: 'first-available',
+                },
+                configSource: 'runtime-routing-table',
+            };
         }
-        // 🔧 ZERO FALLBACK POLICY: 确保providerId必须存在，不使用fallback
-        if (!providerId) {
-            throw new Error(`路由配置错误：无法确定Provider ID，selectedRoute: ${selectedRoute}`);
+        catch (error) {
+            console.error(`❌ [Router] 新路由决策失败: ${error.message}`);
+            throw new Error(`路由决策失败: ${error.message}`);
         }
-        const decision = {
-            routeId: selectedRoute,
-            providerId: providerId,
-            originalModel: requestedModel,
-            mappedModel: mappedModel,
-            selectionCriteria: routingRules.routeSelectionCriteria || {
-                primary: 'priority',
-                secondary: 'health',
-                tertiary: 'weight',
-            },
-            configSource: 'routing-rules',
-        };
-        console.log(`🎯 [Router层] 路由决策完成:`, {
-            requestedModel,
-            selectedRoute,
-            providerId,
-            mappedModel,
-            source: 'configuration-file',
-        });
-        return decision;
     }
     /**
      * 根据Provider ID获取兼容性信息

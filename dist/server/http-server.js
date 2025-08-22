@@ -35,6 +35,7 @@ const http = __importStar(require("http"));
 const url = __importStar(require("url"));
 const events_1 = require("events");
 const constants_1 = require("../constants");
+const jq_json_handler_1 = require("../utils/jq-json-handler");
 /**
  * HTTP服务器核心类
  */
@@ -47,6 +48,7 @@ class HTTPServer extends events_1.EventEmitter {
         this.isRunning = false;
         this.startTime = null;
         this.requestCount = 0;
+        this.connections = new Set();
         this.config = {
             maxRequestSize: (0, constants_1.getMaxRequestSize)(), // 10MB
             timeout: (0, constants_1.getHttpRequestTimeout)(), // 30秒
@@ -110,6 +112,13 @@ class HTTPServer extends events_1.EventEmitter {
             // 配置服务器选项
             this.server.timeout = this.config.timeout;
             this.server.keepAliveTimeout = this.config.keepAliveTimeout;
+            // 跟踪连接以便强制关闭
+            this.server.on('connection', (socket) => {
+                this.connections.add(socket);
+                socket.on('close', () => {
+                    this.connections.delete(socket);
+                });
+            });
             this.server.on('error', error => {
                 this.emit('error', error);
                 reject(error);
@@ -135,21 +144,57 @@ class HTTPServer extends events_1.EventEmitter {
      */
     async stop() {
         if (!this.isRunning || !this.server) {
-            throw new Error('Server is not running');
+            if (this.config.debug) {
+                console.log('⚠️ HTTP Server is not running, skipping stop');
+            }
+            return;
         }
         return new Promise((resolve, reject) => {
-            this.server.close(error => {
-                if (error) {
-                    this.emit('error', error);
-                    reject(error);
-                    return;
+            const timeout = setTimeout(() => {
+                // 超时处理：强制关闭所有连接
+                if (this.config.debug) {
+                    console.log('⏰ HTTP Server stop timeout, forcing connections to close');
                 }
+                for (const socket of this.connections) {
+                    try {
+                        socket.destroy();
+                    }
+                    catch (error) {
+                        // 忽略销毁连接时的错误
+                    }
+                }
+                this.connections.clear();
+                this.isRunning = false;
+                this.startTime = null;
+                this.server = null;
+                this.emit('stopped');
+                resolve();
+            }, 5000); // 5秒超时
+            // 首先停止接受新连接
+            this.server.close(error => {
+                clearTimeout(timeout);
+                if (error) {
+                    if (this.config.debug) {
+                        console.log('❌ HTTP Server close error:', error.message);
+                    }
+                    // 即使有错误，也要强制关闭连接
+                }
+                // 强制关闭所有现有连接
+                for (const socket of this.connections) {
+                    try {
+                        socket.destroy();
+                    }
+                    catch (socketError) {
+                        // 忽略销毁连接时的错误
+                    }
+                }
+                this.connections.clear();
                 this.isRunning = false;
                 this.startTime = null;
                 this.server = null;
                 this.emit('stopped');
                 if (this.config.debug) {
-                    console.log('🛑 HTTP Server stopped');
+                    console.log('🛑 HTTP Server stopped successfully');
                 }
                 resolve();
             });
@@ -251,7 +296,7 @@ class HTTPServer extends events_1.EventEmitter {
                     if (body) {
                         const contentType = req.headers['content-type'] || '';
                         if (contentType.includes('application/json')) {
-                            context.body = JSON.parse(body);
+                            context.body = jq_json_handler_1.JQJsonHandler.parseJsonString(body);
                         }
                         else {
                             context.body = body;

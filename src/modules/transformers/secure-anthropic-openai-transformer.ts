@@ -693,45 +693,106 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
    */
   private fixToolArguments(argumentsStr: string): string {
     try {
+      console.log(`🔧 [TOOL-FIX] Starting fix for:`, argumentsStr.substring(0, 100) + '...');
+      
       let fixed = argumentsStr;
       
       // 🔧 修复: Qwen API返回的单引号JSON问题
-      // 将Python/JavaScript对象格式修复为标准JSON
-      fixed = fixed
-        // 1. 移除多余的转义字符
-        .replace(/\\"/g, '"')
-        // 2. 修复单引号为双引号（仅在字符串键值中）
-        .replace(/'([^']*)':/g, '"$1":')    // 修复键名的单引号
-        .replace(/:\s*'([^']*)'/g, ': "$1"') // 修复值的单引号
-        // 3. 修复布尔值和null
-        .replace(/:\s*True/g, ': true')
-        .replace(/:\s*False/g, ': false')
-        .replace(/:\s*None/g, ': null');
+      // 使用简单而有效的字符替换方法
+      
+      // 1. 移除多余的转义字符
+      fixed = fixed.replace(/\\"/g, '"');
+      
+      // 2. 简单粗暴但有效的单引号替换
+      // 先标记所有单引号的位置，然后有选择地替换
+      let result = '';
+      let inString = false;
+      let i = 0;
+      
+      while (i < fixed.length) {
+        const char = fixed[i];
+        
+        if (char === "'") {
+          // 检查是否应该被替换为双引号
+          // 简单规则：如果前面是 : 或 { 或 [ 或 ,，后面不是 '，则替换
+          const prevNonSpace = this.findPrevNonSpace(fixed, i);
+          const nextChar = fixed[i + 1];
+          
+          if (prevNonSpace && [':', '{', '[', ','].includes(prevNonSpace) && nextChar !== "'") {
+            result += '"';
+          } else if (nextChar && [':', ',', '}', ']'].includes(nextChar)) {
+            // 或者如果后面是 : , } ]，也替换
+            result += '"';
+          } else {
+            result += char;
+          }
+        } else {
+          result += char;
+        }
+        i++;
+      }
+      
+      fixed = result;
+      
+      // 3. 修复Python/JavaScript布尔值和null
+      fixed = fixed.replace(/:\s*True\b/g, ': true');
+      fixed = fixed.replace(/:\s*False\b/g, ': false');  
+      fixed = fixed.replace(/:\s*None\b/g, ': null');
+      
+      // 修复数组中的布尔值
+      fixed = fixed.replace(/,\s*True\b/g, ', true');
+      fixed = fixed.replace(/,\s*False\b/g, ', false');
+      fixed = fixed.replace(/,\s*None\b/g, ', null');
+      
+      // 修复数组开头的布尔值
+      fixed = fixed.replace(/\[\s*True\b/g, '[true');
+      fixed = fixed.replace(/\[\s*False\b/g, '[false');
+      fixed = fixed.replace(/\[\s*None\b/g, '[null');
       
       // 4. 修复未闭合的引号和括号
       const openBraces = (fixed.match(/\{/g) || []).length;
       const closeBraces = (fixed.match(/\}/g) || []).length;
+      const openBrackets = (fixed.match(/\[/g) || []).length;
+      const closeBrackets = (fixed.match(/\]/g) || []).length;
       
       if (openBraces > closeBraces) {
         fixed += '}'.repeat(openBraces - closeBraces);
+      }
+      if (openBrackets > closeBrackets) {
+        fixed += ']'.repeat(openBrackets - closeBrackets);
       }
       
       // 5. 验证修复后的JSON格式
       try {
         JSON.parse(fixed);
+        console.log(`✅ [TOOL-FIX] Fix succeeded:`, {
+          originalLength: argumentsStr.length,
+          fixedLength: fixed.length,
+          hasArrays: fixed.includes('['),
+          hasObjects: fixed.includes('{')
+        });
         return fixed;
       } catch (verifyError) {
-        console.warn(`Tool arguments fix verification failed:`, verifyError.message);
-        console.warn(`Original:`, argumentsStr);
-        console.warn(`Fixed:`, fixed);
+        console.warn(`❌ [TOOL-FIX] Fix verification failed:`, verifyError.message);
+        console.warn(`❌ [TOOL-FIX] Original (${argumentsStr.length} chars):`, argumentsStr);
+        console.warn(`❌ [TOOL-FIX] Fixed (${fixed.length} chars):`, fixed);
         throw verifyError;
       }
       
     } catch (error) {
       // 如果修复失败，返回原始字符串
-      console.warn(`Tool arguments fix failed:`, error.message);
+      console.warn(`❌ [TOOL-FIX] Fix failed:`, error.message);
       return argumentsStr;
     }
+  }
+  
+  private findPrevNonSpace(str: string, index: number): string | null {
+    for (let i = index - 1; i >= 0; i--) {
+      if (str[i] !== ' ' && str[i] !== '\t' && str[i] !== '\n') {
+        return str[i];
+      }
+    }
+    return null;
   }
 
   // ============================================================================
