@@ -1,0 +1,34 @@
+{
+  "// === RCC v4.0 Qwen 认证系统测试配置 ===": "",
+  
+  "// === PROVIDERS 区 (使用多个认证文件) ===": "",
+  "Providers": [
+    {
+      "name": "qwen", 
+      "protocol": "openai",
+      "api_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "api_key": ["qwen-auth-1", "qwen-auth-5", "qwen-auth-12"],
+      "models": ["qwen-plus", "qwen-max", "qwen-turbo"],
+      "maxTokens": {
+        "qwen-plus": 8192,
+        "qwen-max": 8192,
+        "qwen-turbo": 4096
+      }
+    }
+  ],
+
+  "// === ROUTER 区 (演示多key负载均衡) ===": "",
+  "Router": {
+    "default": "qwen,qwen-plus",
+    "reasoning": "qwen,qwen-max",
+    "longContext": "qwen,qwen-max", 
+    "background": "qwen,qwen-turbo",
+    "webSearch": "qwen,qwen-plus"
+  },
+
+  "// === 系统设置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0",
+  "PORT": 5508,
+  "DEBUG": true
+}

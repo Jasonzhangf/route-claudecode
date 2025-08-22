@@ -6,6 +6,23 @@ set -e
 
 echo "🔍 检查硬编码违规..."
 
+# RCC v4.0主项目路径检测 - 只在主项目目录执行，跳过子项目
+PROJECT_ROOT="/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development"
+
+# 检查是否在主项目目录（不是子目录如architecture-engineer）
+if [[ "$PWD" != "$PROJECT_ROOT" ]]; then
+    echo "ℹ️ [硬编码检查] 不在RCC v4.0主项目目录，跳过检查: $PWD" >&2
+    exit 0
+fi
+
+# 确认这是正确的RCC主项目
+if [[ ! -f "package.json" ]] || [[ ! -d "src" ]] || [[ ! -f "scripts/check-hardcoding.sh" ]]; then
+    echo "ℹ️ [硬编码检查] 项目结构不匹配，跳过检查" >&2
+    exit 0
+fi
+
+echo "📁 [硬编码检查] 在RCC v4.0项目中执行硬编码检查: $PWD" >&2
+
 # 检查是否有硬编码的URL
 check_hardcoded_urls() {
     echo "📡 检查硬编码URL..."
@@ -30,7 +47,7 @@ check_hardcoded_urls() {
     done
     
     if [ "$found_violations" = true ]; then
-        return 1
+        return 2
     fi
     
     echo "✅ URL检查通过"
@@ -46,7 +63,7 @@ check_hardcoded_ports() {
     if [ -n "$violating_files" ]; then
         echo "❌ 发现硬编码端口号"
         echo "$violating_files" | sed 's/^/   - /'
-        return 1
+        return 2
     fi
     
     echo "✅ 端口检查通过"
@@ -64,7 +81,7 @@ check_hardcoded_errors() {
         echo "$violating_files" | sed 's/^/   - /'
         echo ""
         echo "💡 建议：将错误消息移动到 src/constants/error-messages.ts"
-        return 1
+        return 2
     fi
     
     echo "✅ 错误消息检查通过"
@@ -96,7 +113,7 @@ check_hardcoded_models() {
     if [ "$found_violations" = true ]; then
         echo ""
         echo "💡 建议：将模型名称移动到 src/constants/model-mappings.ts"
-        return 1
+        return 2
     fi
     
     echo "✅ 模型名称检查通过"
@@ -128,7 +145,7 @@ check_hardcoded_paths() {
     if [ "$found_violations" = true ]; then
         echo ""
         echo "💡 建议：将文件路径移动到 src/constants/file-paths.ts"
-        return 1
+        return 2
     fi
     
     echo "✅ 文件路径检查通过"
@@ -146,7 +163,7 @@ check_hardcoded_timeouts() {
         echo "$violating_files" | sed 's/^/   - /'
         echo ""
         echo "💡 建议：将超时时间移动到 src/constants/timeout-defaults.ts"
-        return 1
+        return 2
     fi
     
     echo "✅ 超时时间检查通过"
@@ -184,18 +201,17 @@ generate_report() {
 main() {
     local exit_code=0
     
-    check_hardcoded_urls || exit_code=1
-    check_hardcoded_ports || exit_code=1
-    check_hardcoded_errors || exit_code=1
-    check_hardcoded_models || exit_code=1
-    check_hardcoded_paths || exit_code=1
-    check_hardcoded_timeouts || exit_code=1
+    check_hardcoded_urls || exit_code=2
+    check_hardcoded_ports || exit_code=2
+    check_hardcoded_errors || exit_code=2
+    check_hardcoded_models || exit_code=2
+    check_hardcoded_paths || exit_code=2
+    check_hardcoded_timeouts || exit_code=2
     
     generate_report
     
     if [ $exit_code -eq 0 ]; then
-        echo ""
-        echo "🎉 硬编码检查完成 - 无违规发现"
+        echo "✅ [RCC v4.0硬编码检查] 无违规发现"
     else
         echo ""
         echo "❌ 硬编码检查失败 - 发现违规项"

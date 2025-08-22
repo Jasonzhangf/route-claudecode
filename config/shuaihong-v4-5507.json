@@ -1,0 +1,36 @@
+{
+  "// === RCC v4.0 ShuaiHong Provider 配置 ===": "",
+  
+  "// === PROVIDERS 区 ===": "",
+  "Providers": [
+    {
+      "name": "shuaihong",
+      "protocol": "openai",
+      "api_base_url": "https://ai.shuaihong.fun/v1/chat/completions",
+      "api_key": "sk-shuaihong-test-key",
+      "models": ["gpt-4o", "gpt-4o-mini", "claude-3-sonnet"],
+      "serverCompatibility": {
+        "use": "passthrough",
+        "options": {
+          "timeout": 30000,
+          "retries": 3
+        }
+      }
+    }
+  ],
+
+  "// === ROUTER 区 ===": "",
+  "Router": {
+    "default": "shuaihong,gpt-4o",
+    "reasoning": "shuaihong,gpt-4o",
+    "longContext": "shuaihong,gpt-4o", 
+    "background": "shuaihong,gpt-4o-mini",
+    "webSearch": "shuaihong,gpt-4o"
+  },
+
+  "// === 系统设置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0",
+  "PORT": 5507,
+  "DEBUG": true
+}
