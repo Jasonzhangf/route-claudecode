@@ -165,6 +165,40 @@ export const API_DEFAULTS = {
     ANTHROPIC: 'anthropic-sdk-typescript',
     OPENAI: 'openai-node',
   },
+
+  // 测试相关常量
+  TEST_ENDPOINTS: {
+    LOCALHOST: 'localhost',
+    LOCALHOST_IP: '127.0.0.1',
+  },
+
+  TEST_API_KEYS: {
+    PROXY_KEY: 'rcc4-proxy-key',
+    TEST_KEY: 'test-api-key',
+  },
+
+  TEST_PORTS: {
+    PRIMARY: 5506,
+    SECONDARY: 5507,
+    ALTERNATIVE: 5508,
+  },
+
+  // 标准token配置
+  MAX_TOKENS: {
+    SMALL: 1000,
+    STANDARD: 4096,
+    LARGE: 8192,
+    XLARGE: 16384,
+  },
+
+  // API端点路径
+  ENDPOINTS: {
+    MESSAGES: '/v1/messages',
+    CHAT_COMPLETIONS: '/v1/chat/completions',
+    MODELS: '/v1/models',
+    HEALTH: '/health',
+    STATUS: '/status',
+  },
 } as const;
 
 /**

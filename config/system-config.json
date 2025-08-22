@@ -57,8 +57,14 @@
       "timeout": 30000,
       "maxRetries": 3
     },
+    "sh": {
+      "endpoint": "https://ai.shuaihong.fun/v1/chat/completions",
+      "protocol": "openai",
+      "transformer": "shuaihong-standard",
+      "timeout": 30000,
+      "maxRetries": 3
+    },
     "lmstudio": {
-      "endpoint": "http://localhost:1234/v1/chat/completions",
       "protocol": "openai",
       "transformer": "anthropic-to-openai-transformer",
       "serverCompatibility": "lmstudio",
@@ -66,7 +72,6 @@
       "maxRetries": 2
     },
     "openai": {
-      "endpoint": "https://api.openai.com/v1/chat/completions",
       "protocol": "openai",
       "transformer": "openai-standard",
       "serverCompatibility": "generic",

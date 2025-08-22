@@ -13,6 +13,7 @@ export const COMPATIBILITY_TAGS = {
   ANTHROPIC: 'anthropic',
   OPENAI: 'openai',
   MODELSCOPE: 'modelscope',
+  QWEN: 'qwen',
   DEFAULT: 'default',
   PASSTHROUGH: 'passthrough'
 } as const;
@@ -23,7 +24,8 @@ export const PROVIDER_NAMES = {
   VLLM: 'vllm',
   ANTHROPIC: 'anthropic',
   OPENAI: 'openai',
-  MODELSCOPE: 'modelscope'
+  MODELSCOPE: 'modelscope',
+  QWEN: 'qwen'
 } as const;
 
 export const DEFAULT_ENDPOINTS = {
@@ -76,6 +78,7 @@ export const COMPATIBILITY_MODULE_PATHS = {
   VLLM: '../modules/pipeline-modules/server-compatibility/vllm-compatibility',
   ANTHROPIC: '../modules/pipeline-modules/server-compatibility/anthropic-compatibility',
   MODELSCOPE: '../modules/pipeline-modules/server-compatibility/modelscope-compatibility',
+  QWEN: '../modules/pipeline-modules/server-compatibility/qwen-compatibility',
   PASSTHROUGH: '../modules/pipeline-modules/server-compatibility/passthrough-compatibility'
 } as const;
 
@@ -85,6 +88,7 @@ export const COMPATIBILITY_MODULE_CLASSES = {
   VLLM: 'VLLMCompatibilityModule',
   ANTHROPIC: 'AnthropicCompatibilityModule',
   MODELSCOPE: 'ModelScopeCompatibilityModule',
+  QWEN: 'QwenCompatibilityModule',
   PASSTHROUGH: 'PassthroughCompatibilityModule'
 } as const;
 
@@ -93,14 +97,16 @@ export const PROVIDER_TO_COMPATIBILITY_MAPPING = {
   [PROVIDER_NAMES.OLLAMA]: COMPATIBILITY_TAGS.OLLAMA,
   [PROVIDER_NAMES.VLLM]: COMPATIBILITY_TAGS.VLLM,
   [PROVIDER_NAMES.ANTHROPIC]: COMPATIBILITY_TAGS.ANTHROPIC,
-  [PROVIDER_NAMES.MODELSCOPE]: COMPATIBILITY_TAGS.MODELSCOPE
+  [PROVIDER_NAMES.MODELSCOPE]: COMPATIBILITY_TAGS.MODELSCOPE,
+  [PROVIDER_NAMES.QWEN]: COMPATIBILITY_TAGS.QWEN
 } as const;
 
 export const URL_PATTERNS = {
   LMSTUDIO_LOCALHOST: 'localhost:1234',
   OLLAMA_LOCALHOST: 'localhost:11434',
   VLLM_PATTERN: 'vllm',
-  ANTHROPIC_DOMAIN: 'anthropic.com'
+  ANTHROPIC_DOMAIN: 'anthropic.com',
+  QWEN_DOMAIN: 'dashscope.aliyuncs.com'
 } as const;
 
 export const LAYER_NAMES = {

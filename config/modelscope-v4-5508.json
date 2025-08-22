@@ -1,0 +1,34 @@
+{
+  "// === RCC v4.0 ModelScope 配置 - 带智能路由增强 ===": "",
+  
+  "// === PROVIDERS 区 ===": "",
+  "Providers": [
+    {
+      "name": "modelscope", 
+      "protocol": "openai",
+      "api_base_url": "https://api-inference.modelscope.cn/v1",
+      "api_key": "ms-cc2f461b-8228-427f-99aa-1d44fab73e67",
+      "models": ["Qwen/Qwen3-Coder-480B-A35B-Instruct", "Qwen/QwQ-32B-Preview"],
+      "maxTokens": {
+        "Qwen/Qwen3-Coder-480B-A35B-Instruct": 8192,
+        "Qwen/QwQ-32B-Preview": 8192
+      }
+    }
+  ],
+
+  "// === ROUTER 区 (带Demo1智能路由逻辑) ===": "",
+  "Router": {
+    "default": "modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "reasoning": "modelscope,Qwen/QwQ-32B-Preview",
+    "longContext": "modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct", 
+    "background": "modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "think": "modelscope,Qwen/QwQ-32B-Preview",
+    "webSearch": "modelscope,Qwen/Qwen3-Coder-480B-A35B-Instruct"
+  },
+
+  "// === 系统设置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0",
+  "PORT": 5506,
+  "DEBUG": true
+}
