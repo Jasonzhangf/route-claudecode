@@ -1,0 +1,29 @@
+{
+  "// === RCC v4.0 LM Studio 配置 - 带智能路由增强 ===": "",
+  
+  "// === PROVIDERS 区 ===": "",
+  "Providers": [
+    {
+      "name": "lmstudio", 
+      "protocol": "openai",
+      "api_base_url": "http://localhost:1234/v1",
+      "api_key": "lm-studio",
+      "models": ["llama-3.1-8b-instruct"]
+    }
+  ],
+
+  "// === ROUTER 区 (带Demo1智能路由逻辑) ===": "",
+  "Router": {
+    "default": "lmstudio,llama-3.1-8b-instruct",
+    "longContext": "lmstudio,llama-3.1-8b-instruct", 
+    "background": "lmstudio,llama-3.1-8b-instruct",
+    "think": "lmstudio,llama-3.1-8b-instruct",
+    "webSearch": "lmstudio,llama-3.1-8b-instruct"
+  },
+
+  "// === 系统设置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0",
+  "PORT": 5506,
+  "DEBUG": true
+}

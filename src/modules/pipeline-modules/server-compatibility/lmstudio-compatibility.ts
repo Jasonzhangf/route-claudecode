@@ -257,24 +257,44 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
    * 适配请求以确保LM Studio兼容性
    */
   private adaptRequestForLMStudio(input: StandardRequest): StandardRequest {
+    // 🔧 关键修复：将虚拟模型映射到实际的LM Studio模型
+    const actualModel = this.mapVirtualModelToActual(input.model);
+    
     // 应用max_tokens限制
-    const modelMaxTokens = this.getModelMaxTokens(input.model);
+    const modelMaxTokens = this.getModelMaxTokens(actualModel);
 
     // 克隆输入以避免修改原始对象
     const adaptedRequest: StandardRequest = {
       ...input,
+      model: actualModel, // 使用实际模型名称
       max_tokens: Math.min(input.max_tokens || modelMaxTokens, modelMaxTokens),
     };
 
-    // 确保messages格式正确
+    // 🔧 关键修复：转换消息内容格式以确保LM Studio兼容性
     if (adaptedRequest.messages && Array.isArray(adaptedRequest.messages)) {
-      adaptedRequest.messages = adaptedRequest.messages.filter(msg => {
-        // 安全检查：确保msg对象存在且不为null/undefined
-        if (!msg || typeof msg !== 'object') {
-          return false;
-        }
-        return msg.content && typeof msg.content === 'string' && msg.content.trim() && msg.role;
-      });
+      adaptedRequest.messages = adaptedRequest.messages
+        .filter(msg => {
+          // 安全检查：确保msg对象存在且不为null/undefined
+          if (!msg || typeof msg !== 'object') {
+            return false;
+          }
+          
+          // 检查是否有有效的role
+          if (!msg.role || typeof msg.role !== 'string') {
+            return false;
+          }
+          
+          // 支持多种content格式，但需要进行转换
+          if (typeof msg.content === 'string') {
+            return msg.content.trim().length > 0; // 字符串必须非空
+          } else if (Array.isArray(msg.content) || (msg.content && typeof msg.content === 'object')) {
+            return true; // 复杂内容需要转换
+          }
+          
+          // 如果content为null/undefined，检查是否是特殊类型消息（如工具响应）
+          return msg.tool_call_id || msg.name; // 工具响应消息可能没有content但有tool_call_id
+        })
+        .map(msg => this.convertMessageContentForLMStudio(msg));
       
       // 🔧 关键修复：如果过滤后messages为空，抛出错误而不是设置空数组
       if (adaptedRequest.messages.length === 0) {
@@ -299,6 +319,77 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       `🔧 LM Studio适配完成: max_tokens=${adaptedRequest.max_tokens}, messages=${adaptedRequest.messages?.length || 0}, tools=${adaptedRequest.tools?.length || 0}`
     );
     return adaptedRequest;
+  }
+
+  /**
+   * 转换消息内容格式以确保LM Studio兼容性
+   */
+  private convertMessageContentForLMStudio(msg: any): any {
+    // 如果已经是字符串格式，直接返回
+    if (typeof msg.content === 'string') {
+      return msg;
+    }
+
+    // 处理复杂内容格式（如Claude Code的tool_use格式）
+    let convertedContent = '';
+
+    if (Array.isArray(msg.content)) {
+      // 处理数组格式的内容
+      for (const contentBlock of msg.content) {
+        if (!contentBlock || typeof contentBlock !== 'object') {
+          continue;
+        }
+
+        if (contentBlock.type === 'text' && contentBlock.text) {
+          // 文本内容块
+          convertedContent += contentBlock.text + '\n';
+        } else if (contentBlock.type === 'tool_use') {
+          // 工具使用内容块 - 转换为文本描述
+          const toolName = contentBlock.name || 'unknown_tool';
+          const toolInput = contentBlock.input || {};
+          convertedContent += `[Tool Call: ${toolName}] `;
+          
+          // 将工具输入转换为可读的描述
+          if (typeof toolInput === 'object' && Object.keys(toolInput).length > 0) {
+            convertedContent += JSON.stringify(toolInput);
+          }
+          convertedContent += '\n';
+        } else if (contentBlock.type === 'tool_result') {
+          // 工具结果内容块
+          const result = contentBlock.content || contentBlock.result || 'No result';
+          convertedContent += `[Tool Result] ${result}\n`;
+        } else {
+          // 未知类型的内容块，尝试提取文本
+          const textContent = contentBlock.text || contentBlock.content || JSON.stringify(contentBlock);
+          convertedContent += textContent + '\n';
+        }
+      }
+    } else if (msg.content && typeof msg.content === 'object') {
+      // 处理对象格式的内容
+      if (msg.content.text) {
+        convertedContent = msg.content.text;
+      } else if (msg.content.content) {
+        convertedContent = msg.content.content;
+      } else {
+        // fallback: 转换整个对象为JSON字符串
+        convertedContent = JSON.stringify(msg.content);
+      }
+    }
+
+    // 清理内容，移除多余的换行符
+    convertedContent = convertedContent.trim();
+    
+    // 如果转换后仍然为空，提供默认内容
+    if (!convertedContent) {
+      convertedContent = '[Empty content]';
+    }
+
+    console.log(`🔧 消息内容转换: ${msg.role} - ${convertedContent.substring(0, 100)}${convertedContent.length > 100 ? '...' : ''}`);
+
+    return {
+      ...msg,
+      content: convertedContent
+    };
   }
 
   /**
@@ -397,9 +488,10 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       throw new Error('缺少messages参数或格式无效');
     }
 
-    // 检查模型是否支持
-    if (!this.config.models.includes(request.model)) {
-      throw new Error(`模型 ${request.model} 不在支持列表中: ${this.config.models.join(', ')}`);
+    // 🔧 关键修复：检查映射后的实际模型是否支持
+    const actualModel = this.mapVirtualModelToActual(request.model);
+    if (!this.config.models.includes(actualModel)) {
+      throw new Error(`映射后的模型 ${actualModel} (来自虚拟模型 ${request.model}) 不在支持列表中: ${this.config.models.join(', ')}`);
     }
   }
 
@@ -564,6 +656,35 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       console.warn('获取LM Studio模型列表失败，使用配置中的模型列表');
       return this.config.models;
     }
+  }
+
+  /**
+   * 将虚拟模型映射到实际的LM Studio模型
+   */
+  private mapVirtualModelToActual(virtualModel: string): string {
+    // 虚拟模型到实际模型的映射
+    const modelMapping: Record<string, string> = {
+      'default': this.config.models[0] || 'llama-3.1-8b-instruct',
+      'reasoning': this.config.models[0] || 'llama-3.1-8b-instruct', 
+      'longContext': this.config.models[0] || 'llama-3.1-8b-instruct',
+      'webSearch': this.config.models[0] || 'llama-3.1-8b-instruct',
+      'background': this.config.models[0] || 'llama-3.1-8b-instruct',
+    };
+
+    // 如果是虚拟模型，返回映射的实际模型
+    if (modelMapping[virtualModel]) {
+      console.log(`🔄 虚拟模型映射: ${virtualModel} -> ${modelMapping[virtualModel]}`);
+      return modelMapping[virtualModel];
+    }
+
+    // 如果已经是实际模型名称，直接返回
+    if (this.config.models.includes(virtualModel)) {
+      return virtualModel;
+    }
+
+    // 如果都不匹配，返回默认模型
+    console.warn(`⚠️ 未知模型 ${virtualModel}，使用默认模型 ${this.config.models[0]}`);
+    return this.config.models[0] || 'llama-3.1-8b-instruct';
   }
 
   // Missing ModuleInterface methods
