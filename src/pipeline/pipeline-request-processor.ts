@@ -49,7 +49,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private responseTimeHistory: number[] = [];
   private debugManager: DebugManagerImpl;
 
-  constructor(config: MergedConfig) {
+  constructor(config: MergedConfig, debugEnabled: boolean = false) {
     super();
     this.config = config;
     this.compatibilityManager = new PipelineCompatibilityManager(config);
@@ -66,7 +66,7 @@ export class PipelineRequestProcessor extends EventEmitter {
 
     // 初始化Debug管理器
     this.debugManager = new DebugManagerImpl({
-      enabled: true,
+      enabled: debugEnabled,
       maxRecordSize: 10 * 1024 * 1024, // 10MB
       maxSessionDuration: 24 * 60 * 60 * 1000, // 24小时
       retentionDays: 7,
@@ -263,31 +263,31 @@ export class PipelineRequestProcessor extends EventEmitter {
    * 处理Router层 - 路由决策
    */
   private async processRouterLayer(input: any, context: RequestContext): Promise<any> {
-    // 使用虚拟模型映射系统
+    // 使用模型映射系统
     const { VirtualModelMapper } = require('../router/virtual-model-mapping');
-    const virtualModel = VirtualModelMapper.mapToVirtual(input.model, input);
+    const mappedModel = VirtualModelMapper.mapToVirtual(input.model, input);
     
-    secureLogger.info('Virtual model mapping completed', {
+    secureLogger.info('Model mapping completed', {
       requestId: context.requestId,
       inputModel: input.model,
-      virtualModel: virtualModel,
-      priority: 99, // 虚拟模型映射的优先级
+      mappedModel: mappedModel,
+      priority: 99, // 模型映射的优先级
       tokenCount: '[REDACTED]', // 不记录具体token数量
     });
 
     // 构建路由决策结果 - 使用实际的流水线ID
-    const availablePipelines = this.getAvailablePipelinesForVirtualModel(virtualModel);
+    const availablePipelines = this.getAvailablePipelinesForMappedModel(mappedModel);
     const routingDecision = {
       originalModel: input.model,
-      virtualModel: virtualModel,
+      virtualModel: mappedModel,
       availablePipelines: availablePipelines,
-      reasoning: `Found ${availablePipelines.length} healthy pipelines for ${virtualModel}`
+      reasoning: `Found ${availablePipelines.length} healthy pipelines for ${mappedModel}`
     };
 
     context.transformations.push({
       layer: 'router',
       inputModel: input.model,
-      outputModel: virtualModel,
+      outputModel: mappedModel,
       timestamp: new Date(),
     });
 
@@ -304,11 +304,16 @@ export class PipelineRequestProcessor extends EventEmitter {
    * 处理Transformer层 - 协议转换
    */
   private async processTransformerLayer(input: any, routingDecision: any, context: RequestContext): Promise<any> {
-    const transformedRequest = {
-      ...input,
-      // 应用路由决策的模型映射
-      model: routingDecision.virtualModel || input.model,
-    };
+    // 🔧 关键修复：使用真实的SecureAnthropicToOpenAITransformer进行协议转换
+    const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
+    const transformer = new SecureAnthropicToOpenAITransformer();
+    await transformer.start();
+
+    // 进行Anthropic → OpenAI协议转换
+    const transformedRequest = await transformer.process(input);
+
+    // 应用路由决策的模型映射
+    (transformedRequest as any).model = routingDecision.virtualModel || input.model;
 
     context.transformations.push({
       layer: 'transformer',
@@ -319,8 +324,10 @@ export class PipelineRequestProcessor extends EventEmitter {
     secureLogger.debug('Transformer layer processing', {
       requestId: context.requestId,
       originalModel: input.model,
-      transformedModel: transformedRequest.model,
+      transformedModel: (transformedRequest as any).model,
       hasTools: Array.isArray(input.tools) && input.tools.length > 0,
+      transformedMessageCount: (transformedRequest as any)?.messages?.length || 0,
+      originalMessageCount: input?.messages?.length || 0,
     });
 
     return transformedRequest;
@@ -333,10 +340,32 @@ export class PipelineRequestProcessor extends EventEmitter {
     // 从路由决策中获取provider信息
     const firstPipelineId = routingDecision.availablePipelines[0];
     const providerType = this.extractProviderFromPipelineId(firstPipelineId);
-    const providerInfo = this.config.systemConfig.providerTypes[providerType];
+    let providerInfo = this.config.systemConfig.providerTypes[providerType];
     
+    // 🔧 修复硬编码问题：如果system config中没有找到provider类型，使用动态默认配置
     if (!providerInfo) {
-      throw new Error(`Provider type '${providerType}' not found in system config`);
+      // 获取用户配置中的provider信息来创建默认配置
+      const providers = this.config.providers || [];
+      const matchingProvider = providers.find(p => p.name === providerType);
+      
+      if (matchingProvider && matchingProvider.api_base_url) {
+        // 根据用户配置动态生成provider信息
+        providerInfo = {
+          endpoint: matchingProvider.api_base_url,
+          protocol: "openai", // 默认使用OpenAI协议
+          transformer: "openai-standard", // 默认transformer
+          timeout: 30000,
+          maxRetries: 3
+        };
+        
+        secureLogger.info(`💡 动态生成provider配置`, {
+          providerType,
+          endpoint: providerInfo.endpoint,
+          protocol: providerInfo.protocol
+        });
+      } else {
+        throw new Error(`Provider type '${providerType}' not found in system config and cannot be auto-generated from user config`);
+      }
     }
 
     // 获取provider endpoint和认证信息
@@ -348,7 +377,19 @@ export class PipelineRequestProcessor extends EventEmitter {
     }
 
     const endpoint = matchingProvider.api_base_url || providerInfo.endpoint;
-    const apiKey = matchingProvider.api_key;
+    
+    // 🔧 关键修复：处理多API密钥配置
+    let apiKey = matchingProvider.api_key;
+    if (Array.isArray(apiKey)) {
+      // 如果是数组，使用第一个可用的密钥
+      apiKey = apiKey[0];
+      secureLogger.debug('Protocol层：多密钥配置检测', {
+        requestId: context.requestId,
+        providerType,
+        totalKeys: matchingProvider.api_key.length,
+        selectedKey: apiKey ? `${apiKey.substring(0, 10)}...` : 'undefined'
+      });
+    }
 
     secureLogger.debug('Protocol layer processing', {
       requestId: context.requestId,
@@ -356,6 +397,32 @@ export class PipelineRequestProcessor extends EventEmitter {
       protocolType: providerInfo.protocol,
       endpoint: endpoint,
     });
+
+    // 🔧 关键修复：从路由决策中获取实际的模型名
+    // 如果当前模型是映射模型，需要获取实际映射的模型名
+    let actualModel = request.model;
+    if (context.routingDecision && context.routingDecision.originalModel !== context.routingDecision.virtualModel) {
+      // 从配置中获取实际的模型名
+      const routerConfig = (this.config as any).router;
+      const mappedModel = context.routingDecision.virtualModel;
+      
+      // 首先尝试直接匹配映射模型，如果没有则使用default路由
+      let routeEntry = routerConfig[mappedModel] || routerConfig.default;
+      
+      if (routeEntry) {
+        const [, modelName] = routeEntry.split(',');
+        if (modelName) {
+          actualModel = modelName;
+          secureLogger.info('Protocol层：模型名映射', {
+            requestId: context.requestId,
+            mappedModel,
+            actualModel,
+            routeEntry,
+            usedDefault: !routerConfig[mappedModel]
+          });
+        }
+      }
+    }
 
     // 添加认证头和端点信息
     const protocolRequest = {
@@ -366,6 +433,7 @@ export class PipelineRequestProcessor extends EventEmitter {
         protocol: providerInfo.protocol,
         timeout: providerInfo.timeout,
         maxRetries: providerInfo.maxRetries,
+        actualModel: actualModel, // 🔧 关键修复：传递实际的模型名给后续层
       },
     };
 
@@ -742,22 +810,59 @@ export class PipelineRequestProcessor extends EventEmitter {
   }
 
   /**
-   * 获取虚拟模型的可用流水线ID
+   * 获取映射模型的可用流水线ID
    * 基于已知的流水线表配置
    */
-  private getAvailablePipelinesForVirtualModel(virtualModel: string): string[] {
-    // 基于流水线表中的实际配置返回正确的pipeline ID
-    switch (virtualModel) {
-      case 'default':
-      case 'reasoning': 
-      case 'longContext':
-      case 'webSearch':
-      case 'background':
-        return ['lmstudio-gpt-oss-20b-mlx-key0'];
-      default:
-        // 如果没有匹配，返回默认流水线
-        return ['lmstudio-gpt-oss-20b-mlx-key0'];
+  private getAvailablePipelinesForMappedModel(mappedModel: string): string[] {
+    // 根据配置文件动态生成pipeline ID
+    const routerConfig = (this.config as any).router;
+    
+    console.log(`🔍 Debug: getAvailablePipelinesForMappedModel - mappedModel=${mappedModel}`);
+    console.log(`🔍 Debug: routerConfig=`, JSON.stringify(routerConfig, null, 2));
+    
+    if (routerConfig && routerConfig[mappedModel]) {
+      const routeEntry = routerConfig[mappedModel];
+      console.log(`🔍 Debug: Found route entry for ${mappedModel}: ${routeEntry}`);
+      
+      // 解析 "provider,model" 格式
+      const [providerName, modelName] = routeEntry.split(',');
+      
+      if (providerName && modelName) {
+        // 生成pipeline ID格式: provider-model-key0
+        const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+        console.log(`🔍 Debug: Generated pipeline ID: ${pipelineId}`);
+        return [pipelineId];
+      }
     }
+    
+    // 如果没有配置或解析失败，尝试使用default路由
+    if (mappedModel !== 'default' && routerConfig && routerConfig.default) {
+      const defaultRoute = routerConfig.default;
+      const [providerName, modelName] = defaultRoute.split(',');
+      
+      if (providerName && modelName) {
+        const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+        console.log(`🔍 Debug: Using default route, generated pipeline ID: ${pipelineId}`);
+        return [pipelineId];
+      }
+    }
+    
+    // 最终fallback - 检查配置中的第一个Provider
+    const providers = (this.config as any).providers;
+    console.log(`🔍 Debug: Fallback to providers=`, JSON.stringify(providers, null, 2));
+    if (providers && providers.length > 0) {
+      const firstProvider = providers[0];
+      if (firstProvider.models && firstProvider.models.length > 0) {
+        const modelName = firstProvider.models[0];
+        const pipelineId = `${firstProvider.name}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+        console.log(`🔍 Debug: Fallback generated pipeline ID: ${pipelineId}`);
+        return [pipelineId];
+      }
+    }
+    
+    // 如果所有方法都失败，返回空数组
+    console.log(`🔍 Debug: All methods failed, returning empty array`);
+    return [];
   }
 
   /**
