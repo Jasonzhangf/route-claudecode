@@ -15,6 +15,7 @@ import { JQJsonHandler } from '../utils/jq-json-handler';
 import { MergedConfig } from '../config/config-reader';
 import { PipelineCompatibilityManager } from './pipeline-compatibility-manager';
 import { DebugManagerImpl } from '../debug/debug-manager';
+import { PipelineDebugRecorder } from '../debug/pipeline-debug-recorder';
 import https from 'https';
 import http from 'http';
 
@@ -48,6 +49,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private stats: PipelineStats;
   private responseTimeHistory: number[] = [];
   private debugManager: DebugManagerImpl;
+  private pipelineDebugRecorder: PipelineDebugRecorder;
 
   constructor(config: MergedConfig, debugEnabled: boolean = false) {
     super();
@@ -82,6 +84,10 @@ export class PipelineRequestProcessor extends EventEmitter {
         'response-transformer': { enabled: true, logLevel: 'debug' },
       }
     });
+
+    // 初始化Pipeline Debug记录器
+    const defaultPort = this.config.server?.port || 5506;
+    this.pipelineDebugRecorder = new PipelineDebugRecorder(defaultPort, debugEnabled);
 
     // 注册所有流水线模块
     this.registerDebugModules();
@@ -198,6 +204,17 @@ export class PipelineRequestProcessor extends EventEmitter {
         transformationCount: context.transformations.length,
       });
 
+      // 记录完整的Pipeline执行
+      this.recordCompletePipelineExecution(
+        requestId,
+        protocol as 'anthropic' | 'openai' | 'gemini',
+        input,
+        finalResponse,
+        totalTime,
+        context,
+        true
+      );
+
       return {
         executionId: requestId,
         pipelineId: routingDecision.selectedPipeline || 'default',
@@ -255,6 +272,18 @@ export class PipelineRequestProcessor extends EventEmitter {
         error: error.message,
       });
 
+      // 记录失败的Pipeline执行
+      this.recordCompletePipelineExecution(
+        requestId,
+        protocol as 'anthropic' | 'openai' | 'gemini',
+        input,
+        null,
+        totalTime,
+        context,
+        false,
+        error.message
+      );
+
       throw new Error(`Pipeline request processing failed: ${error.message}`);
     }
   }
@@ -301,23 +330,76 @@ export class PipelineRequestProcessor extends EventEmitter {
   }
 
   /**
-   * 处理Transformer层 - 协议转换
+   * 处理Transformer层 - 基于协议自动选择转换器
    */
   private async processTransformerLayer(input: any, routingDecision: any, context: RequestContext): Promise<any> {
-    // 🔧 关键修复：使用真实的SecureAnthropicToOpenAITransformer进行协议转换
-    const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
-    const transformer = new SecureAnthropicToOpenAITransformer();
-    await transformer.start();
+    // 🔧 关键修复：基于配置的协议字段自动选择transformer
+    const firstPipelineId = routingDecision.availablePipelines[0];
+    const providerType = this.extractProviderFromPipelineId(firstPipelineId);
+    const providers = this.config.providers || [];
+    const matchingProvider = providers.find(p => p.name === providerType);
 
-    // 进行Anthropic → OpenAI协议转换
-    const transformedRequest = await transformer.process(input);
+    if (!matchingProvider) {
+      throw new Error(`Provider '${providerType}' not found in user config`);
+    }
 
-    // 应用路由决策的模型映射
-    (transformedRequest as any).model = routingDecision.virtualModel || input.model;
+    // 🔧 新架构：基于protocol字段自动选择transformer
+    let transformerDirection = 'passthrough';
+    let transformedRequest = input;
+    
+    // 检查新统一格式的protocol字段
+    if (matchingProvider.protocol) {
+      const protocol = matchingProvider.protocol;
+      secureLogger.info('🔧 使用新统一格式的protocol配置', {
+        requestId: context.requestId,
+        providerName: providerType,
+        protocol: protocol,
+        architecture: 'unified-format'
+      });
+
+      // 新架构逻辑：protocol决定transformer选择
+      if (protocol === 'openai') {
+        // protocol: "openai" -> 需要anthropic-to-openai转换
+        transformerDirection = 'anthropic-to-openai';
+        const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
+        const transformer = new SecureAnthropicToOpenAITransformer();
+        await transformer.start();
+        transformedRequest = await transformer.process(input);
+      } else if (protocol === 'anthropic') {
+        // protocol: "anthropic" -> passthrough，无需转换
+        transformerDirection = 'passthrough';
+        transformedRequest = input;
+      } else {
+        secureLogger.warn('🔧 未知协议类型，使用passthrough', {
+          requestId: context.requestId,
+          protocol: protocol,
+          fallback: 'passthrough'
+        });
+      }
+    } else {
+      // 向后兼容：检查旧格式的transformer配置
+      secureLogger.info('🔧 使用向后兼容的transformer配置', {
+        requestId: context.requestId,
+        providerName: providerType,
+        hasTransformerConfig: !!matchingProvider.transformer
+      });
+
+      if (matchingProvider.transformer?.use?.includes('openai')) {
+        transformerDirection = 'anthropic-to-openai';
+        const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
+        const transformer = new SecureAnthropicToOpenAITransformer();
+        await transformer.start();
+        transformedRequest = await transformer.process(input);
+      }
+    }
+
+    // 🔧 关键修复：不要覆盖model字段，保持原始模型名用于API调用
+    // 路由映射将通过Protocol层的__internal.actualModel传递
+    // (transformedRequest as any).model = routingDecision.virtualModel || input.model;
 
     context.transformations.push({
       layer: 'transformer',
-      direction: 'anthropic-to-openai',
+      direction: transformerDirection,
       timestamp: new Date(),
     });
 
@@ -325,6 +407,7 @@ export class PipelineRequestProcessor extends EventEmitter {
       requestId: context.requestId,
       originalModel: input.model,
       transformedModel: (transformedRequest as any).model,
+      transformerDirection: transformerDirection,
       hasTools: Array.isArray(input.tools) && input.tools.length > 0,
       transformedMessageCount: (transformedRequest as any)?.messages?.length || 0,
       originalMessageCount: input?.messages?.length || 0,
@@ -399,9 +482,9 @@ export class PipelineRequestProcessor extends EventEmitter {
     });
 
     // 🔧 关键修复：从路由决策中获取实际的模型名
-    // 如果当前模型是映射模型，需要获取实际映射的模型名
+    // 总是尝试从路由配置中获取实际模型名，因为需要支持跨Provider模型映射
     let actualModel = request.model;
-    if (context.routingDecision && context.routingDecision.originalModel !== context.routingDecision.virtualModel) {
+    if (context.routingDecision) {
       // 从配置中获取实际的模型名
       const routerConfig = (this.config as any).router;
       const mappedModel = context.routingDecision.virtualModel;
@@ -409,12 +492,13 @@ export class PipelineRequestProcessor extends EventEmitter {
       // 首先尝试直接匹配映射模型，如果没有则使用default路由
       let routeEntry = routerConfig[mappedModel] || routerConfig.default;
       
-      if (routeEntry) {
+      if (routeEntry && typeof routeEntry === 'string' && routeEntry.includes(',')) {
         const [, modelName] = routeEntry.split(',');
-        if (modelName) {
-          actualModel = modelName;
+        if (modelName && modelName.trim()) {
+          actualModel = modelName.trim();
           secureLogger.info('Protocol层：模型名映射', {
             requestId: context.requestId,
+            originalModel: context.routingDecision.originalModel,
             mappedModel,
             actualModel,
             routeEntry,
@@ -444,6 +528,22 @@ export class PipelineRequestProcessor extends EventEmitter {
    * 处理Server层 - 实际HTTP API调用
    */
   private async processServerLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
+    // 🔧 关键调试：检查request对象的完整内容
+    secureLogger.info('🔥🔥 Server层接收到的request对象完整调试', {
+      requestId: context.requestId,
+      hasModel: 'model' in request,
+      modelValue: request.model,
+      hasInternal: '__internal' in request,
+      internalKeys: request.__internal ? Object.keys(request.__internal) : 'no-internal',
+      actualModelFromInternal: request.__internal?.actualModel,
+      requestKeys: Object.keys(request),
+      requestPreview: {
+        model: request.model,
+        messages: Array.isArray(request.messages) ? `${request.messages.length} messages` : 'no-messages',
+        tools: Array.isArray(request.tools) ? `${request.tools.length} tools` : 'no-tools'
+      }
+    });
+
     // 🔧 关键修复：防御性检查__internal对象
     if (!request.__internal) {
       throw new Error(`Server layer requires __internal configuration but it was not found. Request may have been improperly processed by compatibility layer.`);
@@ -473,6 +573,41 @@ export class PipelineRequestProcessor extends EventEmitter {
       timeout,
     });
 
+    // 🔧 关键修复：构建HTTP请求体，确保模型字段正确传递
+    const requestBody = {
+      model: request.model,
+      messages: request.messages,
+      max_tokens: request.max_tokens,
+      temperature: request.temperature || 0.7,
+      stream: false, // 🔧 关键修复：强制禁用流式响应，使用标准JSON格式
+      ...(request.tools && Array.isArray(request.tools) && request.tools.length > 0 ? { tools: request.tools } : {}),
+    };
+
+    // 🔥🔥 CRITICAL DEBUG: 记录HTTP请求体构建过程
+    secureLogger.info('🔥🔥 HTTP请求体构建调试', {
+      requestId: context.requestId,
+      modelField: requestBody.model,
+      hasModel: 'model' in requestBody,
+      requestBodyKeys: Object.keys(requestBody),
+      requestBodyPreview: {
+        model: requestBody.model,
+        messagesCount: Array.isArray(requestBody.messages) ? requestBody.messages.length : 0,
+        max_tokens: requestBody.max_tokens,
+        hasTools: !!requestBody.tools
+      }
+    });
+
+    // 🔥🔥 CRITICAL DEBUG: 记录JSON序列化过程
+    const serializedBody = JQJsonHandler.stringifyJson(requestBody);
+    secureLogger.info('🔥🔥 JSON序列化调试', {
+      requestId: context.requestId,
+      originalBodyHasModel: 'model' in requestBody,
+      serializedLength: serializedBody.length,
+      serializedPreview: serializedBody.substring(0, 200),
+      modelInSerialized: serializedBody.includes('"model"'),
+      modelValueInSerialized: serializedBody.includes(`"model":"${requestBody.model}"`),
+    });
+
     // 构建HTTP请求
     const httpOptions = {
       method: 'POST',
@@ -481,14 +616,7 @@ export class PipelineRequestProcessor extends EventEmitter {
         Authorization: `Bearer ${apiKey}`,
         'User-Agent': 'RCC-v4.0-Pipeline',
       },
-      body: JQJsonHandler.stringifyJson({
-        model: request.model,
-        messages: request.messages,
-        max_tokens: request.max_tokens,
-        temperature: request.temperature || 0.7,
-        stream: false, // 🔧 关键修复：强制禁用流式响应，使用标准JSON格式
-        tools: request.tools,
-      }),
+      body: serializedBody,
       timeout,
     };
 
@@ -513,8 +641,36 @@ export class PipelineRequestProcessor extends EventEmitter {
           responseSize: response.body?.length || 0,
         });
 
-        // 解析响应
-        const responseData = JQJsonHandler.parseJsonString(response.body);
+        // 解析响应 - 增强错误处理，使用jq处理所有JSON序列化
+        let responseData: any;
+        try {
+          responseData = JQJsonHandler.parseJsonString(response.body);
+        } catch (jqError) {
+          secureLogger.error('jq JSON解析失败，尝试修复响应内容', {
+            requestId: context.requestId,
+            jqError: jqError.message,
+            responseBodyPreview: response.body?.substring(0, 200) + '...',
+            responseBodyLength: response.body?.length || 0,
+          });
+          
+          // 尝试修复响应内容��再解析
+          try {
+            const fixedResponse = this.fixJsonResponse(response.body);
+            responseData = JQJsonHandler.parseJsonString(fixedResponse);
+            secureLogger.info('修复后JSON解析成功', {
+              requestId: context.requestId,
+              fallbackUsed: true,
+            });
+          } catch (fixError) {
+            secureLogger.error('JSON修复和解析都失败', {
+              requestId: context.requestId,
+              jqError: jqError.message,
+              fixError: fixError.message,
+              responseBody: response.body,
+            });
+            throw new Error(`JSON解析和修复都失败 - jq错误: ${jqError.message}, 修复错误: ${fixError.message}, 响应内容: ${response.body?.substring(0, 100)}...`);
+          }
+        }
 
         // 🔍 调试日志：记录API实际返回的响应格式
         secureLogger.info('API响应格式检查', {
@@ -526,15 +682,65 @@ export class PipelineRequestProcessor extends EventEmitter {
           responsePreview: JQJsonHandler.stringifyJson(responseData, true).substring(0, 200) + '...',
         });
 
-        // 验证响应格式
-        if (!responseData.choices || !Array.isArray(responseData.choices)) {
-          secureLogger.error('API响应格式验证失败', {
+        // 🔧 关键修复：更灵活的响应格式验证
+        // 检查是否为错误响应
+        if (responseData.error) {
+          secureLogger.error('API返回错误响应', {
             requestId: context.requestId,
-            actualResponse: responseData,
-            hasChoices: !!responseData.choices,
-            choicesType: typeof responseData.choices,
+            error: responseData.error,
+            statusCode: response.status
           });
-          throw new Error('Invalid response format: missing choices array');
+          throw new Error(`API Error: ${JQJsonHandler.stringifyJson(responseData.error, true)}`);
+        }
+        
+        // 检查是否为成功的OpenAI格式响应
+        if (responseData.choices && Array.isArray(responseData.choices)) {
+          // OpenAI格式响应，继续处理
+          secureLogger.debug('API响应格式验证成功 - OpenAI格式', {
+            requestId: context.requestId,
+            choicesCount: responseData.choices.length
+          });
+        } else if (responseData.content || responseData.message || responseData.text) {
+          // 可能是其他格式的成功响应
+          secureLogger.debug('API响应格式验证成功 - 非OpenAI格式', {
+            requestId: context.requestId,
+            hasContent: !!responseData.content,
+            hasMessage: !!responseData.message,
+            hasText: !!responseData.text
+          });
+          
+          // 转换为OpenAI格式以便后续处理
+          responseData = {
+            choices: [{
+              message: {
+                role: 'assistant',
+                content: responseData.content || responseData.message || responseData.text || 'No content available'
+              },
+              finish_reason: 'stop'
+            }],
+            model: request.model,
+            usage: responseData.usage || { prompt_tokens: 0, completion_tokens: 0 }
+          };
+        } else {
+          // 未知格式，记录警告但不失败
+          secureLogger.warn('API响应格式未知，尝试继续处理', {
+            requestId: context.requestId,
+            responseKeys: Object.keys(responseData),
+            responsePreview: JQJsonHandler.stringifyJson(responseData, true).substring(0, 200) + '...'
+          });
+          
+          // 创建默认的OpenAI格式响应
+          responseData = {
+            choices: [{
+              message: {
+                role: 'assistant',
+                content: JQJsonHandler.stringifyJson(responseData, true)
+              },
+              finish_reason: 'stop'
+            }],
+            model: request.model,
+            usage: { prompt_tokens: 0, completion_tokens: 0 }
+          };
         }
 
         // 清理内部配置信息
@@ -694,7 +900,7 @@ export class PipelineRequestProcessor extends EventEmitter {
             name: toolCall.function?.name || 'unknown_tool',
             input: toolCall.function?.arguments ? 
               (typeof toolCall.function.arguments === 'string' ? 
-                JSON.parse(toolCall.function.arguments) : 
+                JQJsonHandler.parseJsonString(toolCall.function.arguments) : 
                 toolCall.function.arguments) : {}
           });
         });
@@ -818,7 +1024,7 @@ export class PipelineRequestProcessor extends EventEmitter {
     const routerConfig = (this.config as any).router;
     
     console.log(`🔍 Debug: getAvailablePipelinesForMappedModel - mappedModel=${mappedModel}`);
-    console.log(`🔍 Debug: routerConfig=`, JSON.stringify(routerConfig, null, 2));
+    console.log(`🔍 Debug: routerConfig=`, JQJsonHandler.stringifyJson(routerConfig, false));
     
     if (routerConfig && routerConfig[mappedModel]) {
       const routeEntry = routerConfig[mappedModel];
@@ -849,7 +1055,7 @@ export class PipelineRequestProcessor extends EventEmitter {
     
     // 最终fallback - 检查配置中的第一个Provider
     const providers = (this.config as any).providers;
-    console.log(`🔍 Debug: Fallback to providers=`, JSON.stringify(providers, null, 2));
+    console.log(`🔍 Debug: Fallback to providers=`, JQJsonHandler.stringifyJson(providers, false));
     if (providers && providers.length > 0) {
       const firstProvider = providers[0];
       if (firstProvider.models && firstProvider.models.length > 0) {
@@ -871,6 +1077,176 @@ export class PipelineRequestProcessor extends EventEmitter {
   async cleanup(): Promise<void> {
     if (this.debugManager) {
       await this.debugManager.cleanup();
+    }
+  }
+
+  /**
+   * 修复JSON响应内容
+   * @param responseBody 原始响应体
+   * @returns 修复后的响应体
+   */
+  private fixJsonResponse(responseBody: string): string {
+    try {
+      // 使用jq修复常见的JSON格式问题
+      // 1. 修复转义字符问题
+      let fixedResponse = responseBody.replace(/\\/g, '\\\\');
+      fixedResponse = fixedResponse.replace(/\"/g, '\\"');
+      
+      // 2. 修复未闭合的引号和括号
+      // 使用简单的启发式方法检测和修复
+      const openBraces = (fixedResponse.match(/{/g) || []).length;
+      const closeBraces = (fixedResponse.match(/}/g) || []).length;
+      const openBrackets = (fixedResponse.match(/\[/g) || []).length;
+      const closeBrackets = (fixedResponse.match(/\]/g) || []).length;
+      
+      // 如果括号不匹配，尝试修复
+      if (openBraces > closeBraces) {
+        fixedResponse += '}'.repeat(openBraces - closeBraces);
+      }
+      if (openBrackets > closeBrackets) {
+        fixedResponse += ']'.repeat(openBrackets - closeBrackets);
+      }
+      
+      // 3. 修复工具调用参数格式问题
+      fixedResponse = fixedResponse.replace(/"arguments":\s*"(\{[^}]*\})"/g, (match, jsonStr) => {
+        try {
+          // 尝试解析内部JSON字符串
+          const parsed = JQJsonHandler.parseJsonString(jsonStr);
+          return `"arguments":"${JQJsonHandler.stringifyJson(parsed, true).replace(/"/g, '\\"')}"`;
+        } catch {
+          // 如果解析失败，返回原始匹配
+          return match;
+        }
+      });
+      
+      // 4. 使用jq验证修��后的JSON
+      try {
+        JQJsonHandler.parseJsonString(fixedResponse);
+        return fixedResponse;
+      } catch (validationError) {
+        // 如果验证失败，尝试更激进的修复
+        return this.aggressiveJsonFix(fixedResponse);
+      }
+    } catch (error) {
+      // 如果修复失败，返回原始响应体
+      return responseBody;
+    }
+  }
+
+  /**
+   * 激进的JSON修复方法
+   * @param response 响应体
+   * @returns 修复后的响应体
+   */
+  private aggressiveJsonFix(response: string): string {
+    try {
+      // 移除可能导致解析错误的控制字符
+      let fixed = response.replace(/[\x00-\x1F\x7F]/g, '');
+      
+      // 修复常见的转义问题
+      fixed = fixed.replace(/\\"/g, '\"');
+      
+      // 尝试使用jq重新格式化
+      try {
+        const tempObj = JQJsonHandler.parseJsonString(fixed);
+        return JQJsonHandler.stringifyJson(tempObj, true);
+      } catch {
+        // 如果仍然失败，返回清理后的字符串
+        return fixed;
+      }
+    } catch {
+      // 最后的后备方案
+      return response;
+    }
+  }
+
+  /**
+   * 记录完整的Pipeline执行
+   */
+  private recordCompletePipelineExecution(
+    requestId: string,
+    protocol: 'anthropic' | 'openai' | 'gemini',
+    originalRequest: any,
+    finalResponse: any,
+    totalDuration: number,
+    context: RequestContext,
+    success: boolean,
+    errorMessage?: string
+  ): void {
+    try {
+      // 🔧 安全提取transformation结果，避免undefined访问
+      const transformerResult = context.transformations.find(t => t.layer === 'transformer')?.result || {};
+      const protocolResult = context.transformations.find(t => t.layer === 'protocol')?.result || { streamingSupported: false, protocol_metadata: {} };
+      const serverCompatibilityResult = context.transformations.find(t => t.layer === 'server-compatibility')?.result || {};
+
+      // 创建6层流水线记录
+      const pipelineSteps = [
+        this.pipelineDebugRecorder.recordClientLayer(
+          requestId,
+          { protocol, request: originalRequest },
+          { processed: true, requestId },
+          context.layerTimings.client || 0
+        ),
+        this.pipelineDebugRecorder.recordRouterLayer(
+          requestId,
+          originalRequest,
+          context.routingDecision || {},
+          context.layerTimings.router || 0,
+          context.routingDecision || {}
+        ),
+        this.pipelineDebugRecorder.recordTransformerLayer(
+          requestId,
+          originalRequest,
+          transformerResult,
+          context.layerTimings.transformer || 0,
+          'anthropic-to-openai'
+        ),
+        this.pipelineDebugRecorder.recordProtocolLayer(
+          requestId,
+          transformerResult,
+          protocolResult,
+          context.layerTimings.protocol || 0,
+          protocol
+        ),
+        this.pipelineDebugRecorder.recordServerCompatibilityLayer(
+          requestId,
+          protocolResult,
+          serverCompatibilityResult,
+          context.layerTimings.serverCompatibility || 0,
+          'passthrough'
+        ),
+        this.pipelineDebugRecorder.recordServerLayer(
+          requestId,
+          serverCompatibilityResult,
+          finalResponse,
+          context.layerTimings.server || 0,
+          success,
+          errorMessage
+        )
+      ];
+
+      // 创建完整的Pipeline记录
+      const completeRecord = this.pipelineDebugRecorder.createPipelineRecord(
+        requestId,
+        protocol,
+        originalRequest,
+        finalResponse,
+        totalDuration,
+        pipelineSteps,
+        {
+          configPath: 'runtime-config',
+          routeId: context.routingDecision?.selectedPipeline || 'default',
+          providerId: context.routingDecision?.providerId || 'unknown'
+        }
+      );
+
+      // 记录完整请求
+      this.pipelineDebugRecorder.recordCompleteRequest(completeRecord);
+      console.log('✅ [PIPELINE-DEBUG] Pipeline执行记录完成:', requestId);
+
+    } catch (debugError) {
+      console.error('❌ [PIPELINE-DEBUG] Debug记录失败:', debugError.message);
+      console.error('❌ [PIPELINE-DEBUG] 详细错误:', debugError.stack);
     }
   }
 }

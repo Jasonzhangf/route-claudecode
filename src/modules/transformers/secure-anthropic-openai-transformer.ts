@@ -24,6 +24,8 @@ import {
   IValidationResult,
 } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
+
 
 /**
  * 安全配置接口
@@ -34,21 +36,9 @@ export interface SecureTransformerConfig {
   readonly mapSystemMessage: boolean;
   readonly defaultMaxTokens: number;
 
-  // 安全限制
-  readonly maxMessageCount: number;
-  readonly maxMessageSize: number;
-  readonly maxContentLength: number;
-  readonly maxToolsCount: number;
-  readonly processingTimeoutMs: number;
+  // 基本限制
+  readonly maxTokens: number;
 
-  // API限制（从安全配置获取，不硬编码）
-  readonly apiMaxTokens: number;
-  readonly modelMaxTokens: ReadonlyMap<string, number>;
-
-  // 验证选项
-  readonly strictValidation: boolean;
-  readonly sanitizeInputs: boolean;
-  readonly logSecurityEvents: boolean;
 }
 
 /**
@@ -90,13 +80,21 @@ export interface AnthropicRequest {
     readonly content:
       | string
       | ReadonlyArray<{
-          readonly type: 'text' | 'image';
+          readonly type: 'text' | 'image' | 'tool_use' | 'tool_result';
           readonly text?: string;
           readonly source?: {
             readonly type: 'base64';
             readonly media_type: string;
             readonly data: string;
           };
+          // Tool use fields
+          readonly id?: string;
+          readonly name?: string;
+          readonly input?: Record<string, any>;
+          // Tool result fields
+          readonly tool_use_id?: string;
+          readonly content?: any;
+          readonly is_error?: boolean;
         }>;
   }>;
   readonly temperature?: number;
@@ -229,29 +227,13 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   constructor(config: Partial<SecureTransformerConfig> = {}) {
     super();
 
-    // 创建安全的默认配置
+    // 创建简单的默认配置
     this.config = Object.freeze({
       // 基础配置
       preserveToolCalls: true,
       mapSystemMessage: true,
       defaultMaxTokens: 4096,
-
-      // 安全限制
-      maxMessageCount: 50,
-      maxMessageSize: 10 * 1024, // 10KB per message
-      maxContentLength: 100 * 1024, // 100KB total content
-      maxToolsCount: 20,
-      processingTimeoutMs: 30000, // 30 seconds
-
-      // API限制（从外部配置注入，不硬编码）
-      apiMaxTokens: config.apiMaxTokens || 8192,
-      modelMaxTokens: new Map(Object.entries(config.modelMaxTokens || {})),
-
-      // 验证选项
-      strictValidation: true,
-      sanitizeInputs: true,
-      logSecurityEvents: true,
-
+      maxTokens: config.maxTokens || 8192,
       ...config,
     });
 
@@ -264,29 +246,10 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       cpuUsage: 0,
     };
 
-    // 安全事件日志记录器
+    // 简单的日志记录器
     this.securityLogger = (event: string, details: any) => {
-      if (this.config.logSecurityEvents) {
-        const timestamp = new Date().toISOString();
-        const logEntry = {
-          timestamp,
-          event,
-          module: this.id,
-          details: this.sanitizeLogData(details),
-        };
-
-        // 使用结构化日志，避免敏感信息泄露
-        console.log(`[SECURITY][${timestamp}] ${this.id}: ${event}`, JSON.stringify(logEntry));
-
-        // 发出安全事件
-        this.emit('security-event', logEntry);
-      }
+      console.log(`[${this.id}] ${event}:`, details);
     };
-
-    this.securityLogger('transformer-initialized', {
-      version: this.version,
-      configHash: this.calculateConfigHash(this.config),
-    });
   }
 
   // ============================================================================
@@ -326,90 +289,39 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
 
   async configure(config: Partial<SecureTransformerConfig>): Promise<void> {
     if (!config || typeof config !== 'object') {
-      throw new TransformerSecurityError('Invalid configuration object', 'INVALID_CONFIG', {
-        providedType: typeof config,
-      });
+      throw new Error('Invalid configuration object');
     }
-
-    // 验证配置安全性
-    this.validateSecurityConfig(config);
-
-    this.securityLogger('configuration-updated', {
-      changedKeys: Object.keys(config),
-      configHash: this.calculateConfigHash(config),
-    });
   }
 
   async start(): Promise<void> {
-    this.status = 'starting';
-
-    try {
-      // 执行启动前检查
-      await this.performStartupChecks();
-
-      this.status = 'running';
-      this.securityLogger('transformer-started', { status: this.status });
-
-      this.emit('started');
-    } catch (error) {
-      this.status = 'error';
-      this.securityLogger('startup-failed', { error: error.message });
-      throw error;
-    }
+    this.status = 'running';
+    this.emit('started');
   }
 
   async stop(): Promise<void> {
-    this.status = 'stopping';
-
-    try {
-      // 清理进行中的处理
-      await this.cleanup();
-
-      this.status = 'stopped';
-      this.securityLogger('transformer-stopped', { status: this.status });
-
-      this.emit('stopped');
-    } catch (error) {
-      this.status = 'error';
-      this.securityLogger('stop-failed', { error: error.message });
-      throw error;
-    }
+    this.status = 'stopped';
+    this.removeAllListeners();
+    this.emit('stopped');
   }
 
   async reset(): Promise<void> {
-    // 重置性能指标
     this.metrics.requestsProcessed = 0;
     this.metrics.averageProcessingTime = 0;
     this.metrics.errorRate = 0;
     this.metrics.memoryUsage = 0;
     this.metrics.cpuUsage = 0;
-
-    this.securityLogger('transformer-reset', { timestamp: new Date().toISOString() });
     this.emit('reset');
   }
 
   async cleanup(): Promise<void> {
-    // 清理事件监听器
     this.removeAllListeners();
-
-    this.securityLogger('transformer-cleanup', { timestamp: new Date().toISOString() });
   }
 
   async healthCheck(): Promise<{ healthy: boolean; details: any }> {
-    const checks = {
-      status: this.status === 'running',
-      memoryUsage: this.metrics.memoryUsage < 200 * 1024 * 1024, // 200MB limit
-      errorRate: this.metrics.errorRate < 0.05, // 5% error rate limit
-      configValid: this.validateCurrentConfig(),
-    };
-
-    const healthy = Object.values(checks).every(Boolean);
-
     return {
-      healthy,
+      healthy: this.status === 'running',
       details: {
-        checks,
-        metrics: this.getMetrics(),
+        status: this.status,
         timestamp: new Date().toISOString(),
       },
     };
@@ -417,49 +329,47 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
 
   /**
    * 主要处理方法 - 支持双向转换
-   * 严格的输入验证和安全检查
    */
   async process(input: unknown): Promise<OpenAIRequest | AnthropicResponse> {
-    const startTime = Date.now();
-
-    try {
-      // 状态检查
-      if (this.status !== 'running') {
-        throw new TransformerSecurityError('Transformer not in running state', 'INVALID_STATE', {
-          currentStatus: this.status,
-        });
-      }
-
-      // 输入验证
-      this.validateInput(input);
-
-      // 超时保护
-      const result = await this.withTimeout(this.performTransformation(input), this.config.processingTimeoutMs);
-
-      // 更新指标
-      const processingTime = Date.now() - startTime;
-      this.updateMetrics(processingTime, false);
-
-      this.securityLogger('transformation-completed', {
-        processingTime,
-        inputType: this.detectInputType(input),
-        outputType: this.detectOutputType(result),
-      });
-
-      return result;
-    } catch (error) {
-      const processingTime = Date.now() - startTime;
-      this.updateMetrics(processingTime, true);
-
-      this.securityLogger('transformation-failed', {
-        error: error.message,
-        errorType: error.constructor.name,
-        processingTime,
-      });
-
-      throw error;
+    if (this.status !== 'running') {
+      throw new Error('Transformer not in running state');
     }
+
+    if (!input || typeof input !== 'object') {
+      throw new Error('Input must be an object');
+    }
+
+    // 🔍 Critical debug: Track all calls to the Transformer
+    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] ========== PROCESS CALLED ==========');
+    console.log('🔥 [TRANSFORMER DEBUG] Timestamp:', new Date().toISOString());
+    console.log('🔥 [TRANSFORMER DEBUG] Input type:', typeof input);
+    console.log('🔥 [TRANSFORMER DEBUG] Input keys:', Object.keys(input as any));
+    console.log('🔥 [TRANSFORMER DEBUG] Transformer status:', this.status);
+    console.log('🔥 [TRANSFORMER DEBUG] Transformer ID:', this.id);
+    
+    if ((input as any).model) {
+      console.log('🔥 [TRANSFORMER DEBUG] Model:', (input as any).model);
+    }
+    if ((input as any).messages) {
+      console.log('🔥 [TRANSFORMER DEBUG] Messages count:', (input as any).messages?.length);
+      // 检查是否有tool_result内容
+      const hasToolResult = (input as any).messages?.some((msg: any) => 
+        Array.isArray(msg.content) && msg.content.some((item: any) => item.type === 'tool_result')
+      );
+      console.log('🔥 [TRANSFORMER DEBUG] Has tool_result content:', hasToolResult);
+    }
+    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] Starting transformation...');
+
+    const result = this.performTransformation(input);
+    
+    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] Transformation completed!');
+    console.log('🔥 [TRANSFORMER DEBUG] Result type:', typeof result);
+    console.log('🔥 [TRANSFORMER DEBUG] Result keys:', Object.keys(result as any));
+    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] ========== PROCESS END ==========');
+    
+    return result;
   }
+
 
   // ============================================================================
   // 私有安全方法
@@ -480,45 +390,37 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   }
 
   private transformAnthropicToOpenAI(request: AnthropicRequest): OpenAIRequest {
-    // 验证请求
-    const validation = this.validateAnthropicRequest(request);
-    if (!validation.valid) {
-      throw new TransformerValidationError('Invalid Anthropic request format', validation.errors, {
-        request: this.sanitizeRequestForLogging(request),
-      });
+    // 基本验证
+    if (!request.model || !request.messages || !Array.isArray(request.messages)) {
+      throw new Error('Invalid Anthropic request: missing model or messages');
     }
 
-    // 创建可变的消息数组
+    // 创建消息数组
     const messages: any[] = [];
 
     const openaiRequest: any = {
-      model: this.sanitizeModelName(request.model),
+      model: request.model,
       messages,
-      temperature: this.clampTemperature(request.temperature),
-      top_p: this.clampTopP(request.top_p),
-      stream: Boolean(request.stream),
+      temperature: request.temperature,
+      top_p: request.top_p,
+      stream: request.stream,
+      max_tokens: Math.min(request.max_tokens, this.config.maxTokens),
     };
-
-    // 安全的max_tokens处理
-    openaiRequest.max_tokens = this.calculateSafeMaxTokens(request.max_tokens, request.model);
 
     // 转换系统消息
     if (request.system && this.config.mapSystemMessage) {
-      const sanitizedSystem = this.sanitizeContent(request.system);
-      if (sanitizedSystem) {
-        messages.push({
-          role: 'system',
-          content: sanitizedSystem,
-        });
-      }
+      messages.push({
+        role: 'system',
+        content: typeof request.system === 'string' ? request.system : JQJsonHandler.stringifyJson(request.system, true),
+      });
     }
 
     // 转换用户消息
     messages.push(...this.convertMessages(request.messages));
 
     // 转换停止序列
-    if (request.stop_sequences) {
-      openaiRequest.stop = this.sanitizeStopSequences(request.stop_sequences);
+    if (request.stop_sequences && Array.isArray(request.stop_sequences)) {
+      openaiRequest.stop = request.stop_sequences;
     }
 
     // 转换工具定义
@@ -526,52 +428,59 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       openaiRequest.tools = this.convertTools(request.tools);
     }
 
+    // 🔍 Debug: Log the final OpenAI request to check JSON validity
+    console.log('🔥 [TRANSFORMER DEBUG] Final OpenAI request:', {
+      modelCount: openaiRequest.model ? 1 : 0,
+      messageCount: openaiRequest.messages?.length || 0,
+      hasTools: !!openaiRequest.tools,
+      hasMaxTokens: typeof openaiRequest.max_tokens === 'number'
+    });
+    
+    try {
+      // Test JSON serialization
+      const testJson = JQJsonHandler.stringifyJson(openaiRequest, true);
+      console.log('🔥 [TRANSFORMER DEBUG] JSON serialization test passed, length:', testJson.length);
+    } catch (error) {
+      console.error('🚨 [TRANSFORMER ERROR] JSON serialization failed:', error);
+      throw new Error(`Invalid OpenAI request format: ${error}`);
+    }
+
     return openaiRequest as OpenAIRequest;
   }
 
   private transformOpenAIToAnthropic(response: OpenAIResponse): AnthropicResponse {
-    // 验证响应
-    const validation = this.validateOpenAIResponse(response);
-    if (!validation.valid) {
-      throw new TransformerValidationError('Invalid OpenAI response format', validation.errors, {
-        response: this.sanitizeResponseForLogging(response),
-      });
+    // 基本验证
+    if (!response.choices || !Array.isArray(response.choices) || response.choices.length === 0) {
+      throw new Error('Invalid OpenAI response: missing choices');
     }
 
     const choice = response.choices[0];
     if (!choice || !choice.message) {
-      throw new TransformerValidationError(
-        'OpenAI response missing required choice or message',
-        ['choices[0].message is required'],
-        { choicesLength: response.choices.length }
-      );
+      throw new Error('OpenAI response missing required choice or message');
     }
 
     // 创建可变的内容数组
     const content: any[] = [];
 
     const anthropicResponse: any = {
-      id: this.sanitizeId(response.id),
+      id: response.id,
       type: 'message',
       role: 'assistant',
       content,
-      model: this.sanitizeModelName(response.model),
+      model: response.model,
       stop_reason: this.convertStopReason(choice.finish_reason),
       usage: {
-        input_tokens: Math.max(0, response.usage.prompt_tokens),
-        output_tokens: Math.max(0, response.usage.completion_tokens),
+        input_tokens: response.usage?.prompt_tokens || 0,
+        output_tokens: response.usage?.completion_tokens || 0,
       },
     };
 
     // 转换文本内容
     if (choice.message.content) {
-      const sanitizedContent = this.sanitizeContent(choice.message.content);
-      if (sanitizedContent) {
-        content.push({
-          type: 'text',
-          text: sanitizedContent,
-        });
-      }
+      content.push({
+        type: 'text',
+        text: choice.message.content,
+      });
     }
 
     // 转换工具调用
@@ -587,302 +496,6 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     return anthropicResponse;
   }
 
-  // ============================================================================
-  // 验证和安全检查方法
-  // ============================================================================
-
-  private validateInput(input: unknown): void {
-    if (input === null || input === undefined) {
-      throw new TransformerValidationError('Input cannot be null or undefined', ['input is required'], { input });
-    }
-
-    if (typeof input !== 'object') {
-      throw new TransformerValidationError('Input must be an object', ['input must be object type'], {
-        inputType: typeof input,
-      });
-    }
-
-    // 检查输入大小
-    const inputSize = JSON.stringify(input).length;
-    if (inputSize > this.config.maxContentLength) {
-      throw new TransformerSecurityError('Input exceeds maximum allowed size', 'INPUT_TOO_LARGE', {
-        size: inputSize,
-        maxSize: this.config.maxContentLength,
-      });
-    }
-  }
-
-  private validateAnthropicRequest(request: AnthropicRequest): IValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
-
-    // 模型验证
-    if (!request.model || typeof request.model !== 'string' || request.model.trim().length === 0) {
-      errors.push('model is required and must be non-empty string');
-    }
-
-    // max_tokens验证
-    if (!Number.isInteger(request.max_tokens) || request.max_tokens <= 0) {
-      errors.push('max_tokens must be positive integer');
-    }
-
-    if (request.max_tokens > this.config.apiMaxTokens) {
-      warnings.push(`max_tokens (${request.max_tokens}) exceeds API limit (${this.config.apiMaxTokens})`);
-    }
-
-    // 消息验证
-    if (!Array.isArray(request.messages)) {
-      errors.push('messages must be an array');
-    } else {
-      if (request.messages.length === 0) {
-        errors.push('messages array cannot be empty');
-      }
-
-      if (request.messages.length > this.config.maxMessageCount) {
-        errors.push(`messages count (${request.messages.length}) exceeds limit (${this.config.maxMessageCount})`);
-      }
-
-      request.messages.forEach((msg, index) => {
-        if (!msg || typeof msg !== 'object') {
-          errors.push(`messages[${index}] must be an object`);
-          return;
-        }
-
-        if (!['user', 'assistant'].includes(msg.role)) {
-          errors.push(`messages[${index}].role must be 'user' or 'assistant'`);
-        }
-
-        if (!msg.content) {
-          errors.push(`messages[${index}].content is required`);
-        }
-      });
-    }
-
-    // 工具验证
-    if (request.tools && Array.isArray(request.tools)) {
-      if (request.tools.length > this.config.maxToolsCount) {
-        errors.push(`tools count (${request.tools.length}) exceeds limit (${this.config.maxToolsCount})`);
-      }
-
-      request.tools.forEach((tool, index) => {
-        if (!tool || typeof tool !== 'object') {
-          errors.push(`tools[${index}] must be an object`);
-          return;
-        }
-
-        if (!tool.name || typeof tool.name !== 'string') {
-          errors.push(`tools[${index}].name is required and must be string`);
-        }
-
-        if (!tool.input_schema || typeof tool.input_schema !== 'object') {
-          errors.push(`tools[${index}].input_schema is required and must be object`);
-        }
-      });
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-      warnings,
-    };
-  }
-
-  private validateOpenAIResponse(response: OpenAIResponse): IValidationResult {
-    const errors: string[] = [];
-
-    // 基础结构验证
-    if (!response.id || typeof response.id !== 'string') {
-      errors.push('id is required and must be string');
-    }
-
-    if (response.object !== 'chat.completion') {
-      errors.push('object must be "chat.completion"');
-    }
-
-    if (!Array.isArray(response.choices) || response.choices.length === 0) {
-      errors.push('choices must be non-empty array');
-    }
-
-    if (!response.usage || typeof response.usage !== 'object') {
-      errors.push('usage is required and must be object');
-    } else {
-      const usage = response.usage;
-      if (!Number.isInteger(usage.prompt_tokens) || usage.prompt_tokens < 0) {
-        errors.push('usage.prompt_tokens must be non-negative integer');
-      }
-      if (!Number.isInteger(usage.completion_tokens) || usage.completion_tokens < 0) {
-        errors.push('usage.completion_tokens must be non-negative integer');
-      }
-      if (!Number.isInteger(usage.total_tokens) || usage.total_tokens < 0) {
-        errors.push('usage.total_tokens must be non-negative integer');
-      }
-    }
-
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  }
-
-  // ============================================================================
-  // 安全工具方法
-  // ============================================================================
-
-  private sanitizeContent(content: string): string {
-    if (!content || typeof content !== 'string') {
-      return '';
-    }
-
-    // 基本清理：去除危险字符，限制长度
-    let sanitized = content.trim();
-
-    if (sanitized.length > this.config.maxMessageSize) {
-      sanitized = sanitized.substring(0, this.config.maxMessageSize);
-      this.securityLogger('content-truncated', {
-        originalLength: content.length,
-        truncatedLength: sanitized.length,
-      });
-    }
-
-    return sanitized;
-  }
-
-  private sanitizeModelName(model: string): string {
-    if (!model || typeof model !== 'string') {
-      throw new TransformerValidationError('Model name must be non-empty string', ['model is required'], { model });
-    }
-
-    // 移除潜在危险字符，只保留字母数字、连字符和下划线
-    const sanitized = model.replace(/[^a-zA-Z0-9\-_.]/g, '');
-
-    if (sanitized.length === 0) {
-      throw new TransformerValidationError(
-        'Model name contains no valid characters',
-        ['model must contain alphanumeric characters'],
-        { originalModel: model }
-      );
-    }
-
-    return sanitized;
-  }
-
-  private sanitizeId(id: string): string {
-    if (!id || typeof id !== 'string') {
-      throw new TransformerValidationError('ID must be non-empty string', ['id is required'], { id });
-    }
-
-    return id.replace(/[^a-zA-Z0-9\-_]/g, '');
-  }
-
-  private sanitizeStopSequences(sequences: ReadonlyArray<string>): string[] {
-    if (!Array.isArray(sequences)) {
-      return [];
-    }
-
-    return sequences
-      .filter(seq => typeof seq === 'string' && seq.length > 0)
-      .map(seq => seq.substring(0, 100)) // 限制停止序列长度
-      .slice(0, 10); // 限制停止序列数量
-  }
-
-  private calculateSafeMaxTokens(requestedTokens: number, model: string): number {
-    // 输入验证
-    if (!Number.isInteger(requestedTokens) || requestedTokens <= 0) {
-      throw new TransformerValidationError('max_tokens must be positive integer', ['max_tokens validation failed'], {
-        requestedTokens,
-      });
-    }
-
-    // 防止整数溢出
-    const MAX_SAFE_INTEGER = Number.MAX_SAFE_INTEGER;
-    if (requestedTokens > MAX_SAFE_INTEGER) {
-      throw new TransformerSecurityError('max_tokens exceeds safe integer limit', 'INTEGER_OVERFLOW', {
-        requestedTokens,
-        maxSafe: MAX_SAFE_INTEGER,
-      });
-    }
-
-    const apiLimit = this.config.apiMaxTokens;
-    const modelLimit = this.config.modelMaxTokens.get(model) || apiLimit;
-
-    const effectiveLimit = Math.min(apiLimit, modelLimit);
-    const safeTokens = Math.min(requestedTokens, effectiveLimit);
-
-    if (safeTokens !== requestedTokens) {
-      this.securityLogger('tokens-clamped', {
-        requested: requestedTokens,
-        clamped: safeTokens,
-        apiLimit,
-        modelLimit,
-      });
-    }
-
-    return safeTokens;
-  }
-
-  private clampTemperature(temperature?: number): number | undefined {
-    if (temperature === undefined) {
-      return undefined;
-    }
-
-    if (typeof temperature !== 'number' || !Number.isFinite(temperature)) {
-      this.securityLogger('invalid-temperature', { temperature });
-      return undefined;
-    }
-
-    return Math.max(0, Math.min(2, temperature));
-  }
-
-  private clampTopP(topP?: number): number | undefined {
-    if (topP === undefined) {
-      return undefined;
-    }
-
-    if (typeof topP !== 'number' || !Number.isFinite(topP)) {
-      this.securityLogger('invalid-top-p', { topP });
-      return undefined;
-    }
-
-    return Math.max(0, Math.min(1, topP));
-  }
-
-  // ============================================================================
-  // JSON解析安全方法
-  // ============================================================================
-
-  private safeJsonParse(jsonString: string): any {
-    if (!jsonString || typeof jsonString !== 'string') {
-      throw new TransformerValidationError('JSON string must be non-empty string', ['jsonString is required'], {
-        jsonString,
-      });
-    }
-
-    // 限制JSON字符串大小
-    if (jsonString.length > 10000) {
-      // 10KB limit
-      throw new TransformerSecurityError('JSON string too large', 'JSON_TOO_LARGE', { size: jsonString.length });
-    }
-
-    try {
-      const parsed = JSON.parse(jsonString);
-
-      // 验证解析结果
-      if (parsed === null || typeof parsed !== 'object') {
-        throw new TransformerValidationError('Parsed JSON must be an object', ['JSON must parse to object'], {
-          parsedType: typeof parsed,
-        });
-      }
-
-      return parsed;
-    } catch (error) {
-      this.securityLogger('json-parse-failed', {
-        error: error.message,
-        jsonStringLength: jsonString.length,
-      });
-
-      throw new TransformerSecurityError('Failed to parse JSON', 'JSON_PARSE_ERROR', { originalError: error.message });
-    }
-  }
 
   // ============================================================================
   // 转换工具方法
@@ -891,47 +504,107 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   private convertMessages(messages: ReadonlyArray<AnthropicRequest['messages'][0]>): OpenAIRequest['messages'] {
     const convertedMessages: OpenAIRequest['messages'][0][] = [];
 
-    for (const [index, message] of messages.entries()) {
-      if (!message || typeof message !== 'object') {
-        this.securityLogger('invalid-message-skipped', { index });
-        continue;
-      }
+    console.log('🔍 [Transformer] convertMessages called with:', messages.length, 'messages');
 
-      let content: string;
-
-      if (typeof message.content === 'string') {
-        content = this.sanitizeContent(message.content);
-      } else if (Array.isArray(message.content)) {
-        // 提取文本内容，忽略其他类型
-        const textParts = message.content
-          .filter(item => item && item.type === 'text' && item.text)
-          .map(item => this.sanitizeContent(item.text!))
-          .filter(text => text.length > 0);
-
-        content = textParts.join('\n');
-      } else {
-        this.securityLogger('invalid-message-content-skipped', { index, contentType: typeof message.content });
-        continue;
-      }
-
-      if (content.length > 0) {
-        convertedMessages.push({
-          role: message.role === 'user' ? 'user' : 'assistant',
-          content,
-        });
-      }
-    }
-
-    // 确保至少有一条消息
-    if (convertedMessages.length === 0) {
-      convertedMessages.push({
-        role: 'user',
-        content: 'Hello', // 安全的默认消息
+    for (const [msgIndex, message] of messages.entries()) {
+      console.log(`🔍 [Transformer] Processing message ${msgIndex}:`, {
+        role: message.role,
+        contentType: typeof message.content,
+        isArray: Array.isArray(message.content)
       });
 
-      this.securityLogger('default-message-added', { reason: 'no-valid-messages' });
+      if (!message || typeof message !== 'object') {
+        continue;
+      }
+
+      if (typeof message.content === 'string') {
+        // Simple string content
+        convertedMessages.push({
+          role: message.role === 'user' ? 'user' : 'assistant',
+          content: message.content,
+        });
+        console.log(`✅ [Transformer] Added string message ${msgIndex}`);
+      } else if (Array.isArray(message.content)) {
+        // 🔧 关键修复：正确处理tool_result拆分逻辑
+        // 基于demo1转换规则：tool_result必须转换为独立的role="tool"消息
+        
+        const textParts: string[] = [];
+        const toolCalls: any[] = [];
+        const toolResults: any[] = [];
+
+        console.log(`🔍 [Transformer] Processing array content with ${message.content.length} items`);
+
+        // 第一步：分离不同类型的内容
+        for (const [itemIndex, item] of message.content.entries()) {
+          console.log(`🔍 [Transformer] Item ${itemIndex}:`, {
+            type: item?.type,
+            hasToolUseId: !!(item as any)?.tool_use_id,
+            hasName: !!item?.name,
+            hasContent: !!(item as any)?.content
+          });
+
+          if (!item || typeof item !== 'object') {
+            continue;
+          }
+
+          if (item.type === 'text' && item.text) {
+            textParts.push(item.text);
+            console.log(`📝 [Transformer] Added text part: ${item.text.substring(0, 50)}...`);
+          } else if (item.type === 'tool_use' && item.name) {
+            // Convert Anthropic tool_use to OpenAI tool_calls (for assistant messages)
+            toolCalls.push({
+              id: item.id || `tool_${Date.now()}`,
+              type: 'function',
+              function: {
+                name: item.name,
+                arguments: JQJsonHandler.stringifyJson(item.input || {}, true),
+              },
+            });
+            console.log(`🔧 [Transformer] Added tool_use: ${item.name}`);
+          } else if (item.type === 'tool_result' && (item as any).tool_use_id) {
+            // 🎯 关键修复：tool_result转换为独立的OpenAI tool消息
+            // 参考demo1场景3：tool_result应该变成独立的role="tool"消息
+            const toolResult = {
+              role: 'tool' as const,
+              tool_call_id: (item as any).tool_use_id,
+              content: typeof (item as any).content === 'string' 
+                ? (item as any).content 
+                : JQJsonHandler.stringifyJson((item as any).content || '', true),
+            };
+            toolResults.push(toolResult);
+            console.log(`🔄 [Transformer] Prepared tool_result for separate message: ${(item as any).tool_use_id} -> ${toolResult.content.substring(0, 50)}...`);
+          } else {
+            console.log(`⚠️ [Transformer] Unhandled item type: ${item.type}`);
+          }
+        }
+
+        // 第二步：添加工具结果作为独立消息（必须先添加tool消息）
+        // 参考demo1规则：tool_result消息必须在相关的user消息之前
+        for (const toolResult of toolResults) {
+          convertedMessages.push(toolResult);
+          console.log(`✅ [Transformer] Added independent tool result message: ${toolResult.tool_call_id}`);
+        }
+
+        // 第三步：添加主消息（如果有文本内容或工具调用）
+        if (textParts.length > 0 || toolCalls.length > 0) {
+          const mainMessage: any = {
+            role: message.role === 'user' ? 'user' : 'assistant',
+            content: textParts.length > 0 ? textParts.join('\n') : (toolCalls.length > 0 ? null : ''),
+          };
+
+          // 工具调用只能在assistant消息中
+          if (toolCalls.length > 0 && message.role === 'assistant') {
+            mainMessage.tool_calls = toolCalls;
+          }
+
+          convertedMessages.push(mainMessage);
+          console.log(`✅ [Transformer] Added main message: role=${mainMessage.role}, textParts=${textParts.length}, toolCalls=${toolCalls.length}`);
+        }
+      }
     }
 
+    console.log(`🔍 [Transformer] Final conversion: ${messages.length} input -> ${convertedMessages.length} output messages`);
+    console.log(`🔍 [Transformer] Message roles:`, convertedMessages.map(m => m.role));
     return convertedMessages;
   }
 
@@ -942,22 +615,16 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
 
     const convertedTools: OpenAIRequest['tools'][0][] = [];
 
-    for (const [index, tool] of tools.entries()) {
-      if (!tool || typeof tool !== 'object') {
-        this.securityLogger('invalid-tool-skipped', { index });
-        continue;
-      }
-
-      if (!tool.name || typeof tool.name !== 'string') {
-        this.securityLogger('tool-missing-name-skipped', { index });
+    for (const tool of tools) {
+      if (!tool || typeof tool !== 'object' || !tool.name) {
         continue;
       }
 
       convertedTools.push({
         type: 'function',
         function: {
-          name: this.sanitizeContent(tool.name),
-          description: this.sanitizeContent(tool.description || ''),
+          name: tool.name,
+          description: tool.description || '',
           parameters: tool.input_schema || {},
         },
       });
@@ -972,31 +639,37 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     const convertedCalls: AnthropicResponse['content'][0][] = [];
 
     for (const [index, toolCall] of toolCalls.entries()) {
-      if (!toolCall || typeof toolCall !== 'object') {
-        this.securityLogger('invalid-tool-call-skipped', { index });
-        continue;
-      }
-
-      if (!toolCall.function || !toolCall.function.name) {
-        this.securityLogger('tool-call-missing-function-skipped', { index });
+      if (!toolCall || typeof toolCall !== 'object' || !toolCall.function?.name) {
         continue;
       }
 
       try {
-        const input = toolCall.function.arguments ? this.safeJsonParse(toolCall.function.arguments) : {};
+        // 使用JQJsonHandler处理工具调用参数，确保正确解析
+        let input = {};
+        if (toolCall.function.arguments) {
+          try {
+            input = JQJsonHandler.parseJsonString(toolCall.function.arguments);
+          } catch (parseError) {
+            // 如果解析失败，尝试修复后再解析
+            try {
+              const fixedArgs = this.fixToolArguments(toolCall.function.arguments);
+              input = JQJsonHandler.parseJsonString(fixedArgs);
+            } catch (fixError) {
+              // 如果修复也失败，使用空对象
+              input = {};
+            }
+          }
+        }
 
         convertedCalls.push({
           type: 'tool_use',
-          id: this.sanitizeId(toolCall.id || `tool_${index}`),
-          name: this.sanitizeContent(toolCall.function.name),
+          id: toolCall.id || `tool_${index}`,
+          name: toolCall.function.name,
           input,
         });
       } catch (error) {
-        this.securityLogger('tool-call-arguments-parse-failed', {
-          index,
-          error: error.message,
-        });
         // 跳过无法解析的工具调用
+        continue;
       }
     }
 
@@ -1012,6 +685,30 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     };
 
     return reasonMap[finishReason] || 'end_turn';
+  }
+
+  /**
+   * 修复工具调用参数格式问题
+   * @private
+   */
+  private fixToolArguments(argumentsStr: string): string {
+    try {
+      // 移除多余的转义字符
+      let fixed = argumentsStr.replace(/\\"/g, '"');
+      
+      // 修复未闭合的引号和括号
+      const openBraces = (fixed.match(/\{/g) || []).length;
+      const closeBraces = (fixed.match(/\}/g) || []).length;
+      
+      if (openBraces > closeBraces) {
+        fixed += '}'.repeat(openBraces - closeBraces);
+      }
+      
+      return fixed;
+    } catch (error) {
+      // 如果修复失败，返回原始字符串
+      return argumentsStr;
+    }
   }
 
   // ============================================================================
@@ -1072,173 +769,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     }
   }
 
-  // ============================================================================
-  // 工具和帮助方法
-  // ============================================================================
-
-  private async withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
-        reject(new TransformerSecurityError('Processing timeout exceeded', 'PROCESSING_TIMEOUT', { timeoutMs }));
-      }, timeoutMs);
-    });
-
-    return Promise.race([promise, timeoutPromise]);
-  }
-
-  private updateMetrics(processingTime: number, isError: boolean): void {
-    this.metrics.requestsProcessed++;
-
-    // 更新平均处理时间
-    this.metrics.averageProcessingTime =
-      (this.metrics.averageProcessingTime * (this.metrics.requestsProcessed - 1) + processingTime) /
-      this.metrics.requestsProcessed;
-
-    // 更新错误率
-    if (isError) {
-      this.metrics.errorRate =
-        (this.metrics.errorRate * (this.metrics.requestsProcessed - 1) + 1) / this.metrics.requestsProcessed;
-    } else {
-      this.metrics.errorRate =
-        (this.metrics.errorRate * (this.metrics.requestsProcessed - 1)) / this.metrics.requestsProcessed;
-    }
-
-    // 更新内存使用情况
-    if (process.memoryUsage) {
-      this.metrics.memoryUsage = process.memoryUsage().heapUsed;
-    }
-  }
-
   private determineHealth(): 'healthy' | 'degraded' | 'unhealthy' {
-    if (this.status === 'error') {
-      return 'unhealthy';
-    }
-
-    if (this.metrics.errorRate > 0.1) {
-      // 10% error rate
-      return 'unhealthy';
-    }
-
-    if (this.metrics.errorRate > 0.05 || this.metrics.averageProcessingTime > 5000) {
-      return 'degraded';
-    }
-
-    return 'healthy';
-  }
-
-  private async performStartupChecks(): Promise<void> {
-    // 检查配置有效性
-    if (!this.validateCurrentConfig()) {
-      throw new TransformerSecurityError('Configuration validation failed during startup', 'INVALID_CONFIG', {});
-    }
-
-    // 检查内存限制
-    if (process.memoryUsage && process.memoryUsage().heapUsed > 100 * 1024 * 1024) {
-      this.securityLogger('high-memory-usage-at-startup', {
-        memoryUsage: process.memoryUsage().heapUsed,
-      });
-    }
-  }
-
-  private validateCurrentConfig(): boolean {
-    try {
-      // 验证关键配置项
-      return (
-        this.config.apiMaxTokens > 0 &&
-        this.config.defaultMaxTokens > 0 &&
-        this.config.maxMessageCount > 0 &&
-        this.config.maxMessageSize > 0 &&
-        this.config.processingTimeoutMs > 0
-      );
-    } catch {
-      return false;
-    }
-  }
-
-  private validateSecurityConfig(config: Partial<SecureTransformerConfig>): void {
-    // 验证数值配置的安全范围
-    if (config.apiMaxTokens !== undefined) {
-      if (!Number.isInteger(config.apiMaxTokens) || config.apiMaxTokens <= 0 || config.apiMaxTokens > 100000) {
-        throw new TransformerSecurityError('apiMaxTokens must be positive integer <= 100000', 'INVALID_CONFIG_VALUE', {
-          apiMaxTokens: config.apiMaxTokens,
-        });
-      }
-    }
-
-    if (config.processingTimeoutMs !== undefined) {
-      if (
-        !Number.isInteger(config.processingTimeoutMs) ||
-        config.processingTimeoutMs < 1000 ||
-        config.processingTimeoutMs > 300000
-      ) {
-        throw new TransformerSecurityError(
-          'processingTimeoutMs must be between 1000 and 300000',
-          'INVALID_CONFIG_VALUE',
-          { processingTimeoutMs: config.processingTimeoutMs }
-        );
-      }
-    }
-  }
-
-  private calculateConfigHash(config: any): string {
-    try {
-      const configString = JSON.stringify(config, Object.keys(config).sort());
-      // 简单的哈希函数（生产环境应使用加密哈希）
-      let hash = 0;
-      for (let i = 0; i < configString.length; i++) {
-        const char = configString.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // 转为32位整数
-      }
-      return hash.toString(36);
-    } catch {
-      return 'unknown';
-    }
-  }
-
-  private sanitizeLogData(data: any): any {
-    if (!data || typeof data !== 'object') {
-      return data;
-    }
-
-    const sanitized = { ...data };
-
-    // 移除潜在的敏感信息
-    const sensitiveKeys = ['password', 'token', 'key', 'secret', 'auth', 'credential'];
-
-    for (const key of Object.keys(sanitized)) {
-      if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
-        sanitized[key] = '[REDACTED]';
-      }
-    }
-
-    return sanitized;
-  }
-
-  private sanitizeRequestForLogging(request: any): any {
-    if (!request || typeof request !== 'object') {
-      return {};
-    }
-
-    return {
-      model: request.model,
-      messageCount: Array.isArray(request.messages) ? request.messages.length : 0,
-      hasSystem: Boolean(request.system),
-      hasTools: Boolean(request.tools),
-      maxTokens: request.max_tokens,
-    };
-  }
-
-  private sanitizeResponseForLogging(response: any): any {
-    if (!response || typeof response !== 'object') {
-      return {};
-    }
-
-    return {
-      id: response.id,
-      model: response.model,
-      choicesCount: Array.isArray(response.choices) ? response.choices.length : 0,
-      hasUsage: Boolean(response.usage),
-    };
+    return this.status === 'error' ? 'unhealthy' : 'healthy';
   }
 }

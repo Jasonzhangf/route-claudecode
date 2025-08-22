@@ -9,17 +9,25 @@ import { JQJsonHandler } from '../utils/jq-json-handler';
 import { secureLogger } from '../utils/secure-logger';
 
 /**
- * Demo1用户配置文件格式 (原始格式，无转换)
+ * Demo1用户配置文件格式 - 支持新的统一格式
  */
 export interface UserConfig {
   Providers: Array<{
     name: string;
+    protocol?: string; // 新统一格式：协议类型，自动决定transformer
     api_base_url: string;
     api_key: string;
     models: string[];
     weight?: number;
     maxTokens?: number;
-    serverCompatibility?: string;
+    serverCompatibility?: {
+      use: string; // 新统一格式：服务器兼容性类型
+      options?: Record<string, any>; // 兼容性选项
+    };
+    // 向后兼容旧格式
+    transformer?: {
+      use?: string[];
+    };
   }>;
   Router: Record<string, string>; // modelType -> "provider,model"
   blacklistSettings?: {

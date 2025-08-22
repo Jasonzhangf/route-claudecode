@@ -192,6 +192,7 @@ export interface ICommandExecutor {
   executeStatus(config: ServerStatusConfig): Promise<void>;
   executeCode(config: ClientProxyConfig): Promise<void>;
   executeConfig(action: ConfigAction, options: any): Promise<void>;
+  executeAuth(provider: string, index?: number, options?: any): Promise<void>;
 }
 
 /**

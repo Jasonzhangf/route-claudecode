@@ -16,6 +16,7 @@ import { secureLogger } from '../utils/secure-logger';
 import { API_DEFAULTS } from '../constants/api-defaults';
 import { DEFAULT_TIMEOUTS, DEFAULT_RETRY_CONFIG } from '../constants/compatibility-constants';
 import { TEST_MODEL_NAMES } from '../constants/test-constants';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 interface ToolCallingTestRequest {
   model: string;
@@ -151,7 +152,7 @@ export class ToolCallingFlowTester {
    */
   private async sendTestRequest(request: ToolCallingTestRequest): Promise<ToolCallingTestResponse> {
     return new Promise((resolve, reject) => {
-      const requestData = JSON.stringify(request);
+      const requestData = JQJsonHandler.stringifyJson(request, true);
       
       const options: http.RequestOptions = {
         hostname: 'localhost',
@@ -187,7 +188,7 @@ export class ToolCallingFlowTester {
         
         res.on('end', () => {
           try {
-            const parsedResponse: ToolCallingTestResponse = JSON.parse(responseData);
+            const parsedResponse: ToolCallingTestResponse = JQJsonHandler.parseJsonString(responseData);
             resolve(parsedResponse);
           } catch (error) {
             secureLogger.error('❌ 响应解析失败', {
@@ -323,7 +324,7 @@ export class ToolCallingFlowTester {
 
       if (isValidFormat) {
         try {
-          const args = JSON.parse(toolCall.function.arguments);
+          const args = JQJsonHandler.parseJsonString(toolCall.function.arguments);
           secureLogger.info(`工具调用${index + 1}参数解析`, {
             argumentKeys: Object.keys(args),
             argumentValid: true

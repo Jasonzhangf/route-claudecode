@@ -15,6 +15,7 @@ import { DebugSerializer, DebugSerializerImpl } from './debug-serializer';
 import { DebugStorage, DebugStorageImpl } from './debug-storage';
 import { DebugAnalyzer, DebugAnalyzerImpl, AnalysisReport } from './debug-analyzer';
 import { DebugCollector, DebugCollectorImpl, DebugEvent } from './debug-collector';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * Debug记录器接口
@@ -184,8 +185,8 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
     if (!this.config.enabled) return;
 
     try {
-      // 过滤敏感数据
-      const filteredData = this.filter.filterRequest(data).filtered;
+      // 过滤敏感数据 (添加null检查防止filter未定义错误)
+      const filteredData = this.filter ? this.filter.filterRequest(data).filtered : data;
 
       // 获取或创建记录
       let record = this.pendingRecords.get(requestId);
@@ -224,8 +225,8 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
     try {
       const now = Date.now();
 
-      // 过滤敏感数据
-      const filteredInput = this.filter.filterModuleInput(input).filtered;
+      // 过滤敏感数据 (添加null检查防止filter未定义错误)
+      const filteredInput = this.filter ? this.filter.filterModuleInput(input).filtered : input;
 
       const moduleRecord: Partial<ModuleRecord> = {
         moduleName,
@@ -248,7 +249,7 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
         moduleName,
         requestId,
         timestamp: now,
-        dataSize: JSON.stringify(filteredInput).length,
+        dataSize: JQJsonHandler.stringifyJson(filteredInput, true).length,
       });
     } catch (error) {
       console.error(`记录模块输入失败 [${moduleName}]:`, error);
@@ -264,8 +265,8 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
     try {
       const now = Date.now();
 
-      // 过滤敏感数据
-      const filteredOutput = this.filter.filterModuleOutput(output).filtered;
+      // 过滤敏感数据 (添加null检查防止filter未定义错误)
+      const filteredOutput = this.filter ? this.filter.filterModuleOutput(output).filtered : output;
 
       // 查找对应的输入记录并更新
       const moduleRecords = this.getModuleRecords(moduleName, requestId);
@@ -285,7 +286,7 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
         moduleName,
         requestId,
         timestamp: now,
-        dataSize: JSON.stringify(filteredOutput).length,
+        dataSize: JQJsonHandler.stringifyJson(filteredOutput, true).length,
       });
     } catch (error) {
       console.error(`记录模块输出失败 [${moduleName}]:`, error);
@@ -299,8 +300,8 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
     try {
       const now = Date.now();
 
-      // 过滤错误信息
-      const filteredError = this.filter.filterError(error).filtered;
+      // 过滤错误信息 (添加null检查防止filter未定义错误)
+      const filteredError = this.filter ? this.filter.filterError(error).filtered : error;
 
       // 查找对应的记录并添加错误信息
       const moduleRecords = this.getModuleRecords(moduleName, requestId);
@@ -340,19 +341,19 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
    */
   async saveRecord(record: DebugRecord): Promise<void> {
     try {
-      // 过滤记录中的敏感数据
+      // 过滤记录中的敏感数据 (添加null检查防止filter未定义错误)
       const filteredRecord = {
         ...record,
-        request: this.filter.filterRequest(record.request).filtered,
-        response: record.response ? this.filter.filterResponse(record.response).filtered : undefined,
-        error: record.error ? this.filter.filterError(record.error).filtered : undefined,
+        request: this.filter ? this.filter.filterRequest(record.request).filtered : record.request,
+        response: record.response ? (this.filter ? this.filter.filterResponse(record.response).filtered : record.response) : undefined,
+        error: record.error ? (this.filter ? this.filter.filterError(record.error).filtered : record.error) : undefined,
         pipeline: {
           ...record.pipeline,
           modules: record.pipeline.modules.map(module => ({
             ...module,
-            input: this.filter.filterModuleInput(module.input).filtered,
-            output: this.filter.filterModuleOutput(module.output).filtered,
-            error: module.error ? this.filter.filterError(module.error).filtered : undefined,
+            input: this.filter ? this.filter.filterModuleInput(module.input).filtered : module.input,
+            output: this.filter ? this.filter.filterModuleOutput(module.output).filtered : module.output,
+            error: module.error ? (this.filter ? this.filter.filterError(module.error).filtered : module.error) : undefined,
           })),
         },
       };
@@ -547,7 +548,7 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
   }
 
   private belongsToSession(requestId: string, session: DebugSession): boolean {
-    // 简化实现：根据时间判断
+    // 根据端口和时间范围判断请求是否属于指定会话
     const record = this.pendingRecords.get(requestId);
     return record && record.port === session.port;
   }

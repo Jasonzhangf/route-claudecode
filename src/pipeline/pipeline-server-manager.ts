@@ -595,14 +595,15 @@ export class PipelineServerManager extends EventEmitter {
         hasBody: !!req.body,
       });
 
+      const INPUT_PROTOCOL = 'anthropic'; // Claude Code输入协议固定为anthropic
       secureLogger.info('通过流水线处理请求', {
-        protocol: 'anthropic',
+        protocol: INPUT_PROTOCOL,
         hasInput: !!req.body,
         router: true,
       });
 
       // 使用Pipeline请求处理器处理请求
-      const result = await this.processRequestThroughPipeline('anthropic', req.body);
+      const result = await this.processRequestThroughPipeline(INPUT_PROTOCOL, req.body);
       
       const responseTime = Date.now() - startTime;
       this.updateRequestMetrics(responseTime, true);
@@ -644,7 +645,7 @@ export class PipelineServerManager extends EventEmitter {
     try {
       // 创建PipelineRequestProcessor实例
       const { PipelineRequestProcessor } = require('./pipeline-request-processor');
-      const processor = new PipelineRequestProcessor(this.config);
+      const processor = new PipelineRequestProcessor(this.config, true); // Enable debug mode
       
       // 创建执行上下文
       const executionContext = {

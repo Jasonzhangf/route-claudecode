@@ -14,6 +14,8 @@ import { EventEmitter } from 'events';
 
 export interface PassthroughCompatibilityConfig {
   mode: 'passthrough';
+  maxTokens?: number;
+  enhanceTool?: boolean;
   [key: string]: any;
 }
 
@@ -61,7 +63,16 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
 
   constructor(config: PassthroughCompatibilityConfig = { mode: 'passthrough' }) {
     super();
-    this.config = config;
+    this.config = {
+      mode: 'passthrough',
+      enhanceTool: true,
+      ...config
+    };
+    
+    // 动态设置maxTokens，支持配置文件覆盖，默认128K
+    if (!this.config.maxTokens) {
+      this.config.maxTokens = 131072; // 默认128K tokens限制
+    }
     this.currentStatus = {
       id: 'passthrough-compatibility',
       name: 'Passthrough Compatibility Module',
@@ -95,6 +106,14 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
     this.config = { ...this.config, ...config };
   }
 
+  async initialize(): Promise<void> {
+    // 初始化透传兼容性模块
+    this.currentStatus.status = 'starting';
+    console.log('🔧 [Passthrough兼容模块] 初始化完成');
+    this.currentStatus.status = 'running';
+    this.currentStatus.lastActivity = new Date();
+  }
+
   async start(): Promise<void> {
     this.currentStatus.status = 'starting';
     // 模块启动完成
@@ -123,16 +142,93 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
   async process(request: StandardRequest): Promise<StandardRequest> {
     this.currentStatus.lastActivity = new Date();
 
-    // Passthrough模块：请求已经是OpenAI格式，直接透传请求到下一个模块
-    // 不做任何转换，直接返回原始请求
-
-    console.log('🔄 [Passthrough兼容模块] 透传OpenAI格式请求:');
-    console.log('   模型:', request.model);
+    console.log('🔄 [Passthrough兼容模块] 处理OpenAI格式请求:');
+    console.log('   输入模型:', request.model);
     console.log('   消息数量:', request.messages?.length || 0);
-    console.log('   透传模式: 直接返回原始请求，无需格式转换');
 
-    // 直接返回原始请求，不包装
-    return request;
+    // 🔧 关键修复：如果模型名是映射模型名（如"default"），需要转换为实际的模型名
+    // 通过__internal配置获取实际使用的模型名
+    let actualModel = request.model;
+    
+    if (request.__internal && request.__internal.actualModel) {
+      actualModel = request.__internal.actualModel;
+      console.log('   🔄 模型名映射: 映射模型', request.model, '-> 实际模型', actualModel);
+    }
+
+    // 创建处理后的请求，使用实际的模型名
+    let processedRequest = {
+      ...request,
+      model: actualModel
+    };
+
+    // 🔧 新增：根据maxTokens限制请求大小，防止JSON过大被API拒绝
+    if (this.config.maxTokens && typeof this.config.maxTokens === 'number') {
+      processedRequest = await this.limitRequestSize(processedRequest, this.config.maxTokens);
+    }
+
+    console.log('   输出模型:', processedRequest.model);
+    console.log('   透传模式: 保持OpenAI格式，更新模型名，限制请求大小');
+
+    return processedRequest;
+  }
+
+  /**
+   * 根据maxTokens限制请求大小，防止JSON过大
+   */
+  private async limitRequestSize(request: StandardRequest, maxTokens: number): Promise<StandardRequest> {
+    // 粗略估算JSON大小（字符数近似token数）
+    const requestJson = JSON.stringify(request);
+    const estimatedTokens = requestJson.length / 4; // 粗略估算：4字符≈1token
+    
+    console.log(`   📏 请求大小检查: ${requestJson.length} 字符, 估算 ${Math.round(estimatedTokens)} tokens, 限制 ${maxTokens} tokens`);
+    
+    if (estimatedTokens <= maxTokens) {
+      console.log('   ✅ 请求大小在限制范围内，无需截断');
+      return request;
+    }
+
+    console.log('   ⚠️ 请求过大，开始截断处理...');
+    
+    // 创建副本进行截断
+    const truncatedRequest = { ...request };
+    
+    // 1. 优先截断tools数组（通常是最大的部分）
+    if (truncatedRequest.tools && Array.isArray(truncatedRequest.tools)) {
+      const originalToolsLength = truncatedRequest.tools.length;
+      // 保留前50%的工具，或最多10个
+      const maxTools = Math.min(Math.floor(originalToolsLength * 0.5), 10);
+      if (truncatedRequest.tools.length > maxTools) {
+        truncatedRequest.tools = truncatedRequest.tools.slice(0, maxTools);
+        console.log(`   🔧 截断工具数组: ${originalToolsLength} -> ${truncatedRequest.tools.length}`);
+      }
+    }
+    
+    // 2. 检查截断后的大小
+    const truncatedJson = JSON.stringify(truncatedRequest);
+    const newEstimatedTokens = truncatedJson.length / 4;
+    
+    console.log(`   📏 截断后大小: ${truncatedJson.length} 字符, 估算 ${Math.round(newEstimatedTokens)} tokens`);
+    
+    // 3. 如果还是太大，进一步截断消息内容
+    if (newEstimatedTokens > maxTokens && truncatedRequest.messages) {
+      for (let i = 0; i < truncatedRequest.messages.length; i++) {
+        const message = truncatedRequest.messages[i];
+        if (message.content && typeof message.content === 'string') {
+          // 截断字符串内容到最多2000字符
+          if (message.content.length > 2000) {
+            message.content = message.content.substring(0, 2000) + '... [内容已截断]';
+            console.log(`   ✂️ 截断消息 ${i} 内容: 长度限制到2000字符`);
+          }
+        }
+      }
+    }
+    
+    const finalJson = JSON.stringify(truncatedRequest);
+    const finalEstimatedTokens = finalJson.length / 4;
+    
+    console.log(`   ✅ 最终请求大小: ${finalJson.length} 字符, 估算 ${Math.round(finalEstimatedTokens)} tokens`);
+    
+    return truncatedRequest;
   }
 
   async healthCheck(): Promise<{ healthy: boolean; details: any }> {

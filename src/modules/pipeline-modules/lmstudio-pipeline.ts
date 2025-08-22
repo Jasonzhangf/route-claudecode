@@ -89,11 +89,9 @@ export class LMStudioPipeline extends EventEmitter {
     const safeMaxTokens = getSafeMaxTokens(userMaxTokens, 'lmstudio');
     
     this.transformerModule = new SecureAnthropicToOpenAITransformer({
-      // 关键：将用户的maxTokens配置作为apiMaxTokens传递
-      apiMaxTokens: safeMaxTokens,
+      // 简化的配置
+      maxTokens: safeMaxTokens,
       defaultMaxTokens: safeMaxTokens,
-      strictValidation: true,
-      logSecurityEvents: true,
     });
 
     // 2. Protocol模块

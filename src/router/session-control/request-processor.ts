@@ -10,6 +10,7 @@ import {
 import { ErrorHandler } from '../../middleware/error-handler';
 import { defaultProviderMapper } from '../../utils/provider-mapper';
 import { API_DEFAULTS } from '../../constants/api-defaults';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 export interface RequestProcessorConfig {
   requestId: string;
@@ -151,7 +152,7 @@ export class RequestProcessorImpl implements RequestProcessor {
     let modelName: string | undefined;
     if (this.request.body) {
       try {
-        const body = typeof this.request.body === 'string' ? JSON.parse(this.request.body) : this.request.body;
+        const body = typeof this.request.body === 'string' ? JQJsonHandler.parseJsonString(this.request.body) : this.request.body;
         modelName = body.model;
       } catch (error) {
         console.warn(`Failed to parse request body: ${error}`);

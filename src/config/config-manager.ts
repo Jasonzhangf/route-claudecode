@@ -7,6 +7,7 @@
  */
 
 import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 import { ConfigReader, MergedConfig } from './config-reader';
 import { ConfigValidator, ValidationRules } from './config-validator';
 import { ConfigTransformer, EnvTransformOptions } from './config-transformer';
@@ -636,10 +637,10 @@ export class ConfigManager {
     }
 
     if (format === 'json') {
-      return JSON.stringify(config, null, 2);
+      return JQJsonHandler.stringifyJson(config, false);
     } else {
       // 简单的YAML导出，实际应该使用yaml库
-      return `# RCC v4.0 Configuration Export\n# Generated at: ${new Date().toISOString()}\n\n${JSON.stringify(config, null, 2)}`;
+      return `# RCC v4.0 Configuration Export\n# Generated at: ${new Date().toISOString()}\n\n${JQJsonHandler.stringifyJson(config, false)}`;
     }
   }
 

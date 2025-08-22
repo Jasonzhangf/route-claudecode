@@ -124,7 +124,7 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
    * 分析会话性能
    */
   async analyzeSession(session: DebugSession, records: DebugRecord[]): Promise<PerformanceMetrics> {
-    if (records.length === 0) {
+    if (!records || records.length === 0) {
       return this.getEmptyMetrics();
     }
 
@@ -167,7 +167,7 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
    * 分析模块性能
    */
   analyzeModulePerformance(moduleName: string, records: ModuleRecord[]): ModulePerformanceStats {
-    if (records.length === 0) {
+    if (!records || records.length === 0) {
       return this.getEmptyModuleStats(moduleName);
     }
 
@@ -204,7 +204,7 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
    * 生成时间序列数据
    */
   generateTimeSeries(records: DebugRecord[], metric: string, interval: number): TimeSeriesDataPoint[] {
-    if (records.length === 0) return [];
+    if (!records || records.length === 0) return [];
 
     // 按时间排序
     const sortedRecords = records.sort((a, b) => a.timestamp - b.timestamp);
@@ -261,7 +261,7 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
   detectAnomalies(records: DebugRecord[]): AnomalyDetectionResult[] {
     const anomalies: AnomalyDetectionResult[] = [];
 
-    if (records.length < 10) return anomalies; // 数据太少无法检测异常
+    if (!records || records.length < 10) return anomalies; // 数据太少无法检测异常
 
     // 响应时间异常检测
     const responseTimeAnomalies = this.detectResponseTimeAnomalies(records);
@@ -283,6 +283,8 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
    */
   analyzeTrends(records: DebugRecord[], timeWindow: number): PerformanceTrend[] {
     const trends: PerformanceTrend[] = [];
+
+    if (!records || records.length === 0) return trends;
 
     // 响应时间趋势
     const responseTimeTrend = this.analyzeMetricTrend(records, 'responseTime', timeWindow);
@@ -325,6 +327,9 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
     // 分析各模块性能
     const moduleRecords = this.groupRecordsByModule(records);
     const moduleAnalysis = Object.entries(moduleRecords).map(([moduleName, records]) => {
+      if (!records || !Array.isArray(records)) {
+        return this.getEmptyModuleStats(moduleName);
+      }
       const moduleRecordData = records.flatMap(r => r.pipeline?.modules || []).filter(m => m.moduleName === moduleName);
       return this.analyzeModulePerformance(moduleName, moduleRecordData);
     });
@@ -367,6 +372,18 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
     let totalErrors = 0;
     let totalResponseTime = 0;
     let responseTimeCount = 0;
+
+    if (!records || records.length === 0) {
+      return {
+        totalSessions: 0,
+        activeSessions: 0,
+        totalRecords: 0,
+        totalErrors: 0,
+        averageResponseTime: 0,
+        diskUsage: 0,
+        moduleStatistics: moduleStats,
+      };
+    }
 
     for (const record of records) {
       if (record.error) {
@@ -577,6 +594,10 @@ export class DebugAnalyzerImpl extends EventEmitter implements DebugAnalyzer {
 
   private groupRecordsByModule(records: DebugRecord[]): Record<string, DebugRecord[]> {
     const grouped: Record<string, DebugRecord[]> = {};
+
+    if (!records || records.length === 0) {
+      return grouped;
+    }
 
     for (const record of records) {
       if (record.pipeline?.modules) {

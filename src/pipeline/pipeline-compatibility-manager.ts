@@ -59,14 +59,46 @@ export class PipelineCompatibilityManager extends EventEmitter {
     context: RequestContext
   ): Promise<any> {
     try {
-      // 从路由决策中获取兼容性信息
       const firstPipelineId = routingDecision.availablePipelines[0];
-      const compatibilityTag = this.extractCompatibilityFromPipelineId(firstPipelineId);
+      const providerType = this.extractProviderFromPipelineId(firstPipelineId);
+      
+      // 🔧 关键修复：从新统一配置格式中获取serverCompatibility信息
+      const providers = this.config.providers || [];
+      const matchingProvider = providers.find(p => p.name === providerType);
+      
+      let compatibilityTag = 'passthrough'; // 默认值
+      let compatibilityOptions: any = {};
+      
+      if (matchingProvider?.serverCompatibility) {
+        compatibilityTag = matchingProvider.serverCompatibility.use || 'passthrough';
+        compatibilityOptions = matchingProvider.serverCompatibility.options || {};
+        
+        secureLogger.info('🔧 使用新统一配置的serverCompatibility', {
+          requestId: context.requestId,
+          providerType,
+          compatibilityTag,
+          hasOptions: Object.keys(compatibilityOptions).length > 0,
+          architecture: 'unified-format'
+        });
+      } else {
+        // 向后兼容：从 pipeline ID 中推断
+        compatibilityTag = this.extractCompatibilityFromPipelineId(firstPipelineId);
+        
+        secureLogger.info('🔧 使用向后兼容的compatibility推断', {
+          requestId: context.requestId,
+          providerType,
+          compatibilityTag,
+          pipelineId: firstPipelineId,
+          architecture: 'backward-compatible'
+        });
+      }
       
       secureLogger.debug(`${LAYER_NAMES.SERVER_COMPATIBILITY}层处理开始`, {
         requestId: context.requestId,
         compatibilityTag,
+        providerType,
         pipelineId: firstPipelineId,
+        hasCompatibilityOptions: Object.keys(compatibilityOptions).length > 0
       });
 
       // 🔧 关键修复：确保__internal对象完整保留
@@ -75,7 +107,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
       // 动态加载兼容性模块
       const compatibilityModule = await this.loadCompatibilityModule(
         compatibilityTag,
-        null, // moduleInfo不需要，由配置确定
+        compatibilityOptions, // 传递兼容性选项
         request,
         context,
         routingDecision
@@ -145,7 +177,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
    */
   async loadCompatibilityModule(
     compatibilityTag: string,
-    moduleInfo: any,
+    compatibilityOptions: any = {}, // 兼容性选项代替moduleInfo
     request: any,
     context: RequestContext,
     routingDecision?: any
@@ -164,34 +196,45 @@ export class PipelineCompatibilityManager extends EventEmitter {
 
       let compatibilityModule: any = null;
 
-      // 🔧 关键修复：基于配置动态确定兼容性模块
+      // 🔧 关键修复：基于新统一配置格式动态确定兼容性模块
       switch (compatibilityTag) {
         case COMPATIBILITY_TAGS.LMSTUDIO:
-          compatibilityModule = await this.loadLMStudioCompatibility();
+        case 'lmstudio': // 支持新统一配置格式
+          compatibilityModule = await this.loadLMStudioCompatibility(compatibilityOptions);
           break;
         case COMPATIBILITY_TAGS.OLLAMA:
-          compatibilityModule = await this.loadOllamaCompatibility();
+        case 'ollama':
+          compatibilityModule = await this.loadOllamaCompatibility(compatibilityOptions);
           break;
         case COMPATIBILITY_TAGS.VLLM:
-          compatibilityModule = await this.loadVLLMCompatibility();
+        case 'vllm':
+          compatibilityModule = await this.loadVLLMCompatibility(compatibilityOptions);
           break;
         case COMPATIBILITY_TAGS.ANTHROPIC:
-          compatibilityModule = await this.loadAnthropicCompatibility();
+        case 'anthropic':
+          compatibilityModule = await this.loadAnthropicCompatibility(compatibilityOptions);
           break;
         case COMPATIBILITY_TAGS.MODELSCOPE:
-          compatibilityModule = await this.loadModelScopeCompatibility();
+        case 'modelscope':
+          compatibilityModule = await this.loadModelScopeCompatibility(compatibilityOptions);
+          break;
+        case COMPATIBILITY_TAGS.QWEN:
+        case 'qwen':
+          compatibilityModule = await this.loadQwenCompatibility(compatibilityOptions);
           break;
         case COMPATIBILITY_TAGS.OPENAI:
+        case 'openai':
         case COMPATIBILITY_TAGS.DEFAULT:
-          // OpenAI标准格式，使用透传兼容性
-          compatibilityModule = await this.loadPassthroughCompatibility();
+        case 'passthrough':
+          // OpenAI标准格式或透传模式
+          compatibilityModule = await this.loadPassthroughCompatibility(compatibilityOptions);
           break;
         default:
           secureLogger.warn(`未知的兼容性标签，使用${PROCESSING_MODES.PASSTHROUGH}模式`, {
             requestId: context.requestId,
             compatibilityTag,
           });
-          compatibilityModule = await this.loadPassthroughCompatibility();
+          compatibilityModule = await this.loadPassthroughCompatibility(compatibilityOptions);
           break;
       }
 
@@ -218,15 +261,24 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
-   * 加载LM Studio兼容性模块
+   * 加载LM Studio兼容性模块 - 支持新统一配置
    */
-  private async loadLMStudioCompatibility(): Promise<any> {
+  private async loadLMStudioCompatibility(compatibilityOptions: any = {}): Promise<any> {
     try {
       const moduleExports = require(COMPATIBILITY_MODULE_PATHS.LMSTUDIO);
       const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.LMSTUDIO];
       
-      // 从配置中获取LM Studio配置
-      const lmstudioConfig = this.getLMStudioConfigFromConfig();
+      // 🔧 新架构：从新统一配置中获取LM Studio配置
+      const lmstudioConfig = {
+        ...this.getLMStudioConfigFromConfig(),
+        ...compatibilityOptions // 合并新统一配置中的选项
+      };
+      
+      secureLogger.debug('🔧 LMStudio兼容性配置', {
+        hasOptions: Object.keys(compatibilityOptions).length > 0,
+        mergedConfig: Object.keys(lmstudioConfig),
+        architecture: 'unified-format'
+      });
       
       const module = new ModuleClass(lmstudioConfig);
       await module.initialize();
@@ -241,9 +293,9 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
-   * 加载Ollama兼容性模块
+   * 加载Ollama兼容性模块 - 支持新统一配置
    */
-  private async loadOllamaCompatibility(): Promise<any> {
+  private async loadOllamaCompatibility(compatibilityOptions: any = {}): Promise<any> {
     try {
       const moduleExports = require(COMPATIBILITY_MODULE_PATHS.OLLAMA);
       const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.OLLAMA];
@@ -266,7 +318,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
   /**
    * 加载VLLM兼容性模块
    */
-  private async loadVLLMCompatibility(): Promise<any> {
+  private async loadVLLMCompatibility(compatibilityOptions: any = {}): Promise<any> {
     try {
       const moduleExports = require(COMPATIBILITY_MODULE_PATHS.VLLM);
       const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.VLLM];
@@ -289,7 +341,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
   /**
    * 加载ModelScope兼容性模块
    */
-  private async loadModelScopeCompatibility(): Promise<any> {
+  private async loadModelScopeCompatibility(compatibilityOptions: any = {}): Promise<any> {
     try {
       const moduleExports = require(COMPATIBILITY_MODULE_PATHS.MODELSCOPE);
       const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.MODELSCOPE];
@@ -312,7 +364,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
   /**
    * 加载Anthropic兼容性模块
    */
-  private async loadAnthropicCompatibility(): Promise<any> {
+  private async loadAnthropicCompatibility(compatibilityOptions: any = {}): Promise<any> {
     try {
       const moduleExports = require(COMPATIBILITY_MODULE_PATHS.ANTHROPIC);
       const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.ANTHROPIC];
@@ -333,9 +385,32 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
+   * 加载Qwen兼容性模块
+   */
+  private async loadQwenCompatibility(compatibilityOptions: any = {}): Promise<any> {
+    try {
+      const moduleExports = require(COMPATIBILITY_MODULE_PATHS.QWEN);
+      const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.QWEN];
+      
+      // 从配置中获取Qwen配置
+      const qwenConfig = this.getQwenConfigFromConfig();
+      
+      const module = new ModuleClass(qwenConfig);
+      await module.initialize();
+      
+      return module;
+    } catch (error) {
+      secureLogger.error(`${PROVIDER_NAMES.QWEN}兼容性模块加载失败`, {
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * 加载透传兼容性模块
    */
-  private async loadPassthroughCompatibility(): Promise<any> {
+  private async loadPassthroughCompatibility(compatibilityOptions: any = {}): Promise<any> {
     try {
       const moduleExports = require(COMPATIBILITY_MODULE_PATHS.PASSTHROUGH);
       const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.PASSTHROUGH];
@@ -359,7 +434,15 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
-   * 从流水线ID中提取兼容性标签
+   * 从流水线ID中提取provider类型
+   */
+  private extractProviderFromPipelineId(pipelineId: string): string {
+    const parts = pipelineId.split('-');
+    return parts[0] || 'unknown';
+  }
+
+  /**
+   * 从流水线ID中提取兼容性标签 (向后兼容)
    */
   private extractCompatibilityFromPipelineId(pipelineId: string): string {
     // 解析流水线ID格式：provider-model-keyIndex
@@ -397,6 +480,8 @@ export class PipelineCompatibilityManager extends EventEmitter {
         return COMPATIBILITY_TAGS.ANTHROPIC;
       } else if (endpoint.includes('modelscope.cn')) {
         return COMPATIBILITY_TAGS.MODELSCOPE;
+      } else if (endpoint.includes('dashscope.aliyuncs.com')) {
+        return COMPATIBILITY_TAGS.QWEN;
       } else if (endpoint.includes('openai.com')) {
         return COMPATIBILITY_TAGS.PASSTHROUGH;
       }
@@ -572,6 +657,36 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
+   * 从配置中获取Qwen配置
+   */
+  private getQwenConfigFromConfig(): any {
+    const providers = this.config.providers || [];
+    const qwenProvider = providers.find(p => 
+      p.name === PROVIDER_NAMES.QWEN || 
+      p.api_base_url?.includes(URL_PATTERNS.QWEN_DOMAIN)
+    );
+
+    if (qwenProvider) {
+      return {
+        baseUrl: qwenProvider.api_base_url || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        apiKey: qwenProvider.api_key,
+        timeout: DEFAULT_TIMEOUTS.STANDARD,
+        maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
+        models: qwenProvider.models || ['qwen-plus', 'qwen-max'],
+        authDir: '~/.route-claudecode/auth'
+      };
+    }
+
+    return {
+      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      timeout: DEFAULT_TIMEOUTS.STANDARD,
+      maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
+      models: ['qwen-plus', 'qwen-max'],
+      authDir: '~/.route-claudecode/auth'
+    };
+  }
+
+  /**
    * 获取可用的兼容性模块列表
    */
   private getAvailableCompatibilityModules(): string[] {
@@ -581,6 +696,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
       COMPATIBILITY_TAGS.VLLM,
       COMPATIBILITY_TAGS.ANTHROPIC,
       COMPATIBILITY_TAGS.MODELSCOPE,
+      COMPATIBILITY_TAGS.QWEN,
       COMPATIBILITY_TAGS.PASSTHROUGH
     ];
   }

@@ -13,7 +13,7 @@
 export const NETWORK_TIMEOUTS = {
   // 基础网络超时
   CONNECTION_TIMEOUT: 5000,           // 5秒连接超时
-  REQUEST_TIMEOUT: 30000,             // 30秒请求超时
+  REQUEST_TIMEOUT: 60000,             // 60秒请求超时
   RESPONSE_TIMEOUT: 60000,            // 60秒响应超时
   
   // DNS和代理超时
@@ -29,7 +29,7 @@ export const NETWORK_TIMEOUTS = {
 // CLI和工具超时配置
 export const CLI_TIMEOUTS = {
   // 命令执行超时
-  COMMAND_TIMEOUT: 30000,             // 30秒命令执行超时
+  COMMAND_TIMEOUT: 60000,             // 60秒命令执行超时
   SCRIPT_TIMEOUT: 120000,             // 2分钟脚本执行超时
   
   // 用户输入超时
@@ -41,15 +41,26 @@ export const CLI_TIMEOUTS = {
   SHUTDOWN_TIMEOUT: 30000,            // 30秒关闭超时
 } as const;
 
+// JQ JSON处理超时配置
+export const JQ_TIMEOUTS = {
+  // JQ解析超时
+  JQ_PARSE_TIMEOUT: 5000,             // 5秒JQ解析超时
+  JQ_STRINGIFY_TIMEOUT: 5000,         // 5秒JQ序列化超时
+  JQ_MERGE_TIMEOUT: 10000,            // 10秒JQ合并超时
+  JQ_TRANSFORM_TIMEOUT: 15000,        // 15秒JQ转换超时
+} as const;
+
 // 所有超时配置的统一导出
 export const TIMEOUT_DEFAULTS = {
   ...NETWORK_TIMEOUTS,
   ...CLI_TIMEOUTS,
+  ...JQ_TIMEOUTS,
 } as const;
 
 // 超时配置类型定义
 export type NetworkTimeoutsType = typeof NETWORK_TIMEOUTS;
 export type CLITimeoutsType = typeof CLI_TIMEOUTS;
+export type JQTimeoutsType = typeof JQ_TIMEOUTS;
 export type AllTimeoutsType = typeof TIMEOUT_DEFAULTS;
 
 /**

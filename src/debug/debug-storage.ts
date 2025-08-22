@@ -102,8 +102,7 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
    */
   async saveRecord(record: DebugRecord): Promise<void> {
     try {
-      const sessionPath = this.getSessionPath(record.port, record.sessionId);
-      const recordPath = path.join(sessionPath, 'requests', `req_${record.requestId}.json`);
+      const recordPath = this.getRequestPath(record.port, record.requestId);
 
       // 确保目录存在
       await this.ensureDirectoryExists(path.dirname(recordPath));
@@ -183,7 +182,7 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
   async saveSession(session: DebugSession): Promise<void> {
     try {
       const sessionPath = this.getSessionPath(session.port, session.sessionId);
-      const sessionFile = path.join(sessionPath, 'session.json');
+      const sessionFile = path.join(sessionPath, `session-${session.sessionId}.json`);
 
       // 确保目录存在
       await this.ensureDirectoryExists(sessionPath);
@@ -216,7 +215,7 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
   async loadSession(sessionId: string, port: number): Promise<DebugSession> {
     try {
       const sessionPath = this.getSessionPath(port, sessionId);
-      const sessionFile = path.join(sessionPath, 'session.json');
+      const sessionFile = path.join(sessionPath, `session-${sessionId}.json`);
 
       if (!fs.existsSync(sessionFile)) {
         throw new Error('Session not found');
@@ -505,7 +504,11 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
   }
 
   private getSessionPath(port: number, sessionId: string): string {
-    return path.join(this.basePath, `port-${port}`, sessionId);
+    return path.join(this.basePath, `port-${port}`);
+  }
+
+  private getRequestPath(port: number, requestId: string): string {
+    return path.join(this.basePath, `port-${port}`, `${requestId}.json`);
   }
 
   private async createBackup(originalPath: string, data: string | Buffer): Promise<void> {
@@ -518,17 +521,9 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
       const ports = await this.getPortDirectories();
 
       for (const port of ports) {
-        const portPath = path.join(this.basePath, `port-${port}`);
-        const sessions = await readdir(portPath);
-
-        for (const sessionDir of sessions) {
-          const requestsPath = path.join(portPath, sessionDir, 'requests');
-          if (fs.existsSync(requestsPath)) {
-            const recordPath = path.join(requestsPath, `req_${requestId}.json`);
-            if (fs.existsSync(recordPath)) {
-              return recordPath;
-            }
-          }
+        const recordPath = this.getRequestPath(port, requestId);
+        if (fs.existsSync(recordPath)) {
+          return recordPath;
         }
       }
     } catch (error) {
@@ -591,6 +586,10 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
 
     try {
       const files = await readdir(dirPath);
+      
+      if (!files || files.length === 0) {
+        return records;
+      }
 
       for (const file of files) {
         if (!file.startsWith('req_') || !file.endsWith('.json')) continue;

@@ -9,6 +9,7 @@
 import * as zlib from 'zlib';
 import { promisify } from 'util';
 import { DebugRecord, ModuleRecord, DebugSession, DebugConfig } from './types/debug-types';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);
@@ -175,7 +176,7 @@ export class DebugSerializerImpl implements DebugSerializer {
    * 计算对象大小（字节）
    */
   calculateSize(obj: any): number {
-    return Buffer.byteLength(JSON.stringify(obj), 'utf8');
+    return Buffer.byteLength(JQJsonHandler.stringifyJson(obj, true), 'utf8');
   }
 
   /**
@@ -189,7 +190,7 @@ export class DebugSerializerImpl implements DebugSerializer {
       }
 
       // 检查循环引用
-      JSON.stringify(data);
+      JQJsonHandler.stringifyJson(data, true);
 
       return true;
     } catch (error) {
@@ -205,7 +206,7 @@ export class DebugSerializerImpl implements DebugSerializer {
       const processedObj = this.preprocessObject(obj);
 
       // JSON序列化
-      const jsonString = options.prettyPrint ? JSON.stringify(processedObj, null, 2) : JSON.stringify(processedObj);
+      const jsonString = options.prettyPrint ? JQJsonHandler.stringifyJson(processedObj, false) : JQJsonHandler.stringifyJson(processedObj, true);
 
       const originalSize = Buffer.byteLength(jsonString, 'utf8');
 
@@ -273,7 +274,7 @@ export class DebugSerializerImpl implements DebugSerializer {
       }
 
       // JSON反序列化
-      const obj = JSON.parse(jsonString) as T;
+      const obj = JQJsonHandler.parseJsonString(jsonString) as T;
 
       // 后处理对象（恢复特殊类型等）
       const processedObj = this.postprocessObject(obj);

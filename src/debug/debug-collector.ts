@@ -10,6 +10,7 @@ import { EventEmitter } from 'events';
 import { DebugRecord, ModuleRecord, DebugSession, DebugConfig } from './types/debug-types';
 import { RCCError } from '../types/error';
 import { Pipeline } from '../pipeline/types';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 事件类型
@@ -406,7 +407,7 @@ export class DebugCollectorImpl extends EventEmitter implements DebugCollector {
 
   private limitDataSize(data: any): any {
     const maxSize = 10000; // 10KB
-    const jsonString = JSON.stringify(data);
+    const jsonString = JQJsonHandler.stringifyJson(data, true);
 
     if (jsonString.length <= maxSize) {
       return data;

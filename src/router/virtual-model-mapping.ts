@@ -8,6 +8,7 @@
  */
 
 import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 export interface VirtualModelMappingRule {
   inputModel: string;
@@ -101,7 +102,7 @@ export class VirtualModelMapper {
    * @param request 完整的请求对象 (用于条件判断)
    * @returns 虚拟模型类型
    */
-  static mapToVirtual(inputModel: string, request: any): VirtualModelType {
+  static mapToVirtual(inputModel: string, request: any): VirtualModelType | string {
     // 计算token数量 (简化版，实际应该使用tiktoken)
     const tokenCount = this.estimateTokenCount(request);
 
@@ -118,9 +119,9 @@ export class VirtualModelMapper {
       }
     }
 
-    // 理论上不会到达这里，因为有默认规则
-    secureLogger.warn('No virtual model rule matched, using default', { inputModel });
-    return VirtualModelType.DEFAULT;
+    // 🔧 修复：返回'default'虚拟模型以匹配流水线表配置
+    secureLogger.warn('No virtual model rule matched, using default virtual model', { inputModel });
+    return 'default';
   }
 
   /**
@@ -224,7 +225,7 @@ export class VirtualModelMapper {
     // 计算工具定义token
     if (Array.isArray(request.tools)) {
       for (const tool of request.tools) {
-        const toolStr = JSON.stringify(tool);
+        const toolStr = JQJsonHandler.stringifyJson(tool);
         tokenCount += Math.ceil(toolStr.length / 4);
       }
     }

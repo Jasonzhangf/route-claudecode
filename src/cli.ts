@@ -19,6 +19,7 @@ import {
   StatusOptions,
 } from './interfaces/client/cli-interface';
 import { secureLogger } from './utils/secure-logger';
+import { JQJsonHandler } from './utils/jq-json-handler';
 
 /**
  * 参数解析器
@@ -135,6 +136,11 @@ class RCCv4CLIHandler implements CLIHandler {
           await this.handleConfig(options);
           break;
 
+        case 'auth':
+          process.stdout.write('🔍 [DEBUG] 处理auth命令\n');
+          await this.handleAuth(parsedCommand.args, options);
+          break;
+
         case 'help':
         case '--help':
         case '-h':
@@ -180,7 +186,7 @@ class RCCv4CLIHandler implements CLIHandler {
       debug: options.debug,
     };
     
-    process.stdout.write(`🔍 [DEBUG] start选项: ${JSON.stringify(startOptions)}\n`);
+    process.stdout.write(`🔍 [DEBUG] start选项: ${JQJsonHandler.stringifyJson(startOptions)}\n`);
     process.stdout.write('🔍 [DEBUG] 调用unifiedCLI.start()\n');
     
     await this.rccCLI.start(startOptions);
@@ -250,6 +256,18 @@ class RCCv4CLIHandler implements CLIHandler {
   }
 
   /**
+   * 处理auth命令
+   */
+  private async handleAuth(args: string[], options: Record<string, any>): Promise<void> {
+    const provider = args[0];
+    const index = args[1] ? parseInt(args[1], 10) : undefined;
+    
+    process.stdout.write(`🔍 [DEBUG] handleAuth: provider=${provider}, index=${index}, options=${JQJsonHandler.stringifyJson(options)}\n`);
+    
+    await this.rccCLI.auth(provider, index, options);
+  }
+
+  /**
    * 显示帮助信息
    */
   showHelp(command?: string): void {
@@ -270,6 +288,7 @@ Commands:
   status                   Show server status
   code                     Start Claude Code proxy mode
   config                   Configuration management
+  auth <provider> <index>  Manage provider authentication (OAuth2, API keys)
   help [command]           Show help information
   version                  Show version information
 
@@ -289,6 +308,9 @@ Examples:
   rcc4 status --port 5506 --detailed
   rcc4 code --port 5506 --auto-start
   rcc4 code --export
+  rcc4 auth qwen 1
+  rcc4 auth qwen --list
+  rcc4 auth qwen 2 --remove
 
 For more information about each command, use:
   rcc4 help <command>
@@ -423,15 +445,72 @@ async function main(): Promise<void> {
 }
 
 // 优雅关闭处理
-process.on('SIGTERM', () => {
+let isShuttingDown = false;
+
+process.on('SIGTERM', async () => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  
   secureLogger.info('Received SIGTERM, exiting gracefully');
-  process.exit(0);
+  
+  try {
+    // 尝试优雅关闭任何正在运行的服务器实例
+    await gracefulShutdown();
+    process.exit(0);
+  } catch (error) {
+    secureLogger.error('Error during graceful shutdown', { error: error.message });
+    process.exit(1);
+  }
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  
   secureLogger.info('Received SIGINT, exiting gracefully');
-  process.exit(0);
+  
+  try {
+    // 尝试优雅关闭任何正在运行的服务器实例
+    await gracefulShutdown();
+    process.exit(0);
+  } catch (error) {
+    secureLogger.error('Error during graceful shutdown', { error: error.message });
+    process.exit(1);
+  }
 });
+
+/**
+ * 优雅关闭函数
+ */
+async function gracefulShutdown(): Promise<void> {
+  secureLogger.info('开始优雅关闭流程');
+  
+  // 设置超时，防止关闭过程无限期等待
+  const shutdownTimeout = setTimeout(() => {
+    secureLogger.warn('优雅关闭超时，强制退出');
+    process.exit(1);
+  }, 10000); // 10秒超时
+  
+  try {
+    // 如果有全局的PipelineLifecycleManager实例，关闭它
+    const globalManager = (global as any).pipelineLifecycleManager;
+    if (globalManager && typeof globalManager.stop === 'function') {
+      secureLogger.info('正在停止PipelineLifecycleManager...');
+      await globalManager.stop();
+    }
+    
+    // 等待一小段时间确保资源完全释放
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    clearTimeout(shutdownTimeout);
+    secureLogger.info('优雅关闭完成');
+    
+  } catch (error) {
+    clearTimeout(shutdownTimeout);
+    secureLogger.error('优雅关闭过程中出错', { error: error.message });
+    throw error;
+  }
+}
 
 // 未捕获异常处理
 process.on('uncaughtException', error => {

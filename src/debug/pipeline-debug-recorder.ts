@@ -13,6 +13,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ExecutionContext } from '../interfaces/pipeline/pipeline-framework';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 export interface PipelineLayerRecord {
   layer: string;
@@ -296,7 +297,7 @@ export class PipelineDebugRecorder {
         },
       };
 
-      fs.writeFileSync(filepath, JSON.stringify(completeRecord, null, 2));
+      fs.writeFileSync(filepath, JQJsonHandler.stringifyJson(completeRecord, false));
       console.log(`📋 [PIPELINE-DEBUG] 完整流水线记录已保存: ${filename}`);
 
       // 更新合规报告
@@ -362,7 +363,7 @@ export class PipelineDebugRecorder {
         最后更新: new Date().toISOString(),
       };
 
-      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      fs.writeFileSync(reportPath, JQJsonHandler.stringifyJson(report, false));
     } catch (error) {
       console.error(`[COMPLIANCE-ERROR] 更新合规报告失败:`, (error as Error).message);
     }

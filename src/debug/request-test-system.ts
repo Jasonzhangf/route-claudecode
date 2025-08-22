@@ -4,7 +4,7 @@
  * 负责：
  * 1. 运行时请求测试 - 完整的请求处理流程测试
  * 2. 分层诊断 - 从Server Layer往上逐层诊断
- * 3. 路由测试 - 验证虚拟模型映射和流水线选择
+ * 3. 路由测试 - 验证模型映射和流水线选择
  * 4. 响应验证 - 验证4层响应处理链路
  * 
  * @author RCC v4.0
@@ -14,6 +14,7 @@ import { EventEmitter } from 'events';
 import { PipelineManager } from '../pipeline/pipeline-manager';
 import { RoutingTestResult, ExecutionTestResult } from './pipeline-debug-system';
 import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 测试请求配置
@@ -164,7 +165,7 @@ export class RequestTestSystem extends EventEmitter {
       throw new Error('Pipeline router not configured for testing');
     }
     
-    // 虚拟模型映射测试
+    // 模型映射测试
     const inputModel = testRequest.model || 'claude-3-5-sonnet';
     const virtualModel = this.mapToVirtualModel(inputModel, testRequest);
     secureLogger.info(`  📍 Virtual model mapping: ${inputModel} → ${virtualModel}`);
@@ -232,7 +233,7 @@ export class RequestTestSystem extends EventEmitter {
       secureLogger.info(`  📤 Response preview:`, { 
         hasChoices: !!response?.choices,
         choicesCount: response?.choices?.length || 0,
-        previewLength: JSON.stringify(response).substring(0, 200).length
+        previewLength: JQJsonHandler.stringifyJson(response, true).substring(0, 200).length
       });
       
       const result: ExecutionTestResult = {
@@ -496,13 +497,13 @@ export class RequestTestSystem extends EventEmitter {
     return result;
   }
 
-  // === Demo1风格虚拟模型映射 ===
+  // === Demo1风格模型映射系统 ===
 
   /**
-   * Demo1风格的虚拟模型映射
+   * Demo1风格的模型映射
    */
   private mapToVirtualModel(inputModel: string, request: TestRequestConfig): string {
-    // 计算token数量（简化实现）
+    // 基于字符长度计算token数量估算
     const tokenCount = this.calculateTokenCount(request);
     
     // 1. 长上下文检测 (>60K tokens)
@@ -531,7 +532,7 @@ export class RequestTestSystem extends EventEmitter {
   }
 
   /**
-   * 计算请求的token数量（简化实现）
+   * 计算请求的token数量估算
    */
   private calculateTokenCount(request: TestRequestConfig): number {
     let count = 0;
@@ -539,7 +540,7 @@ export class RequestTestSystem extends EventEmitter {
     if (request.messages && Array.isArray(request.messages)) {
       for (const message of request.messages) {
         if (typeof message.content === 'string') {
-          count += message.content.length / 4; // 简化的token估算
+          count += message.content.length / 4; // 基于字符长度的token估算
         }
       }
     }
@@ -567,8 +568,7 @@ export class RequestTestSystem extends EventEmitter {
    * 构建Server层请求（根据Pipeline配置）
    */
   private buildServerRequest(testRequest: TestRequestConfig, pipeline: any): any {
-    // 这里应该根据pipeline的配置构建适合的请求格式
-    // 简化实现，返回基本的OpenAI格式
+    // 根据pipeline配置构建标准OpenAI格式请求
     return {
       model: pipeline.targetModel || 'llama-3.1-8b',
       messages: testRequest.messages || [

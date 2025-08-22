@@ -7,6 +7,8 @@
  * @author Jason Zhang
  */
 
+import { JQJsonHandler } from './jq-json-handler';
+
 /**
  * 日志级别
  */
@@ -208,7 +210,7 @@ export class SecureLogger {
     // 添加数据（如果有）
     if (entry.data !== undefined) {
       if (typeof entry.data === 'object') {
-        formatted += ' ' + JSON.stringify(entry.data, null, 2);
+        formatted += ' ' + JQJsonHandler.stringifyJson(entry.data, true);
       } else {
         formatted += ' ' + String(entry.data);
       }

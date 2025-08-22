@@ -15,6 +15,7 @@ import {
 import { ErrorHandler } from '../../middleware/error-handler';
 import { ConversationQueueImpl } from './conversation-queue';
 import { RequestProcessorImpl } from './request-processor';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 export class FlowControlManager {
   private sessions: Map<string, SessionManager>;
@@ -244,7 +245,7 @@ export class FlowControlManager {
       return 'high'; // 流式请求高优先级
     }
 
-    if (request.body && JSON.stringify(request.body).length > 10000) {
+    if (request.body && JQJsonHandler.stringifyJson(request.body).length > 10000) {
       return 'low'; // 大请求低优先级
     }
 

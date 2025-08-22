@@ -11,6 +11,7 @@ import { DebugRecord, DebugSession, ModuleDebugInfo, DebugConfig, DebugStatistic
 import { RCCError } from '../types/error';
 import { DebugRecorder, DebugRecorderImpl } from './debug-recorder';
 import { ReplaySystem, ReplaySystemImpl } from './replay-system';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * Debug管理器接口
@@ -161,7 +162,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
         moduleName,
         requestId,
         timestamp: Date.now(),
-        dataSize: JSON.stringify(input).length,
+        dataSize: JQJsonHandler.stringifyJson(input).length,
       });
     } catch (error) {
       console.error(`记录输入失败 [${moduleName}]:`, error);
@@ -181,7 +182,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
         moduleName,
         requestId,
         timestamp: Date.now(),
-        dataSize: JSON.stringify(output).length,
+        dataSize: JQJsonHandler.stringifyJson(output).length,
       });
     } catch (error) {
       console.error(`记录输出失败 [${moduleName}]:`, error);
@@ -213,7 +214,8 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
    */
   createSession(port: number): DebugSession {
     const now = Date.now();
-    const sessionId = `session-${this.formatReadableTime(now).replace(/[:\s]/g, '-')}`;
+    const date = new Date(now);
+    const sessionId = `session-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}-${String(date.getHours()).padStart(2, '0')}${String(date.getMinutes()).padStart(2, '0')}${String(date.getSeconds()).padStart(2, '0')}`;
 
     const session: DebugSession = {
       sessionId,

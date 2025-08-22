@@ -115,6 +115,9 @@ export const VALIDATION_ERRORS = {
   INVALID_EMAIL: 'Invalid email format',
   INVALID_URL: 'Invalid URL format',
   INVALID_JSON: 'Invalid JSON format',
+  INVALID_JSON_INPUT: 'Invalid JSON input provided',
+  JSON_PARSE_FAILED: 'JSON parsing failed',
+  JSON_STRINGIFY_FAILED: 'JSON stringification failed',
 } as const;
 
 // 权限和安全相关错误

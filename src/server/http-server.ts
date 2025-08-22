@@ -11,6 +11,7 @@ import * as url from 'url';
 import { EventEmitter } from 'events';
 import { ServerStatus } from '../interfaces';
 import { getMaxRequestSize, getHttpRequestTimeout, getKeepAliveTimeout } from '../constants';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 import { IRequestContext, IResponseContext, HTTPMethod } from '../interfaces/core/server-interface';
 
@@ -71,6 +72,7 @@ export class HTTPServer extends EventEmitter {
   private isRunning: boolean = false;
   private startTime: Date | null = null;
   private requestCount: number = 0;
+  private connections: Set<any> = new Set();
 
   constructor(config: ServerConfig) {
     super();
@@ -151,6 +153,14 @@ export class HTTPServer extends EventEmitter {
       this.server.timeout = this.config.timeout!;
       this.server.keepAliveTimeout = this.config.keepAliveTimeout!;
 
+      // 跟踪连接以便强制关闭
+      this.server.on('connection', (socket) => {
+        this.connections.add(socket);
+        socket.on('close', () => {
+          this.connections.delete(socket);
+        });
+      });
+
       this.server.on('error', error => {
         this.emit('error', error);
         reject(error);
@@ -181,16 +191,56 @@ export class HTTPServer extends EventEmitter {
    */
   async stop(): Promise<void> {
     if (!this.isRunning || !this.server) {
-      throw new Error('Server is not running');
+      if (this.config.debug) {
+        console.log('⚠️ HTTP Server is not running, skipping stop');
+      }
+      return;
     }
 
     return new Promise((resolve, reject) => {
-      this.server!.close(error => {
-        if (error) {
-          this.emit('error', error);
-          reject(error);
-          return;
+      const timeout = setTimeout(() => {
+        // 超时处理：强制关闭所有连接
+        if (this.config.debug) {
+          console.log('⏰ HTTP Server stop timeout, forcing connections to close');
         }
+        
+        for (const socket of this.connections) {
+          try {
+            socket.destroy();
+          } catch (error) {
+            // 忽略销毁连接时的错误
+          }
+        }
+        this.connections.clear();
+        
+        this.isRunning = false;
+        this.startTime = null;
+        this.server = null;
+        this.emit('stopped');
+        
+        resolve();
+      }, 5000); // 5秒超时
+
+      // 首先停止接受新连接
+      this.server!.close(error => {
+        clearTimeout(timeout);
+        
+        if (error) {
+          if (this.config.debug) {
+            console.log('❌ HTTP Server close error:', error.message);
+          }
+          // 即使有错误，也要强制关闭连接
+        }
+
+        // 强制关闭所有现有连接
+        for (const socket of this.connections) {
+          try {
+            socket.destroy();
+          } catch (socketError) {
+            // 忽略销毁连接时的错误
+          }
+        }
+        this.connections.clear();
 
         this.isRunning = false;
         this.startTime = null;
@@ -198,7 +248,7 @@ export class HTTPServer extends EventEmitter {
         this.emit('stopped');
 
         if (this.config.debug) {
-          console.log('🛑 HTTP Server stopped');
+          console.log('🛑 HTTP Server stopped successfully');
         }
 
         resolve();
@@ -318,7 +368,7 @@ export class HTTPServer extends EventEmitter {
             const contentType = req.headers['content-type'] || '';
 
             if (contentType.includes('application/json')) {
-              context.body = JSON.parse(body);
+              context.body = JQJsonHandler.parseJsonString(body);
             } else {
               context.body = body;
             }

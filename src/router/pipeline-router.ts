@@ -71,6 +71,26 @@ export class PipelineRouter {
   }
 
   /**
+   * 从运行时RoutingTable直接创建Router (用于配置驱动的路由)
+   * @param routingTable 运行时生成的路由表
+   * @returns PipelineRouter实例
+   */
+  static fromRoutingTable(routingTable: RoutingTable): PipelineRouter {
+    try {
+      secureLogger.info('✅ Creating router from runtime routing table', {
+        routeCount: Object.keys(routingTable.routes).length,
+        defaultRoute: routingTable.defaultRoute
+      });
+      return new PipelineRouter(routingTable);
+    } catch (error) {
+      secureLogger.error('❌ Failed to create router from routing table:', {
+        error: error.message
+      });
+      throw new Error(`Failed to create router from routing table: ${error.message}`);
+    }
+  }
+
+  /**
    * 检查并重新加载流水线表 (如果已过期)
    * @param configName 配置名称
    * @param maxAge 最大年龄（毫秒），默认5分钟

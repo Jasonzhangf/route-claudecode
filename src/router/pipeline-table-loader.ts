@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 import { PipelineTableData, PipelineTableEntry } from '../pipeline/pipeline-manager';
 import { RoutingTable, PipelineRoute } from './pipeline-router';
 import { ROUTING_TABLE_DEFAULTS } from '../constants/router-defaults';
@@ -42,7 +43,7 @@ export class PipelineTableLoader {
 
       // 读取文件内容
       const fileContent = fs.readFileSync(filePath, 'utf8');
-      const pipelineTableData: PipelineTableData = JSON.parse(fileContent);
+      const pipelineTableData: PipelineTableData = JQJsonHandler.parseJsonString<PipelineTableData>(fileContent);
 
       // 验证数据格式
       this.validatePipelineTableData(pipelineTableData);

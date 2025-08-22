@@ -18,6 +18,7 @@ import {
   ConfigAction,
 } from '../interfaces/core/cli-abstraction';
 import { ERROR_MESSAGES } from '../constants/error-messages';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * CLI命令执行器实现
@@ -296,6 +297,63 @@ export class CommandExecutor implements ICommandExecutor {
   }
 
   /**
+   * 执行认证命令
+   */
+  async executeAuth(provider: string, index?: number, options?: any): Promise<void> {
+    console.log(`🔐 Managing authentication for ${provider}...`);
+
+    try {
+      // 动态导入认证管理器
+      const authManagerClass = await this.loadAuthManager(provider);
+      const authManager = new authManagerClass();
+
+      // 处理不同的认证操作
+      if (options?.list) {
+        await authManager.listAuthFiles();
+        return;
+      }
+
+      if (options?.remove && index) {
+        await authManager.removeAuthFile(index);
+        return;
+      }
+
+      if (options?.refresh && index) {
+        await authManager.refreshAuthFile(index);
+        return;
+      }
+
+      // 默认认证流程
+      if (!index) {
+        throw new Error('Index is required for authentication. Usage: rcc4 auth <provider> <index>');
+      }
+
+      await authManager.authenticate(index);
+
+    } catch (error) {
+      console.error('❌ Authentication failed:', error instanceof Error ? error.message : 'Unknown error');
+      process.exit(1);
+    }
+  }
+
+  /**
+   * 动态加载认证管理器
+   */
+  private async loadAuthManager(provider: string): Promise<any> {
+    switch (provider.toLowerCase()) {
+      case 'qwen':
+        const { QwenAuthManager } = await import('../cli/auth/qwen-auth-manager');
+        return QwenAuthManager;
+      case 'gemini':
+        throw new Error('Gemini authentication not yet implemented');
+      case 'claude':
+        throw new Error('Claude authentication not yet implemented');
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  }
+
+  /**
    * 显示服务器端点信息
    */
   private showServerEndpoints(port: number): void {
@@ -431,6 +489,6 @@ export class CommandExecutor implements ICommandExecutor {
     console.log(`📋 Configuration: ${configPath}`);
 
     const config = await this.configManager.loadConfig(configPath);
-    console.log(JSON.stringify(config, null, 2));
+    console.log(JQJsonHandler.stringifyJson(config, true));
   }
 }

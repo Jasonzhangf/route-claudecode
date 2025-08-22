@@ -121,16 +121,7 @@ export function createDefaultSecurityConfig(): SecureTransformerConfig {
     preserveToolCalls: true,
     mapSystemMessage: true,
     defaultMaxTokens: 4096,
-    maxMessageCount: 50,
-    maxMessageSize: 10 * 1024,
-    maxContentLength: 100 * 1024,
-    maxToolsCount: 20,
-    processingTimeoutMs: 30000,
-    apiMaxTokens: 8192,
-    modelMaxTokens: new Map(),
-    strictValidation: true,
-    sanitizeInputs: true,
-    logSecurityEvents: true,
+    maxTokens: 8192,
   };
 }
 

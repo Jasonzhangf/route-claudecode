@@ -6,6 +6,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 export interface UserConfigPaths {
   configDir: string;
@@ -116,7 +117,7 @@ export class UserConfigLoader {
         const json5 = require('json5');
         return json5.parse(content);
       } else {
-        return JSON.parse(content);
+        return JQJsonHandler.parseJsonString(content);
       }
     } catch (error) {
       throw new Error(`Failed to parse configuration file ${configPath}: ${error.message}`);

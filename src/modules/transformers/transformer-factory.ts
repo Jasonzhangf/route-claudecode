@@ -220,9 +220,9 @@ export class SecureTransformerFactory implements IModuleFactory {
   private createSecureConfig(userConfig: Partial<SecureTransformerConfig>): SecureTransformerConfig {
     const defaultConfig = this.config.defaultSecurityConfig;
 
-    // 动态计算apiMaxTokens - 优先使用用户配置，否则使用常量中的默认值
-    const userApiMaxTokens = userConfig.apiMaxTokens || defaultConfig?.apiMaxTokens;
-    const calculatedApiMaxTokens = getSafeMaxTokens(userApiMaxTokens, 'lmstudio'); // 默认使用lmstudio的限制
+    // 动态计算maxTokens - 优先使用用户配置，否则使用常量中的默认值
+    const userMaxTokens = userConfig.maxTokens || defaultConfig?.maxTokens;
+    const calculatedMaxTokens = getSafeMaxTokens(userMaxTokens, 'lmstudio'); // 默认使用lmstudio的限制
 
     // 合并配置，确保安全默认值
     const mergedConfig: SecureTransformerConfig = {
@@ -230,69 +230,22 @@ export class SecureTransformerFactory implements IModuleFactory {
       preserveToolCalls: true,
       mapSystemMessage: true,
       defaultMaxTokens: getSafeMaxTokens(userConfig.defaultMaxTokens),
-
-      // 安全限制
-      maxMessageCount: 50,
-      maxMessageSize: 10 * 1024, // 10KB
-      maxContentLength: 100 * 1024, // 100KB
-      maxToolsCount: 20,
-      processingTimeoutMs: 30000, // 30秒
-
-      // API限制 - 稍后设置以避免重复
-      modelMaxTokens: new Map(),
-
-      // 验证选项
-      strictValidation: true,
-      sanitizeInputs: true,
-      logSecurityEvents: this.config.enableSecurityLogging ?? true,
+      maxTokens: calculatedMaxTokens,
 
       // 覆盖默认配置
       ...defaultConfig,
 
-      // 覆盖用户配置（除了apiMaxTokens之外）
-      ...Object.fromEntries(
-        Object.entries(userConfig).filter(([key]) => key !== 'apiMaxTokens')
-      ),
-      
-      // 最终确保使用用户指定的值（如果存在）或计算后的值
-      apiMaxTokens: userApiMaxTokens || calculatedApiMaxTokens,
+      // 覆盖用户配置
+      ...userConfig,
     };
 
     return mergedConfig;
   }
 
   private validateConfigSecurity(config: SecureTransformerConfig): void {
-    // 验证关键安全参数
-    const securityChecks = [
-      {
-        check: config.apiMaxTokens > 0 && config.apiMaxTokens <= 100000,
-        message: 'apiMaxTokens must be between 1 and 100000',
-      },
-      {
-        check: config.processingTimeoutMs >= 1000 && config.processingTimeoutMs <= 300000,
-        message: 'processingTimeoutMs must be between 1000 and 300000',
-      },
-      {
-        check: config.maxMessageCount > 0 && config.maxMessageCount <= 1000,
-        message: 'maxMessageCount must be between 1 and 1000',
-      },
-      {
-        check: config.maxMessageSize > 0 && config.maxMessageSize <= 1024 * 1024,
-        message: 'maxMessageSize must be between 1 and 1MB',
-      },
-      {
-        check: config.maxContentLength > 0 && config.maxContentLength <= 10 * 1024 * 1024,
-        message: 'maxContentLength must be between 1 and 10MB',
-      },
-    ];
-
-    for (const { check, message } of securityChecks) {
-      if (!check) {
-        throw new TransformerSecurityError('Configuration security validation failed', 'CONFIG_SECURITY_VIOLATION', {
-          message,
-          config,
-        });
-      }
+    // Simple validation for simplified config
+    if (config.maxTokens <= 0 || config.maxTokens > 100000) {
+      throw new Error('maxTokens must be between 1 and 100000');
     }
   }
 
@@ -362,10 +315,10 @@ export function createSecureTransformerFactory(
   const defaultConfig: TransformerFactoryConfig = {
     defaultSecurityConfig: {
       // 使用动态计算而不是硬编码
-      apiMaxTokens: getSafeMaxTokens(config.defaultSecurityConfig?.apiMaxTokens, 'lmstudio'),
-      processingTimeoutMs: 30000,
-      strictValidation: true,
-      logSecurityEvents: true,
+      maxTokens: getSafeMaxTokens(config.defaultSecurityConfig?.maxTokens, 'lmstudio'),
+      preserveToolCalls: true,
+      mapSystemMessage: true,
+      defaultMaxTokens: 4096,
     },
     allowDeprecated: false,
     securityAuditMode: true,

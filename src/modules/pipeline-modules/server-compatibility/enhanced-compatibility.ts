@@ -470,19 +470,30 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
   }
 
   /**
-   * LM Studio请求适配
+   * LM Studio请求适配 - 恢复正确逻辑：只做参数调整，不转换协议
    */
   private adaptForLMStudio(request: OpenAIStandardRequest): OpenAIStandardRequest {
     const adapted = { ...request };
 
-    // LM Studio通常不支持工具调用
-    if (adapted.tools) {
-      this.debugRecorder.record('lmstudio_tools_removed', {
-        reason: 'lmstudio_limited_tool_support',
-        removed_tools_count: adapted.tools.length,
+    // LM Studio支持工具调用，但需要确保格式正确
+    if (adapted.tools && Array.isArray(adapted.tools)) {
+      // 只做格式验证和修复，不做协议转换
+      adapted.tools = adapted.tools.filter(tool => {
+        return tool && tool.type === 'function' && tool.function && tool.function.name;
       });
-      delete adapted.tools;
-      delete adapted.tool_choice;
+      
+      this.debugRecorder.record('lmstudio_tools_validated', {
+        original_count: request.tools?.length || 0,
+        validated_count: adapted.tools.length
+      });
+      
+      // 确保tool_choice格式正确
+      if (adapted.tool_choice && typeof adapted.tool_choice === 'object') {
+        // 验证对象格式的tool_choice
+        if (!adapted.tool_choice.type || !adapted.tool_choice.function?.name) {
+          adapted.tool_choice = 'auto';
+        }
+      }
     }
 
     // 参数限制调整
@@ -1075,4 +1086,5 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
 
     return 'medium'; // 默认中等严重程度
   }
+
 }

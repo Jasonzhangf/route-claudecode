@@ -7,6 +7,7 @@
  */
 
 import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 环境变量替换选项
@@ -225,7 +226,7 @@ export class ConfigTransformer {
     // 尝试解析JSON
     if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
       try {
-        return JSON.parse(value);
+        return JQJsonHandler.parseJsonString(value);
       } catch {
         // 解析失败，保持字符串
       }
@@ -391,7 +392,7 @@ export class ConfigTransformer {
         }
         if (typeof value === 'string') {
           try {
-            const parsed = JSON.parse(value);
+            const parsed = JQJsonHandler.parseJsonString(value);
             if (Array.isArray(parsed)) {
               return parsed;
             }
@@ -411,7 +412,7 @@ export class ConfigTransformer {
         }
         if (typeof value === 'string') {
           try {
-            return JSON.parse(value);
+            return JQJsonHandler.parseJsonString(value);
           } catch {
             if (strict) {
               throw new Error(`Cannot parse "${value}" as JSON object`);
