@@ -693,10 +693,22 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
    */
   private fixToolArguments(argumentsStr: string): string {
     try {
-      // 移除多余的转义字符
-      let fixed = argumentsStr.replace(/\\"/g, '"');
+      let fixed = argumentsStr;
       
-      // 修复未闭合的引号和括号
+      // 🔧 修复: Qwen API返回的单引号JSON问题
+      // 将Python/JavaScript对象格式修复为标准JSON
+      fixed = fixed
+        // 1. 移除多余的转义字符
+        .replace(/\\"/g, '"')
+        // 2. 修复单引号为双引号（仅在字符串键值中）
+        .replace(/'([^']*)':/g, '"$1":')    // 修复键名的单引号
+        .replace(/:\s*'([^']*)'/g, ': "$1"') // 修复值的单引号
+        // 3. 修复布尔值和null
+        .replace(/:\s*True/g, ': true')
+        .replace(/:\s*False/g, ': false')
+        .replace(/:\s*None/g, ': null');
+      
+      // 4. 修复未闭合的引号和括号
       const openBraces = (fixed.match(/\{/g) || []).length;
       const closeBraces = (fixed.match(/\}/g) || []).length;
       
@@ -704,9 +716,20 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
         fixed += '}'.repeat(openBraces - closeBraces);
       }
       
-      return fixed;
+      // 5. 验证修复后的JSON格式
+      try {
+        JSON.parse(fixed);
+        return fixed;
+      } catch (verifyError) {
+        console.warn(`Tool arguments fix verification failed:`, verifyError.message);
+        console.warn(`Original:`, argumentsStr);
+        console.warn(`Fixed:`, fixed);
+        throw verifyError;
+      }
+      
     } catch (error) {
       // 如果修复失败，返回原始字符串
+      console.warn(`Tool arguments fix failed:`, error.message);
       return argumentsStr;
     }
   }

@@ -69,57 +69,38 @@ export class JQJsonHandler {
      */
     static stringifyJson(data: any, compact: boolean = false): string {
         try {
-            // 🔥🔥 CRITICAL DEBUG: JQJsonHandler stringifyJson调试
-            console.log('🔥🔥 [JQJsonHandler] stringifyJson输入:', {
-                dataType: typeof data,
-                hasModel: 'model' in data,
-                modelValue: data.model,
-                keys: Object.keys(data)
-            });
+            // Debug减少日志输出
             
             // 预处理数据，处理特殊值
             const cleanedData = this.sanitizeDataForJq(data);
             
-            // 🔥🔥 CRITICAL DEBUG: 数据清理后检查
-            console.log('🔥🔥 [JQJsonHandler] 数据清理后:', {
-                cleanedDataType: typeof cleanedData,
-                hasModelAfterClean: 'model' in cleanedData,
-                modelValueAfterClean: cleanedData.model,
-                keysAfterClean: Object.keys(cleanedData)
-            });
             
             // 创建基础JSON输入并记录
             const basicJson = this.createBasicJson(cleanedData);
             
-            // 🔥🔥 CRITICAL DEBUG: 基础JSON检查
-            console.log('🔥🔥 [JQJsonHandler] 基础JSON生成:', {
-                basicJsonLength: basicJson.length,
-                basicJsonPreview: basicJson.substring(0, 100),
-                hasModelInBasicJson: basicJson.includes('"model"'),
-                modelInBasicJson: basicJson.includes(`"model":"${cleanedData.model}"`)
-            });
+            // 🔧 修复: 检查JSON长度，避免jq缓冲区溢出
+            if (basicJson.length > 100000) {
+                console.warn('JSON too large for jq, using fallback:', basicJson.length);
+                return this.fallbackJsonStringify(data, compact);
+            }
             
             // 使用jq直接序列化，避免临时文件
             const args = compact ? ['-c', '.'] : ['.'];
             const result = execFileSync('jq', args, {
                 input: basicJson,
                 encoding: 'utf8',
-                timeout: TIMEOUT_DEFAULTS.JQ_STRINGIFY_TIMEOUT
+                timeout: TIMEOUT_DEFAULTS.JQ_STRINGIFY_TIMEOUT,
+                maxBuffer: 200 * 1024 * 1024  // 🔧 修复: 增加缓冲区限制到200MB
             });
             
-            // 🔥🔥 CRITICAL DEBUG: jq处理结果检查
-            const finalResult = result.trim();
-            console.log('🔥🔥 [JQJsonHandler] jq处理结果:', {
-                finalResultLength: finalResult.length,
-                finalResultPreview: finalResult.substring(0, 100),
-                hasModelInFinal: finalResult.includes('"model"'),
-                modelInFinal: finalResult.includes(`"model":"${cleanedData.model}"`)
-            });
-            
-            return finalResult;
+            return result.trim();
         } catch (error) {
             // 如果jq处理失败，使用更安全的fallback
-            console.warn('jq序列化失败，使用fallback:', error.message);
+            if (error.message.includes('ENOBUFS') || error.message.includes('maxBuffer')) {
+                console.warn('jq缓冲区溢出，使用fallback:', error.message);
+            } else {
+                console.warn('jq序列化失败，使用fallback:', error.message);
+            }
             return this.fallbackJsonStringify(data, compact);
         }
     }
