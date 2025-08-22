@@ -178,6 +178,9 @@ export class PipelineCompatibilityManager extends EventEmitter {
         case COMPATIBILITY_TAGS.ANTHROPIC:
           compatibilityModule = await this.loadAnthropicCompatibility();
           break;
+        case COMPATIBILITY_TAGS.MODELSCOPE:
+          compatibilityModule = await this.loadModelScopeCompatibility();
+          break;
         case COMPATIBILITY_TAGS.OPENAI:
         case COMPATIBILITY_TAGS.DEFAULT:
           // OpenAI标准格式，使用透传兼容性
@@ -284,6 +287,29 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
+   * 加载ModelScope兼容性模块
+   */
+  private async loadModelScopeCompatibility(): Promise<any> {
+    try {
+      const moduleExports = require(COMPATIBILITY_MODULE_PATHS.MODELSCOPE);
+      const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.MODELSCOPE];
+      
+      // 从配置中获取ModelScope配置
+      const modelScopeConfig = this.getModelScopeConfigFromConfig();
+      
+      const module = new ModuleClass(modelScopeConfig);
+      await module.initialize();
+      
+      return module;
+    } catch (error) {
+      secureLogger.error(`${PROVIDER_NAMES.MODELSCOPE}兼容性模块加载失败`, {
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * 加载Anthropic兼容性模块
    */
   private async loadAnthropicCompatibility(): Promise<any> {
@@ -340,8 +366,57 @@ export class PipelineCompatibilityManager extends EventEmitter {
     const parts = pipelineId.split('-');
     const provider = parts[0] || 'unknown';
     
+    secureLogger.info('🔍 提取兼容性标签', {
+      pipelineId,
+      provider,
+      availableMappings: Object.keys(PROVIDER_TO_COMPATIBILITY_MAPPING),
+    });
+    
     // 使用常量映射provider到兼容性标签
-    return PROVIDER_TO_COMPATIBILITY_MAPPING[provider as keyof typeof PROVIDER_TO_COMPATIBILITY_MAPPING] || COMPATIBILITY_TAGS.LMSTUDIO;
+    const compatibilityTag = PROVIDER_TO_COMPATIBILITY_MAPPING[provider as keyof typeof PROVIDER_TO_COMPATIBILITY_MAPPING];
+    
+    if (compatibilityTag) {
+      secureLogger.info('✅ 找到兼容性映射', {
+        provider,
+        compatibilityTag,
+      });
+      return compatibilityTag;
+    }
+    
+    // 🔧 关键修复：移除硬编码fallback，根据API端点动态确定
+    const providerConfig = this.getProviderConfigByName(provider);
+    if (providerConfig) {
+      const endpoint = providerConfig.api_base_url || '';
+      
+      // 根据端点特征确定兼容性标签
+      if (endpoint.includes('localhost:1234') || endpoint.includes('lmstudio')) {
+        return COMPATIBILITY_TAGS.LMSTUDIO;
+      } else if (endpoint.includes('localhost:11434') || endpoint.includes('ollama')) {
+        return COMPATIBILITY_TAGS.OLLAMA;
+      } else if (endpoint.includes('anthropic.com')) {
+        return COMPATIBILITY_TAGS.ANTHROPIC;
+      } else if (endpoint.includes('modelscope.cn')) {
+        return COMPATIBILITY_TAGS.MODELSCOPE;
+      } else if (endpoint.includes('openai.com')) {
+        return COMPATIBILITY_TAGS.PASSTHROUGH;
+      }
+    }
+    
+    secureLogger.warn('未找到兼容性映射，使用透传模式', {
+      provider,
+      pipelineId,
+    });
+    
+    // 默认使用透传兼容性
+    return COMPATIBILITY_TAGS.PASSTHROUGH;
+  }
+
+  /**
+   * 根据Provider名称获取配置
+   */
+  private getProviderConfigByName(providerName: string): any | null {
+    const providers = this.config.providers || [];
+    return providers.find(p => p.name === providerName) || null;
   }
 
   /**
@@ -436,6 +511,39 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
+   * 从配置中获取ModelScope配置
+   */
+  private getModelScopeConfigFromConfig(): any {
+    const providers = this.config.providers || [];
+    const modelScopeProvider = providers.find(p => 
+      p.name === PROVIDER_NAMES.MODELSCOPE || 
+      p.api_base_url?.includes('modelscope.cn')
+    );
+
+    if (modelScopeProvider) {
+      return {
+        preserveToolCalls: true,
+        validateInputSchema: true,
+        maxToolsPerRequest: 20,
+        baseUrl: modelScopeProvider.api_base_url,
+        apiKey: modelScopeProvider.api_key,
+        timeout: DEFAULT_TIMEOUTS.STANDARD,
+        maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
+        models: modelScopeProvider.models || [],
+      };
+    }
+
+    return {
+      preserveToolCalls: true,
+      validateInputSchema: true,
+      maxToolsPerRequest: 20,
+      timeout: DEFAULT_TIMEOUTS.STANDARD,
+      maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
+      models: [],
+    };
+  }
+
+  /**
    * 从配置中获取Anthropic配置
    */
   private getAnthropicConfigFromConfig(): any {
@@ -472,6 +580,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
       COMPATIBILITY_TAGS.OLLAMA,
       COMPATIBILITY_TAGS.VLLM,
       COMPATIBILITY_TAGS.ANTHROPIC,
+      COMPATIBILITY_TAGS.MODELSCOPE,
       COMPATIBILITY_TAGS.PASSTHROUGH
     ];
   }
