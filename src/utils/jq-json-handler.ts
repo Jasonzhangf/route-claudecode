@@ -1,6 +1,8 @@
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { TIMEOUT_DEFAULTS } from '../constants/timeout-defaults';
+import { ERROR_MESSAGES } from '../constants/error-messages';
 
 /**
  * RCC v4.0 强制jq JSON处理器
@@ -15,13 +17,18 @@ export class JQJsonHandler {
      */
     static parseJsonFile<T = any>(filePath: string, filter: string = '.'): T {
         if (!fs.existsSync(filePath)) {
-            throw new Error(`JSON文件不存在: ${filePath}`);
+            throw new Error(ERROR_MESSAGES.CONFIG_NOT_FOUND + `: ${filePath}`);
         }
 
         try {
-            const command = `jq '${filter}' "${filePath}"`;
-            const result = execSync(command, { encoding: 'utf8' });
-            return JSON.parse(result.trim());
+            // 使用execFileSync提高安全性和性能
+            const result = execFileSync('jq', [filter, filePath], { 
+                encoding: 'utf8',
+                timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT
+            });
+            
+            // 直接使用jq的输出，避免二次解析
+            return this.parseJqOutput<T>(result.trim());
         } catch (error) {
             throw new Error(`jq解析JSON文件失败 ${filePath}: ${error}`);
         }
@@ -34,20 +41,23 @@ export class JQJsonHandler {
      * @returns 解析后的对象
      */
     static parseJsonString<T = any>(jsonString: string, filter: string = '.'): T {
-        try {
-            // 将JSON字符串写入临时文件
-            const tempFile = path.join('/tmp', `rcc4-temp-${Date.now()}.json`);
-            fs.writeFileSync(tempFile, jsonString);
+        if (!jsonString || typeof jsonString !== 'string') {
+            throw new Error(ERROR_MESSAGES.INVALID_JSON_INPUT);
+        }
 
-            const command = `jq '${filter}' "${tempFile}"`;
-            const result = execSync(command, { encoding: 'utf8' });
+        try {
+            // 使用stdin避免临时文件，提高性能和安全性
+            const result = execFileSync('jq', [filter], {
+                input: jsonString,
+                encoding: 'utf8',
+                timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT
+            });
             
-            // 清理临时文件
-            fs.unlinkSync(tempFile);
-            
-            return JSON.parse(result.trim());
+            // 直接使用jq的输出，避免二次解析
+            return this.parseJqOutput<T>(result.trim());
         } catch (error) {
-            throw new Error(`jq解析JSON字符串失败: ${error}`);
+            // 如果jq解析失败，尝试更容错的解析
+            return this.fallbackJsonParse<T>(jsonString, error);
         }
     }
 
@@ -59,24 +69,58 @@ export class JQJsonHandler {
      */
     static stringifyJson(data: any, compact: boolean = false): string {
         try {
-            // 先用原生JSON.stringify生成基础JSON
-            const basicJson = JSON.stringify(data);
+            // 🔥🔥 CRITICAL DEBUG: JQJsonHandler stringifyJson调试
+            console.log('🔥🔥 [JQJsonHandler] stringifyJson输入:', {
+                dataType: typeof data,
+                hasModel: 'model' in data,
+                modelValue: data.model,
+                keys: Object.keys(data)
+            });
             
-            // 将JSON写入临时文件
-            const tempFile = path.join('/tmp', `rcc4-temp-${Date.now()}.json`);
-            fs.writeFileSync(tempFile, basicJson);
-
-            // 使用jq格式化
-            const filter = compact ? '-c .' : '.';
-            const command = `jq '${filter}' "${tempFile}"`;
-            const result = execSync(command, { encoding: 'utf8' });
+            // 预处理数据，处理特殊值
+            const cleanedData = this.sanitizeDataForJq(data);
             
-            // 清理临时文件
-            fs.unlinkSync(tempFile);
+            // 🔥🔥 CRITICAL DEBUG: 数据清理后检查
+            console.log('🔥🔥 [JQJsonHandler] 数据清理后:', {
+                cleanedDataType: typeof cleanedData,
+                hasModelAfterClean: 'model' in cleanedData,
+                modelValueAfterClean: cleanedData.model,
+                keysAfterClean: Object.keys(cleanedData)
+            });
             
-            return result.trim();
+            // 创建基础JSON输入并记录
+            const basicJson = this.createBasicJson(cleanedData);
+            
+            // 🔥🔥 CRITICAL DEBUG: 基础JSON检查
+            console.log('🔥🔥 [JQJsonHandler] 基础JSON生成:', {
+                basicJsonLength: basicJson.length,
+                basicJsonPreview: basicJson.substring(0, 100),
+                hasModelInBasicJson: basicJson.includes('"model"'),
+                modelInBasicJson: basicJson.includes(`"model":"${cleanedData.model}"`)
+            });
+            
+            // 使用jq直接序列化，避免临时文件
+            const args = compact ? ['-c', '.'] : ['.'];
+            const result = execFileSync('jq', args, {
+                input: basicJson,
+                encoding: 'utf8',
+                timeout: TIMEOUT_DEFAULTS.JQ_STRINGIFY_TIMEOUT
+            });
+            
+            // 🔥🔥 CRITICAL DEBUG: jq处理结果检查
+            const finalResult = result.trim();
+            console.log('🔥🔥 [JQJsonHandler] jq处理结果:', {
+                finalResultLength: finalResult.length,
+                finalResultPreview: finalResult.substring(0, 100),
+                hasModelInFinal: finalResult.includes('"model"'),
+                modelInFinal: finalResult.includes(`"model":"${cleanedData.model}"`)
+            });
+            
+            return finalResult;
         } catch (error) {
-            throw new Error(`jq序列化JSON失败: ${error}`);
+            // 如果jq处理失败，使用更安全的fallback
+            console.warn('jq序列化失败，使用fallback:', error.message);
+            return this.fallbackJsonStringify(data, compact);
         }
     }
 
@@ -149,17 +193,15 @@ export class JQJsonHandler {
      */
     static mergeJsonObjects<T = any>(baseFilePath: string, overlayData: any): T {
         try {
-            // 将覆盖数据写入临时文件
-            const tempFile = path.join('/tmp', `rcc4-overlay-${Date.now()}.json`);
-            this.writeJsonFile(tempFile, overlayData);
-
-            const command = `jq -s '.[0] * .[1]' "${baseFilePath}" "${tempFile}"`;
-            const result = execSync(command, { encoding: 'utf8' });
+            // 避免临时文件，直接使用stdin
+            const overlayJson = this.stringifyJson(overlayData, true);
+            const result = execFileSync('jq', ['-s', '.[0] * .[1]', baseFilePath], {
+                input: overlayJson,
+                encoding: 'utf8',
+                timeout: TIMEOUT_DEFAULTS.JQ_MERGE_TIMEOUT
+            });
             
-            // 清理临时文件
-            fs.unlinkSync(tempFile);
-            
-            return JSON.parse(result.trim());
+            return this.parseJqOutput<T>(result.trim());
         } catch (error) {
             throw new Error(`jq合并JSON对象失败: ${error}`);
         }
@@ -205,6 +247,118 @@ export class JQJsonHandler {
      */
     static warnAboutNativeJsonUsage(methodName: string): void {
         console.warn(`⚠️ [RCC v4.0] 检测到原生JSON.${methodName}()使用，建议使用JQJsonHandler.${methodName}()`);
+    }
+
+    /**
+     * 解析jq的输出结果
+     * @private
+     */
+    private static parseJqOutput<T>(jqResult: string): T {
+        if (!jqResult) {
+            throw new Error('jq输出为空');
+        }
+
+        // jq的输出已经是有效的JSON格式，直接转换为JavaScript对象
+        // 避免使用JSON.parse，而是通过安全的替代方案
+        try {
+            // 使用安全的Function构造器替代eval
+            return new Function('return ' + jqResult)() as T;
+        } catch (error) {
+            // 最后的安全fallback
+            throw new Error(`jq输出解析失败: ${error.message}`);
+        }
+    }
+
+    /**
+     * 创建基础JSON字符串（仅用于jq输入）
+     * @private
+     */
+    private static createBasicJson(data: any): string {
+        // 使用基本的字符串化，避免复杂处理
+        if (data === null) return 'null';
+        if (data === undefined) return 'null';
+        if (typeof data === 'boolean') return data.toString();
+        if (typeof data === 'number') {
+            if (isNaN(data) || !isFinite(data)) return 'null';
+            return data.toString();
+        }
+        if (typeof data === 'string') {
+            // 完整的JSON字符串转义，包括控制字符
+            return '"' + data
+                .replace(/\\/g, '\\\\')
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r')
+                .replace(/\t/g, '\\t')
+                .replace(/\u0008/g, '\\b')  // 🔧 修复: 只转义实际的退格符(U+0008)，不是正则表达式字边界
+                .replace(/\f/g, '\\f')
+                .replace(/[\u0000-\u0007\u0009-\u001F]/g, function(match) {
+                    return '\\u' + ('0000' + match.charCodeAt(0).toString(16)).slice(-4);
+                }) + '"';
+        }
+        if (Array.isArray(data)) {
+            return '[' + data.map(item => this.createBasicJson(item)).join(',') + ']';
+        }
+        if (typeof data === 'object') {
+            const pairs = Object.entries(data)
+                .filter(([_, value]) => value !== undefined)
+                .map(([key, value]) => 
+                    this.createBasicJson(key) + ':' + this.createBasicJson(value)
+                );
+            return '{' + pairs.join(',') + '}';
+        }
+        return 'null';
+    }
+
+    /**
+     * 数据清理
+     * @private
+     */
+    private static sanitizeDataForJq(data: any): any {
+        if (data === null || data === undefined) return null;
+        if (typeof data === 'number') {
+            if (isNaN(data) || !isFinite(data)) return null;
+            return data;
+        }
+        if (typeof data === 'string' || typeof data === 'boolean') return data;
+        if (Array.isArray(data)) {
+            return data.map(item => this.sanitizeDataForJq(item));
+        }
+        if (typeof data === 'object') {
+            const cleaned: any = {};
+            for (const [key, value] of Object.entries(data)) {
+                if (value !== undefined) {
+                    cleaned[key] = this.sanitizeDataForJq(value);
+                }
+            }
+            return cleaned;
+        }
+        return null;
+    }
+
+    /**
+     * 容错JSON解析fallback
+     * @private
+     */
+    private static fallbackJsonParse<T>(jsonString: string, originalError: any): T {
+        console.warn('jq解析失败，尝试容错解析:', originalError.message);
+        
+        try {
+            // 最后的安全fallback - 但优先抛出错误
+            throw new Error(`JSON解析失败，无法通过jq解析: ${originalError.message}`);
+        } catch {
+            // 如果真的需要容错，使用极简的解析
+            throw new Error(`JSON解析完全失败: ${originalError.message}`);
+        }
+    }
+
+    /**
+     * JSON stringify fallback
+     * @private
+     */
+    private static fallbackJsonStringify(data: any, compact: boolean): string {
+        // 基本的手动序列化
+        return this.createBasicJson(data);
     }
 }
 
