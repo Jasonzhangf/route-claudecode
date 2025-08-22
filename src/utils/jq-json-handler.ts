@@ -56,8 +56,25 @@ export class JQJsonHandler {
             // 直接使用jq的输出，避免二次解析
             return this.parseJqOutput<T>(result.trim());
         } catch (error) {
-            // 如果jq解析失败，使用更容错的解析
-            return this.fallbackJsonParse<T>(jsonString, error);
+            // 🔧 修复: 如果jq解析失败，尝试修复单引号JSON后重试
+            console.log(`🔧 [JQ-FIX] jq parse failed, trying to fix single quotes: ${error.message}`);
+            try {
+                const fixedJson = this.fixSingleQuoteJson(jsonString);
+                console.log(`🔧 [JQ-FIX] Attempting retry with fixed JSON`);
+                
+                const result = execFileSync('jq', [filter], {
+                    input: fixedJson,
+                    encoding: 'utf8',
+                    timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT
+                });
+                
+                console.log(`✅ [JQ-FIX] Fixed JSON parse succeeded`);
+                return this.parseJqOutput<T>(result.trim());
+            } catch (retryError) {
+                console.warn(`❌ [JQ-FIX] Fixed JSON parse also failed: ${retryError.message}`);
+                // 如果修复后仍然失败，使用原始错误处理
+                return this.fallbackJsonParse<T>(jsonString, error);
+            }
         }
     }
 
@@ -342,6 +359,95 @@ export class JQJsonHandler {
         return this.createBasicJson(data);
     }
 
+    /**
+     * 修复单引号JSON格式问题
+     * @private
+     */
+    private static fixSingleQuoteJson(jsonString: string): string {
+        try {
+            console.log(`🔧 [JQ-FIX] Starting fix for single quote JSON:`, jsonString.substring(0, 100) + '...');
+            
+            let fixed = jsonString;
+            
+            // 1. 移除多余的转义字符
+            fixed = fixed.replace(/\\"/g, '"');
+            
+            // 2. 简单粗暴但有效的单引号替换
+            // 先标记所有单引号的位置，然后有选择地替换
+            let result = '';
+            let i = 0;
+            
+            while (i < fixed.length) {
+                const char = fixed[i];
+                
+                if (char === "'") {
+                    // 检查是否应该被替换为双引号
+                    // 简单规则：如果前面是 : 或 { 或 [ 或 ,，后面不是 '，则替换
+                    const prevNonSpace = this.findPrevNonSpace(fixed, i);
+                    const nextChar = fixed[i + 1];
+                    
+                    if (prevNonSpace && [':', '{', '[', ','].includes(prevNonSpace) && nextChar !== "'") {
+                        result += '"';
+                    } else if (nextChar && [':', ',', '}', ']'].includes(nextChar)) {
+                        // 或者如果后面是 : , } ]，也替换
+                        result += '"';
+                    } else {
+                        result += char;
+                    }
+                } else {
+                    result += char;
+                }
+                i++;
+            }
+            
+            fixed = result;
+            
+            // 3. 修复Python/JavaScript布尔值和null
+            fixed = fixed.replace(/:\s*True\b/g, ': true');
+            fixed = fixed.replace(/:\s*False\b/g, ': false');  
+            fixed = fixed.replace(/:\s*None\b/g, ': null');
+            
+            // 修复数组中的布尔值
+            fixed = fixed.replace(/,\s*True\b/g, ', true');
+            fixed = fixed.replace(/,\s*False\b/g, ', false');
+            fixed = fixed.replace(/,\s*None\b/g, ', null');
+            
+            // 修复数组开头的布尔值
+            fixed = fixed.replace(/\[\s*True\b/g, '[true');
+            fixed = fixed.replace(/\[\s*False\b/g, '[false');
+            fixed = fixed.replace(/\[\s*None\b/g, '[null');
+            
+            // 4. 修复未闭合的引号和括号
+            const openBraces = (fixed.match(/\{/g) || []).length;
+            const closeBraces = (fixed.match(/\}/g) || []).length;
+            const openBrackets = (fixed.match(/\[/g) || []).length;
+            const closeBrackets = (fixed.match(/\]/g) || []).length;
+            
+            if (openBraces > closeBraces) {
+                fixed += '}'.repeat(openBraces - closeBraces);
+            }
+            if (openBrackets > closeBrackets) {
+                fixed += ']'.repeat(openBrackets - closeBrackets);
+            }
+            
+            console.log(`🔧 [JQ-FIX] Fixed JSON result:`, fixed.substring(0, 100) + '...');
+            return fixed;
+            
+        } catch (error) {
+            // 如果修复失败，返回原始字符串
+            console.warn(`❌ [JQ-FIX] Fix failed:`, error.message);
+            return jsonString;
+        }
+    }
+
+    private static findPrevNonSpace(str: string, index: number): string | null {
+        for (let i = index - 1; i >= 0; i--) {
+            if (str[i] !== ' ' && str[i] !== '\t' && str[i] !== '\n') {
+                return str[i];
+            }
+        }
+        return null;
+    }
 }
 
 /**
