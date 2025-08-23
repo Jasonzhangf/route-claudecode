@@ -564,31 +564,52 @@ export class CommandExecutor implements ICommandExecutor {
   private getEnabledProviders(config: any): any[] {
     const providers: any[] = [];
 
-    // 添加Server-Compatibility Providers
-    if (config.serverCompatibilityProviders) {
-      for (const [name, provider] of Object.entries(config.serverCompatibilityProviders)) {
-        if ((provider as any).enabled) {
-          providers.push({
-            name,
-            type: 'server-compatibility',
-            ...provider
-          });
+    // 新配置格式：Providers数组
+    if (config.Providers && Array.isArray(config.Providers)) {
+      for (const provider of config.Providers) {
+        // 所有在Providers数组中的provider都被认为是启用的
+        providers.push({
+          ...provider,
+          name: provider.name,
+          type: provider.protocol || 'openai', // 默认使用openai协议
+          api_base_url: provider.api_base_url,
+          api_key: provider.api_key,
+          models: provider.models || [],
+          serverCompatibility: provider.serverCompatibility,
+          priority: provider.priority || 999
+        });
+      }
+    } else {
+      // 旧配置格式兼容性支持
+      // 添加Server-Compatibility Providers
+      if (config.serverCompatibilityProviders) {
+        for (const [name, provider] of Object.entries(config.serverCompatibilityProviders)) {
+          if ((provider as any).enabled) {
+            providers.push({
+              ...(provider as any),
+              name,
+              type: 'server-compatibility'
+            });
+          }
+        }
+      }
+
+      // 添加Standard Providers
+      if (config.standardProviders) {
+        for (const [name, provider] of Object.entries(config.standardProviders)) {
+          if ((provider as any).enabled) {
+            providers.push({
+              ...(provider as any),
+              name,
+              type: 'standard'
+            });
+          }
         }
       }
     }
 
-    // 添加Standard Providers
-    if (config.standardProviders) {
-      for (const [name, provider] of Object.entries(config.standardProviders)) {
-        if ((provider as any).enabled) {
-          providers.push({
-            name,
-            type: 'standard',
-            ...provider
-          });
-        }
-      }
-    }
+    // 按优先级排序
+    providers.sort((a, b) => (a.priority || 999) - (b.priority || 999));
 
     return providers;
   }
@@ -600,17 +621,33 @@ export class CommandExecutor implements ICommandExecutor {
     console.log(`\n🔄 Updating models for provider: ${provider.name} (${provider.type})`);
 
     try {
-      // 根据Provider类型处理
-      switch (provider.type) {
-        case 'openai':
-          await this.updateOpenAIModels(provider, options, config, configPath);
-          break;
-        case 'gemini':
-          await this.updateGeminiModels(provider, options, config, configPath);
-          break;
-        default:
-          console.log(`⚠️  Unsupported provider type: ${provider.type}`);
-          throw new Error(`Unsupported provider type: ${provider.type}`);
+      // 根据Provider类型和名称处理
+      const providerType = provider.type || 'openai';
+      
+      if (providerType === 'openai' || provider.protocol === 'openai') {
+        // 根据provider名称选择不同的处理方式
+        switch (provider.name.toLowerCase()) {
+          case 'qwen':
+            await this.updateQwenModels(provider, options, config, configPath);
+            break;
+          case 'shuaihong':
+            await this.updateShuaihongModels(provider, options, config, configPath);
+            break;
+          case 'modelscope':
+            await this.updateModelScopeModels(provider, options, config, configPath);
+            break;
+          case 'lmstudio':
+            await this.updateLMStudioModels(provider, options, config, configPath);
+            break;
+          default:
+            await this.updateGenericOpenAIModels(provider, options, config, configPath);
+            break;
+        }
+      } else if (providerType === 'gemini') {
+        await this.updateGeminiModels(provider, options, config, configPath);
+      } else {
+        console.log(`⚠️  Unsupported provider type: ${providerType}`);
+        throw new Error(`Unsupported provider type: ${providerType}`);
       }
     } catch (error) {
       console.error(`❌ Failed to update models for provider ${provider.name}:`, error instanceof Error ? error.message : 'Unknown error');
@@ -622,9 +659,112 @@ export class CommandExecutor implements ICommandExecutor {
   }
 
   /**
-   * 更新OpenAI模型
+   * 更新Qwen模型
    */
-  private async updateOpenAIModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+  private async updateQwenModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    console.log(`🔍 Updating Qwen models for provider: ${provider.name}`);
+    
+    const qwenModels = [
+      'qwen3-coder-plus',
+      'qwen3-coder-flash',
+      'qwen-max',
+      'qwen-plus',
+      'qwen-turbo',
+      'qwen-long',
+      'qwen2.5-72b-instruct',
+      'qwen2.5-32b-instruct',
+      'qwen2.5-14b-instruct',
+      'qwen2.5-7b-instruct',
+      'qwen2.5-coder-32b-instruct',
+      'qwen2.5-coder-14b-instruct',
+      'qwen2.5-coder-7b-instruct',
+      'qwq-32b-preview'
+    ];
+
+    const modelInfo = qwenModels.map(model => ({
+      id: model,
+      maxTokens: 262144, // 256k tokens for Qwen models
+      supported: true
+    }));
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, modelInfo, options);
+  }
+
+  /**
+   * 更新Shuaihong模型
+   */
+  private async updateShuaihongModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    console.log(`🔍 Updating Shuaihong models for provider: ${provider.name}`);
+    
+    const shuaihongModels = [
+      'gemini-2.5-pro',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'claude-3-sonnet',
+      'claude-3-haiku',
+      'claude-3-opus'
+    ];
+
+    const modelInfo = shuaihongModels.map(model => ({
+      id: model,
+      maxTokens: 262144, // 256k tokens for Shuaihong models
+      supported: true
+    }));
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, modelInfo, options);
+  }
+
+  /**
+   * 更新ModelScope模型
+   */
+  private async updateModelScopeModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    console.log(`🔍 Updating ModelScope models for provider: ${provider.name}`);
+    
+    const modelscopeModels = [
+      'qwen3-480b',
+      'qwen2.5-72b-instruct',
+      'qwen2.5-32b-instruct', 
+      'llama3.1-405b-instruct',
+      'llama3.1-70b-instruct',
+      'deepseek-v2.5-chat'
+    ];
+
+    const modelInfo = modelscopeModels.map(model => ({
+      id: model,
+      maxTokens: 65536, // 64k tokens for ModelScope models
+      supported: true
+    }));
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, modelInfo, options);
+  }
+
+  /**
+   * 更新LM Studio模型
+   */
+  private async updateLMStudioModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    console.log(`🔍 Updating LM Studio models for provider: ${provider.name}`);
+    
+    const lmstudioModels = [
+      'gpt-oss-20b-mlx',
+      'llama-3.1-8b',
+      'qwen2.5-7b-instruct',
+      'codellama-34b',
+      'deepseek-coder-33b'
+    ];
+
+    const modelInfo = lmstudioModels.map(model => ({
+      id: model,
+      maxTokens: 262144, // 256k tokens for LM Studio models
+      supported: true
+    }));
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, modelInfo, options);
+  }
+
+  /**
+   * 更新通用OpenAI模型
+   */
+  private async updateGenericOpenAIModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
     console.log(`🔍 Detecting OpenAI models for provider: ${provider.name}`);
     
     try {
@@ -845,7 +985,68 @@ export class CommandExecutor implements ICommandExecutor {
   }
   
   /**
-   * 更新Provider配置
+   * 更新Provider配置中的模型列表（新配置格式）
+   */
+  private async updateProviderConfigModels(config: any, configPath: string, providerName: string, modelInfo: any[], options: any): Promise<void> {
+    try {
+      console.log(`💾 Updating models for provider ${providerName}...`);
+      
+      if (options.dryRun) {
+        console.log('📝 Dry run mode - showing what would be updated:');
+        console.log(`   Provider: ${providerName}`);
+        console.log(`   Models: ${modelInfo.map(m => m.id).join(', ')}`);
+        console.log(`   Max tokens: ${modelInfo[0]?.maxTokens || 'N/A'}`);
+        return;
+      }
+
+      // 读取原始配置文件内容
+      const fs = require('fs');
+      const rawConfig = fs.readFileSync(configPath, 'utf8');
+      
+      // 解析配置文件
+      const parsedConfig = JQJsonHandler.parseJsonString(rawConfig);
+      
+      // 更新Providers数组中对应provider的models列表
+      let providerUpdated = false;
+      if (parsedConfig.Providers && Array.isArray(parsedConfig.Providers)) {
+        for (const provider of parsedConfig.Providers) {
+          if (provider.name === providerName) {
+            provider.models = modelInfo.map(m => m.id);
+            providerUpdated = true;
+            console.log(`✅ Updated ${modelInfo.length} models for provider ${providerName}`);
+            break;
+          }
+        }
+      }
+      
+      // 检查是否找到了Provider
+      if (!providerUpdated) {
+        throw new Error(`Provider '${providerName}' not found in configuration`);
+      }
+      
+      // 写回配置文件
+      const updatedConfig = JQJsonHandler.stringifyJson(parsedConfig, true);
+      fs.writeFileSync(configPath, updatedConfig, 'utf8');
+      
+      console.log(`✅ Configuration file updated: ${configPath}`);
+      
+      if (options.verbose) {
+        console.log(`📋 Updated models: ${modelInfo.map(m => `${m.id}(${m.maxTokens})`).join(', ')}`);
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to update configuration file:`, error instanceof Error ? error.message : 'Unknown error');
+      if (error instanceof Error && error.message.includes('ENOENT')) {
+        console.error('   Please check if the configuration file exists and is accessible');
+      } else if (error instanceof Error && error.message.includes('EACCES')) {
+        console.error('   Please check if you have write permissions for the configuration file');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 更新Provider配置（旧格式兼容）
    */
   private async updateProviderConfig(config: any, configPath: string, providerName: string, modelInfo: any[]): Promise<void> {
     try {

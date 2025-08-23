@@ -14,6 +14,7 @@ import { secureLogger } from '../utils/secure-logger';
 export interface UserConfig {
   Providers: Array<{
     name: string;
+    priority?: number; // 新增：Provider优先级
     protocol?: string; // 新统一格式：协议类型，自动决定transformer
     api_base_url: string;
     api_key: string;
@@ -29,7 +30,11 @@ export interface UserConfig {
       use?: string[];
     };
   }>;
-  Router: Record<string, string>; // modelType -> "provider,model"
+  // 支持多provider路由格式，如: "qwen,model1;shuaihong,model2"
+  router?: Record<string, string>; // virtualModel -> "provider1,model1;provider2,model2;..."
+  Router?: Record<string, string>; // 向后兼容大写字段
+  // 可选的安全备用路由配置
+  security?: Record<string, string>; // virtualModel -> "provider,model"
   blacklistSettings?: {
     timeout429?: number;
     timeoutError?: number;
