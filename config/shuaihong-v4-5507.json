@@ -7,7 +7,7 @@
       "name": "shuaihong",
       "protocol": "openai",
       "api_base_url": "https://ai.shuaihong.fun/v1/chat/completions",
-      "api_key": "sk-shuaihong-test-key",
+      "api_key": "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl",
       "models": ["gpt-4o", "gpt-4o-mini", "claude-3-sonnet"],
       "serverCompatibility": {
         "use": "passthrough",

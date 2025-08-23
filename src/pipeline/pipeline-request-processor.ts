@@ -736,19 +736,25 @@ export class PipelineRequestProcessor extends EventEmitter {
     const finalHeaders = { ...defaultHeaders, ...customHeaders };
 
     // 🔥🔥 记录HTTP头部配置
+    // 🔧 修复: 设置Content-Length头部，防止大型JSON请求被截断
+    const bodyBuffer = Buffer.from(serializedBody, 'utf8');
+    finalHeaders['Content-Length'] = bodyBuffer.length.toString();
+
     secureLogger.info('🔥🔥 HTTP头部构建完成', {
       requestId: context.requestId,
       hasCustomHeaders: Object.keys(customHeaders).length > 0,
       customHeaderKeys: Object.keys(customHeaders),
       finalHeaderKeys: Object.keys(finalHeaders),
       userAgent: finalHeaders['User-Agent'],
-      hasAuth: !!finalHeaders['Authorization']
+      hasAuth: !!finalHeaders['Authorization'],
+      contentLength: bodyBuffer.length
     });
 
     const httpOptions = {
       method: 'POST',
       headers: finalHeaders,
       body: serializedBody,
+      bodyBuffer: bodyBuffer, // 传递Buffer供HTTP请求使用
       timeout,
     };
 
@@ -964,8 +970,10 @@ export class PipelineRequestProcessor extends EventEmitter {
           reject(timeoutError);
         });
 
-        // 写入请求体
-        if (options.body) {
+        // 🔧 修复: 使用Buffer写入请求体，确保大型JSON正确传输
+        if (options.bodyBuffer) {
+          req.write(options.bodyBuffer);
+        } else if (options.body) {
           req.write(options.body);
         }
         

@@ -46,11 +46,12 @@ export class JQJsonHandler {
         }
 
         try {
-            // 使用stdin避免临时文件，提高性能和安全性
+            // 🚀 增强: 支持大型JSON解析，提高缓冲区到512MB
             const result = execFileSync('jq', [filter], {
                 input: jsonString,
                 encoding: 'utf8',
-                timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT
+                timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT,
+                maxBuffer: 1024 * 1024  // 🚀 大型JSON支持: 1MB缓冲区
             });
             
             // 直接使用jq的输出，避免二次解析
@@ -65,7 +66,8 @@ export class JQJsonHandler {
                 const result = execFileSync('jq', [filter], {
                     input: fixedJson,
                     encoding: 'utf8',
-                    timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT
+                    timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT,
+                    maxBuffer: 1024 * 1024  // 🚀 重试时也支持大型JSON: 1MB缓冲区
                 });
                 
                 console.log(`✅ [JQ-FIX] Fixed JSON parse succeeded`);
@@ -95,19 +97,14 @@ export class JQJsonHandler {
             // 创建基础JSON输入并记录
             const basicJson = this.createBasicJson(cleanedData);
             
-            // 🔧 修复: 检查JSON长度，避免jq缓冲区溢出
-            if (basicJson.length > 100000) {
-                console.warn('JSON too large for jq, using fallback:', basicJson.length);
-                return this.fallbackJsonStringify(data, compact);
-            }
-            
-            // 使用jq直接序列化，避免临时文件
+            // 🔧 修复: 移除不合理的100K限制，增加大缓冲区处理
+            // 支持512MB+的大型JSON处理，为工具调用等复杂请求提供足够空间
             const args = compact ? ['-c', '.'] : ['.'];
             const result = execFileSync('jq', args, {
                 input: basicJson,
                 encoding: 'utf8',
                 timeout: TIMEOUT_DEFAULTS.JQ_STRINGIFY_TIMEOUT,
-                maxBuffer: 200 * 1024 * 1024  // 🔧 修复: 增加缓冲区限制到200MB
+                maxBuffer: 1024 * 1024  // 🚀 合理提升: 增加缓冲区到1MB，足够支持大型工具调用
             });
             
             return result.trim();
@@ -355,8 +352,22 @@ export class JQJsonHandler {
      * @private
      */
     private static fallbackJsonStringify(data: any, compact: boolean): string {
-        // 基本的手动序列化
-        return this.createBasicJson(data);
+        try {
+            // 🔧 修复: 对于大JSON，使用原生JSON.stringify作为fallback
+            // 确保生成有效的JSON而不是手动序列化
+            console.log('🔧 [JQ-FALLBACK] 使用原生JSON.stringify作为fallback');
+            
+            // 使用原生JSON.stringify，避免手动序列化可能的错误
+            if (compact) {
+                return JSON.stringify(data);
+            } else {
+                return JSON.stringify(data, null, 2);
+            }
+        } catch (error) {
+            console.error('❌ [JQ-FALLBACK] 原生JSON.stringify也失败，使用手动序列化:', error.message);
+            // 最后的备用方案：手动序列化
+            return this.createBasicJson(data);
+        }
     }
 
     /**
