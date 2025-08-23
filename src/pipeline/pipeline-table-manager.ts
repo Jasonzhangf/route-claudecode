@@ -11,6 +11,8 @@
 
 import { secureLogger } from '../utils/secure-logger';
 import { MergedConfig } from '../config/config-reader';
+import { ExpandedRouting, ExpandedProvider } from '../config/provider-expander';
+import { PipelineError } from '../types/error';
 import { 
   DEFAULT_ENDPOINTS,
   DEFAULT_TIMEOUTS,
@@ -18,6 +20,7 @@ import {
   PROVIDER_NAMES,
   COMPATIBILITY_TAGS
 } from '../constants/compatibility-constants';
+import { TIMEOUT_DEFAULTS } from '../constants/timeout-defaults';
 
 export interface RoutingTable {
   configName: string;
@@ -62,7 +65,11 @@ export interface PipelineDefinition {
   provider: string;
   targetModel: string;
   apiKeyIndex: number;
+  apiKey: string;
   endpoint: string;
+  priority: number;
+  isSecurityEnhanced: boolean;
+  category: string;
   status: string;
   createdAt: string;
   handshakeTime: number;
@@ -131,47 +138,241 @@ export class PipelineTableManager {
    * 生成Runtime流水线路由表
    */
   private async generateRuntimeRoutingTable(): Promise<RoutingTable> {
-    const providers = this.config.providers || [];
-    
-    if (providers.length === 0) {
-      throw new Error('No providers configured in user configuration');
-    }
+    try {
+      const allPipelines: PipelineDefinition[] = [];
+      const pipelinesGroupedByCategory: Record<string, PipelineDefinition[]> = {};
 
-    const allPipelines: PipelineDefinition[] = [];
-    const pipelinesGroupedByVirtualModel: Record<string, PipelineDefinition[]> = {};
+      // 优先使用expandedRouting生成精确的流水线配置
+      if (this.config.expandedRouting) {
+        secureLogger.info('使用展开后的路由配置生成流水线', {
+          primaryProviders: this.config.expandedRouting.primaryProviders.length,
+          securityProviders: this.config.expandedRouting.securityProviders.length
+        });
 
-    // 为每个provider生成流水线定义
-    for (const provider of providers) {
-      const providerPipelines = await this.generatePipelinesForProvider(provider);
-      allPipelines.push(...providerPipelines);
-
-      // 按虚拟模型分组
-      for (const pipeline of providerPipelines) {
-        const virtualModel = pipeline.virtualModel;
-        if (!pipelinesGroupedByVirtualModel[virtualModel]) {
-          pipelinesGroupedByVirtualModel[virtualModel] = [];
+        // 生成主要流水线
+        for (const expandedProvider of this.config.expandedRouting.primaryProviders) {
+          const pipelines = await this.generatePipelinesFromExpandedProvider(expandedProvider);
+          allPipelines.push(...pipelines);
         }
-        pipelinesGroupedByVirtualModel[virtualModel].push(pipeline);
+
+        // 生成安全增强流水线
+        for (const expandedProvider of this.config.expandedRouting.securityProviders) {
+          const pipelines = await this.generatePipelinesFromExpandedProvider(expandedProvider);
+          allPipelines.push(...pipelines);
+        }
+      } else {
+        // 回退到传统的provider配置
+        secureLogger.info('使用传统Provider配置生成流水线');
+        const providers = this.config.providers || [];
+        
+        if (providers.length === 0) {
+          throw new PipelineError('No providers configured in user configuration', {
+            configProviders: providers.length,
+            hasExpandedRouting: false
+          });
+        }
+
+        for (const provider of providers) {
+          const providerPipelines = await this.generatePipelinesForProvider(provider);
+          allPipelines.push(...providerPipelines);
+        }
       }
+
+      // 按类别分组流水线
+      for (const pipeline of allPipelines) {
+        const category = pipeline.category;
+        if (!pipelinesGroupedByCategory[category]) {
+          pipelinesGroupedByCategory[category] = [];
+        }
+        pipelinesGroupedByCategory[category].push(pipeline);
+      }
+
+      // 按优先级排序每个类别的流水线
+      Object.keys(pipelinesGroupedByCategory).forEach(category => {
+        pipelinesGroupedByCategory[category].sort((a, b) => a.priority - b.priority);
+      });
+
+      const routingTable: RoutingTable = {
+        configName: 'runtime-generated',
+        configFile: 'runtime-from-config',
+        generatedAt: new Date().toISOString(),
+        totalPipelines: allPipelines.length,
+        pipelinesGroupedByVirtualModel: pipelinesGroupedByCategory,
+        allPipelines: allPipelines.sort((a, b) => a.priority - b.priority),
+      };
+
+      secureLogger.info('Runtime路由表生成完成', {
+        totalPipelines: allPipelines.length,
+        categoriesCount: Object.keys(pipelinesGroupedByCategory).length,
+        categories: Object.keys(pipelinesGroupedByCategory),
+        hasExpandedRouting: !!this.config.expandedRouting
+      });
+
+      return routingTable;
+    } catch (error) {
+      const pipelineError = new PipelineError('Pipeline路由表生成失败', {
+        originalError: error,
+        configProviders: this.config.providers?.length || 0,
+        hasExpandedRouting: !!this.config.expandedRouting
+      });
+      secureLogger.error('❌ Pipeline routing table generation failed', { error: pipelineError });
+      throw pipelineError;
     }
+  }
 
-    const routingTable: RoutingTable = {
-      configName: 'runtime-generated',
-      configFile: 'runtime-from-config',
-      generatedAt: new Date().toISOString(),
-      totalPipelines: allPipelines.length,
-      pipelinesGroupedByVirtualModel,
-      allPipelines,
-    };
+  /**
+   * 从展开的Provider配置生成流水线
+   */
+  private async generatePipelinesFromExpandedProvider(expandedProvider: ExpandedProvider): Promise<PipelineDefinition[]> {
+    try {
+      const pipelines: PipelineDefinition[] = [];
+      const originalProvider = expandedProvider.originalProvider;
+      
+      // 处理多key配置：如果有多个API key，为每个key生成独立pipeline
+      const apiKeys = this.extractApiKeysFromProvider(originalProvider);
+      
+      for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+        const apiKey = apiKeys[keyIndex];
+        
+        const pipeline = await this.createEnhancedPipelineDefinition(
+          expandedProvider,
+          keyIndex,
+          apiKey
+        );
+        
+        pipelines.push(pipeline);
+      }
+      
+      secureLogger.debug('从展开Provider生成流水线', {
+        providerName: expandedProvider.name,
+        model: expandedProvider.model,
+        category: expandedProvider.category,
+        priority: expandedProvider.priority,
+        isSecurityEnhanced: expandedProvider.isSecurityEnhanced,
+        pipelineCount: pipelines.length
+      });
+      
+      return pipelines;
+    } catch (error) {
+      const pipelineError = new PipelineError('从展开Provider生成流水线失败', {
+        originalError: error,
+        expandedProvider: {
+          name: expandedProvider.name,
+          model: expandedProvider.model,
+          category: expandedProvider.category
+        }
+      });
+      secureLogger.error('❌ Failed to generate pipelines from expanded provider', { error: pipelineError });
+      throw pipelineError;
+    }
+  }
 
-    secureLogger.debug('Runtime路由表生成详情', {
-      totalProviders: providers.length,
-      totalPipelines: allPipelines.length,
-      virtualModelCount: Object.keys(pipelinesGroupedByVirtualModel).length,
-      virtualModels: Object.keys(pipelinesGroupedByVirtualModel),
-    });
+  /**
+   * 提取Provider的API密钥列表
+   */
+  private extractApiKeysFromProvider(provider: any): string[] {
+    // 支持多种API key配置格式
+    if (provider.api_keys && Array.isArray(provider.api_keys)) {
+      return provider.api_keys;
+    }
+    
+    if (provider.apiKeys && Array.isArray(provider.apiKeys)) {
+      return provider.apiKeys;
+    }
+    
+    // 单个API key的情况
+    if (provider.api_key) {
+      return [provider.api_key];
+    }
+    
+    if (provider.apiKey) {
+      return [provider.apiKey];
+    }
+    
+    // 默认使用provider名称作为key引用
+    return [provider.name || 'default-key'];
+  }
 
-    return routingTable;
+  /**
+   * 创建增强的流水线定义（支持展开配置）
+   */
+  private async createEnhancedPipelineDefinition(
+    expandedProvider: ExpandedProvider,
+    apiKeyIndex: number,
+    apiKey: string
+  ): Promise<PipelineDefinition> {
+    try {
+      // 生成流水线ID - 包含优先级和多key信息
+      const keyTag = apiKeyIndex === 0 ? 'primary' : `key${apiKeyIndex}`;
+      const securityTag = expandedProvider.isSecurityEnhanced ? 'security' : 'main';
+      const pipelineId = `pipeline-${expandedProvider.category}-${expandedProvider.name}-${keyTag}-${expandedProvider.model}-${securityTag}`;
+      
+      // 生成架构配置
+      const architecture = this.createPipelineArchitecture(expandedProvider.originalProvider, expandedProvider.model);
+      
+      // 计算实际的优先级（考虑多key的情况）
+      const adjustedPriority = expandedProvider.priority * 100 + apiKeyIndex;
+      
+      const pipeline: PipelineDefinition = {
+        pipelineId,
+        virtualModel: expandedProvider.virtualModel,
+        provider: expandedProvider.name,
+        targetModel: expandedProvider.model,
+        apiKeyIndex,
+        apiKey,
+        endpoint: expandedProvider.originalProvider.api_base_url || this.getDefaultEndpointForProvider(expandedProvider.name),
+        priority: adjustedPriority,
+        isSecurityEnhanced: expandedProvider.isSecurityEnhanced,
+        category: expandedProvider.category,
+        status: 'runtime-expanded',
+        createdAt: new Date().toISOString(),
+        handshakeTime: this.calculateHandshakeTime(expandedProvider.originalProvider),
+        architecture,
+      };
+
+      secureLogger.debug('创建增强流水线定义', {
+        pipelineId,
+        category: pipeline.category,
+        provider: pipeline.provider,
+        model: pipeline.targetModel,
+        priority: pipeline.priority,
+        isSecurityEnhanced: pipeline.isSecurityEnhanced,
+        apiKeyIndex,
+        endpoint: pipeline.endpoint,
+      });
+
+      return pipeline;
+    } catch (error) {
+      const pipelineError = new PipelineError('创建增强流水线定义失败', {
+        originalError: error,
+        expandedProvider: {
+          name: expandedProvider.name,
+          model: expandedProvider.model,
+          category: expandedProvider.category,
+          priority: expandedProvider.priority
+        },
+        apiKeyIndex
+      });
+      secureLogger.error('❌ Failed to create enhanced pipeline definition', { error: pipelineError });
+      throw pipelineError;
+    }
+  }
+
+  /**
+   * 计算连接握手时间
+   */
+  private calculateHandshakeTime(provider: any): number {
+    // 根据provider类型和配置计算实际的握手时间
+    const baseTime = 2; // 基础握手时间（秒）
+    
+    // 本地provider握手更快
+    if (provider.api_base_url && provider.api_base_url.includes('localhost')) {
+      return baseTime * 0.5;
+    }
+    
+    // 远程provider根据延迟预估调整
+    const timeout = provider.timeout || TIMEOUT_DEFAULTS.REQUEST_TIMEOUT;
+    return Math.min(baseTime + (timeout / 10000), 10); // 最多10秒
   }
 
   /**
@@ -212,7 +413,7 @@ export class PipelineTableManager {
   }
 
   /**
-   * 创建单个流水线定义
+   * 创建单个流水线定义（传统方式）
    */
   private async createPipelineDefinition(
     provider: any,
@@ -220,68 +421,84 @@ export class PipelineTableManager {
     apiKeyIndex: number,
     apiKey: string
   ): Promise<PipelineDefinition> {
-    // 生成流水线ID
-    const pipelineId = `${provider.name}-${targetModel}-key${apiKeyIndex}`;
-    
-    // 确定虚拟模型名称
-    const virtualModel = this.determineVirtualModel(provider, targetModel);
-    
-    // 生成架构配置
-    const architecture = this.createPipelineArchitecture(provider, targetModel);
-    
-    // 计算握手时间（模拟）
-    const handshakeTime = Math.floor(Math.random() * 5) + 1;
-    
-    const pipeline: PipelineDefinition = {
-      pipelineId,
-      virtualModel,
-      provider: provider.name,
-      targetModel,
-      apiKeyIndex,
-      endpoint: provider.api_base_url || this.getDefaultEndpointForProvider(provider.name),
-      status: 'runtime',
-      createdAt: new Date().toISOString(),
-      handshakeTime,
-      architecture,
-    };
+    try {
+      // 生成流水线ID
+      const pipelineId = `${provider.name}-${targetModel}-key${apiKeyIndex}`;
+      
+      // 确定路由名称
+      const routeName = this.determineRouteName(provider, targetModel);
+      
+      // 生成架构配置
+      const architecture = this.createPipelineArchitecture(provider, targetModel);
+      
+      // 计算实际握手时间
+      const handshakeTime = this.calculateHandshakeTime(provider);
+      
+      const pipeline: PipelineDefinition = {
+        pipelineId,
+        virtualModel: routeName,
+        provider: provider.name,
+        targetModel,
+        apiKeyIndex,
+        apiKey,
+        endpoint: provider.api_base_url || this.getDefaultEndpointForProvider(provider.name),
+        priority: (provider.priority || 1) * 100 + apiKeyIndex,
+        isSecurityEnhanced: false,
+        category: routeName,
+        status: 'runtime-legacy',
+        createdAt: new Date().toISOString(),
+        handshakeTime,
+        architecture,
+      };
 
-    secureLogger.debug('创建流水线定义', {
-      pipelineId,
-      virtualModel,
-      provider: provider.name,
-      targetModel,
-      endpoint: pipeline.endpoint,
-    });
+      secureLogger.debug('创建传统流水线定义', {
+        pipelineId,
+        routeName,
+        provider: provider.name,
+        targetModel,
+        priority: pipeline.priority,
+        endpoint: pipeline.endpoint,
+      });
 
-    return pipeline;
+      return pipeline;
+    } catch (error) {
+      const pipelineError = new PipelineError('创建流水线定义失败', {
+        originalError: error,
+        provider: provider.name,
+        targetModel,
+        apiKeyIndex
+      });
+      secureLogger.error('❌ Failed to create pipeline definition', { error: pipelineError });
+      throw pipelineError;
+    }
   }
 
   /**
-   * 确定虚拟模型名称 - 基于Router配置而非硬编码
+   * 确定路由名称 - 基于Router配置而非硬编码
    */
-  private determineVirtualModel(provider: any, targetModel: string): string {
-    // 🔧 关键修复：使用Router配置来确定虚拟模型名称
-    // 扫描config中的router配置，找到指向当前provider+model组合的虚拟模型
+  private determineRouteName(provider: any, targetModel: string): string {
+    // 🔧 关键修复：使用Router配置来确定路由名称
+    // 扫描config中的router配置，找到指向当前provider+model组合的路由名称
     
     // 如果有MergedConfig的router配置，使用它
     if (this.config.router) {
-      for (const [virtualModel, routingRule] of Object.entries(this.config.router)) {
+      for (const [routeName, routingRule] of Object.entries(this.config.router)) {
         if (typeof routingRule === 'string' && routingRule.includes(',')) {
           const [configProvider, configModel] = routingRule.split(',');
           if (configProvider.trim() === provider.name && configModel.trim() === targetModel) {
-            return virtualModel;
+            return routeName;
           }
         }
       }
     }
     
-    // 如果provider有virtualModelMapping配置，使用它
-    if (provider.virtualModelMapping && provider.virtualModelMapping[targetModel]) {
-      return provider.virtualModelMapping[targetModel];
+    // 如果provider有routeMapping配置，使用它
+    if (provider.routeMapping && provider.routeMapping[targetModel]) {
+      return provider.routeMapping[targetModel];
     }
     
     // 🔧 最终回退：使用default而不是provider名称
-    // 这与VirtualModelMapper的默认行为一致
+    // 这与RouteMapper的默认行为一致
     return 'default';
   }
 
