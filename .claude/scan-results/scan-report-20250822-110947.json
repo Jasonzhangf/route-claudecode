@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-22 11:09:47",
+  "scanned_file": "/tmp/test-clean-project/src/example.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

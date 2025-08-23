@@ -10,7 +10,7 @@ set -e
 DEFAULT_PORT="5509"
 DEFAULT_API_KEY="rcc4-proxy-key"
 DEFAULT_CONFIG="/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-v4-5509-demo1-enhanced.json"
-TEST_COMMAND="请列出本地文件"
+TEST_COMMAND="列出本目录中所有文件夹"
 
 # 配置文件路径说明
 CONFIG_PATH_INFO() {
@@ -20,8 +20,9 @@ CONFIG_PATH_INFO() {
     echo ""
     echo "🔧 可用配置文件:"
     echo "   • LM Studio (端口5506): /Users/fanzhang/.route-claudecode/config/v4/single-provider/lmstudio-v4-5506-demo1-enhanced.json"
-    echo "   • ModelScope (端口5507): /Users/fanzhang/.route-claudecode/config/v4/single-provider/shuaihong-v4-5507-demo1-enhanced.json" 
-    echo "   • ShuaiHong (端口5508): /Users/fanzhang/.route-claudecode/config/v4/single-provider/modelscope-v4-5508-demo1-enhanced.json"
+    echo "   • ShuaiHong (端口5507): /Users/fanzhang/.route-claudecode/config/v4/single-provider/shuaihong-v4-5507-demo1-enhanced.json"
+    echo "   • ModelScope (端口5508): /Users/fanzhang/.route-claudecode/config/v4/single-provider/modelscope-v4-5508-demo1-enhanced.json"
+    echo "   • Qwen (端口5509): /Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-v4-5509-demo1-enhanced.json"
     echo ""
     echo "💡 修改配置方法:"
     echo "   1. 编辑此脚本文件，修改DEFAULT_CONFIG变量"

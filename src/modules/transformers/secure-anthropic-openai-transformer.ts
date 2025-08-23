@@ -359,6 +359,24 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       console.log('🔥 [TRANSFORMER DEBUG] Has tool_result content:', hasToolResult);
     }
     console.log('🔥🔥🔥 [TRANSFORMER DEBUG] Starting transformation...');
+    
+    // 🔧 Simple debug - avoid complex operations that might fail
+    console.log('🔥 [TRANSFORMER DEBUG] Input type check:', typeof input);
+    console.log('🔥 [TRANSFORMER DEBUG] Input not null:', input !== null && input !== undefined);
+    
+    if (input && typeof input === 'object') {
+      try {
+        const inputKeys = Object.keys(input);
+        console.log('🔥 [TRANSFORMER DEBUG] Input keys:', inputKeys);
+        console.log('🔥 [TRANSFORMER DEBUG] Has tools field:', inputKeys.includes('tools'));
+        if (inputKeys.includes('tools')) {
+          console.log('🔥 [TRANSFORMER DEBUG] Tools type:', typeof (input as any).tools);
+          console.log('🔥 [TRANSFORMER DEBUG] Tools array:', Array.isArray((input as any).tools));
+        }
+      } catch (e) {
+        console.error('🚨 [TRANSFORMER DEBUG] Key extraction failed:', e.message);
+      }
+    }
 
     const result = this.performTransformation(input);
     
@@ -375,21 +393,36 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   // 私有安全方法
   // ============================================================================
 
-  private async performTransformation(input: unknown): Promise<OpenAIRequest | AnthropicResponse> {
-    if (this.isAnthropicRequest(input)) {
-      return this.transformAnthropicToOpenAI(input as AnthropicRequest);
-    } else if (this.isOpenAIResponse(input)) {
-      return this.transformOpenAIToAnthropic(input as OpenAIResponse);
-    } else {
-      throw new TransformerValidationError(
-        'Unsupported input format',
-        ['Input must be valid Anthropic request or OpenAI response'],
-        { inputType: typeof input }
-      );
+  private performTransformation(input: unknown): OpenAIRequest | AnthropicResponse {
+    console.log('🔥🔥 [TRANSFORMER PERFORM] performTransformation called!');
+    try {
+      console.log('🔥 [TRANSFORMER PERFORM] Checking input type...');
+      if (this.isAnthropicRequest(input)) {
+        console.log('🔥 [TRANSFORMER PERFORM] Detected Anthropic request, calling transformAnthropicToOpenAI');
+        return this.transformAnthropicToOpenAI(input as AnthropicRequest);
+      } else if (this.isOpenAIResponse(input)) {
+        console.log('🔥 [TRANSFORMER PERFORM] Detected OpenAI response, calling transformOpenAIToAnthropic');
+        return this.transformOpenAIToAnthropic(input as OpenAIResponse);
+      } else {
+        console.log('🔥 [TRANSFORMER PERFORM] Unsupported input format detected');
+        throw new TransformerValidationError(
+          'Unsupported input format',
+          ['Input must be valid Anthropic request or OpenAI response'],
+          { inputType: typeof input }
+        );
+      }
+    } catch (error) {
+      console.error('🚨 [TRANSFORMER PERFORM] Error in performTransformation:', error.message);
+      throw error;
     }
   }
 
   private transformAnthropicToOpenAI(request: AnthropicRequest): OpenAIRequest {
+    // 🔧 Critical debug: Track transformer execution
+    console.log('🔥🔥 [TRANSFORMER ANTHROPIC->OPENAI] Method called!');
+    console.log('🔥 [TRANSFORMER DEBUG] Request keys:', Object.keys(request));
+    console.log('🔥 [TRANSFORMER DEBUG] Request has tools:', 'tools' in request, typeof request.tools, Array.isArray(request.tools));
+    
     // 基本验证
     if (!request.model || !request.messages || !Array.isArray(request.messages)) {
       throw new Error('Invalid Anthropic request: missing model or messages');
@@ -424,8 +457,22 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     }
 
     // 转换工具定义
+    console.log('🔧 [TRANSFORMER DEBUG] 工具转换检查:', {
+      hasTools: !!request.tools,
+      toolsType: typeof request.tools,
+      toolsLength: Array.isArray(request.tools) ? request.tools.length : 'not-array',
+      preserveToolCalls: this.config.preserveToolCalls
+    });
+    
     if (request.tools && this.config.preserveToolCalls) {
+      console.log('🔧 [TRANSFORMER DEBUG] 执行工具转换...');
       openaiRequest.tools = this.convertTools(request.tools);
+      console.log('🔧 [TRANSFORMER DEBUG] 工具转换完成:', {
+        originalCount: Array.isArray(request.tools) ? request.tools.length : 0,
+        convertedCount: Array.isArray(openaiRequest.tools) ? openaiRequest.tools.length : 0
+      });
+    } else {
+      console.log('🚨 [TRANSFORMER DEBUG] 跳过工具转换 - 条件不满足');
     }
 
     // 🔍 Debug: Log the final OpenAI request to check JSON validity

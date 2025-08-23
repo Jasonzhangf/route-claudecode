@@ -1,0 +1,22 @@
+{
+  "timestamp": "2025-08-22 23:07:42",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts",
+  "violations_found": true,
+  "violation_count": 7,
+  "violations": [
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts 中发现硬编码: localhost:[0-9]+"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts 中发现硬编码: sk-[a-zA-Z0-9]+"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts 中发现硬编码: claude-3"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts 中发现硬编码: gpt-4"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts 中发现硬编码: gpt-3\.5"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts 中发现硬编码: 5506"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/tests/config/context-pipeline-integration.test.ts 中发现硬编码: 3000"
+  ],
+  "scan_status": "completed"
+}

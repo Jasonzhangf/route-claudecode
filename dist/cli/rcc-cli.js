@@ -379,6 +379,10 @@ class RCCCli {
      */
     async startServer(options) {
         try {
+            // 🎯 自动检测并清理端口占用
+            if (options.port) {
+                await this.cleanupPortIfOccupied(options.port);
+            }
             // 初始化流水线生命周期管理器
             // 需要系统配置路径，使用正确的绝对路径，并传递debug选项
             const systemConfigPath = this.getSystemConfigPath();
@@ -540,6 +544,56 @@ class RCCCli {
         }
         catch (error) {
             throw new Error(`Failed to force kill process ${pid}: ${error.message}`);
+        }
+    }
+    /**
+     * 自动检测并清理端口占用
+     */
+    async cleanupPortIfOccupied(port) {
+        try {
+            const pid = await this.findProcessOnPort(port);
+            if (pid) {
+                if (!this.options.suppressOutput) {
+                    console.log(`⚠️  Port ${port} is occupied by process ${pid}, attempting cleanup...`);
+                }
+                secure_logger_1.secureLogger.info('Auto-cleaning occupied port', { port, pid });
+                // 先尝试优雅关闭
+                await this.sendTermSignal(pid);
+                // 等待进程优雅关闭
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                // 检查进程是否仍在运行
+                const stillRunning = await this.findProcessOnPort(port);
+                if (stillRunning) {
+                    // 强制终止进程
+                    await this.forceKillProcess(stillRunning);
+                    if (!this.options.suppressOutput) {
+                        console.log(`🔥 Forcefully terminated process ${stillRunning} on port ${port}`);
+                    }
+                    secure_logger_1.secureLogger.info('Port cleanup: force killed process', { port, pid: stillRunning });
+                }
+                else {
+                    if (!this.options.suppressOutput) {
+                        console.log(`✅ Process ${pid} gracefully stopped, port ${port} is now available`);
+                    }
+                    secure_logger_1.secureLogger.info('Port cleanup: graceful shutdown successful', { port, pid });
+                }
+                // 再等待一小段时间确保端口完全释放
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            else {
+                secure_logger_1.secureLogger.debug('Port is available', { port });
+            }
+        }
+        catch (error) {
+            secure_logger_1.secureLogger.warn('Port cleanup failed', {
+                port,
+                error: error.message
+            });
+            if (!this.options.suppressOutput) {
+                console.warn(`⚠️  Warning: Failed to cleanup port ${port}: ${error.message}`);
+            }
+            // 不抛出错误，让服务器启动继续尝试
+            // 如果端口真的被占用，后续的服务器启动会失败并报告具体错误
         }
     }
     /**

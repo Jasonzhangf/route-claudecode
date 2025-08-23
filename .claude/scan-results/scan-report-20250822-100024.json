@@ -1,0 +1,14 @@
+{
+  "timestamp": "2025-08-22 10:00:24",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/test-hardcoding-violation.ts",
+  "violations_found": true,
+  "violation_count": 3,
+  "violations": [
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/test-hardcoding-violation.ts 中发现硬编码: localhost:[0-9]+"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/test-hardcoding-violation.ts 中发现硬编码: 5506"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/test-hardcoding-violation.ts 中发现硬编码: 3000"
+  ],
+  "scan_status": "completed"
+}

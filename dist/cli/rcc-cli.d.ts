@@ -103,6 +103,10 @@ export declare class RCCCli implements CLICommands {
      */
     private forceKillProcess;
     /**
+     * 自动检测并清理端口占用
+     */
+    private cleanupPortIfOccupied;
+    /**
      * 启动客户端模式（实际实现）
      */
     private startClientMode;

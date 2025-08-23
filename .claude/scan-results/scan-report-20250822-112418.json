@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-22 11:24:18",
+  "scanned_file": "/tmp/test-blocking-hook.sh",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

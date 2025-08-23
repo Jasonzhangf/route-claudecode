@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-08-22T07:39:16Z",
+  "overall_status": "fail",
+  "summary": {
+    "total_checks": 10,
+    "passed": 4,
+    "failed": 5,
+    "warnings": 3
+  },
+  "compliance_score": 40,
+  "checks": [{"name":"project_structure","status":"pass","details":"所有必需目录和文件都存在","suggestion":""},{"name":"typescript_config","status":"fail","details":"TypeScript配置存在��问题","suggestion":"请更新tsconfig.json以符合TypeScript-Only规范"},{"name":"source_files","status":"pass","details":"源代码目录包含��TypeScript文件，无JavaScript文件","suggestion":""},{"name":"compilation","status":"fail","details":"TypeScript编译失败，发现��错误","suggestion":"运行 'npm run build' 查看详细错误并修复"},{"name":"type_coverage","status":"skip","details":"type-coverage工具未安装","suggestion":"安装type-coverage: npm install --save-dev type-coverage"},{"name":"eslint_compliance","status":"fail","details":"ESLint发现��问题","suggestion":"运行 'npx eslint src/**/*.ts --ext .ts --fix' 自动修复"},{"name":"any_usage","status":"warning","details":"any类型使用��，建议减少","suggestion":"为复杂对象定义具体接口，使用联合类型替代any"},{"name":"git_hooks","status":"fail","details":"Git pre-commit hook缺失","suggestion":"运行 'bash .claude/rules/scripts/dist-protection.sh' 设置hooks"},{"name":"build_scripts","status":"fail","details":"缺少必需的编译脚本","suggestion":"创建缺失的编译脚本"},{"name":"documentation","status":"pass","details":"文档完整","suggestion":""}]
+}

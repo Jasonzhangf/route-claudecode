@@ -21,7 +21,7 @@ export { VLLMCompatibilityModule } from './server-compatibility/vllm-compatibili
 export { OpenAIServerModule } from './server/openai-server';
 
 // 完整流水线
-export { LMStudioPipeline } from './lmstudio-pipeline';
+// export { LMStudioPipeline } from './lmstudio-pipeline'; // REMOVED - 违背模块化架构设计
 
 // 类型定义
 // export type {
@@ -57,8 +57,8 @@ export type {
   OpenAIServerConfig,
 } from './server/openai-server';
 
-export type {
-  // Pipeline类型
-  LMStudioPipelineConfig,
-  PipelineExecutionResult,
-} from './lmstudio-pipeline';
+// export type {
+//   // Pipeline类型
+//   LMStudioPipelineConfig,
+//   PipelineExecutionResult,
+// } from './lmstudio-pipeline'; // REMOVED - 违背模块化架构设计

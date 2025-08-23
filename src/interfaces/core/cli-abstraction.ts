@@ -193,12 +193,24 @@ export interface ICommandExecutor {
   executeCode(config: ClientProxyConfig): Promise<void>;
   executeConfig(action: ConfigAction, options: any): Promise<void>;
   executeAuth(provider: string, index?: number, options?: any): Promise<void>;
+  executeProviderUpdate(options: ProviderUpdateOptions): Promise<void>;
 }
 
 /**
  * 配置操作类型
  */
 export type ConfigAction = 'list' | 'validate' | 'reset' | 'show' | 'edit';
+
+/**
+ * Provider更新选项
+ */
+export interface ProviderUpdateOptions {
+  config?: string;
+  all?: boolean;
+  provider?: string;
+  dryRun?: boolean;
+  verbose?: boolean;
+}
 
 /**
  * 进程管理器接口

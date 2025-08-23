@@ -1,5 +1,197 @@
 # Claude Code Router v4.0 - 强制项目执行规范
 
+## 🌟 RCC4六层流水线数据格式规范 (CRITICAL ARCHITECTURE SPEC)
+
+### 📋 六层架构数据流向和格式要求
+
+**严格的数据流向规范**：
+
+```
+Client → Router → Transformer → Protocol → ServerCompatibility → Server → ResponseTransformer
+  ↓       ↓          ↓           ↓              ↓              ↓            ↓
+Anthropic Model    Anthropic   OpenAI        OpenAI         OpenAI      Anthropic
+Format   Mapping   →OpenAI     Format        Format         Format      Format
+         Decision   Transform   (STRICT)      (STRICT)       (STRICT)    Transform
+```
+
+### 🔒 各层格式要求 (MANDATORY COMPLIANCE)
+
+#### 1. **Client Layer**: Anthropic格式
+- 输入：用户请求，标准Claude格式
+- 输出：Anthropic API格式请求
+
+#### 2. **Router Layer**: 模型映射
+- 输入：Anthropic格式 + 模型名
+- 输出：Anthropic格式 + 路由决策
+- **职责**: 仅做模型映射和路由选择，不改变格式
+
+#### 3. **Transformer Layer**: Anthropic → OpenAI转换
+- 输入：Anthropic格式请求
+- 输出：**纯OpenAI格式请求**
+- **职责**: 
+  - 协议格式转换：Anthropic → OpenAI
+  - 工具调用格式转换：Anthropic tools → OpenAI tools
+  - **严禁输出任何Anthropic格式数据**
+
+#### 4. **Protocol Layer**: OpenAI格式处理 ⚠️ CRITICAL
+- 输入：**仅OpenAI格式**
+- 输出：**仅OpenAI格式**
+- **严禁规则**: 
+  - ❌ 禁止任何Anthropic格式数据
+  - ❌ 禁止在metadata/internal中包含Anthropic协议信息
+  - ❌ 禁止Anthropic相关的字段或配置
+- **职责**: 
+  - 模型名映射和端点配置
+  - **只能添加OpenAI兼容的配置信息**
+
+#### 5. **ServerCompatibility Layer**: OpenAI格式内转换
+- 输入：**仅OpenAI格式**
+- 输出：**仅OpenAI格式** (Provider特定调整)
+- **严禁规则**:
+  - ❌ 禁止接收或产生Anthropic格式
+  - ❌ 禁止Anthropic协议转换
+- **职责**:
+  - OpenAI格式内的字段调整 (如模型名、参数)
+  - Provider特定的工具格式微调 (仍保持OpenAI标准)
+  - 请求大小限制和优化
+
+#### 6. **Server Layer**: HTTP API调用
+- 输入：**仅OpenAI格式**
+- 输出：Provider响应 (通常OpenAI格式)
+- **职责**: 纯HTTP请求，无格式转换
+
+#### 7. **ResponseTransformer Layer**: OpenAI → Anthropic转换
+- 输入：Provider响应 (OpenAI格式)
+- 输出：**Anthropic格式响应**
+- **职责**: 响应格式转换回Anthropic标准
+
+---
+
+### 📖 OpenAI协议格式示例
+
+#### OpenAI请求格式 (Protocol → ServerCompatibility → Server)
+```json
+{
+  "model": "gemini-2.5-pro",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user", 
+      "content": "列出本地文件"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "list_files",
+        "description": "List files in directory",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {"type": "string"}
+          },
+          "required": ["path"]
+        }
+      }
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "stream": false
+}
+```
+
+#### OpenAI响应格式 (Server → ResponseTransformer)
+```json
+{
+  "id": "chatcmpl-123",
+  "object": "chat.completion",
+  "created": 1677652288,
+  "model": "gemini-2.5-pro",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "",
+        "tool_calls": [
+          {
+            "id": "call_123",
+            "type": "function",
+            "function": {
+              "name": "list_files",
+              "arguments": "{\"path\": \".\"}"
+            }
+          }
+        ]
+      },
+      "finish_reason": "tool_calls"
+    }
+  ]
+}
+```
+
+### 🔍 Gemini协议格式示例
+
+#### Gemini特定调整 (ServerCompatibility层处理)
+```json
+{
+  "model": "gemini-2.5-pro",
+  "messages": [
+    {
+      "role": "user",
+      "content": "列出本地文件"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function", 
+      "function": {
+        "name": "list_files",
+        "description": "List files in directory",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Directory path to list"
+            }
+          },
+          "required": ["path"]
+        }
+      }
+    }
+  ],
+  "temperature": 0.7,
+  "max_tokens": 4096,
+  "top_p": 0.9
+}
+```
+
+### ⚠️ 格式验证规则
+
+#### Protocol层验证 (CRITICAL)
+- ✅ 输入必须是OpenAI格式
+- ✅ 输出必须是OpenAI格式  
+- ❌ 禁止任何Anthropic字段 (`tools.input_schema`, `system`, `max_tokens` in Anthropic style)
+- ❌ 禁止在`__internal`或metadata中存储Anthropic协议信息
+
+#### ServerCompatibility层验证
+- ✅ 输入输出都必须是OpenAI格式
+- ✅ 只允许OpenAI格式内的字段调整
+- ❌ 禁止协议转换 (Anthropic ↔ OpenAI)
+
+#### 工具格式统一规则
+- **Protocol层之后统一使用OpenAI工具格式**
+- **Tools数组结构**：`[{type: "function", function: {name, description, parameters}}]`
+- **禁止在Protocol层后出现Anthropic工具格式**：`[{name, description, input_schema}]`
+
+---
+
 ## 🚨 强制执行指令 - 不可违反 (MANDATORY COMPLIANCE)
 
 ### 🔷 TypeScript-Only 强制政策 - 已实施 (TYPESCRIPT-ONLY ENFORCED)

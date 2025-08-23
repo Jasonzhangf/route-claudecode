@@ -29,7 +29,7 @@ export {
 
 // Pipeline模块系统 - 选择性导出避免冲突
 export {
-  LMStudioPipeline,
+  // LMStudioPipeline, // REMOVED - 违背模块化架构设计
   OpenAIProtocolModule,
   LMStudioCompatibilityModule,
   OllamaCompatibilityModule,

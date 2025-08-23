@@ -121,6 +121,9 @@ export class CommandParser implements CLIHandler {
       case 'auth':
         await this.executeAuthCommand(command);
         break;
+      case 'provider':
+        await this.executeProviderCommand(command);
+        break;
       default:
         throw new Error(`Command execution not implemented: ${command.command}`);
     }
@@ -219,6 +222,30 @@ export class CommandParser implements CLIHandler {
         'rcc4 auth qwen 2 --remove',
         'rcc4 auth qwen 1 --refresh'
       ],
+    });
+
+    this.commands.set('provider', {
+      name: 'provider',
+      description: 'Manage provider configurations and model discovery',
+      subcommands: [
+        {
+          name: 'update',
+          description: 'Update provider models and capabilities',
+          options: [
+            { name: 'config', alias: 'c', type: 'string', description: 'Configuration file path' },
+            { name: 'all', alias: 'a', type: 'boolean', description: 'Update all providers' },
+            { name: 'provider', alias: 'p', type: 'string', description: 'Specific provider to update' },
+            { name: 'dry-run', alias: 'd', type: 'boolean', description: 'Show what would be updated without making changes' },
+            { name: 'verbose', alias: 'v', type: 'boolean', description: 'Show detailed output' },
+          ],
+          examples: [
+            'rcc4 provider update --config config.json',
+            'rcc4 provider update --all',
+            'rcc4 provider update --provider openai',
+            'rcc4 provider update --dry-run --verbose'
+          ]
+        }
+      ]
     });
   }
 
@@ -454,5 +481,29 @@ export class CommandParser implements CLIHandler {
     }
 
     await this.commandExecutor.executeAuth(provider, index, options);
+  }
+
+  /**
+   * 执行Provider命令
+   */
+  private async executeProviderCommand(command: ParsedCommand): Promise<void> {
+    if (!this.commandExecutor) {
+      throw new Error('Command executor not available');
+    }
+
+    const subcommand = command.subcommand;
+    const options = command.options;
+
+    if (!subcommand) {
+      throw new Error('Subcommand is required. Usage: rcc4 provider <subcommand>');
+    }
+
+    switch (subcommand) {
+      case 'update':
+        await this.commandExecutor.executeProviderUpdate(options);
+        break;
+      default:
+        throw new Error(`Unknown provider subcommand: ${subcommand}`);
+    }
   }
 }

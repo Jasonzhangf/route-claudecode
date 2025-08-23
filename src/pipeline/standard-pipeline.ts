@@ -18,6 +18,8 @@ import {
   Pipeline,
   PipelineStatus
 } from '../interfaces/pipeline/pipeline-framework';
+import { protocolTransformerValidator, ValidationResult } from '../validation/protocol-transformer-validator';
+import { secureLogger } from '../utils/secure-logger';
 
 /**
  * Pipeline配置接口
@@ -317,30 +319,144 @@ export class StandardPipeline extends EventEmitter implements PipelineFramework 
       let currentInput = input;
       
       // 按顺序执行所有模块
-      for (const moduleId of this.moduleOrder) {
+      for (let i = 0; i < this.moduleOrder.length; i++) {
+        const moduleId = this.moduleOrder[i];
         const module = this.moduleMap.get(moduleId);
         if (!module) {
           throw new Error(`Module ${moduleId} not found`);
         }
         
-        const moduleStart = new Date();
-        const result = await module.process(currentInput);
+        const moduleType = module.getType();
+        const moduleName = module.getName();
+        const requestId = context?.metadata?.requestId || executionId;
         
-        const moduleExecution: ModuleExecutionRecord = {
-          moduleId,
-          moduleName: module.getName(),
-          startTime: moduleStart,
-          endTime: new Date(),
-          status: 'completed',
-          input: currentInput,
-          output: result,
-          processingTime: Date.now() - moduleStart.getTime()
-        };
-        
-        executionRecord.moduleExecutions.push(moduleExecution);
-        this.emit('moduleExecutionCompleted', { moduleExecution });
-        
-        currentInput = result;
+        // 🔍 Protocol-Transformer验证逻辑
+        if (moduleType === ModuleType.TRANSFORMER) {
+          // Transformer模块：验证输出必须是OpenAI格式
+          const moduleStart = new Date();
+          const result = await module.process(currentInput);
+          
+          // 验证Transformer → Protocol的数据格式
+          const validationResult = protocolTransformerValidator.validateTransformerToProtocol(result, {
+            requestId,
+            step: `transformer-${moduleId}-output`
+          });
+          
+          if (!validationResult.isValid) {
+            const errorMsg = `Transformer输出格式验证失败: ${validationResult.errors.join(', ')}`;
+            secureLogger.error('❌ [格式验证] Transformer输出不符合OpenAI格式', {
+              requestId,
+              moduleId,
+              moduleName,
+              errors: validationResult.errors,
+              warnings: validationResult.warnings
+            });
+            throw new Error(errorMsg);
+          }
+          
+          secureLogger.info('✅ [格式验证] Transformer输出验证通过', {
+            requestId,
+            moduleId,
+            format: validationResult.format,
+            summary: validationResult.summary
+          });
+          
+          const moduleExecution: ModuleExecutionRecord = {
+            moduleId,
+            moduleName,
+            startTime: moduleStart,
+            endTime: new Date(),
+            status: 'completed',
+            input: currentInput,
+            output: result,
+            processingTime: Date.now() - moduleStart.getTime(),
+            metadata: {
+              validation: {
+                direction: 'transformer-to-protocol',
+                format: validationResult.format,
+                isValid: validationResult.isValid,
+                summary: validationResult.summary
+              }
+            }
+          };
+          
+          executionRecord.moduleExecutions.push(moduleExecution);
+          this.emit('moduleExecutionCompleted', { moduleExecution });
+          currentInput = result;
+          
+        } else if (moduleType === ModuleType.PROTOCOL) {
+          // Protocol模块：验证输出必须是Anthropic格式
+          const moduleStart = new Date();
+          const result = await module.process(currentInput);
+          
+          // 验证Protocol → Transformer的数据格式
+          const validationResult = protocolTransformerValidator.validateProtocolToTransformer(result, {
+            requestId,
+            step: `protocol-${moduleId}-output`
+          });
+          
+          if (!validationResult.isValid) {
+            const errorMsg = `Protocol输出格式验证失败: ${validationResult.errors.join(', ')}`;
+            secureLogger.error('❌ [格式验证] Protocol输出不符合Anthropic格式', {
+              requestId,
+              moduleId,
+              moduleName,
+              errors: validationResult.errors,
+              warnings: validationResult.warnings
+            });
+            throw new Error(errorMsg);
+          }
+          
+          secureLogger.info('✅ [格式验证] Protocol输出验证通过', {
+            requestId,
+            moduleId,
+            format: validationResult.format,
+            summary: validationResult.summary
+          });
+          
+          const moduleExecution: ModuleExecutionRecord = {
+            moduleId,
+            moduleName,
+            startTime: moduleStart,
+            endTime: new Date(),
+            status: 'completed',
+            input: currentInput,
+            output: result,
+            processingTime: Date.now() - moduleStart.getTime(),
+            metadata: {
+              validation: {
+                direction: 'protocol-to-transformer',
+                format: validationResult.format,
+                isValid: validationResult.isValid,
+                summary: validationResult.summary
+              }
+            }
+          };
+          
+          executionRecord.moduleExecutions.push(moduleExecution);
+          this.emit('moduleExecutionCompleted', { moduleExecution });
+          currentInput = result;
+          
+        } else {
+          // 其他模块：正常执行，不进行格式验证
+          const moduleStart = new Date();
+          const result = await module.process(currentInput);
+          
+          const moduleExecution: ModuleExecutionRecord = {
+            moduleId,
+            moduleName,
+            startTime: moduleStart,
+            endTime: new Date(),
+            status: 'completed',
+            input: currentInput,
+            output: result,
+            processingTime: Date.now() - moduleStart.getTime()
+          };
+          
+          executionRecord.moduleExecutions.push(moduleExecution);
+          this.emit('moduleExecutionCompleted', { moduleExecution });
+          currentInput = result;
+        }
       }
 
       executionRecord.endTime = new Date();
