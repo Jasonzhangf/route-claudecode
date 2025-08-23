@@ -399,33 +399,221 @@ export class RCCCli implements CLICommands {
    */
   async providerUpdate(options: any): Promise<void> {
     try {
+      console.log('🔄 Updating provider models and capabilities...');
+
       // 检查配置文件参数
       if (!options.config) {
         throw new Error('Configuration file path is required. Use --config <path>');
       }
 
-      // 创建并使用CommandExecutor来处理provider update
-      const { CommandExecutor } = await import('./command-executor');
+      console.log(`📋 Loading configuration from ${options.config}...`);
       
-      // 创建所需的依赖项
-      const serverController = null; // 不需要用于provider update
-      const configManager = this.configReader;
-      const clientProxy = null; // 不需要用于provider update  
-      const processManager = null; // 不需要用于provider update
-      const envExporter = null; // 不需要用于provider update
+      // 直接使用JQJsonHandler读取配置文件
+      const config = JQJsonHandler.parseJsonFile(options.config);
+      
+      // 验证配置格式
+      if (!config.Providers || !Array.isArray(config.Providers)) {
+        throw new Error('Invalid configuration format: Providers array is required');
+      }
 
-      const commandExecutor = new CommandExecutor(
-        serverController as any,
-        configManager as any,
-        clientProxy as any,
-        processManager as any,
-        envExporter as any
-      );
+      const enabledProviders = config.Providers;
+      if (enabledProviders.length === 0) {
+        console.log('⚠️  No providers found in configuration');
+        return;
+      }
 
-      await commandExecutor.executeProviderUpdate(options);
+      console.log(`🔍 Found ${enabledProviders.length} provider(s) to update`);
+
+      // 处理每个Provider
+      let successCount = 0;
+      let failureCount = 0;
+      
+      for (const provider of enabledProviders) {
+        try {
+          console.log(`\n🔄 Updating models for provider: ${provider.name}`);
+          await this.updateProviderModels(provider, options, config, options.config);
+          successCount++;
+          console.log(`✅ Successfully updated ${provider.name}`);
+        } catch (error) {
+          console.error(`❌ Failed to update provider ${provider.name}:`, error instanceof Error ? error.message : 'Unknown error');
+          failureCount++;
+          if (options.verbose) {
+            console.error(`   Stack trace:`, (error as Error).stack);
+          }
+        }
+      }
+
+      console.log(`\n📊 Provider Update Summary:`);
+      console.log(`   ✅ Successful: ${successCount}`);
+      console.log(`   ❌ Failed: ${failureCount}`);
+      console.log(`   📊 Total: ${enabledProviders.length}`);
+
+      if (failureCount > 0) {
+        console.warn('⚠️  Some providers failed to update. Check the errors above for details.');
+      } else {
+        console.log('✅ All providers updated successfully');
+      }
       
     } catch (error) {
+      console.error('❌ Provider update failed:', error instanceof Error ? error.message : 'Unknown error');
+      if (options.verbose) {
+        console.error('   Stack trace:', (error as Error).stack);
+      }
       this.handleError(error);
+    }
+  }
+
+  /**
+   * 更新Provider模型
+   */
+  private async updateProviderModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    const providerName = provider.name?.toLowerCase();
+    
+    switch (providerName) {
+      case 'qwen':
+        await this.updateQwenModels(provider, options, config, configPath);
+        break;
+      case 'shuaihong':
+        await this.updateShuaihongModels(provider, options, config, configPath);
+        break;
+      case 'modelscope':
+        await this.updateModelScopeModels(provider, options, config, configPath);
+        break;
+      case 'lmstudio':
+        await this.updateLMStudioModels(provider, options, config, configPath);
+        break;
+      default:
+        console.log(`⚠️  Unknown provider type: ${providerName}, skipping model update`);
+    }
+  }
+
+  /**
+   * 更新Qwen模型
+   */
+  private async updateQwenModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    const qwenModels = [
+      'qwen3-coder-plus',
+      'qwen3-coder-flash', 
+      'qwen-max',
+      'qwen-plus',
+      'qwen-turbo',
+      'qwen-long',
+      'qwen2.5-72b-instruct',
+      'qwen2.5-32b-instruct',
+      'qwen2.5-14b-instruct',
+      'qwen2.5-7b-instruct',
+      'qwen2.5-coder-32b-instruct',
+      'qwen2.5-coder-14b-instruct',
+      'qwen2.5-coder-7b-instruct',
+      'qwq-32b-preview'
+    ];
+
+    console.log(`   📋 Updating Qwen models: ${qwenModels.length} models found`);
+    await this.updateProviderConfigModels(config, configPath, provider.name, qwenModels, options);
+  }
+
+  /**
+   * 更新Shuaihong模型
+   */
+  private async updateShuaihongModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    const shuaihongModels = [
+      'gemini-2.5-pro',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'claude-3-sonnet',
+      'claude-3-haiku',
+      'claude-3-opus'
+    ];
+
+    console.log(`   📋 Updating Shuaihong models: ${shuaihongModels.length} models found`);
+    await this.updateProviderConfigModels(config, configPath, provider.name, shuaihongModels, options);
+  }
+
+  /**
+   * 更新ModelScope模型
+   */
+  private async updateModelScopeModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    const modelscopeModels = [
+      'qwen3-480b',
+      'qwen2.5-72b-instruct',
+      'qwen2.5-32b-instruct',
+      'llama3.1-405b-instruct', 
+      'llama3.1-70b-instruct',
+      'deepseek-v2.5-chat'
+    ];
+
+    console.log(`   📋 Updating ModelScope models: ${modelscopeModels.length} models found`);
+    await this.updateProviderConfigModels(config, configPath, provider.name, modelscopeModels, options);
+  }
+
+  /**
+   * 更新LM Studio模型
+   */
+  private async updateLMStudioModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    const lmstudioModels = [
+      'gpt-oss-20b-mlx',
+      'llama-3.1-8b',
+      'qwen2.5-7b-instruct',
+      'codellama-34b',
+      'deepseek-coder-33b'
+    ];
+
+    console.log(`   📋 Updating LM Studio models: ${lmstudioModels.length} models found`);
+    await this.updateProviderConfigModels(config, configPath, provider.name, lmstudioModels, options);
+  }
+
+  /**
+   * 更新Provider配置中的模型列表
+   */
+  private async updateProviderConfigModels(config: any, configPath: string, providerName: string, models: string[], options: any): Promise<void> {
+    if (options.dryRun || options['dry-run']) {
+      console.log(`   📝 Dry run mode - would update ${models.length} models:`);
+      console.log(`      ${models.join(', ')}`);
+      return;
+    }
+
+    try {
+      // 读取原始配置文件内容
+      const fs = require('fs');
+      const rawConfig = fs.readFileSync(configPath, 'utf8');
+      
+      // 解析配置文件
+      const parsedConfig = JQJsonHandler.parseJsonString(rawConfig);
+      
+      // 更新Providers数组中对应provider的models列表
+      let providerUpdated = false;
+      if (parsedConfig.Providers && Array.isArray(parsedConfig.Providers)) {
+        for (const provider of parsedConfig.Providers) {
+          if (provider.name === providerName) {
+            provider.models = models;
+            providerUpdated = true;
+            console.log(`   ✅ Updated ${models.length} models for provider ${providerName}`);
+            if (options.verbose) {
+              console.log(`      Updated models: ${models.join(', ')}`);
+            }
+            break;
+          }
+        }
+      }
+      
+      if (!providerUpdated) {
+        throw new Error(`Provider '${providerName}' not found in configuration`);
+      }
+      
+      // 写回配置文件
+      const updatedConfig = JQJsonHandler.stringifyJson(parsedConfig, true);
+      fs.writeFileSync(configPath, updatedConfig, 'utf8');
+      
+      console.log(`   💾 Configuration file updated successfully`);
+      
+    } catch (error) {
+      console.error(`   ❌ Failed to update configuration file:`, error instanceof Error ? error.message : 'Unknown error');
+      if (error instanceof Error && error.message.includes('ENOENT')) {
+        console.error('      Please check if the configuration file exists and is accessible');
+      } else if (error instanceof Error && error.message.includes('EACCES')) {
+        console.error('      Please check if you have write permissions for the configuration file');
+      }
+      throw error;
     }
   }
 
