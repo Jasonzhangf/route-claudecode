@@ -75,6 +75,10 @@ export declare class RCCCli implements CLICommands {
      */
     private refreshAuthFile;
     /**
+     * Provider更新命令
+     */
+    providerUpdate(options: any): Promise<void>;
+    /**
      * 处理错误
      */
     private handleError;

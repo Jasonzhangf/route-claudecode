@@ -141,6 +141,11 @@ class RCCv4CLIHandler implements CLIHandler {
           await this.handleAuth(parsedCommand.args, options);
           break;
 
+        case 'provider':
+          process.stdout.write('🔍 [DEBUG] 处理provider命令\n');
+          await this.handleProvider(parsedCommand.args, options);
+          break;
+
         case 'help':
         case '--help':
         case '-h':
@@ -268,6 +273,60 @@ class RCCv4CLIHandler implements CLIHandler {
   }
 
   /**
+   * 处理provider命令
+   */
+  private async handleProvider(args: string[], options: Record<string, any>): Promise<void> {
+    const subcommand = args[0];
+    
+    if (!subcommand) {
+      process.stderr.write('❌ Provider subcommand is required. Usage: rcc4 provider <subcommand>\n');
+      process.stderr.write('Available subcommands: update\n');
+      process.stderr.write('Use --help for more information.\n');
+      process.exit(1);
+    }
+
+    process.stdout.write(`🔍 [DEBUG] handleProvider: subcommand=${subcommand}, options=${JQJsonHandler.stringifyJson(options)}\n`);
+    
+    switch (subcommand) {
+      case 'update':
+        await this.handleProviderUpdate(options);
+        break;
+      default:
+        process.stderr.write(`❌ Unknown provider subcommand: ${subcommand}\n`);
+        process.stderr.write('Available subcommands: update\n');
+        process.exit(1);
+    }
+  }
+
+  /**
+   * 处理provider update命令
+   */
+  private async handleProviderUpdate(options: Record<string, any>): Promise<void> {
+    // 检查必需的配置文件参数
+    if (!options.config) {
+      process.stderr.write('❌ Configuration file path is required. Use --config <path>\n');
+      process.stderr.write('Example: rcc4 provider update --config ~/.route-claudecode/config/multi-provider-hybrid-v4.json\n');
+      process.exit(1);
+    }
+
+    process.stdout.write(`🔄 Updating provider models and capabilities...\n`);
+    process.stdout.write(`📋 Configuration: ${options.config}\n`);
+    
+    try {
+      // 使用 RCCCli 的 provider update 功能
+      await this.rccCLI.providerUpdate(options);
+      
+      process.stdout.write('✅ Provider update completed successfully\n');
+    } catch (error) {
+      process.stderr.write(`❌ Provider update failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`);
+      if (options.verbose) {
+        process.stderr.write(`Stack trace: ${error instanceof Error ? error.stack : 'N/A'}\n`);
+      }
+      process.exit(1);
+    }
+  }
+
+  /**
    * 显示帮助信息
    */
   showHelp(command?: string): void {
@@ -289,6 +348,7 @@ Commands:
   code                     Start Claude Code proxy mode
   config                   Configuration management
   auth <provider> <index>  Manage provider authentication (OAuth2, API keys)
+  provider <subcommand>    Manage provider configurations and model discovery
   help [command]           Show help information
   version                  Show version information
 
@@ -395,6 +455,31 @@ Examples:
   rcc4 code --port 8080
   rcc4 code --auto-start
   rcc4 code --export
+`);
+        break;
+
+      case 'provider':
+        process.stdout.write(`
+rcc4 provider - Manage provider configurations and model discovery
+
+Usage:
+  rcc4 provider <subcommand> [options]
+
+Subcommands:
+  update              Update provider models and capabilities
+
+Options:
+  --config <path>     Configuration file path (required)
+  --all               Update all providers
+  --provider <name>   Update specific provider only  
+  --dry-run           Show what would be updated without making changes
+  --verbose           Show detailed output
+
+Examples:
+  rcc4 provider update --config ~/.route-claudecode/config/multi-provider-hybrid-v4.json
+  rcc4 provider update --config ./config.json --verbose
+  rcc4 provider update --config ./config.json --dry-run
+  rcc4 provider update --config ./config.json --provider qwen
 `);
         break;
 

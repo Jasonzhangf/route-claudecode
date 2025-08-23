@@ -62,5 +62,9 @@ export declare class CommandParser implements CLIHandler {
      * 执行认证命令
      */
     private executeAuthCommand;
+    /**
+     * 执行Provider命令
+     */
+    private executeProviderCommand;
 }
 //# sourceMappingURL=command-parser.d.ts.map

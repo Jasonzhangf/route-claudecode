@@ -48,6 +48,14 @@ declare class RCCv4CLIHandler implements CLIHandler {
      */
     private handleAuth;
     /**
+     * 处理provider命令
+     */
+    private handleProvider;
+    /**
+     * 处理provider update命令
+     */
+    private handleProviderUpdate;
+    /**
      * 显示帮助信息
      */
     showHelp(command?: string): void;

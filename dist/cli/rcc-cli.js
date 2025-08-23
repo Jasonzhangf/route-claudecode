@@ -360,6 +360,30 @@ class RCCCli {
         }
     }
     /**
+     * Provider更新命令
+     */
+    async providerUpdate(options) {
+        try {
+            // 检查配置文件参数
+            if (!options.config) {
+                throw new Error('Configuration file path is required. Use --config <path>');
+            }
+            // 创建并使用CommandExecutor来处理provider update
+            const { CommandExecutor } = await Promise.resolve().then(() => __importStar(require('./command-executor')));
+            // 创建所需的依赖项
+            const serverController = null; // 不需要用于provider update
+            const configManager = this.configReader;
+            const clientProxy = null; // 不需要用于provider update  
+            const processManager = null; // 不需要用于provider update
+            const envExporter = null; // 不需要用于provider update
+            const commandExecutor = new CommandExecutor(serverController, configManager, clientProxy, processManager, envExporter);
+            await commandExecutor.executeProviderUpdate(options);
+        }
+        catch (error) {
+            this.handleError(error);
+        }
+    }
+    /**
      * 处理错误
      */
     handleError(error) {
