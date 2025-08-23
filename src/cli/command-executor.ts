@@ -491,4 +491,477 @@ export class CommandExecutor implements ICommandExecutor {
     const config = await this.configManager.loadConfig(configPath);
     console.log(JQJsonHandler.stringifyJson(config, true));
   }
+
+  /**
+   * 执行Provider更新命令
+   */
+  async executeProviderUpdate(options: any): Promise<void> {
+    console.log('🔄 Updating provider models and capabilities...');
+
+    try {
+      // 检查是否提供了配置文件路径
+      if (!options.config) {
+        console.error('❌ Configuration file path is required. Use --config <path>');
+        process.exit(1);
+      }
+
+      // 加载配置文件
+      console.log(`📋 Loading configuration from ${options.config}...`);
+      const config = await this.configManager.loadConfig(options.config);
+      
+      // 验证配置
+      const validation = this.configManager.validateConfig(config);
+      if (!validation.valid) {
+        console.error('❌ Configuration validation failed:');
+        validation.errors.forEach(error => console.error(`   ${error}`));
+        process.exit(1);
+      }
+
+      // 获取启用的Providers
+      const enabledProviders = this.getEnabledProviders(config);
+      if (enabledProviders.length === 0) {
+        console.log('⚠️  No enabled providers found in configuration');
+        return;
+      }
+
+      console.log(`🔍 Found ${enabledProviders.length} enabled provider(s)`);
+
+      // 处理每个Provider
+      let successCount = 0;
+      let failureCount = 0;
+      for (const provider of enabledProviders) {
+        try {
+          await this.updateProviderModels(provider, options, config, options.config);
+          successCount++;
+        } catch (error) {
+          console.error(`❌ Failed to update provider ${provider.name}:`, error instanceof Error ? error.message : 'Unknown error');
+          failureCount++;
+        }
+      }
+
+      console.log(`\n📊 Provider Update Summary:`);
+      console.log(`   ✅ Successful: ${successCount}`);
+      console.log(`   ❌ Failed: ${failureCount}`);
+      console.log(`   📊 Total: ${enabledProviders.length}`);
+
+      if (failureCount > 0) {
+        console.warn('⚠️  Some providers failed to update. Check the errors above for details.');
+      } else {
+        console.log('✅ All providers updated successfully');
+      }
+    } catch (error) {
+      console.error('❌ Provider update failed:', error instanceof Error ? error.message : 'Unknown error');
+      if (options.verbose) {
+        console.error('   Stack trace:', (error as Error).stack);
+      }
+      process.exit(1);
+    }
+  }
+
+  /**
+   * 获取启用的Providers
+   */
+  private getEnabledProviders(config: any): any[] {
+    const providers: any[] = [];
+
+    // 添加Server-Compatibility Providers
+    if (config.serverCompatibilityProviders) {
+      for (const [name, provider] of Object.entries(config.serverCompatibilityProviders)) {
+        if ((provider as any).enabled) {
+          providers.push({
+            name,
+            type: 'server-compatibility',
+            ...provider
+          });
+        }
+      }
+    }
+
+    // 添加Standard Providers
+    if (config.standardProviders) {
+      for (const [name, provider] of Object.entries(config.standardProviders)) {
+        if ((provider as any).enabled) {
+          providers.push({
+            name,
+            type: 'standard',
+            ...provider
+          });
+        }
+      }
+    }
+
+    return providers;
+  }
+
+  /**
+   * 更新Provider模型
+   */
+  private async updateProviderModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    console.log(`\n🔄 Updating models for provider: ${provider.name} (${provider.type})`);
+
+    try {
+      // 根据Provider类型处理
+      switch (provider.type) {
+        case 'openai':
+          await this.updateOpenAIModels(provider, options, config, configPath);
+          break;
+        case 'gemini':
+          await this.updateGeminiModels(provider, options, config, configPath);
+          break;
+        default:
+          console.log(`⚠️  Unsupported provider type: ${provider.type}`);
+          throw new Error(`Unsupported provider type: ${provider.type}`);
+      }
+    } catch (error) {
+      console.error(`❌ Failed to update models for provider ${provider.name}:`, error instanceof Error ? error.message : 'Unknown error');
+      if (options.verbose) {
+        console.error('   Stack trace:', (error as Error).stack);
+      }
+      throw error; // 重新抛出错误以便上层处理
+    }
+  }
+
+  /**
+   * 更新OpenAI模型
+   */
+  private async updateOpenAIModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    console.log(`🔍 Detecting OpenAI models for provider: ${provider.name}`);
+    
+    try {
+      // 检查API密钥
+      const apiKey = provider.auth?.apiKey || process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        throw new Error('OpenAI API key is required but not provided');
+      }
+      
+      // 创建OpenAI客户端
+      const OpenAI = require('openai');
+      const openai = new OpenAI({
+        apiKey: apiKey,
+        baseURL: provider.endpoint,
+        timeout: provider.connection?.timeout || 30000,
+        maxRetries: provider.connection?.retries || 3,
+      });
+
+      // 获取模型列表
+      console.log('📡 Fetching model list from OpenAI API...');
+      const modelsResponse = await openai.models.list();
+      const models = modelsResponse.data || [];
+      
+      console.log(`✅ Found ${models.length} models`);
+      
+      // 过滤聊天模型
+      const chatModels = models.filter((model: any) => 
+        model.id.includes('gpt') || model.id.includes('chat')
+      );
+      
+      console.log(`💬 Found ${chatModels.length} chat models`);
+      
+      // 测试每个模型的max_tokens
+      const modelInfo: any[] = [];
+      let testedCount = 0;
+      let supportedCount = 0;
+      for (const model of chatModels) {
+        try {
+          console.log(`🧪 Testing model: ${model.id}`);
+          testedCount++;
+          const maxTokens = await this.testModelMaxTokens(openai, model.id, options);
+          
+          // 只有支持的模型才添加到列表中
+          if (maxTokens > 0) {
+            modelInfo.push({
+              id: model.id,
+              maxTokens,
+              supported: true
+            });
+            supportedCount++;
+            console.log(`   ✅ Model ${model.id} supports ${maxTokens} tokens`);
+          } else {
+            console.log(`   ❌ Model ${model.id} does not support any tested token limits`);
+          }
+        } catch (error) {
+          console.warn(`⚠���  Failed to test model ${model.id}:`, error instanceof Error ? error.message : 'Unknown error');
+          if (options.verbose) {
+            console.warn('   Stack trace:', (error as Error).stack);
+          }
+        }
+      }
+      
+      // 显示结果
+      console.log('\n📊 Model Test Results:');
+      console.log(`   🧪 Tested: ${testedCount}`);
+      console.log(`   ✅ Supported: ${supportedCount}`);
+      console.log(`   ❌ Unsupported: ${testedCount - supportedCount}`);
+      
+      for (const model of modelInfo) {
+        console.log(`   ✅ ${model.id}: max_tokens=${model.maxTokens}`);
+      }
+      
+      // 保存到配置（如果需要）
+      if (!options.dryRun && modelInfo.length > 0) {
+        console.log('💾 Updating configuration with model information...');
+        await this.updateProviderConfig(config, configPath, provider.name, modelInfo);
+      } else if (options.dryRun) {
+        console.log('📝 Dry run mode - configuration not updated');
+      } else if (modelInfo.length === 0) {
+        console.log('⚠️  No supported models found - configuration not updated');
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to detect OpenAI models:`, error instanceof Error ? error.message : 'Unknown error');
+      if (options.verbose) {
+        console.error('   Stack trace:', (error as Error).stack);
+      }
+      throw error; // 重新抛出错误以便上层处理
+    }
+  }
+  
+  /**
+   * 测试模型的max_tokens限制
+   */
+  private async testModelMaxTokens(openai: any, modelId: string, options: any): Promise<number> {
+    // 从大往小测试，成功就中止
+    const testTokensList = [524288, 262144, 131072, 65536]; // 512k, 256k, 128k, 64k
+    
+    console.log(`   🔍 Testing max_tokens values: ${testTokensList.join(', ')}`);
+    
+    for (const testTokens of testTokensList) {
+      try {
+        await openai.chat.completions.create({
+          model: modelId,
+          messages: [{ role: 'user', content: 'test' }],
+          max_tokens: testTokens
+        });
+        
+        console.log(`   ✅ Model supports ${testTokens} tokens`);
+        return testTokens;
+      } catch (error) {
+        // 检查错误类型，如果是API限制错误则继续测试，否则抛出错误
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('token') || errorMessage.includes('limit') || errorMessage.includes('429')) {
+          console.log(`   ❌ Model does not support ${testTokens} tokens (API limit or token error)`);
+        } else {
+          console.log(`   ❌ Model does not support ${testTokens} tokens (${errorMessage})`);
+          // 对于非API限制错误，我们可能需要重新抛出
+          if (options.verbose) {
+            console.warn(`   Detailed error for ${modelId}:`, errorMessage);
+          }
+        }
+      }
+      
+      // 添加延迟避免API限制
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    return 0; // 不支持任何测试的值
+  }
+
+  /**
+   * 更新Gemini模型
+   */
+  private async updateGeminiModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
+    console.log(`🔍 Detecting Gemini models for provider: ${provider.name}`);
+    
+    try {
+      // 检查API密钥
+      const apiKey = provider.auth?.apiKey || process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('Gemini API key is required but not provided');
+      }
+      
+      // 创建Google Generative AI客户端
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
+      // 注意：Google Generative AI SDK没有直接列出模型的方法
+      // 我们需要测试常见的Gemini模型
+      const commonModels = [
+        'gemini-pro',
+        'gemini-pro-vision',
+        'gemini-1.0-pro',
+        'gemini-1.0-pro-vision',
+        'gemini-1.5-pro',
+        'gemini-1.5-flash'
+      ];
+      
+      console.log('📡 Testing common Gemini models...');
+      
+      const modelInfo: any[] = [];
+      let testedCount = 0;
+      let supportedCount = 0;
+      for (const modelId of commonModels) {
+        try {
+          console.log(`🧪 Testing model: ${modelId}`);
+          testedCount++;
+          const maxTokens = await this.testGeminiModelMaxTokens(genAI, modelId, options);
+          
+          // 只有支持的模型才添加到列表中
+          if (maxTokens > 0) {
+            modelInfo.push({
+              id: modelId,
+              maxTokens,
+              supported: true
+            });
+            supportedCount++;
+            console.log(`   ✅ Model ${modelId} supports ${maxTokens} tokens`);
+          } else {
+            console.log(`   ❌ Model ${modelId} does not support any tested token limits`);
+          }
+        } catch (error) {
+          console.warn(`⚠️  Failed to test model ${modelId}:`, error instanceof Error ? error.message : 'Unknown error');
+          if (options.verbose) {
+            console.warn('   Stack trace:', (error as Error).stack);
+          }
+        }
+      }
+      
+      // 显示结果
+      console.log('\n📊 Model Test Results:');
+      console.log(`   🧪 Tested: ${testedCount}`);
+      console.log(`   ✅ Supported: ${supportedCount}`);
+      console.log(`   ❌ Unsupported: ${testedCount - supportedCount}`);
+      
+      for (const model of modelInfo) {
+        console.log(`   ✅ ${model.id}: max_tokens=${model.maxTokens}`);
+      }
+      
+      // 保存到配置（如果需要）
+      if (!options.dryRun && modelInfo.length > 0) {
+        console.log('💾 Updating configuration with model information...');
+        await this.updateProviderConfig(config, configPath, provider.name, modelInfo);
+      } else if (options.dryRun) {
+        console.log('📝 Dry run mode - configuration not updated');
+      } else if (modelInfo.length === 0) {
+        console.log('⚠️  No supported models found - configuration not updated');
+      }
+      
+    } catch (error) {
+      console.error(`❌ Failed to detect Gemini models:`, error instanceof Error ? error.message : 'Unknown error');
+      if (options.verbose) {
+        console.error('   Stack trace:', (error as Error).stack);
+      }
+      throw error; // 重新抛出错误以便上层处理
+    }
+  }
+  
+  /**
+   * 更新Provider配置
+   */
+  private async updateProviderConfig(config: any, configPath: string, providerName: string, modelInfo: any[]): Promise<void> {
+    try {
+      // 读取原始配置文件内容
+      const fs = require('fs');
+      const rawConfig = fs.readFileSync(configPath, 'utf8');
+      
+      // 解析配置文件
+      let parsedConfig: any;
+      if (configPath.endsWith('.json')) {
+        parsedConfig = JSON.parse(rawConfig);
+      } else {
+        // 支持JSON5格式
+        const JSON5 = require('json5');
+        parsedConfig = JSON5.parse(rawConfig);
+      }
+      
+      // 更新Provider的模型信息
+      let providerUpdated = false;
+      if (parsedConfig.standardProviders && parsedConfig.standardProviders[providerName]) {
+        // 更新标准Provider
+        const provider = parsedConfig.standardProviders[providerName];
+        if (!provider.models) {
+          provider.models = {};
+        }
+        
+        // 添加或更新模型信息
+        for (const model of modelInfo) {
+          provider.models[model.id] = {
+            maxTokens: model.maxTokens,
+            enabled: true
+          };
+        }
+        providerUpdated = true;
+      } else if (parsedConfig.serverCompatibilityProviders && parsedConfig.serverCompatibilityProviders[providerName]) {
+        // 更新Server-Compatibility Provider
+        const provider = parsedConfig.serverCompatibilityProviders[providerName];
+        if (!provider.models) {
+          provider.models = {};
+        }
+        
+        // 添加或更新模型信息
+        for (const model of modelInfo) {
+          provider.models[model.id] = {
+            maxTokens: model.maxTokens,
+            enabled: true
+          };
+        }
+        providerUpdated = true;
+      }
+      
+      // 检查是否找到了Provider
+      if (!providerUpdated) {
+        throw new Error(`Provider '${providerName}' not found in configuration`);
+      }
+      
+      // 写回配置文件
+      let updatedConfig: string;
+      if (configPath.endsWith('.json')) {
+        updatedConfig = JSON.stringify(parsedConfig, null, 2);
+      } else {
+        const JSON5 = require('json5');
+        updatedConfig = JSON5.stringify(parsedConfig, null, 2);
+      }
+      
+      fs.writeFileSync(configPath, updatedConfig, 'utf8');
+      
+      console.log(`✅ Configuration updated successfully for provider: ${providerName}`);
+      console.log(`   Added/updated ${modelInfo.length} models`);
+      
+    } catch (error) {
+      console.error(`❌ Failed to update configuration file:`, error instanceof Error ? error.message : 'Unknown error');
+      if (error instanceof Error && error.message.includes('ENOENT')) {
+        console.error('   Please check if the configuration file exists and is accessible');
+      } else if (error instanceof Error && error.message.includes('EACCES')) {
+        console.error('   Please check if you have write permissions for the configuration file');
+      }
+      throw error; // 重新抛出错误以便上层处理
+    }
+  }
+  private async testGeminiModelMaxTokens(genAI: any, modelId: string, options: any): Promise<number> {
+    // 从大往小测试，成功就中止
+    const testTokensList = [524288, 262144, 131072, 65536]; // 512k, 256k, 128k, 64k
+    
+    console.log(`   🔍 Testing max_tokens values: ${testTokensList.join(', ')}`);
+    
+    for (const testTokens of testTokensList) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelId });
+        const result = await model.generateContent({
+          contents: [{ role: 'user', parts: [{ text: 'test' }] }],
+          generationConfig: {
+            maxOutputTokens: testTokens
+          }
+        });
+        
+        console.log(`   ✅ Model supports ${testTokens} tokens`);
+        return testTokens;
+      } catch (error) {
+        // 检查错误类型，如果是API限制错误则继续测试，否则抛出错误
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('token') || errorMessage.includes('limit') || errorMessage.includes('429')) {
+          console.log(`   ❌ Model does not support ${testTokens} tokens (API limit or token error)`);
+        } else {
+          console.log(`   ❌ Model does not support ${testTokens} tokens (${errorMessage})`);
+          // 对于非API限制错误，我们可能需要重新抛出
+          if (options.verbose) {
+            console.warn(`   Detailed error for ${modelId}:`, errorMessage);
+          }
+        }
+      }
+      
+      // 添加延迟避免API限制
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    return 0; // 不支持任何测试的值
+  }
 }

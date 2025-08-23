@@ -227,6 +227,7 @@ export class CommandParser implements CLIHandler {
     this.commands.set('provider', {
       name: 'provider',
       description: 'Manage provider configurations and model discovery',
+      options: [], // 主命令不直接有选项
       subcommands: [
         {
           name: 'update',
