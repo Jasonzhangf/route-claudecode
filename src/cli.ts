@@ -276,6 +276,12 @@ class RCCv4CLIHandler implements CLIHandler {
    * 处理provider命令
    */
   private async handleProvider(args: string[], options: Record<string, any>): Promise<void> {
+    // 检查是否是help请求
+    if (options.help || options.h) {
+      this.showProviderHelp();
+      return;
+    }
+    
     const subcommand = args[0];
     
     if (!subcommand) {
@@ -494,6 +500,34 @@ Examples:
    */
   showVersion(): void {
     process.stdout.write('RCC v4.0.0\n');
+  }
+
+  /**
+   * 显示provider命令帮助
+   */
+  private showProviderHelp(): void {
+    process.stdout.write(`
+rcc4 provider - Manage provider configurations and model discovery
+
+Usage:
+  rcc4 provider <subcommand> [options]
+
+Subcommands:
+  update              Update provider models and capabilities
+
+Options:
+  --config <path>     Configuration file path (required)
+  --all               Update all providers
+  --provider <name>   Update specific provider only  
+  --dry-run           Show what would be updated without making changes
+  --verbose           Show detailed output
+
+Examples:
+  rcc4 provider update --config ~/.route-claudecode/config/multi-provider-hybrid-v4.json
+  rcc4 provider update --config ./config.json --verbose
+  rcc4 provider update --config ./config.json --dry-run
+  rcc4 provider update --config ./config.json --provider qwen
+`);
   }
 }
 
