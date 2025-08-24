@@ -1158,9 +1158,125 @@ class RCCCli {
      * 验证配置文件
      */
     async validateConfiguration(path) {
-        if (!this.options.suppressOutput) {
-            console.log(`✅ Configuration ${path || 'default'} is valid`);
+        try {
+            const configPath = path || this.getSystemConfigPath();
+            if (!this.options.suppressOutput) {
+                console.log(`🔍 Validating configuration: ${configPath}`);
+            }
+            // 加载配置
+            const config = config_reader_1.ConfigReader.loadConfig(configPath, this.getSystemConfigPath());
+            let hasErrors = false;
+            // 验证Provider配置
+            if (config.providers && Array.isArray(config.providers)) {
+                for (const provider of config.providers) {
+                    const providerErrors = await this.validateProvider(provider);
+                    if (providerErrors.length > 0) {
+                        hasErrors = true;
+                        console.error(`❌ Provider '${provider.name}' validation failed:`);
+                        providerErrors.forEach(error => console.error(`   - ${error}`));
+                    }
+                }
+            }
+            else {
+                hasErrors = true;
+                console.error('❌ No valid providers found in configuration');
+            }
+            // 验证路由配置
+            if (config.router) {
+                const routeErrors = this.validateRouterConfig(config.router);
+                if (routeErrors.length > 0) {
+                    hasErrors = true;
+                    console.error('❌ Router configuration validation failed:');
+                    routeErrors.forEach(error => console.error(`   - ${error}`));
+                }
+            }
+            if (!hasErrors) {
+                if (!this.options.suppressOutput) {
+                    console.log(`✅ Configuration ${path || 'default'} is valid`);
+                }
+            }
+            else {
+                throw new Error('Configuration validation failed');
+            }
         }
+        catch (error) {
+            throw new Error(`Configuration validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+    /**
+     * 验证单个Provider配置
+     */
+    async validateProvider(provider) {
+        const errors = [];
+        // 必需字段验证
+        if (!provider.name) {
+            errors.push('Missing required field: name');
+        }
+        if (!provider.api_base_url && !provider.endpoint) {
+            errors.push('Missing required field: api_base_url or endpoint');
+        }
+        if (!provider.api_key && !provider.apiKeys) {
+            errors.push('Missing required field: api_key or apiKeys');
+        }
+        // API endpoint格式验证
+        const endpoint = provider.api_base_url || provider.endpoint;
+        if (endpoint) {
+            try {
+                new URL(endpoint);
+                // 特定Provider的endpoint验证
+                if (provider.name === 'modelscope' && endpoint.includes('api.modelscope.cn')) {
+                    errors.push('Incorrect ModelScope endpoint: should use api-inference.modelscope.cn instead of api.modelscope.cn');
+                }
+            }
+            catch {
+                errors.push(`Invalid URL format: ${endpoint}`);
+            }
+        }
+        // 连接性测试 (可选，仅在verbose模式)
+        if (endpoint && provider.api_key && process.argv.includes('--verbose')) {
+            try {
+                const testUrl = endpoint.endsWith('/v1/models') ? endpoint : `${endpoint}/v1/models`;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const response = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${Array.isArray(provider.api_key) ? provider.api_key[0] : provider.api_key}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (!response.ok) {
+                    errors.push(`API connectivity test failed: HTTP ${response.status}`);
+                }
+            }
+            catch (error) {
+                if (error.name === 'AbortError') {
+                    errors.push('API connectivity test timed out');
+                }
+                else if (error.code === 'ENOTFOUND') {
+                    errors.push(`DNS resolution failed for endpoint: ${endpoint}`);
+                }
+                else {
+                    errors.push(`API connectivity test failed: ${error.message}`);
+                }
+            }
+        }
+        return errors;
+    }
+    /**
+     * 验证路由配置
+     */
+    validateRouterConfig(router) {
+        const errors = [];
+        const requiredRoutes = ['default', 'coding'];
+        for (const route of requiredRoutes) {
+            if (!router[route]) {
+                errors.push(`Missing required route: ${route}`);
+            }
+        }
+        return errors;
     }
     /**
      * 获取系统配置文件路径
@@ -1522,7 +1638,7 @@ class RCCCli {
             case 'qwen':
                 return 'https://dashscope.aliyuncs.com/v1';
             case 'modelscope':
-                return 'https://api.modelscope.cn/v1';
+                return 'https://api-inference.modelscope.cn/v1';
             case 'shuaihong':
                 return 'https://api.shuaihong.com/v1';
             case 'lmstudio':

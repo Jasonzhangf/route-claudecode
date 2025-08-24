@@ -175,6 +175,14 @@ export declare class RCCCli implements CLICommands {
      */
     private validateConfiguration;
     /**
+     * 验证单个Provider配置
+     */
+    private validateProvider;
+    /**
+     * 验证路由配置
+     */
+    private validateRouterConfig;
+    /**
      * 获取系统配置文件路径
      */
     private getSystemConfigPath;
