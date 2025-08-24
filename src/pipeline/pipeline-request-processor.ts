@@ -133,6 +133,12 @@ export class PipelineRequestProcessor extends EventEmitter {
     console.log(`📦 Debug系统已初始化 (端口: ${defaultPort})`);
   }
 
+  // ========================================================================================
+  // REQUEST PROCESSOR CORE MODULE - 可独立拆分为 request-processor-core.ts
+  // 包含: processRequest (主协调逻辑), 统计处理, 错误管理
+  // 职责: 六层流水线的协调和统计管理
+  // ========================================================================================
+
   /**
    * 处理Pipeline请求 - 完整的6层处理逻辑
    */
@@ -384,6 +390,12 @@ export class PipelineRequestProcessor extends EventEmitter {
       throw new Error(`Pipeline request processing failed: ${error.message}`);
     }
   }
+
+  // ========================================================================================
+  // PIPELINE PROCESSING LAYERS MODULE - 可独立拆分为 pipeline-layers.ts
+  // 包含: processRouterLayer, processTransformerLayer, processProtocolLayer, processServerLayer
+  // 职责: 六层流水线的核心处理逻辑
+  // ========================================================================================
 
   /**
    * 处理Router层 - 路由决策
@@ -965,6 +977,12 @@ export class PipelineRequestProcessor extends EventEmitter {
     throw lastError || new Error('HTTP request failed after all retries');
   }
 
+  // ========================================================================================
+  // HTTP REQUEST HANDLER MODULE - 可独立拆分为 http-request-handler.ts
+  // 包含: makeHttpRequest, shouldRetryError, createApiErrorResponse, isBufferError
+  // 职责: HTTP请求执行、错误分类、重试逻辑、长文本支持
+  // ========================================================================================
+
   /**
    * 判断错误是否应该重试
    * API错误(4xx)和认证错误不重试，网络错误和服务器错误(5xx)可重试
@@ -1214,6 +1232,12 @@ export class PipelineRequestProcessor extends EventEmitter {
       }
     });
   }
+
+  // ========================================================================================
+  // RESPONSE TRANSFORMER MODULE - 可独立拆分为 response-transformer.ts
+  // 包含: processResponseTransformation, transformOpenAIToAnthropic
+  // 职责: 响应格式转换、协议适配、错误格式统一
+  // ========================================================================================
 
   /**
    * 处理响应转换层 - 将OpenAI格式响应转换为原始协议格式
