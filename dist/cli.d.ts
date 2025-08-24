@@ -67,6 +67,10 @@ declare class RCCv4CLIHandler implements CLIHandler {
      * 显示版本信息
      */
     showVersion(): void;
+    /**
+     * 显示provider命令帮助
+     */
+    private showProviderHelp;
 }
 export { RCCv4CLIHandler };
 //# sourceMappingURL=cli.d.ts.map

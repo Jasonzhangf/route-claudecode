@@ -590,7 +590,9 @@ export class PipelineRequestProcessor extends EventEmitter {
       let routeEntry = routerConfig[mappedModel] || routerConfig.default;
       
       if (routeEntry && typeof routeEntry === 'string' && routeEntry.includes(',')) {
-        const [, modelName] = routeEntry.split(',');
+        // 解析复合路由格式，选择第一个provider-model对
+        const firstRoute = routeEntry.split(';')[0].trim();
+        const [, modelName] = firstRoute.split(',');
         if (modelName && modelName.trim()) {
           actualModel = modelName.trim();
           secureLogger.info('Protocol层：模型名映射', {
@@ -1183,8 +1185,12 @@ export class PipelineRequestProcessor extends EventEmitter {
       const routeEntry = routerConfig[mappedModel];
       console.log(`🔍 Debug: Found route entry for ${mappedModel}: ${routeEntry}`);
       
-      // 解析 "provider,model" 格式
-      const [providerName, modelName] = routeEntry.split(',');
+      // 解析复合路由格式: "provider1,model1;provider2,model2;..."
+      // 选择第一个provider-model对作为主要路由
+      const firstRoute = routeEntry.split(';')[0].trim();
+      console.log(`🔍 Debug: Extracted first route: "${firstRoute}" from "${routeEntry}"`);
+      const [providerName, modelName] = firstRoute.split(',');
+      console.log(`🔍 Debug: Parsed provider: "${providerName}", model: "${modelName}"`);
       
       if (providerName && modelName) {
         // 生成pipeline ID格式: provider-model-key0
@@ -1197,7 +1203,9 @@ export class PipelineRequestProcessor extends EventEmitter {
     // 如果没有配置或解析失败，尝试使用default路由
     if (mappedModel !== 'default' && routerConfig && routerConfig.default) {
       const defaultRoute = routerConfig.default;
-      const [providerName, modelName] = defaultRoute.split(',');
+      // 解析复合默认路由，选择第一个provider-model对
+      const firstDefaultRoute = defaultRoute.split(';')[0].trim();
+      const [providerName, modelName] = firstDefaultRoute.split(',');
       
       if (providerName && modelName) {
         const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;

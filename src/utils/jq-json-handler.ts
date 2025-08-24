@@ -99,7 +99,8 @@ export class JQJsonHandler {
             
             // 🔧 修复: 移除不合理的100K限制，增加大缓冲区处理
             // 支持512MB+的大型JSON处理，为工具调用等复杂请求提供足够空间
-            const args = compact ? ['-c', '.'] : ['.'];
+            // 🎨 改进格式化: 使用更合理的缩进(2空格)增强可读性
+            const args = compact ? ['-c', '.'] : ['--indent', '2', '.'];
             const result = execFileSync('jq', args, {
                 input: basicJson,
                 encoding: 'utf8',
@@ -357,10 +358,11 @@ export class JQJsonHandler {
             // 确保生成有效的JSON而不是手动序列化
             console.log('🔧 [JQ-FALLBACK] 使用原生JSON.stringify作为fallback');
             
-            // 使用原生JSON.stringify，避免手动序列化可能的错误
+            // 🎨 改进格式化: 使用更合理的缩进增强可读性
             if (compact) {
                 return JSON.stringify(data);
             } else {
+                // 使用2个空格缩进，与jq保持一致
                 return JSON.stringify(data, null, 2);
             }
         } catch (error) {

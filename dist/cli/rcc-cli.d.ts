@@ -25,6 +25,7 @@ export declare class RCCCli implements CLICommands {
     private options;
     private pipelineManager?;
     private qwenAuthManager;
+    private blacklistedModels;
     constructor(options?: CLIOptions);
     /**
      * 执行CLI命令
@@ -78,6 +79,41 @@ export declare class RCCCli implements CLICommands {
      * Provider更新命令
      */
     providerUpdate(options: any): Promise<void>;
+    /**
+     * 分类模型统计
+     */
+    /**
+     * 分类模型统计信息
+     */
+    private categorizeModels;
+    /**
+     * 更新Provider模型
+     */
+    private updateProviderModels;
+    /**
+     * 更新Qwen模型
+     */
+    private updateQwenModels;
+    /**
+     * 更新Shuaihong模型
+     */
+    private updateShuaihongModels;
+    /**
+     * 更新ModelScope模型
+     */
+    private updateModelScopeModels;
+    /**
+     * 更新LM Studio模型
+     */
+    private updateLMStudioModels;
+    /**
+     * 获取模型的详细配置（包含精确maxTokens）
+     */
+    private getModelDetailedConfig;
+    /**
+     * 更新Provider配置中的模型列表（支持精确maxTokens）
+     */
+    private updateProviderConfigModels;
     /**
      * 处理错误
      */
@@ -154,5 +190,21 @@ export declare class RCCCli implements CLICommands {
      * 格式化运行时间
      */
     private formatUptime;
+    /**
+     * API动态模型获取功能 - 内联实现
+     */
+    private fetchModelsForProvider;
+    /**
+     * 提取模型的精确上下文长度
+     */
+    private extractContextLength;
+    /**
+     * 智能模型分类
+     */
+    private classifyModel;
+    /**
+     * 获取Provider的默认端点
+     */
+    private getDefaultEndpointForProvider;
 }
 //# sourceMappingURL=rcc-cli.d.ts.map

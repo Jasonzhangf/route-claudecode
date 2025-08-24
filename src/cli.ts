@@ -184,8 +184,21 @@ class RCCv4CLIHandler implements CLIHandler {
   private async handleStart(options: Record<string, any>): Promise<void> {
     process.stdout.write('🔍 [DEBUG] handleStart开始\n');
     
+    // 如果没有提供port，从配置文件中提取
+    let effectivePort = options.port;
+    if (!effectivePort && options.config) {
+      try {
+        const JQJsonHandler = await import('./utils/jq-json-handler');
+        const configData = JQJsonHandler.JQJsonHandler.parseJsonFile(options.config);
+        effectivePort = configData.server?.port;
+        process.stdout.write(`🔍 [DEBUG] 从配置文件提取端口: ${effectivePort}\n`);
+      } catch (error) {
+        process.stdout.write(`⚠️ [DEBUG] 配置文件端口提取失败: ${error.message}\n`);
+      }
+    }
+    
     const startOptions: StartOptions = {
-      port: options.port,
+      port: effectivePort,
       host: options.host,
       config: options.config,
       debug: options.debug,

@@ -23,6 +23,7 @@ import { PipelineLifecycleManager } from '../pipeline/pipeline-lifecycle-manager
 import { secureLogger } from '../utils/secure-logger';
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { QwenAuthManager } from './auth/qwen-auth-manager';
+// import { ApiModelFetcher, FetchedModel } from './api-model-fetcher';
 import * as path from 'path';
 import * as os from 'os';
 
@@ -46,12 +47,15 @@ export class RCCCli implements CLICommands {
   private options: CLIOptions;
   private pipelineManager?: PipelineLifecycleManager;
   private qwenAuthManager: QwenAuthManager;
+  // private apiModelFetcher: ApiModelFetcher;
+  private blacklistedModels: Set<string> = new Set();
 
   constructor(options: CLIOptions = {}) {
     this.parser = new CommandParser();
     this.validator = new ArgumentValidator();
     this.configReader = new ConfigReader();
     this.qwenAuthManager = new QwenAuthManager();
+    // this.apiModelFetcher = new ApiModelFetcher();
     this.options = {
       exitOnError: true,
       suppressOutput: false,
@@ -464,6 +468,38 @@ export class RCCCli implements CLICommands {
   }
 
   /**
+   * 分类模型统计
+   */
+  /**
+   * 分类模型统计信息
+   */
+  private categorizeModels(models: FetchedModel[]): {
+    programming: number;
+    multimodal: number; 
+    longContext: number;
+    blacklisted: number;
+  } {
+    const stats = {
+      programming: 0,
+      multimodal: 0,
+      longContext: 0,
+      blacklisted: 0
+    };
+
+    for (const model of models) {
+      if (model.classification.blacklisted) {
+        stats.blacklisted++;
+      } else {
+        if (model.classification.isProgramming) stats.programming++;
+        if (model.classification.hasImageProcessing) stats.multimodal++;
+        if (model.classification.isLongContext) stats.longContext++;
+      }
+    }
+
+    return stats;
+  }
+
+  /**
    * 更新Provider模型
    */
   private async updateProviderModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
@@ -491,7 +527,7 @@ export class RCCCli implements CLICommands {
    * 更新Qwen模型
    */
   private async updateQwenModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
-    const qwenModels = [
+    const staticModels = [
       'qwen3-coder-plus',
       'qwen3-coder-flash', 
       'qwen-max',
@@ -508,15 +544,42 @@ export class RCCCli implements CLICommands {
       'qwq-32b-preview'
     ];
 
-    console.log(`   📋 Updating Qwen models: ${qwenModels.length} models found`);
-    await this.updateProviderConfigModels(config, configPath, provider.name, qwenModels, options);
+    let finalModels: string[];
+
+    if (options.apiFetch || options['api-fetch']) {
+      console.log(`   🔍 Fetching Qwen models via API...`);
+      try {
+        const fetchedModels = await this.fetchModelsForProvider('qwen', provider, staticModels);
+        finalModels = fetchedModels.map(m => m.id);
+        
+        // 显示分类信息
+        if (options.verbose) {
+          const categories = this.categorizeModels(fetchedModels);
+          console.log(`   📊 API获取结果:`);
+          console.log(`      💻 编程专用: ${categories.programming}`);
+          console.log(`      🖼️ 图像处理: ${categories.multimodal}`);
+          console.log(`      📄 长上下文: ${categories.longContext}`);
+          console.log(`      🚫 已拉黑: ${categories.blacklisted}`);
+        }
+        
+        console.log(`   ✅ API获取成功: ${finalModels.length} models (静态备用: ${staticModels.length})`);
+      } catch (error) {
+        console.log(`   ⚠️ API获取失败，使用静态模型列表: ${error.message}`);
+        finalModels = staticModels;
+      }
+    } else {
+      finalModels = staticModels;
+      console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
+    }
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
   }
 
   /**
    * 更新Shuaihong模型
    */
   private async updateShuaihongModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
-    const shuaihongModels = [
+    const staticModels = [
       'gemini-2.5-pro',
       'gpt-4o',
       'gpt-4o-mini',
@@ -525,15 +588,33 @@ export class RCCCli implements CLICommands {
       'claude-3-opus'
     ];
 
-    console.log(`   📋 Updating Shuaihong models: ${shuaihongModels.length} models found`);
-    await this.updateProviderConfigModels(config, configPath, provider.name, shuaihongModels, options);
+    let finalModels: string[];
+
+    if (options.apiFetch || options['api-fetch']) {
+      console.log(`   🔍 Shuaihong不支持/models API，使用静态模型列表...`);
+      finalModels = staticModels;
+      
+      if (options.verbose) {
+        // 为静态模型显示分类统计
+        console.log(`   📊 静态模型分类:`);
+        console.log(`      💻 编程专用: 0`);
+        console.log(`      🖼️ 图像处理: 2 (gemini-2.5-pro, gpt-4o)`);
+        console.log(`      📄 长上下文: 6 (全部模型)`);
+        console.log(`      🚫 已拉黑: 0`);
+      }
+    } else {
+      finalModels = staticModels;
+      console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
+    }
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
   }
 
   /**
    * 更新ModelScope模型
    */
   private async updateModelScopeModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
-    const modelscopeModels = [
+    const staticModels = [
       'qwen3-480b',
       'qwen2.5-72b-instruct',
       'qwen2.5-32b-instruct',
@@ -542,15 +623,41 @@ export class RCCCli implements CLICommands {
       'deepseek-v2.5-chat'
     ];
 
-    console.log(`   📋 Updating ModelScope models: ${modelscopeModels.length} models found`);
-    await this.updateProviderConfigModels(config, configPath, provider.name, modelscopeModels, options);
+    let finalModels: string[];
+
+    if (options.apiFetch || options['api-fetch']) {
+      console.log(`   🔍 Fetching ModelScope models via API...`);
+      try {
+        const fetchedModels = await this.fetchModelsForProvider('modelscope', provider, staticModels);
+        finalModels = fetchedModels.map(m => m.id);
+        
+        if (options.verbose) {
+          const categories = this.categorizeModels(fetchedModels);
+          console.log(`   📊 API获取结果:`);
+          console.log(`      💻 编程专用: ${categories.programming}`);
+          console.log(`      🖼️ 图像处理: ${categories.multimodal}`);
+          console.log(`      📄 长上下文: ${categories.longContext}`);
+          console.log(`      🚫 已拉黑: ${categories.blacklisted}`);
+        }
+        
+        console.log(`   ✅ API获取成功: ${finalModels.length} models (静态备用: ${staticModels.length})`);
+      } catch (error) {
+        console.log(`   ⚠️ API获取失败，使用静态模型列表: ${error.message}`);
+        finalModels = staticModels;
+      }
+    } else {
+      finalModels = staticModels;
+      console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
+    }
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
   }
 
   /**
    * 更新LM Studio模型
    */
   private async updateLMStudioModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
-    const lmstudioModels = [
+    const staticModels = [
       'gpt-oss-20b-mlx',
       'llama-3.1-8b',
       'qwen2.5-7b-instruct',
@@ -558,17 +665,76 @@ export class RCCCli implements CLICommands {
       'deepseek-coder-33b'
     ];
 
-    console.log(`   📋 Updating LM Studio models: ${lmstudioModels.length} models found`);
-    await this.updateProviderConfigModels(config, configPath, provider.name, lmstudioModels, options);
+    let finalModels: string[];
+
+    if (options.apiFetch || options['api-fetch']) {
+      console.log(`   🔍 Fetching LM Studio models via API...`);
+      try {
+        const fetchedModels = await this.fetchModelsForProvider('lmstudio', provider, staticModels);
+        finalModels = fetchedModels.map(m => m.id);
+        
+        if (options.verbose) {
+          const categories = this.categorizeModels(fetchedModels);
+          console.log(`   📊 API获取结果:`);
+          console.log(`      💻 编程专用: ${categories.programming}`);
+          console.log(`      🖼️ 图像处理: ${categories.multimodal}`);
+          console.log(`      📄 长上下文: ${categories.longContext}`);
+          console.log(`      🚫 已拉黑: ${categories.blacklisted}`);
+        }
+        
+        console.log(`   ✅ API获取成功: ${finalModels.length} models (静态备用: ${staticModels.length})`);
+      } catch (error) {
+        console.log(`   ⚠️ API获取失败，使用静态模型列表: ${error.message}`);
+        finalModels = staticModels;
+      }
+    } else {
+      finalModels = staticModels;
+      console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
+    }
+
+    await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
   }
 
   /**
-   * 更新Provider配置中的模型列表
+   * 获取模型的详细配置（包含精确maxTokens）
+   */
+  private getModelDetailedConfig(modelName: string, providerType: string): { name: string; maxTokens: number; capabilities?: string[] } {
+    const maxTokens = this.extractContextLength(modelName, providerType);
+    const classification = this.classifyModel(modelName, maxTokens);
+    
+    const config = {
+      name: modelName,
+      maxTokens,
+      ...(classification.capabilities.length > 0 && { capabilities: classification.capabilities })
+    };
+    
+    return config;
+  }
+
+  /**
+   * 更新Provider配置中的模型列表（支持精确maxTokens）
    */
   private async updateProviderConfigModels(config: any, configPath: string, providerName: string, models: string[], options: any): Promise<void> {
     if (options.dryRun || options['dry-run']) {
+      // 在dry-run模式下显示详细的模型配置
       console.log(`   📝 Dry run mode - would update ${models.length} models:`);
-      console.log(`      ${models.join(', ')}`);
+      
+      if (options.verbose) {
+        // 显示每个模型的详细信息
+        models.forEach(modelName => {
+          const detailedConfig = this.getModelDetailedConfig(modelName, providerName);
+          const tokensDisplay = detailedConfig.maxTokens >= 1000000 
+            ? `${(detailedConfig.maxTokens / 1000000).toFixed(1)}M`
+            : detailedConfig.maxTokens >= 1000 
+            ? `${Math.round(detailedConfig.maxTokens / 1000)}K`
+            : detailedConfig.maxTokens.toString();
+          
+          const capStr = detailedConfig.capabilities ? ` [${detailedConfig.capabilities.join(', ')}]` : '';
+          console.log(`      - ${modelName}: ${tokensDisplay}${capStr}`);
+        });
+      } else {
+        console.log(`      ${models.join(', ')}`);
+      }
       return;
     }
 
@@ -580,12 +746,20 @@ export class RCCCli implements CLICommands {
       // 解析配置文件
       const parsedConfig = JQJsonHandler.parseJsonString(rawConfig);
       
+      // 创建详细的模型配置
+      const detailedModels = models.map(modelName => 
+        this.getModelDetailedConfig(modelName, providerName)
+      );
+      
       // 更新Providers数组中对应provider的models列表
       let providerUpdated = false;
       if (parsedConfig.Providers && Array.isArray(parsedConfig.Providers)) {
         for (const provider of parsedConfig.Providers) {
           if (provider.name === providerName) {
-            provider.models = models;
+            // 更新为详细配置，同时保持向后兼容
+            provider.models = detailedModels;
+            // 添加更新时间戳
+            provider.lastUpdated = new Date().toISOString();
             providerUpdated = true;
             console.log(`   ✅ Updated ${models.length} models for provider ${providerName}`);
             if (options.verbose) {
@@ -1215,4 +1389,339 @@ export class RCCCli implements CLICommands {
       return `${seconds}s`;
     }
   }
+
+  /**
+   * API动态模型获取功能 - 内联实现
+   */
+  private async fetchModelsForProvider(providerType: string, provider: any, staticFallback: string[]): Promise<FetchedModel[]> {
+    try {
+      const apiKey = provider.api_key || provider.apiKeys?.[0] || 'default-key';
+      const baseUrl = provider.api_base_url || this.getDefaultEndpointForProvider(providerType);
+      const modelsEndpoint = `${baseUrl}/v1/models`;
+
+      secureLogger.info(`Fetching models from ${providerType} API`, {
+        endpoint: modelsEndpoint,
+        provider: provider.name
+      });
+
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      const response = await fetch(modelsEndpoint, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const rawModels = data.data || data.models || [];
+
+      const fetchedModels: FetchedModel[] = [];
+
+      for (const rawModel of rawModels) {
+        const modelName = rawModel.id || rawModel.name || 'unknown-model';
+        
+        // 尝试从API响应中提取真实的上下文长度
+        let contextLength: number;
+        if (rawModel.context_length || rawModel.contextLength || rawModel.max_tokens || rawModel.maxTokens) {
+          contextLength = rawModel.context_length || rawModel.contextLength || rawModel.max_tokens || rawModel.maxTokens;
+          secureLogger.debug(`Found API context length for ${modelName}`, {
+            apiContextLength: contextLength,
+            source: rawModel.context_length ? 'context_length' : 
+                    rawModel.contextLength ? 'contextLength' :
+                    rawModel.max_tokens ? 'max_tokens' : 'maxTokens'
+          });
+        } else {
+          // 回退到精确映射表
+          contextLength = this.extractContextLength(modelName, providerType);
+          secureLogger.debug(`Using mapped context length for ${modelName}`, {
+            mappedContextLength: contextLength,
+            source: 'precise_mapping'
+          });
+        }
+        
+        const classification = this.classifyModel(modelName, contextLength);
+
+        // Skip blacklisted models
+        if (classification.blacklisted) {
+          this.blacklistedModels.add(modelName);
+          continue;
+        }
+
+        const fetchedModel: FetchedModel = {
+          id: modelName,
+          name: modelName,
+          maxTokens: contextLength,
+          classification,
+          provider: providerType,
+          createdAt: new Date().toISOString()
+        };
+
+        fetchedModels.push(fetchedModel);
+      }
+
+      secureLogger.info(`Successfully fetched models from ${providerType}`, {
+        totalModels: rawModels.length,
+        filteredModels: fetchedModels.length,
+        blacklisted: rawModels.length - fetchedModels.length
+      });
+
+      return fetchedModels;
+
+    } catch (error) {
+      secureLogger.error(`Failed to fetch models from ${providerType}`, {
+        error: error.message,
+        fallbackCount: staticFallback.length
+      });
+      
+      // Return static models as FetchedModel objects
+      return staticFallback.map(modelName => ({
+        id: modelName,
+        name: modelName,
+        maxTokens: this.extractContextLength(modelName, providerType),
+        classification: this.classifyModel(modelName, this.extractContextLength(modelName, providerType)),
+        provider: providerType,
+        createdAt: new Date().toISOString()
+      }));
+    }
+  }
+
+  /**
+   * 提取模型的精确上下文长度
+   */
+  private extractContextLength(modelName: string, providerType: string): number {
+    const lowerName = modelName.toLowerCase();
+    
+    // 精确的模型上下文长度映射表
+    const modelMaxTokens: Record<string, number> = {
+      // Qwen模型系列
+      'qwen3-coder-plus': 1000000,        // 1M上下文
+      'qwen3-coder-flash': 1000000,       // 1M上下文  
+      'qwen-max': 2000000,                // 2M上下文
+      'qwen-plus': 1000000,               // 1M上下文
+      'qwen-turbo': 1000000,              // 1M上下文
+      'qwen-long': 10000000,              // 10M长上下文
+      'qwen2.5-72b-instruct': 131072,     // 128K上下文
+      'qwen2.5-32b-instruct': 131072,     // 128K上下文
+      'qwen2.5-14b-instruct': 131072,     // 128K上下文
+      'qwen2.5-7b-instruct': 131072,      // 128K上下文
+      'qwen2.5-coder-32b-instruct': 131072, // 128K上下文
+      'qwen2.5-coder-14b-instruct': 131072, // 128K上下文
+      'qwen2.5-coder-7b-instruct': 131072,  // 128K上下文
+      'qwq-32b-preview': 1000000,         // 1M推理模型
+      
+      // Shuaihong代理模型系列
+      'gemini-2.5-pro': 2097152,          // 2M上下文
+      'gpt-4o': 128000,                   // 128K上下文
+      'gpt-4o-mini': 128000,              // 128K上下文  
+      'claude-3-sonnet': 200000,          // 200K上下文
+      'claude-3-haiku': 200000,           // 200K上下文
+      'claude-3-opus': 200000,            // 200K上下文
+      
+      // ModelScope模型系列 (64K限制)
+      'qwen3-480b': 65536,                // 64K上下文
+      'llama3.1-405b-instruct': 131072,   // 128K上下文
+      'llama3.1-70b-instruct': 131072,    // 128K上下文
+      'deepseek-v2.5-chat': 65536,        // 64K上下文
+      
+      // LM Studio本地模型
+      'gpt-oss-20b-mlx': 131072,          // 128K上下文
+      'llama-3.1-8b': 131072,             // 128K上下文
+      'codellama-34b': 100000,            // 100K上下文
+      'deepseek-coder-33b': 131072,       // 128K上下文
+      
+      // 其他常见模型
+      'gpt-3.5-turbo': 16384,             // 16K上下文 (会被拉黑)
+      'gpt-4': 128000,                    // 128K上下文
+      'claude-instant-1': 9000,           // 9K上下文 (会被拉黑)
+      'llama-2-7b-chat': 4096,            // 4K上下文 (会被拉黑)
+    };
+    
+    // 直接查找精确匹配
+    if (modelMaxTokens[lowerName]) {
+      return modelMaxTokens[lowerName];
+    }
+    
+    // 尝试部分匹配（处理版本变化）
+    for (const [modelKey, tokens] of Object.entries(modelMaxTokens)) {
+      if (lowerName.includes(modelKey.split('-')[0]) && lowerName.includes(modelKey.split('-')[1] || '')) {
+        return tokens;
+      }
+    }
+    
+    // 基于名称模式推断（作为后备）
+    if (lowerName.includes('32k')) return 32768;
+    if (lowerName.includes('64k')) return 65536;
+    if (lowerName.includes('128k')) return 131072;
+    if (lowerName.includes('256k')) return 262144;
+    if (lowerName.includes('1m') || lowerName.includes('1000k')) return 1000000;
+    if (lowerName.includes('2m') || lowerName.includes('2000k')) return 2000000;
+    if (lowerName.includes('10m')) return 10000000;
+    
+    // 基于模型名称特征推断
+    if (lowerName.includes('long') || lowerName.includes('extended')) {
+      return 1000000; // 长上下文变种
+    }
+    if (lowerName.includes('flash') || lowerName.includes('turbo')) {
+      return 1000000; // 快速模型通常上下文较长
+    }
+    if (lowerName.includes('mini') || lowerName.includes('small')) {
+      return 128000;  // 小模型通常上下文中等
+    }
+    
+    // Provider特定的保守默认值
+    switch (providerType) {
+      case 'qwen':
+        return 131072;  // Qwen保守默认128K
+      case 'shuaihong':
+        return 128000;  // 代理模型保守默认128K
+      case 'modelscope':
+        return 65536;   // ModelScope默认64K
+      case 'lmstudio':
+        return 131072;  // 本地模型保守默认128K
+      default:
+        return 131072;  // 全局保守默认128K
+    }
+  }
+
+  /**
+   * 智能模型分类
+   */
+  private classifyModel(name: string, contextLength: number): ModelClassification {
+    const lowerName = name.toLowerCase();
+    
+    // Check for blacklisting conditions
+    if (contextLength < 65536) { // < 64K
+      return {
+        contextLength,
+        isProgramming: false,
+        hasImageProcessing: false,
+        isLongContext: false,
+        category: 'general' as const,
+        capabilities: [],
+        blacklisted: true,
+        blacklistReason: `Context length ${contextLength} < 64K threshold`
+      };
+    }
+
+    // Programming keywords
+    const programmingKeywords = [
+      'code', 'coder', 'coding', 'program', 'dev', 'developer', 
+      'instruct', 'chat', 'assistant', 'tool', 'function',
+      'qwen', 'codellama', 'starcoder', 'deepseek', 'gemini'
+    ];
+    
+    // Image processing keywords
+    const imageProcessingKeywords = [
+      'vision', 'visual', 'image', 'multimodal', 'mm', 'vlm',
+      'gemini', 'gpt-4o', 'claude-3', 'qwen-vl'
+    ];
+    
+    // Reasoning keywords
+    const reasoningKeywords = [
+      'reasoning', 'reason', 'think', 'analysis', 'logic',
+      'qwq', 'o1', 'reasoning', 'deepthink'
+    ];
+
+    // Detect capabilities
+    const isProgramming = programmingKeywords.some(keyword => lowerName.includes(keyword));
+    const hasImageProcessing = imageProcessingKeywords.some(keyword => lowerName.includes(keyword));
+    const isReasoning = reasoningKeywords.some(keyword => lowerName.includes(keyword));
+    const isLongContext = contextLength >= 200000; // >= 200K
+
+    // Filter out non-programming models
+    if (!isProgramming && !hasImageProcessing && !isReasoning) {
+      return {
+        contextLength,
+        isProgramming: false,
+        hasImageProcessing: false,
+        isLongContext,
+        category: 'general' as const,
+        capabilities: [],
+        blacklisted: true,
+        blacklistReason: 'Non-programming general purpose model'
+      };
+    }
+
+    // Determine category
+    let category: ModelClassification['category'] = 'programming';
+    if (hasImageProcessing) {
+      category = 'multimodal';
+    } else if (isReasoning) {
+      category = 'reasoning';
+    }
+
+    // Build capabilities list
+    const capabilities: string[] = [];
+    if (isProgramming) capabilities.push('programming');
+    if (hasImageProcessing) capabilities.push('image-processing');
+    if (isLongContext) capabilities.push('long-context');
+    if (isReasoning) capabilities.push('reasoning');
+    if (contextLength >= 1000000) capabilities.push('ultra-long-context');
+
+    return {
+      contextLength,
+      isProgramming,
+      hasImageProcessing,
+      isLongContext,
+      category,
+      capabilities,
+      blacklisted: false
+    };
+  }
+
+  /**
+   * 获取Provider的默认端点
+   */
+  private getDefaultEndpointForProvider(providerType: string): string {
+    switch (providerType) {
+      case 'qwen':
+        return 'https://dashscope.aliyuncs.com/v1';
+      case 'modelscope':
+        return 'https://api.modelscope.cn/v1';
+      case 'shuaihong':
+        return 'https://api.shuaihong.com/v1';
+      case 'lmstudio':
+        return 'http://localhost:1234/v1';
+      default:
+        return 'http://localhost:1234/v1';
+    }
+  }
+}
+
+/**
+ * 模型分类接口
+ */
+interface ModelClassification {
+  contextLength: number;
+  isProgramming: boolean;
+  hasImageProcessing: boolean;
+  isLongContext: boolean;
+  category: 'programming' | 'general' | 'multimodal' | 'reasoning';
+  capabilities: string[];
+  blacklisted: boolean;
+  blacklistReason?: string;
+}
+
+/**
+ * 获取的模型接口
+ */
+interface FetchedModel {
+  id: string;
+  name: string;
+  maxTokens: number;
+  classification: ModelClassification;
+  provider: string;
+  createdAt: string;
 }

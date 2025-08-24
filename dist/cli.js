@@ -8,6 +8,29 @@
  *
  * @author Jason Zhang
  */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RCCv4CLIHandler = void 0;
 const rcc_cli_1 = require("./cli/rcc-cli");
@@ -157,8 +180,21 @@ class RCCv4CLIHandler {
      */
     async handleStart(options) {
         process.stdout.write('🔍 [DEBUG] handleStart开始\n');
+        // 如果没有提供port，从配置文件中提取
+        let effectivePort = options.port;
+        if (!effectivePort && options.config) {
+            try {
+                const JQJsonHandler = await Promise.resolve().then(() => __importStar(require('./utils/jq-json-handler')));
+                const configData = JQJsonHandler.JQJsonHandler.parseJsonFile(options.config);
+                effectivePort = configData.server?.port;
+                process.stdout.write(`🔍 [DEBUG] 从配置文件提取端口: ${effectivePort}\n`);
+            }
+            catch (error) {
+                process.stdout.write(`⚠️ [DEBUG] 配置文件端口提取失败: ${error.message}\n`);
+            }
+        }
         const startOptions = {
-            port: options.port,
+            port: effectivePort,
             host: options.host,
             config: options.config,
             debug: options.debug,
@@ -233,6 +269,11 @@ class RCCv4CLIHandler {
      * 处理provider命令
      */
     async handleProvider(args, options) {
+        // 检查是否是help请求
+        if (options.help || options.h) {
+            this.showProviderHelp();
+            return;
+        }
         const subcommand = args[0];
         if (!subcommand) {
             process.stderr.write('❌ Provider subcommand is required. Usage: rcc4 provider <subcommand>\n');
@@ -436,6 +477,33 @@ Examples:
      */
     showVersion() {
         process.stdout.write('RCC v4.0.0\n');
+    }
+    /**
+     * 显示provider命令帮助
+     */
+    showProviderHelp() {
+        process.stdout.write(`
+rcc4 provider - Manage provider configurations and model discovery
+
+Usage:
+  rcc4 provider <subcommand> [options]
+
+Subcommands:
+  update              Update provider models and capabilities
+
+Options:
+  --config <path>     Configuration file path (required)
+  --all               Update all providers
+  --provider <name>   Update specific provider only  
+  --dry-run           Show what would be updated without making changes
+  --verbose           Show detailed output
+
+Examples:
+  rcc4 provider update --config ~/.route-claudecode/config/multi-provider-hybrid-v4.json
+  rcc4 provider update --config ./config.json --verbose
+  rcc4 provider update --config ./config.json --dry-run
+  rcc4 provider update --config ./config.json --provider qwen
+`);
     }
 }
 exports.RCCv4CLIHandler = RCCv4CLIHandler;

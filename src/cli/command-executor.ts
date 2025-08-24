@@ -80,8 +80,14 @@ export class CommandExecutor implements ICommandExecutor {
           validation.warnings.forEach(warning => console.warn(`   ${warning}`));
         }
 
-        // 合并配置
-        serverConfig = { ...loadedConfig, ...config };
+        // 合并配置 - 正确提取server配置
+        serverConfig = { 
+          ...config, // CLI参数优先
+          port: config.port || loadedConfig.server?.port || 3456,
+          host: config.host || loadedConfig.server?.host || 'localhost',
+          debug: config.debug || loadedConfig.server?.debug || false,
+          configPath: config.configPath
+        };
       }
 
       // 启动服务器

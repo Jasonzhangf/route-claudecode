@@ -238,12 +238,15 @@ export class CommandParser implements CLIHandler {
             { name: 'provider', alias: 'p', type: 'string', description: 'Specific provider to update' },
             { name: 'dry-run', alias: 'd', type: 'boolean', description: 'Show what would be updated without making changes' },
             { name: 'verbose', alias: 'v', type: 'boolean', description: 'Show detailed output' },
+            { name: 'api-fetch', alias: 'f', type: 'boolean', description: 'Fetch models from provider APIs instead of using static lists' },
           ],
           examples: [
             'rcc4 provider update --config config.json',
             'rcc4 provider update --all',
             'rcc4 provider update --provider openai',
-            'rcc4 provider update --dry-run --verbose'
+            'rcc4 provider update --dry-run --verbose',
+            'rcc4 provider update --api-fetch --verbose',
+            'rcc4 provider update --all --api-fetch --verbose'
           ]
         }
       ]

@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-08-23 11:01:58",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/test-config-expansion.ts",
+  "violations_found": true,
+  "violation_count": 1,
+  "violations": [
+    "SILENT-FAILURE: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/test-config-expansion.ts 中发现静默失败: \|\|\s*{}"
+  ],
+  "scan_status": "completed"
+}

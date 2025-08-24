@@ -400,6 +400,10 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       if (this.isAnthropicRequest(input)) {
         console.log('🔥 [TRANSFORMER PERFORM] Detected Anthropic request, calling transformAnthropicToOpenAI');
         return this.transformAnthropicToOpenAI(input as AnthropicRequest);
+      } else if (this.isOpenAIRequest(input)) {
+        console.log('🔥 [TRANSFORMER PERFORM] Detected OpenAI request, passing through as-is');
+        // OpenAI请求直接传递，不需要转换
+        return input as OpenAIRequest;
       } else if (this.isOpenAIResponse(input)) {
         console.log('🔥 [TRANSFORMER PERFORM] Detected OpenAI response, calling transformOpenAIToAnthropic');
         return this.transformOpenAIToAnthropic(input as OpenAIResponse);
@@ -407,7 +411,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
         console.log('🔥 [TRANSFORMER PERFORM] Unsupported input format detected');
         throw new TransformerValidationError(
           'Unsupported input format',
-          ['Input must be valid Anthropic request or OpenAI response'],
+          ['Input must be valid Anthropic request, OpenAI request, or OpenAI response'],
           { inputType: typeof input }
         );
       }
@@ -861,6 +865,21 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     );
   }
 
+  private isOpenAIRequest(input: unknown): boolean {
+    if (!input || typeof input !== 'object') {
+      return false;
+    }
+
+    const req = input as any;
+    return (
+      typeof req.model === 'string' &&
+      Array.isArray(req.messages) &&
+      !req.max_tokens && // 不是Anthropic请求格式
+      !req.choices && // 不是OpenAI响应
+      !req.usage // 不是OpenAI响应
+    );
+  }
+
   private isOpenAIResponse(input: unknown): boolean {
     if (!input || typeof input !== 'object') {
       return false;
@@ -878,6 +897,8 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   private detectInputType(input: unknown): string {
     if (this.isAnthropicRequest(input)) {
       return 'anthropic-request';
+    } else if (this.isOpenAIRequest(input)) {
+      return 'openai-request';
     } else if (this.isOpenAIResponse(input)) {
       return 'openai-response';
     } else {

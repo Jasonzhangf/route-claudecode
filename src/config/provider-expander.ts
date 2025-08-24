@@ -176,7 +176,10 @@ export class ProviderExpander {
         }
         
         // 验证模型是否在Provider的模型列表中
-        if (!originalProvider.models.includes(modelName)) {
+        const modelExists = originalProvider.models.some((model: any) => 
+          typeof model === 'string' ? model === modelName : model.name === modelName
+        );
+        if (!modelExists) {
           secureLogger.warn('⚠️ Model not found in provider, skipping', {
             virtualModel,
             providerName,
