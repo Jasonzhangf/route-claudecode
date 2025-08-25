@@ -12,6 +12,7 @@ import { RCCError } from '../types/error';
 import { DebugRecorder, DebugRecorderImpl } from './debug-recorder';
 import { ReplaySystem, ReplaySystemImpl } from './replay-system';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { ConsoleLogCapture } from './console-log-capture';
 
 /**
  * Debug管理器接口
@@ -27,6 +28,7 @@ export interface DebugManager {
   endSession(sessionId: string): Promise<void>;
   getStatistics(): DebugStatistics;
   cleanup(): Promise<void>;
+  setRequestContext(requestId: string, port?: number): void;
 }
 
 /**
@@ -40,6 +42,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
   private replaySystem: ReplaySystem;
   private config: DebugConfig;
   private startTime: number;
+  private consoleCapture: ConsoleLogCapture;
 
   constructor(config?: Partial<DebugConfig>) {
     super();
@@ -67,6 +70,11 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
 
     this.recorder = new DebugRecorderImpl(this.config);
     this.replaySystem = new ReplaySystemImpl(this.recorder);
+    
+    // 使用正确的debug-logs路径
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
+    const debugLogsPath = `${homeDir}/.route-claudecode/debug-logs`;
+    this.consoleCapture = new ConsoleLogCapture(debugLogsPath);
 
     // 启动清理任务
     this.startCleanupScheduler();
@@ -81,6 +89,9 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
    * 初始化Debug管理器
    */
   async initialize(port?: number): Promise<void> {
+    // 启用console日志捕获
+    this.consoleCapture.enable(port);
+    
     // 初始化逻辑
     console.log(`Debug manager initialized for port ${port || 'default'}`);
     this.emit('initialized', { port: port || 'default' });
@@ -345,12 +356,26 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
       await this.recorder.cleanup();
     }
 
+    // 禁用console捕获
+    if (this.consoleCapture) {
+      this.consoleCapture.disable();
+    }
+
     this.emit('debug-manager-cleanup', {
       timestamp: Date.now(),
       duration: Date.now() - this.startTime,
     });
 
     console.log('✅ Debug系统清理完成');
+  }
+
+  /**
+   * 设置当前请求上下文（用于console日志关联）
+   */
+  setRequestContext(requestId: string, port?: number): void {
+    if (this.consoleCapture) {
+      this.consoleCapture.setCurrentRequestId(requestId, port);
+    }
   }
 
   /**

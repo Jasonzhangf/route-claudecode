@@ -166,6 +166,12 @@ export class PipelineRequestProcessor extends EventEmitter {
     this.blacklistManager.initialize().catch(error => {
       secureLogger.warn('Failed to initialize blacklist manager, continuing with defaults', { error });
     });
+
+    // 初始化Debug管理器以启用console日志捕获
+    const port = this.config.server?.port || getServerPort();
+    this.debugManager.initialize(port).catch(error => {
+      secureLogger.warn('Failed to initialize debug manager console capture', { error, port });
+    });
   }
 
   /**
@@ -209,6 +215,11 @@ export class PipelineRequestProcessor extends EventEmitter {
 
     try {
       this.stats.totalRequests++;
+      
+      // 设置console日志捕获的请求上下文
+      if (this.debugManager) {
+        this.debugManager.setRequestContext(requestId, this.config?.server?.port);
+      }
       
       secureLogger.info('Starting pipeline request processing', {
         requestId,
@@ -872,7 +883,15 @@ export class PipelineRequestProcessor extends EventEmitter {
           (httpError as any).response = { status: response.status, data: response.body };
           
           // 返回格式化的API错误响应，而不是抛出异常
-          return this.httpRequestHandler.createApiErrorResponse(httpError, response.status, context.requestId);
+          const errorContext = {
+            provider: routingDecision?.providerId || 'unknown',
+            model: request?.model || 'unknown',
+            endpoint: context.metadata?.protocolConfig?.endpoint
+          };
+          const errorResponse = this.httpRequestHandler.createApiErrorResponse(httpError, response.status, context.requestId, errorContext);
+          // 标记这是一个错误响应，避免通过响应转换层
+          (errorResponse as any).__isErrorResponse = true;
+          return errorResponse;
         }
 
         // 解析响应 - 仅对成功状态码进行JSON解析，增强错误处理
@@ -1021,7 +1040,15 @@ export class PipelineRequestProcessor extends EventEmitter {
           });
           
           // 返回API错误而不是抛出异常，让客户端决定是否重试
-          return this.httpRequestHandler.createApiErrorResponse(error, statusCode, context.requestId);
+          const errorContext = {
+            provider: routingDecision?.providerId || 'unknown',
+            model: request?.model || 'unknown',
+            endpoint: context.metadata?.protocolConfig?.endpoint
+          };
+          const errorResponse = this.httpRequestHandler.createApiErrorResponse(error, statusCode, context.requestId, errorContext);
+          // 标记这是一个错误响应，避免通过响应转换层
+          (errorResponse as any).__isErrorResponse = true;
+          return errorResponse;
         }
         
         // 检查是否应该重试
@@ -1050,7 +1077,15 @@ export class PipelineRequestProcessor extends EventEmitter {
             shouldRetry
           });
           
-          return this.httpRequestHandler.createApiErrorResponse(error, statusCode, context.requestId);
+          const errorContext = {
+            provider: routingDecision?.providerId || 'unknown',
+            model: request?.model || 'unknown',
+            endpoint: context.metadata?.protocolConfig?.endpoint
+          };
+          const errorResponse = this.httpRequestHandler.createApiErrorResponse(error, statusCode, context.requestId, errorContext);
+          // 标记这是一个错误响应，避免通过响应转换层
+          (errorResponse as any).__isErrorResponse = true;
+          return errorResponse;
         }
       }
     }
@@ -1085,7 +1120,22 @@ export class PipelineRequestProcessor extends EventEmitter {
       requestId: context.requestId,
       originalProtocol,
       responseType: response?.object || 'unknown',
+      isErrorResponse: !!(response?.__isErrorResponse),
     });
+
+    // 🔧 关键修复：如果是错误响应，直接返回，不进行协议转换
+    // 错误响应已经是正确格式（Anthropic），不应该被转换
+    if (response?.__isErrorResponse) {
+      secureLogger.debug('Bypassing transformation for error response', {
+        requestId: context.requestId,
+        errorType: response?.error?.type || 'unknown',
+        statusCode: response?.error?.details?.http_status
+      });
+      
+      // 移除内部标记
+      const { __isErrorResponse, ...cleanResponse } = response;
+      return cleanResponse;
+    }
 
     // 如果原始协议是anthropic，将OpenAI格式转换为Anthropic格式
     if (originalProtocol === 'anthropic') {
