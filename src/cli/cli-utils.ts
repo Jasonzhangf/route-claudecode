@@ -8,6 +8,7 @@
 
 import { getServerHost, getServerPort } from '../constants';
 import { CLI_DEFAULTS } from '../constants/cli-defaults';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 服务器状态检查结果
@@ -85,7 +86,7 @@ export async function getServerDetailedStatus(
       throw new Error(`Server returned status ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = JQJsonHandler.parseJsonString(await response.text());
 
     return {
       running: true,
@@ -153,7 +154,7 @@ export async function gracefulStopServer(
         'Content-Type': 'application/json',
         Authorization: 'Bearer admin-key-123', // 临时管理员密钥
       },
-      body: JSON.stringify({ graceful: true, timeout }),
+      body: JQJsonHandler.stringifyJson({ graceful: true, timeout }, true),
       signal: controller.signal,
     });
 
@@ -198,7 +199,7 @@ export async function forceStopServer(
         'Content-Type': 'application/json',
         Authorization: 'Bearer admin-key-123',
       },
-      body: JSON.stringify({ graceful: false, force: true }),
+      body: JQJsonHandler.stringifyJson({ graceful: false, force: true }, true),
       signal: controller.signal,
     });
 

@@ -1063,7 +1063,7 @@ export class CommandExecutor implements ICommandExecutor {
       // 解析配置文件
       let parsedConfig: any;
       if (configPath.endsWith('.json')) {
-        parsedConfig = JSON.parse(rawConfig);
+        parsedConfig = JQJsonHandler.parseJsonString(rawConfig);
       } else {
         // 支持JSON5格式
         const JSON5 = require('json5');
@@ -1112,7 +1112,7 @@ export class CommandExecutor implements ICommandExecutor {
       // 写回配置文件
       let updatedConfig: string;
       if (configPath.endsWith('.json')) {
-        updatedConfig = JSON.stringify(parsedConfig, null, 2);
+        updatedConfig = JQJsonHandler.stringifyJson(parsedConfig, false);
       } else {
         const JSON5 = require('json5');
         updatedConfig = JSON5.stringify(parsedConfig, null, 2);

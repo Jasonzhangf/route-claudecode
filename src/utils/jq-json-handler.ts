@@ -24,7 +24,8 @@ export class JQJsonHandler {
             // 使用execFileSync提高安全性和性能
             const result = execFileSync('jq', [filter, filePath], { 
                 encoding: 'utf8',
-                timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT
+                timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT,
+                maxBuffer: 50 * 1024 * 1024  // 🚀 大幅提升: 50MB缓冲区支持大型JSON文件
             });
             
             // 直接使用jq的输出，避免二次解析
@@ -51,7 +52,7 @@ export class JQJsonHandler {
                 input: jsonString,
                 encoding: 'utf8',
                 timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT,
-                maxBuffer: 1024 * 1024  // 🚀 大型JSON支持: 1MB缓冲区
+                maxBuffer: 50 * 1024 * 1024  // 🚀 大幅提升: 50MB缓冲区支持大型JSON解析
             });
             
             // 直接使用jq的输出，避免二次解析
@@ -67,7 +68,7 @@ export class JQJsonHandler {
                     input: fixedJson,
                     encoding: 'utf8',
                     timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT,
-                    maxBuffer: 1024 * 1024  // 🚀 重试时也支持大型JSON: 1MB缓冲区
+                    maxBuffer: 50 * 1024 * 1024  // 🚀 大幅提升: 重试时也支持50MB大型JSON
                 });
                 
                 console.log(`✅ [JQ-FIX] Fixed JSON parse succeeded`);
@@ -105,7 +106,7 @@ export class JQJsonHandler {
                 input: basicJson,
                 encoding: 'utf8',
                 timeout: TIMEOUT_DEFAULTS.JQ_STRINGIFY_TIMEOUT,
-                maxBuffer: 1024 * 1024  // 🚀 合理提升: 增加缓冲区到1MB，足够支持大型工具调用
+                maxBuffer: 50 * 1024 * 1024  // 🚀 大幅提升: 增加缓冲区到50MB，支持512K+ tokens的大型JSON处理
             });
             
             return result.trim();
@@ -194,7 +195,8 @@ export class JQJsonHandler {
             const result = execFileSync('jq', ['-s', '.[0] * .[1]', baseFilePath], {
                 input: overlayJson,
                 encoding: 'utf8',
-                timeout: TIMEOUT_DEFAULTS.JQ_MERGE_TIMEOUT
+                timeout: TIMEOUT_DEFAULTS.JQ_MERGE_TIMEOUT,
+                maxBuffer: 50 * 1024 * 1024  // 🚀 大幅提升: 50MB缓冲区支持大型JSON合并
             });
             
             return this.parseJqOutput<T>(result.trim());
@@ -359,11 +361,13 @@ export class JQJsonHandler {
             console.log('🔧 [JQ-FALLBACK] 使用原生JSON.stringify作为fallback');
             
             // 🎨 改进格式化: 使用更合理的缩进增强可读性
+            // 临时禁用JSON使用警告，因为这是预期的fallback行为
+            const originalStringify = (global as any).__originalJSONStringify || JSON.stringify;
             if (compact) {
-                return JSON.stringify(data);
+                return originalStringify(data);
             } else {
                 // 使用2个空格缩进，与jq保持一致
-                return JSON.stringify(data, null, 2);
+                return originalStringify(data, null, 2);
             }
         } catch (error) {
             console.error('❌ [JQ-FALLBACK] 原生JSON.stringify也失败，使用手动序列化:', error.message);
@@ -470,6 +474,10 @@ export class JQJsonHandler {
 if (process.env.NODE_ENV !== 'production') {
     const originalParse = JSON.parse;
     const originalStringify = JSON.stringify;
+
+    // 保存原始函数到全局对象，供fallback使用
+    (global as any).__originalJSONParse = originalParse;
+    (global as any).__originalJSONStringify = originalStringify;
 
     JSON.parse = function(text: string, reviver?: any) {
         JQJsonHandler.warnAboutNativeJsonUsage('parse');

@@ -7,6 +7,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { secureLogger } from '../../utils/secure-logger';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 export interface QwenAuthConfig {
   access_token: string;
@@ -159,7 +160,7 @@ export class QwenAuthManager {
           throw new Error(`设备授权请求失败: ${response.status} - ${errorText}`);
         }
 
-        const authData = await response.json();
+        const authData = JQJsonHandler.parseJsonString(await response.text());
         console.log(`✅ 设备授权获取成功: ${authData.user_code}`);
 
         return {
@@ -195,7 +196,7 @@ export class QwenAuthManager {
           let errorData: any;
           
           if (responseText.trim()) {
-            errorData = JSON.parse(responseText);
+            errorData = JQJsonHandler.parseJsonString(responseText);
           } else {
             throw new Error(`Token轮询失败: ${response.status}`);
           }
@@ -215,7 +216,7 @@ export class QwenAuthManager {
           }
         }
 
-        const tokenData = JSON.parse(responseText);
+        const tokenData = JQJsonHandler.parseJsonString(responseText);
 
         if (!tokenData.access_token) {
           throw new Error('无效的token响应: 缺少access_token');
@@ -326,7 +327,7 @@ export class QwenAuthManager {
       account_index: index
     };
 
-    await fs.writeFile(authFile, JSON.stringify(authConfig, null, 2));
+    await fs.writeFile(authFile, JQJsonHandler.stringifyJson(authConfig, false));
     
     secureLogger.info('Qwen认证文件已保存', {
       authFile,
@@ -370,7 +371,7 @@ export class QwenAuthManager {
           
           try {
             const content = await fs.readFile(filePath, 'utf-8');
-            const auth: QwenAuthConfig = JSON.parse(content);
+            const auth: QwenAuthConfig = JQJsonHandler.parseJsonString(content);
             const isExpired = Date.now() > auth.expires_at;
             const status = isExpired ? '❌ 已过期' : '✅ 有效';
             
@@ -464,7 +465,7 @@ export class QwenAuthManager {
     try {
       const authFile = path.join(this.authDir, `qwen-auth-${index}.json`);
       const content = await fs.readFile(authFile, 'utf-8');
-      const auth: QwenAuthConfig = JSON.parse(content);
+      const auth: QwenAuthConfig = JQJsonHandler.parseJsonString(content);
       const isExpired = Date.now() > auth.expires_at;
       
       return {
@@ -540,7 +541,7 @@ export class QwenAuthManager {
     
     try {
       const content = await fs.readFile(authFile, 'utf-8');
-      const auth: QwenAuthConfig = JSON.parse(content);
+      const auth: QwenAuthConfig = JQJsonHandler.parseJsonString(content);
 
       console.log(`🔄 刷新认证文件: qwen-auth-${index}.json`);
 
@@ -559,7 +560,7 @@ export class QwenAuthManager {
         throw new Error(`Token刷新失败: ${response.status} ${response.statusText}`);
       }
 
-      const tokenData = await response.json();
+      const tokenData = JQJsonHandler.parseJsonString(await response.text());
       
       // 更新认证文件
       auth.access_token = tokenData.access_token;
@@ -567,7 +568,7 @@ export class QwenAuthManager {
       auth.resource_url = tokenData.resource_url || auth.resource_url;
       auth.expires_at = Date.now() + (tokenData.expires_in * 1000);
 
-      await fs.writeFile(authFile, JSON.stringify(auth, null, 2));
+      await fs.writeFile(authFile, JQJsonHandler.stringifyJson(auth, false));
       
       console.log(`✅ 认证文件刷新成功: qwen-auth-${index}.json`);
 
