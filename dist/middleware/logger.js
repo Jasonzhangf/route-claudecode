@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LogLevel = void 0;
 exports.logger = logger;
 // import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
+const jq_json_handler_1 = require("../utils/jq-json-handler");
 /**
  * 日志级别
  */
@@ -56,10 +57,10 @@ function logger(options = {}) {
             case 'detailed':
                 console.log(`[${new Date().toISOString()}] ${req.id} ${req.method} ${req.url} ${statusCode} ${duration}ms`);
                 if (includeHeaders) {
-                    console.log(`  Headers: ${JSON.stringify(req.headers, null, 2)}`);
+                    console.log(`  Headers: ${jq_json_handler_1.JQJsonHandler.stringifyJson(req.headers)}`);
                 }
                 if (includeBody && req.body) {
-                    console.log(`  Body: ${JSON.stringify(req.body, null, 2)}`);
+                    console.log(`  Body: ${jq_json_handler_1.JQJsonHandler.stringifyJson(req.body)}`);
                 }
                 break;
             case 'json':
@@ -74,7 +75,7 @@ function logger(options = {}) {
                     ...(includeHeaders && { headers: req.headers }),
                     ...(includeBody && req.body && { body: req.body }),
                 };
-                console.log(JSON.stringify(logEntry));
+                console.log(jq_json_handler_1.JQJsonHandler.stringifyJson(logEntry, true));
                 break;
         }
     }
@@ -100,7 +101,7 @@ function logger(options = {}) {
                         stack: error.stack,
                     },
                 };
-                console.error(JSON.stringify(errorEntry, null, 2));
+                console.error(jq_json_handler_1.JQJsonHandler.stringifyJson(errorEntry));
                 break;
         }
     }

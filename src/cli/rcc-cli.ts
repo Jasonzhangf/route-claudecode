@@ -21,6 +21,7 @@ import { ArgumentValidator } from './argument-validator';
 import { ConfigReader } from '../config/config-reader';
 import { PipelineLifecycleManager } from '../pipeline/pipeline-lifecycle-manager';
 import { secureLogger } from '../utils/secure-logger';
+import { getServerPort } from '../constants/server-defaults';
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { QwenAuthManager } from './auth/qwen-auth-manager';
 import { ModelTestHistoryManager } from './history/model-test-history-manager';
@@ -194,7 +195,7 @@ export class RCCCli implements CLICommands {
     try {
       if (!this.options.suppressOutput) {
         console.log('🔧 Starting Claude Code Client Mode...');
-        console.log(`   Target Port: ${options.port || 5506}`);
+        console.log(`   Target Port: ${options.port || getServerPort()}`);
         if (options.autoStart) {
           console.log('   Auto Start: enabled');
         }
@@ -873,9 +874,9 @@ export class RCCCli implements CLICommands {
       }
 
       // 初始化流水线生命周期管理器
-      // 需要系统配置路径，使用正确的绝对路径，并传递debug选项
+      // 需要系统配置路径，使用正确的绝对路径，并传递debug选项和CLI端口参数
       const systemConfigPath = this.getSystemConfigPath();
-      this.pipelineManager = new PipelineLifecycleManager(options.config, systemConfigPath, options.debug);
+      this.pipelineManager = new PipelineLifecycleManager(options.config, systemConfigPath, options.debug, options.port);
       
       // 将实例保存到全局变量，以便信号处理程序能够访问
       (global as any).pipelineLifecycleManager = this.pipelineManager;
@@ -1119,7 +1120,7 @@ export class RCCCli implements CLICommands {
    * 启动客户端模式（实际实现）
    */
   private async startClientMode(options: CodeOptions): Promise<void> {
-    const port = options.port || 5506;
+    const port = options.port || getServerPort();
     const baseUrl = `http://localhost:${port}`;
     const apiKey = 'rcc4-proxy-key';
 
@@ -1177,12 +1178,38 @@ export class RCCCli implements CLICommands {
       });
 
       const claude = spawn('claude', claudeArgs, {
-        stdio: 'inherit',  // 继承stdio，让claude直接与终端交互
+        stdio: 'inherit',  // 恢复inherit模式以确保交互正常
         env: {
           ...process.env,
           ANTHROPIC_BASE_URL: baseUrl,
           ANTHROPIC_API_KEY: apiKey
         }
+      });
+
+      // 添加错误处理但不拦截stdio
+      process.stdin.on('error', (error: any) => {
+        if (error.code === 'EIO') {
+          secureLogger.warn('终端stdin EIO错误，通常是终端断开导致', { error: error.message });
+          // EIO错误不是致命的，继续运行
+          return;
+        }
+        secureLogger.error('Process stdin严重错误', { error: error.message });
+      });
+
+      process.stdout.on('error', (error: any) => {
+        if (error.code === 'EIO' || error.code === 'EPIPE') {
+          secureLogger.warn('终端输出管道错误，通常是终端断开导致', { error: error.message });
+          return;
+        }
+        secureLogger.error('Process stdout严重错误', { error: error.message });
+      });
+
+      process.stderr.on('error', (error: any) => {
+        if (error.code === 'EIO' || error.code === 'EPIPE') {
+          secureLogger.warn('终端错误输出管道错误', { error: error.message });
+          return;
+        }
+        secureLogger.error('Process stderr严重错误', { error: error.message });
       });
 
       claude.on('close', (code) => {
@@ -1210,7 +1237,7 @@ export class RCCCli implements CLICommands {
    */
   private async exportClientConfig(options: CodeOptions): Promise<void> {
     const envVars = [
-      `export ANTHROPIC_BASE_URL=http://localhost:${options.port || 5506}`,
+      `export ANTHROPIC_BASE_URL=http://localhost:${options.port || getServerPort()}`,
       'export ANTHROPIC_API_KEY=rcc-proxy-key',
     ];
 
@@ -2138,13 +2165,29 @@ export class RCCCli implements CLICommands {
   }
 
   /**
-   * 测试模型上下文长度 - 通过max_tokens参数测试
+   * 测试模型上下文长度 - 通过max_tokens参数递归测试
    */
   private async testModelContextLength(model: FetchedModel, provider: any, testTokens: number): Promise<FetchedModel> {
+    return await this.recursiveTokenTest(model, provider, testTokens, 4096, 5); // 最小4K，最多5次重试
+  }
+
+  /**
+   * 递归测试token长度 - 实现二分查找逻辑
+   */
+  private async recursiveTokenTest(model: FetchedModel, provider: any, currentTokens: number, minTokens: number = 4096, maxRetries: number = 5): Promise<FetchedModel> {
+    if (maxRetries <= 0 || currentTokens < minTokens) {
+      // 达到最大重试次数或低于最小值，使用当前值
+      model.maxTokens = Math.max(currentTokens, minTokens);
+      model.classification = this.classifyModel(model.name, model.maxTokens);
+      return model;
+    }
+
     try {
       const chatEndpoint = `${provider.api_base_url}/chat/completions`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s超时
+
+      console.log(`🔍 Testing ${model.name} with ${currentTokens} max_tokens (${maxRetries} retries left)`);
 
       const response = await fetch(chatEndpoint, {
         method: 'POST',
@@ -2155,7 +2198,7 @@ export class RCCCli implements CLICommands {
         body: JQJsonHandler.stringifyJson({
           model: model.name,
           messages: [{ role: 'user', content: 'Hello' }],
-          max_tokens: testTokens
+          max_tokens: currentTokens
         }, true),
         signal: controller.signal
       });
@@ -2163,27 +2206,37 @@ export class RCCCli implements CLICommands {
       clearTimeout(timeoutId);
 
       if (response.status === 413 || response.status === 400) {
-        // max_tokens too large - 模型不支持这个长度
-        const estimatedLength = Math.floor(testTokens * 0.5); // 折半再试
-        model.maxTokens = estimatedLength;
-        model.classification = this.classifyModel(model.name, estimatedLength);
-        return model;
+        // max_tokens太大，折半继续测试
+        const nextTokens = Math.floor(currentTokens * 0.5);
+        console.log(`❌ ${currentTokens} tokens failed, trying ${nextTokens} tokens`);
+        return await this.recursiveTokenTest(model, provider, nextTokens, minTokens, maxRetries - 1);
       } else if (response.ok) {
-        // 成功处理 - 支持这个max_tokens
-        model.maxTokens = testTokens;
+        // 成功！使用当前值
+        console.log(`✅ ${currentTokens} tokens succeeded`);
+        model.maxTokens = currentTokens;
+        model.classification = this.classifyModel(model.name, currentTokens);
         return model;
       } else {
         throw new Error(`Context test failed: ${response.status}`);
       }
       
     } catch (error) {
-      if (error.message.includes('429')) {
+      if (error.message && error.message.includes('429')) {
         throw error; // 429错误向上传递
       }
       
-      // 其他错误返回原模型
-      console.log(`⚠️ Context test failed for ${model.name}: ${error.message}`);
-      return model;
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log(`⏱️  Context test timeout for ${model.name}, reducing tokens and retrying`);
+        // 超时也视为当前值太大，折半重试
+        const nextTokens = Math.floor(currentTokens * 0.5);
+        return await this.recursiveTokenTest(model, provider, nextTokens, minTokens, maxRetries - 1);
+      } else {
+        console.log(`⚠️  Context test failed for ${model.name}:`, error instanceof Error ? error.message : 'Unknown error');
+        // 网络错误等，使用保守估计
+        model.maxTokens = Math.max(Math.floor(currentTokens * 0.5), minTokens);
+        model.classification = this.classifyModel(model.name, model.maxTokens);
+        return model;
+      }
     }
   }
 

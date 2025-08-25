@@ -9,6 +9,7 @@ import { JQJsonHandler } from '../utils/jq-json-handler';
 import { secureLogger } from '../utils/secure-logger';
 import { ProviderExpander, ExpandedRouting } from './provider-expander';
 import { ConfigError } from '../types/error';
+import { getServerPort, getServerHost } from '../constants/server-defaults';
 
 /**
  * Demo1用户配置文件格式 - 支持新的统一格式
@@ -221,8 +222,8 @@ export class ConfigReader {
         // 可选的安全增强配置
         security: userConfig.security,
         server: {
-          port: userConfig.server?.port || 5506,
-          host: userConfig.server?.host || '0.0.0.0',
+          port: userConfig.server?.port || getServerPort(),
+          host: userConfig.server?.host || getServerHost(),
           debug: userConfig.server?.debug || false
         },
         apiKey: userConfig.APIKEY || 'rcc4-proxy-key',

@@ -12,6 +12,7 @@
 import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { getServerPort } from '../constants/server-defaults';
 import { MergedConfig } from '../config/config-reader';
 import { PipelineCompatibilityManager } from './pipeline-compatibility-manager';
 import { DebugManagerImpl } from '../debug/debug-manager';
@@ -22,6 +23,14 @@ import { PrecisePipelineBlacklistManager } from './modules/precise-blacklist-man
 
 // 导入验证器
 import { protocolTransformerValidator, ValidationResult } from '../validation/protocol-transformer-validator';
+
+// 导入智能流水线切换系统
+import { 
+  IntelligentPipelineSwitching, 
+  PipelineRecoveryContext, 
+  PipelineRecoveryResult,
+  PipelineRecoveryConfig
+} from './intelligent-pipeline-switching';
 
 export interface RequestContext {
   requestId: string;
@@ -76,6 +85,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private httpRequestHandler: HttpRequestHandler;
   private pipelineLayersProcessor: PipelineLayersProcessor;
   private blacklistManager: PrecisePipelineBlacklistManager;
+  private intelligentPipelineSwitching: IntelligentPipelineSwitching;
 
   constructor(config: MergedConfig, debugEnabled: boolean = false) {
     super();
@@ -112,7 +122,7 @@ export class PipelineRequestProcessor extends EventEmitter {
     });
 
     // 初始化Pipeline Debug记录器
-    const defaultPort = this.config.server?.port || 5506;
+    const defaultPort = this.config.server?.port || getServerPort();
     this.pipelineDebugRecorder = new PipelineDebugRecorder(defaultPort, debugEnabled);
 
     // 初始化HTTP请求处理器
@@ -124,6 +134,30 @@ export class PipelineRequestProcessor extends EventEmitter {
     // 初始化精准拉黑管理器
     const blacklistConfig = config.blacklistSettings || {};
     this.blacklistManager = new PrecisePipelineBlacklistManager(blacklistConfig);
+
+    // 初始化智能流水线切换系统
+    const pipelineRecoveryConfig: Partial<PipelineRecoveryConfig> = {
+      maxRetries: 3,
+      blacklistThreshold: 5,
+      temporaryBlockDuration: 30000, // 30秒
+      recoveryTimeout: 120000, // 2分钟
+      enableAggressiveRecovery: true,
+      enablePipelineDestroy: true
+    };
+    this.intelligentPipelineSwitching = new IntelligentPipelineSwitching(pipelineRecoveryConfig);
+
+    // 监听流水线切换系统的事件
+    this.intelligentPipelineSwitching.on('pipeline-recovery', (event) => {
+      secureLogger.info('🔄 流水线恢复事件', event);
+      this.emit('pipeline-recovery', event);
+    });
+
+    this.intelligentPipelineSwitching.on('pipeline-destroy', (event) => {
+      secureLogger.error('💀 流水线销毁事件', event);
+      this.emit('pipeline-destroy', event);
+      // 通知拉黑管理器销毁流水线
+      this.blacklistManager.destroyPipeline(event.pipelineId);
+    });
 
     // 注册所有流水线模块
     this.registerDebugModules();
@@ -138,7 +172,7 @@ export class PipelineRequestProcessor extends EventEmitter {
    * 注册Debug模块
    */
   private registerDebugModules(): void {
-    const defaultPort = this.config.server?.port || 5506;
+    const defaultPort = this.config.server?.port || getServerPort();
     
     this.debugManager.registerModule('pipeline-request-processor', defaultPort);
     this.debugManager.registerModule('router', defaultPort);
@@ -327,9 +361,107 @@ export class PipelineRequestProcessor extends EventEmitter {
         this.blacklistManager.resetRateLimitCounter(pipelineId);
         
       } catch (serverError: any) {
-        // 检查是否需要拉黑或销毁流水线
-        await this.handlePipelineErrorAndBlacklist(serverError, pipelineId, requestId);
-        throw serverError;
+        secureLogger.error('🔥 Server层发生错误，启动智能流水线切换恢复', {
+          requestId,
+          pipelineId,
+          errorMessage: serverError.message,
+          statusCode: serverError.status || serverError.statusCode
+        });
+
+        // 创建流水线恢复上下文
+        const recoveryContext: PipelineRecoveryContext = {
+          requestId,
+          originalRequest: input,
+          routingDecision,
+          failedPipelineId: pipelineId,
+          error: serverError,
+          retryCount: 0,
+          maxRetries: 3,
+          startTime: Date.now()
+        };
+
+        // 创建请求执行函数（用于重试）
+        const executeRequest = async (newPipelineId: string) => {
+          // 更新路由决策以使用新的流水线
+          const updatedRoutingDecision = {
+            ...routingDecision,
+            selectedPipeline: newPipelineId,
+            availablePipelines: routingDecision.availablePipelines || [newPipelineId]
+          };
+
+          // 使用新的流水线重新执行Server层请求
+          secureLogger.info('🔄 使用新流水线重新执行Server层请求', {
+            requestId,
+            newPipelineId,
+            previousPipelineId: pipelineId
+          });
+
+          return await this.pipelineLayersProcessor.processServerLayer(
+            compatibleRequest, 
+            updatedRoutingDecision, 
+            context
+          );
+        };
+
+        try {
+          // 执行智能流水线切换恢复
+          const recoveryResult = await this.intelligentPipelineSwitching.executePipelineSwitching(
+            serverError,
+            recoveryContext,
+            executeRequest
+          );
+
+          if (recoveryResult.success && recoveryResult.response) {
+            // 恢复成功，使用新流水线的响应
+            response = recoveryResult.response;
+            
+            secureLogger.info('✅ 流水线切换恢复成功', {
+              requestId,
+              originalPipeline: pipelineId,
+              newPipeline: recoveryResult.newPipelineId,
+              recoveryAction: recoveryResult.recoveryAction,
+              recoveryTime: recoveryResult.recoveryTime
+            });
+
+            // 更新上下文中的路由决策
+            context.routingDecision = {
+              ...routingDecision,
+              selectedPipeline: recoveryResult.newPipelineId,
+              switchedFrom: pipelineId,
+              switchReason: recoveryResult.recoveryAction
+            };
+
+          } else {
+            // 恢复失败，抛出原始错误
+            secureLogger.error('❌ 流水线切换恢复失败', {
+              requestId,
+              failedPipeline: pipelineId,
+              recoveryAction: recoveryResult.recoveryAction,
+              details: recoveryResult.details
+            });
+
+            // 如果是终端错误，直接返回错误给客户端
+            if (recoveryResult.recoveryAction === 'terminal') {
+              // 创建适当格式的错误响应返回给客户端
+              throw serverError;
+            } else {
+              // 其他情况抛出恢复失败错误
+              throw new Error(`流水线切换恢复失败: ${recoveryResult.details}`);
+            }
+          }
+
+        } catch (recoveryError) {
+          secureLogger.error('❌ 流水线切换系统执行失败', {
+            requestId,
+            pipelineId,
+            originalError: serverError.message,
+            recoveryError: recoveryError.message
+          });
+
+          // 如果切换系统本身失败，使用旧的处理方式
+          await this.handlePipelineErrorAndBlacklist(serverError, pipelineId, requestId);
+          throw serverError;
+        }
       }
       
       this.debugManager.recordOutput('server', requestId, response);
@@ -673,7 +805,7 @@ export class PipelineRequestProcessor extends EventEmitter {
       customHeadersIsObject: protocolConfig.customHeaders && typeof protocolConfig.customHeaders === 'object',
       customHeadersIsNull: protocolConfig.customHeaders === null,
       customHeadersIsUndefined: protocolConfig.customHeaders === undefined,
-      customHeadersAsString: protocolConfig.customHeaders ? JSON.stringify(protocolConfig.customHeaders) : 'no-custom-headers'
+      customHeadersAsString: protocolConfig.customHeaders ? JQJsonHandler.stringifyJson(protocolConfig.customHeaders) : 'no-custom-headers'
     });
 
     const customHeaders = protocolConfig.customHeaders || {};
@@ -716,14 +848,34 @@ export class PipelineRequestProcessor extends EventEmitter {
 
         const response = await this.httpRequestHandler.makeHttpRequest(fullEndpoint, httpOptions);
 
-        secureLogger.info('HTTP request successful', {
+        secureLogger.info('HTTP request completed', {
           requestId: context.requestId,
           attempt: attempt + 1,
           statusCode: response.status,
           responseSize: response.body?.length || 0,
         });
 
-        // 解析响应 - 增强错误处理，使用jq处理所有JSON序列化
+        // 🔧 关键修复：检查HTTP状态码，502等错误状态不尝试JSON解析
+        // 根据用户反馈，502错误应该返回给客户端而不是导致管道失败
+        if (response.status >= 400) {
+          secureLogger.warn('HTTP错误状态码，创建错误响应返回客户端', {
+            requestId: context.requestId,
+            statusCode: response.status,
+            responseBodyPreview: response.body?.substring(0, 200) + '...',
+            responseSize: response.body?.length || 0,
+          });
+          
+          // 对于HTTP错误状态码，创建错误对象并返回给客户端
+          const httpError = new Error(`HTTP ${response.status}: ${response.body || 'Unknown error'}`);
+          (httpError as any).status = response.status;
+          (httpError as any).statusCode = response.status;
+          (httpError as any).response = { status: response.status, data: response.body };
+          
+          // 返回格式化的API错误响应，而不是抛出异常
+          return this.httpRequestHandler.createApiErrorResponse(httpError, response.status, context.requestId);
+        }
+
+        // 解析响应 - 仅对成功状态码进行JSON解析，增强错误处理
         let responseData: any;
         try {
           responseData = JQJsonHandler.parseJsonString(response.body);
@@ -854,15 +1006,21 @@ export class PipelineRequestProcessor extends EventEmitter {
           willRetry: !isLastAttempt,
         });
         
-        // 如果是API错误(4xx)，不重试，直接返回API错误给客户端
-        if (statusCode && statusCode >= 400 && statusCode < 500) {
-          secureLogger.info('API错误不重试，返回给客户端', {
+        // 🔧 关键修复：HTTP错误状态码应该返回给客户端，而不是导致pipeline失败
+        // 根据用户反馈，502等服务器错误应该让客户端有机会重试
+        if (statusCode && statusCode >= 400) {
+          const errorType = statusCode >= 500 ? '服务器错误' : 'API客户端错误';
+          const shouldReturnToClient = true; // 所有HTTP错误都应该返回给客户端
+          
+          secureLogger.info(`${errorType}不重试，返回给客户端`, {
             requestId: context.requestId,
             statusCode,
-            errorMessage: error.message
+            errorMessage: error.message,
+            errorType,
+            shouldReturnToClient
           });
           
-          // 返回API错误而不是抛出异常
+          // 返回API错误而不是抛出异常，让客户端决定是否重试
           return this.httpRequestHandler.createApiErrorResponse(error, statusCode, context.requestId);
         }
         

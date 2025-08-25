@@ -34,6 +34,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RCCv4CLIHandler = void 0;
 const rcc_cli_1 = require("./cli/rcc-cli");
+const server_defaults_1 = require("./constants/server-defaults");
 const secure_logger_1 = require("./utils/secure-logger");
 const jq_json_handler_1 = require("./utils/jq-json-handler");
 /**
@@ -344,7 +345,7 @@ Commands:
 
 Options:
   --config <path>          Configuration file path
-  --port <number>          Server port (default: 5506)
+  --port <number>          Server port (default: ${(0, server_defaults_1.getServerPort)()})
   --host <host>            Server host (default: 0.0.0.0)
   --debug                  Enable debug mode
   --force                  Force operation (for stop command)
@@ -353,10 +354,10 @@ Options:
   --export                 Export environment variables (for code command)
 
 Examples:
-  rcc4 start --config ./config.json --port 5506 --debug
-  rcc4 stop --port 5506 --force
-  rcc4 status --port 5506 --detailed
-  rcc4 code --port 5506 --auto-start
+  rcc4 start --config ./config.json --port ${(0, server_defaults_1.getServerPort)()} --debug
+  rcc4 stop --port ${(0, server_defaults_1.getServerPort)()} --force
+  rcc4 status --port ${(0, server_defaults_1.getServerPort)()} --detailed
+  rcc4 code --port ${(0, server_defaults_1.getServerPort)()} --auto-start
   rcc4 code --export
   rcc4 auth qwen 1
   rcc4 auth qwen --list
@@ -380,7 +381,7 @@ Usage:
 
 Options:
   --config <path>     Configuration file path (default: ./config.json)
-  --port <number>     Server port (default: 5506)
+  --port <number>     Server port (default: ${(0, server_defaults_1.getServerPort)()})
   --host <host>       Server host (default: 0.0.0.0)
   --debug             Enable debug mode with detailed logging
 
@@ -398,7 +399,7 @@ Usage:
   rcc4 stop [options]
 
 Options:
-  --port <number>     Server port (default: 5506)
+  --port <number>     Server port (default: ${(0, server_defaults_1.getServerPort)()})
   --force             Force stop even if graceful shutdown fails
 
 Examples:
@@ -415,7 +416,7 @@ Usage:
   rcc4 status [options]
 
 Options:
-  --port <number>     Server port (default: 5506)
+  --port <number>     Server port (default: ${(0, server_defaults_1.getServerPort)()})
   --detailed          Show detailed pipeline information
 
 Examples:
@@ -432,7 +433,7 @@ Usage:
   rcc4 code [options]
 
 Options:
-  --port <number>     RCC proxy server port (default: 5506)
+  --port <number>     RCC proxy server port (default: ${(0, server_defaults_1.getServerPort)()})
   --auto-start        Auto-start RCC server if not running
   --export            Export environment variables instead of starting Claude Code
 

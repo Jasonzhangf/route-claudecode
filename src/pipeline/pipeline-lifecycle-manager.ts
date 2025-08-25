@@ -84,7 +84,7 @@ export class PipelineLifecycleManager extends EventEmitter {
 
   private debugEnabled: boolean = false;
 
-  constructor(userConfigPath?: string, systemConfigPath?: string, debugEnabled?: boolean) {
+  constructor(userConfigPath?: string, systemConfigPath?: string, debugEnabled?: boolean, cliPort?: number) {
     super();
 
     // 设置debug选项
@@ -92,6 +92,14 @@ export class PipelineLifecycleManager extends EventEmitter {
 
     // 加载配置
     this.config = ConfigReader.loadConfig(userConfigPath, systemConfigPath);
+    
+    // 应用CLI端口参数覆盖配置文件中的端口设置
+    if (cliPort) {
+      this.config.server = {
+        ...this.config.server,
+        port: cliPort
+      };
+    }
     
     secureLogger.info('PipelineLifecycleManager初始化开始', {
       userConfigPath: userConfigPath || 'default',

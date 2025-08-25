@@ -25,6 +25,7 @@ export declare class RCCCli implements CLICommands {
     private options;
     private pipelineManager?;
     private qwenAuthManager;
+    private historyManager;
     private blacklistedModels;
     constructor(options?: CLIOptions);
     /**
@@ -91,13 +92,13 @@ export declare class RCCCli implements CLICommands {
      */
     private updateProviderModels;
     /**
+     * 更新通用OpenAI兼容Provider模型 (如 Shuaihong, OpenAI, Anthropic 等)
+     */
+    private updateGenericOpenAIProvider;
+    /**
      * 更新Qwen模型
      */
     private updateQwenModels;
-    /**
-     * 更新Shuaihong模型
-     */
-    private updateShuaihongModels;
     /**
      * 更新ModelScope模型
      */
@@ -201,6 +202,9 @@ export declare class RCCCli implements CLICommands {
     /**
      * API动态模型获取功能 - 内联实现
      */
+    /**
+     * 增强版模型获取 - 支持能力测试和429重试
+     */
     private fetchModelsForProvider;
     /**
      * 提取模型的精确上下文长度
@@ -211,7 +215,31 @@ export declare class RCCCli implements CLICommands {
      */
     private classifyModel;
     /**
-     * 获取Provider的默认端点
+     * 429错误重试的模型获取
+     */
+    private fetchModelsWithRetry;
+    /**
+     * 测试模型上下文长度 - 通过max_tokens参数递归测试
+     */
+    private testModelContextLength;
+    /**
+     * 递归测试token长度 - 实现二分查找逻辑
+     */
+    private recursiveTokenTest;
+    /**
+     * 测试模型可用性
+     */
+    private testModelAvailability;
+    /**
+     * 测试多模态能力
+     */
+    private testMultimodalCapability;
+    /**
+     * 生成长测试消息
+     */
+    private generateLongTestMessage;
+    /**
+     * 获取Provider的默认端点 (已废弃 - 现在使用配置驱动)
      */
     private getDefaultEndpointForProvider;
 }

@@ -11,6 +11,7 @@ exports.validation = validation;
 exports.anthropicValidation = anthropicValidation;
 exports.openaiValidation = openaiValidation;
 exports.geminiValidation = geminiValidation;
+const jq_json_handler_1 = require("../utils/jq-json-handler");
 /**
  * 创建验证中间件
  */
@@ -26,7 +27,7 @@ function validation(config = {}) {
         try {
             // 1. 检查请求体大小
             if (req.body) {
-                const bodySize = JSON.stringify(req.body).length;
+                const bodySize = jq_json_handler_1.JQJsonHandler.stringifyJson(req.body, true).length;
                 if (bodySize > maxBodySize) {
                     res.statusCode = 413;
                     res.body = {
@@ -54,7 +55,7 @@ function validation(config = {}) {
             // 3. 验证JSON格式
             if (validateJson && req.body && typeof req.body === 'string') {
                 try {
-                    req.body = JSON.parse(req.body);
+                    req.body = jq_json_handler_1.JQJsonHandler.parseJsonString(req.body);
                 }
                 catch (error) {
                     res.statusCode = 400;

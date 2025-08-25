@@ -36,8 +36,10 @@ const argument_validator_1 = require("./argument-validator");
 const config_reader_1 = require("../config/config-reader");
 const pipeline_lifecycle_manager_1 = require("../pipeline/pipeline-lifecycle-manager");
 const secure_logger_1 = require("../utils/secure-logger");
+const server_defaults_1 = require("../constants/server-defaults");
 const jq_json_handler_1 = require("../utils/jq-json-handler");
 const qwen_auth_manager_1 = require("./auth/qwen-auth-manager");
+const model_test_history_manager_1 = require("./history/model-test-history-manager");
 // import { ApiModelFetcher, FetchedModel } from './api-model-fetcher';
 const path = __importStar(require("path"));
 const os = __importStar(require("os"));
@@ -52,6 +54,7 @@ class RCCCli {
         this.validator = new argument_validator_1.ArgumentValidator();
         this.configReader = new config_reader_1.ConfigReader();
         this.qwenAuthManager = new qwen_auth_manager_1.QwenAuthManager();
+        this.historyManager = new model_test_history_manager_1.ModelTestHistoryManager();
         // this.apiModelFetcher = new ApiModelFetcher();
         this.options = {
             exitOnError: true,
@@ -173,7 +176,7 @@ class RCCCli {
         try {
             if (!this.options.suppressOutput) {
                 console.log('🔧 Starting Claude Code Client Mode...');
-                console.log(`   Target Port: ${options.port || 5506}`);
+                console.log(`   Target Port: ${options.port || (0, server_defaults_1.getServerPort)()}`);
                 if (options.autoStart) {
                     console.log('   Auto Start: enabled');
                 }
@@ -369,6 +372,40 @@ class RCCCli {
     async providerUpdate(options) {
         try {
             console.log('🔄 Updating provider models and capabilities...');
+            // 初始化历史记录管理器
+            console.log('📚 Initializing model test history manager...');
+            await this.historyManager.initialize();
+            // 处理历史记录相关选项
+            if (options.historyStats) {
+                const stats = await this.historyManager.getStatistics();
+                console.log('\n📊 Model Test History Statistics:');
+                console.log(`   📝 Total Records: ${stats.totalRecords}`);
+                console.log(`   ✅ Successful Tests: ${stats.successCount}`);
+                console.log(`   ❌ Failed Tests: ${stats.failedCount}`);
+                console.log(`   📁 File Size: ${(stats.fileSize / 1024).toFixed(2)} KB`);
+                if (stats.lastTestedAt) {
+                    console.log(`   🕒 Last Test: ${stats.lastTestedAt}`);
+                }
+                if (Object.keys(stats.byProvider).length > 0) {
+                    console.log('\n📊 By Provider:');
+                    for (const [provider, providerStats] of Object.entries(stats.byProvider)) {
+                        console.log(`   ${provider}: ${providerStats.success}/${providerStats.total} successful`);
+                    }
+                }
+                return; // 只显示统计信息后退出
+            }
+            if (options.exportHistory) {
+                const outputPath = options.exportHistory;
+                const format = outputPath.toLowerCase().endsWith('.csv') ? 'csv' : 'json';
+                await this.historyManager.exportHistory(outputPath, format);
+                console.log(`✅ History exported to: ${outputPath}`);
+                return; // 导出后退出
+            }
+            if (options.clearHistory) {
+                console.log('🗑️ Clearing model test history...');
+                const result = await this.historyManager.clearHistory({ confirmClear: true });
+                console.log(`✅ Cleared ${result.deletedCount} records, ${result.remainingCount} remaining`);
+            }
             // 检查配置文件参数
             if (!options.config) {
                 throw new Error('Configuration file path is required. Use --config <path>');
@@ -460,9 +497,6 @@ class RCCCli {
             case 'qwen':
                 await this.updateQwenModels(provider, options, config, configPath);
                 break;
-            case 'shuaihong':
-                await this.updateShuaihongModels(provider, options, config, configPath);
-                break;
             case 'modelscope':
                 await this.updateModelScopeModels(provider, options, config, configPath);
                 break;
@@ -470,8 +504,51 @@ class RCCCli {
                 await this.updateLMStudioModels(provider, options, config, configPath);
                 break;
             default:
-                console.log(`⚠️  Unknown provider type: ${providerName}, skipping model update`);
+                // 对于未知的provider类型，使用通用OpenAI兼容方式
+                // 这包括 Shuaihong 和其他 OpenAI 兼容的 provider
+                await this.updateGenericOpenAIProvider(provider, options, config, configPath);
         }
+    }
+    /**
+     * 更新通用OpenAI兼容Provider模型 (如 Shuaihong, OpenAI, Anthropic 等)
+     */
+    async updateGenericOpenAIProvider(provider, options, config, configPath) {
+        // 默认静态模型，适用于大多数OpenAI兼容provider
+        const staticModels = [
+            'gpt-4o',
+            'gpt-4o-mini',
+            'gpt-4',
+            'gpt-3.5-turbo',
+            'claude-3.5-sonnet',
+            'claude-3-haiku',
+            'gemini-pro'
+        ];
+        let finalModels;
+        if (options.static) {
+            finalModels = staticModels;
+            console.log(`   📋 使用静态模型列表 (--static): ${finalModels.length} models`);
+        }
+        else {
+            console.log(`   🔍 Fetching ${provider.name} models via API (default behavior)...`);
+            try {
+                const fetchedModels = await this.fetchModelsForProvider(provider.name, provider, staticModels, options);
+                finalModels = fetchedModels.map(m => m.id);
+                if (options.verbose) {
+                    const categories = this.categorizeModels(fetchedModels);
+                    console.log(`   📊 API获取结果:`);
+                    console.log(`      💻 编程专用: ${categories.programming}`);
+                    console.log(`      🖼️ 图像处理: ${categories.multimodal}`);
+                    console.log(`      📄 长上下文: ${categories.longContext}`);
+                    console.log(`      🚫 已拉黑: ${categories.blacklisted}`);
+                }
+                console.log(`   ✅ API获取成功: ${finalModels.length} models (静态备用: ${staticModels.length})`);
+            }
+            catch (error) {
+                console.log(`   ⚠️ API获取失败，回退到静态模型列表`);
+                finalModels = staticModels;
+            }
+        }
+        await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
     }
     /**
      * 更新Qwen模型
@@ -494,10 +571,15 @@ class RCCCli {
             'qwq-32b-preview'
         ];
         let finalModels;
-        if (options.apiFetch || options['api-fetch']) {
-            console.log(`   🔍 Fetching Qwen models via API...`);
+        // 默认使用API获取，--static参数强制使用静态列表
+        if (options.static) {
+            finalModels = staticModels;
+            console.log(`   📋 使用静态模型列表 (--static): ${finalModels.length} models`);
+        }
+        else {
+            console.log(`   🔍 Fetching Qwen models via API (default behavior)...`);
             try {
-                const fetchedModels = await this.fetchModelsForProvider('qwen', provider, staticModels);
+                const fetchedModels = await this.fetchModelsForProvider(provider.name, provider, staticModels, options);
                 finalModels = fetchedModels.map(m => m.id);
                 // 显示分类信息
                 if (options.verbose) {
@@ -511,44 +593,10 @@ class RCCCli {
                 console.log(`   ✅ API获取成功: ${finalModels.length} models (静态备用: ${staticModels.length})`);
             }
             catch (error) {
-                console.log(`   ⚠️ API获取失败，使用静态模型列表: ${error.message}`);
+                console.log(`   ⚠️ API获取失败，回退到静态模型列表: ${error instanceof Error ? error.message : 'Unknown error'}`);
                 finalModels = staticModels;
+                console.log(`   📋 使用静态备用列表: ${finalModels.length} models`);
             }
-        }
-        else {
-            finalModels = staticModels;
-            console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
-        }
-        await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
-    }
-    /**
-     * 更新Shuaihong模型
-     */
-    async updateShuaihongModels(provider, options, config, configPath) {
-        const staticModels = [
-            'gemini-2.5-pro',
-            'gpt-4o',
-            'gpt-4o-mini',
-            'claude-3-sonnet',
-            'claude-3-haiku',
-            'claude-3-opus'
-        ];
-        let finalModels;
-        if (options.apiFetch || options['api-fetch']) {
-            console.log(`   🔍 Shuaihong不支持/models API，使用静态模型列表...`);
-            finalModels = staticModels;
-            if (options.verbose) {
-                // 为静态模型显示分类统计
-                console.log(`   📊 静态模型分类:`);
-                console.log(`      💻 编程专用: 0`);
-                console.log(`      🖼️ 图像处理: 2 (gemini-2.5-pro, gpt-4o)`);
-                console.log(`      📄 长上下文: 6 (全部模型)`);
-                console.log(`      🚫 已拉黑: 0`);
-            }
-        }
-        else {
-            finalModels = staticModels;
-            console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
         }
         await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
     }
@@ -565,10 +613,14 @@ class RCCCli {
             'deepseek-v2.5-chat'
         ];
         let finalModels;
-        if (options.apiFetch || options['api-fetch']) {
-            console.log(`   🔍 Fetching ModelScope models via API...`);
+        if (options.static) {
+            finalModels = staticModels;
+            console.log(`   📋 使用静态模型列表 (--static): ${finalModels.length} models`);
+        }
+        else {
+            console.log(`   🔍 Fetching ModelScope models via API (default behavior)...`);
             try {
-                const fetchedModels = await this.fetchModelsForProvider('modelscope', provider, staticModels);
+                const fetchedModels = await this.fetchModelsForProvider(provider.name, provider, staticModels, options);
                 finalModels = fetchedModels.map(m => m.id);
                 if (options.verbose) {
                     const categories = this.categorizeModels(fetchedModels);
@@ -581,13 +633,9 @@ class RCCCli {
                 console.log(`   ✅ API获取成功: ${finalModels.length} models (静态备用: ${staticModels.length})`);
             }
             catch (error) {
-                console.log(`   ⚠️ API获取失败，使用静态模型列表: ${error.message}`);
+                console.log(`   ⚠️ API获取失败，回退到静态模型列表`);
                 finalModels = staticModels;
             }
-        }
-        else {
-            finalModels = staticModels;
-            console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
         }
         await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
     }
@@ -603,10 +651,14 @@ class RCCCli {
             'deepseek-coder-33b'
         ];
         let finalModels;
-        if (options.apiFetch || options['api-fetch']) {
-            console.log(`   🔍 Fetching LM Studio models via API...`);
+        if (options.static) {
+            finalModels = staticModels;
+            console.log(`   📋 使用静态模型列表 (--static): ${finalModels.length} models`);
+        }
+        else {
+            console.log(`   🔍 Fetching LM Studio models via API (default behavior)...`);
             try {
-                const fetchedModels = await this.fetchModelsForProvider('lmstudio', provider, staticModels);
+                const fetchedModels = await this.fetchModelsForProvider(provider.name, provider, staticModels, options);
                 finalModels = fetchedModels.map(m => m.id);
                 if (options.verbose) {
                     const categories = this.categorizeModels(fetchedModels);
@@ -619,13 +671,9 @@ class RCCCli {
                 console.log(`   ✅ API获取成功: ${finalModels.length} models (静态备用: ${staticModels.length})`);
             }
             catch (error) {
-                console.log(`   ⚠️ API获取失败，使用静态模型列表: ${error.message}`);
+                console.log(`   ⚠️ API获取失败，回退到静态模型列表`);
                 finalModels = staticModels;
             }
-        }
-        else {
-            finalModels = staticModels;
-            console.log(`   📋 使用静态模型列表: ${finalModels.length} models`);
         }
         await this.updateProviderConfigModels(config, configPath, provider.name, finalModels, options);
     }
@@ -696,8 +744,8 @@ class RCCCli {
             if (!providerUpdated) {
                 throw new Error(`Provider '${providerName}' not found in configuration`);
             }
-            // 写回配置文件
-            const updatedConfig = jq_json_handler_1.JQJsonHandler.stringifyJson(parsedConfig, true);
+            // 写回配置文件（使用用户友好的格式化输出）
+            const updatedConfig = jq_json_handler_1.JQJsonHandler.stringifyJson(parsedConfig, false);
             fs.writeFileSync(configPath, updatedConfig, 'utf8');
             console.log(`   💾 Configuration file updated successfully`);
         }
@@ -737,9 +785,9 @@ class RCCCli {
                 await this.cleanupPortIfOccupied(options.port);
             }
             // 初始化流水线生命周期管理器
-            // 需要系统配置路径，使用正确的绝对路径，并传递debug选项
+            // 需要系统配置路径，使用正确的绝对路径，并传递debug选项和CLI端口参数
             const systemConfigPath = this.getSystemConfigPath();
-            this.pipelineManager = new pipeline_lifecycle_manager_1.PipelineLifecycleManager(options.config, systemConfigPath, options.debug);
+            this.pipelineManager = new pipeline_lifecycle_manager_1.PipelineLifecycleManager(options.config, systemConfigPath, options.debug, options.port);
             // 将实例保存到全局变量，以便信号处理程序能够访问
             global.pipelineLifecycleManager = this.pipelineManager;
             // 启动RCC v4.0流水线系统
@@ -953,7 +1001,7 @@ class RCCCli {
      * 启动客户端模式（实际实现）
      */
     async startClientMode(options) {
-        const port = options.port || 5506;
+        const port = options.port || (0, server_defaults_1.getServerPort)();
         const baseUrl = `http://localhost:${port}`;
         const apiKey = 'rcc4-proxy-key';
         // 设置环境变量
@@ -1006,12 +1054,35 @@ class RCCCli {
                 }
             });
             const claude = spawn('claude', claudeArgs, {
-                stdio: 'inherit', // 继承stdio，让claude直接与终端交互
+                stdio: 'inherit', // 恢复inherit模式以确保交互正常
                 env: {
                     ...process.env,
                     ANTHROPIC_BASE_URL: baseUrl,
                     ANTHROPIC_API_KEY: apiKey
                 }
+            });
+            // 添加错误处理但不拦截stdio
+            process.stdin.on('error', (error) => {
+                if (error.code === 'EIO') {
+                    secure_logger_1.secureLogger.warn('终端stdin EIO错误，通常是终端断开导致', { error: error.message });
+                    // EIO错误不是致命的，继续运行
+                    return;
+                }
+                secure_logger_1.secureLogger.error('Process stdin严重错误', { error: error.message });
+            });
+            process.stdout.on('error', (error) => {
+                if (error.code === 'EIO' || error.code === 'EPIPE') {
+                    secure_logger_1.secureLogger.warn('终端输出管道错误，通常是终端断开导致', { error: error.message });
+                    return;
+                }
+                secure_logger_1.secureLogger.error('Process stdout严重错误', { error: error.message });
+            });
+            process.stderr.on('error', (error) => {
+                if (error.code === 'EIO' || error.code === 'EPIPE') {
+                    secure_logger_1.secureLogger.warn('终端错误输出管道错误', { error: error.message });
+                    return;
+                }
+                secure_logger_1.secureLogger.error('Process stderr严重错误', { error: error.message });
             });
             claude.on('close', (code) => {
                 secure_logger_1.secureLogger.info('Claude进程退出', { exitCode: code });
@@ -1035,7 +1106,7 @@ class RCCCli {
      */
     async exportClientConfig(options) {
         const envVars = [
-            `export ANTHROPIC_BASE_URL=http://localhost:${options.port || 5506}`,
+            `export ANTHROPIC_BASE_URL=http://localhost:${options.port || (0, server_defaults_1.getServerPort)()}`,
             'export ANTHROPIC_API_KEY=rcc-proxy-key',
         ];
         if (!this.options.suppressOutput) {
@@ -1366,34 +1437,40 @@ class RCCCli {
     /**
      * API动态模型获取功能 - 内联实现
      */
-    async fetchModelsForProvider(providerType, provider, staticFallback) {
+    /**
+     * 增强版模型获取 - 支持能力测试和429重试
+     */
+    async fetchModelsForProvider(providerType, provider, staticFallback, options = {}) {
         try {
             const apiKey = provider.api_key || provider.apiKeys?.[0] || 'default-key';
-            const baseUrl = provider.api_base_url || this.getDefaultEndpointForProvider(providerType);
-            const modelsEndpoint = `${baseUrl}/v1/models`;
-            secure_logger_1.secureLogger.info(`Fetching models from ${providerType} API`, {
+            // 使用provider配置中的api_base_url，不依赖硬编码映射
+            if (!provider.api_base_url) {
+                throw new Error(`Provider ${provider.name || providerType} 缺少 api_base_url 配置`);
+            }
+            // 智能推断 models API 端点
+            let modelsEndpoint;
+            const apiBaseUrl = provider.api_base_url.replace(/\/+$/, ''); // 移除末尾的/
+            if (apiBaseUrl.includes('/chat/completions')) {
+                // 如果 api_base_url 包含 /chat/completions，则替换为 /models
+                modelsEndpoint = apiBaseUrl.replace('/chat/completions', '/models');
+            }
+            else if (apiBaseUrl.endsWith('/v1')) {
+                // 如果以 /v1 结尾，直接添加 /models
+                modelsEndpoint = `${apiBaseUrl}/models`;
+            }
+            else {
+                // 其他情况，假设需要添加 /v1/models
+                modelsEndpoint = `${apiBaseUrl}/v1/models`;
+            }
+            secure_logger_1.secureLogger.info(`Fetching models from ${providerType} API with enhanced testing`, {
                 endpoint: modelsEndpoint,
                 provider: provider.name
             });
-            // Create AbortController for timeout
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
-            const response = await fetch(modelsEndpoint, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                signal: controller.signal
-            });
-            clearTimeout(timeoutId);
-            if (!response.ok) {
-                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-            }
-            const data = await response.json();
-            const rawModels = data.data || data.models || [];
+            // 获取模型列表（带429重试）
+            const rawModels = await this.fetchModelsWithRetry(modelsEndpoint, apiKey);
             const fetchedModels = [];
+            const testedModels = [];
+            // 第一轮：基础分类和过滤
             for (const rawModel of rawModels) {
                 const modelName = rawModel.id || rawModel.name || 'unknown-model';
                 // 尝试从API响应中提取真实的上下文长度
@@ -1419,7 +1496,18 @@ class RCCCli {
                 // Skip blacklisted models
                 if (classification.blacklisted) {
                     this.blacklistedModels.add(modelName);
+                    secure_logger_1.secureLogger.info(`🚫 Blacklisted model: ${modelName} - ${classification.blacklistReason}`);
                     continue;
+                }
+                // Check user-defined blacklist in provider config
+                if (provider.model_blacklist && Array.isArray(provider.model_blacklist)) {
+                    const userBlacklist = provider.model_blacklist.filter(item => typeof item === 'string' && !item.startsWith('//') && item.trim() !== '');
+                    if (userBlacklist.some(blacklistedModel => modelName === blacklistedModel || modelName.includes(blacklistedModel))) {
+                        this.blacklistedModels.add(modelName);
+                        secure_logger_1.secureLogger.info(`🚫 User blacklisted model: ${modelName} - Found in provider.model_blacklist`);
+                        console.log(`🚫 User blacklisted model: ${modelName} - Found in provider.model_blacklist`);
+                        continue;
+                    }
                 }
                 const fetchedModel = {
                     id: modelName,
@@ -1431,12 +1519,189 @@ class RCCCli {
                 };
                 fetchedModels.push(fetchedModel);
             }
-            secure_logger_1.secureLogger.info(`Successfully fetched models from ${providerType}`, {
-                totalModels: rawModels.length,
-                filteredModels: fetchedModels.length,
-                blacklisted: rawModels.length - fetchedModels.length
+            console.log(`📋 Initial filtering: ${fetchedModels.length}/${rawModels.length} models passed basic classification`);
+            // 快速模式历史记录检查
+            if (options.fast) {
+                console.log('⚡ Fast mode enabled - checking test history...');
+                const historyStats = {
+                    skipped: 0,
+                    newModels: 0,
+                    failedModels: 0,
+                    lowContextModels: 0
+                };
+                const modelsToTest = [];
+                for (const model of fetchedModels) {
+                    const skipResult = await this.historyManager.shouldSkipModel(providerType, model.name, 'full');
+                    if (skipResult.shouldSkip && skipResult.record) {
+                        // 使用历史记录中的数据
+                        model.classification.contextLength = skipResult.record.result.contextLength || model.classification.contextLength;
+                        model.maxTokens = skipResult.record.result.maxTokens || model.maxTokens;
+                        if (skipResult.record.result.category) {
+                            // 只设置兼容的category类型
+                            const compatibleCategories = ['multimodal', 'reasoning', 'programming', 'general'];
+                            if (compatibleCategories.includes(skipResult.record.result.category)) {
+                                model.classification.category = skipResult.record.result.category;
+                            }
+                        }
+                        // 检查是否是低上下文模型需要重新测试
+                        if (skipResult.record.result.contextLength && skipResult.record.result.contextLength < 128000) {
+                            console.log(`🔄 ${model.name}: Low context (${skipResult.record.result.contextLength} < 128K), re-testing...`);
+                            modelsToTest.push(model);
+                            historyStats.lowContextModels++;
+                        }
+                        else {
+                            console.log(`⏩ ${model.name}: Skipped (successful test from ${skipResult.record.testedAt.split('T')[0]})`);
+                            testedModels.push(model);
+                            historyStats.skipped++;
+                        }
+                    }
+                    else {
+                        if (skipResult.reason === 'no_history') {
+                            console.log(`🆕 ${model.name}: New model, will test`);
+                            historyStats.newModels++;
+                        }
+                        else if (skipResult.reason === 'previous_failed') {
+                            console.log(`🔄 ${model.name}: Previous test failed, re-testing...`);
+                            historyStats.failedModels++;
+                        }
+                        else {
+                            console.log(`🔄 ${model.name}: ${skipResult.reason}, will test`);
+                        }
+                        modelsToTest.push(model);
+                    }
+                }
+                console.log(`📊 Fast mode statistics:`);
+                console.log(`   ⏩ Skipped: ${historyStats.skipped} models`);
+                console.log(`   🆕 New models: ${historyStats.newModels}`);
+                console.log(`   ❌ Failed retries: ${historyStats.failedModels}`);
+                console.log(`   🔄 Low context retries: ${historyStats.lowContextModels}`);
+                console.log(`   🧪 Total to test: ${modelsToTest.length}`);
+                // 在快速模式下只测试需要测试的模型
+                fetchedModels.length = 0;
+                fetchedModels.push(...modelsToTest);
+            }
+            // 第二轮：上下文长度测试（512K测试，过滤<64K）
+            console.log(`🔍 Starting context length testing with 512K tokens...`);
+            for (const model of fetchedModels) {
+                try {
+                    const testedModel = await this.testModelContextLength(model, provider, 512000); // 512K测试
+                    if (testedModel.classification.contextLength >= 65536) { // 保留>=64K的模型
+                        testedModels.push(testedModel);
+                        console.log(`✅ ${model.name}: Context ${testedModel.classification.contextLength} tokens (${testedModel.classification.capabilities.join(', ')})`);
+                    }
+                    else {
+                        console.log(`🚫 ${model.name}: Context too small (${testedModel.classification.contextLength} < 64K)`);
+                    }
+                }
+                catch (error) {
+                    console.log(`⚠️  ${model.name}: Context test failed - ${error.message}`);
+                    // 测试失败的模型使用原始分类，但标记为需要人工验证
+                    model.classification.capabilities.push('test-failed');
+                    testedModels.push(model);
+                }
+            }
+            // 第三轮：可用性和多模态能力测试
+            console.log(`🧪 Starting availability and multimodal capability testing...`);
+            const finalModels = [];
+            for (const model of testedModels) {
+                try {
+                    // 基础可用性测试
+                    const availabilityTest = await this.testModelAvailability(model, provider);
+                    if (!availabilityTest.available) {
+                        console.log(`❌ ${model.name}: Not available - ${availabilityTest.reason}`);
+                        continue;
+                    }
+                    // 多模态能力测试（仅对可能的多模态模型）
+                    if (model.classification.hasImageProcessing) {
+                        const multimodalTest = await this.testMultimodalCapability(model, provider);
+                        if (multimodalTest.hasMultimodal) {
+                            model.classification.capabilities.push('confirmed-multimodal');
+                            console.log(`🖼️  ${model.name}: ✅ Multimodal confirmed (${multimodalTest.supportedTypes.join(', ')})`);
+                        }
+                        else {
+                            // 移除多模态标记
+                            model.classification.hasImageProcessing = false;
+                            model.classification.capabilities = model.classification.capabilities.filter(cap => !['image-processing', 'multimodal'].includes(cap));
+                            if (model.classification.category === 'multimodal') {
+                                model.classification.category = 'programming';
+                            }
+                            console.log(`📝 ${model.name}: ❌ Multimodal test failed, reclassified as programming model`);
+                        }
+                    }
+                    finalModels.push(model);
+                    console.log(`✅ ${model.name}: Final classification - ${model.classification.category} (${model.classification.capabilities.join(', ')})`);
+                    // 保存成功测试结果到历史记录
+                    try {
+                        await this.historyManager.saveTestRecord({
+                            providerName: providerType,
+                            modelName: model.name,
+                            testType: 'full',
+                            status: 'success',
+                            result: {
+                                category: model.classification.category,
+                                contextLength: model.classification.contextLength,
+                                maxTokens: model.maxTokens,
+                                available: true,
+                                multimodal: model.classification.hasImageProcessing,
+                                duration: Date.now() - model._testStartTime || 0,
+                                endpoint: provider.api_base_url
+                            },
+                            testedAt: new Date().toISOString()
+                        });
+                    }
+                    catch (historyError) {
+                        // 历史记录保存失败不应该影响主流程
+                        secure_logger_1.secureLogger.error('Failed to save test history', {
+                            model: model.name,
+                            error: historyError.message
+                        });
+                    }
+                }
+                catch (error) {
+                    if (error.message.includes('429')) {
+                        console.log(`⏳ ${model.name}: Rate limited, will retry later...`);
+                        // 将模型添加到延迟测试队列
+                        finalModels.push(model);
+                    }
+                    else {
+                        console.log(`❌ ${model.name}: Capability test failed - ${error.message}`);
+                        // 保存失败测试结果到历史记录
+                        try {
+                            await this.historyManager.saveTestRecord({
+                                providerName: providerType,
+                                modelName: model.name,
+                                testType: 'full',
+                                status: 'failed',
+                                result: {
+                                    category: model.classification.category,
+                                    contextLength: model.classification.contextLength,
+                                    maxTokens: model.maxTokens,
+                                    available: false,
+                                    multimodal: model.classification.hasImageProcessing,
+                                    error: error.message,
+                                    endpoint: provider.api_base_url
+                                },
+                                testedAt: new Date().toISOString()
+                            });
+                        }
+                        catch (historyError) {
+                            secure_logger_1.secureLogger.error('Failed to save test history for failed model', {
+                                model: model.name,
+                                error: historyError.message
+                            });
+                        }
+                    }
+                }
+            }
+            secure_logger_1.secureLogger.info(`Enhanced model fetching completed for ${providerType}`, {
+                totalRaw: rawModels.length,
+                afterFiltering: fetchedModels.length,
+                afterContextTest: testedModels.length,
+                final: finalModels.length,
+                multimodalConfirmed: finalModels.filter(m => m.classification.capabilities.includes('confirmed-multimodal')).length,
+                longContextModels: finalModels.filter(m => m.classification.capabilities.includes('extended-long-context')).length
             });
-            return fetchedModels;
+            return finalModels;
         }
         catch (error) {
             secure_logger_1.secureLogger.error(`Failed to fetch models from ${providerType}`, {
@@ -1553,8 +1818,27 @@ class RCCCli {
      */
     classifyModel(name, contextLength) {
         const lowerName = name.toLowerCase();
-        // Check for blacklisting conditions
-        if (contextLength < 65536) { // < 64K
+        // 1. 永久过滤非大模型 - 检测嵌入模型、音频模型、图像模型
+        const nonChatModelKeywords = [
+            'embedding', 'embed', 'text-embedding', 'ada', 'similarity',
+            'whisper', 'tts', 'speech', 'audio', 'voice',
+            'dalle', 'midjourney', 'stable-diffusion', 'image-gen',
+            'clip', 'blip', 'vit', 'dino'
+        ];
+        if (nonChatModelKeywords.some(keyword => lowerName.includes(keyword))) {
+            return {
+                contextLength,
+                isProgramming: false,
+                hasImageProcessing: false,
+                isLongContext: false,
+                category: 'general',
+                capabilities: [],
+                blacklisted: true,
+                blacklistReason: `Non-chat model: detected embedding/audio/image generation model`
+            };
+        }
+        // 2. 上下文长度过滤 - 低于64K的模型拉黑
+        if (contextLength < 65536) {
             return {
                 contextLength,
                 isProgramming: false,
@@ -1566,59 +1850,59 @@ class RCCCli {
                 blacklistReason: `Context length ${contextLength} < 64K threshold`
             };
         }
-        // Programming keywords
+        // 3. 检测模型能力关键词
         const programmingKeywords = [
             'code', 'coder', 'coding', 'program', 'dev', 'developer',
             'instruct', 'chat', 'assistant', 'tool', 'function',
             'qwen', 'codellama', 'starcoder', 'deepseek', 'gemini'
         ];
-        // Image processing keywords
-        const imageProcessingKeywords = [
+        // 多模态能力检测 - 重点标记
+        const multimodalKeywords = [
             'vision', 'visual', 'image', 'multimodal', 'mm', 'vlm',
-            'gemini', 'gpt-4o', 'claude-3', 'qwen-vl'
+            'gemini', 'gpt-4o', 'claude-3', 'qwen-vl', 'llava',
+            'internvl', 'cogvlm', 'blip', 'minigpt'
         ];
-        // Reasoning keywords
+        // 推理能力检测
         const reasoningKeywords = [
             'reasoning', 'reason', 'think', 'analysis', 'logic',
-            'qwq', 'o1', 'reasoning', 'deepthink'
+            'qwq', 'o1', 'reasoning', 'deepthink', 'cot'
         ];
-        // Detect capabilities
+        // 检测具体能力
         const isProgramming = programmingKeywords.some(keyword => lowerName.includes(keyword));
-        const hasImageProcessing = imageProcessingKeywords.some(keyword => lowerName.includes(keyword));
+        const hasImageProcessing = multimodalKeywords.some(keyword => lowerName.includes(keyword));
         const isReasoning = reasoningKeywords.some(keyword => lowerName.includes(keyword));
         const isLongContext = contextLength >= 200000; // >= 200K
-        // Filter out non-programming models
-        if (!isProgramming && !hasImageProcessing && !isReasoning) {
-            return {
-                contextLength,
-                isProgramming: false,
-                hasImageProcessing: false,
-                isLongContext,
-                category: 'general',
-                capabilities: [],
-                blacklisted: true,
-                blacklistReason: 'Non-programming general purpose model'
-            };
-        }
-        // Determine category
-        let category = 'programming';
+        const isUltraLongContext = contextLength >= 1000000; // >= 1M
+        const isExtendedLongContext = contextLength >= 256000; // >= 256K (用户要求的标记阈值)
+        // 4. 通用模型判断：只要上下文窗口足够(>=64K)就允许使用
+        // 不再过滤纯通用模型 - 用户反馈：通用模型并非不能编程，只要上下文窗口够
+        // 已经在前面过滤了非聊天模型(embedding/audio/image)和低上下文模型(<64K)
+        // 5. 确定模型分类优先级
+        let category = 'general'; // 默认通用模型
         if (hasImageProcessing) {
-            category = 'multimodal';
+            category = 'multimodal'; // 多模态优先级最高
         }
         else if (isReasoning) {
-            category = 'reasoning';
+            category = 'reasoning'; // 推理次之
         }
-        // Build capabilities list
+        else if (isProgramming) {
+            category = 'programming'; // 编程模型
+        }
+        // 6. 构建能力标签列表
         const capabilities = [];
         if (isProgramming)
             capabilities.push('programming');
-        if (hasImageProcessing)
-            capabilities.push('image-processing');
-        if (isLongContext)
-            capabilities.push('long-context');
+        if (hasImageProcessing) {
+            capabilities.push('multimodal');
+            capabilities.push('image-processing'); // 特别标记多模态
+        }
         if (isReasoning)
             capabilities.push('reasoning');
-        if (contextLength >= 1000000)
+        if (isLongContext)
+            capabilities.push('long-context');
+        if (isExtendedLongContext)
+            capabilities.push('extended-long-context'); // 256K+标记
+        if (isUltraLongContext)
             capabilities.push('ultra-long-context');
         return {
             contextLength,
@@ -1631,9 +1915,242 @@ class RCCCli {
         };
     }
     /**
-     * 获取Provider的默认端点
+     * 429错误重试的模型获取
+     */
+    async fetchModelsWithRetry(endpoint, apiKey, maxRetries = 3) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const response = await fetch(endpoint, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (response.status === 429) {
+                    const waitTime = Math.min(5000 * attempt, 30000); // 5s, 10s, 15s 最大30s
+                    console.log(`⏳ Rate limited (429), waiting ${waitTime / 1000}s before retry ${attempt}/${maxRetries}...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    continue;
+                }
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+                }
+                const data = jq_json_handler_1.JQJsonHandler.parseJsonString(await response.text());
+                return data.data || data.models || [];
+            }
+            catch (error) {
+                if (attempt === maxRetries) {
+                    throw error;
+                }
+                // 网络错误也重试
+                if (error.name === 'AbortError' || error.message.includes('fetch')) {
+                    const waitTime = 2000 * attempt;
+                    console.log(`🔄 Network error, retrying in ${waitTime / 1000}s... (${attempt}/${maxRetries})`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                }
+                else {
+                    throw error;
+                }
+            }
+        }
+        throw new Error('Max retries exceeded');
+    }
+    /**
+     * 测试模型上下文长度 - 通过max_tokens参数递归测试
+     */
+    async testModelContextLength(model, provider, testTokens) {
+        return await this.recursiveTokenTest(model, provider, testTokens, 4096, 5); // 最小4K，最多5次重试
+    }
+    /**
+     * 递归测试token长度 - 实现二分查找逻辑
+     */
+    async recursiveTokenTest(model, provider, currentTokens, minTokens = 4096, maxRetries = 5) {
+        if (maxRetries <= 0 || currentTokens < minTokens) {
+            // 达到最大重试次数或低于最小值，使用当前值
+            model.maxTokens = Math.max(currentTokens, minTokens);
+            model.classification = this.classifyModel(model.name, model.maxTokens);
+            return model;
+        }
+        try {
+            const chatEndpoint = `${provider.api_base_url}/chat/completions`;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s超时
+            console.log(`🔍 Testing ${model.name} with ${currentTokens} max_tokens (${maxRetries} retries left)`);
+            const response = await fetch(chatEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${provider.api_key}`,
+                    'Content-Type': 'application/json'
+                },
+                body: jq_json_handler_1.JQJsonHandler.stringifyJson({
+                    model: model.name,
+                    messages: [{ role: 'user', content: 'Hello' }],
+                    max_tokens: currentTokens
+                }, true),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (response.status === 413 || response.status === 400) {
+                // max_tokens太大，折半继续测试
+                const nextTokens = Math.floor(currentTokens * 0.5);
+                console.log(`❌ ${currentTokens} tokens failed, trying ${nextTokens} tokens`);
+                return await this.recursiveTokenTest(model, provider, nextTokens, minTokens, maxRetries - 1);
+            }
+            else if (response.ok) {
+                // 成功！使用当前值
+                console.log(`✅ ${currentTokens} tokens succeeded`);
+                model.maxTokens = currentTokens;
+                model.classification = this.classifyModel(model.name, currentTokens);
+                return model;
+            }
+            else {
+                throw new Error(`Context test failed: ${response.status}`);
+            }
+        }
+        catch (error) {
+            if (error.message && error.message.includes('429')) {
+                throw error; // 429错误向上传递
+            }
+            if (error instanceof Error && error.name === 'AbortError') {
+                console.log(`⏱️  Context test timeout for ${model.name}, reducing tokens and retrying`);
+                // 超时也视为当前值太大，折半重试
+                const nextTokens = Math.floor(currentTokens * 0.5);
+                return await this.recursiveTokenTest(model, provider, nextTokens, minTokens, maxRetries - 1);
+            }
+            else {
+                console.log(`⚠️  Context test failed for ${model.name}:`, error instanceof Error ? error.message : 'Unknown error');
+                // 网络错误等，使用保守估计
+                model.maxTokens = Math.max(Math.floor(currentTokens * 0.5), minTokens);
+                model.classification = this.classifyModel(model.name, model.maxTokens);
+                return model;
+            }
+        }
+    }
+    /**
+     * 测试模型可用性
+     */
+    async testModelAvailability(model, provider) {
+        try {
+            const chatEndpoint = `${provider.api_base_url}/chat/completions`;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            const response = await fetch(chatEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${provider.api_key}`,
+                    'Content-Type': 'application/json'
+                },
+                body: jq_json_handler_1.JQJsonHandler.stringifyJson({
+                    model: model.name,
+                    messages: [{ role: 'user', content: 'Hello' }]
+                }, true),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (response.status === 404) {
+                return { available: false, reason: 'Model not found (404)' };
+            }
+            else if (response.status === 403) {
+                return { available: false, reason: 'Access denied (403)' };
+            }
+            else if (response.status === 429) {
+                throw new Error('429: Rate limited');
+            }
+            else if (response.ok || response.status === 400) {
+                // 200 OK 或 400 (bad request) 都说明模型存在
+                return { available: true };
+            }
+            else {
+                return { available: false, reason: `HTTP ${response.status}` };
+            }
+        }
+        catch (error) {
+            if (error.message.includes('429')) {
+                throw error; // 429错误向上传递
+            }
+            return { available: false, reason: error.message };
+        }
+    }
+    /**
+     * 测试多模态能力
+     */
+    async testMultimodalCapability(model, provider) {
+        try {
+            const chatEndpoint = `${provider.api_base_url}/chat/completions`;
+            // 测试图像处理能力
+            const testImageMessage = {
+                role: 'user',
+                content: [
+                    { type: 'text', text: 'What do you see in this image?' },
+                    {
+                        type: 'image_url',
+                        image_url: {
+                            url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+                        }
+                    }
+                ]
+            };
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            const response = await fetch(chatEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${provider.api_key}`,
+                    'Content-Type': 'application/json'
+                },
+                body: jq_json_handler_1.JQJsonHandler.stringifyJson({
+                    model: model.name,
+                    messages: [testImageMessage]
+                }, true),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (response.status === 429) {
+                throw new Error('429: Rate limited');
+            }
+            if (response.ok) {
+                const data = jq_json_handler_1.JQJsonHandler.parseJsonString(await response.text());
+                if (data.choices && data.choices[0]?.message?.content) {
+                    return { hasMultimodal: true, supportedTypes: ['image'] };
+                }
+            }
+            else if (response.status === 400) {
+                // 400错误可能表示不支持multimodal格式
+                const errorData = jq_json_handler_1.JQJsonHandler.parseJsonString(await response.text()).catch(() => ({}));
+                if (errorData.error?.message?.includes('image') || errorData.error?.message?.includes('multimodal')) {
+                    return { hasMultimodal: false, supportedTypes: [] };
+                }
+            }
+            return { hasMultimodal: false, supportedTypes: [] };
+        }
+        catch (error) {
+            if (error.message.includes('429')) {
+                throw error; // 429错误向上传递
+            }
+            return { hasMultimodal: false, supportedTypes: [] };
+        }
+    }
+    /**
+     * 生成长测试消息
+     */
+    generateLongTestMessage(targetTokens) {
+        // 估算：平均每个英文单词约1.3个token，每个中文字符约1个token
+        const wordsNeeded = Math.floor(targetTokens / 1.3);
+        const paragraph = 'The quick brown fox jumps over the lazy dog. This is a sample text for testing purposes. ';
+        const repetitions = Math.ceil(wordsNeeded / (paragraph.split(' ').length));
+        return Array(repetitions).fill(paragraph).join('\n');
+    }
+    /**
+     * 获取Provider的默认端点 (已废弃 - 现在使用配置驱动)
      */
     getDefaultEndpointForProvider(providerType) {
+        // 保留向后兼容，但应该使用provider.api_base_url
         switch (providerType) {
             case 'qwen':
                 return 'https://dashscope.aliyuncs.com/v1';

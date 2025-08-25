@@ -32,6 +32,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PipelineServer = void 0;
 const http_server_1 = require("./http-server");
+const jq_json_handler_1 = require("../utils/jq-json-handler");
+const server_defaults_1 = require("../constants/server-defaults");
 const events_1 = require("events");
 const pipeline_debug_recorder_1 = require("../debug/pipeline-debug-recorder");
 /**
@@ -66,7 +68,7 @@ class PipelineServer extends events_1.EventEmitter {
             this.pipelineService.on('executionFailed', (data) => this.emit('executionFailed', data));
         }
         // 初始化Debug记录器
-        this.debugRecorder = new pipeline_debug_recorder_1.PipelineDebugRecorder(config.port || 5506, config.debug !== false);
+        this.debugRecorder = new pipeline_debug_recorder_1.PipelineDebugRecorder(config.port || (0, server_defaults_1.getServerPort)(), config.debug !== false);
         this.initializePipelineRoutes();
         this.initializeMiddleware();
     }
@@ -223,7 +225,7 @@ class PipelineServer extends events_1.EventEmitter {
                     endpoint: '/v1/messages',
                     headers_validated: true,
                     content_type: 'application/json',
-                    request_size: JSON.stringify(req.body).length,
+                    request_size: jq_json_handler_1.JQJsonHandler.stringifyJson(req.body).length,
                     anthropic_version: req.headers['anthropic-version'] || '2023-06-01',
                 },
                 validation: {

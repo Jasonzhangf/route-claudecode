@@ -473,7 +473,7 @@ class HTTPServer extends events_1.EventEmitter {
                     res.setHeader('Connection', 'keep-alive');
                     // 发送每个chunk
                     for (const chunk of streamResponse.chunks) {
-                        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+                        res.write(`data: ${jq_json_handler_1.JQJsonHandler.stringifyJson(chunk)}\n\n`);
                         // 简单延迟以模拟流式传输
                         await new Promise(resolve => setTimeout(resolve, 10));
                     }
@@ -481,11 +481,11 @@ class HTTPServer extends events_1.EventEmitter {
                 }
                 else {
                     // 如果chunks不是数组，回退到普通JSON响应
-                    res.end(JSON.stringify(context.body, null, 2));
+                    res.end(jq_json_handler_1.JQJsonHandler.stringifyJson(context.body, true));
                 }
             }
             else if (typeof context.body === 'object') {
-                res.end(JSON.stringify(context.body, null, 2));
+                res.end(jq_json_handler_1.JQJsonHandler.stringifyJson(context.body, true));
             }
             else {
                 res.end(String(context.body));
@@ -512,10 +512,10 @@ class HTTPServer extends events_1.EventEmitter {
         if (!res.headersSent) {
             res.statusCode = statusCode;
             res.setHeader('Content-Type', 'application/json');
-            res.end(JSON.stringify({
+            res.end(jq_json_handler_1.JQJsonHandler.stringifyJson({
                 error: 'Internal Server Error',
                 message: this.config.debug ? message : 'An unexpected error occurred',
-            }, null, 2));
+            }, true));
         }
         this.emit('error', error);
     }
