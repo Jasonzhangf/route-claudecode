@@ -702,18 +702,63 @@ export class CommandExecutor implements ICommandExecutor {
   private async updateShuaihongModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
     console.log(`🔍 Updating Shuaihong models for provider: ${provider.name}`);
     
+    // 如果选择API获取模式，尝试从Shuaihong API获取模型列表
+    if (options.apiFetch) {
+      try {
+        console.log('📡 Fetching model list from Shuaihong API...');
+        const response = await fetch(`${provider.api_base_url}/models`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${provider.api_key}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const models = data.data || [];
+          console.log(`✅ Found ${models.length} models from Shuaihong API`);
+          
+          // 过滤聊天模型
+          const chatModels = models.filter((model: any) => 
+            this.isChatModel(model.id) && !this.isEmbeddingModel(model.id)
+          );
+          
+          console.log(`💬 Found ${chatModels.length} chat models after filtering`);
+          
+          const modelInfo = chatModels.map((model: any) => ({
+            id: model.id,
+            maxTokens: this.getModelMaxTokens(model.id),
+            supported: true
+          }));
+          
+          await this.updateProviderConfigModels(config, configPath, provider.name, modelInfo, options);
+          return;
+        } else {
+          console.warn(`⚠️ Shuaihong API returned status ${response.status}, falling back to static list`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to fetch from Shuaihong API: ${error instanceof Error ? error.message : 'Unknown error'}, falling back to static list`);
+      }
+    }
+    
+    // 静态模型列表作为fallback - 基于实际支持的模型
     const shuaihongModels = [
-      'gemini-2.5-pro',
       'gpt-4o',
       'gpt-4o-mini',
-      'claude-3-sonnet',
+      'gpt-4',
+      'gpt-3.5-turbo',
+      'claude-3.5-sonnet',
       'claude-3-haiku',
-      'claude-3-opus'
+      'gemini-pro',
+      'gemini-2.5-flash',
+      'deepseek-v3.1',
+      'deepseek-r1'
     ];
 
     const modelInfo = shuaihongModels.map(model => ({
       id: model,
-      maxTokens: 262144, // 256k tokens for Shuaihong models
+      maxTokens: this.getModelMaxTokens(model), // 根据模型动态设置tokens
       supported: true
     }));
 
@@ -750,17 +795,60 @@ export class CommandExecutor implements ICommandExecutor {
   private async updateLMStudioModels(provider: any, options: any, config: any, configPath: string): Promise<void> {
     console.log(`🔍 Updating LM Studio models for provider: ${provider.name}`);
     
-    const lmstudioModels = [
+    // 如果选择API获取模式，尝试从LM Studio API获取模型列表
+    if (options.apiFetch) {
+      try {
+        console.log('📡 Fetching model list from LM Studio API...');
+        const response = await fetch(`${provider.api_base_url}/models`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${provider.api_key}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const models = data.data || [];
+          console.log(`✅ Found ${models.length} models from LM Studio API`);
+          
+          // 过滤聊天模型，排除embedding和其他非聊天模型
+          const chatModels = models.filter((model: any) => 
+            this.isChatModel(model.id) && !this.isEmbeddingModel(model.id)
+          );
+          
+          console.log(`💬 Found ${chatModels.length} chat models after filtering`);
+          
+          const modelInfo = chatModels.map((model: any) => ({
+            id: model.id,
+            maxTokens: 131072, // 128k tokens for LM Studio models
+            supported: true
+          }));
+          
+          await this.updateProviderConfigModels(config, configPath, provider.name, modelInfo, options);
+          return;
+        } else {
+          console.warn(`⚠️ LM Studio API returned status ${response.status}, falling back to static list`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to fetch from LM Studio API: ${error instanceof Error ? error.message : 'Unknown error'}, falling back to static list`);
+      }
+    }
+    
+    // 静态模型列表作为fallback
+    const lmstudioChatModels = [
       'gpt-oss-20b-mlx',
-      'llama-3.1-8b',
-      'qwen2.5-7b-instruct',
-      'codellama-34b',
-      'deepseek-coder-33b'
+      'qwen3-30b-a3b-instruct-2507-mlx',
+      'nextcoder-32b-mlx',
+      'seed-oss-36b-instruct',
+      'glm-4.5v',
+      'qwen3-4b-thinking-2507-mlx',
+      'gemma-3n-e2b-it-mlx'
     ];
 
-    const modelInfo = lmstudioModels.map(model => ({
+    const modelInfo = lmstudioChatModels.map(model => ({
       id: model,
-      maxTokens: 262144, // 256k tokens for LM Studio models
+      maxTokens: 131072, // 128k tokens for LM Studio models
       supported: true
     }));
 
@@ -1030,8 +1118,8 @@ export class CommandExecutor implements ICommandExecutor {
         throw new Error(`Provider '${providerName}' not found in configuration`);
       }
       
-      // 写回配置文件
-      const updatedConfig = JQJsonHandler.stringifyJson(parsedConfig, true);
+      // 写回配置文件（使用用户友好的格式化输出）
+      const updatedConfig = JQJsonHandler.stringifyJson(parsedConfig, false);
       fs.writeFileSync(configPath, updatedConfig, 'utf8');
       
       console.log(`✅ Configuration file updated: ${configPath}`);
@@ -1170,5 +1258,102 @@ export class CommandExecutor implements ICommandExecutor {
     }
     
     return 0; // 不支持任何测试的值
+  }
+
+  /**
+   * 判断是否为聊天模型
+   */
+  private isChatModel(modelId: string): boolean {
+    // 🔧 修复：改为排除明确不是聊天模型的，而不是匹配聊天模型关键词
+    // 只排除明确知道的非聊天模型类型
+    const modelLower = modelId.toLowerCase();
+    
+    // 首先排除embedding模型
+    if (this.isEmbeddingModel(modelId)) {
+      return false;
+    }
+    
+    // 排除其他明确的非聊天模型类型
+    const nonChatKeywords = [
+      'reranker',          // 重排序模型
+      'image-generation',  // 图片生成模型
+      'tts',              // 语音合成
+      'stt',              // 语音转文字
+      'whisper'           // 语音模型
+    ];
+    
+    // 如果包含非聊天关键词，则不是聊天模型
+    if (nonChatKeywords.some(keyword => modelLower.includes(keyword))) {
+      return false;
+    }
+    
+    // 其他所有模型默认认为是聊天模型
+    return true;
+  }
+
+  /**
+   * 判断是否为embedding模型
+   */
+  private isEmbeddingModel(modelId: string): boolean {
+    const embeddingKeywords = [
+      'bge', 'e5', 'embed', 'sentence', 'retrieval', 'similarity',
+      'vector', 'semantic', 'text-embedding'
+    ];
+    
+    const modelLower = modelId.toLowerCase();
+    return embeddingKeywords.some(keyword => modelLower.includes(keyword));
+  }
+
+  /**
+   * 根据模型名称获取最大token数
+   */
+  private getModelMaxTokens(modelId: string): number {
+    const modelLower = modelId.toLowerCase();
+    
+    // Claude模型
+    if (modelLower.includes('claude-3.5') || modelLower.includes('claude-3-opus')) {
+      return 200000; // 200k tokens
+    }
+    if (modelLower.includes('claude-3-haiku') || modelLower.includes('claude-3-sonnet')) {
+      return 200000; // 200k tokens
+    }
+    
+    // GPT模型
+    if (modelLower.includes('gpt-4o')) {
+      return 128000; // 128k tokens
+    }
+    if (modelLower.includes('gpt-4')) {
+      return 128000; // 128k tokens
+    }
+    if (modelLower.includes('gpt-3.5-turbo')) {
+      return 16384; // 16k tokens
+    }
+    
+    // Gemini模型
+    if (modelLower.includes('gemini')) {
+      return 128000; // 128k tokens
+    }
+    
+    // DeepSeek模型
+    if (modelLower.includes('deepseek')) {
+      return 65536; // 64k tokens
+    }
+    
+    // Qwen模型
+    if (modelLower.includes('qwen-long')) {
+      return 10000000; // 10M tokens
+    }
+    if (modelLower.includes('qwen-max')) {
+      return 2000000; // 2M tokens
+    }
+    if (modelLower.includes('qwen3') || modelLower.includes('qwen-plus') || modelLower.includes('qwen-turbo')) {
+      return 1000000; // 1M tokens
+    }
+    if (modelLower.includes('qwen')) {
+      return 131072; // 128k tokens
+    }
+    
+    // 默认值
+    return 65536; // 64k tokens
   }
 }

@@ -17,6 +17,8 @@ import { PipelineCompatibilityManager } from './pipeline-compatibility-manager';
 import { DebugManagerImpl } from '../debug/debug-manager';
 import { PipelineDebugRecorder } from '../debug/pipeline-debug-recorder';
 import { HttpRequestHandler, HttpRequestOptions } from './modules/http-request-handler';
+import { PipelineLayersProcessor } from './modules/pipeline-layers';
+import { PrecisePipelineBlacklistManager } from './modules/precise-blacklist-manager';
 
 // 导入验证器
 import { protocolTransformerValidator, ValidationResult } from '../validation/protocol-transformer-validator';
@@ -72,6 +74,8 @@ export class PipelineRequestProcessor extends EventEmitter {
   private debugManager: DebugManagerImpl;
   private pipelineDebugRecorder: PipelineDebugRecorder;
   private httpRequestHandler: HttpRequestHandler;
+  private pipelineLayersProcessor: PipelineLayersProcessor;
+  private blacklistManager: PrecisePipelineBlacklistManager;
 
   constructor(config: MergedConfig, debugEnabled: boolean = false) {
     super();
@@ -114,8 +118,20 @@ export class PipelineRequestProcessor extends EventEmitter {
     // 初始化HTTP请求处理器
     this.httpRequestHandler = new HttpRequestHandler();
 
+    // 初始化流水线处理层
+    this.pipelineLayersProcessor = new PipelineLayersProcessor(config, this.httpRequestHandler);
+
+    // 初始化精准拉黑管理器
+    const blacklistConfig = config.blacklistSettings || {};
+    this.blacklistManager = new PrecisePipelineBlacklistManager(blacklistConfig);
+
     // 注册所有流水线模块
     this.registerDebugModules();
+
+    // 异步初始化拉黑管理器
+    this.blacklistManager.initialize().catch(error => {
+      secureLogger.warn('Failed to initialize blacklist manager, continuing with defaults', { error });
+    });
   }
 
   /**
@@ -170,7 +186,7 @@ export class PipelineRequestProcessor extends EventEmitter {
       // Step 1: Router层 - 路由决策
       const routerStart = Date.now();
       this.debugManager.recordInput('router', requestId, input);
-      const routingDecision = await this.processRouterLayer(input, context);
+      const routingDecision = await this.pipelineLayersProcessor.processRouterLayer(input, context);
       this.debugManager.recordOutput('router', requestId, routingDecision);
       context.layerTimings.router = Date.now() - routerStart;
       context.routingDecision = routingDecision;
@@ -178,7 +194,7 @@ export class PipelineRequestProcessor extends EventEmitter {
       // Step 2: Transformer层 - 协议转换
       const transformerStart = Date.now();
       this.debugManager.recordInput('transformer', requestId, { input, routingDecision });
-      const transformedRequest = await this.processTransformerLayer(
+      const transformedRequest = await this.pipelineLayersProcessor.processTransformerLayer(
         input,
         routingDecision,
         context
@@ -213,7 +229,7 @@ export class PipelineRequestProcessor extends EventEmitter {
       // Step 3: Protocol层 - 协议处理
       const protocolStart = Date.now();
       this.debugManager.recordInput('protocol', requestId, { transformedRequest, routingDecision });
-      const protocolRequest = await this.processProtocolLayer(
+      const protocolRequest = await this.pipelineLayersProcessor.processProtocolLayer(
         transformedRequest,
         routingDecision,
         context
@@ -283,10 +299,39 @@ export class PipelineRequestProcessor extends EventEmitter {
         summary: compatibilityValidation.summary
       });
 
-      // Step 5: Server层 - 实际API调用
+      // Step 5: Server层 - 实际API调用（检查拉黑状态）
+      const pipelineId = routingDecision.selectedPipeline || 'default';
+      const pipelineStatus = this.blacklistManager.checkPipelineStatus(pipelineId);
+      
+      if (pipelineStatus.status === 'temporarily_blocked') {
+        const errorMsg = `Pipeline ${pipelineId} is temporarily blocked: ${pipelineStatus.reason}`;
+        secureLogger.warn('Pipeline temporarily blocked, request rejected', {
+          requestId,
+          pipelineId,
+          reason: pipelineStatus.reason,
+          unblockAt: pipelineStatus.unblockAt,
+          consecutiveFailures: pipelineStatus.consecutiveFailures
+        });
+        this.stats.failedRequests++;
+        throw new Error(errorMsg);
+      }
+
       const serverStart = Date.now();
       this.debugManager.recordInput('server', requestId, { compatibleRequest, routingDecision });
-      const response = await this.processServerLayer(compatibleRequest, routingDecision, context);
+      
+      let response;
+      try {
+        response = await this.pipelineLayersProcessor.processServerLayer(compatibleRequest, routingDecision, context);
+        
+        // 成功请求，重置429计数器
+        this.blacklistManager.resetRateLimitCounter(pipelineId);
+        
+      } catch (serverError: any) {
+        // 检查是否需要拉黑或销毁流水线
+        await this.handlePipelineErrorAndBlacklist(serverError, pipelineId, requestId);
+        throw serverError;
+      }
+      
       this.debugManager.recordOutput('server', requestId, response);
       context.layerTimings.server = Date.now() - serverStart;
 
@@ -395,138 +440,20 @@ export class PipelineRequestProcessor extends EventEmitter {
   }
 
   // ========================================================================================
-  // PIPELINE PROCESSING LAYERS MODULE - 可独立拆分为 pipeline-layers.ts
+  // PIPELINE PROCESSING LAYERS MODULE - 已拆分到 pipeline-layers.ts
   // 包含: processRouterLayer, processTransformerLayer, processProtocolLayer, processServerLayer
-  // 职责: 六层流水线的核心处理逻辑
+  // 职责: 六层流水线的核心处理逻辑 (现由PipelineLayersProcessor处理)
   // ========================================================================================
 
-  /**
-   * 处理Router层 - 路由决策
-   */
-  private async processRouterLayer(input: any, context: RequestContext): Promise<any> {
-    // 使用模型映射系统
-    const { VirtualModelMapper } = require('../router/virtual-model-mapping');
-    const mappedModel = VirtualModelMapper.mapToVirtual(input.model, input);
-    
-    secureLogger.info('Model mapping completed', {
-      requestId: context.requestId,
-      inputModel: input.model,
-      mappedModel: mappedModel,
-      priority: 99, // 模型映射的优先级
-      tokenCount: '[REDACTED]', // 不记录具体token数量
-    });
+  // ========================================================================================
+  // HTTP REQUEST HANDLER MODULE - 已拆分到 http-request-handler.ts
+  // 包含: makeHttpRequest, shouldRetryError, createApiErrorResponse
+  // 职责: HTTP请求执行、错误分类、重试逻辑、长文本支持 (现由HttpRequestHandler处理)
+  // ========================================================================================
 
-    // 构建路由决策结果 - 使用实际的流水线ID
-    const availablePipelines = this.getAvailablePipelinesForMappedModel(mappedModel);
-    const routingDecision = {
-      originalModel: input.model,
-      virtualModel: mappedModel,
-      availablePipelines: availablePipelines,
-      reasoning: `Found ${availablePipelines.length} healthy pipelines for ${mappedModel}`
-    };
+  // 注意: processRouterLayer 已移至 PipelineLayersProcessor
 
-    context.transformations.push({
-      layer: 'router',
-      inputModel: input.model,
-      outputModel: mappedModel,
-      timestamp: new Date(),
-    });
-
-    secureLogger.info('Router layer completed', {
-      requestId: context.requestId,
-      routingDecision,
-      timing: context.layerTimings.router || 0,
-    });
-
-    return routingDecision;
-  }
-
-  /**
-   * 处理Transformer层 - 基于协议自动选择转换器
-   */
-  private async processTransformerLayer(input: any, routingDecision: any, context: RequestContext): Promise<any> {
-    // 🔧 关键修复：基于配置的协议字段自动选择transformer
-    const firstPipelineId = routingDecision.availablePipelines[0];
-    const providerType = this.extractProviderFromPipelineId(firstPipelineId);
-    const providers = this.config.providers || [];
-    const matchingProvider = providers.find(p => p.name === providerType);
-
-    if (!matchingProvider) {
-      throw new Error(`Provider '${providerType}' not found in user config`);
-    }
-
-    // 🔧 新架构：基于protocol字段自动选择transformer
-    let transformerDirection = 'passthrough';
-    let transformedRequest = input;
-    
-    // 检查新统一格式的protocol字段
-    if (matchingProvider.protocol) {
-      const protocol = matchingProvider.protocol;
-      secureLogger.info('🔧 使用新统一格式的protocol配置', {
-        requestId: context.requestId,
-        providerName: providerType,
-        protocol: protocol,
-        architecture: 'unified-format'
-      });
-
-      // 新架构逻辑：protocol决定transformer选择
-      if (protocol === 'openai') {
-        // protocol: "openai" -> 需要anthropic-to-openai转换
-        transformerDirection = 'anthropic-to-openai';
-        const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
-        const transformer = new SecureAnthropicToOpenAITransformer();
-        await transformer.start();
-        transformedRequest = await transformer.process(input);
-      } else if (protocol === 'anthropic') {
-        // protocol: "anthropic" -> passthrough，无需转换
-        transformerDirection = 'passthrough';
-        transformedRequest = input;
-      } else {
-        secureLogger.warn('🔧 未知协议类型，使用passthrough', {
-          requestId: context.requestId,
-          protocol: protocol,
-          fallback: 'passthrough'
-        });
-      }
-    } else {
-      // 向后兼容：检查旧格式的transformer配置
-      secureLogger.info('🔧 使用向后兼容的transformer配置', {
-        requestId: context.requestId,
-        providerName: providerType,
-        hasTransformerConfig: !!matchingProvider.transformer
-      });
-
-      if (matchingProvider.transformer?.use?.includes('openai')) {
-        transformerDirection = 'anthropic-to-openai';
-        const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
-        const transformer = new SecureAnthropicToOpenAITransformer();
-        await transformer.start();
-        transformedRequest = await transformer.process(input);
-      }
-    }
-
-    // 🔧 关键修复：不要覆盖model字段，保持原始模型名用于API调用
-    // 路由映射将通过Protocol层的__internal.actualModel传递
-    // (transformedRequest as any).model = routingDecision.virtualModel || input.model;
-
-    context.transformations.push({
-      layer: 'transformer',
-      direction: transformerDirection,
-      timestamp: new Date(),
-    });
-
-    secureLogger.debug('Transformer layer processing', {
-      requestId: context.requestId,
-      originalModel: input.model,
-      transformedModel: (transformedRequest as any).model,
-      transformerDirection: transformerDirection,
-      hasTools: Array.isArray(input.tools) && input.tools.length > 0,
-      transformedMessageCount: (transformedRequest as any)?.messages?.length || 0,
-      originalMessageCount: input?.messages?.length || 0,
-    });
-
-    return transformedRequest;
-  }
+  // 注意: processTransformerLayer 已移至 PipelineLayersProcessor
 
   /**
    * 处理Protocol层 - 协议处理
@@ -1409,5 +1336,114 @@ export class PipelineRequestProcessor extends EventEmitter {
       console.error('❌ [PIPELINE-DEBUG] Debug记录失败:', debugError.message);
       console.error('❌ [PIPELINE-DEBUG] 详细错误:', debugError.stack);
     }
+  }
+
+  /**
+   * 处理流水线错误并执行拉黑逻辑
+   */
+  private async handlePipelineErrorAndBlacklist(error: any, pipelineId: string, requestId: string): Promise<void> {
+    try {
+      // 提取状态码和错误消息
+      const statusCode = error.status || error.statusCode || error.code || 0;
+      const errorMessage = error.message || error.toString() || '';
+
+      secureLogger.debug('Analyzing pipeline error for blacklist action', {
+        requestId,
+        pipelineId,
+        statusCode,
+        errorMessage: errorMessage.substring(0, 200),
+        errorType: error.constructor.name
+      });
+
+      // 检查是否应该立即销毁流水线
+      if (this.blacklistManager.shouldDestroyPipeline(statusCode, errorMessage)) {
+        secureLogger.error('Pipeline marked for destruction due to configured destroy rule', {
+          requestId,
+          pipelineId,
+          statusCode,
+          errorMessage: errorMessage.substring(0, 100)
+        });
+
+        // 触发流水线销毁事件
+        this.emit('pipeline-destroy', {
+          pipelineId,
+          reason: `Destroy rule matched: ${statusCode} - ${errorMessage.substring(0, 50)}`,
+          requestId,
+          timestamp: Date.now()
+        });
+
+        return;
+      }
+
+      // 处理429流控错误
+      if (statusCode === 429) {
+        const blacklistAction = this.blacklistManager.handle429Error(pipelineId);
+        
+        if (blacklistAction.action === 'destroy') {
+          secureLogger.error('Pipeline marked for destruction due to persistent rate limiting', {
+            requestId,
+            pipelineId,
+            reason: blacklistAction.reason
+          });
+
+          // 触发流水线销毁事件
+          this.emit('pipeline-destroy', {
+            pipelineId,
+            reason: blacklistAction.reason,
+            requestId,
+            timestamp: Date.now()
+          });
+
+        } else if (blacklistAction.action === 'temporary_block') {
+          secureLogger.warn('Pipeline temporarily blocked for rate limiting', {
+            requestId,
+            pipelineId,
+            duration: blacklistAction.duration,
+            reason: blacklistAction.reason
+          });
+
+          // 触发临时拉黑事件
+          this.emit('pipeline-temporary-block', {
+            pipelineId,
+            reason: blacklistAction.reason,
+            duration: blacklistAction.duration,
+            requestId,
+            timestamp: Date.now()
+          });
+        }
+      }
+
+    } catch (blacklistError) {
+      secureLogger.error('Failed to process pipeline blacklist action', {
+        requestId,
+        pipelineId,
+        originalError: error,
+        blacklistError: blacklistError,
+        errorMessage: blacklistError.message
+      });
+    }
+  }
+
+  /**
+   * 获取拉黑管理器统计信息
+   */
+  public getBlacklistStatistics() {
+    return this.blacklistManager.getStatistics();
+  }
+
+  /**
+   * 手动解除流水线拉黑
+   */
+  public async manualUnblockPipeline(pipelineId: string): Promise<boolean> {
+    const result = await this.blacklistManager.manualUnblock(pipelineId);
+    
+    if (result) {
+      this.emit('pipeline-manual-unblock', {
+        pipelineId,
+        timestamp: Date.now()
+      });
+    }
+
+    return result;
   }
 }

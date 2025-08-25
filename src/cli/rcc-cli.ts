@@ -828,8 +828,8 @@ export class RCCCli implements CLICommands {
         throw new Error(`Provider '${providerName}' not found in configuration`);
       }
       
-      // 写回配置文件
-      const updatedConfig = JQJsonHandler.stringifyJson(parsedConfig, true);
+      // 写回配置文件（使用用户友好的格式化输出）
+      const updatedConfig = JQJsonHandler.stringifyJson(parsedConfig, false);
       fs.writeFileSync(configPath, updatedConfig, 'utf8');
       
       console.log(`   💾 Configuration file updated successfully`);
@@ -2138,14 +2138,11 @@ export class RCCCli implements CLICommands {
   }
 
   /**
-   * 测试模型上下文长度 - 用512K token测试
+   * 测试模型上下文长度 - 通过max_tokens参数测试
    */
   private async testModelContextLength(model: FetchedModel, provider: any, testTokens: number): Promise<FetchedModel> {
     try {
-      // 构建测试消息 - 生成大约指定token数的测试文本
-      const testMessage = this.generateLongTestMessage(testTokens);
-      
-      const chatEndpoint = provider.api_base_url;
+      const chatEndpoint = `${provider.api_base_url}/chat/completions`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s超时
 
@@ -2157,9 +2154,8 @@ export class RCCCli implements CLICommands {
         },
         body: JQJsonHandler.stringifyJson({
           model: model.name,
-          messages: [{ role: 'user', content: testMessage }],
-          max_tokens: 100,
-          temperature: 0
+          messages: [{ role: 'user', content: 'Hello' }],
+          max_tokens: testTokens
         }, true),
         signal: controller.signal
       });
@@ -2167,13 +2163,14 @@ export class RCCCli implements CLICommands {
       clearTimeout(timeoutId);
 
       if (response.status === 413 || response.status === 400) {
-        // Payload too large - 模型上下文不足
-        const estimatedLength = Math.floor(testTokens * 0.7); // 保守估计
+        // max_tokens too large - 模型不支持这个长度
+        const estimatedLength = Math.floor(testTokens * 0.5); // 折半再试
         model.maxTokens = estimatedLength;
         model.classification = this.classifyModel(model.name, estimatedLength);
         return model;
       } else if (response.ok) {
-        // 成功处理 - 上下文足够
+        // 成功处理 - 支持这个max_tokens
+        model.maxTokens = testTokens;
         return model;
       } else {
         throw new Error(`Context test failed: ${response.status}`);
@@ -2195,7 +2192,7 @@ export class RCCCli implements CLICommands {
    */
   private async testModelAvailability(model: FetchedModel, provider: any): Promise<{available: boolean, reason?: string}> {
     try {
-      const chatEndpoint = provider.api_base_url;
+      const chatEndpoint = `${provider.api_base_url}/chat/completions`;
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
 
@@ -2207,9 +2204,7 @@ export class RCCCli implements CLICommands {
         },
         body: JQJsonHandler.stringifyJson({
           model: model.name,
-          messages: [{ role: 'user', content: 'Hello' }],
-          max_tokens: 10,
-          temperature: 0
+          messages: [{ role: 'user', content: 'Hello' }]
         }, true),
         signal: controller.signal
       });
@@ -2242,7 +2237,7 @@ export class RCCCli implements CLICommands {
    */
   private async testMultimodalCapability(model: FetchedModel, provider: any): Promise<{hasMultimodal: boolean, supportedTypes: string[]}> {
     try {
-      const chatEndpoint = provider.api_base_url;
+      const chatEndpoint = `${provider.api_base_url}/chat/completions`;
       
       // 测试图像处理能力
       const testImageMessage = {
@@ -2269,9 +2264,7 @@ export class RCCCli implements CLICommands {
         },
         body: JQJsonHandler.stringifyJson({
           model: model.name,
-          messages: [testImageMessage],
-          max_tokens: 50,
-          temperature: 0
+          messages: [testImageMessage]
         }, true),
         signal: controller.signal
       });

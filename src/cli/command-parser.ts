@@ -239,6 +239,11 @@ export class CommandParser implements CLIHandler {
             { name: 'dry-run', alias: 'd', type: 'boolean', description: 'Show what would be updated without making changes' },
             { name: 'verbose', alias: 'v', type: 'boolean', description: 'Show detailed output' },
             { name: 'api-fetch', alias: 'f', type: 'boolean', description: 'Fetch models from provider APIs instead of using static lists' },
+            { name: 'fast', type: 'boolean', description: 'Fast mode: skip successful tests from history, only test new/failed/low-context models' },
+            { name: 'static', type: 'boolean', description: 'Use static model lists instead of API fetching (overrides default API-first behavior)' },
+            { name: 'clear-history', type: 'boolean', description: 'Clear test history before updating (requires confirmation)' },
+            { name: 'export-history', type: 'string', description: 'Export test history to file (JSON/CSV format)' },
+            { name: 'history-stats', type: 'boolean', description: 'Show test history statistics' },
           ],
           examples: [
             'rcc4 provider update --config config.json',
@@ -246,7 +251,12 @@ export class CommandParser implements CLIHandler {
             'rcc4 provider update --provider openai',
             'rcc4 provider update --dry-run --verbose',
             'rcc4 provider update --api-fetch --verbose',
-            'rcc4 provider update --all --api-fetch --verbose'
+            'rcc4 provider update --all --api-fetch --verbose',
+            'rcc4 provider update --config config.json --fast',
+            'rcc4 provider update --all --fast --verbose',
+            'rcc4 provider update --config config.json --clear-history',
+            'rcc4 provider update --export-history history.json',
+            'rcc4 provider update --history-stats'
           ]
         }
       ]
