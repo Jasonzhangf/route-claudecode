@@ -41,6 +41,14 @@ export const SERVER_DEFAULTS = {
       MESSAGE: 'Too many requests from this IP',
     },
   },
+
+  // 错误恢复配置
+  ERROR_RECOVERY: {
+    MAX_RETRIES: 3,              // 最大重试次数
+    INITIAL_DELAY: 1000,         // 初始延迟1秒
+    MAX_DELAY: 10000,           // 最大延迟10秒
+    RECOVERY_TIMEOUT: 30000,    // 恢复超时30秒
+  },
 } as const;
 
 /**

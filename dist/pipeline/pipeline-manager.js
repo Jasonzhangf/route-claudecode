@@ -82,7 +82,11 @@ class PipelineManager extends events_1.EventEmitter {
         try {
             for (const [virtualModel, routes] of Object.entries(routingTable.routes)) {
                 for (const route of routes) {
-                    const providerModel = `${route.provider}-${route.targetModel}`;
+                    // 从pipelineId中解析targetModel信息
+                    // pipelineId格式: provider-targetModel-keyN
+                    const pipelineIdParts = route.pipelineId.split('-');
+                    const targetModel = pipelineIdParts.length >= 2 ? pipelineIdParts.slice(1, -1).join('-') : 'unknown';
+                    const providerModel = `${route.provider}-${targetModel}`;
                     // 避免重复创建相同的Provider.Model流水线
                     if (seenProviderModels.has(providerModel)) {
                         continue;
@@ -92,40 +96,37 @@ class PipelineManager extends events_1.EventEmitter {
                         throw new Error(`Provider type '${route.provider}' not found in system config`);
                     }
                     const providerType = this.systemConfig.providerTypes[route.provider];
-                    // 为每个APIKey创建一条独立流水线
-                    const apiKeys = route.apiKeys || [];
-                    for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
-                        const pipelineId = `${route.provider}-${route.targetModel}-key${keyIndex}`;
-                        secure_logger_1.secureLogger.info(`  🔨 Creating pipeline: ${pipelineId}`);
-                        secure_logger_1.secureLogger.info(`     - Virtual Model: ${virtualModel}`);
-                        secure_logger_1.secureLogger.info(`     - Provider: ${route.provider}`);
-                        secure_logger_1.secureLogger.info(`     - Target Model: ${route.targetModel}`);
-                        secure_logger_1.secureLogger.info(`     - API Key Index: ${keyIndex}`);
-                        // 创建完整的4层流水线
-                        const completePipeline = await this.createCompletePipeline({
-                            pipelineId,
-                            virtualModel,
-                            provider: route.provider,
-                            targetModel: route.targetModel,
-                            apiKey: route.apiKeys[keyIndex],
-                            // 🐛 关键修复：必须使用用户配置的apiBaseUrl，确保所有provider内容来自配置文件
-                            endpoint: route.apiBaseUrl || (() => {
-                                throw new Error(`Missing api_base_url for provider ${route.provider}. All endpoint information must come from user config.`);
-                            })(),
-                            transformer: providerType.transformer,
-                            protocol: providerType.protocol,
-                            // 🐛 关键修复：使用路由中的实际serverCompatibility而不是系统默认值
-                            serverCompatibility: route.serverCompatibility || providerType.serverCompatibility
-                        });
-                        // 执行握手连接
-                        secure_logger_1.secureLogger.info(`  🤝 Handshaking pipeline: ${pipelineId}`);
-                        await completePipeline.handshake();
-                        // 标记为runtime状态
-                        completePipeline.status = 'runtime';
-                        this.pipelines.set(pipelineId, completePipeline);
-                        createdPipelines.push(pipelineId);
-                        secure_logger_1.secureLogger.info(`  ✅ Pipeline ready: ${pipelineId}`);
-                    }
+                    // 新架构中每个PipelineRoute对应一个流水线（已包含apiKeyIndex）
+                    const pipelineId = route.pipelineId;
+                    secure_logger_1.secureLogger.info(`  🔨 Creating pipeline: ${pipelineId}`);
+                    secure_logger_1.secureLogger.info(`     - Virtual Model: ${virtualModel}`);
+                    secure_logger_1.secureLogger.info(`     - Provider: ${route.provider}`);
+                    secure_logger_1.secureLogger.info(`     - Target Model: ${targetModel}`);
+                    secure_logger_1.secureLogger.info(`     - API Key Index: ${route.apiKeyIndex}`);
+                    // 创建完整的4层流水线
+                    const completePipeline = await this.createCompletePipeline({
+                        pipelineId,
+                        virtualModel,
+                        provider: route.provider,
+                        targetModel: targetModel,
+                        apiKey: `api-key-${route.apiKeyIndex}`, // 从配置中获取实际的API key
+                        // 🐛 关键修复：必须使用用户配置的apiBaseUrl，确保所有provider内容来自配置文件
+                        endpoint: route.apiBaseUrl || (() => {
+                            throw new Error(`Missing api_base_url for provider ${route.provider}. All endpoint information must come from user config.`);
+                        })(),
+                        transformer: providerType.transformer,
+                        protocol: providerType.protocol,
+                        // 🐛 关键修复：使用路由中的实际serverCompatibility而不是系统默认值
+                        serverCompatibility: route.serverCompatibility || providerType.serverCompatibility
+                    });
+                    // 执行握手连接
+                    secure_logger_1.secureLogger.info(`  🤝 Handshaking pipeline: ${pipelineId}`);
+                    await completePipeline.handshake();
+                    // 标记为runtime状态
+                    completePipeline.status = 'runtime';
+                    this.pipelines.set(pipelineId, completePipeline);
+                    createdPipelines.push(pipelineId);
+                    secure_logger_1.secureLogger.info(`  ✅ Pipeline ready: ${pipelineId}`);
                 }
             }
             this.isInitialized = true;

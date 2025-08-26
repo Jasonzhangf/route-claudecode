@@ -279,7 +279,7 @@ export class AnthropicProtocolHandler extends EventEmitter implements ModuleInte
               name: toolCall.function.name,
               input:
                 typeof toolCall.function.arguments === 'string'
-                  ? JSON.parse(toolCall.function.arguments)
+                  ? JQJsonHandler.parseJsonString(toolCall.function.arguments)
                   : toolCall.function.arguments || {},
             });
           }

@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">1.44% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>4/277</span>
+                <span class='fraction'>0/278</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">1.49% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>4/267</span>
+                <span class='fraction'>0/268</span>
             </div>
         
             
@@ -1153,7 +1153,8 @@
 <a name='L1088'></a><a href='#L1088'>1088</a>
 <a name='L1089'></a><a href='#L1089'>1089</a>
 <a name='L1090'></a><a href='#L1090'>1090</a>
-<a name='L1091'></a><a href='#L1091'>1091</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1091'></a><a href='#L1091'>1091</a>
+<a name='L1092'></a><a href='#L1092'>1092</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1165,14 +1166,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1292,7 +1294,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -2255,14 +2257,15 @@
  * @author Jason Zhang
  */
 &nbsp;
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
-import { EventEmitter } from 'events';
-import {
+<span class="cstat-no" title="statement not covered" >import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';</span>
+<span class="cstat-no" title="statement not covered" >import { EventEmitter } from 'events';</span>
+<span class="cstat-no" title="statement not covered" >import {</span>
   LMStudioResponseFixer,
   DeepSeekResponseFixer,
   OllamaResponseFixer,
   GenericResponseFixer,
 } from './response-compatibility-fixer';
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../../../utils/jq-json-handler';</span>
 &nbsp;
 /**
  * 标准OpenAI请求接口
@@ -2382,7 +2385,7 @@ export interface ResponseAnalysis {
  * Enhanced Server Compatibility Module
  * 专注于响应兼容性修复，不处理模型映射
  */
-export class EnhancedServerCompatibilityModule extends EventEmitter implements ModuleInterface {
+<span class="cstat-no" title="statement not covered" >export class E</span>nhancedServerCompatibilityModule extends EventEmitter implements ModuleInterface {
   private readonly <span class="cstat-no" title="statement not covered" >id: string = 'enhanced-server-compatibility-module';</span>
   private readonly <span class="cstat-no" title="statement not covered" >name: string = 'Enhanced Server Compatibility Module';</span>
   private readonly <span class="cstat-no" title="statement not covered" >type: any = 'server-compatibility';</span>
@@ -2852,7 +2855,7 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
               arguments:
                 typeof toolCall.function?.arguments === 'string'
                   ? toolCall.function.arguments
-                  : JSON.stringify(toolCall.function?.arguments || {}),
+                  : JQJsonHandler.stringifyJson(toolCall.function?.arguments || {}),
             },
           }));
         }
@@ -2893,11 +2896,11 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
 <span class="cstat-no" title="statement not covered" >    if (typeof response === 'string') {</span>
 <span class="cstat-no" title="statement not covered" >      content = response;</span>
     } else <span class="cstat-no" title="statement not covered" >if (response.content) {</span>
-<span class="cstat-no" title="statement not covered" >      content = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);</span>
+<span class="cstat-no" title="statement not covered" >      content = typeof response.content === 'string' ? response.content : JQJsonHandler.stringifyJson(response.content);</span>
     } else <span class="cstat-no" title="statement not covered" >if (response.choices?.[0]?.message?.content) {</span>
 <span class="cstat-no" title="statement not covered" >      content = response.choices[0].message.content;</span>
     } else <span class="cstat-no" title="statement not covered" >if (response.message) {</span>
-<span class="cstat-no" title="statement not covered" >      content = typeof response.message === 'string' ? response.message : JSON.stringify(response.message);</span>
+<span class="cstat-no" title="statement not covered" >      content = typeof response.message === 'string' ? response.message : JQJsonHandler.stringifyJson(response.message);</span>
     }
 &nbsp;
     const fixedResponse: OpenAIStandardResponse = <span class="cstat-no" title="statement not covered" >{</span>
@@ -2982,7 +2985,7 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
         arguments:
           typeof toolCall.function?.arguments === 'string'
             ? toolCall.function.arguments
-            : JSON.stringify(toolCall.function?.arguments || {}),
+            : JQJsonHandler.stringifyJson(toolCall.function?.arguments || {}),
       },
     }));
   }
@@ -3340,7 +3343,7 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.341Z
+                at 2025-08-26T08:25:39.343Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

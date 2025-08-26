@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/157</span>
+                <span class='fraction'>0/158</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/156</span>
+                <span class='fraction'>0/157</span>
             </div>
         
             
@@ -701,7 +701,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1326,7 +1326,7 @@
 &nbsp;
 <span class="cstat-no" title="statement not covered" >import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';</span>
 <span class="cstat-no" title="statement not covered" >import { EventEmitter } from 'events';</span>
-&nbsp;
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../../../utils/jq-json-handler';</span>
 export interface AdaptiveCompatibilityConfig {
   enableResponseFormatDetection?: boolean;
   enableGenericStrategy?: boolean;
@@ -1731,7 +1731,7 @@ export interface ProviderConfig {
    */
   private <span class="fstat-no" title="function not covered" >convertGenericResponseToOpenAI(</span>response: any): any {
 <span class="cstat-no" title="statement not covered" >    console.log('🔄 [AdaptiveCompatibility] 通用响应 → 标准OpenAI格式');</span>
-<span class="cstat-no" title="statement not covered" >    console.log('🔍 通用原始响应:', JSON.stringify(response, null, 2));</span>
+<span class="cstat-no" title="statement not covered" >    console.log('🔍 通用原始响应:', JQJsonHandler.stringifyJson(response, false));</span>
 &nbsp;
     // 如果已经是标准格式，直接返回
 <span class="cstat-no" title="statement not covered" >    if (this.isStandardOpenAIResponse(response)) {</span>
@@ -1748,10 +1748,10 @@ export interface ProviderConfig {
     } else <span class="cstat-no" title="statement not covered" >if (response.content) {</span>
 <span class="cstat-no" title="statement not covered" >      content = this.extractContentFromResponse(response.content);</span>
     } else <span class="cstat-no" title="statement not covered" >if (response.message) {</span>
-<span class="cstat-no" title="statement not covered" >      content = typeof response.message === 'string' ? response.message : JSON.stringify(response.message);</span>
+<span class="cstat-no" title="statement not covered" >      content = typeof response.message === 'string' ? response.message : JQJsonHandler.stringifyJson(response.message);</span>
     } else {
       // 尝试从其他字段提取内容
-<span class="cstat-no" title="statement not covered" >      content = response.text || response.output || JSON.stringify(response);</span>
+<span class="cstat-no" title="statement not covered" >      content = response.text || response.output || JQJsonHandler.stringifyJson(response);</span>
     }
 &nbsp;
     const openaiResponse = <span class="cstat-no" title="statement not covered" >{</span>
@@ -1776,7 +1776,7 @@ export interface ProviderConfig {
       },
     };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    console.log('✅ [AdaptiveCompatibility] 通用转换完成:', JSON.stringify(openaiResponse, null, 2));</span>
+<span class="cstat-no" title="statement not covered" >    console.log('✅ [AdaptiveCompatibility] 通用转换完成:', JQJsonHandler.stringifyJson(openaiResponse, false));</span>
 <span class="cstat-no" title="statement not covered" >    return openaiResponse;</span>
   }
 &nbsp;
@@ -1797,7 +1797,7 @@ export interface ProviderConfig {
 <span class="cstat-no" title="statement not covered" >          if (item.type === 'text' &amp;&amp; item.text) {</span>
 <span class="cstat-no" title="statement not covered" >            return item.text;</span>
           }
-<span class="cstat-no" title="statement not covered" >          return JSON.stringify(item);</span>
+<span class="cstat-no" title="statement not covered" >          return JQJsonHandler.stringifyJson(item);</span>
         })
         .join('\n');
     }
@@ -1806,7 +1806,7 @@ export interface ProviderConfig {
 <span class="cstat-no" title="statement not covered" >      return content.text;</span>
     }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    return JSON.stringify(content);</span>
+<span class="cstat-no" title="statement not covered" >    return JQJsonHandler.stringifyJson(content);</span>
   }
 &nbsp;
   /**
@@ -1945,7 +1945,7 @@ export interface ProviderConfig {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.122Z
+                at 2025-08-26T08:25:39.116Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

@@ -32,11 +32,4 @@ export interface ConfigModuleInterface {
   validateConfig(config: any): boolean;
 }
 
-// 旧接口兼容 (已弃用)
-/**
- * @deprecated 请使用 ConfigModuleInterface 替代
- */
-export interface LegacyConfigInterface extends ConfigModuleInterface {
-  reloadConfig?(): Promise<any>;
-  clearCache?(): void;
-}
+// 旧接口已删除

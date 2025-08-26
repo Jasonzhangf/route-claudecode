@@ -7,7 +7,7 @@
  */
 
 import { PipelineDebugSystemFactory, PipelineDebugConfig, DEFAULT_PIPELINE_DEBUG_CONFIG } from './index';
-import { RoutingTable } from '../interfaces/router/request-router';
+import { RoutingTable } from '../router/pipeline-router';
 import { secureLogger } from '../utils/secure-logger';
 
 /**

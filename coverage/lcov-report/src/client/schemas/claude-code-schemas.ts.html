@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>0/5</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/1</span>
+                <span class='fraction'>0/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>0/5</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -645,7 +645,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -783,7 +783,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -872,7 +872,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -883,7 +883,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">131072x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -906,7 +906,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1083,7 +1083,7 @@ export interface ClientOutputValidationError {
 /**
  * Claude Code请求验证模式
  */
-export const CLAUDE_CODE_REQUEST_SCHEMA: ValidationSchema = {
+export const <span class="cstat-no" title="statement not covered" >CLAUDE_CODE_REQUEST_SCHEMA: ValidationSchema = {</span>
   model: {
     type: 'string',
     required: true,
@@ -1221,7 +1221,7 @@ export const CLAUDE_CODE_REQUEST_SCHEMA: ValidationSchema = {
 /**
  * Claude Code响应验证模式
  */
-export const CLAUDE_CODE_RESPONSE_SCHEMA: ValidationSchema = {
+export const <span class="cstat-no" title="statement not covered" >CLAUDE_CODE_RESPONSE_SCHEMA: ValidationSchema = {</span>
   id: {
     type: 'string',
     required: true,
@@ -1310,7 +1310,7 @@ export const CLAUDE_CODE_RESPONSE_SCHEMA: ValidationSchema = {
 /**
  * 客户端配置验证模式
  */
-export const CLIENT_CONFIG_SCHEMA: ValidationSchema = {
+export const <span class="cstat-no" title="statement not covered" >CLIENT_CONFIG_SCHEMA: ValidationSchema = {</span>
   serverHost: {
     type: 'string',
     required: false,
@@ -1321,7 +1321,7 @@ export const CLIENT_CONFIG_SCHEMA: ValidationSchema = {
   serverPort: {
     type: 'number',
     required: false,
-    enum: Array.from({ length: 65536 }, (_, i) =&gt; i),
+    enum: Array.from({ length: 65536 }, <span class="fstat-no" title="function not covered" >(_</span>, i) =&gt; <span class="cstat-no" title="statement not covered" >i)</span>,
   },
   transparent: {
     type: 'boolean',
@@ -1344,7 +1344,7 @@ export const CLIENT_CONFIG_SCHEMA: ValidationSchema = {
 /**
  * Debug数据记录模式
  */
-export const DEBUG_RECORD_SCHEMA: ValidationSchema = {
+export const <span class="cstat-no" title="statement not covered" >DEBUG_RECORD_SCHEMA: ValidationSchema = {</span>
   timestamp: {
     type: 'string',
     required: true,
@@ -1384,7 +1384,7 @@ export const DEBUG_RECORD_SCHEMA: ValidationSchema = {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.122Z
+                at 2025-08-26T08:25:39.116Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

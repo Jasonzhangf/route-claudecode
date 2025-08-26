@@ -13,6 +13,7 @@
 import { secureLogger } from '../utils/secure-logger';
 import { VirtualModelMapper } from './virtual-model-mapping';
 import { PipelineTableLoader } from './pipeline-table-loader';
+import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
 
 export interface PipelineRoute {
   routeId: string;
@@ -34,6 +35,7 @@ export interface PipelineRoutingDecision {
   originalModel: string;
   virtualModel: string;
   availablePipelines: string[];
+  globalPipelinePool: string[]; // 全局流水线池，必需字段，用于跨类别容错切换
   selectedPipeline?: string; // 由负载均衡器决定
   reasoning: string;
 }
@@ -140,6 +142,7 @@ export class PipelineRouter {
         availablePipelines: defaultRoutes
           .filter(route => route.isActive && route.health !== 'unhealthy')
           .map(route => route.pipelineId),
+        globalPipelinePool: this.getAllHealthyPipelines(),
         reasoning: `Using default route ${this.routingTable.defaultRoute} for ${inputModel}`,
       };
     }
@@ -164,6 +167,7 @@ export class PipelineRouter {
       originalModel: inputModel,
       virtualModel,
       availablePipelines: healthyPipelines,
+      globalPipelinePool: this.getAllHealthyPipelines(),
       reasoning: `Found ${healthyPipelines.length} healthy pipelines for ${virtualModel}`,
     };
   }
@@ -177,11 +181,19 @@ export class PipelineRouter {
       const targetModel = VirtualModelMapper.mapToVirtual(inputModel, request || {});
       return targetModel;
     } catch (error) {
-      secureLogger.error('Model mapping failed, using default', {
+      secureLogger.error('Model mapping failed - Zero Fallback Policy', {
         inputModel,
-        error: error.message
+        error: error.message,
+        zeroFallbackPolicy: true
       });
-      return 'default';
+      
+      // 零Fallback策略: 模型映射失败时立即抛出错误
+      throw ZeroFallbackErrorFactory.createRoutingRuleNotFound(
+        inputModel,
+        'virtual-model-mapping',
+        error.message,
+        { originalModel: inputModel }
+      );
     }
   }
 
@@ -321,5 +333,22 @@ export class PipelineRouter {
       reason,
       duration: duration || 'permanent'
     });
+  }
+
+  /**
+   * 获取所有健康流水线的全局池
+   */
+  private getAllHealthyPipelines(): string[] {
+    const allHealthyPipelines: string[] = [];
+    
+    for (const routes of Object.values(this.routingTable.routes)) {
+      for (const route of routes) {
+        if (route.isActive && route.health !== 'unhealthy') {
+          allHealthyPipelines.push(route.pipelineId);
+        }
+      }
+    }
+    
+    return allHealthyPipelines;
   }
 }

@@ -125,7 +125,7 @@ export class ConfigLoader {
   private static parseConfig(content: string, format: ConfigFormat): ProviderConfigFile {
     switch (format) {
       case 'json':
-        return JSON.parse(content);
+        return JQJsonHandler.parseJsonString(content);
 
       case 'json5':
         return JSON5.parse(content);

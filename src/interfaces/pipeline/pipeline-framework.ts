@@ -16,6 +16,76 @@ import { ModuleType, ModuleStatus, ModuleInterface } from '../module/base-module
  */
 export { ModuleType, ModuleStatus, ModuleInterface };
 
+// ========================================
+// 🔧 新增：固定管道架构接口
+// ========================================
+
+/**
+ * 固定流水线执行器接口
+ * 运行时执行预构建的固定管道
+ */
+export interface FixedPipelineExecutor {
+  readonly pipelineId: string;
+  readonly definition: any; // 临时使用any，避免循环依赖
+  readonly components: PrebuiltComponents;
+  execute(request: any, context: RequestContext): Promise<any>;
+}
+
+/**
+ * 预构建组件集合
+ * 在初始化时创建，运行时直接使用
+ */
+export interface PrebuiltComponents {
+  readonly transformer: ComponentInstance;
+  readonly protocol: ComponentInstance;
+  readonly serverCompatibility: ComponentInstance;
+  readonly server: ComponentInstance;
+}
+
+/**
+ * 组件实例接口
+ * 预配置的组件实例，运行时不再查询配置
+ */
+export interface ComponentInstance {
+  readonly id: string;
+  readonly type: string;
+  readonly config: any; // 预定义配置，从Pipeline定义中提取
+  process(data: any, context?: any): Promise<any>;
+}
+
+/**
+ * 组件定义接口
+ * 用于从PipelineDefinition.architecture创建组件实例
+ */
+export interface ComponentDefinition {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  config?: any; // 从架构定义中提取的配置
+}
+
+/**
+ * 请求上下文接口
+ * 贯穿整个固定管道执行过程
+ */
+export interface RequestContext {
+  requestId: string;
+  startTime: Date;
+  layerTimings: {
+    transformer?: number;
+    protocol?: number;
+    serverCompatibility?: number;
+    server?: number;
+    total?: number;
+  };
+  metadata: any;
+}
+
+// ========================================
+// 🔧 现有接口保持不变，继续定义...
+// ========================================
+
 /**
  * 流水线规范接口
  */

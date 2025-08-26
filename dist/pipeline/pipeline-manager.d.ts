@@ -15,7 +15,7 @@ import { EventEmitter } from 'events';
 import { PipelineConfig, ExecutionContext, ExecutionResult, ExecutionRecord, StandardPipelineFactory } from '../interfaces/pipeline/pipeline-framework';
 import { ModuleInterface } from '../interfaces/module/base-module';
 import { PipelineStatus } from '../interfaces/module/pipeline-module';
-import { RoutingTable } from '../interfaces/router/request-router';
+import { RoutingTable } from '../router/pipeline-router';
 /**
  * 完整流水线定义 (RCC v4.0)
  */

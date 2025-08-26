@@ -12,7 +12,7 @@
 
 import { EventEmitter } from 'events';
 import { PipelineManager } from '../pipeline/pipeline-manager';
-import { RoutingTable, PipelineRoute } from '../interfaces/router/request-router';
+import { RoutingTable, PipelineRoute } from '../router/pipeline-router';
 import { secureLogger } from '../utils/secure-logger';
 
 /**
@@ -214,25 +214,27 @@ export class PipelineDebugSystem extends EventEmitter {
     
     for (const [virtualModel, routes] of Object.entries(routingTable.routes)) {
       for (const route of routes) {
-        const providerModel = `${route.provider}-${route.targetModel}`;
+        // 从pipelineId中解析出targetModel信息
+        // pipelineId格式: provider-targetModel-keyN
+        const pipelineIdParts = route.pipelineId.split('-');
+        const targetModel = pipelineIdParts.length >= 2 ? pipelineIdParts.slice(1, -1).join('-') : 'unknown';
+        const providerModel = `${route.provider}-${targetModel}`;
         
         // 避免重复计算相同的Provider.Model
         if (!seenProviderModels.has(providerModel)) {
           seenProviderModels.add(providerModel);
           
-          // 每个APIKey对应一条流水线
-          for (let keyIndex = 0; keyIndex < route.apiKeys.length; keyIndex++) {
-            const expectedPipeline: ExpectedPipeline = {
-              pipelineId: `${route.provider}-${route.targetModel}-key${keyIndex}`,
-              provider: route.provider,
-              targetModel: route.targetModel,
-              apiKeyIndex: keyIndex,
-              shouldExist: true
-            };
-            
-            expected.push(expectedPipeline);
-            secureLogger.info(`  📋 Expected: ${expectedPipeline.pipelineId}`);
-          }
+          // 从pipelineId推断单个流水线（新架构中每个流水线对应一个apiKey）
+          const expectedPipeline: ExpectedPipeline = {
+            pipelineId: route.pipelineId,
+            provider: route.provider,
+            targetModel: targetModel,
+            apiKeyIndex: route.apiKeyIndex,
+            shouldExist: true
+          };
+          
+          expected.push(expectedPipeline);
+          secureLogger.info(`  📋 Expected: ${expectedPipeline.pipelineId}`);
         }
       }
     }

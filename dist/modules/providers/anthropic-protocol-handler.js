@@ -213,7 +213,7 @@ class AnthropicProtocolHandler extends events_1.EventEmitter {
                             id: toolCall.id,
                             name: toolCall.function.name,
                             input: typeof toolCall.function.arguments === 'string'
-                                ? JSON.parse(toolCall.function.arguments)
+                                ? jq_json_handler_1.JQJsonHandler.parseJsonString(toolCall.function.arguments)
                                 : toolCall.function.arguments || {},
                         });
                     }

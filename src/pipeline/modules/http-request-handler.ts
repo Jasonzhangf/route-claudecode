@@ -15,6 +15,7 @@ import http from 'http';
 import { secureLogger } from '../../utils/secure-logger';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { HeartbeatManager } from './heartbeat-manager';
+import { API_DEFAULTS } from '../../constants/api-defaults';
 
 export interface HttpRequestOptions {
   method?: string;
@@ -164,7 +165,7 @@ export class HttpRequestHandler {
     if (typeof error === 'string' && error.startsWith('API Error: ')) {
       try {
         const jsonStr = error.replace('API Error: ', '');
-        errorDetails = JSON.parse(jsonStr);
+        errorDetails = JQJsonHandler.parseJsonString(jsonStr);
       } catch (parseError) {
         errorDetails = { message: error };
       }
@@ -294,10 +295,12 @@ export class HttpRequestHandler {
         
         // 检测是否为长文本请求（请求体大于10KB）
         const bodySize = options.body ? Buffer.byteLength(options.body, 'utf8') : 0;
-        const isLongTextRequest = bodySize > 10 * 1024; // 10KB阈值
+        const isLongTextRequest = bodySize > API_DEFAULTS.HTTP_CONFIG.LARGE_REQUEST_THRESHOLD;
         
         // 🔧 修复socket hang up：针对大型请求体配置合适的HTTP选项
-        const requestTimeout = isLongTextRequest ? 600000 : (options.timeout || 120000); // 大型请求10分钟超时
+        const requestTimeout = isLongTextRequest ? 
+          API_DEFAULTS.HTTP_CONFIG.LONG_REQUEST_TIMEOUT : 
+          (options.timeout || API_DEFAULTS.HTTP_CONFIG.STANDARD_REQUEST_TIMEOUT);
         
         const requestOptions = {
           hostname: urlObj.hostname,
@@ -317,10 +320,10 @@ export class HttpRequestHandler {
           timeout: requestTimeout,
           // 🔧 针对大型请求的socket配置
           ...(isLongTextRequest && {
-            highWaterMark: 64 * 1024, // 64KB 缓冲区
+            highWaterMark: API_DEFAULTS.HTTP_CONFIG.HIGH_WATER_MARK, // 64KB 缓冲区
             noDelay: true, // 禁用Nagle算法，立即发送数据
             keepAlive: true,
-            keepAliveInitialDelay: 300000 // 5分钟keep-alive延迟
+            keepAliveInitialDelay: API_DEFAULTS.HTTP_CONFIG.KEEP_ALIVE_INITIAL_DELAY // 5分钟keep-alive延迟
           })
         };
 
@@ -376,7 +379,7 @@ export class HttpRequestHandler {
             lastDataTime = Date.now();
             
             // 长文本请求记录数据接收进度
-            if (isLongTextRequest && responseData.length % (50 * 1024) === 0) { // 每50KB记录一次
+            if (isLongTextRequest && responseData.length % API_DEFAULTS.HTTP_CONFIG.PROGRESS_LOG_INTERVAL === 0) { // 每50KB记录一次
               secureLogger.debug('长文本响应接收中', {
                 url: url.replace(/\/[^/]+$/, '/***'),
                 receivedBytes: responseData.length
@@ -463,7 +466,7 @@ export class HttpRequestHandler {
         if (options.bodyBuffer) {
           if (isLongTextRequest) {
             // 🔧 分块写入大型请求体，防止socket hang up
-            const chunkSize = 16384; // 16KB chunks (增加块大小提高效率)
+            const chunkSize = API_DEFAULTS.HTTP_CONFIG.CHUNK_SIZE; // 16KB chunks (增加块大小提高效率)
             let writtenBytes = 0;
             
             secureLogger.info('开始分块写入大型请求体', {
@@ -484,7 +487,7 @@ export class HttpRequestHandler {
               }
               
               // 每100KB记录进度
-              if (writtenBytes % (100 * 1024) === 0) {
+              if (writtenBytes % API_DEFAULTS.HTTP_CONFIG.WRITE_PROGRESS_INTERVAL === 0) {
                 secureLogger.debug('分块写入进度', {
                   writtenBytes,
                   totalBytes: options.bodyBuffer.length,
@@ -504,7 +507,7 @@ export class HttpRequestHandler {
           if (isLongTextRequest) {
             // 🔧 字符串请求体的优化处理
             const bodyBuffer = Buffer.from(options.body, 'utf8');
-            const chunkSize = 16384; // 16KB chunks
+            const chunkSize = API_DEFAULTS.HTTP_CONFIG.CHUNK_SIZE; // 16KB chunks
             let writtenBytes = 0;
             
             for (let i = 0; i < bodyBuffer.length; i += chunkSize) {

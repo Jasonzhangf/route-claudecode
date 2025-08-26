@@ -14,6 +14,7 @@ import { secureLogger } from '../../utils/secure-logger';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { MergedConfig } from '../../config/config-reader';
 import { HttpRequestHandler, HttpRequestOptions } from './http-request-handler';
+import { API_DEFAULTS, generatePipelineId } from '../../constants/api-defaults';
 
 export interface RequestContext {
   requestId: string;
@@ -307,6 +308,9 @@ export class PipelineLayersProcessor {
       maxRetries: providerInfo?.maxRetries || 3,
       originalModel: request.model,
       actualModel,
+      // 🔧 架构修复：Protocol层应该向ServerCompatibility层传递provider信息
+      providerType: providerType,
+      serverCompatibility: matchingProvider?.serverCompatibility?.use || 'passthrough'
     };
 
     return protocolRequest;
@@ -337,8 +341,8 @@ export class PipelineLayersProcessor {
     
     // 🔧 检测大型请求并调整超时配置
     const bodySize = Buffer.from(serializedBody, 'utf8').length;
-    const isLongTextRequest = bodySize > 10 * 1024; // 10KB阈值
-    const adjustedTimeout = isLongTextRequest ? 600000 : timeout; // 大型请求10分钟超时
+    const isLongTextRequest = bodySize > API_DEFAULTS.HTTP_CONFIG.LARGE_REQUEST_THRESHOLD;
+    const adjustedTimeout = isLongTextRequest ? API_DEFAULTS.HTTP_CONFIG.LONG_REQUEST_TIMEOUT : timeout;
     
     if (isLongTextRequest) {
       secureLogger.info('检测到大型请求，启用长文本处理模式', {
@@ -491,7 +495,7 @@ export class PipelineLayersProcessor {
         const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
         
         if (providerName && modelName) {
-          const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+          const pipelineId = generatePipelineId(providerName, modelName);
           availablePipelines.push(pipelineId);
           
           secureLogger.debug('🔧 生成pipeline ID', {
@@ -530,7 +534,7 @@ export class PipelineLayersProcessor {
         const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
         
         if (providerName && modelName) {
-          const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+          const pipelineId = generatePipelineId(providerName, modelName);
           availablePipelines.push(pipelineId);
         }
       }
@@ -545,7 +549,7 @@ export class PipelineLayersProcessor {
       const firstProvider = providers[0];
       if (firstProvider.models?.length > 0) {
         const modelName = firstProvider.models[0];
-        const pipelineId = `${firstProvider.name}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+        const pipelineId = generatePipelineId(firstProvider.name, modelName);
         return [pipelineId];
       }
     }

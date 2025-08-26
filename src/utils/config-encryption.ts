@@ -281,7 +281,7 @@ export class ConfigEncryptionManager {
 
     // 读取配置文件
     const configContent = fs.readFileSync(configPath, 'utf8');
-    const config = JSON.parse(configContent);
+    const config = JQJsonHandler.parseJsonString(configContent);
 
     // 检查是否为加密配置
     if (!config._encryption || !config._encryption.encrypted) {

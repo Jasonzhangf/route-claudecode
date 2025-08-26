@@ -2075,3 +2075,1020 @@
 {"timestamp":"2025-08-26T04:39:07.291Z","level":"INFO","message":"HTTP请求完成","data":{"url":"http://ai.shuaihong.xyz:3939/v1/chat/***","statusCode":200,"responseSize":376,"isLongTextRequest":true}}
 {"timestamp":"2025-08-26T04:39:07.340Z","level":"INFO","message":"Request processing completed successfully","data":{"requestId":"req_1756183145445_e2lhk43kd","totalTime":1895,"layerTimings":{"router":49,"transformer":65,"protocol":34,"serverCompatibility":47,"server":1633,"responseTransform":21},"transformationCount":4}}
 {"timestamp":"2025-08-26T04:39:07.357Z","level":"INFO","message":"流水线处理完成","data":{"requestId":"req_1756183145445_e2lhk43kd","executionId":"req_1756183145445_e2lhk43kd","totalTime":1895,"success":true}}
+{"timestamp":"2025-08-26T05:24:35.755Z","level":"INFO","message":"接收到messages请求","data":{"method":"POST","url":"/v1/messages","hasBody":true}}
+{"timestamp":"2025-08-26T05:24:35.762Z","level":"INFO","message":"通过流水线处理请求","data":{"protocol":"anthropic","hasInput":true,"router":true}}
+{"timestamp":"2025-08-26T05:24:35.769Z","level":"INFO","message":"通过流水线处理请求","data":{"protocol":"anthropic","hasInput":true,"router":true}}
+{"timestamp":"2025-08-26T05:24:35.776Z","level":"INFO","message":"🚀 智能流水线切换系统已初始化","data":{"maxRetries":3,"blacklistThreshold":5,"enableAggressiveRecovery":true}}
+{"timestamp":"2025-08-26T05:24:35.782Z","level":"INFO","message":"Decoupled execution management disabled, using legacy pipeline switching"}
+{"timestamp":"2025-08-26T05:24:35.792Z","level":"INFO","message":"Console日志捕获已启用","data":{"port":5506,"module":"console-capture"}}
+{"timestamp":"2025-08-26T05:24:35.800Z","level":"INFO","message":"Starting pipeline request processing","data":{"requestId":"req_1756185875800_gwnixmjff","protocol":"anthropic","hasInput":true,"executionContext":"[CONTEXT_PRESENT]"}}
+{"timestamp":"2025-08-26T05:24:35.815Z","level":"INFO","message":"Virtual model mapping completed","data":{"inputModel":"claude-3-haiku-20240307","virtualModel":"default","priority":99,"tokenCount":"[REDACTED]"}}
+{"timestamp":"2025-08-26T05:24:35.821Z","level":"INFO","message":"Model mapping completed","data":{"requestId":"req_1756185875800_gwnixmjff","inputModel":"claude-3-haiku-20240307","mappedModel":"default"}}
+{"timestamp":"2025-08-26T05:24:35.828Z","level":"INFO","message":"🔧 解析路由配置","data":{"mappedModel":"default","routeEntry":"qwen,qwen3-coder-plus;shuaihong,glm-4.5;modelscope,ZhipuAI/GLM-4.5","allRoutes":["qwen,qwen3-coder-plus","shuaihong,glm-4.5","modelscope,ZhipuAI/GLM-4.5"]}}
+{"timestamp":"2025-08-26T05:24:35.835Z","level":"INFO","message":"🔧 Pipeline生成完成","data":{"mappedModel":"default","generatedPipelines":["qwen-qwen3-coder-plus-key0","shuaihong-glm-4.5-key0","modelscope-zhipuai-glm-4.5-key0"],"totalCount":3}}
+{"timestamp":"2025-08-26T05:24:35.841Z","level":"INFO","message":"🔄 Round Robin负载均衡选择","data":{"routeKey":"[REDACTED]","currentIndex":36,"selectedIndex":0,"selectedPipeline":"modelscope-zhipuai-glm-4.5-key0","totalPipelines":3,"position":"1/3","nextIndex":37,"allCounters":[["modelscope-zhipuai-glm-4.5-key0,qwen-qwen3-coder-plus-key0,shuaihong-glm-4.5-key0",37]],"sortedPipelines":["modelscope-zhipuai-glm-4.5-key0","qwen-qwen3-coder-plus-key0","shuaihong-glm-4.5-key0"]}}
+{"timestamp":"2025-08-26T05:24:35.848Z","level":"INFO","message":"Round-robin load balancer selected pipeline","data":{"requestId":"req_1756185875800_gwnixmjff","selectedPipeline":"modelscope-zhipuai-glm-4.5-key0","availablePipelines":["modelscope-zhipuai-glm-4.5-key0","qwen-qwen3-coder-plus-key0","shuaihong-glm-4.5-key0"],"totalAvailable":3}}
+{"timestamp":"2025-08-26T05:24:35.869Z","level":"INFO","message":"Transformer layer processing","data":{"requestId":"req_1756185875800_gwnixmjff","providerType":"modelscope","providerProtocol":"openai","hasInput":true}}
+{"timestamp":"2025-08-26T05:24:35.904Z","level":"INFO","message":"Anthropic-to-OpenAI transformation completed","data":{"requestId":"req_1756185875800_gwnixmjff","hasOutput":true}}
+{"timestamp":"2025-08-26T05:24:35.910Z","level":"INFO","message":"Transformer layer completed","data":{"requestId":"req_1756185875800_gwnixmjff","direction":"anthropic-to-openai","outputSize":6}}
+{"timestamp":"2025-08-26T05:24:35.922Z","level":"INFO","message":"🔍 [格式验证] Transformer → Protocol 验证开始","data":{"requestId":"req_1756185875800_gwnixmjff","step":"transformer-to-protocol","dataType":"object","validatorId":"protocol-transformer-validator"}}
+{"timestamp":"2025-08-26T05:24:35.928Z","level":"INFO","message":"✅ [格式验证] Transformer → Protocol 验证通过","data":{"requestId":"req_1756185875800_gwnixmjff","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:35.933Z","level":"INFO","message":"✅ [Pipeline] Transformer输出验证通过","data":{"requestId":"req_1756185875800_gwnixmjff","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:35.946Z","level":"INFO","message":"🔍 端点解析调试","data":{"requestId":"req_1756185875800_gwnixmjff","selectedPipelineId":"modelscope-zhipuai-glm-4.5-key0","providerType":"modelscope","hasSystemProviderInfo":true,"systemProviderInfoEndpoint":"https://api-inference.modelscope.cn/v1/chat/completions"}}
+{"timestamp":"2025-08-26T05:24:35.952Z","level":"INFO","message":"🔥 端点解析结果","data":{"requestId":"req_1756185875800_gwnixmjff","selectedPipelineId":"modelscope-zhipuai-glm-4.5-key0","providerType":"modelscope","finalEndpoint":"https://api-inference.modelscope.cn/v1","matchingProviderUrl":"https://api-inference.modelscope.cn/v1","providerInfoEndpoint":"https://api-inference.modelscope.cn/v1/chat/completions","resolutionPath":"user-config"}}
+{"timestamp":"2025-08-26T05:24:35.958Z","level":"INFO","message":"Protocol layer model mapping","data":{"requestId":"req_1756185875800_gwnixmjff","selectedPipeline":"modelscope-zhipuai-glm-4.5-key0","selectedProvider":"modelscope","originalModel":"claude-3-haiku-20240307","virtualModel":"default","actualModel":"ZhipuAI/GLM-4.5","routeUsed":"modelscope,ZhipuAI/GLM-4.5"}}
+{"timestamp":"2025-08-26T05:24:35.970Z","level":"INFO","message":"✅ [Pipeline] Protocol输出验证通过（非Anthropic格式）","data":{"requestId":"req_1756185875800_gwnixmjff","hasModel":true,"hasMessages":true,"isOpenAIFormat":true}}
+{"timestamp":"2025-08-26T05:24:35.982Z","level":"INFO","message":"🔧 使用新统一配置的serverCompatibility","data":{"requestId":"req_1756185875800_gwnixmjff","providerType":"modelscope","compatibilityTag":"passthrough","hasOptions":true,"architecture":"unified-format"}}
+{"timestamp":"2025-08-26T05:24:35.987Z","level":"INFO","message":"🔥🔥 [COMPATIBILITY-CONTEXT-FIX] 检查原始context的protocolConfig","data":{"requestId":"req_1756185875800_gwnixmjff","hasOriginalMetadata":true,"hasOriginalProtocolConfig":true,"originalProtocolConfigKeys":"[REDACTED]","hasOriginalCustomHeaders":false,"originalCustomHeadersKeys":"[REDACTED]"}}
+{"timestamp":"2025-08-26T05:24:35.994Z","level":"INFO","message":"兼容性模块加载成功","data":{"requestId":"req_1756185875800_gwnixmjff","compatibilityTag":"passthrough","moduleType":"object"}}
+{"timestamp":"2025-08-26T05:24:36.004Z","level":"INFO","message":"🔥🔥 [COMPATIBILITY-CONTEXT-FIX] 复制protocolConfig回原始context","data":{"requestId":"req_1756185875800_gwnixmjff","hasCustomHeaders":false,"customHeadersKeys":"[REDACTED]","contextSynchronized":true}}
+{"timestamp":"2025-08-26T05:24:36.017Z","level":"INFO","message":"🔍 [格式验证] Transformer → Protocol 验证开始","data":{"requestId":"req_1756185875800_gwnixmjff","step":"compatibility-to-server","dataType":"object","validatorId":"protocol-transformer-validator"}}
+{"timestamp":"2025-08-26T05:24:36.022Z","level":"INFO","message":"✅ [格式验证] Transformer → Protocol 验证通过","data":{"requestId":"req_1756185875800_gwnixmjff","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:36.028Z","level":"INFO","message":"✅ [Pipeline] ServerCompatibility输出验证通过","data":{"requestId":"req_1756185875800_gwnixmjff","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:36.043Z","level":"INFO","message":"发起HTTP请求","data":{"url":"https://api-inference.modelscope.cn/v1/chat/***","method":"POST","bodySize":171,"isLongTextRequest":false,"timeout":30000}}
+{"timestamp":"2025-08-26T05:24:36.050Z","level":"INFO","message":"Loaded blacklist persistence data","data":{"counters":0,"blocks":0,"file":"/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/data/pipeline-blacklist.json"}}
+{"timestamp":"2025-08-26T05:24:36.055Z","level":"INFO","message":"Precise pipeline blacklist manager initialized","data":{"enabled":true,"destroyRulesCount":3,"enabledDestroyRules":0,"activeCounters":0,"temporaryBlocks":0}}
+{"timestamp":"2025-08-26T05:24:38.981Z","level":"INFO","message":"HTTP请求完成","data":{"url":"https://api-inference.modelscope.cn/v1/chat/***","statusCode":200,"responseSize":625,"isLongTextRequest":false}}
+{"timestamp":"2025-08-26T05:24:39.045Z","level":"INFO","message":"Request processing completed successfully","data":{"requestId":"req_1756185875800_gwnixmjff","totalTime":3245,"layerTimings":{"router":56,"transformer":60,"protocol":31,"serverCompatibility":42,"server":2994,"responseTransform":18},"transformationCount":4}}
+{"timestamp":"2025-08-26T05:24:39.061Z","level":"INFO","message":"流水线处理完成","data":{"requestId":"req_1756185875800_gwnixmjff","executionId":"req_1756185875800_gwnixmjff","totalTime":3245,"success":true}}
+{"timestamp":"2025-08-26T05:24:58.273Z","level":"INFO","message":"接收到messages请求","data":{"method":"POST","url":"/v1/messages","hasBody":true}}
+{"timestamp":"2025-08-26T05:24:58.279Z","level":"INFO","message":"通过流水线处理请求","data":{"protocol":"anthropic","hasInput":true,"router":true}}
+{"timestamp":"2025-08-26T05:24:58.286Z","level":"INFO","message":"通过流水线处理请求","data":{"protocol":"anthropic","hasInput":true,"router":true}}
+{"timestamp":"2025-08-26T05:24:58.292Z","level":"INFO","message":"🚀 智能流水线切换系统已初始化","data":{"maxRetries":3,"blacklistThreshold":5,"enableAggressiveRecovery":true}}
+{"timestamp":"2025-08-26T05:24:58.299Z","level":"INFO","message":"Decoupled execution management disabled, using legacy pipeline switching"}
+{"timestamp":"2025-08-26T05:24:58.310Z","level":"INFO","message":"Console日志捕获已启用","data":{"port":5506,"module":"console-capture"}}
+{"timestamp":"2025-08-26T05:24:58.317Z","level":"INFO","message":"Starting pipeline request processing","data":{"requestId":"req_1756185898317_c882tker2","protocol":"anthropic","hasInput":true,"executionContext":"[CONTEXT_PRESENT]"}}
+{"timestamp":"2025-08-26T05:24:58.332Z","level":"INFO","message":"Virtual model mapping completed","data":{"inputModel":"claude-sonnet-4-20250514","virtualModel":"default","priority":99,"tokenCount":"[REDACTED]"}}
+{"timestamp":"2025-08-26T05:24:58.338Z","level":"INFO","message":"Model mapping completed","data":{"requestId":"req_1756185898317_c882tker2","inputModel":"claude-sonnet-4-20250514","mappedModel":"default"}}
+{"timestamp":"2025-08-26T05:24:58.344Z","level":"INFO","message":"🔧 解析路由配置","data":{"mappedModel":"default","routeEntry":"qwen,qwen3-coder-plus;shuaihong,glm-4.5;modelscope,ZhipuAI/GLM-4.5","allRoutes":["qwen,qwen3-coder-plus","shuaihong,glm-4.5","modelscope,ZhipuAI/GLM-4.5"]}}
+{"timestamp":"2025-08-26T05:24:58.351Z","level":"INFO","message":"🔧 Pipeline生成完成","data":{"mappedModel":"default","generatedPipelines":["qwen-qwen3-coder-plus-key0","shuaihong-glm-4.5-key0","modelscope-zhipuai-glm-4.5-key0"],"totalCount":3}}
+{"timestamp":"2025-08-26T05:24:58.358Z","level":"INFO","message":"🔄 Round Robin负载均衡选择","data":{"routeKey":"[REDACTED]","currentIndex":37,"selectedIndex":1,"selectedPipeline":"qwen-qwen3-coder-plus-key0","totalPipelines":3,"position":"2/3","nextIndex":38,"allCounters":[["modelscope-zhipuai-glm-4.5-key0,qwen-qwen3-coder-plus-key0,shuaihong-glm-4.5-key0",38]],"sortedPipelines":["modelscope-zhipuai-glm-4.5-key0","qwen-qwen3-coder-plus-key0","shuaihong-glm-4.5-key0"]}}
+{"timestamp":"2025-08-26T05:24:58.365Z","level":"INFO","message":"Round-robin load balancer selected pipeline","data":{"requestId":"req_1756185898317_c882tker2","selectedPipeline":"qwen-qwen3-coder-plus-key0","availablePipelines":["modelscope-zhipuai-glm-4.5-key0","qwen-qwen3-coder-plus-key0","shuaihong-glm-4.5-key0"],"totalAvailable":3}}
+{"timestamp":"2025-08-26T05:24:58.386Z","level":"INFO","message":"Transformer layer processing","data":{"requestId":"req_1756185898317_c882tker2","providerType":"qwen","providerProtocol":"openai","hasInput":true}}
+{"timestamp":"2025-08-26T05:24:58.424Z","level":"INFO","message":"Anthropic-to-OpenAI transformation completed","data":{"requestId":"req_1756185898317_c882tker2","hasOutput":true}}
+{"timestamp":"2025-08-26T05:24:58.430Z","level":"INFO","message":"Transformer layer completed","data":{"requestId":"req_1756185898317_c882tker2","direction":"anthropic-to-openai","outputSize":6}}
+{"timestamp":"2025-08-26T05:24:58.444Z","level":"INFO","message":"🔍 [格式验证] Transformer → Protocol 验证开始","data":{"requestId":"req_1756185898317_c882tker2","step":"transformer-to-protocol","dataType":"object","validatorId":"protocol-transformer-validator"}}
+{"timestamp":"2025-08-26T05:24:58.450Z","level":"INFO","message":"✅ [格式验证] Transformer → Protocol 验证通过","data":{"requestId":"req_1756185898317_c882tker2","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:58.456Z","level":"INFO","message":"✅ [Pipeline] Transformer输出验证通过","data":{"requestId":"req_1756185898317_c882tker2","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:58.469Z","level":"INFO","message":"🔍 端点解析调试","data":{"requestId":"req_1756185898317_c882tker2","selectedPipelineId":"qwen-qwen3-coder-plus-key0","providerType":"qwen","hasSystemProviderInfo":false}}
+{"timestamp":"2025-08-26T05:24:58.475Z","level":"INFO","message":"🔧 创建动态provider配置","data":{"requestId":"req_1756185898317_c882tker2","providerType":"qwen","matchingProviderName":"qwen","matchingProviderUrl":"https://portal.qwen.ai/v1"}}
+{"timestamp":"2025-08-26T05:24:58.480Z","level":"INFO","message":"🔥 端点解析结果","data":{"requestId":"req_1756185898317_c882tker2","selectedPipelineId":"qwen-qwen3-coder-plus-key0","providerType":"qwen","finalEndpoint":"https://portal.qwen.ai/v1","matchingProviderUrl":"https://portal.qwen.ai/v1","providerInfoEndpoint":"https://portal.qwen.ai/v1","resolutionPath":"user-config"}}
+{"timestamp":"2025-08-26T05:24:58.486Z","level":"INFO","message":"Protocol layer model mapping","data":{"requestId":"req_1756185898317_c882tker2","selectedPipeline":"qwen-qwen3-coder-plus-key0","selectedProvider":"qwen","originalModel":"claude-sonnet-4-20250514","virtualModel":"default","actualModel":"qwen3-coder-plus","routeUsed":"qwen,qwen3-coder-plus"}}
+{"timestamp":"2025-08-26T05:24:58.498Z","level":"INFO","message":"✅ [Pipeline] Protocol输出验证通过（非Anthropic格式）","data":{"requestId":"req_1756185898317_c882tker2","hasModel":true,"hasMessages":true,"isOpenAIFormat":true}}
+{"timestamp":"2025-08-26T05:24:58.511Z","level":"INFO","message":"🔧 使用新统一配置的serverCompatibility","data":{"requestId":"req_1756185898317_c882tker2","providerType":"modelscope","compatibilityTag":"passthrough","hasOptions":true,"architecture":"unified-format"}}
+{"timestamp":"2025-08-26T05:24:58.516Z","level":"INFO","message":"🔥🔥 [COMPATIBILITY-CONTEXT-FIX] 检查原始context的protocolConfig","data":{"requestId":"req_1756185898317_c882tker2","hasOriginalMetadata":true,"hasOriginalProtocolConfig":true,"originalProtocolConfigKeys":"[REDACTED]","hasOriginalCustomHeaders":false,"originalCustomHeadersKeys":"[REDACTED]"}}
+{"timestamp":"2025-08-26T05:24:58.523Z","level":"INFO","message":"兼容性模块加载成功","data":{"requestId":"req_1756185898317_c882tker2","compatibilityTag":"passthrough","moduleType":"object"}}
+{"timestamp":"2025-08-26T05:24:58.535Z","level":"INFO","message":"🔥🔥 [COMPATIBILITY-CONTEXT-FIX] 复制protocolConfig回原始context","data":{"requestId":"req_1756185898317_c882tker2","hasCustomHeaders":false,"customHeadersKeys":"[REDACTED]","contextSynchronized":true}}
+{"timestamp":"2025-08-26T05:24:58.548Z","level":"INFO","message":"🔍 [格式验证] Transformer → Protocol 验证开始","data":{"requestId":"req_1756185898317_c882tker2","step":"compatibility-to-server","dataType":"object","validatorId":"protocol-transformer-validator"}}
+{"timestamp":"2025-08-26T05:24:58.553Z","level":"INFO","message":"✅ [格式验证] Transformer → Protocol 验证通过","data":{"requestId":"req_1756185898317_c882tker2","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:58.559Z","level":"INFO","message":"✅ [Pipeline] ServerCompatibility输出验证通过","data":{"requestId":"req_1756185898317_c882tker2","format":"openai-request","summary":{"hasRequiredFields":true,"hasValidStructure":true,"hasValidToolCalls":true,"fieldCount":6}}}
+{"timestamp":"2025-08-26T05:24:58.574Z","level":"INFO","message":"发起HTTP请求","data":{"url":"https://portal.qwen.ai/v1/chat/***","method":"POST","bodySize":174,"isLongTextRequest":false,"timeout":120000}}
+{"timestamp":"2025-08-26T05:24:58.581Z","level":"INFO","message":"Loaded blacklist persistence data","data":{"counters":0,"blocks":0,"file":"/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/data/pipeline-blacklist.json"}}
+{"timestamp":"2025-08-26T05:24:58.587Z","level":"INFO","message":"Precise pipeline blacklist manager initialized","data":{"enabled":true,"destroyRulesCount":3,"enabledDestroyRules":0,"activeCounters":0,"temporaryBlocks":0}}
+{"timestamp":"2025-08-26T05:24:58.720Z","level":"INFO","message":"HTTP请求完成","data":{"url":"https://portal.qwen.ai/v1/chat/***","statusCode":401,"responseSize":182,"isLongTextRequest":false}}
+{"timestamp":"2025-08-26T05:24:58.736Z","level":"ERROR","message":"Client error detected","data":{"requestId":"req_1756185898317_c882tker2","status":401,"endpoint":"https://portal.qwen.ai/v1/chat/completions","responsePreview":"{\"error\":{\"code\":\"invalid_api_key\",\"message\":\"invalid access token or token expired\",\"param\":null,\"type\":\"invalid_request_error\"},\"request_id\":\"635dd51b-6671-9da7-b178-60a5c798c47e\"}","extractedErrorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:58.745Z","level":"ERROR","message":"🔥 Server层发生错误，启动智能流水线切换恢复","data":{"requestId":"req_1756185898317_c882tker2","pipelineId":"qwen-qwen3-coder-plus-key0","errorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:58.752Z","level":"INFO","message":"🔄 开始流水线错误恢复","data":{"requestId":"req_1756185898317_c882tker2","failedPipelineId":"qwen-qwen3-coder-plus-key0","retryCount":0,"errorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:58.758Z","level":"INFO","message":"🎯 错误分类完成","data":{"requestId":"req_1756185898317_c882tker2","recoverability":"recoverable","matchedRule":"default","confidence":0.1}}
+{"timestamp":"2025-08-26T05:24:58.765Z","level":"INFO","message":"🔀 切换流水线重试","data":{"requestId":"req_1756185898317_c882tker2","fromPipeline":"qwen-qwen3-coder-plus-key0","toPipeline":"modelscope-zhipuai-glm-4.5-key0","retryCount":1}}
+{"timestamp":"2025-08-26T05:24:58.771Z","level":"INFO","message":"🔄 使用新流水线重新执行Server层请求","data":{"requestId":"req_1756185898317_c882tker2","newPipelineId":"modelscope-zhipuai-glm-4.5-key0","previousPipelineId":"qwen-qwen3-coder-plus-key0"}}
+{"timestamp":"2025-08-26T05:24:58.779Z","level":"INFO","message":"发起HTTP请求","data":{"url":"https://portal.qwen.ai/v1/chat/***","method":"POST","bodySize":174,"isLongTextRequest":false,"timeout":120000}}
+{"timestamp":"2025-08-26T05:24:58.862Z","level":"INFO","message":"HTTP请求完成","data":{"url":"https://portal.qwen.ai/v1/chat/***","statusCode":401,"responseSize":182,"isLongTextRequest":false}}
+{"timestamp":"2025-08-26T05:24:58.873Z","level":"ERROR","message":"Client error detected","data":{"requestId":"req_1756185898317_c882tker2","status":401,"endpoint":"https://portal.qwen.ai/v1/chat/completions","responsePreview":"{\"error\":{\"code\":\"invalid_api_key\",\"message\":\"invalid access token or token expired\",\"param\":null,\"type\":\"invalid_request_error\"},\"request_id\":\"c72ccc38-d90f-9d6c-b309-d57f64a41932\"}","extractedErrorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:58.880Z","level":"ERROR","message":"❌ 流水线切换失败","data":{"requestId":"req_1756185898317_c882tker2","newPipelineId":"modelscope-zhipuai-glm-4.5-key0","error":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:58.887Z","level":"INFO","message":"🔄 开始流水线错误恢复","data":{"requestId":"req_1756185898317_c882tker2","failedPipelineId":"modelscope-zhipuai-glm-4.5-key0","retryCount":1,"errorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:58.893Z","level":"INFO","message":"🎯 错误分类完成","data":{"requestId":"req_1756185898317_c882tker2","recoverability":"recoverable","matchedRule":"default","confidence":0.1}}
+{"timestamp":"2025-08-26T05:24:58.899Z","level":"INFO","message":"🔀 切换流水线重试","data":{"requestId":"req_1756185898317_c882tker2","fromPipeline":"modelscope-zhipuai-glm-4.5-key0","toPipeline":"shuaihong-glm-4.5-key0","retryCount":2}}
+{"timestamp":"2025-08-26T05:24:58.905Z","level":"INFO","message":"🔄 使用新流水线重新执行Server层请求","data":{"requestId":"req_1756185898317_c882tker2","newPipelineId":"shuaihong-glm-4.5-key0","previousPipelineId":"qwen-qwen3-coder-plus-key0"}}
+{"timestamp":"2025-08-26T05:24:58.914Z","level":"INFO","message":"发起HTTP请求","data":{"url":"https://portal.qwen.ai/v1/chat/***","method":"POST","bodySize":174,"isLongTextRequest":false,"timeout":120000}}
+{"timestamp":"2025-08-26T05:24:58.996Z","level":"INFO","message":"HTTP请求完成","data":{"url":"https://portal.qwen.ai/v1/chat/***","statusCode":401,"responseSize":182,"isLongTextRequest":false}}
+{"timestamp":"2025-08-26T05:24:59.008Z","level":"ERROR","message":"Client error detected","data":{"requestId":"req_1756185898317_c882tker2","status":401,"endpoint":"https://portal.qwen.ai/v1/chat/completions","responsePreview":"{\"error\":{\"code\":\"invalid_api_key\",\"message\":\"invalid access token or token expired\",\"param\":null,\"type\":\"invalid_request_error\"},\"request_id\":\"b44977d1-65d7-94fd-9229-908e8ab48e9e\"}","extractedErrorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:59.016Z","level":"ERROR","message":"❌ 流水线切换失败","data":{"requestId":"req_1756185898317_c882tker2","newPipelineId":"shuaihong-glm-4.5-key0","error":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:59.023Z","level":"INFO","message":"🔄 开始流水线错误恢复","data":{"requestId":"req_1756185898317_c882tker2","failedPipelineId":"shuaihong-glm-4.5-key0","retryCount":2,"errorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:59.031Z","level":"INFO","message":"🎯 错误分类完成","data":{"requestId":"req_1756185898317_c882tker2","recoverability":"recoverable","matchedRule":"default","confidence":0.1}}
+{"timestamp":"2025-08-26T05:24:59.038Z","level":"INFO","message":"🔀 切换流水线重试","data":{"requestId":"req_1756185898317_c882tker2","fromPipeline":"shuaihong-glm-4.5-key0","toPipeline":"qwen-qwen3-coder-plus-key0","retryCount":3}}
+{"timestamp":"2025-08-26T05:24:59.044Z","level":"INFO","message":"🔄 使用新流水线重新执行Server层请求","data":{"requestId":"req_1756185898317_c882tker2","newPipelineId":"qwen-qwen3-coder-plus-key0","previousPipelineId":"qwen-qwen3-coder-plus-key0"}}
+{"timestamp":"2025-08-26T05:24:59.052Z","level":"INFO","message":"发起HTTP请求","data":{"url":"https://portal.qwen.ai/v1/chat/***","method":"POST","bodySize":174,"isLongTextRequest":false,"timeout":120000}}
+{"timestamp":"2025-08-26T05:24:59.141Z","level":"INFO","message":"HTTP请求完成","data":{"url":"https://portal.qwen.ai/v1/chat/***","statusCode":401,"responseSize":182,"isLongTextRequest":false}}
+{"timestamp":"2025-08-26T05:24:59.153Z","level":"ERROR","message":"Client error detected","data":{"requestId":"req_1756185898317_c882tker2","status":401,"endpoint":"https://portal.qwen.ai/v1/chat/completions","responsePreview":"{\"error\":{\"code\":\"invalid_api_key\",\"message\":\"invalid access token or token expired\",\"param\":null,\"type\":\"invalid_request_error\"},\"request_id\":\"a6e6ddef-0325-9537-a559-cfaee269d16f\"}","extractedErrorMessage":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:59.159Z","level":"ERROR","message":"❌ 流水线切换失败","data":{"requestId":"req_1756185898317_c882tker2","newPipelineId":"qwen-qwen3-coder-plus-key0","error":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:59.166Z","level":"INFO","message":"🔄 流水线恢复事件","data":{"requestId":"req_1756185898317_c882tker2","failedPipelineId":"shuaihong-glm-4.5-key0","result":{"success":false,"recoveryAction":"failed","recoveryTime":143,"details":"所有流水线切换尝试均失败"},"errorClassification":{"recoverability":"recoverable","matchedRule":{"name":"default","recoverability":"recoverable","priority":999,"description":"默认分类规则"},"confidence":0.1,"reason":"未匹配任何具体规则，使用默认可恢复分类"}}}
+{"timestamp":"2025-08-26T05:24:59.173Z","level":"INFO","message":"✅ 流水线恢复完成","data":{"requestId":"req_1756185898317_c882tker2","success":false,"recoveryAction":"failed","recoveryTime":143}}
+{"timestamp":"2025-08-26T05:24:59.179Z","level":"INFO","message":"🔄 流水线恢复事件","data":{"requestId":"req_1756185898317_c882tker2","failedPipelineId":"modelscope-zhipuai-glm-4.5-key0","result":{"success":false,"recoveryAction":"failed","recoveryTime":292,"details":"所有流水线切换尝试均失败"},"errorClassification":{"recoverability":"recoverable","matchedRule":{"name":"default","recoverability":"recoverable","priority":999,"description":"默认分类规则"},"confidence":0.1,"reason":"未匹配任何具体规则，使用默认可恢复分类"}}}
+{"timestamp":"2025-08-26T05:24:59.185Z","level":"INFO","message":"✅ 流水线恢复完成","data":{"requestId":"req_1756185898317_c882tker2","success":false,"recoveryAction":"failed","recoveryTime":292}}
+{"timestamp":"2025-08-26T05:24:59.192Z","level":"INFO","message":"🔄 流水线恢复事件","data":{"requestId":"req_1756185898317_c882tker2","failedPipelineId":"qwen-qwen3-coder-plus-key0","result":{"success":false,"recoveryAction":"failed","recoveryTime":440,"details":"所有流水线切换尝试均失败"},"errorClassification":{"recoverability":"recoverable","matchedRule":{"name":"default","recoverability":"recoverable","priority":999,"description":"默认分类规则"},"confidence":0.1,"reason":"未匹配任何具体规则，使用默认可恢复分类"}}}
+{"timestamp":"2025-08-26T05:24:59.198Z","level":"INFO","message":"✅ 流水线恢复完成","data":{"requestId":"req_1756185898317_c882tker2","success":false,"recoveryAction":"failed","recoveryTime":440}}
+{"timestamp":"2025-08-26T05:24:59.203Z","level":"ERROR","message":"❌ 流水线切换恢复失败","data":{"requestId":"req_1756185898317_c882tker2","failedPipeline":"qwen-qwen3-coder-plus-key0","recoveryAction":"failed","details":"所有流水线切换尝试均失败"}}
+{"timestamp":"2025-08-26T05:24:59.208Z","level":"ERROR","message":"❌ 流水线切换系统执行失败","data":{"requestId":"req_1756185898317_c882tker2","pipelineId":"qwen-qwen3-coder-plus-key0","originalError":"invalid access token or token expired","recoveryError":"流水线切换恢复失败: 所有流水线切换尝试均失败"}}
+{"timestamp":"2025-08-26T05:24:59.217Z","level":"ERROR","message":"Request processing failed","data":{"requestId":"req_1756185898317_c882tker2","error":"invalid access token or token expired","stack":"Error: invalid access token or token expired\n    at HttpRequestHandler.checkResponseStatusAndThrow (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/modules/http-request-handler.js:89:19)\n    at PipelineLayersProcessor.processServerLayer (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/modules/pipeline-layers.js:339:33)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async PipelineRequestProcessor.processRequest (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-request-processor.js:321:28)\n    at async PipelineServerManager.processRequestThroughPipeline (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-server-manager.js:516:28)\n    at async PipelineServerManager.handleAnthropicMessages (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-server-manager.js:469:28)\n    at async Object.handler (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-server-manager.js:329:13)\n    at async HTTPServer.executeRoute (/opt/homebrew/lib/node_modules/route-claude-code/dist/server/http-server.js:373:9)\n    at async HTTPServer.handleRequest (/opt/homebrew/lib/node_modules/route-claude-code/dist/server/http-server.js:236:13)","layerTimings":{"router":55,"transformer":65,"protocol":37,"serverCompatibility":44},"errors":[{"layer":"pipeline","error":"invalid access token or token expired","timestamp":{}}]}}
+{"timestamp":"2025-08-26T05:24:59.223Z","level":"WARN","message":"Request failed","data":{"requestId":"req_1756185898317_c882tker2","error":"invalid access token or token expired"}}
+{"timestamp":"2025-08-26T05:24:59.236Z","level":"ERROR","message":"流水线处理失败","data":{"protocol":"anthropic","error":"Pipeline request processing failed: invalid access token or token expired","stack":"Error: Pipeline request processing failed: invalid access token or token expired\n    at PipelineRequestProcessor.processRequest (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-request-processor.js:485:19)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async PipelineServerManager.processRequestThroughPipeline (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-server-manager.js:516:28)\n    at async PipelineServerManager.handleAnthropicMessages (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-server-manager.js:469:28)\n    at async Object.handler (/opt/homebrew/lib/node_modules/route-claude-code/dist/pipeline/pipeline-server-manager.js:329:13)\n    at async HTTPServer.executeRoute (/opt/homebrew/lib/node_modules/route-claude-code/dist/server/http-server.js:373:9)\n    at async HTTPServer.handleRequest (/opt/homebrew/lib/node_modules/route-claude-code/dist/server/http-server.js:236:13)"}}
+{
+	"timestamp": "2025-08-26T08:06:58.228Z",
+	"port": 5506,
+	"requestId": "sim_1756195618228_ld40tr3xo",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Hello, how are you?"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.239Z",
+	"port": 5506,
+	"requestId": "sim_1756195618228_ld40tr3xo",
+	"output": {
+		"id": "msg_sim_1756195618228_ld40tr3xo",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Hello, how are you?\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 13,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.244Z",
+	"port": 5506,
+	"requestId": "sim_1756195618244_f6zfgl41r",
+	"input": {
+		"model": "claude-3-opus-20240229",
+		"max_tokens": 2000,
+		"system": "You are a helpful assistant.",
+		"messages": [
+			{
+				"role": "user",
+				"content": "Explain quantum computing"
+			}
+		],
+		"temperature": 0.7
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.272Z",
+	"port": 5506,
+	"requestId": "sim_1756195618244_f6zfgl41r",
+	"processingTime": 28,
+	"error": {
+		"name": "InputValidationError",
+		"message": "字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000",
+		"code": "FIELD_VALIDATION_FAILED",
+		"stack": "InputValidationError: 字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000\n    at ClientInputValidator.handleValidationFailure (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:179:29)\n    at ClientInputValidator.handleValidationFailure [as validateClaudeCodeRequest] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:127:14)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:66:50)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:211:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.input.validation",
+			"field": "max_tokens",
+			"expected": "one of: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000",
+			"actual": "invalid enum value",
+			"value": "see originalData",
+			"path": "max_tokens",
+			"message": "字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000",
+			"code": "FIELD_VALIDATION_FAILED",
+			"timestamp": 1756195618248
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.277Z",
+	"port": 5506,
+	"requestId": "sim_1756195618277_wguxah3bm",
+	"input": {
+		"model": "claude-3-haiku-20240307",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "What is the capital of France?"
+			},
+			{
+				"role": "assistant",
+				"content": "The capital of France is Paris."
+			},
+			{
+				"role": "user",
+				"content": "What is its population?"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.281Z",
+	"port": 5506,
+	"requestId": "sim_1756195618277_wguxah3bm",
+	"output": {
+		"id": "msg_sim_1756195618277_wguxah3bm",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-haiku-20240307. Your message was: \"What is the capital of France?\""
+			}
+		],
+		"model": "claude-3-haiku-20240307",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 45,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 4,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.4
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.4
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.285Z",
+	"port": 5506,
+	"requestId": "sim_1756195618285_e1gt98eur",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 2000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "What is the weather like in New York?"
+			}
+		],
+		"tools": [
+			{
+				"name": "get_weather",
+				"description": "Get current weather information",
+				"input_schema": {
+					"type": "object",
+					"properties": {
+						"location": {
+							"type": "string"
+						},
+						"unit": {
+							"type": "string",
+							"enum": [
+								"celsius",
+								"fahrenheit"
+							]
+						}
+					},
+					"required": [
+						"location"
+					]
+				}
+			}
+		],
+		"tool_choice": {
+			"type": "auto"
+		}
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.294Z",
+	"port": 5506,
+	"requestId": "sim_1756195618285_e1gt98eur",
+	"processingTime": 9,
+	"error": {
+		"name": "InputValidationError",
+		"message": "字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000",
+		"code": "FIELD_VALIDATION_FAILED",
+		"stack": "InputValidationError: 字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000\n    at ClientInputValidator.handleValidationFailure (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:179:29)\n    at ClientInputValidator.handleValidationFailure [as validateClaudeCodeRequest] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:127:14)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:66:50)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:274:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.input.validation",
+			"field": "max_tokens",
+			"expected": "one of: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000",
+			"actual": "invalid enum value",
+			"value": "see originalData",
+			"path": "max_tokens",
+			"message": "字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000",
+			"code": "FIELD_VALIDATION_FAILED",
+			"timestamp": 1756195618289
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'max_tokens' 的值必须是枚举值之一: 1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.299Z",
+	"port": 5506,
+	"requestId": "sim_1756195618299_iyuc9d0qh",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"stream": true,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Write a short story"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.303Z",
+	"port": 5506,
+	"requestId": "sim_1756195618299_iyuc9d0qh",
+	"output": {
+		"id": "msg_sim_1756195618299_iyuc9d0qh",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Write a short story\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 13,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 4,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.4
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.4
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.307Z",
+	"port": 5506,
+	"requestId": "sim_1756195618307_5icob9me3",
+	"input": {
+		"model": "claude-3-opus-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Hello"
+			}
+		],
+		"metadata": {
+			"user_id": "user_123",
+			"conversation_id": "conv_456"
+		}
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.312Z",
+	"port": 5506,
+	"requestId": "sim_1756195618307_5icob9me3",
+	"output": {
+		"id": "msg_sim_1756195618307_5icob9me3",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-opus-20240229. Your message was: \"Hello\""
+			}
+		],
+		"model": "claude-3-opus-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 9,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 5,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.5
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.5
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.321Z",
+	"port": 5506,
+	"requestId": "sim_1756195618321_541l4kcu6",
+	"input": {
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Hello"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.328Z",
+	"port": 5506,
+	"requestId": "sim_1756195618321_541l4kcu6",
+	"processingTime": 7,
+	"error": {
+		"name": "InputValidationError",
+		"message": "字段 'model' 是必需的",
+		"code": "FIELD_VALIDATION_FAILED",
+		"stack": "InputValidationError: 字段 'model' 是必需的\n    at ClientInputValidator.handleValidationFailure (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:179:29)\n    at ClientInputValidator.handleValidationFailure [as validateClaudeCodeRequest] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:127:14)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:66:50)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:337:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.input.validation",
+			"field": "model",
+			"expected": "valid value",
+			"actual": "invalid value",
+			"value": "see originalData",
+			"path": "model",
+			"message": "字段 'model' 是必需的",
+			"code": "FIELD_VALIDATION_FAILED",
+			"timestamp": 1756195618324
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'model' 是必需的"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'model' 是必需的"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.332Z",
+	"port": 5506,
+	"requestId": "sim_1756195618332_qwsketxwd",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": "invalid_number",
+		"messages": [
+			{
+				"role": "user",
+				"content": "Hello"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.340Z",
+	"port": 5506,
+	"requestId": "sim_1756195618332_qwsketxwd",
+	"processingTime": 8,
+	"error": {
+		"name": "InputValidationError",
+		"message": "字段 'max_tokens' 类型不匹配，期望: number, 实际: string",
+		"code": "FIELD_VALIDATION_FAILED",
+		"stack": "InputValidationError: 字段 'max_tokens' 类型不匹配，期望: number, 实际: string\n    at ClientInputValidator.handleValidationFailure (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:179:29)\n    at ClientInputValidator.handleValidationFailure [as validateClaudeCodeRequest] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:127:14)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:66:50)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:361:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.input.validation",
+			"field": "max_tokens",
+			"expected": "number",
+			"actual": "string",
+			"value": "see originalData",
+			"path": "max_tokens",
+			"message": "字段 'max_tokens' 类型不匹配，期望: number, 实际: string",
+			"code": "FIELD_VALIDATION_FAILED",
+			"timestamp": 1756195618336
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'max_tokens' 类型不匹配，期望: number, 实际: string"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'max_tokens' 类型不匹配，期望: number, 实际: string"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.344Z",
+	"port": 5506,
+	"requestId": "sim_1756195618344_amgm576a6",
+	"input": {
+		"model": "claude-3-haiku-20240307",
+		"max_tokens": 8192,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Hello"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.351Z",
+	"port": 5506,
+	"requestId": "sim_1756195618344_amgm576a6",
+	"processingTime": 7,
+	"error": {
+		"name": "InputValidationError",
+		"message": "claude-3-haiku model only supports max_tokens up to 4096",
+		"code": "MODEL_TOKEN_LIMIT_EXCEEDED",
+		"stack": "InputValidationError: claude-3-haiku model only supports max_tokens up to 4096\n    at ClientInputValidator.validateBusinessLogic (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:259:13)\n    at ClientInputValidator.validateBusinessLogic [as validateClaudeCodeRequest] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:131:12)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:66:50)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:384:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.input.validation",
+			"field": "max_tokens",
+			"expected": "≤ 4096 for claude-3-haiku",
+			"actual": "8192",
+			"value": 8192,
+			"path": "max_tokens",
+			"message": "claude-3-haiku model only supports max_tokens up to 4096",
+			"code": "MODEL_TOKEN_LIMIT_EXCEEDED",
+			"timestamp": 1756195618348
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"claude-3-haiku model only supports max_tokens up to 4096"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"claude-3-haiku model only supports max_tokens up to 4096"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.355Z",
+	"port": 5506,
+	"requestId": "sim_1756195618355_3hpkods6w",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Hello"
+			}
+		],
+		"tools": [
+			{
+				"name": "get_weather",
+				"description": "Get weather",
+				"input_schema": {
+					"type": "object",
+					"properties": {}
+				}
+			}
+		],
+		"tool_choice": {
+			"type": "tool",
+			"name": "get_temperature"
+		}
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.362Z",
+	"port": 5506,
+	"requestId": "sim_1756195618355_3hpkods6w",
+	"processingTime": 7,
+	"error": {
+		"name": "InputValidationError",
+		"message": "tool 'get_temperature' specified in tool_choice but not defined in tools array",
+		"code": "TOOL_NOT_FOUND",
+		"stack": "InputValidationError: tool 'get_temperature' specified in tool_choice but not defined in tools array\n    at ClientInputValidator.validateBusinessLogic (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:276:15)\n    at ClientInputValidator.validateBusinessLogic [as validateClaudeCodeRequest] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:131:12)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:66:50)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:417:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.input.validation",
+			"field": "tool_choice.name",
+			"expected": "existing tool name",
+			"actual": "get_temperature",
+			"value": "get_temperature",
+			"path": "tool_choice.name",
+			"message": "tool 'get_temperature' specified in tool_choice but not defined in tools array",
+			"code": "TOOL_NOT_FOUND",
+			"timestamp": 1756195618359
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"tool 'get_temperature' specified in tool_choice but not defined in tools array"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"tool 'get_temperature' specified in tool_choice but not defined in tools array"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.366Z",
+	"port": 5506,
+	"requestId": "sim_1756195618366_0r903nuqq",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Hello"
+			},
+			{
+				"role": "user",
+				"content": "How are you?"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.372Z",
+	"port": 5506,
+	"requestId": "sim_1756195618366_0r903nuqq",
+	"processingTime": 6,
+	"error": {
+		"name": "InputValidationError",
+		"message": "consecutive messages with role 'user' are not allowed",
+		"code": "INVALID_MESSAGE_SEQUENCE",
+		"stack": "InputValidationError: consecutive messages with role 'user' are not allowed\n    at ClientInputValidator.validateBusinessLogic (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:295:17)\n    at ClientInputValidator.validateBusinessLogic [as validateClaudeCodeRequest] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/input-validator.ts:131:12)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:66:50)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:443:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.input.validation",
+			"field": "messages[1].role",
+			"expected": "alternating roles",
+			"actual": "consecutive user",
+			"value": "user",
+			"path": "messages[1].role",
+			"message": "consecutive messages with role 'user' are not allowed",
+			"code": "INVALID_MESSAGE_SEQUENCE",
+			"timestamp": 1756195618369
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"consecutive messages with role 'user' are not allowed"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"consecutive messages with role 'user' are not allowed"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.549Z",
+	"port": 5506,
+	"requestId": "sim_1756195619549_iee6p7km3",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test output validation"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.552Z",
+	"port": 5506,
+	"requestId": "sim_1756195619549_iee6p7km3",
+	"output": {
+		"id": "msg_test_123",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a valid response"
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 10,
+			"output_tokens": 5
+		}
+	},
+	"processingTime": 3,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.30000000000000004
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.30000000000000004
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.556Z",
+	"port": 5506,
+	"requestId": "sim_1756195619556_raa4l1cq9",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test invalid output"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.572Z",
+	"port": 5506,
+	"requestId": "sim_1756195619556_raa4l1cq9",
+	"processingTime": 16,
+	"error": {
+		"name": "OutputValidationError",
+		"message": "字段 'id' 是必需的",
+		"code": "OUTPUT_FIELD_VALIDATION_FAILED",
+		"stack": "OutputValidationError: 字段 'id' 是必需的\n    at ClientOutputValidator.handleValidationFailure (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/output-validator.ts:210:29)\n    at ClientOutputValidator.handleValidationFailure [as validateClaudeCodeResponse] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/output-validator.ts:126:14)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:77:48)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:616:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.output.validation",
+			"field": "id",
+			"expected": "valid value",
+			"actual": "invalid value",
+			"value": "see originalData",
+			"path": "id",
+			"message": "字段 'id' 是必需的",
+			"code": "OUTPUT_FIELD_VALIDATION_FAILED",
+			"timestamp": 1756195619560
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'id' 是必需的"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"字段 'id' 是必需的"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.575Z",
+	"port": 5506,
+	"requestId": "sim_1756195619575_d71xowm4n",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test business logic validation"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.583Z",
+	"port": 5506,
+	"requestId": "sim_1756195619575_d71xowm4n",
+	"processingTime": 8,
+	"error": {
+		"name": "OutputValidationError",
+		"message": "text content cannot be empty",
+		"code": "EMPTY_TEXT_CONTENT",
+		"stack": "OutputValidationError: text content cannot be empty\n    at ClientOutputValidator.validateOutputBusinessLogic (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/output-validator.ts:294:17)\n    at ClientOutputValidator.validateOutputBusinessLogic [as validateClaudeCodeResponse] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/output-validator.ts:130:12)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:77:48)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:656:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.output.validation",
+			"field": "content[0].text",
+			"expected": "non-empty string",
+			"actual": "empty or missing",
+			"value": "",
+			"path": "content[0].text",
+			"message": "text content cannot be empty",
+			"code": "EMPTY_TEXT_CONTENT",
+			"timestamp": 1756195619579
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"text content cannot be empty"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"text content cannot be empty"
+			]
+		}
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.586Z",
+	"port": 5506,
+	"requestId": "sim_1756195619586_xa2but8pd",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test token validation"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:59.592Z",
+	"port": 5506,
+	"requestId": "sim_1756195619586_xa2but8pd",
+	"processingTime": 6,
+	"error": {
+		"name": "OutputValidationError",
+		"message": "input_tokens cannot be negative",
+		"code": "NEGATIVE_INPUT_TOKENS",
+		"stack": "OutputValidationError: input_tokens cannot be negative\n    at ClientOutputValidator.validateOutputBusinessLogic (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/output-validator.ts:337:15)\n    at ClientOutputValidator.validateOutputBusinessLogic [as validateClaudeCodeResponse] (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/validation/output-validator.ts:130:12)\n    at ClaudeCodeRequestSimulator.simulateRequest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:77:48)\n    at Object.<anonymous> (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/client/__tests__/claude-code-request-simulator.test.ts:695:38)\n    at Promise.finally.completed (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1559:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1499:10)\n    at _callCircusTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1009:40)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at _runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:949:3)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/jestAdapterInit.js:1920:21)\n    at jestAdapter (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:275:16)\n    at runTest (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:343:7)\n    at Object.worker (/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/node_modules/jest-runner/build/testWorker.js:497:12)",
+		"details": {
+			"module": "client.output.validation",
+			"field": "usage.input_tokens",
+			"expected": "non-negative number",
+			"actual": "-5",
+			"value": -5,
+			"path": "usage.input_tokens",
+			"message": "input_tokens cannot be negative",
+			"code": "NEGATIVE_INPUT_TOKENS",
+			"timestamp": 1756195619589
+		}
+	},
+	"validation": {
+		"inputValidation": {
+			"success": false,
+			"errors": [
+				"input_tokens cannot be negative"
+			]
+		},
+		"outputValidation": {
+			"success": false,
+			"errors": [
+				"input_tokens cannot be negative"
+			]
+		}
+	}
+}

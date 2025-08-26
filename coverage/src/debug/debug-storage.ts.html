@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">4.78% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>12/251</span>
+                <span class='fraction'>0/251</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5.02% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>12/239</span>
+                <span class='fraction'>0/239</span>
             </div>
         
             
@@ -730,24 +730,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -799,7 +795,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1389,20 +1389,20 @@
  * @author Jason Zhang
  */
 &nbsp;
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
-import { promisify } from 'util';
-import { EventEmitter } from 'events';
+<span class="cstat-no" title="statement not covered" >import * as fs from 'fs';</span>
+<span class="cstat-no" title="statement not covered" >import * as path from 'path';</span>
+<span class="cstat-no" title="statement not covered" >import * as os from 'os';</span>
+<span class="cstat-no" title="statement not covered" >import { promisify } from 'util';</span>
+<span class="cstat-no" title="statement not covered" >import { EventEmitter } from 'events';</span>
 import { DebugRecord, DebugSession, DebugConfig } from './types/debug-types';
 import { DebugSerializer } from './debug-serializer';
 &nbsp;
-const mkdir = promisify(fs.mkdir);
-const writeFile = promisify(fs.writeFile);
-const readFile = promisify(fs.readFile);
-const readdir = promisify(fs.readdir);
-const stat = promisify(fs.stat);
-const unlink = promisify(fs.unlink);
+const mkdir = <span class="cstat-no" title="statement not covered" >promisify(fs.mkdir);</span>
+const writeFile = <span class="cstat-no" title="statement not covered" >promisify(fs.writeFile);</span>
+const readFile = <span class="cstat-no" title="statement not covered" >promisify(fs.readFile);</span>
+const readdir = <span class="cstat-no" title="statement not covered" >promisify(fs.readdir);</span>
+const stat = <span class="cstat-no" title="statement not covered" >promisify(fs.stat);</span>
+const unlink = <span class="cstat-no" title="statement not covered" >promisify(fs.unlink);</span>
 &nbsp;
 /**
  * 存储统计信息
@@ -1458,7 +1458,7 @@ export interface DebugStorage {
 /**
  * Debug存储管理器实现
  */
-export class DebugStorageImpl extends EventEmitter implements DebugStorage {
+<span class="cstat-no" title="statement not covered" >export class D</span>ebugStorageImpl extends EventEmitter implements DebugStorage {
   private config: DebugConfig;
   private basePath: string;
   private serializer: DebugSerializer;
@@ -2047,7 +2047,7 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.341Z
+                at 2025-08-26T08:25:39.343Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

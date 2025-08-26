@@ -26,7 +26,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RouterModuleFactory = exports.ROUTER_MODULE_VERSION = exports.VIRTUAL_MODEL_MAPPING_RULES = exports.VirtualModelType = exports.SimpleRouter = exports.DEFAULT_LOAD_BALANCER_CONFIG = exports.LoadBalancer = exports.PipelineRouter = void 0;
+exports.RouterModuleFactory = exports.ROUTER_MODULE_VERSION = exports.VirtualModelType = exports.SimpleRouter = exports.DEFAULT_LOAD_BALANCER_CONFIG = exports.LoadBalancer = exports.PipelineRouter = void 0;
 // 标准接口导出
 __exportStar(require("../interfaces/core/router-interface"), exports);
 // RCC v4.0 核心组件
@@ -39,7 +39,6 @@ var simple_router_1 = require("./simple-router");
 Object.defineProperty(exports, "SimpleRouter", { enumerable: true, get: function () { return simple_router_1.SimpleRouter; } });
 var virtual_model_mapping_1 = require("./virtual-model-mapping");
 Object.defineProperty(exports, "VirtualModelType", { enumerable: true, get: function () { return virtual_model_mapping_1.VirtualModelType; } });
-Object.defineProperty(exports, "VIRTUAL_MODEL_MAPPING_RULES", { enumerable: true, get: function () { return virtual_model_mapping_1.VIRTUAL_MODEL_MAPPING_RULES; } });
 // 会话控制组件
 __exportStar(require("./session-control"), exports);
 // 导入用于类型注解
@@ -54,9 +53,9 @@ class RouterModuleFactory {
     /**
      * 创建完整的路由系统
      */
-    static createRoutingSystem(pipelineManager, routingTable, config) {
+    static createRoutingSystem(pipelineManager, routingTable, config, pipelineTableManager) {
         const pipelineRouter = new pipeline_router_2.PipelineRouter(routingTable);
-        const loadBalancer = new load_balancer_2.LoadBalancer(pipelineManager, config);
+        const loadBalancer = new load_balancer_2.LoadBalancer(pipelineManager, config, pipelineTableManager);
         return {
             pipelineRouter,
             loadBalancer

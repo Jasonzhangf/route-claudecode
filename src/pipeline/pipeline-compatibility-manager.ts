@@ -60,8 +60,17 @@ export class PipelineCompatibilityManager extends EventEmitter {
     context: RequestContext
   ): Promise<any> {
     try {
-      const firstPipelineId = routingDecision.availablePipelines[0];
-      const providerType = this.extractProviderFromPipelineId(firstPipelineId);
+      // 🔧 关键修复：使用负载均衡器选中的pipeline，而不是列表第一个
+      const selectedPipelineId = routingDecision.selectedPipeline || routingDecision.availablePipelines[0];
+      const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
+      
+      secureLogger.info('🔥 ServerCompatibility层pipeline选择', {
+        requestId: context.requestId,
+        selectedPipelineId,
+        availablePipelines: routingDecision.availablePipelines,
+        extractedProviderType: providerType,
+        usedSelectedPipeline: !!routingDecision.selectedPipeline
+      });
       
       // 🔧 关键修复：从新统一配置格式中获取serverCompatibility信息
       const providers = this.config.providers || [];
@@ -83,13 +92,13 @@ export class PipelineCompatibilityManager extends EventEmitter {
         });
       } else {
         // 向后兼容：从 pipeline ID 中推断
-        compatibilityTag = this.extractCompatibilityFromPipelineId(firstPipelineId);
+        compatibilityTag = this.extractCompatibilityFromPipelineId(selectedPipelineId);
         
         secureLogger.info('🔧 使用向后兼容的compatibility推断', {
           requestId: context.requestId,
           providerType,
           compatibilityTag,
-          pipelineId: firstPipelineId,
+          pipelineId: selectedPipelineId,
           architecture: 'backward-compatible'
         });
       }
@@ -98,7 +107,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
         requestId: context.requestId,
         compatibilityTag,
         providerType,
-        pipelineId: firstPipelineId,
+        pipelineId: selectedPipelineId,
         hasCompatibilityOptions: Object.keys(compatibilityOptions).length > 0
       });
 

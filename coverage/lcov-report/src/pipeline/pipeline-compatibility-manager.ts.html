@@ -25,14 +25,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/217</span>
+                <span class='fraction'>0/218</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/152</span>
+                <span class='fraction'>0/154</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/215</span>
+                <span class='fraction'>0/216</span>
             </div>
         
             
@@ -850,7 +850,16 @@
 <a name='L785'></a><a href='#L785'>785</a>
 <a name='L786'></a><a href='#L786'>786</a>
 <a name='L787'></a><a href='#L787'>787</a>
-<a name='L788'></a><a href='#L788'>788</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L788'></a><a href='#L788'>788</a>
+<a name='L789'></a><a href='#L789'>789</a>
+<a name='L790'></a><a href='#L790'>790</a>
+<a name='L791'></a><a href='#L791'>791</a>
+<a name='L792'></a><a href='#L792'>792</a>
+<a name='L793'></a><a href='#L793'>793</a>
+<a name='L794'></a><a href='#L794'>794</a>
+<a name='L795'></a><a href='#L795'>795</a>
+<a name='L796'></a><a href='#L796'>796</a>
+<a name='L797'></a><a href='#L797'>797</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -912,8 +921,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1699,8 +1717,17 @@ export interface CompatibilityModuleInfo {
     context: RequestContext
   ): Promise&lt;any&gt; {
 <span class="cstat-no" title="statement not covered" >    try {</span>
-      const firstPipelineId = <span class="cstat-no" title="statement not covered" >routingDecision.availablePipelines[0];</span>
-      const providerType = <span class="cstat-no" title="statement not covered" >this.extractProviderFromPipelineId(firstPipelineId);</span>
+      // 🔧 关键修复：使用负载均衡器选中的pipeline，而不是列表第一个
+      const selectedPipelineId = <span class="cstat-no" title="statement not covered" >routingDecision.selectedPipeline || routingDecision.availablePipelines[0];</span>
+      const providerType = <span class="cstat-no" title="statement not covered" >this.extractProviderFromPipelineId(selectedPipelineId);</span>
+      
+<span class="cstat-no" title="statement not covered" >      secureLogger.info('🔥 ServerCompatibility层pipeline选择', {</span>
+        requestId: context.requestId,
+        selectedPipelineId,
+        availablePipelines: routingDecision.availablePipelines,
+        extractedProviderType: providerType,
+        usedSelectedPipeline: !!routingDecision.selectedPipeline
+      });
       
       // 🔧 关键修复：从新统一配置格式中获取serverCompatibility信息
       const providers = <span class="cstat-no" title="statement not covered" >this.config.providers || [];</span>
@@ -1722,13 +1749,13 @@ export interface CompatibilityModuleInfo {
         });
       } else {
         // 向后兼容：从 pipeline ID 中推断
-<span class="cstat-no" title="statement not covered" >        compatibilityTag = this.extractCompatibilityFromPipelineId(firstPipelineId);</span>
+<span class="cstat-no" title="statement not covered" >        compatibilityTag = this.extractCompatibilityFromPipelineId(selectedPipelineId);</span>
         
 <span class="cstat-no" title="statement not covered" >        secureLogger.info('🔧 使用向后兼容的compatibility推断', {</span>
           requestId: context.requestId,
           providerType,
           compatibilityTag,
-          pipelineId: firstPipelineId,
+          pipelineId: selectedPipelineId,
           architecture: 'backward-compatible'
         });
       }
@@ -1737,7 +1764,7 @@ export interface CompatibilityModuleInfo {
         requestId: context.requestId,
         compatibilityTag,
         providerType,
-        pipelineId: firstPipelineId,
+        pipelineId: selectedPipelineId,
         hasCompatibilityOptions: Object.keys(compatibilityOptions).length &gt; 0
       });
 &nbsp;
@@ -2431,7 +2458,7 @@ export interface CompatibilityModuleInfo {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.122Z
+                at 2025-08-26T08:25:39.116Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

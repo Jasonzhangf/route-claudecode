@@ -100,7 +100,7 @@ class ConfigLoader {
     static parseConfig(content, format) {
         switch (format) {
             case 'json':
-                return JSON.parse(content);
+                return jq_json_handler_1.JQJsonHandler.parseJsonString(content);
             case 'json5':
                 return JSON5.parse(content);
             case 'yaml':

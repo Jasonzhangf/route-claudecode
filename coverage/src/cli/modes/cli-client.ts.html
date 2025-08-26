@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/179</span>
+                <span class='fraction'>0/181</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/179</span>
+                <span class='fraction'>0/181</span>
             </div>
         
             
@@ -528,7 +528,9 @@
 <a name='L463'></a><a href='#L463'>463</a>
 <a name='L464'></a><a href='#L464'>464</a>
 <a name='L465'></a><a href='#L465'>465</a>
-<a name='L466'></a><a href='#L466'>466</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
+<a name='L466'></a><a href='#L466'>466</a>
+<a name='L467'></a><a href='#L467'>467</a>
+<a name='L468'></a><a href='#L468'>468</a></td><td class="line-coverage quiet"><span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -542,6 +544,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1007,6 +1011,8 @@ import {
 } from './mode-interface';
 <span class="cstat-no" title="statement not covered" >import { ConfigManager } from '../../config/config-manager';</span>
 import { ErrorHandler } from '../../middleware/error-handler';
+<span class="cstat-no" title="statement not covered" >import { getServerPort } from '../../constants/server-defaults';</span>
+<span class="cstat-no" title="statement not covered" >import { CLI_DEFAULTS } from '../../constants/cli-defaults';</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >export class C</span></span>lientMode implements CLIModeInterface {
   public readonly <span class="cstat-no" title="statement not covered" >name = 'client';</span>
@@ -1040,10 +1046,10 @@ import { ErrorHandler } from '../../middleware/error-handler';
 <span class="cstat-no" title="statement not covered" >      console.log('Setting up transparent proxy...');</span>
 <span class="cstat-no" title="statement not covered" >      this.proxyManager = new ClientProxyManager({</span>
         processName: 'claude',
-        targetUrl: 'http://localhost:3456',
-        proxyUrl: 'http://localhost:5506',
+        targetUrl: `http://localhost:${CLI_DEFAULTS.DEFAULT_PORT}`,
+        proxyUrl: `http://localhost:${getServerPort()}`,
         targetProcess: 'claude',
-        proxyPort: options.proxyPort || 3456,
+        proxyPort: options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT,
         rccServerUrl: await this.getRCCServerUrl(options),
       });
 <span class="cstat-no" title="statement not covered" >      await this.proxyManager.start();</span>
@@ -1060,7 +1066,7 @@ import { ErrorHandler } from '../../middleware/error-handler';
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      console.log('✅ RCC Client started successfully');</span>
 <span class="cstat-no" title="statement not covered" >      console.log(`   Claude Code process: PID ${this.claudeCodeProcess?.pid}`);</span>
-<span class="cstat-no" title="statement not covered" >      console.log(`   Proxy listening on: http://localhost:${options.proxyPort || 3456}`);</span>
+<span class="cstat-no" title="statement not covered" >      console.log(`   Proxy listening on: http://localhost:${options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT}`);</span>
 <span class="cstat-no" title="statement not covered" >      console.log('   Press Ctrl+C to stop');</span>
 &nbsp;
       // 5. 监控进程健康状态
@@ -1152,7 +1158,7 @@ import { ErrorHandler } from '../../middleware/error-handler';
         env: {
           ...process.env,
           RCC_PROXY_MODE: 'true',
-          RCC_PROXY_PORT: (options.proxyPort || 3456).toString(),
+          RCC_PROXY_PORT: (options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT).toString(),
         },
       });
 &nbsp;
@@ -1221,7 +1227,7 @@ import { ErrorHandler } from '../../middleware/error-handler';
     }
 &nbsp;
     // 添加代理配置
-<span class="cstat-no" title="statement not covered" >    args.push('--proxy', `http://localhost:${options.proxyPort || 3456}`);</span>
+<span class="cstat-no" title="statement not covered" >    args.push('--proxy', `http://localhost:${options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT}`);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    return args;</span>
   }
@@ -1233,7 +1239,7 @@ import { ErrorHandler } from '../../middleware/error-handler';
 &nbsp;
     // 从配置中获取RCC服务器URL，或使用默认值
     const config = <span class="cstat-no" title="statement not covered" >await this.configManager.getClientConfig();</span>
-<span class="cstat-no" title="statement not covered" >    return config.serverUrl || 'http://localhost:3456';</span>
+<span class="cstat-no" title="statement not covered" >    return config.serverUrl || `http://localhost:${CLI_DEFAULTS.DEFAULT_PORT}`;</span>
   }
 &nbsp;
   private <span class="fstat-no" title="function not covered" >startHealthMonitoring(</span>): void {
@@ -1465,7 +1471,7 @@ class ClientLifecycleManager implements LifecycleManager {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.341Z
+                at 2025-08-26T08:25:39.343Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

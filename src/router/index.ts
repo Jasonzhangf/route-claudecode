@@ -18,7 +18,7 @@ export * from '../interfaces/core/router-interface';
 export { PipelineRouter } from './pipeline-router';
 export { LoadBalancer, DEFAULT_LOAD_BALANCER_CONFIG } from './load-balancer';
 export { SimpleRouter } from './simple-router';
-export { VirtualModelMappingRule, VirtualModelType, VIRTUAL_MODEL_MAPPING_RULES } from './virtual-model-mapping';
+export { VirtualModelMappingRule, VirtualModelType } from './virtual-model-mapping';
 
 // 会话控制组件
 export * from './session-control';
@@ -69,13 +69,14 @@ export class RouterModuleFactory {
   static createRoutingSystem(
     pipelineManager: any,
     routingTable: any,
-    config?: any
+    config?: any,
+    pipelineTableManager?: any
   ): {
     pipelineRouter: PipelineRouter;
     loadBalancer: LoadBalancer;
   } {
     const pipelineRouter = new PipelineRouter(routingTable);
-    const loadBalancer = new LoadBalancer(pipelineManager, config);
+    const loadBalancer = new LoadBalancer(pipelineManager, config, pipelineTableManager);
     
     return {
       pipelineRouter,

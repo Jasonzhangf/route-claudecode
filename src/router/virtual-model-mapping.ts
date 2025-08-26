@@ -8,6 +8,7 @@
  */
 
 import { secureLogger } from '../utils/secure-logger';
+import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { getRoutingThresholds, estimateTokenCount } from '../config/routing-thresholds';
 
@@ -125,9 +126,18 @@ export class VirtualModelMapper {
       }
     }
 
-    // 🔧 修复：返回'default'虚拟模型以匹配流水线表配置
-    secureLogger.warn('No virtual model rule matched, using default virtual model', { inputModel });
-    return 'default';
+    // 零Fallback策略: 不允许静默返回default虚拟模型
+    secureLogger.error('No virtual model rule matched - Zero Fallback Policy', { 
+      inputModel, 
+      zeroFallbackPolicy: true 
+    });
+    
+    throw ZeroFallbackErrorFactory.createRoutingRuleNotFound(
+      inputModel,
+      'virtual-model-mapping',
+      'No virtual model rule matched for input model',
+      { inputModel }
+    );
   }
 
   /**

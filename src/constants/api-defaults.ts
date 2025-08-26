@@ -159,11 +159,48 @@ export const API_DEFAULTS = {
     X_RATE_LIMIT_RESET: 'X-RateLimit-Reset',
   },
 
+  // HTTP请求配置常量
+  HTTP_CONFIG: {
+    CHUNK_SIZE: 16384, // 16KB chunks for large requests
+    LARGE_REQUEST_THRESHOLD: 10 * 1024, // 10KB threshold for large requests
+    PROGRESS_LOG_INTERVAL: 50 * 1024, // Log progress every 50KB for long text responses
+    WRITE_PROGRESS_INTERVAL: 100 * 1024, // Log write progress every 100KB
+    HIGH_WATER_MARK: 64 * 1024, // 64KB buffer for large requests
+    KEEP_ALIVE_INITIAL_DELAY: 300000, // 5 minutes keep-alive delay
+    HEARTBEAT_INTERVAL: 30000, // 30 seconds heartbeat interval
+    LONG_REQUEST_TIMEOUT: 600000, // 10 minutes timeout for large requests
+    STANDARD_REQUEST_TIMEOUT: 120000, // 2 minutes standard timeout
+  },
+
   // 默认用户代理
   USER_AGENTS: {
     RCC: 'Route-Claude-Code/4.0',
     ANTHROPIC: 'anthropic-sdk-typescript',
     OPENAI: 'openai-node',
+  },
+
+  // Qwen OAuth2认证常量
+  QWEN_OAUTH: {
+    CLIENT_ID: 'f0304373b74a44d2b584a3fb70ca9e56',
+    BASE_URL: 'https://chat.qwen.ai',
+    TOKEN_URL: 'https://chat.qwen.ai/api/v1/oauth2/token',
+    DEVICE_AUTH_URL: 'https://chat.qwen.ai/api/v1/oauth2/device/code',
+    VERIFICATION_URI: 'https://chat.qwen.ai/device',
+    USER_AGENT: 'RCC4-Qwen-Client/1.0',
+    DEFAULT_SCOPE: 'openid profile email model.completion',
+    DEFAULT_CODE_CHALLENGE_METHOD: 'S256',
+    DEFAULT_INTERVAL: 2000, // 2秒轮询间隔
+    DEFAULT_EXPIRES_IN: 600, // 10分钟过期时间
+    MAX_POLL_ATTEMPTS: 150, // 5分钟最大等待时间
+    POLL_INTERVAL_MIN: 2000, // 最小轮询间隔
+    POLL_INTERVAL_MAX: 10000, // 最大轮询间隔
+  },
+
+  // 流水线配置常量
+  PIPELINE: {
+    DEFAULT_KEY_SUFFIX: 'key0', // 默认的API Key后缀
+    ID_SEPARATOR: '-', // Pipeline ID分隔符
+    MODEL_NAME_REGEX: /[\/\s]+/g, // 模型名称规范化正则表达式
   },
 
   // 测试相关常量
@@ -483,4 +520,31 @@ export function validateMaxTokens(maxTokens: number): { valid: boolean; message?
 export function getRecommendedMaxTokens(provider: 'lmstudio' | 'anthropic' | 'openai' | 'gemini'): number {
   const providerKey = provider.toUpperCase() as keyof typeof API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS;
   return API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS[providerKey] || API_DEFAULTS.TOKEN_LIMITS.PROVIDER_DEFAULTS.GENERIC;
+}
+
+/**
+ * 生成标准的Pipeline ID
+ * 格式: {provider}-{normalizedModel}-{keySuffix}
+ */
+export function generatePipelineId(providerName: string, modelName: string, keySuffix?: string): string {
+  const normalizedModel = modelName.replace(API_DEFAULTS.PIPELINE.MODEL_NAME_REGEX, API_DEFAULTS.PIPELINE.ID_SEPARATOR).toLowerCase();
+  const suffix = keySuffix || API_DEFAULTS.PIPELINE.DEFAULT_KEY_SUFFIX;
+  
+  return `${providerName}${API_DEFAULTS.PIPELINE.ID_SEPARATOR}${normalizedModel}${API_DEFAULTS.PIPELINE.ID_SEPARATOR}${suffix}`;
+}
+
+/**
+ * 解析Pipeline ID获取组件
+ */
+export function parsePipelineId(pipelineId: string): { provider: string; model: string; keySuffix: string } | null {
+  const parts = pipelineId.split(API_DEFAULTS.PIPELINE.ID_SEPARATOR);
+  if (parts.length < 3) {
+    return null;
+  }
+  
+  return {
+    provider: parts[0],
+    model: parts.slice(1, -1).join(API_DEFAULTS.PIPELINE.ID_SEPARATOR),
+    keySuffix: parts[parts.length - 1]
+  };
 }

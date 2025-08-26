@@ -8,6 +8,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { secureLogger } from '../../utils/secure-logger';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
+import { API_DEFAULTS } from '../../constants/api-defaults';
+import { QWEN_AUTH_ERRORS } from '../../constants/error-messages';
 
 export interface QwenAuthConfig {
   access_token: string;
@@ -124,10 +126,10 @@ export class QwenAuthManager {
 
       constructor(options: any = {}) {
         this.options = {
-          clientId: 'f0304373b74a44d2b584a3fb70ca9e56',
-          tokenUrl: 'https://chat.qwen.ai/api/v1/oauth2/token',
-          deviceAuthUrl: 'https://chat.qwen.ai/api/v1/oauth2/device/code',
-          userAgent: 'RCC4-Qwen-Client/1.0',
+          clientId: API_DEFAULTS.QWEN_OAUTH.CLIENT_ID,
+          tokenUrl: API_DEFAULTS.QWEN_OAUTH.TOKEN_URL,
+          deviceAuthUrl: API_DEFAULTS.QWEN_OAUTH.DEVICE_AUTH_URL,
+          userAgent: API_DEFAULTS.QWEN_OAUTH.USER_AGENT,
           timeout: 30000,
           ...options
         };
@@ -139,9 +141,9 @@ export class QwenAuthManager {
         const crypto = require('crypto');
         const requestParams = new URLSearchParams({
           client_id: this.options.clientId,
-          scope: params.scope || 'openid profile email model.completion',
+          scope: params.scope || API_DEFAULTS.QWEN_OAUTH.DEFAULT_SCOPE,
           code_challenge: params.code_challenge,
-          code_challenge_method: params.code_challenge_method || 'S256'
+          code_challenge_method: params.code_challenge_method || API_DEFAULTS.QWEN_OAUTH.DEFAULT_CODE_CHALLENGE_METHOD
         });
 
         const response = await fetch(this.options.deviceAuthUrl, {
@@ -166,10 +168,10 @@ export class QwenAuthManager {
         return {
           device_code: authData.device_code,
           user_code: authData.user_code,
-          verification_uri: authData.verification_uri || 'https://chat.qwen.ai/device',
+          verification_uri: authData.verification_uri || API_DEFAULTS.QWEN_OAUTH.VERIFICATION_URI,
           verification_uri_complete: authData.verification_uri_complete,
-          expires_in: authData.expires_in || 600,
-          interval: authData.interval || 2
+          expires_in: authData.expires_in || API_DEFAULTS.QWEN_OAUTH.DEFAULT_EXPIRES_IN,
+          interval: authData.interval || (API_DEFAULTS.QWEN_OAUTH.DEFAULT_INTERVAL / 1000)
         };
       }
 
@@ -259,8 +261,8 @@ export class QwenAuthManager {
   private async pollForToken(client: any, deviceCode: string, codeVerifier: string): Promise<any> {
     console.log('\n🔄 开始token轮询...');
     
-    let pollInterval = 2000; // 2秒间隔
-    const maxAttempts = 150; // 5分钟最大等待时间
+    let pollInterval: number = API_DEFAULTS.QWEN_OAUTH.POLL_INTERVAL_MIN; // 2秒间隔
+    const maxAttempts = API_DEFAULTS.QWEN_OAUTH.MAX_POLL_ATTEMPTS; // 5分钟最大等待时间
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -282,7 +284,7 @@ export class QwenAuthManager {
         // 处理pending状态
         if (tokenResponse.status === 'pending') {
           if (tokenResponse.slowDown) {
-            pollInterval = Math.min(pollInterval * 1.5, 10000);
+            pollInterval = Math.min(pollInterval * 1.5, API_DEFAULTS.QWEN_OAUTH.POLL_INTERVAL_MAX);
             console.log(`📢 服务器要求降低轮询频率，调整间隔为 ${pollInterval}ms`);
           }
           
@@ -299,7 +301,7 @@ export class QwenAuthManager {
         }
         
         if (error.message.includes('429')) {
-          pollInterval = Math.min(pollInterval * 2, 10000);
+          pollInterval = Math.min(pollInterval * 2, API_DEFAULTS.QWEN_OAUTH.POLL_INTERVAL_MAX);
           console.log(`🚫 遇到频率限制，增加间隔到 ${pollInterval}ms`);
           await new Promise(resolve => setTimeout(resolve, pollInterval));
           continue;
@@ -546,13 +548,13 @@ export class QwenAuthManager {
       console.log(`🔄 刷新认证文件: qwen-auth-${index}.json`);
 
       // 使用refresh_token获取新的access_token
-      const response = await fetch('https://chat.qwen.ai/api/v1/oauth2/token', {
+      const response = await fetch(API_DEFAULTS.QWEN_OAUTH.TOKEN_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: auth.refresh_token,
-          client_id: 'f0304373b74a44d2b584a3fb70ca9e56'
+          client_id: API_DEFAULTS.QWEN_OAUTH.CLIENT_ID
         })
       });
 

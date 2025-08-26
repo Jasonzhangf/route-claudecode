@@ -1,0 +1,54 @@
+{
+	"timestamp": "2025-08-26T08:06:58.375Z",
+	"port": 5507,
+	"requestId": "sim_1756195618375_mbv7ip8np",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-08-26T08:06:58.379Z",
+	"port": 5507,
+	"requestId": "sim_1756195618375_mbv7ip8np",
+	"output": {
+		"id": "msg_sim_1756195618375_mbv7ip8np",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 13,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 4,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.4
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.4
+		}
+	}
+}

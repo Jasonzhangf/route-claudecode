@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5.5% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/109</span>
+                <span class='fraction'>0/109</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5.6% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/107</span>
+                <span class='fraction'>0/107</span>
             </div>
         
             
@@ -522,11 +522,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -535,8 +535,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -608,7 +608,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -927,7 +927,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -971,11 +971,11 @@
  * @version 4.0.0
  */
 &nbsp;
-import { DataValidator, ValidationResult } from '../../utils/data-validator';
+<span class="cstat-no" title="statement not covered" >import { DataValidator, ValidationResult } from '../../utils/data-validator';</span>
 import { ErrorHandler } from '../../middleware/error-handler';
 import { DebugManager } from '../../debug/debug-manager';
-import { JQJsonHandler } from '../../utils/jq-json-handler';
-import {
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../../utils/jq-json-handler';</span>
+<span class="cstat-no" title="statement not covered" >import {</span>
   ClaudeCodeResponse,
   ClientOutputValidationError,
   CLAUDE_CODE_RESPONSE_SCHEMA,
@@ -984,7 +984,7 @@ import {
 /**
  * 输出验证错误类
  */
-export class OutputValidationError extends Error {
+<span class="cstat-no" title="statement not covered" >export class O</span>utputValidationError extends Error {
   public readonly <span class="cstat-no" title="statement not covered" >module = 'client.output.validation';</span>
   public readonly code: string;
   public readonly field: string;
@@ -1057,7 +1057,7 @@ export class OutputValidationError extends Error {
 /**
  * 客户端输出验证器
  */
-export class ClientOutputValidator {
+<span class="cstat-no" title="statement not covered" >export class C</span>lientOutputValidator {
   private errorHandler: ErrorHandler;
   private debugManager: DebugManager;
   private <span class="cstat-no" title="statement not covered" >validationStats: Map&lt;string, number&gt; = new Map();</span>
@@ -1376,7 +1376,7 @@ export class ClientOutputValidator {
  * @ValidateOutput('claude_code_response')
  * async processRequest(request: any): Promise&lt;any&gt;
  */
-export function <span class="fstat-no" title="function not covered" >ValidateOutput(</span>validationType: 'claude_code_response' | 'status_response') {
+<span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >V</span>alidateOutput(</span>validationType: 'claude_code_response' | 'status_response') {
 <span class="cstat-no" title="statement not covered" >  return <span class="fstat-no" title="function not covered" >function (t</span>arget: any, propertyKey: string, descriptor: PropertyDescriptor) {</span>
     const originalMethod = <span class="cstat-no" title="statement not covered" >descriptor.value;</span>
 &nbsp;
@@ -1417,7 +1417,7 @@ export function <span class="fstat-no" title="function not covered" >ValidateOut
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.122Z
+                at 2025-08-26T08:25:39.116Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

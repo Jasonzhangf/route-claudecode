@@ -201,6 +201,9 @@ export class ToolCallingFlowTester {
         });
       });
 
+      // 设置最大监听器数量，防止内存泄漏警告
+      req.setMaxListeners(20);
+
       req.on('error', (error) => {
         secureLogger.error('❌ 请求错误', {
           error: error.message,

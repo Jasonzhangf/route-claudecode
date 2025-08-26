@@ -87,6 +87,16 @@ export const ROUTING_ERRORS = {
   VIRTUAL_MODEL_MAPPING_FAILED: 'Virtual model mapping failed',
 } as const;
 
+// 零Fallback策略相关错误
+export const ZERO_FALLBACK_ERRORS = {
+  MODEL_MAPPING_FAILED_ZERO_FALLBACK: 'Model mapping failed - Zero fallback policy enforced',
+  PIPELINE_TABLE_LOAD_FAILED_ZERO_FALLBACK: 'Pipeline table loading failed - Zero fallback policy enforced',
+  HEALTH_CHECK_FAILED_ZERO_FALLBACK: 'Health check failed - Zero fallback policy enforced',
+  PROVIDER_UNAVAILABLE_ZERO_FALLBACK: 'Provider unavailable - Zero fallback policy enforced',
+  CONFIGURATION_LOAD_FAILED_ZERO_FALLBACK: 'Configuration loading failed - Zero fallback policy enforced',
+  SILENT_FAILURE_NOT_ALLOWED: 'Silent failure not allowed under zero fallback policy',
+} as const;
+
 // 服务器相关错误
 export const SERVER_ERRORS = {
   SERVER_START_FAILED: 'Server failed to start',
@@ -131,6 +141,30 @@ export const SECURITY_ERRORS = {
   DECRYPTION_FAILED: 'Decryption failed',
 } as const;
 
+// Qwen OAuth2认证相关错误
+export const QWEN_AUTH_ERRORS = {
+  DEVICE_AUTH_REQUEST_FAILED: '设备授权请求失败',
+  TOKEN_POLLING_FAILED: 'Token轮询失败',
+  AUTHORIZATION_PENDING: '用户授权待处理',
+  SLOW_DOWN: '服务器要求降低轮询频率',
+  EXPIRED_TOKEN: '设备授权已过期，请重新开始认证流程',
+  ACCESS_DENIED: '用户拒绝了授权请求',
+  OAUTH2_ERROR: 'OAuth2认证错误',
+  INVALID_TOKEN_RESPONSE: '无效的token响应',
+  AUTHENTICATION_TIMEOUT: '认证超时，请重新尝试',
+  TOKEN_REFRESH_FAILED: 'Token刷新失败',
+  AUTH_FILE_NOT_FOUND: '认证文件不存在',
+  AUTH_FILE_PARSE_ERROR: '认证文件解析失败',
+  BROWSER_OPEN_FAILED: '无法自动打开浏览器',
+  RATE_LIMIT_HIT: '遇到频率限制',
+  TOOLS_FORMAT_CONVERSION_FAILED: '工具格式转换失败',
+  TOOLS_ARRAY_INVALID: '无效的工具数组格式',
+  TOKEN_RECREATION_START: '开始Qwen token自动recreate流程',
+  TOKEN_RECREATION_SUCCESS: 'Qwen token extended refresh成功',
+  TOKEN_RECREATION_EXTENDED_FAILED: 'Qwen extended refresh也失败',
+  TOKEN_RECREATION_FAILED: 'Qwen token自动recreate流程失败',
+} as const;
+
 // 统一错误消息导出
 export const ERROR_MESSAGES = {
   ...GENERAL_ERRORS,
@@ -140,10 +174,12 @@ export const ERROR_MESSAGES = {
   ...MODEL_ERRORS,
   ...PIPELINE_ERRORS,
   ...ROUTING_ERRORS,
+  ...ZERO_FALLBACK_ERRORS,
   ...SERVER_ERRORS,
   ...DEBUG_ERRORS,
   ...VALIDATION_ERRORS,
   ...SECURITY_ERRORS,
+  ...QWEN_AUTH_ERRORS,
 } as const;
 
 // 错误消息类型定义
@@ -159,3 +195,5 @@ export type ServerError = typeof SERVER_ERRORS[keyof typeof SERVER_ERRORS];
 export type DebugError = typeof DEBUG_ERRORS[keyof typeof DEBUG_ERRORS];
 export type ValidationError = typeof VALIDATION_ERRORS[keyof typeof VALIDATION_ERRORS];
 export type SecurityError = typeof SECURITY_ERRORS[keyof typeof SECURITY_ERRORS];
+export type QwenAuthError = typeof QWEN_AUTH_ERRORS[keyof typeof QWEN_AUTH_ERRORS];
+export type ZeroFallbackError = typeof ZERO_FALLBACK_ERRORS[keyof typeof ZERO_FALLBACK_ERRORS];

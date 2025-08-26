@@ -13,6 +13,7 @@ import { secureLogger } from '../utils/secure-logger';
 import { MergedConfig } from '../config/config-reader';
 import { ExpandedRouting, ExpandedProvider } from '../config/provider-expander';
 import { PipelineError } from '../types/error';
+import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
 import { 
   DEFAULT_ENDPOINTS,
   DEFAULT_TIMEOUTS,
@@ -21,6 +22,25 @@ import {
   COMPATIBILITY_TAGS
 } from '../constants/compatibility-constants';
 import { TIMEOUT_DEFAULTS } from '../constants/timeout-defaults';
+import {
+  TRANSFORMER_TYPES,
+  PROTOCOL_TYPES,
+  SERVER_COMPATIBILITY_TYPES,
+  SERVER_TYPES,
+  PROVIDER_COMPATIBILITY_MAPPING,
+  PROVIDER_TRANSFORMER_MAPPING,
+  PIPELINE_LAYERS,
+  PIPELINE_ERRORS,
+  PIPELINE_ERROR_MESSAGES,
+  COMPONENT_DEFAULTS
+} from '../constants/pipeline-constants';
+import {
+  FixedPipelineExecutor,
+  PrebuiltComponents,
+  ComponentInstance,
+  ComponentDefinition,
+  RequestContext
+} from '../interfaces/pipeline/pipeline-framework';
 
 export interface RoutingTable {
   configName: string;
@@ -88,6 +108,13 @@ export class PipelineTableManager {
 
   constructor(config: MergedConfig) {
     this.config = config;
+  }
+
+  /**
+   * 获取缓存的路由表（不触发重新生成）
+   */
+  getCachedRoutingTable(): RoutingTable | null {
+    return this.cachedTable;
   }
 
   /**
@@ -161,9 +188,10 @@ export class PipelineTableManager {
           allPipelines.push(...pipelines);
         }
       } else {
-        // 回退到传统的provider配置
-        secureLogger.info('使用传统Provider配置生成流水线');
+        // 使用router配置驱动的流水线生成
+        secureLogger.info('使用Router配置驱动生成流水线');
         const providers = this.config.providers || [];
+        const routerConfig = this.config.router || {};
         
         if (providers.length === 0) {
           throw new PipelineError('No providers configured in user configuration', {
@@ -172,19 +200,19 @@ export class PipelineTableManager {
           });
         }
 
-        for (const provider of providers) {
-          const providerPipelines = await this.generatePipelinesForProvider(provider);
-          allPipelines.push(...providerPipelines);
+        // 遍历每个路由类别，按配置生成流水线
+        for (const [routeCategory, routeRule] of Object.entries(routerConfig)) {
+          if (typeof routeRule === 'string' && !routeCategory.startsWith('//')) {
+            const categoryPipelines = await this.generatePipelinesForRouteCategory(
+              routeCategory, 
+              routeRule, 
+              providers
+            );
+            
+            allPipelines.push(...categoryPipelines);
+            pipelinesGroupedByCategory[routeCategory] = categoryPipelines;
+          }
         }
-      }
-
-      // 按类别分组流水线
-      for (const pipeline of allPipelines) {
-        const category = pipeline.category;
-        if (!pipelinesGroupedByCategory[category]) {
-          pipelinesGroupedByCategory[category] = [];
-        }
-        pipelinesGroupedByCategory[category].push(pipeline);
       }
 
       // 按优先级排序每个类别的流水线
@@ -376,40 +404,192 @@ export class PipelineTableManager {
   }
 
   /**
-   * 为单个provider生成流水线定义
+   * 为单个路由类别生成流水线 - 以路由配置为驱动
+   */
+  private async generatePipelinesForRouteCategory(
+    routeCategory: string,
+    routeRule: string,
+    providers: any[]
+  ): Promise<PipelineDefinition[]> {
+    const pipelines: PipelineDefinition[] = [];
+    
+    secureLogger.debug('为路由类别生成流水线', {
+      routeCategory,
+      routeRule,
+      providersCount: providers.length
+    });
+
+    // 解析路由规则：如 "qwen,qwen3-coder-plus;shuaihong,glm-4.5"
+    const routes = routeRule.split(';').map(r => r.trim());
+    
+    for (const route of routes) {
+      if (route.includes(',')) {
+        const [providerName, modelName] = route.split(',').map(s => s.trim());
+        
+        // 找到对应的provider
+        const provider = providers.find(p => p.name === providerName);
+        if (!provider) {
+          secureLogger.warn('路由配置中的Provider不存在', {
+            routeCategory,
+            providerName,
+            modelName
+          });
+          continue;
+        }
+
+        // 为这个provider+model组合生成流水线
+        const apiKeys = provider.api_keys || [provider.api_key || 'default-key'];
+        
+        for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+          const apiKey = apiKeys[keyIndex];
+          
+          const pipeline = await this.createPipelineDefinition(
+            provider,
+            modelName,
+            keyIndex,
+            apiKey,
+            routeCategory
+          );
+          
+          pipelines.push(pipeline);
+          
+          secureLogger.debug('创建路由类别流水线', {
+            routeCategory,
+            provider: providerName,
+            model: modelName,
+            keyIndex,
+            pipelineId: pipeline.pipelineId
+          });
+        }
+      }
+    }
+
+    secureLogger.info(`路由类别 ${routeCategory} 生成了 ${pipelines.length} 个流水线`);
+    return pipelines;
+  }
+
+  /**
+   * 为单个provider生成流水线定义 - 简化策略：一模型一流水线
    */
   private async generatePipelinesForProvider(provider: any): Promise<PipelineDefinition[]> {
     const pipelines: PipelineDefinition[] = [];
     const models = provider.models || ['default-model'];
     const apiKeys = provider.api_keys || [provider.api_key || 'default-key'];
 
-    secureLogger.debug('为Provider生成流水线', {
+    secureLogger.debug('为Provider生成流水线 - 简化策略', {
       providerName: provider.name,
       modelCount: models.length,
       apiKeyCount: apiKeys.length,
       endpoint: provider.api_base_url,
     });
 
-    // 为每个模型和API密钥组合生成流水线
+    // 简化策略：为每个模型-key组合生成一个流水线，使用第一个匹配的路由
     for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
       const model = models[modelIndex];
+      const modelName = typeof model === 'string' ? model : model.name;
       
       for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
         const apiKey = apiKeys[keyIndex];
         
+        // 找到匹配的路由并选择第一个（优先级最高的）
+        const matchingRoutes = this.findMatchingRoutes(provider.name, modelName);
+        const selectedRoute = this.selectPrimaryRoute(matchingRoutes);
+        
         const pipeline = await this.createPipelineDefinition(
           provider,
-          model,
+          modelName,
           keyIndex,
-          apiKey
+          apiKey,
+          selectedRoute
         );
         
         pipelines.push(pipeline);
+        
+        secureLogger.debug('创建简化流水线', {
+          provider: provider.name,
+          model: modelName,
+          keyIndex,
+          selectedRoute,
+          matchingRoutes,
+          pipelineId: pipeline.pipelineId
+        });
       }
     }
 
-    secureLogger.debug(`Provider ${provider.name} 生成了 ${pipelines.length} 个流水线`);
+    secureLogger.info(`Provider ${provider.name} 生成了 ${pipelines.length} 个流水线 (简化策略)`);
     return pipelines;
+  }
+
+  /**
+   * 找到匹配的路由类别
+   */
+  private findMatchingRoutes(providerName: string, targetModel: string): string[] {
+    const matchingRoutes: string[] = [];
+    
+    if (this.config.router) {
+      for (const [routeName, routingRule] of Object.entries(this.config.router)) {
+        if (typeof routingRule === 'string') {
+          // 跳过注释行
+          if (routeName.startsWith('//')) {
+            continue;
+          }
+          
+          // 处理多provider路由规则 (用分号分隔)
+          const routes = routingRule.split(';').map(r => r.trim());
+          for (const route of routes) {
+            if (route.includes(',')) {
+              const [configProvider, configModel] = route.split(',').map(s => s.trim());
+              if (configProvider === providerName && configModel === targetModel) {
+                matchingRoutes.push(routeName);
+                break; // 找到匹配后就跳出内层循环
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    return matchingRoutes;
+  }
+
+  /**
+   * 选择主要路由（使用优先级策略，default是最低优先级）
+   */
+  private selectPrimaryRoute(matchingRoutes: string[]): string {
+    if (matchingRoutes.length === 0) {
+      // 零Fallback策略: 不允许静默返回default
+      throw ZeroFallbackErrorFactory.createRoutingRuleNotFound(
+        'unknown',
+        'route-selection', 
+        'No matching routes found for selection',
+        { matchingRoutesCount: 0 }
+      );
+    }
+    
+    // 定义路由优先级（数字越小优先级越高）
+    const routePriority: Record<string, number> = {
+      'imageProcessing': 1,  // 图片处理最高优先级（专用性强）
+      'reasoning': 2,        // 推理任务第二优先级
+      'longContext': 3,      // 长文本处理第三优先级
+      'webSearch': 4,        // 网络搜索第四优先级
+      'coding': 5,           // 编程任务第五优先级
+      'default': 999         // default最低优先级
+    };
+    
+    // 按优先级排序，选择优先级最高的路由
+    const sortedRoutes = matchingRoutes.sort((a, b) => {
+      const priorityA = routePriority[a] || 100;
+      const priorityB = routePriority[b] || 100;
+      return priorityA - priorityB;
+    });
+    
+    secureLogger.debug('路由优先级选择', {
+      matchingRoutes,
+      sortedRoutes,
+      selectedRoute: sortedRoutes[0]
+    });
+    
+    return sortedRoutes[0];
   }
 
   /**
@@ -419,14 +599,15 @@ export class PipelineTableManager {
     provider: any,
     targetModel: string,
     apiKeyIndex: number,
-    apiKey: string
+    apiKey: string,
+    routeName?: string
   ): Promise<PipelineDefinition> {
     try {
-      // 生成流水线ID
-      const pipelineId = `${provider.name}-${targetModel}-key${apiKeyIndex}`;
+      // 生成流水线ID - 包含路由类别以避免ID冲突
+      const pipelineId = `${routeName || 'default'}-${provider.name}-${targetModel}-key${apiKeyIndex}`;
       
-      // 确定路由名称
-      const routeName = this.determineRouteName(provider, targetModel);
+      // 使用传入的路由名称，如果没有则使用default
+      const finalRouteName = routeName || 'default';
       
       // 生成架构配置
       const architecture = this.createPipelineArchitecture(provider, targetModel);
@@ -436,7 +617,7 @@ export class PipelineTableManager {
       
       const pipeline: PipelineDefinition = {
         pipelineId,
-        virtualModel: routeName,
+        virtualModel: finalRouteName,
         provider: provider.name,
         targetModel,
         apiKeyIndex,
@@ -444,7 +625,7 @@ export class PipelineTableManager {
         endpoint: provider.api_base_url || this.getDefaultEndpointForProvider(provider.name),
         priority: (provider.priority || 1) * 100 + apiKeyIndex,
         isSecurityEnhanced: false,
-        category: routeName,
+        category: finalRouteName,
         status: 'runtime-legacy',
         createdAt: new Date().toISOString(),
         handshakeTime,
@@ -453,7 +634,7 @@ export class PipelineTableManager {
 
       secureLogger.debug('创建传统流水线定义', {
         pipelineId,
-        routeName,
+        routeName: finalRouteName,
         provider: provider.name,
         targetModel,
         priority: pipeline.priority,
@@ -483,10 +664,29 @@ export class PipelineTableManager {
     // 如果有MergedConfig的router配置，使用它
     if (this.config.router) {
       for (const [routeName, routingRule] of Object.entries(this.config.router)) {
-        if (typeof routingRule === 'string' && routingRule.includes(',')) {
-          const [configProvider, configModel] = routingRule.split(',');
-          if (configProvider.trim() === provider.name && configModel.trim() === targetModel) {
-            return routeName;
+        if (typeof routingRule === 'string') {
+          // 跳过注释行
+          if (routeName.startsWith('//')) {
+            continue;
+          }
+          
+          // 处理多provider路由规则 (用分号分隔)
+          const routes = routingRule.split(';').map(r => r.trim());
+          for (const route of routes) {
+            if (route.includes(',')) {
+              const [configProvider, configModel] = route.split(',').map(s => s.trim());
+              if (configProvider === provider.name && configModel === targetModel) {
+                secureLogger.debug('找到匹配的路由规则', {
+                  routeName,
+                  provider: provider.name,
+                  targetModel,
+                  configProvider,
+                  configModel,
+                  originalRule: routingRule
+                });
+                return routeName;
+              }
+            }
           }
         }
       }
@@ -499,7 +699,18 @@ export class PipelineTableManager {
     
     // 🔧 最终回退：使用default而不是provider名称
     // 这与RouteMapper的默认行为一致
-    return 'default';
+    secureLogger.debug('使用默认路由名称', {
+      provider: provider.name,
+      targetModel,
+      reason: 'no matching router rule found'
+    });
+    // 零Fallback策略: 不允许静默返回default
+    throw ZeroFallbackErrorFactory.createRoutingRuleNotFound(
+      targetModel,
+      'virtual-model-mapping',
+      'No matching router rule found for target model',
+      { targetModel }
+    );
   }
 
   /**
@@ -634,6 +845,112 @@ export class PipelineTableManager {
   setCacheValidity(ms: number): void {
     this.cacheValidityMs = ms;
     secureLogger.debug('流水线路由表缓存有效期已更新', { validityMs: ms });
+  }
+
+  // ========================================
+  // 🔧 新增：固定管道架构支持方法
+  // ========================================
+
+  /**
+   * 为Pipeline定义创建组件实例
+   */
+  async createComponentInstances(definition: PipelineDefinition): Promise<PrebuiltComponents> {
+    const transformerInstance = await this.createTransformerComponent(definition.architecture.transformer, definition);
+    const protocolInstance = await this.createProtocolComponent(definition.architecture.protocol, definition);
+    const serverCompatibilityInstance = await this.createServerCompatibilityComponent(definition.architecture.serverCompatibility, definition);
+    const serverInstance = await this.createServerComponent(definition.architecture.server, definition);
+
+    return {
+      transformer: transformerInstance,
+      protocol: protocolInstance,
+      serverCompatibility: serverCompatibilityInstance,
+      server: serverInstance,
+    };
+  }
+
+  /**
+   * 创建Transformer组件实例
+   */
+  private async createTransformerComponent(componentDef: any, pipelineDef: PipelineDefinition): Promise<ComponentInstance> {
+    const transformerType = PROVIDER_TRANSFORMER_MAPPING[pipelineDef.provider] || TRANSFORMER_TYPES.PASSTHROUGH;
+    
+    return {
+      id: componentDef.id,
+      type: transformerType,
+      config: { provider: pipelineDef.provider, model: pipelineDef.targetModel, transformationType: transformerType },
+      process: async (data: any) => {
+        if (transformerType === TRANSFORMER_TYPES.ANTHROPIC_TO_OPENAI) {
+          const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
+          const transformer = new SecureAnthropicToOpenAITransformer();
+          await transformer.start();
+          return transformer.process(data);
+        }
+        return data;
+      },
+    };
+  }
+
+  /**
+   * 创建Protocol组件实例
+   */
+  private async createProtocolComponent(componentDef: any, pipelineDef: PipelineDefinition): Promise<ComponentInstance> {
+    return {
+      id: componentDef.id,
+      type: PROTOCOL_TYPES.OPENAI,
+      config: { provider: pipelineDef.provider, model: pipelineDef.targetModel, endpoint: pipelineDef.endpoint, apiKey: pipelineDef.apiKey },
+      process: async (data: any) => ({ ...data, model: pipelineDef.targetModel }),
+    };
+  }
+
+  /**
+   * 创建ServerCompatibility组件实例
+   */
+  private async createServerCompatibilityComponent(componentDef: any, pipelineDef: PipelineDefinition): Promise<ComponentInstance> {
+    const compatibilityType = PROVIDER_COMPATIBILITY_MAPPING[pipelineDef.provider] || SERVER_COMPATIBILITY_TYPES.PASSTHROUGH;
+    
+    return {
+      id: componentDef.id,
+      type: compatibilityType,
+      config: { provider: pipelineDef.provider, compatibilityType, endpoint: pipelineDef.endpoint },
+      process: async (data: any) => data, // Provider-specific adjustments
+    };
+  }
+
+  /**
+   * 创建Server组件实例
+   */
+  private async createServerComponent(componentDef: any, pipelineDef: PipelineDefinition): Promise<ComponentInstance> {
+    return {
+      id: componentDef.id,
+      type: SERVER_TYPES.HTTP,
+      config: { endpoint: pipelineDef.endpoint, apiKey: pipelineDef.apiKey, timeout: COMPONENT_DEFAULTS.SERVER_TIMEOUT, maxRetries: COMPONENT_DEFAULTS.SERVER_MAX_RETRIES },
+      process: async (data: any) => { const msg = PIPELINE_ERROR_MESSAGES.SERVER_HTTP_NOT_IMPLEMENTED; throw new PipelineError(msg, { pipelineId: pipelineDef.pipelineId }); },
+    };
+  }
+
+  /**
+   * 生成固定管道执行器集合
+   */
+  async generateExecutablePipelines(routingTable: RoutingTable): Promise<FixedPipelineExecutor[]> {
+    const executors: FixedPipelineExecutor[] = [];
+    
+    for (const pipelineDefinition of routingTable.allPipelines) {
+      const components = await this.createComponentInstances(pipelineDefinition);
+      
+      const executor: FixedPipelineExecutor = {
+        pipelineId: pipelineDefinition.pipelineId,
+        definition: pipelineDefinition,
+        components,
+        execute: async (request: any, context: RequestContext): Promise<any> => {
+          const msg = PIPELINE_ERROR_MESSAGES.FIXED_PIPELINE_NOT_IMPLEMENTED;
+          throw new PipelineError(msg, { pipelineId: pipelineDefinition.pipelineId });
+        },
+      };
+      
+      executors.push(executor);
+    }
+    
+    return executors;
   }
 
   /**

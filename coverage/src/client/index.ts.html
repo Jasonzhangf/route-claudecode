@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">16.85% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>15/89</span>
+                <span class='fraction'>0/90</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.11% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>13/86</span>
+                <span class='fraction'>0/87</span>
             </div>
         
             
@@ -351,7 +351,8 @@
 <a name='L286'></a><a href='#L286'>286</a>
 <a name='L287'></a><a href='#L287'>287</a>
 <a name='L288'></a><a href='#L288'>288</a>
-<a name='L289'></a><a href='#L289'>289</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L289'></a><a href='#L289'>289</a>
+<a name='L290'></a><a href='#L290'>290</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -360,18 +361,19 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -402,7 +404,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -602,14 +604,14 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -636,9 +638,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * 客户端模块入口文件
  *
@@ -648,18 +650,19 @@
  */
 &nbsp;
 // 导出客户端功能
-export * from './session';
-export * from './http';
-export * from './client-manager';
+<span class="cstat-no" title="statement not covered" >export * from './session';</span>
+<span class="cstat-no" title="statement not covered" >export * from './http';</span>
+<span class="cstat-no" title="statement not covered" >export * from './client-manager';</span>
 &nbsp;
 // 模块版本信息
-export const CLIENT_MODULE_VERSION = '4.0.0-alpha.2';
+export const <span class="cstat-no" title="statement not covered" >CLIENT_MODULE_VERSION = '4.0.0-alpha.2';</span>
 &nbsp;
 // 导入核心类
-import { ClientSession, SessionManager, SessionError } from './session';
-import { HttpClient, StreamProcessor, HttpError } from './http';
-import { ClientProxy, EnvironmentExporter } from './client-manager';
-import { ErrorHandler, RCCError } from '../interfaces/client/error-handler';
+<span class="cstat-no" title="statement not covered" >import { ClientSession, SessionManager, S</span>essionError } from './session';
+<span class="cstat-no" title="statement not covered" >import { HttpClient, StreamProcessor, H</span>ttpError } from './http';
+<span class="cstat-no" title="statement not covered" >import { ClientProxy, EnvironmentExporter } from './client-manager';</span>
+<span class="cstat-no" title="statement not covered" >import { ErrorHandler, RCCError } from '../interfaces/client/error-handler';</span>
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../utils/jq-json-handler';</span>
 &nbsp;
 /**
  * 客户端模块接口
@@ -690,7 +693,7 @@ export interface ClientModuleConfig {
 /**
  * 客户端模块主类
  */
-export class ClientModule {
+<span class="cstat-no" title="statement not covered" >export class C</span>lientModule {
   public readonly <span class="cstat-no" title="statement not covered" >version = CLIENT_MODULE_VERSION;</span>
 &nbsp;
   private sessionManager: SessionManager;
@@ -750,7 +753,7 @@ export class ClientModule {
     });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    this.proxy.on('started', <span class="fstat-no" title="function not covered" >data </span>=&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      console.log(`🔌 Proxy started: ${JSON.stringify(data.config)}`);</span>
+<span class="cstat-no" title="statement not covered" >      console.log(`🔌 Proxy started: ${JQJsonHandler.stringifyJson(data.config)}`);</span>
     });
 &nbsp;
 <span class="cstat-no" title="statement not covered" >    this.proxy.on('error', <span class="fstat-no" title="function not covered" >error </span>=&gt; {</span>
@@ -890,14 +893,14 @@ export class ClientModule {
 /**
  * 客户端工厂函数
  */
-export function <span class="fstat-no" title="function not covered" >createClientModule(</span>config: ClientModuleConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> errorHandler: ErrorHandler): ClientModule {
+<span class="cstat-no" title="statement not covered" >export function <span class="fstat-no" title="function not covered" >c</span>reateClientModule(</span>config: ClientModuleConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{},</span> errorHandler: ErrorHandler): ClientModule {
 <span class="cstat-no" title="statement not covered" >  return new ClientModule(config, errorHandler);</span>
 }
 &nbsp;
 /**
  * 快速创建客户端实例的工厂函数
  */
-export async function <span class="fstat-no" title="function not covered" >createClient(</span>config: ClientModuleConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span>: Promise&lt;ClientModule&gt; {
+<span class="cstat-no" title="statement not covered" >export a</span>sync function <span class="fstat-no" title="function not covered" >createClient(</span>config: ClientModuleConfig = <span class="branch-0 cbranch-no" title="branch not covered" >{})</span>: Promise&lt;ClientModule&gt; {
   // 创建默认错误处理器
   const defaultErrorHandler: ErrorHandler = <span class="cstat-no" title="statement not covered" >{</span>
     handleError: <span class="fstat-no" title="function not covered" >(e</span>rror, context) =&gt; {
@@ -924,9 +927,9 @@ export async function <span class="fstat-no" title="function not covered" >creat
 }
 &nbsp;
 // 导出错误类型 - 避免重复导出
-export { <span class="fstat-no" title="function not covered" >SessionError,</span> <span class="fstat-no" title="function not covered" >HttpError </span>};
+export { <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >SessionError,</span> <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >HttpError </span>};</span></span>
 // 导出CLI错误类
-export { <span class="fstat-no" title="function not covered" >CLIError </span>} from '../types/error';
+<span class="cstat-no" title="statement not covered" >export { <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >C</span>LIError </span>} from '../types/error';</span>
 &nbsp;</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -934,7 +937,7 @@ export { <span class="fstat-no" title="function not covered" >CLIError </span>} 
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.341Z
+                at 2025-08-26T08:25:39.343Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

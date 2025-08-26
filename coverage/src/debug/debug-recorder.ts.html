@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">4.76% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>9/189</span>
+                <span class='fraction'>0/190</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>9/180</span>
+                <span class='fraction'>0/181</span>
             </div>
         
             
@@ -644,7 +644,8 @@
 <a name='L579'></a><a href='#L579'>579</a>
 <a name='L580'></a><a href='#L580'>580</a>
 <a name='L581'></a><a href='#L581'>581</a>
-<a name='L582'></a><a href='#L582'>582</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L582'></a><a href='#L582'>582</a>
+<a name='L583'></a><a href='#L583'>583</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -652,26 +653,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -698,7 +690,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -708,7 +710,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1233,16 +1235,17 @@
  * @author Jason Zhang
  */
 &nbsp;
-import { EventEmitter } from 'events';
+<span class="cstat-no" title="statement not covered" >import { EventEmitter } from 'events';</span>
 import { DebugRecord, DebugSession, ModuleRecord, DebugConfig } from './types/debug-types';
 import { RCCError } from '../types/error';
 import { Pipeline } from '../pipeline/types';
-import { DebugFilter, DebugFilterImpl } from './debug-filter';
-import { DebugSerializer, DebugSerializerImpl } from './debug-serializer';
-import { DebugStorage, DebugStorageImpl } from './debug-storage';
-import { DebugAnalyzer, DebugAnalyzerImpl, AnalysisReport } from './debug-analyzer';
-import { DebugCollector, DebugCollectorImpl, DebugEvent } from './debug-collector';
-import { JQJsonHandler } from '../utils/jq-json-handler';
+<span class="cstat-no" title="statement not covered" >import { DebugFilter, DebugFilterImpl } from './debug-filter';</span>
+<span class="cstat-no" title="statement not covered" >import { DebugSerializer, DebugSerializerImpl } from './debug-serializer';</span>
+<span class="cstat-no" title="statement not covered" >import { DebugStorage, DebugStorageImpl } from './debug-storage';</span>
+<span class="cstat-no" title="statement not covered" >import { getServerPort } from '../constants/server-defaults';</span>
+<span class="cstat-no" title="statement not covered" >import { DebugAnalyzer, DebugAnalyzerImpl, AnalysisReport } from './debug-analyzer';</span>
+<span class="cstat-no" title="statement not covered" >import { DebugCollector, DebugCollectorImpl, DebugEvent } from './debug-collector';</span>
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../utils/jq-json-handler';</span>
 &nbsp;
 /**
  * Debug记录器接口
@@ -1279,7 +1282,7 @@ export interface RecordSearchCriteria {
 /**
  * 记录错误类
  */
-export class RecordError extends Error {
+<span class="cstat-no" title="statement not covered" >export class R</span>ecordError extends Error {
 <span class="fstat-no" title="function not covered" >  constructor(r</span>ecordId: string, message: string) {
 <span class="cstat-no" title="statement not covered" >    super(`Record operation failed for ${recordId}: ${message}`);</span>
 <span class="cstat-no" title="statement not covered" >    this.name = 'RecordError';</span>
@@ -1289,7 +1292,7 @@ export class RecordError extends Error {
 /**
  * Debug记录器实现
  */
-export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
+<span class="cstat-no" title="statement not covered" >export class D</span>ebugRecorderImpl extends EventEmitter implements DebugRecorder {
   private config: DebugConfig;
   private <span class="cstat-no" title="statement not covered" >activeSessions: Map&lt;string, DebugSession&gt; = new Map();</span>
   private <span class="cstat-no" title="statement not covered" >pendingRecords: Map&lt;string, Partial&lt;DebugRecord&gt;&gt; = new Map();</span>
@@ -1725,8 +1728,8 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
       requestId,
       timestamp: now,
       readableTime: this.formatReadableTime(now),
-      port: data.port || 3120,
-      sessionId: this.findCurrentSessionId(data.port || 3120),
+      port: data.port || getServerPort(),
+      sessionId: this.findCurrentSessionId(data.port || getServerPort()),
       request: {
         method: data.method || 'POST',
         url: data.url || '/v1/chat/completions',
@@ -1813,7 +1816,7 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.341Z
+                at 2025-08-26T08:25:39.343Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

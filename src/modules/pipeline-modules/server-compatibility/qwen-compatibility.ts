@@ -12,6 +12,8 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import { QWEN_AUTH_ERRORS } from '../../../constants/error-messages';
+import { API_DEFAULTS } from '../../../constants/api-defaults';
 export interface QwenAuthConfig {
   access_token: string;
   refresh_token: string;
@@ -267,12 +269,15 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
             });
           }
         } catch (error) {
-          secureLogger.error('Qwen工具格式转换失败', {
+          secureLogger.error(QWEN_AUTH_ERRORS.TOOLS_FORMAT_CONVERSION_FAILED, {
             requestId: context.requestId,
             error: error.message,
-            toolsCount: processedRequest.tools.length
+            toolsCount: processedRequest.tools?.length || 0,
+            toolsType: typeof processedRequest.tools
           });
-          throw new Error(`Qwen工具格式转换失败: ${error.message}`);
+          
+          // 🚨 不静默处理：重新抛出错误让客户端知道具体问题
+          throw error;
         }
       }
 
@@ -423,7 +428,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
     
     try {
       const fileContent = await fs.readFile(authFilePath, 'utf-8');
-      const authConfig: QwenAuthConfig = JSON.parse(fileContent);
+      const authConfig: QwenAuthConfig = JQJsonHandler.parseJsonString(fileContent);
 
       // 检查是否需要刷新token
       if (Date.now() > authConfig.expires_at - 30000) {
@@ -453,20 +458,20 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
   }
 
   /**
-   * 刷新OAuth2 token
+   * 刷新OAuth2 token（支持refresh失败后自动recreate）
    */
   private async refreshAuthConfig(authConfig: QwenAuthConfig): Promise<QwenAuthConfig> {
     try {
-      const response = await fetch('https://chat.qwen.ai/api/v1/oauth2/token', {
+      const response = await fetch(API_DEFAULTS.QWEN_OAUTH.TOKEN_URL, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': 'RCC4-Qwen-Client/1.0'
+          'User-Agent': API_DEFAULTS.QWEN_OAUTH.USER_AGENT
         },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
           refresh_token: authConfig.refresh_token,
-          client_id: 'f0304373b74a44d2b584a3fb70ca9e56'
+          client_id: API_DEFAULTS.QWEN_OAUTH.CLIENT_ID
         })
       });
 
@@ -564,72 +569,119 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
    * 检查是否为Anthropic工具格式
    */
   private isAnthropicToolsFormat(tools: any[]): boolean {
-    return tools.every(tool => 
-      tool &&
-      typeof tool.name === 'string' &&
-      typeof tool.description === 'string' &&
-      tool.input_schema &&
-      typeof tool.input_schema === 'object' &&
-      !tool.type && // OpenAI格式会有type: 'function'
-      !tool.function // OpenAI格式会有function字段
-    );
+    // 🔧 修复: 防止undefined导致的every调用错误
+    if (!tools || !Array.isArray(tools) || tools.length === 0) {
+      return false;
+    }
+    
+    try {
+      return tools.every(tool => 
+        tool &&
+        typeof tool.name === 'string' &&
+        typeof tool.description === 'string' &&
+        tool.input_schema &&
+        typeof tool.input_schema === 'object' &&
+        !tool.type && // OpenAI格式会有type: 'function'
+        !tool.function // OpenAI格式会有function字段
+      );
+    } catch (error) {
+      secureLogger.warn('Anthropic工具格式检查失败', {
+        error: error.message,
+        toolsLength: tools?.length,
+        toolsType: typeof tools
+      });
+      return false;
+    }
   }
 
   /**
    * 检查是否为OpenAI工具格式
    */
   private isOpenAIToolsFormat(tools: any[]): boolean {
-    return tools.every(tool =>
-      tool &&
-      tool.type === 'function' &&
-      tool.function &&
-      typeof tool.function.name === 'string' &&
-      typeof tool.function.description === 'string' &&
-      tool.function.parameters &&
-      typeof tool.function.parameters === 'object'
-    );
+    // 🔧 修复: 防止undefined导致的every调用错误
+    if (!tools || !Array.isArray(tools) || tools.length === 0) {
+      return false;
+    }
+    
+    try {
+      return tools.every(tool =>
+        tool &&
+        tool.type === 'function' &&
+        tool.function &&
+        typeof tool.function.name === 'string' &&
+        typeof tool.function.description === 'string' &&
+        tool.function.parameters &&
+        typeof tool.function.parameters === 'object'
+      );
+    } catch (error) {
+      secureLogger.warn('OpenAI工具格式检查失败', {
+        error: error.message,
+        toolsLength: tools?.length,
+        toolsType: typeof tools
+      });
+      return false;
+    }
   }
 
   /**
    * 转换Anthropic工具格式为OpenAI格式
    */
   private convertAnthropicToOpenAI(tools: any[]): any[] {
+    // 🔧 修复: 防止undefined导致的转换错误
+    if (!tools || !Array.isArray(tools)) {
+      secureLogger.warn('Qwen Anthropic转换: 输入工具数组无效', {
+        toolsType: typeof tools,
+        toolsValue: tools
+      });
+      return [];
+    }
+
     const convertedTools: any[] = [];
 
-    for (const [index, tool] of tools.entries()) {
-      try {
-        if (!this.isValidAnthropicTool(tool)) {
-          throw new Error(`工具${index}不符合Anthropic格式: ${tool?.name || 'unknown'}`);
-        }
-
-        const openaiTool = {
-          type: 'function',
-          function: {
-            name: tool.name,
-            description: tool.description || '',
-            parameters: {
-              type: tool.input_schema.type || 'object',
-              properties: tool.input_schema.properties || {},
-              required: tool.input_schema.required || []
-            }
+    try {
+      for (const [index, tool] of tools.entries()) {
+        try {
+          if (!this.isValidAnthropicTool(tool)) {
+            secureLogger.warn(`工具${index}不符合Anthropic格式，跳过: ${tool?.name || 'unknown'}`);
+            continue; // 跳过无效工具，而不是抛出错误
           }
-        };
 
-        convertedTools.push(openaiTool);
-        
-        secureLogger.debug('✅ Qwen工具转换成功', {
-          toolName: tool.name,
-          index
-        });
+          const openaiTool = {
+            type: 'function',
+            function: {
+              name: tool.name,
+              description: tool.description || '',
+              parameters: {
+                type: tool.input_schema?.type || 'object',
+                properties: tool.input_schema?.properties || {},
+                required: tool.input_schema?.required || []
+              }
+            }
+          };
 
-      } catch (error) {
-        secureLogger.error('Qwen单个工具转换失败', {
-          error: error.message,
-          toolIndex: index,
-          toolName: tool?.name
-        });
-        throw new Error(`工具转换失败(${index}): ${error.message}`);
+          convertedTools.push(openaiTool);
+          
+          secureLogger.debug('✅ Qwen工具转换成功', {
+            toolName: tool.name,
+            index
+          });
+
+        } catch (error) {
+          secureLogger.error('Qwen单个工具转换失败，跳过该工具', {
+            error: error.message,
+            toolIndex: index,
+            toolName: tool?.name
+          });
+          // 继续处理下一个工具，而不是抛出错误中断整个转换
+          continue;
+        }
       }
+    } catch (error) {
+      secureLogger.error('Qwen Anthropic工具转换过程失败', {
+        error: error.message,
+        toolsLength: tools?.length,
+        convertedCount: convertedTools.length
+      });
     }
 
     return convertedTools;
@@ -639,29 +691,48 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
    * 修复不完整的OpenAI格式工具
    */
   private fixIncompleteOpenAIFormat(tools: any[]): any[] {
-    return tools.map((tool: any, index: number) => {
-      if (tool && typeof tool === 'object') {
-        // 确保工具对象格式正确
-        const fixedTool = {
-          type: tool.type || 'function',
-          function: tool.function || {}
-        };
-        
-        // 确保function有必需字段
-        if (!fixedTool.function.name) {
-          fixedTool.function.name = tool.name || `tool_${index}`;
+    // 🔧 修复: 防止undefined导致的filter错误
+    if (!tools || !Array.isArray(tools)) {
+      secureLogger.warn(QWEN_AUTH_ERRORS.TOOLS_ARRAY_INVALID, {
+        toolsType: typeof tools,
+        toolsValue: tools
+      });
+      return [];
+    }
+
+    try {
+      return tools.map((tool: any, index: number) => {
+        if (tool && typeof tool === 'object') {
+          // 确保工具对象格式正确
+          const fixedTool = {
+            type: tool.type || 'function',
+            function: tool.function || {}
+          };
+          
+          // 确保function有必需字段
+          if (!fixedTool.function.name) {
+            fixedTool.function.name = tool.name || `tool_${index}`;
+          }
+          if (!fixedTool.function.description) {
+            fixedTool.function.description = tool.description || '';
+          }
+          if (!fixedTool.function.parameters) {
+            fixedTool.function.parameters = tool.parameters || tool.input_schema || {};
+          }
+          
+          return fixedTool;
         }
-        if (!fixedTool.function.description) {
-          fixedTool.function.description = tool.description || '';
-        }
-        if (!fixedTool.function.parameters) {
-          fixedTool.function.parameters = tool.parameters || tool.input_schema || {};
-        }
-        
-        return fixedTool;
-      }
-      return tool;
-    }).filter(tool => tool !== null && tool !== undefined);
+        return tool;
+      }).filter(tool => tool !== null && tool !== undefined);
+    } catch (error) {
+      secureLogger.error('Qwen工具格式修复失败', {
+        error: error.message,
+        toolsLength: tools?.length,
+        toolsType: typeof tools
+      });
+      // 返回空数组，避免整个请求失败
+      return [];
+    }
   }
 
   /**

@@ -11,6 +11,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { secureLogger } from '../utils/secure-logger';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
 import { PipelineTableData, PipelineTableEntry } from '../pipeline/pipeline-manager';
 import { RoutingTable, PipelineRoute } from './pipeline-router';
 import { ROUTING_TABLE_DEFAULTS } from '../constants/router-defaults';
@@ -94,8 +95,18 @@ export class PipelineTableLoader {
       return pipelineTableFiles;
 
     } catch (error) {
-      secureLogger.error('❌ Failed to list pipeline tables:', { error: error.message });
-      return [];
+      secureLogger.error('❌ Failed to list pipeline tables - Zero Fallback Policy:', {
+        error: error.message,
+        zeroFallbackPolicy: true
+      });
+      
+      // 零Fallback策略: 不允许静默返回空数组
+      throw ZeroFallbackErrorFactory.createConfigurationError(
+        'system',
+        'pipeline-table-listing',
+        `Failed to list pipeline tables: ${error.message}`,
+        { operation: 'listPipelineTables' }
+      );
     }
   }
 

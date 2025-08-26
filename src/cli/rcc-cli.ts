@@ -1059,6 +1059,9 @@ export class RCCCli implements CLICommands {
           res.on('end', () => resolve(undefined));
         });
 
+        // 设置最大监听器数量，防止内存泄漏警告
+        req.setMaxListeners(20);
+
         req.on('error', (err) => {
           // 如果HTTP请求失败，继续其他停止方法
           resolve(undefined);

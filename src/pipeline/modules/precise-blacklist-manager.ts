@@ -520,7 +520,7 @@ export class PrecisePipelineBlacklistManager {
   private async loadPersistenceData(): Promise<void> {
     try {
       const data = await fs.readFile(this.config.persistenceFile, 'utf8');
-      const parsed = JSON.parse(data);
+      const parsed = JQJsonHandler.parseJsonString(data);
 
       // 加载429计数器
       if (parsed.rateLimitCounters) {

@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.25% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>6/266</span>
+                <span class='fraction'>0/267</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.26% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>6/265</span>
+                <span class='fraction'>0/266</span>
             </div>
         
             
@@ -1105,7 +1105,8 @@
 <a name='L1040'></a><a href='#L1040'>1040</a>
 <a name='L1041'></a><a href='#L1041'>1041</a>
 <a name='L1042'></a><a href='#L1042'>1042</a>
-<a name='L1043'></a><a href='#L1043'>1043</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1043'></a><a href='#L1043'>1043</a>
+<a name='L1044'></a><a href='#L1044'>1044</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1119,7 +1120,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1134,10 +1135,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1245,7 +1247,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2161,7 +2163,7 @@
  * @author RCC v4.0
  */
 &nbsp;
-import { EventEmitter } from 'events';
+<span class="cstat-no" title="statement not covered" >import { EventEmitter } from 'events';</span>
 import { 
   PipelineFramework, 
   PipelineConfig, 
@@ -2176,10 +2178,11 @@ import { ModuleInterface, ModuleType, ModuleStatus, PipelineSpec } from '../inte
 import { StandardPipeline } from './standard-pipeline';
 import { Pipeline, PipelineStatus } from '../interfaces/module/pipeline-module';
 import { RoutingTable, PipelineRoute } from '../interfaces/router/request-router';
-import { secureLogger } from '../utils/secure-logger';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+<span class="cstat-no" title="statement not covered" >import { secureLogger } from '../utils/secure-logger';</span>
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../utils/jq-json-handler';</span>
+<span class="cstat-no" title="statement not covered" >import * as fs from 'fs';</span>
+<span class="cstat-no" title="statement not covered" >import * as path from 'path';</span>
+<span class="cstat-no" title="statement not covered" >import * as os from 'os';</span>
 &nbsp;
 /**
  * 完整流水线定义 (RCC v4.0)
@@ -2287,7 +2290,7 @@ export interface PipelineTableEntry {
 /**
  * Pipeline管理器
  */
-export class PipelineManager extends EventEmitter {
+<span class="cstat-no" title="statement not covered" >export class P</span>ipelineManager extends EventEmitter {
   private <span class="cstat-no" title="statement not covered" >pipelines: Map&lt;string, CompletePipeline&gt; = new Map();</span>
   private <span class="cstat-no" title="statement not covered" >activeExecutions: Map&lt;string, ExecutionRecord&gt; = new Map();</span>
   private factory: StandardPipelineFactory;
@@ -2990,7 +2993,7 @@ export class PipelineManager extends EventEmitter {
     const filePath = <span class="cstat-no" title="statement not covered" >path.join(generatedDir, fileName);</span>
     
     // 写入文件
-<span class="cstat-no" title="statement not covered" >    fs.writeFileSync(filePath, JSON.stringify(pipelineTableData, null, 2), 'utf8');</span>
+<span class="cstat-no" title="statement not covered" >    fs.writeFileSync(filePath, JQJsonHandler.stringifyJson(pipelineTableData, false), 'utf8');</span>
     
 <span class="cstat-no" title="statement not covered" >    secureLogger.info('📋 Pipeline table saved', {</span>
       file: filePath,
@@ -3141,7 +3144,7 @@ export class PipelineManager extends EventEmitter {
     const filePath = <span class="cstat-no" title="statement not covered" >path.join(debugLogsDir, fileName);</span>
     
     // 写入文件
-<span class="cstat-no" title="statement not covered" >    fs.writeFileSync(filePath, JSON.stringify(debugPipelineTableData, null, 2), 'utf8');</span>
+<span class="cstat-no" title="statement not covered" >    fs.writeFileSync(filePath, JQJsonHandler.stringifyJson(debugPipelineTableData, false), 'utf8');</span>
     
 <span class="cstat-no" title="statement not covered" >    secureLogger.info('🐛 Debug pipeline table saved', {</span>
       file: filePath,
@@ -3196,7 +3199,7 @@ export class PipelineManager extends EventEmitter {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-25T07:28:12.122Z
+                at 2025-08-26T08:25:39.116Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

@@ -243,7 +243,7 @@ export class MonitoringDashboard {
    */
   private handleApiMetrics(req: any, res: any, query: any): void {
     const metricName = query.metric;
-    const timeRange = query.range ? JSON.parse(query.range) : undefined;
+    const timeRange = query.range ? JQJsonHandler.parseJsonString(query.range) : undefined;
     const format = query.format || 'json';
 
     if (metricName) {
@@ -305,7 +305,7 @@ export class MonitoringDashboard {
 
     req.on('end', () => {
       try {
-        const data = JSON.parse(body);
+        const data = JQJsonHandler.parseJsonString(body);
         const { action, alertId, duration } = data;
 
         switch (action) {

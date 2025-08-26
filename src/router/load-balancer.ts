@@ -14,6 +14,7 @@
 
 import { EventEmitter } from 'events';
 import { PipelineManager } from '../pipeline/pipeline-manager';
+import { PipelineTableManager, RoutingTable } from '../pipeline/pipeline-table-manager';
 import { secureLogger } from '../utils/secure-logger';
 
 /**
@@ -73,6 +74,7 @@ export const DEFAULT_LOAD_BALANCER_CONFIG: LoadBalancerConfig = {
  */
 export class LoadBalancer extends EventEmitter {
   private pipelineManager: PipelineManager;
+  private pipelineTableManager?: PipelineTableManager;
   private config: LoadBalancerConfig;
   
   // 轮询计数器
@@ -86,12 +88,17 @@ export class LoadBalancer extends EventEmitter {
   private requestCounts = new Map<string, number>();
   private errorCounts = new Map<string, number>();
   
+  // 流水线黑名单管理
+  private blacklistedPipelines = new Set<string>();
+  private temporarilyBlockedPipelines = new Map<string, number>(); // pipelineId -> blockUntilTimestamp
+  
   // 健康检查定时器
   private healthCheckTimer?: NodeJS.Timeout;
 
-  constructor(pipelineManager: PipelineManager, config: LoadBalancerConfig = DEFAULT_LOAD_BALANCER_CONFIG) {
+  constructor(pipelineManager: PipelineManager, config: LoadBalancerConfig = DEFAULT_LOAD_BALANCER_CONFIG, pipelineTableManager?: PipelineTableManager) {
     super();
     this.pipelineManager = pipelineManager;
+    this.pipelineTableManager = pipelineTableManager;
     this.config = { ...DEFAULT_LOAD_BALANCER_CONFIG, ...config };
     
     this.initializeLoadBalancer();
@@ -164,6 +171,82 @@ export class LoadBalancer extends EventEmitter {
     this.recordSelection(selectedPipeline, availablePipelines);
 
     return selectedPipeline;
+  }
+
+  /**
+   * 从Category级别的流水线池中选择流水线
+   * 这是解决流水线切换问题的关键方法
+   */
+  selectPipelineFromCategory(virtualModel: string, excludePipelines: string[] = []): string {
+    if (!this.pipelineTableManager) {
+      throw new Error('PipelineTableManager not available - cannot access category pipeline pool');
+    }
+
+    // 获取当前category的完整流水线池
+    const routingTable = this.pipelineTableManager.getCachedRoutingTable();
+    if (!routingTable || !routingTable.pipelinesGroupedByVirtualModel[virtualModel]) {
+      throw new Error(`No pipelines available for virtual model: ${virtualModel}`);
+    }
+
+    // 获取该category的所有流水线ID
+    const categoryPipelines = routingTable.pipelinesGroupedByVirtualModel[virtualModel]
+      .map((pipeline: any) => pipeline.pipelineId);
+
+    // 过滤出健康的可用流水线（排除黑名单、临时阻塞和指定排除的）
+    const healthyPipelines = categoryPipelines.filter((pipelineId: string) => {
+      if (excludePipelines.includes(pipelineId)) return false;
+      if (this.blacklistedPipelines.has(pipelineId)) return false;
+      if (this.isTemporarilyBlocked(pipelineId)) return false;
+      return this.isPipelineHealthy(pipelineId);
+    });
+
+    if (healthyPipelines.length === 0) {
+      // 如果没有健康流水线，尝试解除一些临时阻塞的流水线
+      this.cleanExpiredBlocks();
+      
+      const recheckedPipelines = categoryPipelines.filter((pipelineId: string) => {
+        if (excludePipelines.includes(pipelineId)) return false;
+        if (this.blacklistedPipelines.has(pipelineId)) return false;
+        if (this.isTemporarilyBlocked(pipelineId)) return false;
+        return true; // 不再检查健康状态，给机会重试
+      });
+      
+      if (recheckedPipelines.length === 0) {
+        throw new Error(`No available pipelines in category ${virtualModel} after filtering blacklist and exclusions`);
+      }
+      
+      secureLogger.warn('🔄 Using potentially unhealthy pipelines due to no healthy alternatives', {
+        virtualModel,
+        availablePipelines: recheckedPipelines,
+        blacklistedCount: this.blacklistedPipelines.size,
+        temporarilyBlockedCount: this.temporarilyBlockedPipelines.size
+      });
+      
+      return this.selectFromPipelines(recheckedPipelines);
+    }
+
+    secureLogger.info('⚖️  Category-level load balancing', {
+      virtualModel,
+      totalInCategory: categoryPipelines.length,
+      healthyAvailable: healthyPipelines.length,
+      excludedCount: excludePipelines.length,
+      blacklistedCount: this.blacklistedPipelines.size,
+      strategy: this.config.strategy
+    });
+
+    return this.selectFromPipelines(healthyPipelines);
+  }
+
+  /**
+   * 从指定的流水线列表中选择一个
+   */
+  private selectFromPipelines(pipelines: string[]): string {
+    if (pipelines.length === 1) {
+      return pipelines[0];
+    }
+
+    // 使用配置的负载均衡策略
+    return this.selectPipeline(pipelines);
   }
 
   /**
@@ -292,6 +375,85 @@ export class LoadBalancer extends EventEmitter {
     // 基于错误率判断健康状态
     const errorRate = weight.totalRequests > 0 ? weight.errorCount / weight.totalRequests : 0;
     return errorRate < this.config.errorRateThreshold;
+  }
+
+  /**
+   * 检查流水线是否被临时阻塞
+   */
+  private isTemporarilyBlocked(pipelineId: string): boolean {
+    const blockUntil = this.temporarilyBlockedPipelines.get(pipelineId);
+    if (!blockUntil) return false;
+    
+    if (Date.now() >= blockUntil) {
+      // 阻塞时间已过，自动恢复
+      this.temporarilyBlockedPipelines.delete(pipelineId);
+      secureLogger.info('🔄 Pipeline automatically recovered from temporary block', {
+        pipelineId,
+        blockedUntil: new Date(blockUntil).toISOString()
+      });
+      return false;
+    }
+    
+    return true;
+  }
+
+  /**
+   * 清理过期的临时阻塞
+   */
+  private cleanExpiredBlocks(): void {
+    const now = Date.now();
+    const expiredBlocks: string[] = [];
+    
+    for (const [pipelineId, blockUntil] of this.temporarilyBlockedPipelines) {
+      if (now >= blockUntil) {
+        expiredBlocks.push(pipelineId);
+      }
+    }
+    
+    for (const pipelineId of expiredBlocks) {
+      this.temporarilyBlockedPipelines.delete(pipelineId);
+      secureLogger.info('🔄 Cleaned expired pipeline block', { pipelineId });
+    }
+  }
+
+  /**
+   * 标记流水线为临时阻塞
+   */
+  public temporarilyBlockPipeline(pipelineId: string, durationMs: number = 30000): void {
+    const blockUntil = Date.now() + durationMs;
+    this.temporarilyBlockedPipelines.set(pipelineId, blockUntil);
+    
+    secureLogger.warn('⏸️ Pipeline temporarily blocked', {
+      pipelineId,
+      duration: durationMs,
+      blockUntil: new Date(blockUntil).toISOString(),
+      reason: 'Load balancer health management'
+    });
+  }
+
+  /**
+   * 将流水线加入黑名单
+   */
+  public blacklistPipeline(pipelineId: string, reason: string): void {
+    this.blacklistedPipelines.add(pipelineId);
+    
+    secureLogger.error('🚫 Pipeline blacklisted', {
+      pipelineId,
+      reason,
+      totalBlacklisted: this.blacklistedPipelines.size
+    });
+  }
+
+  /**
+   * 从黑名单中移除流水线
+   */
+  public unblacklistPipeline(pipelineId: string): void {
+    if (this.blacklistedPipelines.delete(pipelineId)) {
+      secureLogger.info('✅ Pipeline removed from blacklist', {
+        pipelineId,
+        remainingBlacklisted: this.blacklistedPipelines.size
+      });
+    }
   }
 
   /**

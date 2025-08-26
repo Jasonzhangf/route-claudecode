@@ -14,7 +14,7 @@ export * from '../interfaces/core/router-interface';
 export { PipelineRouter } from './pipeline-router';
 export { LoadBalancer, DEFAULT_LOAD_BALANCER_CONFIG } from './load-balancer';
 export { SimpleRouter } from './simple-router';
-export { VirtualModelMappingRule, VirtualModelType, VIRTUAL_MODEL_MAPPING_RULES } from './virtual-model-mapping';
+export { VirtualModelMappingRule, VirtualModelType } from './virtual-model-mapping';
 export * from './session-control';
 import { PipelineRouter } from './pipeline-router';
 import { LoadBalancer } from './load-balancer';
@@ -28,7 +28,7 @@ export declare class RouterModuleFactory {
     /**
      * 创建完整的路由系统
      */
-    static createRoutingSystem(pipelineManager: any, routingTable: any, config?: any): {
+    static createRoutingSystem(pipelineManager: any, routingTable: any, config?: any, pipelineTableManager?: any): {
         pipelineRouter: PipelineRouter;
         loadBalancer: LoadBalancer;
     };

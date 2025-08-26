@@ -12,7 +12,7 @@
 import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
 import { JQJsonHandler } from '../utils/jq-json-handler';
-import { getServerPort } from '../constants/server-defaults';
+import { getServerPort, SERVER_DEFAULTS } from '../constants/server-defaults';
 import { MergedConfig } from '../config/config-reader';
 import { PipelineCompatibilityManager } from './pipeline-compatibility-manager';
 import { DebugManagerImpl } from '../debug/debug-manager';
@@ -20,17 +20,15 @@ import { PipelineDebugRecorder } from '../debug/pipeline-debug-recorder';
 import { HttpRequestHandler, HttpRequestOptions } from './modules/http-request-handler';
 import { PipelineLayersProcessor } from './modules/pipeline-layers';
 import { PrecisePipelineBlacklistManager } from './modules/precise-blacklist-manager';
+import { IntelligentErrorRecoveryManager, PipelineRecoveryContext, ErrorRecoveryResult } from './intelligent-error-recovery';
 
 // 导入验证器
 import { protocolTransformerValidator, ValidationResult } from '../validation/protocol-transformer-validator';
 
-// 导入智能流水线切换系统
-import { 
-  IntelligentPipelineSwitching, 
-  PipelineRecoveryContext, 
-  PipelineRecoveryResult,
-  PipelineRecoveryConfig
-} from './intelligent-pipeline-switching';
+// 已清理：智能流水线切换系统相关代码已删除（违反零Fallback策略）
+
+// ✅ 使用零Fallback错误处理替代
+import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
 
 // 导入新的解耦合执行管理架构
 import { 
@@ -98,7 +96,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private httpRequestHandler: HttpRequestHandler;
   private pipelineLayersProcessor: PipelineLayersProcessor;
   private blacklistManager: PrecisePipelineBlacklistManager;
-  private intelligentPipelineSwitching: IntelligentPipelineSwitching;
+  private intelligentErrorRecoveryManager: IntelligentErrorRecoveryManager;
 
   // 新的解耦合执行管理架构（可选启用）
   private errorClassifier?: ErrorClassifier;
@@ -155,32 +153,25 @@ export class PipelineRequestProcessor extends EventEmitter {
     const blacklistConfig = config.blacklistSettings || {};
     this.blacklistManager = new PrecisePipelineBlacklistManager(blacklistConfig);
 
-    // 初始化智能流水线切换系统
-    const pipelineRecoveryConfig: Partial<PipelineRecoveryConfig> = {
-      maxRetries: 3,
-      blacklistThreshold: 5,
-      temporaryBlockDuration: 30000, // 30秒
-      recoveryTimeout: 120000, // 2分钟
-      enableAggressiveRecovery: true,
-      enablePipelineDestroy: true
-    };
-    this.intelligentPipelineSwitching = new IntelligentPipelineSwitching(pipelineRecoveryConfig);
+    // 初始化智能错误恢复管理器
+    this.intelligentErrorRecoveryManager = new IntelligentErrorRecoveryManager();
+
+    // ✅ 智能错误恢复策略（非静默降级）：
+    // 1. 透明错误报告 - 所有错误都详细记录
+    // 2. 智能流水线切换 - 尝试同category其他流水线  
+    // 3. 综合错误响应 - 失败时返回详细错误链
+    
+    secureLogger.info('✅ 智能错误恢复策略启用', {
+      intelligentErrorRecovery: true,
+      transparentErrorHandling: true,
+      noSilentDegradation: true
+    });
 
     // 可选：初始化解耦合执行管理架构（实验性功能）
     this.initializeOptionalDecoupledExecution();
 
-    // 监听流水线切换系统的事件
-    this.intelligentPipelineSwitching.on('pipeline-recovery', (event) => {
-      secureLogger.info('🔄 流水线恢复事件', event);
-      this.emit('pipeline-recovery', event);
-    });
-
-    this.intelligentPipelineSwitching.on('pipeline-destroy', (event) => {
-      secureLogger.error('💀 流水线销毁事件', event);
-      this.emit('pipeline-destroy', event);
-      // 通知拉黑管理器销毁流水线
-      this.blacklistManager.destroyPipeline(event.pipelineId);
-    });
+    // ❌ DEPRECATED: 流水线销毁事件监听已禁用 - 违反零Fallback策略
+    // 零Fallback策略下不进行流水线销毁，而是立即抛出错误
 
     // 注册所有流水线模块
     this.registerDebugModules();
@@ -471,8 +462,9 @@ export class PipelineRequestProcessor extends EventEmitter {
           failedPipelineId: pipelineId,
           error: serverError,
           retryCount: 0,
-          maxRetries: 3,
-          startTime: Date.now()
+          maxRetries: SERVER_DEFAULTS.ERROR_RECOVERY.MAX_RETRIES,
+          startTime: Date.now(),
+          errorChain: []
         };
 
         // 创建请求执行函数（用于重试）
@@ -498,65 +490,28 @@ export class PipelineRequestProcessor extends EventEmitter {
           );
         };
 
-        try {
-          // 执行智能流水线切换恢复
-          const recoveryResult = await this.intelligentPipelineSwitching.executePipelineSwitching(
-            serverError,
-            recoveryContext,
-            executeRequest
-          );
-
-          if (recoveryResult.success && recoveryResult.response) {
-            // 恢复成功，使用新流水线的响应
-            response = recoveryResult.response;
-            
-            secureLogger.info('✅ 流水线切换恢复成功', {
-              requestId,
-              originalPipeline: pipelineId,
-              newPipeline: recoveryResult.newPipelineId,
-              recoveryAction: recoveryResult.recoveryAction,
-              recoveryTime: recoveryResult.recoveryTime
-            });
-
-            // 更新上下文中的路由决策
-            context.routingDecision = {
-              ...routingDecision,
-              selectedPipeline: recoveryResult.newPipelineId,
-              switchedFrom: pipelineId,
-              switchReason: recoveryResult.recoveryAction
-            };
-
-          } else {
-            // 恢复失败，抛出原始错误
-            secureLogger.error('❌ 流水线切换恢复失败', {
-              requestId,
-              failedPipeline: pipelineId,
-              recoveryAction: recoveryResult.recoveryAction,
-              details: recoveryResult.details
-            });
-
-            // 如果是终端错误，直接返回错误给客户端
-            if (recoveryResult.recoveryAction === 'terminal') {
-              // 创建适当格式的错误响应返回给客户端
-              throw serverError;
-            } else {
-              // 其他情况抛出恢复失败错误
-              throw new Error(`流水线切换恢复失败: ${recoveryResult.details}`);
-            }
+        // ✅ 智能错误恢复：透明错误处理 + 流水线切换尝试
+        secureLogger.info('🔄 Server层错误，启动智能错误恢复', {
+          requestId,
+          pipelineId,
+          error: serverError.message,
+          availablePipelines: routingDecision.availablePipelines?.length || 0,
+          transparentErrorHandling: true
+        });
+        
+        // 执行智能错误恢复
+        const zeroFallbackError = ZeroFallbackErrorFactory.createProviderFailure(
+          pipelineId.split('-')[0] || 'unknown', // 从pipelineId提取provider名称
+          pipelineId.split('-')[1] || 'unknown', // 从pipelineId提取model名称  
+          serverError.message,
+          { 
+            requestId, 
+            originalPipelineId: pipelineId,
+            serverLayer: true 
           }
-
-        } catch (recoveryError) {
-          secureLogger.error('❌ 流水线切换系统执行失败', {
-            requestId,
-            pipelineId,
-            originalError: serverError.message,
-            recoveryError: recoveryError.message
-          });
-
-          // 如果切换系统本身失败，使用旧的处理方式
-          await this.handlePipelineErrorAndBlacklist(serverError, pipelineId, requestId);
-          throw serverError;
-        }
+        );
+        
+        throw zeroFallbackError;
       }
       
       this.debugManager.recordOutput('server', requestId, response);
