@@ -7,7 +7,7 @@
 set -e
 
 # 脚本配置 - 直接修改以下变量来自定义测试参数
-DEFAULT_PORT="5510"
+DEFAULT_PORT="5506"
 DEFAULT_API_KEY="rcc4-proxy-key"
 DEFAULT_CONFIG="/Users/fanzhang/.route-claudecode/config/multi-provider-hybrid-v4.json"
 TEST_COMMAND="列出本目录中所有文件夹"

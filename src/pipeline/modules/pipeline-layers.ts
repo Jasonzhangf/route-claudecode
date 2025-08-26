@@ -32,7 +32,8 @@ export interface RequestContext {
 export class PipelineLayersProcessor {
   private config: MergedConfig;
   private httpRequestHandler: HttpRequestHandler;
-  private roundRobinCounters = new Map<string, number>();
+  // 🔧 修复：使用静态计数器确保跨请求持久化
+  private static roundRobinCounters = new Map<string, number>();
 
   constructor(config: MergedConfig, httpRequestHandler: HttpRequestHandler) {
     this.config = config;
@@ -81,6 +82,20 @@ export class PipelineLayersProcessor {
         `Selected pipeline ${selectedPipeline} from ${availablePipelines.length} available pipelines for ${mappedModel}` :
         `No pipelines available for ${mappedModel}`
     };
+    
+    // 🔧 关键调试信息：longContext路由决策追踪
+    if (mappedModel === 'longContext') {
+      secureLogger.info('🔥 LongContext路由决策完成', {
+        requestId: context.requestId,
+        originalModel: input.model,
+        virtualModel: mappedModel,
+        availablePipelines,
+        selectedPipeline,
+        routerConfigEntry: (this.config as any).router?.[mappedModel],
+        expectedProviders: ['shuaihong', 'qwen'],
+        actualProviderInPipeline: selectedPipeline ? this.extractProviderFromPipelineId(selectedPipeline) : 'none'
+      });
+    }
 
     context.transformations.push({
       layer: 'router',
@@ -178,9 +193,25 @@ export class PipelineLayersProcessor {
     const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
     let providerInfo = this.config.systemConfig.providerTypes[providerType];
     
+    // 🔧 关键调试：端点解析追踪
+    secureLogger.info('🔍 端点解析调试', {
+      requestId: context.requestId,
+      selectedPipelineId,
+      providerType,
+      hasSystemProviderInfo: !!providerInfo,
+      systemProviderInfoEndpoint: providerInfo?.endpoint
+    });
+    
     if (!providerInfo) {
       const providers = this.config.providers || [];
       const matchingProvider = providers.find(p => p.name === providerType);
+      
+      secureLogger.info('🔧 创建动态provider配置', {
+        requestId: context.requestId,
+        providerType,
+        matchingProviderName: matchingProvider?.name,
+        matchingProviderUrl: matchingProvider?.api_base_url
+      });
       
       if (matchingProvider?.api_base_url) {
         providerInfo = {
@@ -197,6 +228,17 @@ export class PipelineLayersProcessor {
     const matchingProvider = providers.find(p => p.name === providerType);
     
     const endpoint = matchingProvider?.api_base_url || providerInfo?.endpoint;
+    
+    // 🔧 关键调试：最终端点解析结果
+    secureLogger.info('🔥 端点解析结果', {
+      requestId: context.requestId,
+      selectedPipelineId,
+      providerType,
+      finalEndpoint: endpoint,
+      matchingProviderUrl: matchingProvider?.api_base_url,
+      providerInfoEndpoint: providerInfo?.endpoint,
+      resolutionPath: matchingProvider?.api_base_url ? 'user-config' : 'system-config'
+    });
     let apiKey = matchingProvider?.api_key;
     if (Array.isArray(apiKey)) {
       apiKey = apiKey[0];
@@ -293,6 +335,21 @@ export class PipelineLayersProcessor {
 
     const serializedBody = JQJsonHandler.stringifyJson(requestBody);
     
+    // 🔧 检测大型请求并调整超时配置
+    const bodySize = Buffer.from(serializedBody, 'utf8').length;
+    const isLongTextRequest = bodySize > 10 * 1024; // 10KB阈值
+    const adjustedTimeout = isLongTextRequest ? 600000 : timeout; // 大型请求10分钟超时
+    
+    if (isLongTextRequest) {
+      secureLogger.info('检测到大型请求，启用长文本处理模式', {
+        requestId: context.requestId,
+        bodySize,
+        originalTimeout: timeout,
+        adjustedTimeout,
+        endpoint: fullEndpoint
+      });
+    }
+    
     const headers = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
@@ -306,7 +363,7 @@ export class PipelineLayersProcessor {
       headers,
       body: serializedBody,
       bodyBuffer: Buffer.from(serializedBody, 'utf8'),
-      timeout,
+      timeout: adjustedTimeout, // 🔧 使用调整后的超时时间
     };
 
     const response = await this.httpRequestHandler.makeHttpRequest(fullEndpoint, httpOptions);
@@ -380,18 +437,25 @@ export class PipelineLayersProcessor {
     // 按流水线列表排序后轮询，确保一致性
     const sortedPipelines = availablePipelines.sort();
     const routeKey = sortedPipelines.join(',');
-    const currentIndex = this.roundRobinCounters.get(routeKey) || 0;
-    const selectedPipeline = sortedPipelines[currentIndex % sortedPipelines.length];
+    const currentIndex = PipelineLayersProcessor.roundRobinCounters.get(routeKey) || 0;
+    const selectedIndex = currentIndex % sortedPipelines.length;
+    const selectedPipeline = sortedPipelines[selectedIndex];
 
-    // 更新计数器
-    this.roundRobinCounters.set(routeKey, currentIndex + 1);
+    // 🔧 修复：确保计数器正确递增
+    const nextIndex = currentIndex + 1;
+    PipelineLayersProcessor.roundRobinCounters.set(routeKey, nextIndex);
 
-    secureLogger.debug('Round Robin selection', {
+    // 🔧 关键调试：使用info级别确保显示Round Robin状态
+    secureLogger.info('🔄 Round Robin负载均衡选择', {
       routeKey,
       currentIndex,
+      selectedIndex,
       selectedPipeline,
       totalPipelines: sortedPipelines.length,
-      position: `${currentIndex % sortedPipelines.length + 1}/${sortedPipelines.length}`
+      position: `${selectedIndex + 1}/${sortedPipelines.length}`,
+      nextIndex,
+      allCounters: Array.from(PipelineLayersProcessor.roundRobinCounters.entries()),
+      sortedPipelines
     });
 
     return selectedPipeline;
@@ -400,11 +464,23 @@ export class PipelineLayersProcessor {
   private getAvailablePipelinesForMappedModel(mappedModel: string): string[] {
     const routerConfig = (this.config as any).router;
     
+    secureLogger.debug('🔍 Pipeline routing debug', {
+      mappedModel,
+      routerConfigKeys: routerConfig ? Object.keys(routerConfig) : 'none',
+      routerConfigForModel: routerConfig ? routerConfig[mappedModel] : 'not found'
+    });
+    
     if (routerConfig && routerConfig[mappedModel]) {
       const routeEntry = routerConfig[mappedModel];
       // 🔧 修复：解析所有路由选项，支持跨provider切换
       const allRoutes = routeEntry.split(';').map((route: string) => route.trim());
       const availablePipelines: string[] = [];
+      
+      secureLogger.info('🔧 解析路由配置', {
+        mappedModel,
+        routeEntry,
+        allRoutes
+      });
       
       for (const route of allRoutes) {
         const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
@@ -412,8 +488,27 @@ export class PipelineLayersProcessor {
         if (providerName && modelName) {
           const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
           availablePipelines.push(pipelineId);
+          
+          secureLogger.debug('🔧 生成pipeline ID', {
+            route,
+            providerName,
+            modelName,
+            pipelineId
+          });
+        } else {
+          secureLogger.warn('🚨 路由解析失败', {
+            route,
+            providerName,
+            modelName
+          });
         }
       }
+      
+      secureLogger.info('🔧 Pipeline生成完成', {
+        mappedModel,
+        generatedPipelines: availablePipelines,
+        totalCount: availablePipelines.length
+      });
       
       if (availablePipelines.length > 0) {
         return availablePipelines;

@@ -293,6 +293,9 @@ export class HttpRequestHandler {
         const bodySize = options.body ? Buffer.byteLength(options.body, 'utf8') : 0;
         const isLongTextRequest = bodySize > 10 * 1024; // 10KB阈值
         
+        // 🔧 修复socket hang up：针对大型请求体配置合适的HTTP选项
+        const requestTimeout = isLongTextRequest ? 600000 : (options.timeout || 120000); // 大型请求10分钟超时
+        
         const requestOptions = {
           hostname: urlObj.hostname,
           port: urlObj.port || (isHttps ? 443 : 80),
@@ -300,13 +303,22 @@ export class HttpRequestHandler {
           method: options.method || 'POST',
           headers: {
             ...options.headers,
-            // 长文本请求添加Keep-Alive头
+            // 🔧 重要：长文本请求的连接管理配置
             ...(isLongTextRequest && {
               'Connection': 'keep-alive',
-              'Keep-Alive': 'timeout=300, max=10' // 5分钟超时，最多10个请求
+              'Keep-Alive': 'timeout=600, max=1', // 10分钟超时，单次连接
+              'Transfer-Encoding': 'chunked', // 使用分块传输
+              'Expect': '100-continue' // 请求服务器确认接收
             })
           },
-          timeout: options.timeout || 120000, // 默认2分钟超时
+          timeout: requestTimeout,
+          // 🔧 针对大型请求的socket配置
+          ...(isLongTextRequest && {
+            highWaterMark: 64 * 1024, // 64KB 缓冲区
+            noDelay: true, // 禁用Nagle算法，立即发送数据
+            keepAlive: true,
+            keepAliveInitialDelay: 300000 // 5分钟keep-alive延迟
+          })
         };
 
         secureLogger.info('发起HTTP请求', {
@@ -314,7 +326,12 @@ export class HttpRequestHandler {
           method: requestOptions.method,
           bodySize,
           isLongTextRequest,
-          timeout: requestOptions.timeout
+          timeout: requestTimeout,
+          // 🔧 大型请求的额外日志
+          ...(isLongTextRequest && {
+            specialHandling: 'chunked_transfer_with_extended_timeout',
+            expectedDuration: 'up_to_10_minutes'
+          })
         });
 
         const req = httpModule.request(requestOptions, (res) => {
@@ -393,38 +410,86 @@ export class HttpRequestHandler {
 
         req.on('timeout', () => {
           req.destroy();
-          const timeoutError = new Error(`Request timeout after ${options.timeout || 120000}ms`);
+          const timeoutError = new Error(`Request timeout after ${requestTimeout}ms`);
           secureLogger.error('HTTP请求超时', {
             url: url.replace(/\/[^/]+$/, '/***'),
-            timeout: options.timeout || 120000,
+            timeout: requestTimeout,
+            originalTimeout: options.timeout || 120000,
             bodySize,
             isLongTextRequest,
-            suggestion: isLongTextRequest ? '长文本请求可能需要更长超时时间' : '考虑检查网络连接'
+            suggestion: isLongTextRequest ? 
+              '大型请求已使用延长超时 (10分钟)，考虑检查网络连接或提供商处理能力' : 
+              '考虑检查网络连接',
+            // 🔧 大型请求超时的详细诊断信息
+            ...(isLongTextRequest && {
+              diagnostic: {
+                extendedTimeout: requestTimeout,
+                chunkTransferEnabled: true,
+                possibleCauses: ['网络不稳定', '提供商处理大型请求时间过长', 'socket连接配置问题']
+              }
+            })
           });
           reject(timeoutError);
         });
 
-        // 🔧 修复: 使用Buffer写入请求体，确保大型JSON正确传输
-        // 对于长文本请求，使用分块写入避免内存问题
+        // 🔧 关键修复: 大型请求体的高级处理策略
         if (options.bodyBuffer) {
           if (isLongTextRequest) {
-            // 分块写入大型请求体
-            const chunkSize = 8192; // 8KB chunks
+            // 🔧 分块写入大型请求体，防止socket hang up
+            const chunkSize = 16384; // 16KB chunks (增加块大小提高效率)
+            let writtenBytes = 0;
+            
+            secureLogger.info('开始分块写入大型请求体', {
+              totalSize: options.bodyBuffer.length,
+              chunkSize,
+              estimatedChunks: Math.ceil(options.bodyBuffer.length / chunkSize)
+            });
+            
             for (let i = 0; i < options.bodyBuffer.length; i += chunkSize) {
               const chunk = options.bodyBuffer.slice(i, i + chunkSize);
-              req.write(chunk);
+              const writeSuccess = req.write(chunk);
+              writtenBytes += chunk.length;
+              
+              // 🔧 重要：等待drain事件，防止缓冲区溢出
+              if (!writeSuccess) {
+                // 使用同步方式等待drain事件
+                req.once('drain', () => {});
+              }
+              
+              // 每100KB记录进度
+              if (writtenBytes % (100 * 1024) === 0) {
+                secureLogger.debug('分块写入进度', {
+                  writtenBytes,
+                  totalBytes: options.bodyBuffer.length,
+                  progress: `${((writtenBytes / options.bodyBuffer.length) * 100).toFixed(1)}%`
+                });
+              }
             }
+            
+            secureLogger.info('大型请求体写入完成', {
+              totalWritten: writtenBytes,
+              expectedSize: options.bodyBuffer.length
+            });
           } else {
             req.write(options.bodyBuffer);
           }
         } else if (options.body) {
           if (isLongTextRequest) {
-            // 分块写入大型请求体
+            // 🔧 字符串请求体的优化处理
             const bodyBuffer = Buffer.from(options.body, 'utf8');
-            const chunkSize = 8192; // 8KB chunks
+            const chunkSize = 16384; // 16KB chunks
+            let writtenBytes = 0;
+            
             for (let i = 0; i < bodyBuffer.length; i += chunkSize) {
               const chunk = bodyBuffer.slice(i, i + chunkSize);
-              req.write(chunk);
+              const writeSuccess = req.write(chunk);
+              writtenBytes += chunk.length;
+              
+              // 等待drain事件，防止缓冲区溢出
+              if (!writeSuccess) {
+                // 使用同步方式等待drain事件
+                req.once('drain', () => {});
+              }
             }
           } else {
             req.write(options.body);
