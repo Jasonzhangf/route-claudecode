@@ -35,6 +35,48 @@ export interface HttpResponse {
 export class HttpRequestHandler {
 
   /**
+   * 检查HTTP响应状态码并在需要时抛出错误
+   * 对于可恢复的错误（5xx、429）抛出异常以触发重试机制
+   */
+  public checkResponseStatusAndThrow(response: HttpResponse, context?: { requestId?: string; endpoint?: string }): void {
+    if (response.status >= 500) {
+      // 5xx错误通常是服务器端问题，应该抛出错误触发重试
+      const errorMessage = `Server error: ${response.status} Internal Server Error`;
+      secureLogger.error('Server error detected, throwing for retry', {
+        requestId: context?.requestId,
+        status: response.status,
+        endpoint: context?.endpoint,
+        responsePreview: response.body?.substring(0, 200)
+      });
+      throw new Error(errorMessage);
+    }
+    
+    if (response.status === 429) {
+      // 429错误是限流，应该抛出错误触发重试
+      const errorMessage = `Rate limit exceeded: ${response.status}`;
+      secureLogger.warn('Rate limit detected, throwing for retry', {
+        requestId: context?.requestId,
+        status: response.status,
+        endpoint: context?.endpoint,
+        responsePreview: response.body?.substring(0, 200)
+      });
+      throw new Error(errorMessage);
+    }
+    
+    if (response.status >= 400 && response.status < 500) {
+      // 4xx错误（除了429）通常是客户端问题，抛出错误但不重试
+      const errorMessage = `Client error: ${response.status} Bad Request`;
+      secureLogger.error('Client error detected', {
+        requestId: context?.requestId,
+        status: response.status,
+        endpoint: context?.endpoint,
+        responsePreview: response.body?.substring(0, 200)
+      });
+      throw new Error(errorMessage);
+    }
+  }
+
+  /**
    * 判断错误是否应该重试
    * API错误(4xx)和认证错误不重试，网络错误和服务器错误(5xx)可重试
    */

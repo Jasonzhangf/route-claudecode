@@ -32,6 +32,7 @@ export interface RequestContext {
 export class PipelineLayersProcessor {
   private config: MergedConfig;
   private httpRequestHandler: HttpRequestHandler;
+  private roundRobinCounters = new Map<string, number>();
 
   constructor(config: MergedConfig, httpRequestHandler: HttpRequestHandler) {
     this.config = config;
@@ -52,11 +53,33 @@ export class PipelineLayersProcessor {
     });
 
     const availablePipelines = this.getAvailablePipelinesForMappedModel(mappedModel);
+    
+    // 使用简单的Round Robin负载均衡选择具体的流水线
+    let selectedPipeline: string | undefined;
+    if (availablePipelines.length > 0) {
+      selectedPipeline = this.selectPipelineRoundRobin(availablePipelines);
+      secureLogger.info('Round-robin load balancer selected pipeline', {
+        requestId: context.requestId,
+        selectedPipeline,
+        availablePipelines,
+        totalAvailable: availablePipelines.length
+      });
+    } else {
+      selectedPipeline = undefined;
+      secureLogger.warn('No pipelines available for load balancing', {
+        requestId: context.requestId,
+        mappedModel
+      });
+    }
+
     const routingDecision = {
       originalModel: input.model,
       virtualModel: mappedModel,
       availablePipelines: availablePipelines,
-      reasoning: `Found ${availablePipelines.length} healthy pipelines for ${mappedModel}`
+      selectedPipeline: selectedPipeline,
+      reasoning: selectedPipeline ? 
+        `Selected pipeline ${selectedPipeline} from ${availablePipelines.length} available pipelines for ${mappedModel}` :
+        `No pipelines available for ${mappedModel}`
     };
 
     context.transformations.push({
@@ -73,8 +96,8 @@ export class PipelineLayersProcessor {
    * 处理Transformer层 - 协议转换
    */
   public async processTransformerLayer(input: any, routingDecision: any, context: RequestContext): Promise<any> {
-    const firstPipelineId = routingDecision.availablePipelines[0];
-    const providerType = this.extractProviderFromPipelineId(firstPipelineId);
+    const selectedPipelineId = routingDecision.selectedPipeline || routingDecision.availablePipelines[0];
+    const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
     const providers = this.config.providers || [];
     const matchingProvider = providers.find(p => p.name === providerType);
 
@@ -147,8 +170,8 @@ export class PipelineLayersProcessor {
    * 处理Protocol层 - 协议处理
    */
   public async processProtocolLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
-    const firstPipelineId = routingDecision.availablePipelines[0];
-    const providerType = this.extractProviderFromPipelineId(firstPipelineId);
+    const selectedPipelineId = routingDecision.selectedPipeline || routingDecision.availablePipelines[0];
+    const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
     let providerInfo = this.config.systemConfig.providerTypes[providerType];
     
     if (!providerInfo) {
@@ -249,7 +272,13 @@ export class PipelineLayersProcessor {
 
     const response = await this.httpRequestHandler.makeHttpRequest(fullEndpoint, httpOptions);
     
-    // 添加响应体调试信息和更好的错误处理
+    // 使用HttpRequestHandler统一的错误检查方法
+    this.httpRequestHandler.checkResponseStatusAndThrow(response, {
+      requestId: context.requestId,
+      endpoint: fullEndpoint
+    });
+    
+    // 状态码检查通过，尝试解析响应
     try {
       let responseData = JQJsonHandler.parseJsonString(response.body);
 
@@ -290,29 +319,43 @@ export class PipelineLayersProcessor {
         parseError: parseError.message
       });
 
-      // 尝试返回原始响应作为文本内容
-      return {
-        choices: [{
-          message: {
-            role: 'assistant',
-            content: `服务器返回了无效的JSON格式响应。状态码: ${response.status}, 响应长度: ${response.body?.length || 0}字节。\n\n原始响应预览:\n${response.body?.substring(0, 500) || '空响应'}`
-          },
-          finish_reason: 'stop'
-        }],
-        model: request.model,
-        usage: { prompt_tokens: 0, completion_tokens: 0 },
-        error: {
-          type: 'json_parse_error',
-          message: parseError.message,
-          response_preview: response.body?.substring(0, 100)
-        }
-      };
+      // JSON解析失败通常意味着服务器返回了无效响应，应该抛出错误以触发重试
+      const errorMessage = `Invalid JSON response from server. Status: ${response.status}, Parse Error: ${parseError.message}`;
+      throw new Error(errorMessage);
     }
   }
 
   private extractProviderFromPipelineId(pipelineId: string): string {
     const parts = pipelineId.split('-');
     return parts[0] || 'unknown';
+  }
+
+  /**
+   * Round Robin负载均衡选择流水线
+   */
+  private selectPipelineRoundRobin(availablePipelines: string[]): string {
+    if (availablePipelines.length === 1) {
+      return availablePipelines[0];
+    }
+
+    // 按流水线列表排序后轮询，确保一致性
+    const sortedPipelines = availablePipelines.sort();
+    const routeKey = sortedPipelines.join(',');
+    const currentIndex = this.roundRobinCounters.get(routeKey) || 0;
+    const selectedPipeline = sortedPipelines[currentIndex % sortedPipelines.length];
+
+    // 更新计数器
+    this.roundRobinCounters.set(routeKey, currentIndex + 1);
+
+    secureLogger.debug('Round Robin selection', {
+      routeKey,
+      currentIndex,
+      selectedPipeline,
+      totalPipelines: sortedPipelines.length,
+      position: `${currentIndex % sortedPipelines.length + 1}/${sortedPipelines.length}`
+    });
+
+    return selectedPipeline;
   }
 
   private getAvailablePipelinesForMappedModel(mappedModel: string): string[] {

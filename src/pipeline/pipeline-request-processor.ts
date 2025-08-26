@@ -866,33 +866,11 @@ export class PipelineRequestProcessor extends EventEmitter {
           responseSize: response.body?.length || 0,
         });
 
-        // 🔧 关键修复：检查HTTP状态码，502等错误状态不尝试JSON解析
-        // 根据用户反馈，502错误应该返回给客户端而不是导致管道失败
-        if (response.status >= 400) {
-          secureLogger.warn('HTTP错误状态码，创建错误响应返回客户端', {
-            requestId: context.requestId,
-            statusCode: response.status,
-            responseBodyPreview: response.body?.substring(0, 200) + '...',
-            responseSize: response.body?.length || 0,
-          });
-          
-          // 对于HTTP错误状态码，创建错误对象并返回给客户端
-          const httpError = new Error(`HTTP ${response.status}: ${response.body || 'Unknown error'}`);
-          (httpError as any).status = response.status;
-          (httpError as any).statusCode = response.status;
-          (httpError as any).response = { status: response.status, data: response.body };
-          
-          // 返回格式化的API错误响应，而不是抛出异常
-          const errorContext = {
-            provider: routingDecision?.providerId || 'unknown',
-            model: request?.model || 'unknown',
-            endpoint: context.metadata?.protocolConfig?.endpoint
-          };
-          const errorResponse = this.httpRequestHandler.createApiErrorResponse(httpError, response.status, context.requestId, errorContext);
-          // 标记这是一个错误响应，避免通过响应转换层
-          (errorResponse as any).__isErrorResponse = true;
-          return errorResponse;
-        }
+        // 使用统一的HTTP错误检查方法，对可恢复错误抛出异常以触发重试
+        this.httpRequestHandler.checkResponseStatusAndThrow(response, {
+          requestId: context.requestId,
+          endpoint: fullEndpoint
+        });
 
         // 解析响应 - 仅对成功状态码进行JSON解析，增强错误处理
         let responseData: any;
@@ -1025,30 +1003,45 @@ export class PipelineRequestProcessor extends EventEmitter {
           willRetry: !isLastAttempt,
         });
         
-        // 🔧 关键修复：HTTP错误状态码应该返回给客户端，而不是导致pipeline失败
-        // 根据用户反馈，502等服务器错误应该让客户端有机会重试
+        // HTTP错误现在由HttpRequestHandler.checkResponseStatusAndThrow统一处理
+        // 对于可重试错误（5xx、429），会抛出异常到达这里，应该进行重试
+        // 对于不可重试错误（4xx除了429），也会抛出异常，但不应该重试
         if (statusCode && statusCode >= 400) {
-          const errorType = statusCode >= 500 ? '服务器错误' : 'API客户端错误';
-          const shouldReturnToClient = true; // 所有HTTP错误都应该返回给客户端
+          // 检查是否应该重试这个错误
+          const shouldRetry = this.httpRequestHandler.shouldRetryError(error, statusCode);
           
-          secureLogger.info(`${errorType}不重试，返回给客户端`, {
+          if (!shouldRetry || isLastAttempt) {
+            // 不应该重试或者已经是最后一次尝试，返回错误响应给客户端
+            const errorType = statusCode >= 500 ? '服务器错误' : 'API客户端错误';
+            
+            secureLogger.info(`${errorType}${shouldRetry ? '达到最大重试次数' : '不重试'}，返回给客户端`, {
+              requestId: context.requestId,
+              statusCode,
+              errorMessage: error.message,
+              errorType,
+              shouldRetry,
+              isLastAttempt
+            });
+            
+            const errorContext = {
+              provider: routingDecision?.providerId || 'unknown',
+              model: request?.model || 'unknown',
+              endpoint: context.metadata?.protocolConfig?.endpoint
+            };
+            const errorResponse = this.httpRequestHandler.createApiErrorResponse(error, statusCode, context.requestId, errorContext);
+            (errorResponse as any).__isErrorResponse = true;
+            return errorResponse;
+          }
+          
+          // 可重试错误，继续重试循环
+          secureLogger.info('HTTP错误将进行重试', {
             requestId: context.requestId,
             statusCode,
-            errorMessage: error.message,
-            errorType,
-            shouldReturnToClient
+            attempt: attempt + 1,
+            maxRetries: maxRetries + 1,
+            errorMessage: error.message
           });
-          
-          // 返回API错误而不是抛出异常，让客户端决定是否重试
-          const errorContext = {
-            provider: routingDecision?.providerId || 'unknown',
-            model: request?.model || 'unknown',
-            endpoint: context.metadata?.protocolConfig?.endpoint
-          };
-          const errorResponse = this.httpRequestHandler.createApiErrorResponse(error, statusCode, context.requestId, errorContext);
-          // 标记这是一个错误响应，避免通过响应转换层
-          (errorResponse as any).__isErrorResponse = true;
-          return errorResponse;
+          continue;
         }
         
         // 检查是否应该重试
