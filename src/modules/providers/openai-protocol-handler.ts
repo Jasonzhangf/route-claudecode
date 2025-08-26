@@ -25,7 +25,7 @@ import {
   ToolMessage,
 } from '../../interfaces/standard/message';
 import { Tool } from '../../interfaces/standard/tool';
-
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 /**
  * OpenAI Protocol配置接口
  */
@@ -248,7 +248,7 @@ export class OpenAIProtocolHandler extends EventEmitter implements ModuleInterfa
       } else if (msg.role === 'user') {
         const userMsg = msg as UserMessage;
         // 简化处理：只支持文本内容，复杂内容转为JSON字符串
-        const content = typeof userMsg.content === 'string' ? userMsg.content : JSON.stringify(userMsg.content);
+        const content = typeof userMsg.content === 'string' ? userMsg.content : JQJsonHandler.stringifyJson(userMsg.content);
         return {
           role: 'user',
           content: content,
@@ -260,7 +260,7 @@ export class OpenAIProtocolHandler extends EventEmitter implements ModuleInterfa
           typeof assistantMsg.content === 'string'
             ? assistantMsg.content
             : assistantMsg.content
-              ? JSON.stringify(assistantMsg.content)
+              ? JQJsonHandler.stringifyJson(assistantMsg.content)
               : null;
 
         const openaiMsg: OpenAI.Chat.ChatCompletionAssistantMessageParam = {
@@ -278,7 +278,7 @@ export class OpenAIProtocolHandler extends EventEmitter implements ModuleInterfa
               arguments:
                 typeof tc.function.arguments === 'string'
                   ? tc.function.arguments
-                  : JSON.stringify(tc.function.arguments),
+                  : JQJsonHandler.stringifyJson(tc.function.arguments),
             },
           }));
         }

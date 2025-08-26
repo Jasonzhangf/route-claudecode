@@ -13,6 +13,7 @@ import { Pipeline } from '../pipeline/types';
 import { DebugFilter, DebugFilterImpl } from './debug-filter';
 import { DebugSerializer, DebugSerializerImpl } from './debug-serializer';
 import { DebugStorage, DebugStorageImpl } from './debug-storage';
+import { getServerPort } from '../constants/server-defaults';
 import { DebugAnalyzer, DebugAnalyzerImpl, AnalysisReport } from './debug-analyzer';
 import { DebugCollector, DebugCollectorImpl, DebugEvent } from './debug-collector';
 import { JQJsonHandler } from '../utils/jq-json-handler';
@@ -498,8 +499,8 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
       requestId,
       timestamp: now,
       readableTime: this.formatReadableTime(now),
-      port: data.port || 3120,
-      sessionId: this.findCurrentSessionId(data.port || 3120),
+      port: data.port || getServerPort(),
+      sessionId: this.findCurrentSessionId(data.port || getServerPort()),
       request: {
         method: data.method || 'POST',
         url: data.url || '/v1/chat/completions',

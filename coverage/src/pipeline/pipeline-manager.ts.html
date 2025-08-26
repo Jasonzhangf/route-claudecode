@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5.66% </span>
+                <span class="strong">2.25% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>15/265</span>
+                <span class='fraction'>6/266</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/114</span>
+                <span class='fraction'>0/116</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.56% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>1/39</span>
+                <span class='fraction'>0/40</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">5.68% </span>
+                <span class="strong">2.26% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>15/264</span>
+                <span class='fraction'>6/265</span>
             </div>
         
             
@@ -1102,7 +1102,10 @@
 <a name='L1037'></a><a href='#L1037'>1037</a>
 <a name='L1038'></a><a href='#L1038'>1038</a>
 <a name='L1039'></a><a href='#L1039'>1039</a>
-<a name='L1040'></a><a href='#L1040'>1040</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L1040'></a><a href='#L1040'>1040</a>
+<a name='L1041'></a><a href='#L1041'>1041</a>
+<a name='L1042'></a><a href='#L1042'>1042</a>
+<a name='L1043'></a><a href='#L1043'>1043</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1243,8 +1246,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">34x</span>
-<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1258,15 +1261,15 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">34x</span>
-<span class="cline-any cline-yes">34x</span>
-<span class="cline-any cline-yes">34x</span>
-<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">34x</span>
-<span class="cline-any cline-yes">34x</span>
-<span class="cline-any cline-yes">34x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1330,6 +1333,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2282,8 +2288,8 @@ export interface PipelineTableEntry {
  * Pipeline管理器
  */
 export class PipelineManager extends EventEmitter {
-  private pipelines: Map&lt;string, CompletePipeline&gt; = new Map();
-  private activeExecutions: Map&lt;string, ExecutionRecord&gt; = new Map();
+  private <span class="cstat-no" title="statement not covered" >pipelines: Map&lt;string, CompletePipeline&gt; = new Map();</span>
+  private <span class="cstat-no" title="statement not covered" >activeExecutions: Map&lt;string, ExecutionRecord&gt; = new Map();</span>
   private factory: StandardPipelineFactory;
   private systemConfig: {
     providerTypes: Record&lt;string, {
@@ -2297,15 +2303,15 @@ export class PipelineManager extends EventEmitter {
     transformers?: Record&lt;string, any&gt;;
     serverCompatibilityModules?: Record&lt;string, any&gt;;
   };
-  private isInitialized: boolean = false;
-  private configName: string = '';
-  private configFile: string = '';
-  private port: number = 0;
+  private <span class="cstat-no" title="statement not covered" >isInitialized: boolean = false;</span>
+  private <span class="cstat-no" title="statement not covered" >configName: string = '';</span>
+  private <span class="cstat-no" title="statement not covered" >configFile: string = '';</span>
+  private <span class="cstat-no" title="statement not covered" >port: number = 0;</span>
   
-  constructor(factory: StandardPipelineFactory, systemConfig?: any) {
-    super();
-    this.factory = factory;
-    this.systemConfig = systemConfig;
+<span class="fstat-no" title="function not covered" >  constructor(f</span>actory: StandardPipelineFactory, systemConfig?: any) {
+<span class="cstat-no" title="statement not covered" >    super();</span>
+<span class="cstat-no" title="statement not covered" >    this.factory = factory;</span>
+<span class="cstat-no" title="statement not covered" >    this.systemConfig = systemConfig;</span>
   }
 &nbsp;
   /**
@@ -2369,7 +2375,10 @@ export class PipelineManager extends EventEmitter {
               provider: route.provider,
               targetModel: route.targetModel,
               apiKey: route.apiKeys[keyIndex],
-              endpoint: providerType.endpoint,
+              // 🐛 关键修复：必须使用用户配置的apiBaseUrl，确保所有provider内容来自配置文件
+              endpoint: (route as any).apiBaseUrl || (<span class="fstat-no" title="function not covered" >() =</span>&gt; {
+<span class="cstat-no" title="statement not covered" >                throw new Error(`Missing api_base_url for provider ${route.provider}. All endpoint information must come from user config.`);</span>
+              })(),
               transformer: providerType.transformer,
               protocol: providerType.protocol,
               // 🐛 关键修复：使用路由中的实际serverCompatibility而不是系统默认值
@@ -3187,7 +3196,7 @@ export class PipelineManager extends EventEmitter {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-21T03:37:37.249Z
+                at 2025-08-25T07:28:12.341Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

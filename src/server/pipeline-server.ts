@@ -15,6 +15,8 @@ import {
   RouteHandler,
 } from './http-server';
 import { PipelineService, PipelineServiceConfig } from './pipeline-service';
+import { JQJsonHandler } from '../utils/jq-json-handler';
+import { getServerPort } from '../constants/server-defaults';
 import { PipelineConfig, ExecutionContext } from '../interfaces/pipeline/pipeline-framework';
 import {
   IMiddlewareManager,
@@ -90,7 +92,7 @@ export class PipelineServer extends EventEmitter {
     }
 
     // 初始化Debug记录器
-    this.debugRecorder = new PipelineDebugRecorder(config.port || 5506, config.debug !== false);
+    this.debugRecorder = new PipelineDebugRecorder(config.port || getServerPort(), config.debug !== false);
 
     this.initializePipelineRoutes();
     this.initializeMiddleware();
@@ -276,7 +278,7 @@ export class PipelineServer extends EventEmitter {
           endpoint: '/v1/messages',
           headers_validated: true,
           content_type: 'application/json',
-          request_size: JSON.stringify(req.body).length,
+          request_size: JQJsonHandler.stringifyJson(req.body).length,
           anthropic_version: req.headers['anthropic-version'] || '2023-06-01',
         },
         validation: {

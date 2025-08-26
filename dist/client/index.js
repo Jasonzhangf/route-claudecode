@@ -37,6 +37,7 @@ const http_1 = require("./http");
 Object.defineProperty(exports, "HttpError", { enumerable: true, get: function () { return http_1.HttpError; } });
 const client_manager_1 = require("./client-manager");
 const error_handler_1 = require("../interfaces/client/error-handler");
+const jq_json_handler_1 = require("../utils/jq-json-handler");
 /**
  * 客户端模块主类
  */
@@ -88,7 +89,7 @@ class ClientModule {
             }
         });
         this.proxy.on('started', data => {
-            console.log(`🔌 Proxy started: ${JSON.stringify(data.config)}`);
+            console.log(`🔌 Proxy started: ${jq_json_handler_1.JQJsonHandler.stringifyJson(data.config)}`);
         });
         this.proxy.on('error', error => {
             this.errorHandler.handleError(error, {

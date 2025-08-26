@@ -18,6 +18,7 @@ import {
   OllamaResponseFixer,
   GenericResponseFixer,
 } from './response-compatibility-fixer';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 /**
  * 标准OpenAI请求接口
@@ -607,7 +608,7 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
               arguments:
                 typeof toolCall.function?.arguments === 'string'
                   ? toolCall.function.arguments
-                  : JSON.stringify(toolCall.function?.arguments || {}),
+                  : JQJsonHandler.stringifyJson(toolCall.function?.arguments || {}),
             },
           }));
         }
@@ -648,11 +649,11 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
     if (typeof response === 'string') {
       content = response;
     } else if (response.content) {
-      content = typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+      content = typeof response.content === 'string' ? response.content : JQJsonHandler.stringifyJson(response.content);
     } else if (response.choices?.[0]?.message?.content) {
       content = response.choices[0].message.content;
     } else if (response.message) {
-      content = typeof response.message === 'string' ? response.message : JSON.stringify(response.message);
+      content = typeof response.message === 'string' ? response.message : JQJsonHandler.stringifyJson(response.message);
     }
 
     const fixedResponse: OpenAIStandardResponse = {
@@ -737,7 +738,7 @@ export class EnhancedServerCompatibilityModule extends EventEmitter implements M
         arguments:
           typeof toolCall.function?.arguments === 'string'
             ? toolCall.function.arguments
-            : JSON.stringify(toolCall.function?.arguments || {}),
+            : JQJsonHandler.stringifyJson(toolCall.function?.arguments || {}),
       },
     }));
   }

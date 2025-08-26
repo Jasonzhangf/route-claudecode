@@ -15,6 +15,7 @@ const sdk_1 = __importDefault(require("@anthropic-ai/sdk"));
 const constants_1 = require("../../constants");
 const base_module_1 = require("../../interfaces/module/base-module");
 const events_1 = require("events");
+const jq_json_handler_1 = require("../../utils/jq-json-handler");
 /**
  * Anthropic Protocol处理器实现
  */
@@ -390,7 +391,7 @@ class AnthropicProtocolHandler extends events_1.EventEmitter {
                     type: 'function',
                     function: {
                         name: block.name,
-                        arguments: typeof block.input === 'string' ? block.input : JSON.stringify(block.input),
+                        arguments: typeof block.input === 'string' ? block.input : jq_json_handler_1.JQJsonHandler.stringifyJson(block.input),
                     },
                 });
             }

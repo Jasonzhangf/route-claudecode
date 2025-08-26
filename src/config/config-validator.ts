@@ -528,7 +528,9 @@ export class ConfigValidator {
    */
   private validateProviderRouteConsistency(config: RCCv4Config, warnings: string[]): void {
     const enabledProviders = this.getEnabledProviders(config);
-    const enabledRoutes = config.routing.routes.filter(r => r.enabled);
+    const enabledRoutes = (config.routing && config.routing.routes) 
+      ? config.routing.routes.filter(r => r.enabled) 
+      : [];
 
     if (enabledProviders.length > 0 && enabledRoutes.length === 0) {
       warnings.push('Providers are enabled but no routes are enabled');

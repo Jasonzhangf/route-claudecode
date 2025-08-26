@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { TIMEOUT_DEFAULTS } from '../constants/timeout-defaults';
 import { ERROR_MESSAGES } from '../constants/error-messages';
+import { getServerPort, getServerHost } from '../constants/server-defaults';
 
 /**
  * RCC v4.0 强制jq JSON处理器
@@ -58,6 +59,42 @@ export class JQJsonHandler {
             // 直接使用jq的输出，避免二次解析
             return this.parseJqOutput<T>(result.trim());
         } catch (error) {
+            // 🔧 增强错误诊断: 详细记录JSON解析错误信息
+            const errorMessage = error.message || error.toString();
+            const isNumericError = errorMessage.includes('Invalid numeric literal');
+            const isParseError = errorMessage.includes('parse error');
+            
+            console.log(`🔧 [JQ-DIAGNOSTIC] JSON解析失败诊断:`, {
+                errorMessage,
+                isNumericError,
+                isParseError,
+                jsonLength: jsonString.length,
+                jsonPreview: jsonString.substring(0, 100) + (jsonString.length > 100 ? '...' : ''),
+                hasControlChars: /[\x00-\x1F]/.test(jsonString),
+                hasInvalidNumbers: /:\s*[0-9]*\.?[0-9]*[eE][+\-]?[0-9]*[^0-9,}\]\s]/.test(jsonString)
+            });
+
+            // 🔧 修复: 针对不同类型的错误采用不同的修复策略
+            if (isNumericError) {
+                console.log(`🔧 [JQ-FIX] 检测到数值字面量错误，尝试修复`);
+                try {
+                    const fixedJson = this.fixNumericLiterals(jsonString);
+                    console.log(`🔧 [JQ-FIX] 尝试修复数值字面量后重试`);
+                    
+                    const result = execFileSync('jq', [filter], {
+                        input: fixedJson,
+                        encoding: 'utf8',
+                        timeout: TIMEOUT_DEFAULTS.JQ_PARSE_TIMEOUT,
+                        maxBuffer: 50 * 1024 * 1024
+                    });
+                    
+                    console.log(`✅ [JQ-FIX] 数值修复成功`);
+                    return this.parseJqOutput<T>(result.trim());
+                } catch (numericError) {
+                    console.warn(`❌ [JQ-FIX] 数值修复失败: ${numericError.message}`);
+                }
+            }
+
             // 🔧 修复: 如果jq解析失败，尝试修复单引号JSON后重试
             console.log(`🔧 [JQ-FIX] jq parse failed, trying to fix single quotes: ${error.message}`);
             try {
@@ -223,8 +260,8 @@ export class JQJsonHandler {
                 providers: providers,
                 routing: router,
                 server: {
-                    port: serverConfig?.port || 5506,
-                    host: serverConfig?.host || '0.0.0.0',
+                    port: serverConfig?.port || getServerPort(),
+                    host: serverConfig?.host || getServerHost(),
                     debug: serverConfig?.debug || false
                 },
                 authentication: {
@@ -335,18 +372,75 @@ export class JQJsonHandler {
     }
 
     /**
-     * 容错JSON解析fallback
+     * 容错JSON解析fallback - 创建API错误响应而非直接失败
      * @private
      */
     private static fallbackJsonParse<T>(jsonString: string, originalError: any): T {
-        console.warn('jq解析失败，尝试容错解析:', originalError.message);
+        console.warn('🔧 [JQ-FALLBACK] jq解析失败，尝试容错解析:', originalError.message);
+        
+        // 🔧 记录完整的错误数据用于调试
+        console.error('🔧 [JQ-FALLBACK] 完整错误数据记录:', {
+            originalError: originalError.message,
+            jsonStringLength: jsonString.length,
+            jsonStringPreview: jsonString.substring(0, 500) + (jsonString.length > 500 ? '...' : ''),
+            errorType: originalError.constructor?.name || 'UnknownError',
+            stack: originalError.stack
+        });
         
         try {
-            // 最后的安全fallback - 但优先抛出错误
-            throw new Error(`JSON解析失败，无法通过jq解析: ${originalError.message}`);
-        } catch {
-            // 如果真的需要容错，使用极简的解析
-            throw new Error(`JSON解析完全失败: ${originalError.message}`);
+            // 🔧 首次fallback: 尝试原生JSON.parse
+            console.log('🔧 [JQ-FALLBACK] 尝试原生JSON.parse作为fallback');
+            const originalParse = (global as any).__originalJSONParse || JSON.parse;
+            const parsed = originalParse(jsonString);
+            console.log('✅ [JQ-FALLBACK] 原生JSON.parse成功');
+            return parsed;
+        } catch (nativeError) {
+            console.warn('❌ [JQ-FALLBACK] 原生JSON.parse也失败:', nativeError.message);
+            
+            try {
+                // 🔧 二次fallback: 尝试修复常见JSON问题后用原生解析
+                console.log('🔧 [JQ-FALLBACK] 尝试修复JSON格式后用原生解析');
+                let fixedJson = this.emergencyJsonFix(jsonString);
+                const originalParse = (global as any).__originalJSONParse || JSON.parse;
+                const parsed = originalParse(fixedJson);
+                console.log('✅ [JQ-FALLBACK] 修复后原生JSON.parse成功');
+                return parsed;
+            } catch (fixedError) {
+                console.warn('❌ [JQ-FALLBACK] 修复后原生JSON.parse也失败:', fixedError.message);
+                
+                // 🔧 最终fallback: 创建API错误响应对象而非抛出异常
+                console.log('🔧 [JQ-FALLBACK] 创建API错误响应对象，避免系统崩溃');
+                
+                // 检查是否看起来像OpenAI格式的错误响应
+                if (jsonString.includes('choices') || jsonString.includes('error')) {
+                    return {
+                        error: {
+                            type: 'json_parse_error',
+                            message: `JSON解析失败: ${originalError.message}`,
+                            details: 'Server returned malformed JSON response',
+                            original_error: originalError.message,
+                            fallback_used: true
+                        }
+                    } as T;
+                } else {
+                    // 创建通用的API错误响应
+                    return {
+                        choices: [{
+                            message: {
+                                role: 'assistant',
+                                content: `⚠️ JSON解析错误: 服务器返回的响应格式异常。原始错误: ${originalError.message}`
+                            },
+                            finish_reason: 'error'
+                        }],
+                        error: {
+                            type: 'json_parse_error',
+                            message: `JSON解析失败: ${originalError.message}`,
+                            fallback_used: true
+                        },
+                        usage: { prompt_tokens: 0, completion_tokens: 50 }
+                    } as T;
+                }
+            }
         }
     }
 
@@ -373,6 +467,51 @@ export class JQJsonHandler {
             console.error('❌ [JQ-FALLBACK] 原生JSON.stringify也失败，使用手动序列化:', error.message);
             // 最后的备用方案：手动序列化
             return this.createBasicJson(data);
+        }
+    }
+
+    /**
+     * 修复数值字面量错误
+     * @private
+     */
+    private static fixNumericLiterals(jsonString: string): string {
+        try {
+            console.log(`🔧 [JQ-NUMERIC-FIX] 开始修复数值字面量错误`);
+            
+            let fixed = jsonString;
+            
+            // 1. 修复无效的科学记数法 (如 1.23e+abc -> 1.23)
+            fixed = fixed.replace(/([0-9]+\.?[0-9]*)[eE][+\-]?[^0-9][^,}\]\s]*/g, '$1');
+            
+            // 2. 修复不完整的小数 (如 123. -> 123.0)
+            fixed = fixed.replace(/([0-9]+)\.([\s,}\]])/g, '$1.0$2');
+            
+            // 3. 修复多个小数点 (如 1.2.3 -> 1.23)
+            fixed = fixed.replace(/([0-9]+)\.([0-9]*)\.([0-9]*)/g, '$1.$2$3');
+            
+            // 4. 修复开头的小数点 (如 .123 -> 0.123)
+            fixed = fixed.replace(/([\[\{:,\s])\.([0-9]+)/g, '$10.$2');
+            
+            // 5. 修复非法的数值字符 (移除数字后面的非法字符)
+            fixed = fixed.replace(/([0-9]+\.?[0-9]*)[^0-9eE+\-,}\]\s][^,}\]\s]*/g, '$1');
+            
+            // 6. 修复超长的数值 (截断到合理长度)
+            fixed = fixed.replace(/([0-9]{20,})/g, (match) => {
+                console.log(`🔧 [JQ-NUMERIC-FIX] 截断超长数值: ${match.substring(0, 50)}...`);
+                return match.substring(0, 15); // 保留前15位数字
+            });
+            
+            // 7. 修复NaN和Infinity
+            fixed = fixed.replace(/:\s*NaN\b/g, ': null');
+            fixed = fixed.replace(/:\s*Infinity\b/g, ': null');
+            fixed = fixed.replace(/:\s*-Infinity\b/g, ': null');
+            
+            console.log(`🔧 [JQ-NUMERIC-FIX] 数值修复完成`);
+            return fixed;
+            
+        } catch (error) {
+            console.warn(`❌ [JQ-NUMERIC-FIX] 数值修复失败:`, error.message);
+            return jsonString;
         }
     }
 
@@ -454,6 +593,70 @@ export class JQJsonHandler {
             // 如果修复失败，返回原始字符串
             console.warn(`❌ [JQ-FIX] Fix failed:`, error.message);
             return jsonString;
+        }
+    }
+
+    /**
+     * 紧急JSON修复 - 最后的救命稻草
+     * @private
+     */
+    private static emergencyJsonFix(jsonString: string): string {
+        try {
+            console.log(`🚨 [EMERGENCY-FIX] 启动紧急JSON修复`);
+            
+            let fixed = jsonString;
+            
+            // 1. 移除所有控制字符和不可见字符
+            fixed = fixed.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '');
+            
+            // 2. 修复常见的引号问题
+            fixed = fixed.replace(/'/g, '"'); // 单引号转双引号
+            fixed = fixed.replace(/"/g, '"'); // 中文引号转英文引号
+            fixed = fixed.replace(/"/g, '"'); // 中文引号转英文引号
+            
+            // 3. 修复布尔值和null
+            fixed = fixed.replace(/\bTrue\b/g, 'true');
+            fixed = fixed.replace(/\bFalse\b/g, 'false');
+            fixed = fixed.replace(/\bNone\b/g, 'null');
+            fixed = fixed.replace(/\bundefined\b/g, 'null');
+            
+            // 4. 修复数值问题
+            fixed = fixed.replace(/\bNaN\b/g, 'null');
+            fixed = fixed.replace(/\bInfinity\b/g, 'null');
+            fixed = fixed.replace(/\b-Infinity\b/g, 'null');
+            
+            // 5. 修复数组和对象的括号匹配
+            const openBraces = (fixed.match(/\{/g) || []).length;
+            const closeBraces = (fixed.match(/\}/g) || []).length;
+            const openBrackets = (fixed.match(/\[/g) || []).length;
+            const closeBrackets = (fixed.match(/\]/g) || []).length;
+            
+            if (openBraces > closeBraces) {
+                fixed += '}'.repeat(openBraces - closeBraces);
+            }
+            if (openBrackets > closeBrackets) {
+                fixed += ']'.repeat(openBrackets - closeBrackets);
+            }
+            
+            // 6. 移除尾部逗号
+            fixed = fixed.replace(/,(\s*[}\]])/g, '$1');
+            
+            // 7. 处理不完整的JSON - 如果看起来像被截断了
+            if (!fixed.trim().endsWith('}') && !fixed.trim().endsWith(']')) {
+                if (fixed.includes('{') && !fixed.includes('}')) {
+                    fixed += '}';
+                } else if (fixed.includes('[') && !fixed.includes(']')) {
+                    fixed += ']';
+                }
+            }
+            
+            console.log(`🚨 [EMERGENCY-FIX] 紧急修复完成`);
+            return fixed;
+            
+        } catch (error) {
+            console.error(`💥 [EMERGENCY-FIX] 紧急修复也失败了:`, error.message);
+            // 如果连紧急修复都失败，返回一个最基本的空对象JSON
+            return '{}';
         }
     }
 

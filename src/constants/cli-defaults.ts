@@ -10,6 +10,8 @@
  * @author RCC v4.0 Team
  */
 
+import { getServerPort, getServerHost } from './server-defaults';
+
 // =============================================================================
 // 基础配置常量
 // =============================================================================
@@ -31,10 +33,10 @@ export const CLI_DEFAULTS = {
   CONFIG_FILE_NAME: 'config.json',
   
   /** 默认端口 */
-  DEFAULT_PORT: 5506,
+  DEFAULT_PORT: getServerPort(),
   
   /** 默认主机地址 */
-  DEFAULT_HOST: 'localhost',
+  DEFAULT_HOST: getServerHost(),
   
   /** 默认最大重试次数 */
   MAX_RETRIES: 3,

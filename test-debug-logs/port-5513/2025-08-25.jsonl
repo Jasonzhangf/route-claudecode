@@ -1,0 +1,23 @@
+{"timestamp":"2025-08-25T15:29:52.574Z","level":"INFO","message":"启用文件日志记录","data":{"port":5513,"debugLogsPath":"./test-debug-logs"}}
+{"timestamp":"2025-08-25T15:29:52.580Z","level":"INFO","message":"🔧 Loading configuration with direct reading (no conversions)","data":{"userConfigPath":"config/lmstudio-v4-5506-enhanced.json","systemConfigPath":"/Users/fanzhang/.route-claudecode/config/system-config.json"}}
+{"timestamp":"2025-08-25T15:29:52.593Z","level":"INFO","message":"📋 Using standard routing format, no expansion needed"}
+{"timestamp":"2025-08-25T15:29:52.596Z","level":"INFO","message":"✅ Configuration loaded successfully with direct reading","data":{"userProviders":1,"routerRules":5}}
+{"timestamp":"2025-08-25T15:29:52.602Z","level":"INFO","message":"PipelineLifecycleManager初始化开始","data":{"userConfigPath":"config/lmstudio-v4-5506-enhanced.json","systemConfigPath":"/Users/fanzhang/.route-claudecode/config/system-config.json","hasProviders":true,"debugEnabled":true}}
+{"timestamp":"2025-08-25T15:29:52.610Z","level":"INFO","message":"🚀 智能流水线切换系统已初始化","data":{"maxRetries":3,"blacklistThreshold":5,"enableAggressiveRecovery":true}}
+{"timestamp":"2025-08-25T15:29:52.616Z","level":"INFO","message":"Console日志捕获已启用","data":{"port":5513,"module":"console-capture"}}
+{"timestamp":"2025-08-25T15:29:52.622Z","level":"INFO","message":"PipelineLifecycleManager初始化完成","data":{"totalProviders":1,"serverPort":5513,"modulesInitialized":true}}
+{"timestamp":"2025-08-25T15:29:52.629Z","level":"INFO","message":"开始初始化Pipeline服务器"}
+{"timestamp":"2025-08-25T15:29:52.632Z","level":"INFO","message":"开始初始化Pipeline服务器","data":{"configName":"runtime-config","hasProviders":true}}
+{"timestamp":"2025-08-25T15:29:52.638Z","level":"INFO","message":"生成新的流水线路由表","data":{"configName":"runtime-config","hasProviders":true}}
+{"timestamp":"2025-08-25T15:29:52.644Z","level":"INFO","message":"使用传统Provider配置生成流水线"}
+{"timestamp":"2025-08-25T15:29:52.647Z","level":"INFO","message":"Runtime路由表生成完成","data":{"totalPipelines":1,"categoriesCount":1,"categories":["default"],"hasExpandedRouting":false}}
+{"timestamp":"2025-08-25T15:29:52.653Z","level":"INFO","message":"流水线路由表生成成功","data":{"totalPipelines":1,"virtualModels":["default"]}}
+{"timestamp":"2025-08-25T15:29:52.659Z","level":"INFO","message":"✅ Creating router from runtime routing table","data":{"routeCount":1,"defaultRoute":"default"}}
+{"timestamp":"2025-08-25T15:29:52.664Z","level":"INFO","message":"PipelineRouter initialized","data":{"routeCount":1,"defaultRoute":"default"}}
+{"timestamp":"2025-08-25T15:29:52.670Z","level":"INFO","message":"HTTP服务器实例创建成功","data":{"port":5513,"host":"0.0.0.0"}}
+{"timestamp":"2025-08-25T15:29:52.675Z","level":"INFO","message":"Pipeline服务器初始化成功","data":{"initializationTime":43,"totalPipelines":1,"virtualModels":["default"],"routerInitialized":true,"serverCreated":true}}
+{"timestamp":"2025-08-25T15:29:52.679Z","level":"INFO","message":"启动Pipeline服务器","data":{"port":5513,"totalPipelines":1}}
+{"timestamp":"2025-08-25T15:29:52.688Z","level":"INFO","message":"Pipeline服务器启动成功","data":{"port":5513,"uptime":0}}
+{"timestamp":"2025-08-25T15:29:52.694Z","level":"INFO","message":"Pipeline服务器启动成功","data":{"port":5513,"initializationTime":43,"uptime":0}}
+{"timestamp":"2025-08-25T15:29:52.700Z","level":"INFO","message":"RCC Server started with pipeline system","data":{"port":5513,"host":"0.0.0.0","config":"config/lmstudio-v4-5506-enhanced.json","debug":true}}
+{"timestamp":"2025-08-25T15:29:52.705Z","level":"INFO","message":"Precise pipeline blacklist manager initialized","data":{"enabled":true,"destroyRulesCount":3,"enabledDestroyRules":0,"activeCounters":0,"temporaryBlocks":0}}

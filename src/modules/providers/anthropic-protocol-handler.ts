@@ -26,7 +26,7 @@ import {
   ToolMessage,
 } from '../../interfaces/standard/message';
 import { Tool } from '../../interfaces/standard/tool';
-
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 /**
  * Anthropic Protocol配置接口
  */
@@ -478,7 +478,7 @@ export class AnthropicProtocolHandler extends EventEmitter implements ModuleInte
           type: 'function',
           function: {
             name: block.name,
-            arguments: typeof block.input === 'string' ? block.input : JSON.stringify(block.input),
+            arguments: typeof block.input === 'string' ? block.input : JQJsonHandler.stringifyJson(block.input),
           },
         });
       }

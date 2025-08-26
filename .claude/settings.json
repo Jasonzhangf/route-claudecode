@@ -51,7 +51,7 @@
             "blocking": true
           },
           {
-            "type": "command", 
+            "type": "command",
             "command": "bash ~/.claude/hooks/pre_bash_anti_test_fraud_hook.sh",
             "blocking": true
           },
@@ -112,6 +112,11 @@
           {
             "type": "command",
             "command": "bash /Users/fanzhang/.claude/hooks/pre_edit_anti_mockup_guard_hook.sh",
+            "blocking": true
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_write_hardcoding_checker_json.sh",
             "blocking": true
           }
         ]

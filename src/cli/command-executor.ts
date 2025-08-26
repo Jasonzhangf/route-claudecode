@@ -19,6 +19,7 @@ import {
 } from '../interfaces/core/cli-abstraction';
 import { ERROR_MESSAGES } from '../constants/error-messages';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { getProviderRequestTimeout } from '../constants/timeout-defaults';
 
 /**
  * CLI命令执行器实现
@@ -873,7 +874,7 @@ export class CommandExecutor implements ICommandExecutor {
       const openai = new OpenAI({
         apiKey: apiKey,
         baseURL: provider.endpoint,
-        timeout: provider.connection?.timeout || 30000,
+        timeout: getProviderRequestTimeout(provider.connection?.timeout),
         maxRetries: provider.connection?.retries || 3,
       });
 

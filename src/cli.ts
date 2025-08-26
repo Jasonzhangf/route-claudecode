@@ -10,6 +10,7 @@
  */
 
 import { RCCCli } from './cli/rcc-cli';
+import { getServerPort } from './constants/server-defaults';
 import {
   ParsedCommand,
   CLIHandler,
@@ -373,7 +374,7 @@ Commands:
 
 Options:
   --config <path>          Configuration file path
-  --port <number>          Server port (default: 5506)
+  --port <number>          Server port (default: ${getServerPort()})
   --host <host>            Server host (default: 0.0.0.0)
   --debug                  Enable debug mode
   --force                  Force operation (for stop command)
@@ -382,10 +383,10 @@ Options:
   --export                 Export environment variables (for code command)
 
 Examples:
-  rcc4 start --config ./config.json --port 5506 --debug
-  rcc4 stop --port 5506 --force
-  rcc4 status --port 5506 --detailed
-  rcc4 code --port 5506 --auto-start
+  rcc4 start --config ./config.json --port ${getServerPort()} --debug
+  rcc4 stop --port ${getServerPort()} --force
+  rcc4 status --port ${getServerPort()} --detailed
+  rcc4 code --port ${getServerPort()} --auto-start
   rcc4 code --export
   rcc4 auth qwen 1
   rcc4 auth qwen --list
@@ -410,7 +411,7 @@ Usage:
 
 Options:
   --config <path>     Configuration file path (default: ./config.json)
-  --port <number>     Server port (default: 5506)
+  --port <number>     Server port (default: ${getServerPort()})
   --host <host>       Server host (default: 0.0.0.0)
   --debug             Enable debug mode with detailed logging
 
@@ -429,7 +430,7 @@ Usage:
   rcc4 stop [options]
 
 Options:
-  --port <number>     Server port (default: 5506)
+  --port <number>     Server port (default: ${getServerPort()})
   --force             Force stop even if graceful shutdown fails
 
 Examples:
@@ -447,7 +448,7 @@ Usage:
   rcc4 status [options]
 
 Options:
-  --port <number>     Server port (default: 5506)
+  --port <number>     Server port (default: ${getServerPort()})
   --detailed          Show detailed pipeline information
 
 Examples:
@@ -465,7 +466,7 @@ Usage:
   rcc4 code [options]
 
 Options:
-  --port <number>     RCC proxy server port (default: 5506)
+  --port <number>     RCC proxy server port (default: ${getServerPort()})
   --auto-start        Auto-start RCC server if not running
   --export            Export environment variables instead of starting Claude Code
 

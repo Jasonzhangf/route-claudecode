@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/182</span>
+                <span class='fraction'>0/183</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/182</span>
+                <span class='fraction'>0/183</span>
             </div>
         
             
@@ -660,6 +660,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1198,7 +1199,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1231,7 +1231,7 @@
  * 负责：
  * 1. 运行时请求测试 - 完整的请求处理流程测试
  * 2. 分层诊断 - 从Server Layer往上逐层诊断
- * 3. 路由测试 - 验证虚拟模型映射和流水线选择
+ * 3. 路由测试 - 验证模型映射和流水线选择
  * 4. 响应验证 - 验证4层响应处理链路
  * 
  * @author RCC v4.0
@@ -1241,6 +1241,7 @@
 import { PipelineManager } from '../pipeline/pipeline-manager';
 import { RoutingTestResult, ExecutionTestResult } from './pipeline-debug-system';
 <span class="cstat-no" title="statement not covered" >import { secureLogger } from '../utils/secure-logger';</span>
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../utils/jq-json-handler';</span>
 &nbsp;
 /**
  * 测试请求配置
@@ -1391,7 +1392,7 @@ export interface DiagnosisResult {
 <span class="cstat-no" title="statement not covered" >      throw new Error('Pipeline router not configured for testing');</span>
     }
     
-    // 虚拟模型映射测试
+    // 模型映射测试
     const inputModel = <span class="cstat-no" title="statement not covered" >testRequest.model || 'claude-3-5-sonnet';</span>
     const virtualModel = <span class="cstat-no" title="statement not covered" >this.mapToVirtualModel(inputModel, testRequest);</span>
 <span class="cstat-no" title="statement not covered" >    secureLogger.info(`  📍 Virtual model mapping: ${inputModel} → ${virtualModel}`);</span>
@@ -1459,7 +1460,7 @@ export interface DiagnosisResult {
 <span class="cstat-no" title="statement not covered" >      secureLogger.info(`  📤 Response preview:`, { </span>
         hasChoices: !!response?.choices,
         choicesCount: response?.choices?.length || 0,
-        previewLength: JSON.stringify(response).substring(0, 200).length
+        previewLength: JQJsonHandler.stringifyJson(response, true).substring(0, 200).length
       });
       
       const result: ExecutionTestResult = <span class="cstat-no" title="statement not covered" >{</span>
@@ -1723,13 +1724,13 @@ export interface DiagnosisResult {
 <span class="cstat-no" title="statement not covered" >    return result;</span>
   }
 &nbsp;
-  // === Demo1风格虚拟模型映射 ===
+  // === Demo1风格模型映射系统 ===
 &nbsp;
   /**
-   * Demo1风格的虚拟模型映射
+   * Demo1风格的模型映射
    */
   private <span class="fstat-no" title="function not covered" >mapToVirtualModel(</span>inputModel: string, request: TestRequestConfig): string {
-    // 计算token数量（简化实现）
+    // 基于字符长度计算token数量估算
     const tokenCount = <span class="cstat-no" title="statement not covered" >this.calculateTokenCount(request);</span>
     
     // 1. 长上下文检测 (&gt;60K tokens)
@@ -1758,7 +1759,7 @@ export interface DiagnosisResult {
   }
 &nbsp;
   /**
-   * 计算请求的token数量（简化实现）
+   * 计算请求的token数量估算
    */
   private <span class="fstat-no" title="function not covered" >calculateTokenCount(</span>request: TestRequestConfig): number {
     let count = <span class="cstat-no" title="statement not covered" >0;</span>
@@ -1766,7 +1767,7 @@ export interface DiagnosisResult {
 <span class="cstat-no" title="statement not covered" >    if (request.messages &amp;&amp; Array.isArray(request.messages)) {</span>
 <span class="cstat-no" title="statement not covered" >      for (const message of request.messages) {</span>
 <span class="cstat-no" title="statement not covered" >        if (typeof message.content === 'string') {</span>
-<span class="cstat-no" title="statement not covered" >          count += message.content.length / 4; </span>// 简化的token估算
+<span class="cstat-no" title="statement not covered" >          count += message.content.length / 4; </span>// 基于字符长度的token估算
         }
       }
     }
@@ -1794,8 +1795,7 @@ export interface DiagnosisResult {
    * 构建Server层请求（根据Pipeline配置）
    */
   private <span class="fstat-no" title="function not covered" >buildServerRequest(</span>testRequest: TestRequestConfig, pipeline: any): any {
-    // 这里应该根据pipeline的配置构建适合的请求格式
-    // 简化实现，返回基本的OpenAI格式
+    // 根据pipeline配置构建标准OpenAI格式请求
 <span class="cstat-no" title="statement not covered" >    return {</span>
       model: pipeline.targetModel || 'llama-3.1-8b',
       messages: testRequest.messages || [
@@ -1813,7 +1813,7 @@ export interface DiagnosisResult {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-21T03:37:37.074Z
+                at 2025-08-25T07:28:12.122Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

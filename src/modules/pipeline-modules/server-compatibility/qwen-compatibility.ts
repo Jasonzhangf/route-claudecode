@@ -11,7 +11,7 @@ import { secureLogger } from '../../../utils/secure-logger';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
-
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 export interface QwenAuthConfig {
   access_token: string;
   refresh_token: string;
@@ -337,7 +337,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
             'before_injection': !!context.metadata.protocolConfig.customHeaders,
             'qwen_headers_object': qwenHeaders,
             'injected_headers': context.metadata.protocolConfig.customHeaders,
-            'headers_match': JSON.stringify(context.metadata.protocolConfig.customHeaders) === JSON.stringify(qwenHeaders),
+            'headers_match': JQJsonHandler.stringifyJson(context.metadata.protocolConfig.customHeaders) === JQJsonHandler.stringifyJson(qwenHeaders),
             'context_metadata_exists': !!context.metadata,
             'protocolConfig_exists': !!context.metadata.protocolConfig
           });
@@ -350,7 +350,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
               'hasCustomHeaders': !!context.metadata.protocolConfig.customHeaders,
               'customHeadersType': typeof context.metadata.protocolConfig.customHeaders,
               'customHeadersKeys': context.metadata.protocolConfig.customHeaders ? Object.keys(context.metadata.protocolConfig.customHeaders) : 'no-keys',
-              'customHeadersAsString': context.metadata.protocolConfig.customHeaders ? JSON.stringify(context.metadata.protocolConfig.customHeaders) : 'no-custom-headers'
+              'customHeadersAsString': context.metadata.protocolConfig.customHeaders ? JQJsonHandler.stringifyJson(context.metadata.protocolConfig.customHeaders) : 'no-custom-headers'
             }
           });
 
@@ -519,7 +519,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
     const authFilePath = path.join(this.authDir, `${authFileName}.json`);
     
     try {
-      await fs.writeFile(authFilePath, JSON.stringify(authConfig, null, 2));
+      await fs.writeFile(authFilePath, JQJsonHandler.stringifyJson(authConfig, false));
       secureLogger.debug('Qwen认证配置已更新', {
         authFileName,
         filePath: authFilePath

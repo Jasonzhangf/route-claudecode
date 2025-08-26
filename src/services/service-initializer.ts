@@ -23,6 +23,7 @@ import { ServerManager } from './server-manager';
 import { CacheManager } from './cache-manager';
 import { StandardPipelineFactoryImpl } from '../pipeline/pipeline-factory';
 import { ModuleRegistry } from '../pipeline/module-registry';
+import { getServerPort } from '../constants/server-defaults';
 
 /**
  * 服务初始化结果
@@ -53,7 +54,7 @@ export async function initializeServices(configPath?: string): Promise<ServiceIn
     
     // 加载配置
     const config = ConfigReader.loadConfig(
-      configPath || 'config/v4/single-provider/lmstudio-v4-5506-demo1-enhanced.json',
+      configPath || `config/v4/single-provider/lmstudio-v4-${getServerPort()}-demo1-enhanced.json`,
       'config/system-config.json'
     );
     // registerConfigManager(config); // TODO: 重构服务注册

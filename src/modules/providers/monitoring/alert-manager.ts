@@ -6,6 +6,8 @@
  * @author Jason Zhang
  */
 
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
+
 /**
  * 告警级别枚举
  */
@@ -117,7 +119,7 @@ export class ConsoleAlertChannel implements AlertChannel {
     console.log(`${color}[ALERT-${alert.level.toUpperCase()}]${reset} ${alert.title}`);
     console.log(`  Description: ${alert.description}`);
     console.log(`  Value: ${alert.value} (threshold: ${alert.threshold})`);
-    console.log(`  Labels: ${JSON.stringify(alert.labels)}`);
+    console.log(`  Labels: ${JQJsonHandler.stringifyJson(alert.labels)}`);
     console.log(`  Triggered: ${new Date(alert.triggeredAt).toISOString()}`);
 
     if (alert.resolvedAt) {
@@ -151,7 +153,7 @@ export class WebhookAlertChannel implements AlertChannel {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JQJsonHandler.stringifyJson(payload),
       });
 
       if (!response.ok) {
@@ -403,7 +405,7 @@ export class AlertManager {
    */
   private handleConditionMet(rule: AlertRule, dataPoint: any): void {
     const now = Date.now();
-    const conditionKey = `${rule.id}_${JSON.stringify(dataPoint.labels)}`;
+    const conditionKey = `${rule.id}_${JQJsonHandler.stringifyJson(dataPoint.labels)}`;
 
     if (!this.activeConditions.has(conditionKey)) {
       this.activeConditions.set(conditionKey, {

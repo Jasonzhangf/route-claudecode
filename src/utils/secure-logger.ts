@@ -8,6 +8,8 @@
  */
 
 import { JQJsonHandler } from './jq-json-handler';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * 日志级别
@@ -57,6 +59,9 @@ export interface SecureLoggerConfig {
   maxLogLength: number;
   includeTimestamp: boolean;
   includeLevel: boolean;
+  enableFileLogging?: boolean;
+  debugLogsPath?: string;
+  serverPort?: number;
 }
 
 /**
@@ -77,6 +82,7 @@ export interface LogEntry {
 export class SecureLogger {
   private config: SecureLoggerConfig;
   private auditLog: LogEntry[] = [];
+  private logFileStream?: fs.WriteStream;
 
   constructor(config: Partial<SecureLoggerConfig> = {}) {
     this.config = {
@@ -87,8 +93,53 @@ export class SecureLogger {
       maxLogLength: 5000,
       includeTimestamp: true,
       includeLevel: true,
+      enableFileLogging: false,
+      debugLogsPath: './test-debug-logs',
       ...config,
     };
+
+    // 初始化文件日志
+    if (this.config.enableFileLogging && this.config.serverPort) {
+      this.initFileLogging();
+    }
+  }
+
+  /**
+   * 初始化文件日志
+   */
+  private initFileLogging(): void {
+    try {
+      const portDir = path.join(this.config.debugLogsPath!, `port-${this.config.serverPort}`);
+      
+      // 确保目录存在
+      if (!fs.existsSync(portDir)) {
+        fs.mkdirSync(portDir, { recursive: true });
+      }
+
+      // 创建日志文件（按日期）
+      const today = new Date().toISOString().split('T')[0];
+      const logFilePath = path.join(portDir, `${today}.jsonl`);
+
+      // 创建写入流
+      this.logFileStream = fs.createWriteStream(logFilePath, { flags: 'a' });
+
+      // 处理流错误
+      this.logFileStream.on('error', (error) => {
+        console.error('日志文件写入错误:', error);
+      });
+    } catch (error) {
+      console.error('初始化文件日志失败:', error);
+    }
+  }
+
+  /**
+   * 写入日志到文件
+   */
+  private writeToFile(logEntry: LogEntry): void {
+    if (this.logFileStream && !this.logFileStream.destroyed) {
+      const logLine = JQJsonHandler.stringifyJson(logEntry, true) + '\n';
+      this.logFileStream.write(logLine);
+    }
   }
 
   /**
@@ -182,6 +233,36 @@ export class SecureLogger {
       case LogLevel.ERROR:
         console.error(formattedMessage);
         break;
+    }
+
+    // 同时写入文件（如果启用）
+    if (this.config.enableFileLogging) {
+      this.writeToFile(logEntry);
+    }
+  }
+
+  /**
+   * 清理资源，关闭文件流
+   */
+  cleanup(): void {
+    if (this.logFileStream && !this.logFileStream.destroyed) {
+      this.logFileStream.end();
+    }
+  }
+
+  /**
+   * 配置服务器端口和启用文件日志
+   */
+  configureFileLogging(serverPort: number, debugLogsPath?: string): void {
+    this.config.serverPort = serverPort;
+    this.config.enableFileLogging = true;
+    if (debugLogsPath) {
+      this.config.debugLogsPath = debugLogsPath;
+    }
+    
+    // 如果还没有初始化，现在初始化
+    if (!this.logFileStream && serverPort) {
+      this.initFileLogging();
     }
   }
 

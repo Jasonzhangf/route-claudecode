@@ -40,6 +40,7 @@ const server_defaults_1 = require("../constants/server-defaults");
 const jq_json_handler_1 = require("../utils/jq-json-handler");
 const qwen_auth_manager_1 = require("./auth/qwen-auth-manager");
 const model_test_history_manager_1 = require("./history/model-test-history-manager");
+const timeout_defaults_1 = require("../constants/timeout-defaults");
 // import { ApiModelFetcher, FetchedModel } from './api-model-fetcher';
 const path = __importStar(require("path"));
 const os = __importStar(require("os"));
@@ -728,14 +729,59 @@ class RCCCli {
             if (parsedConfig.Providers && Array.isArray(parsedConfig.Providers)) {
                 for (const provider of parsedConfig.Providers) {
                     if (provider.name === providerName) {
-                        // 更新为详细配置，同时保持向后兼容
-                        provider.models = detailedModels;
-                        // 添加更新时间戳
+                        // 🔧 BUG修复: 智能合并模型而非直接替换
+                        // 保护现有配置，避免数据丢失
+                        // 检查新模型数据的有效性
+                        if (!Array.isArray(detailedModels) || detailedModels.length === 0) {
+                            console.warn(`   ⚠️  警告: 获取到的模型列表为空，跳过更新以保护现有配置`);
+                            console.warn(`      Provider: ${providerName}, 现有模型数量: ${Array.isArray(provider.models) ? provider.models.length : 0}`);
+                            return;
+                        }
+                        // 智能合并逻辑：保留现有模型配置，更新新模型信息
+                        const existingModels = Array.isArray(provider.models) ? provider.models : [];
+                        const mergedModels = [...existingModels];
+                        let addedCount = 0;
+                        let updatedCount = 0;
+                        // 对每个新模型进行合并处理
+                        for (const newModel of detailedModels) {
+                            const modelName = typeof newModel === 'string' ? newModel : newModel.name;
+                            const existingIndex = mergedModels.findIndex(existing => {
+                                const existingName = typeof existing === 'string' ? existing : existing.name;
+                                return existingName === modelName;
+                            });
+                            if (existingIndex >= 0) {
+                                // 更新现有模型：保留用户配置，更新系统信息
+                                if (typeof newModel === 'object' && typeof mergedModels[existingIndex] === 'object') {
+                                    mergedModels[existingIndex] = {
+                                        ...mergedModels[existingIndex], // 保留现有配置
+                                        ...newModel, // 更新新信息
+                                        // 特殊保护：如果现有配置有自定义maxTokens，优先保留
+                                        maxTokens: mergedModels[existingIndex].maxTokens || newModel.maxTokens
+                                    };
+                                    updatedCount++;
+                                }
+                                else if (typeof newModel === 'string' && typeof mergedModels[existingIndex] === 'string') {
+                                    // 字符串模型无需更新
+                                    continue;
+                                }
+                            }
+                            else {
+                                // 添加新模型
+                                mergedModels.push(newModel);
+                                addedCount++;
+                            }
+                        }
+                        // 更新provider配置
+                        provider.models = mergedModels;
                         provider.lastUpdated = new Date().toISOString();
                         providerUpdated = true;
-                        console.log(`   ✅ Updated ${models.length} models for provider ${providerName}`);
+                        console.log(`   ✅ 智能合并完成 - Provider: ${providerName}`);
+                        console.log(`      📊 统计: 新增 ${addedCount} 个, 更新 ${updatedCount} 个, 总计 ${mergedModels.length} 个模型`);
                         if (options.verbose) {
-                            console.log(`      Updated models: ${models.join(', ')}`);
+                            console.log(`      📝 详细信息:`);
+                            console.log(`         - 新增模型: ${addedCount > 0 ? detailedModels.slice(-addedCount).map(m => typeof m === 'string' ? m : m.name).join(', ') : '无'}`);
+                            console.log(`         - 更新模型: ${updatedCount > 0 ? '已更新' + updatedCount + '个现有模型' : '无'}`);
+                            console.log(`         - 保留模型: ${existingModels.length - updatedCount} 个现有模型配置已保留`);
                         }
                         break;
                     }
@@ -783,6 +829,14 @@ class RCCCli {
             // 🎯 自动检测并清理端口占用
             if (options.port) {
                 await this.cleanupPortIfOccupied(options.port);
+            }
+            // 🔧 配置secureLogger启用文件日志记录
+            if (options.port) {
+                secure_logger_1.secureLogger.configureFileLogging(options.port, './test-debug-logs');
+                secure_logger_1.secureLogger.info('启用文件日志记录', {
+                    port: options.port,
+                    debugLogsPath: './test-debug-logs'
+                });
             }
             // 初始化流水线生命周期管理器
             // 需要系统配置路径，使用正确的绝对路径，并传递debug选项和CLI端口参数
@@ -1921,7 +1975,7 @@ class RCCCli {
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const timeoutId = setTimeout(() => controller.abort(), (0, timeout_defaults_1.getProviderRequestTimeout)());
                 const response = await fetch(endpoint, {
                     method: 'GET',
                     headers: {
@@ -2039,7 +2093,7 @@ class RCCCli {
         try {
             const chatEndpoint = `${provider.api_base_url}/chat/completions`;
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            const timeoutId = setTimeout(() => controller.abort(), (0, timeout_defaults_1.getProviderRequestTimeout)());
             const response = await fetch(chatEndpoint, {
                 method: 'POST',
                 headers: {
@@ -2097,7 +2151,7 @@ class RCCCli {
                 ]
             };
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            const timeoutId = setTimeout(() => controller.abort(), (0, timeout_defaults_1.getProviderRequestTimeout)());
             const response = await fetch(chatEndpoint, {
                 method: 'POST',
                 headers: {

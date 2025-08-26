@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/212</span>
+                <span class='fraction'>0/213</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/204</span>
+                <span class='fraction'>0/205</span>
             </div>
         
             
@@ -644,11 +644,13 @@
 <a name='L579'></a><a href='#L579'>579</a>
 <a name='L580'></a><a href='#L580'>580</a>
 <a name='L581'></a><a href='#L581'>581</a>
-<a name='L582'></a><a href='#L582'>582</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L582'></a><a href='#L582'>582</a>
+<a name='L583'></a><a href='#L583'>583</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -1234,6 +1236,7 @@
 <span class="cstat-no" title="statement not covered" >import * as path from 'path';</span>
 <span class="cstat-no" title="statement not covered" >import * as os from 'os';</span>
 <span class="cstat-no" title="statement not covered" >import { secureLogger } from '../../utils/secure-logger';</span>
+<span class="cstat-no" title="statement not covered" >import { JQJsonHandler } from '../../utils/jq-json-handler';</span>
 &nbsp;
 export interface QwenAuthConfig {
   access_token: string;
@@ -1386,7 +1389,7 @@ export interface QwenAuthConfig {
 <span class="cstat-no" title="statement not covered" >          throw new Error(`设备授权请求失败: ${response.status} - ${errorText}`);</span>
         }
 &nbsp;
-        const authData = <span class="cstat-no" title="statement not covered" >await response.json();</span>
+        const authData = <span class="cstat-no" title="statement not covered" >JQJsonHandler.parseJsonString(await response.text());</span>
 <span class="cstat-no" title="statement not covered" >        console.log(`✅ 设备授权获取成功: ${authData.user_code}`);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        return {</span>
@@ -1422,7 +1425,7 @@ export interface QwenAuthConfig {
           let errorData: any;
           
 <span class="cstat-no" title="statement not covered" >          if (responseText.trim()) {</span>
-<span class="cstat-no" title="statement not covered" >            errorData = JSON.parse(responseText);</span>
+<span class="cstat-no" title="statement not covered" >            errorData = JQJsonHandler.parseJsonString(responseText);</span>
           } else {
 <span class="cstat-no" title="statement not covered" >            throw new Error(`Token轮询失败: ${response.status}`);</span>
           }
@@ -1442,7 +1445,7 @@ export interface QwenAuthConfig {
           }
         }
 &nbsp;
-        const tokenData = <span class="cstat-no" title="statement not covered" >JSON.parse(responseText);</span>
+        const tokenData = <span class="cstat-no" title="statement not covered" >JQJsonHandler.parseJsonString(responseText);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >        if (!tokenData.access_token) {</span>
 <span class="cstat-no" title="statement not covered" >          throw new Error('无效的token响应: 缺少access_token');</span>
@@ -1553,7 +1556,7 @@ export interface QwenAuthConfig {
       account_index: index
     };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    await fs.writeFile(authFile, JSON.stringify(authConfig, null, 2));</span>
+<span class="cstat-no" title="statement not covered" >    await fs.writeFile(authFile, JQJsonHandler.stringifyJson(authConfig, false));</span>
     
 <span class="cstat-no" title="statement not covered" >    secureLogger.info('Qwen认证文件已保存', {</span>
       authFile,
@@ -1597,7 +1600,7 @@ export interface QwenAuthConfig {
           
 <span class="cstat-no" title="statement not covered" >          try {</span>
             const content = <span class="cstat-no" title="statement not covered" >await fs.readFile(filePath, 'utf-8');</span>
-            const auth: QwenAuthConfig = <span class="cstat-no" title="statement not covered" >JSON.parse(content);</span>
+            const auth: QwenAuthConfig = <span class="cstat-no" title="statement not covered" >JQJsonHandler.parseJsonString(content);</span>
             const isExpired = <span class="cstat-no" title="statement not covered" >Date.now() &gt; auth.expires_at;</span>
             const status = <span class="cstat-no" title="statement not covered" >isExpired ? '❌ 已过期' : '✅ 有效';</span>
             
@@ -1691,7 +1694,7 @@ export interface QwenAuthConfig {
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const authFile = <span class="cstat-no" title="statement not covered" >path.join(this.authDir, `qwen-auth-${index}.json`);</span>
       const content = <span class="cstat-no" title="statement not covered" >await fs.readFile(authFile, 'utf-8');</span>
-      const auth: QwenAuthConfig = <span class="cstat-no" title="statement not covered" >JSON.parse(content);</span>
+      const auth: QwenAuthConfig = <span class="cstat-no" title="statement not covered" >JQJsonHandler.parseJsonString(content);</span>
       const isExpired = <span class="cstat-no" title="statement not covered" >Date.now() &gt; auth.expires_at;</span>
       
 <span class="cstat-no" title="statement not covered" >      return {</span>
@@ -1767,7 +1770,7 @@ export interface QwenAuthConfig {
     
 <span class="cstat-no" title="statement not covered" >    try {</span>
       const content = <span class="cstat-no" title="statement not covered" >await fs.readFile(authFile, 'utf-8');</span>
-      const auth: QwenAuthConfig = <span class="cstat-no" title="statement not covered" >JSON.parse(content);</span>
+      const auth: QwenAuthConfig = <span class="cstat-no" title="statement not covered" >JQJsonHandler.parseJsonString(content);</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >      console.log(`🔄 刷新认证文件: qwen-auth-${index}.json`);</span>
 &nbsp;
@@ -1786,7 +1789,7 @@ export interface QwenAuthConfig {
 <span class="cstat-no" title="statement not covered" >        throw new Error(`Token刷新失败: ${response.status} ${response.statusText}`);</span>
       }
 &nbsp;
-      const tokenData = <span class="cstat-no" title="statement not covered" >await response.json();</span>
+      const tokenData = <span class="cstat-no" title="statement not covered" >JQJsonHandler.parseJsonString(await response.text());</span>
       
       // 更新认证文件
 <span class="cstat-no" title="statement not covered" >      auth.access_token = tokenData.access_token;</span>
@@ -1794,7 +1797,7 @@ export interface QwenAuthConfig {
 <span class="cstat-no" title="statement not covered" >      auth.resource_url = tokenData.resource_url || auth.resource_url;</span>
 <span class="cstat-no" title="statement not covered" >      auth.expires_at = Date.now() + (tokenData.expires_in * 1000);</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >      await fs.writeFile(authFile, JSON.stringify(auth, null, 2));</span>
+<span class="cstat-no" title="statement not covered" >      await fs.writeFile(authFile, JQJsonHandler.stringifyJson(auth, false));</span>
       
 <span class="cstat-no" title="statement not covered" >      console.log(`✅ 认证文件刷新成功: qwen-auth-${index}.json`);</span>
 &nbsp;
@@ -1813,7 +1816,7 @@ export interface QwenAuthConfig {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-08-22T11:47:59.222Z
+                at 2025-08-25T07:28:12.122Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

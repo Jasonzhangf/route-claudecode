@@ -11,6 +11,7 @@ import { JQJsonHandler } from '../utils/jq-json-handler';
 import { ConfigReader, MergedConfig } from './config-reader';
 import { ConfigValidator, ValidationRules } from './config-validator';
 import { ConfigTransformer, EnvTransformOptions } from './config-transformer';
+import { getServerPort, getServerHost } from '../constants/server-defaults';
 import {
   RCCv4Config,
   ServerCompatibilityProvider,
@@ -325,7 +326,7 @@ export class ConfigManager {
    * 获取启用的路由列表
    */
   getEnabledRoutes(): RouteConfig[] {
-    if (!this.currentConfig) {
+    if (!this.currentConfig || !this.currentConfig.routing || !this.currentConfig.routing.routes) {
       return [];
     }
 
@@ -685,7 +686,7 @@ export class ConfigManager {
           strictErrorReporting: true,
           zeroFallbackPolicy: true,
           maxRetries: 3,
-          requestTimeout: 30000,
+          requestTimeout: 300000, // 5分钟，支持长上下文处理
           healthCheckInterval: 60000,
           debug: false,
           monitoring: {
@@ -857,8 +858,8 @@ export class ConfigManager {
         preventCrossLayerCalls: true,
       },
       server: {
-        port: 5506,
-        host: 'localhost',
+        port: getServerPort(),
+        host: getServerHost(),
         name: 'RCC-Server',
         environment: 'development',
       },

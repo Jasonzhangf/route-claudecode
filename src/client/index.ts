@@ -19,6 +19,7 @@ import { ClientSession, SessionManager, SessionError } from './session';
 import { HttpClient, StreamProcessor, HttpError } from './http';
 import { ClientProxy, EnvironmentExporter } from './client-manager';
 import { ErrorHandler, RCCError } from '../interfaces/client/error-handler';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 客户端模块接口
@@ -109,7 +110,7 @@ export class ClientModule {
     });
 
     this.proxy.on('started', data => {
-      console.log(`🔌 Proxy started: ${JSON.stringify(data.config)}`);
+      console.log(`🔌 Proxy started: ${JQJsonHandler.stringifyJson(data.config)}`);
     });
 
     this.proxy.on('error', error => {

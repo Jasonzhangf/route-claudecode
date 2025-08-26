@@ -467,7 +467,7 @@ export class ConfigTransformer {
             strictErrorReporting: true,
             zeroFallbackPolicy: true,
             maxRetries: 3,
-            requestTimeout: 30000,
+            requestTimeout: 300000, // 5分钟，支持长上下文处理
             healthCheckInterval: 60000,
             debug: false,
             monitoring: {

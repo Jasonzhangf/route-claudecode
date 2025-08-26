@@ -16,7 +16,7 @@ import {
   TransformerSecurityError,
 } from './secure-anthropic-openai-transformer';
 import { getSafeMaxTokens, validateMaxTokens } from '../../constants/api-defaults';
-
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 /**
  * 支持的安全Transformer类型
  */
@@ -261,7 +261,7 @@ export class SecureTransformerFactory implements IModuleFactory {
 
   private calculateConfigHash(config: any): string {
     try {
-      const configString = JSON.stringify(config, Object.keys(config).sort());
+      const configString = JQJsonHandler.stringifyJson(config, false);
       let hash = 0;
       for (let i = 0; i < configString.length; i++) {
         const char = configString.charCodeAt(i);
@@ -284,7 +284,7 @@ export class SecureTransformerFactory implements IModuleFactory {
         details: this.sanitizeLogData(details),
       };
 
-      console.log(`[SECURITY][${timestamp}] TransformerFactory: ${event}`, JSON.stringify(logEntry));
+      console.log(`[SECURITY][${timestamp}] TransformerFactory: ${event}`, JQJsonHandler.stringifyJson(logEntry));
     }
   }
 

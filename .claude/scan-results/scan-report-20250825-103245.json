@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-25 10:32:45",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/cli/history/model-test-history-manager.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

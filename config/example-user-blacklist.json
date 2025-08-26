@@ -1,0 +1,46 @@
+{
+  "// === RCC v4.0 用户黑名单功能演示配置 ===": "",
+  
+  "// === PROVIDERS 区 ===": "",
+  "Providers": [
+    {
+      "name": "example-provider", 
+      "protocol": "openai",
+      "api_base_url": "https://api.example.com/v1",
+      "api_key": "your-api-key",
+      "models": ["gpt-4", "gpt-3.5-turbo", "claude-3-sonnet"],
+      "model_blacklist": [
+        "// === 用户黑名单配置说明 ===",
+        "// 1. 直接从API获取的模型列表中拷贝需要跳过的模型名称",
+        "// 2. 支持精确匹配和部分匹配（contains）",
+        "// 3. 注释行（以//开头）会被自动忽略",
+        "// 4. 空行会被自动过滤",
+        "",
+        "// === 示例黑名单 ===",
+        "gpt-4-32k-deprecated",
+        "old-model-v1", 
+        "unstable-beta-model",
+        "text-embedding-",
+        "// 上面的'text-embedding-'会匹配所有包含该文本的模型",
+        "",
+        "// === 常见需要屏蔽的模型类型 ===",
+        "whisper-",
+        "dall-e-",
+        "tts-",
+        "text-moderation",
+        "// 这些通常不适合用于聊天对话"
+      ]
+    }
+  ],
+
+  "// === ROUTER 区 ===": "",
+  "Router": {
+    "default": "example-provider,gpt-4"
+  },
+
+  "// === 系统设置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0",
+  "PORT": 5506,
+  "DEBUG": true
+}

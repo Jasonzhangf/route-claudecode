@@ -11,6 +11,7 @@
 import { DataValidator, ValidationResult } from '../../utils/data-validator';
 import { ErrorHandler } from '../../middleware/error-handler';
 import { DebugManager } from '../../debug/debug-manager';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 import {
   ClaudeCodeRequest,
   ClientInputValidationError,
@@ -76,7 +77,7 @@ export class InputValidationError extends Error {
       `🛤️  Path: ${this.path}`,
       `✅ Expected: ${this.expected}`,
       `❌ Actual: ${this.actual}`,
-      `💾 Value: ${JSON.stringify(this.value, null, 2)}`,
+      `💾 Value: ${JQJsonHandler.stringifyJson(this.value, true)}`,
       `📝 Message: ${this.message}`,
       `🏷️  Code: ${this.code}`,
       `⏰ Timestamp: ${new Date(this.timestamp).toISOString()}`,

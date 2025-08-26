@@ -8,7 +8,12 @@
       "protocol": "openai",
       "api_base_url": "http://localhost:1234/v1",
       "api_key": "lm-studio",
-      "models": ["llama-3.1-8b-instruct"]
+      "models": ["llama-3.1-8b-instruct"],
+      "model_blacklist": [
+        "// 用户黑名单：直接从模型列表拷贝需要跳过的模型名称到这里",
+        "// 示例：'gpt-4-32k-deprecated', 'old-model-v1', 'unstable-beta-model'",
+        "// 下次provider update会自动跳过这些模型"
+      ]
     }
   ],
 

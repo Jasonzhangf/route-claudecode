@@ -12,6 +12,8 @@ import {
 } from './mode-interface';
 import { ConfigManager } from '../../config/config-manager';
 import { ErrorHandler } from '../../middleware/error-handler';
+import { getServerPort } from '../../constants/server-defaults';
+import { CLI_DEFAULTS } from '../../constants/cli-defaults';
 
 export class ClientMode implements CLIModeInterface {
   public readonly name = 'client';
@@ -45,10 +47,10 @@ export class ClientMode implements CLIModeInterface {
       console.log('Setting up transparent proxy...');
       this.proxyManager = new ClientProxyManager({
         processName: 'claude',
-        targetUrl: 'http://localhost:3456',
-        proxyUrl: 'http://localhost:5506',
+        targetUrl: `http://localhost:${CLI_DEFAULTS.DEFAULT_PORT}`,
+        proxyUrl: `http://localhost:${getServerPort()}`,
         targetProcess: 'claude',
-        proxyPort: options.proxyPort || 3456,
+        proxyPort: options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT,
         rccServerUrl: await this.getRCCServerUrl(options),
       });
       await this.proxyManager.start();
@@ -65,7 +67,7 @@ export class ClientMode implements CLIModeInterface {
 
       console.log('✅ RCC Client started successfully');
       console.log(`   Claude Code process: PID ${this.claudeCodeProcess?.pid}`);
-      console.log(`   Proxy listening on: http://localhost:${options.proxyPort || 3456}`);
+      console.log(`   Proxy listening on: http://localhost:${options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT}`);
       console.log('   Press Ctrl+C to stop');
 
       // 5. 监控进程健康状态
@@ -157,7 +159,7 @@ export class ClientMode implements CLIModeInterface {
         env: {
           ...process.env,
           RCC_PROXY_MODE: 'true',
-          RCC_PROXY_PORT: (options.proxyPort || 3456).toString(),
+          RCC_PROXY_PORT: (options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT).toString(),
         },
       });
 
@@ -226,7 +228,7 @@ export class ClientMode implements CLIModeInterface {
     }
 
     // 添加代理配置
-    args.push('--proxy', `http://localhost:${options.proxyPort || 3456}`);
+    args.push('--proxy', `http://localhost:${options.proxyPort || CLI_DEFAULTS.DEFAULT_PORT}`);
 
     return args;
   }
@@ -238,7 +240,7 @@ export class ClientMode implements CLIModeInterface {
 
     // 从配置中获取RCC服务器URL，或使用默认值
     const config = await this.configManager.getClientConfig();
-    return config.serverUrl || 'http://localhost:3456';
+    return config.serverUrl || `http://localhost:${CLI_DEFAULTS.DEFAULT_PORT}`;
   }
 
   private startHealthMonitoring(): void {

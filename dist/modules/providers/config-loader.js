@@ -34,6 +34,7 @@ exports.ConfigLoader = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const JSON5 = __importStar(require("json5"));
+const jq_json_handler_1 = require("../../utils/jq-json-handler");
 /**
  * Provider配置加载器
  */
@@ -210,7 +211,7 @@ class ConfigLoader {
         let content;
         switch (configFormat) {
             case 'json':
-                content = JSON.stringify(config, null, 2);
+                content = jq_json_handler_1.JQJsonHandler.stringifyJson(config, false);
                 break;
             case 'json5':
                 content = JSON5.stringify(config, null, 2);

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-25 10:51:20",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/config/example-user-blacklist.json",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

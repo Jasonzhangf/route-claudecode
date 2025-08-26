@@ -39,6 +39,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PipelineManager = void 0;
 const events_1 = require("events");
 const secure_logger_1 = require("../utils/secure-logger");
+const jq_json_handler_1 = require("../utils/jq-json-handler");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const os = __importStar(require("os"));
@@ -642,7 +643,7 @@ class PipelineManager extends events_1.EventEmitter {
             : `default-pipeline-table.json`;
         const filePath = path.join(generatedDir, fileName);
         // 写入文件
-        fs.writeFileSync(filePath, JSON.stringify(pipelineTableData, null, 2), 'utf8');
+        fs.writeFileSync(filePath, jq_json_handler_1.JQJsonHandler.stringifyJson(pipelineTableData, false), 'utf8');
         secure_logger_1.secureLogger.info('📋 Pipeline table saved', {
             file: filePath,
             totalPipelines: pipelineTableData.totalPipelines,
@@ -777,7 +778,7 @@ class PipelineManager extends events_1.EventEmitter {
             : `${timestamp}_default-pipeline-table.json`;
         const filePath = path.join(debugLogsDir, fileName);
         // 写入文件
-        fs.writeFileSync(filePath, JSON.stringify(debugPipelineTableData, null, 2), 'utf8');
+        fs.writeFileSync(filePath, jq_json_handler_1.JQJsonHandler.stringifyJson(debugPipelineTableData, false), 'utf8');
         secure_logger_1.secureLogger.info('🐛 Debug pipeline table saved', {
             file: filePath,
             port: this.port,

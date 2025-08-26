@@ -6,6 +6,8 @@
  * @author Jason Zhang
  */
 
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
+
 /**
  * 指标类型枚举
  */
@@ -384,7 +386,7 @@ export class MetricsCollector {
       };
     }
 
-    return JSON.stringify(exportData, null, 2);
+    return JQJsonHandler.stringifyJson(exportData, false);
   }
 
   /**

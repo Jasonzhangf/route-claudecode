@@ -7,6 +7,7 @@
  */
 
 import { IMiddlewareFunction } from '../interfaces/core/server-interface';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 验证中间件配置
@@ -42,7 +43,7 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
     try {
       // 1. 检查请求体大小
       if (req.body) {
-        const bodySize = JSON.stringify(req.body).length;
+        const bodySize = JQJsonHandler.stringifyJson(req.body, true).length;
         if (bodySize > maxBodySize) {
           res.statusCode = 413;
           res.body = {
@@ -74,7 +75,7 @@ export function validation(config: ValidationConfig = {}): IMiddlewareFunction {
       // 3. 验证JSON格式
       if (validateJson && req.body && typeof req.body === 'string') {
         try {
-          req.body = JSON.parse(req.body);
+          req.body = JQJsonHandler.parseJsonString(req.body);
         } catch (error) {
           res.statusCode = 400;
           res.body = {

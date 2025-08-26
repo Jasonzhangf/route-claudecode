@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { DataValidator } from '../../utils/data-validator';
 import { DEBUG_RECORD_SCHEMA } from '../schemas/claude-code-schemas';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { InputValidationError } from '../validation/input-validator';
 import { OutputValidationError } from '../validation/output-validator';
 
@@ -262,7 +263,7 @@ export class PortBasedDebugRecorder {
           totalRecords++;
 
           try {
-            const record = JSON.parse(lines[i]) as DebugRecord;
+            const record = JQJsonHandler.parseJsonString(lines[i]) as DebugRecord;
 
             // 基础结构验证
             const structureValidation = DataValidator.validate(record, DEBUG_RECORD_SCHEMA);
@@ -365,7 +366,7 @@ export class PortBasedDebugRecorder {
           if (limit && records.length >= limit) break;
 
           try {
-            const record = JSON.parse(line) as DebugRecord;
+            const record = JQJsonHandler.parseJsonString(line) as DebugRecord;
             records.push(record);
           } catch (parseError) {
             console.warn(`Failed to parse debug record: ${parseError.message}`);
@@ -420,7 +421,7 @@ export class PortBasedDebugRecorder {
 
     try {
       // 追加模式写入JSONL格式
-      const recordLine = JSON.stringify(record) + '\n';
+      const recordLine = JQJsonHandler.stringifyJson(record) + '\n';
       fs.appendFileSync(filePath, recordLine, 'utf8');
     } catch (error) {
       console.error(`Failed to write debug record for port ${port}:`, error.message);

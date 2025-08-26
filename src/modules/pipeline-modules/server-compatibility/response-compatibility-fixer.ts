@@ -7,6 +7,7 @@
  */
 
 import { OpenAIStandardResponse, DebugRecorder } from './enhanced-compatibility';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 /**
  * LM Studio 响应修复器
@@ -50,7 +51,7 @@ export class LMStudioResponseFixer {
         final_structure_valid: this.validateOpenAIFormat(fixedResponse),
         processing_time_ms: processingTime,
         performance_metrics: {
-          response_size_bytes: JSON.stringify(fixedResponse).length,
+          response_size_bytes: JQJsonHandler.stringifyJson(fixedResponse).length,
           choices_count: fixedResponse.choices.length,
           tool_calls_count: this.countToolCalls(fixedResponse),
         },
@@ -120,7 +121,7 @@ export class LMStudioResponseFixer {
         arguments:
           typeof toolCall.function?.arguments === 'string'
             ? toolCall.function.arguments
-            : JSON.stringify(toolCall.function?.arguments || {}),
+            : JQJsonHandler.stringifyJson(toolCall.function?.arguments || {}),
       },
     }));
   }
@@ -239,7 +240,7 @@ export class DeepSeekResponseFixer {
               arguments:
                 typeof toolCall.function?.arguments === 'string'
                   ? toolCall.function.arguments
-                  : JSON.stringify(toolCall.function?.arguments || {}),
+                  : JQJsonHandler.stringifyJson(toolCall.function?.arguments || {}),
             },
           }));
         }
@@ -510,7 +511,7 @@ export class GenericResponseFixer {
     }
 
     if (response.content) {
-      return typeof response.content === 'string' ? response.content : JSON.stringify(response.content);
+      return typeof response.content === 'string' ? response.content : JQJsonHandler.stringifyJson(response.content);
     }
 
     if (response.choices?.[0]?.message?.content) {
@@ -518,7 +519,7 @@ export class GenericResponseFixer {
     }
 
     if (response.message) {
-      return typeof response.message === 'string' ? response.message : JSON.stringify(response.message);
+      return typeof response.message === 'string' ? response.message : JQJsonHandler.stringifyJson(response.message);
     }
 
     if (response.text) {
@@ -530,7 +531,7 @@ export class GenericResponseFixer {
     }
 
     // 最后尝试JSON字符串化
-    return JSON.stringify(response);
+    return JQJsonHandler.stringifyJson(response);
   }
 
   private getContentExtractionMethod(response: any): string {

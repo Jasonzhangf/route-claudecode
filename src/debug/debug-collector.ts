@@ -11,6 +11,7 @@ import { DebugRecord, ModuleRecord, DebugSession, DebugConfig } from './types/de
 import { RCCError } from '../types/error';
 import { Pipeline } from '../pipeline/types';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { getServerPort } from '../constants/server-defaults';
 
 /**
  * 事件类型
@@ -160,7 +161,7 @@ export class DebugCollectorImpl extends EventEmitter implements DebugCollector {
       requestId,
       data: this.sanitizeEventData(data),
       metadata: {
-        port: data.port || 3120,
+        port: data.port || getServerPort(),
         source: 'request-handler',
         version: '4.0.0',
       },
@@ -188,7 +189,7 @@ export class DebugCollectorImpl extends EventEmitter implements DebugCollector {
       moduleName,
       data: this.sanitizeEventData(data),
       metadata: {
-        port: data.port || 3120,
+        port: data.port || getServerPort(),
         source: moduleName,
         version: '4.0.0',
       },
@@ -220,7 +221,7 @@ export class DebugCollectorImpl extends EventEmitter implements DebugCollector {
         ...this.sanitizeEventData(data),
       },
       metadata: {
-        port: data.port || 3120,
+        port: data.port || getServerPort(),
         source: 'pipeline-manager',
         version: '4.0.0',
       },

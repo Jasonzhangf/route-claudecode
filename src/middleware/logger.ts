@@ -7,6 +7,7 @@
  */
 
 // import { IMiddlewareFunction } from '../interfaces/core/middleware-interface';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 日志级别
@@ -77,10 +78,10 @@ export function logger(options: LoggerOptions = {}): any {
       case 'detailed':
         console.log(`[${new Date().toISOString()}] ${req.id} ${req.method} ${req.url} ${statusCode} ${duration}ms`);
         if (includeHeaders) {
-          console.log(`  Headers: ${JSON.stringify(req.headers, null, 2)}`);
+          console.log(`  Headers: ${JQJsonHandler.stringifyJson(req.headers)}`);
         }
         if (includeBody && req.body) {
-          console.log(`  Body: ${JSON.stringify(req.body, null, 2)}`);
+          console.log(`  Body: ${JQJsonHandler.stringifyJson(req.body)}`);
         }
         break;
 
@@ -96,7 +97,7 @@ export function logger(options: LoggerOptions = {}): any {
           ...(includeHeaders && { headers: req.headers }),
           ...(includeBody && req.body && { body: req.body }),
         };
-        console.log(JSON.stringify(logEntry));
+        console.log(JQJsonHandler.stringifyJson(logEntry, true));
         break;
     }
   }
@@ -125,7 +126,7 @@ export function logger(options: LoggerOptions = {}): any {
             stack: error.stack,
           },
         };
-        console.error(JSON.stringify(errorEntry, null, 2));
+        console.error(JQJsonHandler.stringifyJson(errorEntry));
         break;
     }
   }

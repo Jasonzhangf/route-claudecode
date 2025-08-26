@@ -10,7 +10,7 @@
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { OpenAI } from 'openai';
-
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 /**
  * LM Studio配置接口
  */
@@ -351,7 +351,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
           
           // 将工具输入转换为可读的描述
           if (typeof toolInput === 'object' && Object.keys(toolInput).length > 0) {
-            convertedContent += JSON.stringify(toolInput);
+            convertedContent += JQJsonHandler.stringifyJson(toolInput);
           }
           convertedContent += '\n';
         } else if (contentBlock.type === 'tool_result') {
@@ -360,7 +360,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
           convertedContent += `[Tool Result] ${result}\n`;
         } else {
           // 未知类型的内容块，尝试提取文本
-          const textContent = contentBlock.text || contentBlock.content || JSON.stringify(contentBlock);
+          const textContent = contentBlock.text || contentBlock.content || JQJsonHandler.stringifyJson(contentBlock);
           convertedContent += textContent + '\n';
         }
       }
@@ -372,7 +372,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
         convertedContent = msg.content.content;
       } else {
         // fallback: 转换整个对象为JSON字符串
-        convertedContent = JSON.stringify(msg.content);
+        convertedContent = JQJsonHandler.stringifyJson(msg.content);
       }
     }
 

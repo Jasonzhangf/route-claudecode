@@ -10,6 +10,7 @@ import { EventEmitter } from 'events';
 import { ValidateInput, ValidateOutput } from '../middleware/data-validator';
 import { RCCError, ErrorHandler, ErrorContext } from '../interfaces/client/error-handler';
 import { getServerPort, getServerHost, buildServerUrl } from '../constants/server-defaults';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 会话状态
@@ -299,7 +300,7 @@ export class ClientSession extends EventEmitter {
       const response = await fetch(endpoint, {
         method,
         headers: requestHeaders,
-        body: data ? JSON.stringify(data) : undefined,
+        body: data ? JQJsonHandler.stringifyJson(data) : undefined,
         signal: AbortSignal.timeout(this._config.timeout),
       });
 

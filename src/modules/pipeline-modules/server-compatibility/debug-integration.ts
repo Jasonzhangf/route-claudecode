@@ -14,6 +14,7 @@ import {
   CompatibilityStats,
   ServerCompatibilityConfig,
 } from './types/compatibility-types';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 /**
  * 调试集成管理器
@@ -85,8 +86,8 @@ export class DebugIntegrationManager extends EventEmitter {
         processing_time_ms: processingTimeMs,
         adaptations: this.identifyAdaptations(originalRequest, adaptedRequest),
         size_change: {
-          original_size: JSON.stringify(originalRequest).length,
-          adapted_size: JSON.stringify(adaptedRequest).length,
+          original_size: JQJsonHandler.stringifyJson(originalRequest).length,
+          adapted_size: JQJsonHandler.stringifyJson(adaptedRequest).length,
         },
       },
     };
@@ -297,7 +298,7 @@ export class DebugIntegrationManager extends EventEmitter {
     }
 
     // 深度复制并清理敏感数据
-    const sanitized = JSON.parse(JSON.stringify(data));
+    const sanitized = JSON.parse(JQJsonHandler.stringifyJson(data));
 
     const sensitiveFields = ['api_key', 'token', 'authorization', 'password', 'secret'];
 
@@ -362,7 +363,7 @@ export class DebugIntegrationManager extends EventEmitter {
     const adaptations = [];
 
     // 简化的差异检测
-    if (JSON.stringify(original) !== JSON.stringify(adapted)) {
+    if (JQJsonHandler.stringifyJson(original) !== JQJsonHandler.stringifyJson(adapted)) {
       adaptations.push('request_modified');
     }
 

@@ -14,6 +14,7 @@ exports.OpenAIProtocolHandler = void 0;
 const openai_1 = __importDefault(require("openai"));
 const base_module_1 = require("../../interfaces/module/base-module");
 const events_1 = require("events");
+const jq_json_handler_1 = require("../../utils/jq-json-handler");
 /**
  * OpenAI Protocol处理器实现
  */
@@ -186,7 +187,7 @@ class OpenAIProtocolHandler extends events_1.EventEmitter {
             else if (msg.role === 'user') {
                 const userMsg = msg;
                 // 简化处理：只支持文本内容，复杂内容转为JSON字符串
-                const content = typeof userMsg.content === 'string' ? userMsg.content : JSON.stringify(userMsg.content);
+                const content = typeof userMsg.content === 'string' ? userMsg.content : jq_json_handler_1.JQJsonHandler.stringifyJson(userMsg.content);
                 return {
                     role: 'user',
                     content: content,
@@ -198,7 +199,7 @@ class OpenAIProtocolHandler extends events_1.EventEmitter {
                 const content = typeof assistantMsg.content === 'string'
                     ? assistantMsg.content
                     : assistantMsg.content
-                        ? JSON.stringify(assistantMsg.content)
+                        ? jq_json_handler_1.JQJsonHandler.stringifyJson(assistantMsg.content)
                         : null;
                 const openaiMsg = {
                     role: 'assistant',
@@ -213,7 +214,7 @@ class OpenAIProtocolHandler extends events_1.EventEmitter {
                             name: tc.function.name,
                             arguments: typeof tc.function.arguments === 'string'
                                 ? tc.function.arguments
-                                : JSON.stringify(tc.function.arguments),
+                                : jq_json_handler_1.JQJsonHandler.stringifyJson(tc.function.arguments),
                         },
                     }));
                 }

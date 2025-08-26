@@ -153,7 +153,7 @@ export const CLAUDE_CODE_REQUEST_SCHEMA: ValidationSchema = {
   max_tokens: {
     type: 'number',
     required: true,
-    enum: [1, 4096, 8192, 16384, 32768, 65536, 100000, 200000],
+    enum: [1, 1000, 4096, 8192, 16384, 32768, 65536, 100000, 200000],
   },
   messages: {
     type: 'array',

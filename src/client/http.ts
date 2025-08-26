@@ -11,6 +11,8 @@ import { Readable } from 'stream';
 import { ValidateInput, ValidateOutput } from '../middleware/data-validator';
 import { RCCError, ErrorHandler, ErrorContext } from '../interfaces/client/error-handler';
 import { ClientSession, SessionManager } from './session';
+import { JQJsonHandler } from '../utils/jq-json-handler';
+import { getHttpRequestTimeout } from '../constants/timeout-defaults';
 
 /**
  * HTTP方法类型
@@ -253,7 +255,7 @@ export class HttpClient extends EventEmitter {
       const requestInit: RequestInit = {
         method: config.method,
         headers: this.buildHeaders(config.headers),
-        body: data ? JSON.stringify(data) : undefined,
+        body: data ? JQJsonHandler.stringifyJson(data, true) : undefined,
         signal: config.signal || controller.signal,
         redirect: config.followRedirects ? 'follow' : 'manual',
       };
@@ -308,7 +310,7 @@ export class HttpClient extends EventEmitter {
       const requestInit: RequestInit = {
         method: requestConfig.method,
         headers: this.buildHeaders(requestConfig.headers),
-        body: data ? JSON.stringify(data) : undefined,
+        body: data ? JQJsonHandler.stringifyJson(data, true) : undefined,
         signal: controller.signal,
       };
 
@@ -404,7 +406,8 @@ export class HttpClient extends EventEmitter {
   private async parseResponseData<T>(response: Response, responseType: string): Promise<T> {
     switch (responseType) {
       case 'json':
-        return await response.json();
+        const jsonText = await response.text();
+        return JQJsonHandler.parseJsonString<T>(jsonText);
       case 'text':
         return (await response.text()) as T;
       case 'buffer':
@@ -412,7 +415,8 @@ export class HttpClient extends EventEmitter {
       case 'stream':
         return response.body as T;
       default:
-        return await response.json();
+        const defaultJsonText = await response.text();
+        return JQJsonHandler.parseJsonString<T>(defaultJsonText);
     }
   }
 
@@ -423,7 +427,7 @@ export class HttpClient extends EventEmitter {
     return {
       method: config.method || 'GET',
       headers: config.headers || {},
-      timeout: config.timeout || 30000,
+      timeout: getHttpRequestTimeout(config.timeout),
       retries: config.retries || 2,
       retryDelay: config.retryDelay || 1000,
       followRedirects: config.followRedirects ?? true,
@@ -581,7 +585,7 @@ export class StreamProcessor extends EventEmitter {
                 return;
               }
 
-              const parsedData = JSON.parse(data);
+              const parsedData = JQJsonHandler.parseJsonString(data);
               onMessage(parsedData);
               this.emit('message', parsedData);
             } catch (error) {
@@ -644,7 +648,7 @@ export class StreamProcessor extends EventEmitter {
           if (braceCount === 0 && buffer[i] === '}') {
             try {
               const jsonStr = buffer.slice(start, i + 1);
-              const data = JSON.parse(jsonStr);
+              const data = JQJsonHandler.parseJsonString(jsonStr);
               onData(data);
               this.emit('data', data);
               start = i + 1;

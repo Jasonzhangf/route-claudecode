@@ -12,7 +12,7 @@
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
 import { ModuleProcessingContext } from '../../../config/unified-config-manager';
 import { EventEmitter } from 'events';
-
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 export interface PassthroughCompatibilityConfig {
   mode: 'passthrough';
   maxTokens?: number;
@@ -198,7 +198,7 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
     // }
 
     console.log('   输出模型:', processedRequest.model);
-    console.log('   透传模式: 保持OpenAI格式，Context更新模型名，限制请求大小');
+    console.log('   透传模式: 保持OpenAI格式，Context更新模型名，直接透传');
     console.log('   Context信息:', {
       requestId: context?.requestId,
       providerName: context?.providerName,
@@ -213,7 +213,7 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
    */
   private async limitRequestSize(request: StandardRequest, maxTokens: number): Promise<StandardRequest> {
     // 粗略估算JSON大小（字符数近似token数）
-    const requestJson = JSON.stringify(request);
+    const requestJson = JQJsonHandler.stringifyJson(request);
     const estimatedTokens = requestJson.length / 4; // 粗略估算：4字符≈1token
     
     console.log(`   📏 请求大小检查: ${requestJson.length} 字符, 估算 ${Math.round(estimatedTokens)} tokens, 限制 ${maxTokens} tokens`);
@@ -240,7 +240,7 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
     }
     
     // 2. 检查截断后的大小
-    const truncatedJson = JSON.stringify(truncatedRequest);
+    const truncatedJson = JQJsonHandler.stringifyJson(truncatedRequest);
     const newEstimatedTokens = truncatedJson.length / 4;
     
     console.log(`   📏 截断后大小: ${truncatedJson.length} 字符, 估算 ${Math.round(newEstimatedTokens)} tokens`);
@@ -259,7 +259,7 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
       }
     }
     
-    const finalJson = JSON.stringify(truncatedRequest);
+    const finalJson = JQJsonHandler.stringifyJson(truncatedRequest);
     const finalEstimatedTokens = finalJson.length / 4;
     
     console.log(`   ✅ 最终请求大小: ${finalJson.length} 字符, 估算 ${Math.round(finalEstimatedTokens)} tokens`);

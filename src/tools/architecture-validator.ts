@@ -10,6 +10,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { MODULE_DEPENDENCY_GRAPH, validateModuleDependency, detectCircularDependencies } from '../interfaces/core';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 违规类型枚举
@@ -579,7 +580,7 @@ export class ArchitectureValidator {
       recommendations: this.generateRecommendations(result),
     };
 
-    fs.writeFileSync(outputPath, JSON.stringify(report, null, 2), 'utf-8');
+    fs.writeFileSync(outputPath, JQJsonHandler.stringifyJson(report, false), 'utf-8');
     console.log(`📄 详细报告已生成: ${outputPath}`);
   }
 

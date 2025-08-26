@@ -9,7 +9,7 @@
 import { MetricsCollector, ProviderHealthStatus, SystemMetrics, AggregatedMetric } from './metrics-collector';
 import { AlertManager, Alert } from './alert-manager';
 import { HealthMonitor } from './health-monitor';
-
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 /**
  * 仪表板配置
  */
@@ -331,7 +331,7 @@ export class MonitoringDashboard {
    */
   private sendResponse(res: any, statusCode: number, data: any): void {
     res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(data, null, 2));
+    res.end(JQJsonHandler.stringifyJson(data, false));
   }
 
   /**

@@ -13,6 +13,7 @@
 
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { secureLogger } from '../utils/secure-logger';
+import { getServerPort, getServerHost } from '../constants/server-defaults';
 
 /**
  * 统一配置输出接口 - 配置大表
@@ -270,7 +271,7 @@ export class UnifiedConfigManager {
     
     for (const provider of config.providers) {
       if (!provider.name || !provider.api_key || !provider.models) {
-        throw new ConfigurationLoadError(`Provider配置不完整: ${JSON.stringify(provider)}`);
+        throw new ConfigurationLoadError(`Provider配置不完整: ${JQJsonHandler.stringifyJson(provider)}`);
       }
     }
   }
@@ -380,8 +381,8 @@ export class UnifiedConfigManager {
       },
       
       server: {
-        port: rawConfig.server?.port || 5506,
-        host: rawConfig.server?.host || '0.0.0.0',
+        port: rawConfig.server?.port || getServerPort(),
+        host: rawConfig.server?.host || getServerHost(),
         debug: rawConfig.server?.debug || false,
         cors: { enabled: true, origins: ['*'] },
         middleware: []

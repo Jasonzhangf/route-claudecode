@@ -28,6 +28,7 @@ import { StandardPipeline } from './standard-pipeline';
 import { Pipeline, PipelineStatus } from '../interfaces/module/pipeline-module';
 import { RoutingTable, PipelineRoute } from '../interfaces/router/request-router';
 import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -841,7 +842,7 @@ export class PipelineManager extends EventEmitter {
     const filePath = path.join(generatedDir, fileName);
     
     // 写入文件
-    fs.writeFileSync(filePath, JSON.stringify(pipelineTableData, null, 2), 'utf8');
+    fs.writeFileSync(filePath, JQJsonHandler.stringifyJson(pipelineTableData, false), 'utf8');
     
     secureLogger.info('📋 Pipeline table saved', {
       file: filePath,
@@ -992,7 +993,7 @@ export class PipelineManager extends EventEmitter {
     const filePath = path.join(debugLogsDir, fileName);
     
     // 写入文件
-    fs.writeFileSync(filePath, JSON.stringify(debugPipelineTableData, null, 2), 'utf8');
+    fs.writeFileSync(filePath, JQJsonHandler.stringifyJson(debugPipelineTableData, false), 'utf8');
     
     secureLogger.info('🐛 Debug pipeline table saved', {
       file: filePath,

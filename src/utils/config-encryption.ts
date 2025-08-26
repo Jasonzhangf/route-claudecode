@@ -10,6 +10,7 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
+import { JQJsonHandler } from './jq-json-handler';
 
 /**
  * 加密配置接口
@@ -254,7 +255,7 @@ export class ConfigEncryptionManager {
 
     // 安全地写入文件
     const tempPath = `${configPath}.tmp`;
-    fs.writeFileSync(tempPath, JSON.stringify(configWithMetadata, null, 2), {
+    fs.writeFileSync(tempPath, JQJsonHandler.stringifyJson(configWithMetadata, true), {
       mode: 0o600, // 只有所有者可读写
     });
 
@@ -309,7 +310,7 @@ export class ConfigEncryptionManager {
       }
 
       // 检查是否有解密失败的字段
-      const configString = JSON.stringify(config);
+      const configString = JQJsonHandler.stringifyJson(config);
       if (configString.includes('[DECRYPTION_FAILED]')) {
         console.error('❌ 配置包含解密失败的字段');
         return false;

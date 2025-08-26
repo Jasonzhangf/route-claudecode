@@ -11,7 +11,7 @@
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 export interface AdaptiveCompatibilityConfig {
   enableResponseFormatDetection?: boolean;
   enableGenericStrategy?: boolean;
@@ -416,7 +416,7 @@ export class AdaptiveCompatibilityModule extends EventEmitter implements ModuleI
    */
   private convertGenericResponseToOpenAI(response: any): any {
     console.log('🔄 [AdaptiveCompatibility] 通用响应 → 标准OpenAI格式');
-    console.log('🔍 通用原始响应:', JSON.stringify(response, null, 2));
+    console.log('🔍 通用原始响应:', JQJsonHandler.stringifyJson(response, false));
 
     // 如果已经是标准格式，直接返回
     if (this.isStandardOpenAIResponse(response)) {
@@ -433,10 +433,10 @@ export class AdaptiveCompatibilityModule extends EventEmitter implements ModuleI
     } else if (response.content) {
       content = this.extractContentFromResponse(response.content);
     } else if (response.message) {
-      content = typeof response.message === 'string' ? response.message : JSON.stringify(response.message);
+      content = typeof response.message === 'string' ? response.message : JQJsonHandler.stringifyJson(response.message);
     } else {
       // 尝试从其他字段提取内容
-      content = response.text || response.output || JSON.stringify(response);
+      content = response.text || response.output || JQJsonHandler.stringifyJson(response);
     }
 
     const openaiResponse = {
@@ -461,7 +461,7 @@ export class AdaptiveCompatibilityModule extends EventEmitter implements ModuleI
       },
     };
 
-    console.log('✅ [AdaptiveCompatibility] 通用转换完成:', JSON.stringify(openaiResponse, null, 2));
+    console.log('✅ [AdaptiveCompatibility] 通用转换完成:', JQJsonHandler.stringifyJson(openaiResponse, false));
     return openaiResponse;
   }
 
@@ -482,7 +482,7 @@ export class AdaptiveCompatibilityModule extends EventEmitter implements ModuleI
           if (item.type === 'text' && item.text) {
             return item.text;
           }
-          return JSON.stringify(item);
+          return JQJsonHandler.stringifyJson(item);
         })
         .join('\n');
     }
@@ -491,7 +491,7 @@ export class AdaptiveCompatibilityModule extends EventEmitter implements ModuleI
       return content.text;
     }
 
-    return JSON.stringify(content);
+    return JQJsonHandler.stringifyJson(content);
   }
 
   /**

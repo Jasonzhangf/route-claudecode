@@ -14,6 +14,7 @@ import {
   ThirdPartyServiceErrorHandler,
   handleOpenAIError,
 } from '../../../middleware/third-party-service-error-handler';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 /**
  * 服务器请求格式（标准OpenAI格式）
@@ -218,7 +219,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
 
     const startTime = Date.now();
     console.log(`🌐 OpenAI服务器处理开始: ${input?.model}`);
-    console.log(`🔍 Server层接收到的input详细结构:`, JSON.stringify(input, null, 2));
+    console.log(`🔍 Server层接收到的input详细结构:`, JQJsonHandler.stringifyJson(input, false));
 
     try {
       // 验证请求
@@ -384,7 +385,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
     console.log(`   - Messages type: ${typeof request?.messages}`);
     console.log(`   - Messages is array: ${Array.isArray(request?.messages)}`);
     console.log(`   - Messages length: ${Array.isArray(request?.messages) ? request.messages.length : 'not array'}`);
-    console.log(`   - Full request: ${JSON.stringify(request, null, 2)}`);
+    console.log(`   - Full request: ${JQJsonHandler.stringifyJson(request, false)}`);
 
     // 立即检查messages的真实性
     console.log('🚨 URGENT DEBUG: 检查messages的各种访问方式');
@@ -397,7 +398,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
     );
     console.log(`   - Object.getOwnPropertyNames(request): ${Object.getOwnPropertyNames(request)}`);
     console.log(
-      `   - Object.getOwnPropertyDescriptor(request, 'messages'): ${JSON.stringify(Object.getOwnPropertyDescriptor(request, 'messages'))}`
+      `   - Object.getOwnPropertyDescriptor(request, 'messages'): ${JQJsonHandler.stringifyJson(Object.getOwnPropertyDescriptor(request, 'messages'))}`
     );
 
     if (!request) {

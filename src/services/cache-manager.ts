@@ -8,6 +8,7 @@
 
 import { EventEmitter } from 'events';
 import { ICacheManager } from './global-service-registry';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * 缓存项
@@ -176,7 +177,7 @@ export class CacheManager extends EventEmitter implements ICacheManager {
    */
   private calculateSize(data: any): number {
     try {
-      return JSON.stringify(data).length * 2; // 粗略估计字符串占用的字节数
+      return JQJsonHandler.stringifyJson(data).length * 2; // 粗略估计字符串占用的字节数
     } catch {
       return 1024; // 如果无法序列化，返回默认大小
     }
