@@ -21,3 +21,16 @@
 {"timestamp":"2025-08-25T15:20:34.179Z","level":"INFO","message":"Pipeline服务器启动成功","data":{"port":5511,"initializationTime":971,"uptime":0}}
 {"timestamp":"2025-08-25T15:20:34.254Z","level":"INFO","message":"RCC Server started with pipeline system","data":{"port":5511,"host":"0.0.0.0","config":"config/lmstudio-v4-5506-enhanced.json","debug":true}}
 {"timestamp":"2025-08-25T15:20:34.506Z","level":"INFO","message":"Precise pipeline blacklist manager initialized","data":{"enabled":true,"destroyRulesCount":3,"enabledDestroyRules":0,"activeCounters":0,"temporaryBlocks":0}}
+{"timestamp":"2025-08-26T04:23:43.607Z","level":"INFO","message":"Received SIGTERM, exiting gracefully"}
+{"timestamp":"2025-08-26T04:23:43.710Z","level":"INFO","message":"开始优雅关闭流程"}
+{"timestamp":"2025-08-26T04:23:43.768Z","level":"INFO","message":"正在停止PipelineLifecycleManager..."}
+{"timestamp":"2025-08-26T04:23:43.839Z","level":"INFO","message":"停止Pipeline系统"}
+{"timestamp":"2025-08-26T04:23:43.908Z","level":"INFO","message":"停止Pipeline服务器"}
+{"timestamp":"2025-08-26T04:23:44.044Z","level":"INFO","message":"Pipeline服务器已停止"}
+{"timestamp":"2025-08-26T04:23:44.120Z","level":"INFO","message":"清理Pipeline服务器资源"}
+{"timestamp":"2025-08-26T04:23:44.196Z","level":"INFO","message":"清理Pipeline服务器资源"}
+{"timestamp":"2025-08-26T04:23:44.270Z","level":"INFO","message":"Pipeline服务器资源清理完成"}
+{"timestamp":"2025-08-26T04:23:44.349Z","level":"INFO","message":"兼容性管理器清理完成"}
+{"timestamp":"2025-08-26T04:23:44.428Z","level":"INFO","message":"Pipeline服务器资源清理完成"}
+{"timestamp":"2025-08-26T04:23:44.510Z","level":"INFO","message":"Pipeline服务器已停止"}
+{"timestamp":"2025-08-26T04:23:45.589Z","level":"INFO","message":"优雅关闭完成"}

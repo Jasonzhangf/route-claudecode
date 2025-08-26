@@ -408,3 +408,16 @@
 {"timestamp":"2025-08-25T15:04:17.864Z","level":"INFO","message":"Pipeline服务器启动成功","data":{"port":5510,"initializationTime":1870,"uptime":0}}
 {"timestamp":"2025-08-25T15:04:18.027Z","level":"INFO","message":"RCC Server started with pipeline system","data":{"port":5510,"host":"0.0.0.0","config":"/Users/fanzhang/.route-claudecode/config/multi-provider-hybrid-v4.json","debug":true}}
 {"timestamp":"2025-08-25T15:04:18.463Z","level":"INFO","message":"Precise pipeline blacklist manager initialized","data":{"enabled":true,"destroyRulesCount":3,"enabledDestroyRules":0,"activeCounters":0,"temporaryBlocks":0}}
+{"timestamp":"2025-08-26T00:03:44.762Z","level":"INFO","message":"Received SIGTERM, exiting gracefully"}
+{"timestamp":"2025-08-26T00:03:44.947Z","level":"INFO","message":"开始优雅关闭流程"}
+{"timestamp":"2025-08-26T00:03:45.087Z","level":"INFO","message":"正在停止PipelineLifecycleManager..."}
+{"timestamp":"2025-08-26T00:03:45.226Z","level":"INFO","message":"停止Pipeline系统"}
+{"timestamp":"2025-08-26T00:03:45.362Z","level":"INFO","message":"停止Pipeline服务器"}
+{"timestamp":"2025-08-26T00:03:45.529Z","level":"INFO","message":"Pipeline服务器已停止"}
+{"timestamp":"2025-08-26T00:03:45.595Z","level":"INFO","message":"清理Pipeline服务器资源"}
+{"timestamp":"2025-08-26T00:03:45.661Z","level":"INFO","message":"清理Pipeline服务器资源"}
+{"timestamp":"2025-08-26T00:03:45.727Z","level":"INFO","message":"Pipeline服务器资源清理完成"}
+{"timestamp":"2025-08-26T00:03:45.794Z","level":"INFO","message":"兼容性管理器清理完成"}
+{"timestamp":"2025-08-26T00:03:45.925Z","level":"INFO","message":"Pipeline服务器资源清理完成"}
+{"timestamp":"2025-08-26T00:03:46.056Z","level":"INFO","message":"Pipeline服务器已停止"}
+{"timestamp":"2025-08-26T00:03:47.186Z","level":"INFO","message":"优雅关闭完成"}

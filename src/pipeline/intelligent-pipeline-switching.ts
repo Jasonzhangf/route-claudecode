@@ -202,13 +202,21 @@ export class IntelligentPipelineSwitching extends EventEmitter {
    */
   private initializeDefaultRules(): void {
     this.errorClassificationRules = [
-      // 可恢复错误 - 网络和临时问题
+      // 可恢复错误 - 网关超时和临时问题
       {
-        name: 'network-timeout',
-        statusCodes: [408, 503, 504],
-        messageKeywords: ['timeout', 'connection reset', 'network error'],
+        name: 'gateway-timeout',
+        statusCodes: [502, 504],
+        messageKeywords: ['gateway timeout', 'bad gateway', 'timeout', 'connection timeout'],
         recoverability: ErrorRecoverability.RECOVERABLE,
         priority: 1,
+        description: '网关超时或连接问题 - 可通过切换流水线恢复'
+      },
+      {
+        name: 'network-timeout',
+        statusCodes: [408, 503],
+        messageKeywords: ['timeout', 'connection reset', 'network error'],
+        recoverability: ErrorRecoverability.RECOVERABLE,
+        priority: 2,
         description: '网络超时或连接问题 - 可通过切换流水线恢复'
       },
       {
@@ -221,8 +229,8 @@ export class IntelligentPipelineSwitching extends EventEmitter {
       },
       {
         name: 'server-overload',
-        statusCodes: [502, 503],
-        messageKeywords: ['server overload', 'temporary unavailable', 'bad gateway'],
+        statusCodes: [503],
+        messageKeywords: ['server overload', 'temporary unavailable', 'service unavailable'],
         recoverability: ErrorRecoverability.RECOVERABLE,
         priority: 3,
         description: '服务器过载 - 可切换流水线'
@@ -239,18 +247,18 @@ export class IntelligentPipelineSwitching extends EventEmitter {
       },
       {
         name: 'model-not-found',
-        statusCodes: [404],
-        messageKeywords: ['model not found', 'not available', 'does not exist'],
-        recoverability: ErrorRecoverability.NON_RECOVERABLE,
-        priority: 2,
-        description: '模型不存在 - 需要拉黑流水线'
+        statusCodes: [400, 404],
+        messageKeywords: ['model not found', 'not available', 'does not exist', 'invalid model id', 'model id'],
+        recoverability: ErrorRecoverability.RECOVERABLE,
+        priority: 0,
+        description: '模型不支持 - 可切换到其他provider重试'
       },
       {
         name: 'server-internal-error',
         statusCodes: [500],
         messageKeywords: ['internal server error', 'unexpected error'],
         recoverability: ErrorRecoverability.NON_RECOVERABLE,
-        priority: 3,
+        priority: 4,
         description: '服务器内部错误 - 需要拉黑流水线'
       },
       

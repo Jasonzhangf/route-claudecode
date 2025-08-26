@@ -14,6 +14,7 @@ import https from 'https';
 import http from 'http';
 import { secureLogger } from '../../utils/secure-logger';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
+import { HeartbeatManager } from './heartbeat-manager';
 
 export interface HttpRequestOptions {
   method?: string;
@@ -21,6 +22,8 @@ export interface HttpRequestOptions {
   body?: string;
   bodyBuffer?: Buffer;
   timeout?: number;
+  requestId?: string;
+  enableHeartbeat?: boolean;
 }
 
 export interface HttpResponse {
@@ -337,20 +340,35 @@ export class HttpRequestHandler {
         const req = httpModule.request(requestOptions, (res) => {
           let responseData = '';
           let lastDataTime = Date.now();
-          let heartbeatInterval: NodeJS.Timeout | null = null;
+          let heartbeatSession: any = null;
           
-          // 长文本请求启动心跳监控
-          if (isLongTextRequest) {
-            heartbeatInterval = setInterval(() => {
-              const timeSinceLastData = Date.now() - lastDataTime;
-              if (timeSinceLastData > 30000) { // 30秒无数据
-                secureLogger.warn('长文本请求心跳检查', {
+          // 长文本请求启动专业心跳管理
+          if (isLongTextRequest && options.requestId) {
+            const heartbeatManager = HeartbeatManager.getInstance();
+            heartbeatSession = heartbeatManager.startHeartbeatSession(
+              options.requestId,
+              bodySize,
+              () => {
+                // 心跳回调 - 记录连接状态
+                const timeSinceLastData = Date.now() - lastDataTime;
+                secureLogger.debug('长文本请求心跳信号', {
+                  requestId: options.requestId,
                   url: url.replace(/\/[^/]+$/, '/***'),
                   timeSinceLastData,
-                  responseDataLength: responseData.length
+                  responseDataLength: responseData.length,
+                  connectionStatus: 'active'
                 });
+                
+                // 如果超过60秒无数据，发出警告
+                if (timeSinceLastData > 60000) {
+                  secureLogger.warn('长时间无响应数据', {
+                    requestId: options.requestId,
+                    timeSinceLastData,
+                    responseSize: responseData.length
+                  });
+                }
               }
-            }, 30000); // 每30秒检查一次
+            );
           }
 
           res.on('data', (chunk) => {
@@ -367,15 +385,20 @@ export class HttpRequestHandler {
           });
 
           res.on('end', () => {
-            if (heartbeatInterval) {
-              clearInterval(heartbeatInterval);
+            // 清理心跳会话
+            if (heartbeatSession && options.requestId) {
+              const heartbeatManager = HeartbeatManager.getInstance();
+              heartbeatManager.stopHeartbeatSession(options.requestId);
             }
             
             secureLogger.info('HTTP请求完成', {
               url: url.replace(/\/[^/]+$/, '/***'),
               statusCode: res.statusCode,
               responseSize: responseData.length,
-              isLongTextRequest
+              isLongTextRequest,
+              ...(isLongTextRequest && options.requestId && {
+                heartbeatSessionCleaned: true
+              })
             });
             
             resolve({
@@ -386,12 +409,16 @@ export class HttpRequestHandler {
           });
           
           res.on('error', (error) => {
-            if (heartbeatInterval) {
-              clearInterval(heartbeatInterval);
+            // 清理心跳会话
+            if (heartbeatSession && options.requestId) {
+              const heartbeatManager = HeartbeatManager.getInstance();
+              heartbeatManager.stopHeartbeatSession(options.requestId);
             }
+            
             secureLogger.error('HTTP响应接收失败', {
               url: url.replace(/\/[^/]+$/, '/***'),
-              error: error.message
+              error: error.message,
+              heartbeatSessionCleaned: !!heartbeatSession
             });
             reject(error);
           });

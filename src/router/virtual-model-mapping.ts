@@ -9,6 +9,7 @@
 
 import { secureLogger } from '../utils/secure-logger';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { getRoutingThresholds, estimateTokenCount } from '../config/routing-thresholds';
 
 export interface VirtualModelMappingRule {
   inputModel: string;
@@ -33,64 +34,68 @@ export enum VirtualModelType {
 }
 
 /**
- * 虚拟模型映射规则配置
- * 按照优先级顺序排列，第一个匹配的规则生效
+ * 获取模型路由映射规则配置
+ * 使用配置化的阈值替代硬编码值
  */
-export const VIRTUAL_MODEL_MAPPING_RULES: VirtualModelMappingRule[] = [
-  // 长上下文检测 (>60K tokens)
-  {
-    inputModel: '*', // 通配符，匹配所有模型
-    conditions: {
-      tokenCount: { min: 60000 },
+export function getModelMappingRules(): VirtualModelMappingRule[] {
+  const thresholds = getRoutingThresholds();
+  
+  return [
+    // 长上下文检测 - 使用配置化阈值
+    {
+      inputModel: '*', // 通配符，匹配所有模型
+      conditions: {
+        tokenCount: { min: thresholds.tokenLimits.longContextMin },
+      },
+      virtualModel: VirtualModelType.LONG_CONTEXT,
+      priority: 1,
     },
-    virtualModel: VirtualModelType.LONG_CONTEXT,
-    priority: 1,
-  },
 
-  // Web搜索工具检测
-  {
-    inputModel: '*',
-    conditions: {
-      hasTools: true,
-      toolTypes: ['web_search', 'browser', 'search'],
+    // Web搜索工具检测
+    {
+      inputModel: '*',
+      conditions: {
+        hasTools: true,
+        toolTypes: ['web_search', 'browser', 'search'],
+      },
+      virtualModel: VirtualModelType.WEB_SEARCH,
+      priority: 2,
     },
-    virtualModel: VirtualModelType.WEB_SEARCH,
-    priority: 2,
-  },
 
-  // 推理模型检测 (包含thinking参数)
-  {
-    inputModel: '*',
-    conditions: {
-      hasThinking: true,
+    // 推理模型检测 (包含thinking参数)
+    {
+      inputModel: '*',
+      conditions: {
+        hasThinking: true,
+      },
+      virtualModel: VirtualModelType.REASONING,
+      priority: 3,
     },
-    virtualModel: VirtualModelType.REASONING,
-    priority: 3,
-  },
 
-  // 编程相关模型 - 有工具调用通常是编程任务
-  {
-    inputModel: '*',
-    conditions: {
-      hasTools: true,
-      customCondition: (request: any) => {
-        // 排除web搜索工具，那些属于WEB_SEARCH类型
-        const toolTypes = request.tools?.map((tool: any) => tool.type || tool.name || '').join(' ').toLowerCase();
-        return !toolTypes.includes('web') && !toolTypes.includes('search') && !toolTypes.includes('browser');
-      }
+    // 编程相关模型 - 有工具调用通常是编程任务
+    {
+      inputModel: '*',
+      conditions: {
+        hasTools: true,
+        customCondition: (request: any) => {
+          // 排除web搜索工具，那些属于WEB_SEARCH类型
+          const toolTypes = request.tools?.map((tool: any) => tool.type || tool.name || '').join(' ').toLowerCase();
+          return !toolTypes.includes('web') && !toolTypes.includes('search') && !toolTypes.includes('browser');
+        }
+      },
+      virtualModel: VirtualModelType.CODING,
+      priority: 4,
     },
-    virtualModel: VirtualModelType.CODING,
-    priority: 4,
-  },
 
-  // 默认规则 (必须放在最后)
-  {
-    inputModel: '*',
-    conditions: {},
-    virtualModel: VirtualModelType.DEFAULT,
-    priority: 99,
-  },
-];
+    // 默认规则 (必须放在最后)
+    {
+      inputModel: '*',
+      conditions: {},
+      virtualModel: VirtualModelType.DEFAULT,
+      priority: 99,
+    },
+  ];
+}
 
 /**
  * 虚拟模型映射引擎
@@ -103,11 +108,12 @@ export class VirtualModelMapper {
    * @returns 虚拟模型类型
    */
   static mapToVirtual(inputModel: string, request: any): VirtualModelType | string {
-    // 计算token数量 (简化版，实际应该使用tiktoken)
+    // 精确计算token数量 - 使用配置化参数
     const tokenCount = this.estimateTokenCount(request);
 
-    // 按优先级顺序检查规则
-    for (const rule of VIRTUAL_MODEL_MAPPING_RULES) {
+    // 按优先级顺序检查规则 - 使用配置化规则
+    const rules = getModelMappingRules();
+    for (const rule of rules) {
       if (this.matchesRule(inputModel, request, tokenCount, rule)) {
         secureLogger.info('Virtual model mapping completed', {
           inputModel,
@@ -203,30 +209,30 @@ export class VirtualModelMapper {
   }
 
   /**
-   * 估算token数量 (简化版实现)
+   * 精确估算token数量 - 使用配置化参数
    */
   private static estimateTokenCount(request: any): number {
     let tokenCount = 0;
 
-    // 计算消息token
+    // 计算消息token - 使用更精确的估算
     if (Array.isArray(request.messages)) {
       for (const message of request.messages) {
         if (typeof message.content === 'string') {
-          tokenCount += Math.ceil(message.content.length / 4); // 粗略估算
+          tokenCount += estimateTokenCount(message.content, 'message');
         }
       }
     }
 
     // 计算系统消息token
     if (typeof request.system === 'string') {
-      tokenCount += Math.ceil(request.system.length / 4);
+      tokenCount += estimateTokenCount(request.system, 'system');
     }
 
     // 计算工具定义token
     if (Array.isArray(request.tools)) {
       for (const tool of request.tools) {
         const toolStr = JQJsonHandler.stringifyJson(tool);
-        tokenCount += Math.ceil(toolStr.length / 4);
+        tokenCount += estimateTokenCount(toolStr, 'tool');
       }
     }
 

@@ -32,6 +32,19 @@ import {
   PipelineRecoveryConfig
 } from './intelligent-pipeline-switching';
 
+// 导入新的解耦合执行管理架构
+import { 
+  PipelineExecutionManager, 
+  ExecutionRequest, 
+  ExecutionResult,
+  PipelineExecutionError,
+  NoPipelinesAvailableError,
+  PipelineTimeoutError
+} from './execution/pipeline-execution-manager';
+import { ErrorClassifier } from './execution/error-classifier';
+import { PipelineHealthManager } from './execution/pipeline-health-manager';
+import { LoadBalancer } from '../router/load-balancer';
+
 export interface RequestContext {
   requestId: string;
   startTime: Date;
@@ -86,6 +99,13 @@ export class PipelineRequestProcessor extends EventEmitter {
   private pipelineLayersProcessor: PipelineLayersProcessor;
   private blacklistManager: PrecisePipelineBlacklistManager;
   private intelligentPipelineSwitching: IntelligentPipelineSwitching;
+
+  // 新的解耦合执行管理架构（可选启用）
+  private errorClassifier?: ErrorClassifier;
+  private healthManager?: PipelineHealthManager;
+  private loadBalancer?: LoadBalancer;
+  private executionManager?: PipelineExecutionManager;
+  private useDecoupledExecution: boolean = false;
 
   constructor(config: MergedConfig, debugEnabled: boolean = false) {
     super();
@@ -146,6 +166,9 @@ export class PipelineRequestProcessor extends EventEmitter {
     };
     this.intelligentPipelineSwitching = new IntelligentPipelineSwitching(pipelineRecoveryConfig);
 
+    // 可选：初始化解耦合执行管理架构（实验性功能）
+    this.initializeOptionalDecoupledExecution();
+
     // 监听流水线切换系统的事件
     this.intelligentPipelineSwitching.on('pipeline-recovery', (event) => {
       secureLogger.info('🔄 流水线恢复事件', event);
@@ -172,6 +195,67 @@ export class PipelineRequestProcessor extends EventEmitter {
     this.debugManager.initialize(port).catch(error => {
       secureLogger.warn('Failed to initialize debug manager console capture', { error, port });
     });
+  }
+
+  /**
+   * 可选：初始化解耦合执行管理架构（实验性功能）
+   */
+  private initializeOptionalDecoupledExecution(): void {
+    // 检查是否启用解耦合执行
+    const enableDecoupled = process.env.RCC4_ENABLE_DECOUPLED_EXECUTION === 'true' ||
+                           (this.config as any).experimental?.decoupledExecution === true;
+    
+    if (!enableDecoupled) {
+      secureLogger.info('Decoupled execution management disabled, using legacy pipeline switching');
+      return;
+    }
+
+    try {
+      // 初始化错误分类器
+      this.errorClassifier = new ErrorClassifier();
+
+      // 初始化健康管理器
+      this.healthManager = new PipelineHealthManager({
+        healthThreshold: 0.8, // 80%成功率
+        minRequestsForHealthCheck: 5, // 最少5个请求
+        responseTimeWindow: 100, // 记录最近100次响应时间
+        autoRecoveryEnabled: true,
+        maxBlacklistDuration: 300000 // 最大5分钟
+      });
+
+      // 注意：LoadBalancer需要PipelineManager，这里暂时禁用负载均衡器集成
+      // TODO: 当PipelineManager可用时，启用LoadBalancer
+      // this.loadBalancer = new LoadBalancer(pipelineManager, ...);
+
+      // 初始化统一执行管理器（不使用负载均衡器）
+      // this.executionManager = new PipelineExecutionManager(
+      //   this.errorClassifier,
+      //   this.healthManager,
+      //   this.loadBalancer!, // 需要LoadBalancer
+      //   {
+      //     maxRetries: 3,
+      //     maxExecutionTime: 30000,
+      //     retryDelay: 1000,
+      //     enableHealthManagement: true,
+      //     enableErrorClassification: true
+      //   }
+      // );
+
+      this.useDecoupledExecution = false; // 暂时禁用，等待LoadBalancer集成
+      
+      secureLogger.info('🚀 Decoupled execution management components initialized (partial)', {
+        errorClassifier: 'enabled',
+        healthManager: 'enabled',
+        loadBalancer: 'disabled - pending PipelineManager integration',
+        executionManager: 'disabled - pending LoadBalancer'
+      });
+      
+    } catch (initError) {
+      secureLogger.warn('Failed to initialize decoupled execution management, falling back to legacy', {
+        error: (initError as Error).message
+      });
+      this.useDecoupledExecution = false;
+    }
   }
 
   /**
@@ -1314,31 +1398,52 @@ export class PipelineRequestProcessor extends EventEmitter {
       console.log(`🔍 Debug: Found route entry for ${mappedModel}: ${routeEntry}`);
       
       // 解析复合路由格式: "provider1,model1;provider2,model2;..."
-      // 选择第一个provider-model对作为主要路由
-      const firstRoute = routeEntry.split(';')[0].trim();
-      console.log(`🔍 Debug: Extracted first route: "${firstRoute}" from "${routeEntry}"`);
-      const [providerName, modelName] = firstRoute.split(',');
-      console.log(`🔍 Debug: Parsed provider: "${providerName}", model: "${modelName}"`);
+      // 🔧 修复：返回所有可用的provider-model对，支持跨provider切换
+      const allRoutes = routeEntry.split(';').map((route: string) => route.trim());
+      const availablePipelines: string[] = [];
       
-      if (providerName && modelName) {
-        // 生成pipeline ID格式: provider-model-key0
-        const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
-        console.log(`🔍 Debug: Generated pipeline ID: ${pipelineId}`);
-        return [pipelineId];
+      console.log(`🔍 Debug: Parsing all routes from "${routeEntry}": ${allRoutes.length} routes found`);
+      
+      for (const route of allRoutes) {
+        const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
+        console.log(`🔍 Debug: Parsing route "${route}" -> provider: "${providerName}", model: "${modelName}"`);
+        
+        if (providerName && modelName) {
+          // 生成pipeline ID格式: provider-model-key0
+          const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+          availablePipelines.push(pipelineId);
+          console.log(`🔍 Debug: Generated pipeline ID: ${pipelineId}`);
+        }
+      }
+      
+      if (availablePipelines.length > 0) {
+        console.log(`🔍 Debug: Returning ${availablePipelines.length} available pipelines:`, availablePipelines);
+        return availablePipelines;
       }
     }
     
     // 如果没有配置或解析失败，尝试使用default路由
     if (mappedModel !== 'default' && routerConfig && routerConfig.default) {
       const defaultRoute = routerConfig.default;
-      // 解析复合默认路由，选择第一个provider-model对
-      const firstDefaultRoute = defaultRoute.split(';')[0].trim();
-      const [providerName, modelName] = firstDefaultRoute.split(',');
+      // 🔧 修复：解析所有默认路由，不只是第一个
+      const allDefaultRoutes = defaultRoute.split(';').map((route: string) => route.trim());
+      const availablePipelines: string[] = [];
       
-      if (providerName && modelName) {
-        const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
-        console.log(`🔍 Debug: Using default route, generated pipeline ID: ${pipelineId}`);
-        return [pipelineId];
+      console.log(`🔍 Debug: Parsing all default routes from "${defaultRoute}": ${allDefaultRoutes.length} routes found`);
+      
+      for (const route of allDefaultRoutes) {
+        const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
+        
+        if (providerName && modelName) {
+          const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+          availablePipelines.push(pipelineId);
+          console.log(`🔍 Debug: Generated default pipeline ID: ${pipelineId}`);
+        }
+      }
+      
+      if (availablePipelines.length > 0) {
+        console.log(`🔍 Debug: Returning ${availablePipelines.length} default pipelines:`, availablePipelines);
+        return availablePipelines;
       }
     }
     

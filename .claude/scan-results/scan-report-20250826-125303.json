@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-26 12:53:03",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/modules/heartbeat-manager.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

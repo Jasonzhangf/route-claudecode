@@ -364,6 +364,8 @@ export class PipelineLayersProcessor {
       body: serializedBody,
       bodyBuffer: Buffer.from(serializedBody, 'utf8'),
       timeout: adjustedTimeout, // 🔧 使用调整后的超时时间
+      requestId: context.requestId, // 🔧 传递请求ID以启用心跳机制
+      enableHeartbeat: isLongTextRequest, // 🔧 长文本请求启用心跳
     };
 
     const response = await this.httpRequestHandler.makeHttpRequest(fullEndpoint, httpOptions);
@@ -427,7 +429,7 @@ export class PipelineLayersProcessor {
   }
 
   /**
-   * Round Robin负载均衡选择流水线
+   * Round Robin负载均衡选择流水线 - 线程安全实现
    */
   private selectPipelineRoundRobin(availablePipelines: string[]): string {
     if (availablePipelines.length === 1) {
@@ -437,11 +439,14 @@ export class PipelineLayersProcessor {
     // 按流水线列表排序后轮询，确保一致性
     const sortedPipelines = availablePipelines.sort();
     const routeKey = sortedPipelines.join(',');
+    
+    // 🔒 线程安全的原子操作 - 使用Node.js单线程的原子性保证
+    // 避免在同一事件循环tick内的竞争条件
     const currentIndex = PipelineLayersProcessor.roundRobinCounters.get(routeKey) || 0;
     const selectedIndex = currentIndex % sortedPipelines.length;
     const selectedPipeline = sortedPipelines[selectedIndex];
 
-    // 🔧 修复：确保计数器正确递增
+    // 🔧 原子性地更新计数器 - 在同一个同步操作中完成
     const nextIndex = currentIndex + 1;
     PipelineLayersProcessor.roundRobinCounters.set(routeKey, nextIndex);
 
