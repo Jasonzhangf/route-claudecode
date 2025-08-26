@@ -397,6 +397,27 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     console.log('🔥🔥 [TRANSFORMER PERFORM] performTransformation called!');
     try {
       console.log('🔥 [TRANSFORMER PERFORM] Checking input type...');
+      
+      // 🔧 优先检查错误响应 - 避免处理不完整的OpenAI响应
+      if (this.isOpenAIErrorResponse(input)) {
+        console.log('🚨 [TRANSFORMER PERFORM] Detected OpenAI error response, propagating error without transformation');
+        // 错误响应不应该被转换，直接抛出包含完整错误信息的异常
+        const errorInput = input as any;
+        let errorMessage = 'API Error Response';
+        
+        if (errorInput.error?.message) {
+          errorMessage = errorInput.error.message;
+        } else if (errorInput.errors?.message) {
+          errorMessage = errorInput.errors.message;
+        } else if (errorInput.message) {
+          errorMessage = errorInput.message;
+        } else if (errorInput.detail) {
+          errorMessage = errorInput.detail;
+        }
+        
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      
       if (this.isAnthropicRequest(input)) {
         console.log('🔥 [TRANSFORMER PERFORM] Detected Anthropic request, calling transformAnthropicToOpenAI');
         return this.transformAnthropicToOpenAI(input as AnthropicRequest);
@@ -409,6 +430,29 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
         return this.transformOpenAIToAnthropic(input as OpenAIResponse);
       } else {
         console.log('🔥 [TRANSFORMER PERFORM] Unsupported input format detected');
+        console.log('🔥 [TRANSFORMER DEBUG] Input details:', {
+          hasObject: !!(input as any)?.object,
+          hasChoices: !!(input as any)?.choices,
+          hasError: !!(input as any)?.error,
+          hasErrors: !!(input as any)?.errors,
+          hasMessage: !!(input as any)?.message,
+          inputKeys: input && typeof input === 'object' ? Object.keys(input) : 'not-object'
+        });
+        
+        // 🔧 修复：如果输入看起来像一个响应但格式不完整，尝试提取错误信息
+        if (input && typeof input === 'object') {
+          const inputObj = input as any;
+          if (inputObj.message || inputObj.error || inputObj.errors || inputObj.detail) {
+            let errorMessage = inputObj.message || inputObj.detail || 'Unknown API error';
+            if (inputObj.error?.message) {
+              errorMessage = inputObj.error.message;
+            } else if (inputObj.errors?.message) {
+              errorMessage = inputObj.errors.message;
+            }
+            throw new Error(`API Error: ${errorMessage}`);
+          }
+        }
+        
         throw new TransformerValidationError(
           'Unsupported input format',
           ['Input must be valid Anthropic request, OpenAI request, or OpenAI response'],
@@ -500,9 +544,53 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   }
 
   private transformOpenAIToAnthropic(response: OpenAIResponse): AnthropicResponse {
-    // 基本验证
+    // 🔧 增强的响应验证 - 检查错误响应格式
+    console.log('🔥🔥 [TRANSFORMER OPENAI->ANTHROPIC] Method called!');
+    console.log('🔥 [TRANSFORMER DEBUG] Response validation:', {
+      hasChoices: !!(response as any)?.choices,
+      choicesIsArray: Array.isArray((response as any)?.choices),
+      choicesLength: Array.isArray((response as any)?.choices) ? (response as any).choices.length : 'not-array',
+      hasObject: !!(response as any)?.object,
+      objectValue: (response as any)?.object,
+      hasError: !!(response as any)?.error,
+      hasErrors: !!(response as any)?.errors,
+      responseKeys: Object.keys(response as any)
+    });
+    
+    // 🔧 关键修复：检查是否为错误响应，避免访问undefined的choices
+    if ((response as any).error || (response as any).errors) {
+      console.log('🚨 [TRANSFORMER DEBUG] Error response detected in transformOpenAIToAnthropic');
+      let errorMessage = 'API Error Response';
+      
+      if ((response as any).error?.message) {
+        errorMessage = (response as any).error.message;
+      } else if ((response as any).errors?.message) {
+        errorMessage = (response as any).errors.message;
+      } else if ((response as any).message) {
+        errorMessage = (response as any).message;
+      }
+      
+      throw new Error(`API Error: ${errorMessage}`);
+    }
+    
+    // 基本验证 - 使用更详细的错误信息
     if (!response.choices || !Array.isArray(response.choices) || response.choices.length === 0) {
-      throw new Error('Invalid OpenAI response: missing choices');
+      console.log('🚨 [TRANSFORMER DEBUG] Invalid OpenAI response structure:', {
+        hasChoices: !!response.choices,
+        isArray: Array.isArray(response.choices),
+        length: Array.isArray(response.choices) ? response.choices.length : 'not-array',
+        responsePreview: JSON.stringify(response).substring(0, 200)
+      });
+      
+      // 尝试从响应中提取有用的错误信息
+      let errorDetails = 'missing or empty choices array';
+      if ((response as any).message) {
+        errorDetails = (response as any).message;
+      } else if ((response as any).detail) {
+        errorDetails = (response as any).detail;  
+      }
+      
+      throw new Error(`Invalid OpenAI response: ${errorDetails}`);
     }
 
     const choice = response.choices[0];
@@ -891,6 +979,29 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       Array.isArray(res.choices) &&
       res.usage &&
       typeof res.usage.total_tokens === 'number'
+    );
+  }
+
+  private isOpenAIErrorResponse(input: unknown): boolean {
+    if (!input || typeof input !== 'object') {
+      return false;
+    }
+
+    const res = input as any;
+    // 检查是否为OpenAI错误响应格式
+    return (
+      res.error && 
+      typeof res.error === 'object' &&
+      res.error.message
+    ) || (
+      // 或者其他错误响应格式
+      res.errors && 
+      typeof res.errors === 'object'
+    ) || (
+      // 或者是HTTP错误但没有正确的choices结构
+      res.object !== 'chat.completion' &&
+      !Array.isArray(res.choices) &&
+      (res.message || res.detail || res.error)
     );
   }
 

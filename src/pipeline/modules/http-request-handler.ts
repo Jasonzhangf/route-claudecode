@@ -13,6 +13,7 @@
 import https from 'https';
 import http from 'http';
 import { secureLogger } from '../../utils/secure-logger';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 export interface HttpRequestOptions {
   method?: string;
@@ -65,14 +66,38 @@ export class HttpRequestHandler {
     
     if (response.status >= 400 && response.status < 500) {
       // 4xx错误（除了429）通常是客户端问题，抛出错误但不重试
-      const errorMessage = `Client error: ${response.status} Bad Request`;
+      // 尝试从响应体中提取详细错误信息
+      let detailedErrorMessage = `Client error: ${response.status} Bad Request`;
+      
+      if (response.body) {
+        try {
+          const responseData = JQJsonHandler.parseJsonString(response.body);
+          if (responseData.errors && responseData.errors.message) {
+            // ModelScope格式: {"errors": {"message": "Invalid model id: xxx"}}
+            detailedErrorMessage = responseData.errors.message;
+          } else if (responseData.error && responseData.error.message) {
+            // OpenAI格式: {"error": {"message": "xxx"}}
+            detailedErrorMessage = responseData.error.message;
+          } else if (responseData.message) {
+            // 简单格式: {"message": "xxx"}
+            detailedErrorMessage = responseData.message;
+          } else if (typeof responseData === 'string') {
+            detailedErrorMessage = responseData;
+          }
+        } catch (parseError) {
+          // JSON解析失败，使用响应体前200字符
+          detailedErrorMessage = `Client error: ${response.status} - ${response.body.substring(0, 200)}`;
+        }
+      }
+      
       secureLogger.error('Client error detected', {
         requestId: context?.requestId,
         status: response.status,
         endpoint: context?.endpoint,
-        responsePreview: response.body?.substring(0, 200)
+        responsePreview: response.body?.substring(0, 200),
+        extractedErrorMessage: detailedErrorMessage
       });
-      throw new Error(errorMessage);
+      throw new Error(detailedErrorMessage);
     }
   }
 

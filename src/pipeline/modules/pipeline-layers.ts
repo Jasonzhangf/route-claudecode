@@ -88,6 +88,10 @@ export class PipelineLayersProcessor {
       outputModel: mappedModel,
       timestamp: new Date(),
     });
+    
+    // 🔧 修复：确保路由决策信息保存到context中，供Protocol层使用
+    context.routingDecision = routingDecision;
+    context.metadata.routingDecision = routingDecision;
 
     return routingDecision;
   }
@@ -202,13 +206,48 @@ export class PipelineLayersProcessor {
     if (context.routingDecision) {
       const routerConfig = (this.config as any).router;
       const mappedModel = context.routingDecision.virtualModel;
+      const selectedPipeline = context.routingDecision.selectedPipeline;
       const routeEntry = routerConfig[mappedModel] || routerConfig.default;
       
-      if (routeEntry && typeof routeEntry === 'string' && routeEntry.includes(',')) {
-        const firstRoute = routeEntry.split(';')[0].trim();
-        const [, modelName] = firstRoute.split(',');
-        if (modelName?.trim()) {
-          actualModel = modelName.trim();
+      // 🔧 修复：根据选中的pipeline确定对应的provider模型名
+      if (routeEntry && typeof routeEntry === 'string' && selectedPipeline) {
+        const allRoutes = routeEntry.split(';').map((route: string) => route.trim());
+        const selectedProviderType = this.extractProviderFromPipelineId(selectedPipeline);
+        
+        // 查找匹配选中provider的路由配置
+        for (const route of allRoutes) {
+          const [routeProviderName, modelName] = route.split(',').map((s: string) => s.trim());
+          
+          if (routeProviderName === selectedProviderType && modelName) {
+            actualModel = modelName;
+            secureLogger.info('Protocol layer model mapping', {
+              requestId: context.requestId,
+              selectedPipeline,
+              selectedProvider: selectedProviderType,
+              originalModel: request.model,
+              virtualModel: mappedModel,
+              actualModel: actualModel,
+              routeUsed: route
+            });
+            break;
+          }
+        }
+        
+        // 如果没有找到匹配的路由，使用第一个路由的模型名（向后兼容）
+        if (actualModel === request.model && allRoutes.length > 0 && allRoutes[0].includes(',')) {
+          const [, fallbackModelName] = allRoutes[0].split(',').map((s: string) => s.trim());
+          if (fallbackModelName) {
+            actualModel = fallbackModelName;
+            secureLogger.warn('Protocol layer model mapping fallback', {
+              requestId: context.requestId,
+              selectedPipeline,
+              selectedProvider: selectedProviderType,
+              originalModel: request.model,
+              virtualModel: mappedModel,
+              fallbackModel: actualModel,
+              reason: 'No matching provider route found'
+            });
+          }
         }
       }
     }
@@ -363,23 +402,41 @@ export class PipelineLayersProcessor {
     
     if (routerConfig && routerConfig[mappedModel]) {
       const routeEntry = routerConfig[mappedModel];
-      const firstRoute = routeEntry.split(';')[0].trim();
-      const [providerName, modelName] = firstRoute.split(',');
+      // 🔧 修复：解析所有路由选项，支持跨provider切换
+      const allRoutes = routeEntry.split(';').map((route: string) => route.trim());
+      const availablePipelines: string[] = [];
       
-      if (providerName && modelName) {
-        const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
-        return [pipelineId];
+      for (const route of allRoutes) {
+        const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
+        
+        if (providerName && modelName) {
+          const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+          availablePipelines.push(pipelineId);
+        }
+      }
+      
+      if (availablePipelines.length > 0) {
+        return availablePipelines;
       }
     }
     
     if (mappedModel !== 'default' && routerConfig?.default) {
       const defaultRoute = routerConfig.default;
-      const firstDefaultRoute = defaultRoute.split(';')[0].trim();
-      const [providerName, modelName] = firstDefaultRoute.split(',');
+      // 🔧 修复：解析所有默认路由选项
+      const allDefaultRoutes = defaultRoute.split(';').map((route: string) => route.trim());
+      const availablePipelines: string[] = [];
       
-      if (providerName && modelName) {
-        const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
-        return [pipelineId];
+      for (const route of allDefaultRoutes) {
+        const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
+        
+        if (providerName && modelName) {
+          const pipelineId = `${providerName}-${modelName.replace(/[\/\s]+/g, '-').toLowerCase()}-key0`;
+          availablePipelines.push(pipelineId);
+        }
+      }
+      
+      if (availablePipelines.length > 0) {
+        return availablePipelines;
       }
     }
     
