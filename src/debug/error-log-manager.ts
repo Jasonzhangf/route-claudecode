@@ -1,0 +1,475 @@
+/**
+ * 错误日志管理器
+ * 
+ * 专门管理和分类错误日志，提供流水线级别的错误追踪和分析
+ * 
+ * @author RCC v4.0 - Debug System Enhancement
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import { secureLogger } from '../utils/secure-logger';
+import { JQJsonHandler } from '../utils/jq-json-handler';
+
+/**
+ * 错误类型枚举
+ */
+export enum ErrorType {
+  FILTER_ERROR = 'FILTER_ERROR',
+  SOCKET_ERROR = 'SOCKET_ERROR',
+  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
+  PIPELINE_ERROR = 'PIPELINE_ERROR',
+  CONNECTION_ERROR = 'CONNECTION_ERROR',
+  TRANSFORM_ERROR = 'TRANSFORM_ERROR',
+  AUTH_ERROR = 'AUTH_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+}
+
+/**
+ * 错误日志条目
+ */
+export interface ErrorLogEntry {
+  id: string;
+  timestamp: number;
+  requestId: string;
+  pipelineId?: string;
+  errorType: ErrorType;
+  message: string;
+  stack?: string;
+  context: Record<string, any>;
+  classification?: {
+    confidence: number;
+    matchedPattern: string;
+    contextHints?: string[];
+  };
+}
+
+/**
+ * 错误统计信息
+ */
+export interface ErrorStatistics {
+  totalErrors: number;
+  errorsByType: Record<ErrorType, number>;
+  errorsByPipeline: Record<string, number>;
+  timeRange: {
+    startTime: number;
+    endTime: number;
+  };
+}
+
+/**
+ * 错误摘要报告
+ */
+export interface ErrorSummaryReport {
+  reportId: string;
+  timeRange: {
+    startTime: number;
+    endTime: number;
+  };
+  statistics: {
+    totalErrors: number;
+    errorsByType: Record<ErrorType, number>;
+    topErrors: Array<{
+      message: string;
+      count: number;
+      errorType: ErrorType;
+    }>;
+    problemPipelines: Array<{
+      pipelineId: string;
+      errorCount: number;
+      errorRate: number;
+    }>;
+  };
+  recommendations: Array<{
+    type: 'blacklist' | 'config' | 'monitoring' | 'investigation';
+    priority: 'high' | 'medium' | 'low';
+    message: string;
+    affectedPipelines?: string[];
+  }>;
+}
+
+/**
+ * 错误日志管理器
+ */
+export class ErrorLogManager {
+  private basePath: string;
+  private initialized: boolean = false;
+
+  constructor(basePath: string = '~/.route-claudecode/debug-logs') {
+    this.basePath = this.expandHomePath(basePath);
+  }
+
+  /**
+   * 初始化错误日志管理器
+   */
+  async initialize(): Promise<void> {
+    try {
+      await this.ensureDirectoryStructure();
+      this.initialized = true;
+      secureLogger.info('Error log manager initialized', {
+        basePath: this.basePath
+      });
+    } catch (error) {
+      secureLogger.error('Failed to initialize error log manager', {
+        error: error.message,
+        basePath: this.basePath
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 记录错误
+   */
+  async logError(errorEntry: Omit<ErrorLogEntry, 'id' | 'timestamp'>): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    const entry: ErrorLogEntry = {
+      ...errorEntry,
+      id: this.generateErrorId(),
+      timestamp: Date.now()
+    };
+
+    try {
+      // 按类型保存
+      await this.saveByType(entry);
+      
+      // 按流水线保存（如果有流水线信息）
+      if (entry.pipelineId) {
+        await this.saveByPipeline(entry);
+      }
+
+      secureLogger.debug('Error logged successfully', {
+        errorId: entry.id,
+        errorType: entry.errorType,
+        pipelineId: entry.pipelineId
+      });
+    } catch (error) {
+      secureLogger.error('Failed to log error', {
+        error: error.message,
+        errorEntry: entry
+      });
+    }
+  }
+
+  /**
+   * 获取错误统计信息
+   */
+  getErrorStatistics(timeRangeHours: number = 24): ErrorStatistics | null {
+    if (!this.initialized) {
+      return null;
+    }
+
+    const endTime = Date.now();
+    const startTime = endTime - (timeRangeHours * 60 * 60 * 1000);
+
+    const stats: ErrorStatistics = {
+      totalErrors: 0,
+      errorsByType: {} as Record<ErrorType, number>,
+      errorsByPipeline: {},
+      timeRange: { startTime, endTime }
+    };
+
+    // 初始化错误类型计数
+    Object.values(ErrorType).forEach(type => {
+      stats.errorsByType[type] = 0;
+    });
+
+    try {
+      // 读取类型目录下的错误文件
+      const typeDir = path.join(this.basePath, 'errors', 'by-type');
+      if (fs.existsSync(typeDir)) {
+        const typeFiles = fs.readdirSync(typeDir);
+        
+        for (const typeFile of typeFiles) {
+          if (!typeFile.endsWith('.json')) continue;
+          
+          const filePath = path.join(typeDir, typeFile);
+          const fileContent = fs.readFileSync(filePath, 'utf8');
+          const errors: ErrorLogEntry[] = JSON.parse(fileContent);
+          
+          errors.forEach(error => {
+            if (error.timestamp >= startTime && error.timestamp <= endTime) {
+              stats.totalErrors++;
+              stats.errorsByType[error.errorType]++;
+              
+              if (error.pipelineId) {
+                stats.errorsByPipeline[error.pipelineId] = 
+                  (stats.errorsByPipeline[error.pipelineId] || 0) + 1;
+              }
+            }
+          });
+        }
+      }
+
+      return stats;
+    } catch (error) {
+      secureLogger.error('Failed to get error statistics', {
+        error: error.message
+      });
+      return stats;
+    }
+  }
+
+  /**
+   * 生成错误摘要报告
+   */
+  async generateErrorSummary(startTime: number, endTime: number): Promise<ErrorSummaryReport> {
+    const reportId = `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const report: ErrorSummaryReport = {
+      reportId,
+      timeRange: { startTime, endTime },
+      statistics: {
+        totalErrors: 0,
+        errorsByType: {} as Record<ErrorType, number>,
+        topErrors: [],
+        problemPipelines: []
+      },
+      recommendations: []
+    };
+
+    // 初始化错误类型计数
+    Object.values(ErrorType).forEach(type => {
+      report.statistics.errorsByType[type] = 0;
+    });
+
+    const errorCounts = new Map<string, number>();
+    const pipelineCounts = new Map<string, number>();
+
+    try {
+      // 收集错误数据
+      const typeDir = path.join(this.basePath, 'errors', 'by-type');
+      if (fs.existsSync(typeDir)) {
+        const typeFiles = fs.readdirSync(typeDir);
+        
+        for (const typeFile of typeFiles) {
+          if (!typeFile.endsWith('.json')) continue;
+          
+          const filePath = path.join(typeDir, typeFile);
+          const fileContent = fs.readFileSync(filePath, 'utf8');
+          const errors: ErrorLogEntry[] = JSON.parse(fileContent);
+          
+          errors.forEach(error => {
+            if (error.timestamp >= startTime && error.timestamp <= endTime) {
+              report.statistics.totalErrors++;
+              report.statistics.errorsByType[error.errorType]++;
+              
+              // 计算错误频次
+              const errorKey = `${error.errorType}:${error.message.substring(0, 100)}`;
+              errorCounts.set(errorKey, (errorCounts.get(errorKey) || 0) + 1);
+              
+              // 计算流水线错误
+              if (error.pipelineId) {
+                pipelineCounts.set(error.pipelineId, (pipelineCounts.get(error.pipelineId) || 0) + 1);
+              }
+            }
+          });
+        }
+      }
+
+      // 生成TOP错误
+      report.statistics.topErrors = Array.from(errorCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([key, count]) => {
+          const [errorType, message] = key.split(':', 2);
+          return {
+            message,
+            count,
+            errorType: errorType as ErrorType
+          };
+        });
+
+      // 生成问题流水线
+      report.statistics.problemPipelines = Array.from(pipelineCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .map(([pipelineId, errorCount]) => ({
+          pipelineId,
+          errorCount,
+          errorRate: report.statistics.totalErrors > 0 ? errorCount / report.statistics.totalErrors : 0
+        }));
+
+      // 生成建议
+      report.recommendations = this.generateRecommendations(report.statistics);
+
+      // 保存报告
+      await this.saveReport(report);
+
+      return report;
+    } catch (error) {
+      secureLogger.error('Failed to generate error summary', {
+        error: error.message,
+        reportId
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 清理过期日志
+   */
+  async cleanupLogs(retentionDays: number): Promise<number> {
+    const cutoffTime = Date.now() - (retentionDays * 24 * 60 * 60 * 1000);
+    let cleanedCount = 0;
+
+    try {
+      const typeDir = path.join(this.basePath, 'errors', 'by-type');
+      if (fs.existsSync(typeDir)) {
+        const typeFiles = fs.readdirSync(typeDir);
+        
+        for (const typeFile of typeFiles) {
+          if (!typeFile.endsWith('.json')) continue;
+          
+          const filePath = path.join(typeDir, typeFile);
+          const fileContent = fs.readFileSync(filePath, 'utf8');
+          const errors: ErrorLogEntry[] = JSON.parse(fileContent);
+          
+          const validErrors = errors.filter(error => error.timestamp >= cutoffTime);
+          cleanedCount += errors.length - validErrors.length;
+          
+          if (validErrors.length !== errors.length) {
+            fs.writeFileSync(filePath, JQJsonHandler.stringifyJson(validErrors, false));
+          }
+        }
+      }
+
+      secureLogger.info('Error log cleanup completed', {
+        retentionDays,
+        cleanedCount,
+        cutoffTime
+      });
+
+      return cleanedCount;
+    } catch (error) {
+      secureLogger.error('Failed to cleanup error logs', {
+        error: error.message
+      });
+      throw error;
+    }
+  }
+
+  // ===== Private Helper Methods =====
+
+  private expandHomePath(filepath: string): string {
+    if (filepath.startsWith('~/')) {
+      const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
+      return path.join(homeDir, filepath.slice(2));
+    }
+    return filepath;
+  }
+
+  private async ensureDirectoryStructure(): Promise<void> {
+    const dirs = [
+      this.basePath,
+      path.join(this.basePath, 'errors'),
+      path.join(this.basePath, 'errors', 'by-type'),
+      path.join(this.basePath, 'errors', 'by-pipeline'),
+      path.join(this.basePath, 'errors', 'summaries')
+    ];
+
+    for (const dir of dirs) {
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+    }
+  }
+
+  private generateErrorId(): string {
+    return `err_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private async saveByType(entry: ErrorLogEntry): Promise<void> {
+    const typeFile = path.join(this.basePath, 'errors', 'by-type', `${entry.errorType.toLowerCase()}.json`);
+    
+    let entries: ErrorLogEntry[] = [];
+    if (fs.existsSync(typeFile)) {
+      const content = fs.readFileSync(typeFile, 'utf8');
+      entries = JSON.parse(content);
+    }
+    
+    entries.push(entry);
+    
+    // 保持最近1000条记录
+    if (entries.length > 1000) {
+      entries = entries.slice(-1000);
+    }
+    
+    fs.writeFileSync(typeFile, JQJsonHandler.stringifyJson(entries, false));
+  }
+
+  private async saveByPipeline(entry: ErrorLogEntry): Promise<void> {
+    if (!entry.pipelineId) return;
+    
+    const pipelineFile = path.join(this.basePath, 'errors', 'by-pipeline', `${entry.pipelineId}.json`);
+    
+    let entries: ErrorLogEntry[] = [];
+    if (fs.existsSync(pipelineFile)) {
+      const content = fs.readFileSync(pipelineFile, 'utf8');
+      entries = JSON.parse(content);
+    }
+    
+    entries.push(entry);
+    
+    // 保持最近500条记录
+    if (entries.length > 500) {
+      entries = entries.slice(-500);
+    }
+    
+    fs.writeFileSync(pipelineFile, JQJsonHandler.stringifyJson(entries, false));
+  }
+
+  private async saveReport(report: ErrorSummaryReport): Promise<void> {
+    const reportFile = path.join(this.basePath, 'errors', 'summaries', `${report.reportId}.json`);
+    fs.writeFileSync(reportFile, JQJsonHandler.stringifyJson(report, false));
+  }
+
+  private generateRecommendations(statistics: ErrorSummaryReport['statistics']): ErrorSummaryReport['recommendations'] {
+    const recommendations: ErrorSummaryReport['recommendations'] = [];
+
+    // 检查高频错误
+    if (statistics.errorsByType[ErrorType.FILTER_ERROR] > 10) {
+      recommendations.push({
+        type: 'config',
+        priority: 'high',
+        message: 'High number of filter errors detected. Review array initialization and null safety in pipeline code.',
+        affectedPipelines: statistics.problemPipelines.slice(0, 3).map(p => p.pipelineId)
+      });
+    }
+
+    if (statistics.errorsByType[ErrorType.SOCKET_ERROR] > 15) {
+      recommendations.push({
+        type: 'monitoring',
+        priority: 'high',
+        message: 'Frequent socket errors indicate network connectivity issues. Check provider endpoints.',
+        affectedPipelines: statistics.problemPipelines.slice(0, 3).map(p => p.pipelineId)
+      });
+    }
+
+    // 检查问题流水线
+    const criticalPipelines = statistics.problemPipelines.filter(p => p.errorRate > 0.5);
+    if (criticalPipelines.length > 0) {
+      recommendations.push({
+        type: 'blacklist',
+        priority: 'high',
+        message: 'Consider blacklisting pipelines with high error rates (>50%).',
+        affectedPipelines: criticalPipelines.map(p => p.pipelineId)
+      });
+    }
+
+    return recommendations;
+  }
+}
+
+// 导出单例实例
+let errorLogManagerInstance: ErrorLogManager | null = null;
+
+export function getErrorLogManager(): ErrorLogManager {
+  if (!errorLogManagerInstance) {
+    errorLogManagerInstance = new ErrorLogManager();
+  }
+  return errorLogManagerInstance;
+}

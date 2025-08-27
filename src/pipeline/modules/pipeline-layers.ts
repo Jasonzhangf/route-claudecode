@@ -116,7 +116,7 @@ export class PipelineLayersProcessor {
    * 处理Transformer层 - 协议转换
    */
   public async processTransformerLayer(input: any, routingDecision: any, context: RequestContext): Promise<any> {
-    const selectedPipelineId = routingDecision.selectedPipeline || routingDecision.availablePipelines[0];
+    const selectedPipelineId = routingDecision.selectedPipeline || (routingDecision.availablePipelines && routingDecision.availablePipelines[0]);
     const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
     const providers = this.config.providers || [];
     const matchingProvider = providers.find(p => p.name === providerType);
@@ -190,7 +190,7 @@ export class PipelineLayersProcessor {
    * 处理Protocol层 - 协议处理
    */
   public async processProtocolLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
-    const selectedPipelineId = routingDecision.selectedPipeline || routingDecision.availablePipelines[0];
+    const selectedPipelineId = routingDecision.selectedPipeline || (routingDecision.availablePipelines && routingDecision.availablePipelines[0]);
     const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
     let providerInfo = this.config.systemConfig.providerTypes[providerType];
     

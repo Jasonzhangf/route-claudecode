@@ -154,6 +154,18 @@ export class ErrorClassifier {
       };
     }
     
+    // Socket hang up - 通常是暂时的网络问题，可以重试
+    if (message.includes('socket hang up')) {
+      return context.attempt < context.maxRetries ? {
+        type: 'RETRY_SAME_PIPELINE',
+        reason: 'socket_hang_up',
+        retryAfter: 2000 // 2秒后重试（比econnreset稍长）
+      } : {
+        type: 'SKIP_PIPELINE',
+        reason: 'socket_hang_up_max_retries'
+      };
+    }
+    
     return {
       type: 'SKIP_PIPELINE',
       reason: 'network_error'

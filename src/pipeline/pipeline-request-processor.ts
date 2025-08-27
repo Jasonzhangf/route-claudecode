@@ -31,6 +31,9 @@ import { protocolTransformerValidator, ValidationResult } from '../validation/pr
 // ✅ 使用零Fallback错误处理替代
 import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
 
+// 导入增强错误处理系统
+import { getEnhancedErrorHandler } from '../debug/enhanced-error-handler';
+
 // 导入新的解耦合执行管理架构
 import { 
   PipelineExecutionManager, 
@@ -499,17 +502,118 @@ export class PipelineRequestProcessor extends EventEmitter {
           availablePipelines: routingDecision.availablePipelines?.length || 0,
           transparentErrorHandling: true
         });
+
+        // 记录错误到增强错误处理系统
+        const errorHandler = getEnhancedErrorHandler();
+        await errorHandler.handleRCCError(serverError, {
+          requestId,
+          pipelineId,
+          layerName: 'server',
+          provider: routingDecision.provider,
+          endpoint: routingDecision.endpoint,
+          availablePipelines: routingDecision.availablePipelines?.length || 0
+        });
         
         // 检查其他可用流水线
-        const availablePipelines = routingDecision.availablePipelines || [];
-        const remainingPipelines = availablePipelines.filter(id => id !== pipelineId);
+        const availablePipelines = routingDecision?.availablePipelines || [];
+        const remainingPipelines = Array.isArray(availablePipelines) ? availablePipelines.filter(id => id !== pipelineId) : [];
         
         if (remainingPipelines.length > 0 && PIPELINE_RETRY_CONSTANTS.ERROR_HANDLING.SERVER_LAYER_RETRY_ENABLED) {
-          try {
-            const updatedRoutingDecision = { ...routingDecision, selectedPipeline: remainingPipelines[0] };
-            return await this.pipelineLayersProcessor.processServerLayer(compatibleRequest, updatedRoutingDecision, context);
-          } catch (retryError) {
-            secureLogger.error(PIPELINE_RETRY_CONSTANTS.LOG_MESSAGES.RETRY_FAILED, { requestId });
+          // 修复：循环尝试所有健康的流水线，跳过被拉黑的流水线
+          const healthyPipelines = Array.isArray(remainingPipelines) ? remainingPipelines.filter(pipeline => {
+            const status = this.blacklistManager.checkPipelineStatus(pipeline);
+            return status.status === 'active';
+          }) : [];
+          
+          secureLogger.info('开始循环尝试所有健康的流水线', {
+            requestId,
+            failedPipelineId: pipelineId,
+            allRemainingPipelines: remainingPipelines.length,
+            healthyPipelinesCount: healthyPipelines.length,
+            healthyPipelines,
+            skippedBlacklisted: remainingPipelines.length - healthyPipelines.length
+          });
+          
+          if (healthyPipelines.length === 0) {
+            secureLogger.warn('所有备用流水线都已被拉黑，无法进行流水线调度', {
+              requestId,
+              remainingPipelines,
+              allBlacklisted: true
+            });
+          }
+          
+          for (let i = 0; i < healthyPipelines.length; i++) {
+            const currentPipeline = healthyPipelines[i];
+            
+            try {
+              secureLogger.info(`尝试流水线 ${i + 1}/${healthyPipelines.length}`, {
+                requestId,
+                currentPipeline,
+                attemptNumber: i + 1
+              });
+              
+              const updatedRoutingDecision = { ...routingDecision, selectedPipeline: currentPipeline };
+              const result = await this.pipelineLayersProcessor.processServerLayer(compatibleRequest, updatedRoutingDecision, context);
+              
+              secureLogger.info('流水线切换成功', {
+                requestId,
+                successfulPipeline: currentPipeline,
+                failedPipeline: pipelineId,
+                attemptNumber: i + 1,
+                totalHealthyAttempts: healthyPipelines.length
+              });
+              
+              // 流水线切换成功 - 构造完整的返回结构
+              const totalTime = Date.now() - context.startTime.getTime();
+              return {
+                executionId: requestId,
+                pipelineId: currentPipeline,
+                startTime: context.startTime.getTime(),
+                endTime: Date.now(),
+                result: result,
+                error: null,
+                performance: {
+                  startTime: context.startTime.getTime(),
+                  endTime: Date.now(),
+                  totalTime,
+                  moduleTimings: context.layerTimings,
+                },
+                metadata: {
+                  processingSteps: context.transformations.map(t => t.layer),
+                  routingDecision: { ...routingDecision, selectedPipeline: currentPipeline },
+                  pipelineSwitched: true,
+                  originalFailedPipeline: pipelineId,
+                  switchAttemptNumber: i + 1
+                }
+              };
+              
+            } catch (retryError) {
+              secureLogger.warn(`流水线尝试失败: ${i + 1}/${healthyPipelines.length}`, {
+                requestId,
+                failedPipeline: currentPipeline,
+                errorMessage: retryError.message,
+                attemptNumber: i + 1,
+                isLastAttempt: i === healthyPipelines.length - 1
+              });
+              
+              // 如果不是最后一个流水线，继续尝试下一个
+              if (i < healthyPipelines.length - 1) {
+                secureLogger.info('继续尝试下一个流水线', {
+                  requestId,
+                  nextPipeline: healthyPipelines[i + 1],
+                  nextAttemptNumber: i + 2
+                });
+                continue;
+              } else {
+                // 所有流水线都失败了
+                secureLogger.error('所有可用流水线尝试完毕，全部失败', {
+                  requestId,
+                  originalPipeline: pipelineId,
+                  totalAttempted: remainingPipelines.length,
+                  lastErrorMessage: retryError.message
+                });
+              }
+            }
           }
         }
         
@@ -608,6 +712,25 @@ export class PipelineRequestProcessor extends EventEmitter {
           errors: context.errors,
         }
       } as any);
+
+      // 记录到增强错误处理系统
+      try {
+        const errorHandler = getEnhancedErrorHandler();
+        await errorHandler.handleError(error, {
+          requestId,
+          pipelineId: context.routingDecision?.selectedPipeline,
+          layerName: 'pipeline-request-processor',
+          provider: context.routingDecision?.provider,
+          totalTime,
+          layerTimings: context.layerTimings,
+          errorCount: context.errors.length
+        });
+      } catch (enhancedErrorHandlerError) {
+        secureLogger.warn('Enhanced error handler failed', {
+          requestId,
+          error: enhancedErrorHandlerError.message
+        });
+      }
 
       secureLogger.error('Request processing failed', {
         requestId,
@@ -1058,6 +1181,28 @@ export class PipelineRequestProcessor extends EventEmitter {
           isLastAttempt,
           willRetry: !isLastAttempt,
         });
+
+        // 记录到增强错误处理系统
+        try {
+          const errorHandler = getEnhancedErrorHandler();
+          await errorHandler.handleError(error, {
+            requestId: context.requestId,
+            pipelineId: routingDecision.selectedPipeline,
+            layerName: 'http-request',
+            provider: routingDecision.provider,
+            endpoint: routingDecision.endpoint,
+            statusCode,
+            attempt: attempt + 1,
+            maxRetries: maxRetries + 1,
+            isBufferError,
+            isLastAttempt
+          });
+        } catch (enhancedErrorHandlerError) {
+          secureLogger.warn('Enhanced error handler failed during HTTP request error', {
+            requestId: context.requestId,
+            error: enhancedErrorHandlerError.message
+          });
+        }
         
         // HTTP错误现在由HttpRequestHandler.checkResponseStatusAndThrow统一处理
         // 对于可重试错误（5xx、429），会抛出异常到达这里，应该进行重试
@@ -1300,6 +1445,28 @@ export class PipelineRequestProcessor extends EventEmitter {
         error: error.message,
         originalResponse: openaiResponse,
       });
+
+      // 记录到增强错误处理系统
+      try {
+        const errorHandler = getEnhancedErrorHandler();
+        errorHandler.handleError(error, {
+          requestId: context.requestId,
+          layerName: 'response-transformer',
+          protocol: 'openai-to-anthropic',
+          originalResponseId: openaiResponse?.id,
+          hasOriginalResponse: !!openaiResponse
+        }).catch(enhancedErrorHandlerError => {
+          secureLogger.warn('Enhanced error handler failed during response transformation', {
+            requestId: context.requestId,
+            error: enhancedErrorHandlerError.message
+          });
+        });
+      } catch (enhancedErrorHandlerError) {
+        secureLogger.warn('Enhanced error handler initialization failed during response transformation', {
+          requestId: context.requestId,
+          error: enhancedErrorHandlerError.message
+        });
+      }
 
       // 返回备用的Anthropic格式响应
       return {
