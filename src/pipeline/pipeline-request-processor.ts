@@ -92,6 +92,7 @@ export interface PipelineStats {
  */
 export class PipelineRequestProcessor extends EventEmitter {
   private config: MergedConfig;
+  private serverPort: number;
   private compatibilityManager: PipelineCompatibilityManager;
   private stats: PipelineStats;
   private responseTimeHistory: number[] = [];
@@ -112,6 +113,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   constructor(config: MergedConfig, debugEnabled: boolean = false) {
     super();
     this.config = config;
+    this.serverPort = this.config.server?.port || getServerPort();
     this.compatibilityManager = new PipelineCompatibilityManager(config);
     
     this.stats = {
@@ -186,9 +188,8 @@ export class PipelineRequestProcessor extends EventEmitter {
     });
 
     // 初始化Debug管理器以启用console日志捕获
-    const port = this.config.server?.port || getServerPort();
-    this.debugManager.initialize(port).catch(error => {
-      secureLogger.warn('Failed to initialize debug manager console capture', { error, port });
+    this.debugManager.initialize(this.serverPort).catch(error => {
+      secureLogger.warn('Failed to initialize debug manager console capture', { error, port: this.serverPort });
     });
   }
 
@@ -504,7 +505,7 @@ export class PipelineRequestProcessor extends EventEmitter {
         });
 
         // 记录错误到增强错误处理系统
-        const errorHandler = getEnhancedErrorHandler();
+        const errorHandler = getEnhancedErrorHandler(this.serverPort);
         await errorHandler.handleRCCError(serverError, {
           requestId,
           pipelineId,
@@ -715,7 +716,7 @@ export class PipelineRequestProcessor extends EventEmitter {
 
       // 记录到增强错误处理系统
       try {
-        const errorHandler = getEnhancedErrorHandler();
+        const errorHandler = getEnhancedErrorHandler(this.serverPort);
         await errorHandler.handleError(error, {
           requestId,
           pipelineId: context.routingDecision?.selectedPipeline,
@@ -1184,7 +1185,7 @@ export class PipelineRequestProcessor extends EventEmitter {
 
         // 记录到增强错误处理系统
         try {
-          const errorHandler = getEnhancedErrorHandler();
+          const errorHandler = getEnhancedErrorHandler(this.serverPort);
           await errorHandler.handleError(error, {
             requestId: context.requestId,
             pipelineId: routingDecision.selectedPipeline,
@@ -1448,7 +1449,7 @@ export class PipelineRequestProcessor extends EventEmitter {
 
       // 记录到增强错误处理系统
       try {
-        const errorHandler = getEnhancedErrorHandler();
+        const errorHandler = getEnhancedErrorHandler(this.serverPort);
         errorHandler.handleError(error, {
           requestId: context.requestId,
           layerName: 'response-transformer',

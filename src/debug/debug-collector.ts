@@ -409,7 +409,6 @@ export class DebugCollectorImpl extends EventEmitter implements DebugCollector {
   private limitDataSize(data: any): any {
     // 🔧 FIXED: 移除数据大小限制 - 保持完整的调试数据
     // 不再截断调试数据，保留完整信息用于问题诊断
-    console.log(`🐛 [Debug] 保留完整调试数据，不进行大小限制`);
     return data;
   }
 

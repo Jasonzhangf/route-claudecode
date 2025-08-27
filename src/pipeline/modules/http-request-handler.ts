@@ -298,9 +298,9 @@ export class HttpRequestHandler {
         const isLongTextRequest = bodySize > API_DEFAULTS.HTTP_CONFIG.LARGE_REQUEST_THRESHOLD;
         
         // 🔧 修复socket hang up：针对大型请求体配置合适的HTTP选项
-        const requestTimeout = isLongTextRequest ? 
-          API_DEFAULTS.HTTP_CONFIG.LONG_REQUEST_TIMEOUT : 
-          (options.timeout || API_DEFAULTS.HTTP_CONFIG.STANDARD_REQUEST_TIMEOUT);
+        // 🔧 修复：优先使用传入的timeout配置，支持longContext的200秒超时
+        const requestTimeout = options.timeout || 
+          (isLongTextRequest ? API_DEFAULTS.HTTP_CONFIG.LONG_REQUEST_TIMEOUT : API_DEFAULTS.HTTP_CONFIG.STANDARD_REQUEST_TIMEOUT);
         
         const requestOptions = {
           hostname: urlObj.hostname,

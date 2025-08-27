@@ -168,8 +168,8 @@ export const API_DEFAULTS = {
     HIGH_WATER_MARK: 64 * 1024, // 64KB buffer for large requests
     KEEP_ALIVE_INITIAL_DELAY: 300000, // 5 minutes keep-alive delay
     HEARTBEAT_INTERVAL: 30000, // 30 seconds heartbeat interval
-    LONG_REQUEST_TIMEOUT: 600000, // 10 minutes timeout for large requests
-    STANDARD_REQUEST_TIMEOUT: 120000, // 2 minutes standard timeout
+    LONG_REQUEST_TIMEOUT: 200000, // 200 seconds timeout for longcontext requests
+    STANDARD_REQUEST_TIMEOUT: 60000, // 60 seconds standard timeout
   },
 
   // 默认用户代理

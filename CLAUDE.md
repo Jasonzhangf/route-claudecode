@@ -229,14 +229,24 @@ Format   Mapping   →OpenAI     Format        Format         Format      Format
 
 本项目已完全实施**零Fallback策略**，消除了所有架构冲突：
 
-- ✅ **废弃fallback实现**: CrossProviderFallbackStrategy、ConditionalFallbackResolver等已标记废弃
-- ✅ **强化配置验证**: 强制要求 `zeroFallbackPolicy: true`，拒绝任何fallback配置
-- ✅ **统一错误处理**: 实施ZeroFallbackError统一错误类型，失败时立即抛出错误
-- ✅ **重构路由逻辑**: hybrid-multi-provider-router仅使用主Provider，移除所有fallback路径
-- ✅ **项目治理规则**: 建立`.claude/rules/`强制规则，防止fallback机制重新引入
+**🔍 零Fallback策略明确定义**：
+1. **零Fallback策略** = 禁止**跨Provider的降级策略**（如Anthropic失败后用OpenAI）
+2. **流水线调度** = **同Provider内的负载均衡策略**（如多个API密钥、多个端点的主动切换）
+3. **明确区分**：流水线调度是主动负载均衡功能，不是fallback机制
+
+**实施措施**：
+- ✅ **废弃跨Provider fallback**: CrossProviderFallbackStrategy、ConditionalFallbackResolver等已标记废弃
+- ✅ **保留流水线调度**: 同Provider内的多流水线轮询切换是正常负载均衡功能
+- ✅ **强化配置验证**: 强制要求 `zeroFallbackPolicy: true`，拒绝跨Provider fallback配置
+- ✅ **统一错误处理**: 实施ZeroFallbackError统一错误类型，跨Provider失败时立即抛出错误
+- ✅ **重构路由逻辑**: hybrid-multi-provider-router仅使用主Provider，移除跨Provider fallback路径
+- ✅ **项目治理规则**: 建立`.claude/rules/`强制规则，防止跨Provider fallback机制重新引入
 - ✅ **合规检查工具**: 创建自动化检查脚本，确保持续合规
 
-**核心原则**: 失败时立即报错，不进行任何形式的降级或备用路由。
+**核心原则**: 
+- ❌ 禁止跨Provider的静默降级或备用路由
+- ✅ 允许同Provider内的流水线调度和负载均衡
+- ✅ 流水线失败是预期行为，应通过负载均衡调度处理
 
 **参考文档**: 
 - `.claude/rules/zero-fallback-policy.md` - 零Fallback策略规则

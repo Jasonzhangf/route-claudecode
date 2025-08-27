@@ -2,17 +2,25 @@
 
 ## 🚨 MANDATORY COMPLIANCE - 强制执行规则
 
-本规则为 **RCC v4.0 项目的强制性架构约束**，禁止任何形式的fallback机制实现，确保系统行为的一致性和可预测性。
+本规则为 **RCC v4.0 项目的强制性架构约束**，禁止跨Provider的fallback机制实现，但允许同Provider内的流水线调度负载均衡，确保系统行为的一致性和可预测性。
 
 ## 📋 零Fallback策略规则 (Zero Fallback Policy Rules)
 
-### Rule ZF-001: 禁止Fallback实现 (Prohibition of Fallback Implementation)
+### 🔍 零Fallback策略明确定义
+
+**核心概念区分**：
+1. **零Fallback策略** = 禁止**跨Provider的降级策略**（如Anthropic失败后用OpenAI）
+2. **流水线调度** = **同Provider内的负载均衡策略**（如多个API密钥、多个端点的主动切换）
+3. **重要区分**：流水线调度是主动负载均衡功能，不是fallback机制
+
+### Rule ZF-001: 禁止跨Provider Fallback实现 (Prohibition of Cross-Provider Fallback Implementation)
 
 **规则内容**:
-- **PROHIBITED**: 禁止实现任何形式的Provider fallback、降级或备用路由逻辑
-- **PROHIBITED**: 禁止实现 `CrossProviderFallbackStrategy` 类型的fallback策略
-- **PROHIBITED**: 禁止实现 `ConditionalFallbackResolver` 类型的条件fallback解析器
-- **PROHIBITED**: 禁止在路由逻辑中添加backup、secondary、emergency等备用路径
+- **PROHIBITED**: 禁止实现任何形式的**跨Provider** fallback、降级或备用路由逻辑
+- **PROHIBITED**: 禁止实现 `CrossProviderFallbackStrategy` 类型的跨Provider fallback策略
+- **PROHIBITED**: 禁止实现 `ConditionalFallbackResolver` 类型的跨Provider条件fallback解析器
+- **PROHIBITED**: 禁止在路由逻辑中添加跨Provider的backup、secondary、emergency等备用路径
+- **ALLOWED**: 允许同Provider内的流水线调度和负载均衡（多API密钥、多端点轮询）
 
 **强制要求**:
 - 所有配置文件必须设置 `zeroFallbackPolicy: true`

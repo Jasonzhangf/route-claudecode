@@ -15,6 +15,7 @@ import { JQJsonHandler } from '../utils/jq-json-handler';
  * 错误类型枚举
  */
 export enum ErrorType {
+  SERVER_ERROR = 'SERVER_ERROR',
   FILTER_ERROR = 'FILTER_ERROR',
   SOCKET_ERROR = 'SOCKET_ERROR',
   TIMEOUT_ERROR = 'TIMEOUT_ERROR',
@@ -94,10 +95,12 @@ export interface ErrorSummaryReport {
  */
 export class ErrorLogManager {
   private basePath: string;
+  private serverPort?: number;
   private initialized: boolean = false;
 
-  constructor(basePath: string = '~/.route-claudecode/debug-logs') {
+  constructor(basePath: string = '~/.route-claudecode/debug-logs', serverPort?: number) {
     this.basePath = this.expandHomePath(basePath);
+    this.serverPort = serverPort;
   }
 
   /**
@@ -363,12 +366,18 @@ export class ErrorLogManager {
   }
 
   private async ensureDirectoryStructure(): Promise<void> {
+    // 如果指定了端口，则在端口特定目录下创建errors子目录
+    const errorBasePath = this.serverPort 
+      ? path.join(this.basePath, `port-${this.serverPort}`, 'errors')
+      : path.join(this.basePath, 'errors');
+
     const dirs = [
       this.basePath,
-      path.join(this.basePath, 'errors'),
-      path.join(this.basePath, 'errors', 'by-type'),
-      path.join(this.basePath, 'errors', 'by-pipeline'),
-      path.join(this.basePath, 'errors', 'summaries')
+      this.serverPort ? path.join(this.basePath, `port-${this.serverPort}`) : this.basePath,
+      errorBasePath,
+      path.join(errorBasePath, 'by-type'),
+      path.join(errorBasePath, 'by-pipeline'),
+      path.join(errorBasePath, 'summaries')
     ];
 
     for (const dir of dirs) {
@@ -383,7 +392,10 @@ export class ErrorLogManager {
   }
 
   private async saveByType(entry: ErrorLogEntry): Promise<void> {
-    const typeFile = path.join(this.basePath, 'errors', 'by-type', `${entry.errorType.toLowerCase()}.json`);
+    const errorBasePath = this.serverPort 
+      ? path.join(this.basePath, `port-${this.serverPort}`, 'errors')
+      : path.join(this.basePath, 'errors');
+    const typeFile = path.join(errorBasePath, 'by-type', `${entry.errorType.toLowerCase()}.json`);
     
     let entries: ErrorLogEntry[] = [];
     if (fs.existsSync(typeFile)) {
@@ -404,7 +416,10 @@ export class ErrorLogManager {
   private async saveByPipeline(entry: ErrorLogEntry): Promise<void> {
     if (!entry.pipelineId) return;
     
-    const pipelineFile = path.join(this.basePath, 'errors', 'by-pipeline', `${entry.pipelineId}.json`);
+    const errorBasePath = this.serverPort 
+      ? path.join(this.basePath, `port-${this.serverPort}`, 'errors')
+      : path.join(this.basePath, 'errors');
+    const pipelineFile = path.join(errorBasePath, 'by-pipeline', `${entry.pipelineId}.json`);
     
     let entries: ErrorLogEntry[] = [];
     if (fs.existsSync(pipelineFile)) {
@@ -464,12 +479,20 @@ export class ErrorLogManager {
   }
 }
 
-// 导出单例实例
-let errorLogManagerInstance: ErrorLogManager | null = null;
+// 导出端口特定的实例管理
+const errorLogManagerInstances: Map<number, ErrorLogManager> = new Map();
+let defaultErrorLogManagerInstance: ErrorLogManager | null = null;
 
-export function getErrorLogManager(): ErrorLogManager {
-  if (!errorLogManagerInstance) {
-    errorLogManagerInstance = new ErrorLogManager();
+export function getErrorLogManager(serverPort?: number): ErrorLogManager {
+  if (serverPort) {
+    if (!errorLogManagerInstances.has(serverPort)) {
+      errorLogManagerInstances.set(serverPort, new ErrorLogManager(undefined, serverPort));
+    }
+    return errorLogManagerInstances.get(serverPort)!;
+  } else {
+    if (!defaultErrorLogManagerInstance) {
+      defaultErrorLogManagerInstance = new ErrorLogManager();
+    }
+    return defaultErrorLogManagerInstance;
   }
-  return errorLogManagerInstance;
 }

@@ -94,7 +94,7 @@ export class SecureLogger {
       includeTimestamp: true,
       includeLevel: true,
       enableFileLogging: false,
-      debugLogsPath: './test-debug-logs',
+      debugLogsPath: path.join('.', 'test-debug-logs'),
       ...config,
     };
 
@@ -431,7 +431,7 @@ export class RequestLogger {
  * 全局安全日志实例
  */
 export const secureLogger = new SecureLogger({
-  level: process.env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO,
+  level: process.env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.WARN,
   enableSanitization: true,
   enableAuditLog: true,
 });

@@ -222,11 +222,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
       throw new Error('Transformer not in running state');
     }
 
-    console.log('🔥 [GEMINI TRANSFORMER] Processing input...', {
-      type: typeof input,
-      hasModel: !!(input as any)?.model,
-      hasMessages: !!(input as any)?.messages
-    });
+    // Processing input debug logging removed for cleaner output
 
     const startTime = Date.now();
     
@@ -285,10 +281,10 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
 
   private performAnthropicToGeminiTransformation(input: unknown): any {
     if (this.isAnthropicRequest(input)) {
-      console.log('🔄 [GEMINI TRANSFORMER] Converting Anthropic → Gemini format');
+      // Converting Anthropic → Gemini format debug logging removed
       return this.transformAnthropicToGemini(input as AnthropicRequest);
     } else {
-      console.error('❌ [GEMINI TRANSFORMER] Unsupported input format');
+      // Unsupported input format error logging removed
       throw new TransformerValidationError(
         'Unsupported input format for Gemini transformer',
         ['Input must be Anthropic request'],
@@ -301,7 +297,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
    * 转换Anthropic请求到Gemini格式
    */
   private transformAnthropicToGemini(request: AnthropicRequest): GeminiRequest {
-    console.log('🔄 [GEMINI TRANSFORMER] Anthropic → Gemini conversion');
+    // Anthropic → Gemini conversion debug logging removed
     
     // 验证基本字段
     if (!request.model || !request.messages) {
@@ -339,12 +335,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
       model: geminiModel
     };
 
-    console.log('✅ [GEMINI TRANSFORMER] Anthropic → Gemini conversion completed', {
-      originalModel: request.model,
-      geminiModel,
-      contentCount: contents.length,
-      hasTools: !!tools && tools.length > 0
-    });
+    // Anthropic → Gemini conversion completion debug logging removed
 
     return geminiRequest;
   }
@@ -353,7 +344,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
    * 转换Gemini响应到Anthropic格式
    */
   private transformGeminiToAnthropic(response: any): AnthropicResponse {
-    console.log('🔄 [GEMINI TRANSFORMER] Gemini → Anthropic conversion');
+    // Gemini → Anthropic conversion debug logging removed
     
     // 处理数组格式的流式响应（基于验证的响应格式）
     let processedResponse: GeminiResponse;
@@ -392,7 +383,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
       }
     };
 
-    console.log('✅ [GEMINI TRANSFORMER] Gemini → Anthropic conversion completed');
+    // Gemini → Anthropic conversion completion debug logging removed
 
     return anthropicResponse;
   }

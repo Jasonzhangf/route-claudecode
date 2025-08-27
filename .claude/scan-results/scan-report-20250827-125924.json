@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-27 12:59:24",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/debug/error-log-cli.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

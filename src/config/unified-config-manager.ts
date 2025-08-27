@@ -248,7 +248,7 @@ export class UnifiedConfigManager {
       config: {
         endpoint: provider?.api_base_url,
         apiKey: Array.isArray(provider?.api_key) ? provider.api_key[0] : provider?.api_key,
-        timeout: protocolConfig.timeouts[providerName || 'default'] || 30000,
+        timeout: protocolConfig.timeouts[providerName || 'default'] || 60000, // 增加默认超时至60秒
         maxRetries: protocolConfig.maxRetries[providerName || 'default'] || 3,
         actualModel,
         originalModel,
@@ -286,7 +286,7 @@ export class UnifiedConfigManager {
     return {
       client: {
         serverUrl: 'http://localhost',
-        timeout: 30000,
+        timeout: 60000, // 增加超时至60秒
         retryAttempts: 3,
         retryDelay: 1000,
         maxConcurrency: 10,
@@ -361,7 +361,7 @@ export class UnifiedConfigManager {
         }), {}),
         mappings: providers.reduce((acc, p) => ({ ...acc, [p.name]: p.protocol || 'openai' }), {}),
         modelMappings: routingRules,
-        timeouts: providers.reduce((acc, p) => ({ ...acc, [p.name]: 30000 }), {}),
+        timeouts: providers.reduce((acc, p) => ({ ...acc, [p.name]: 60000 }), {}), // 默认超时增加至60秒
         maxRetries: providers.reduce((acc, p) => ({ ...acc, [p.name]: 3 }), {})
       },
       

@@ -43,8 +43,8 @@ export class EnhancedErrorHandler {
   private errorLogManager: ErrorLogManager;
   private initialized: boolean = false;
 
-  constructor() {
-    this.errorLogManager = getErrorLogManager();
+  constructor(serverPort?: number) {
+    this.errorLogManager = getErrorLogManager(serverPort);
   }
 
   /**
@@ -220,12 +220,20 @@ export class EnhancedErrorHandler {
   }
 }
 
-// 导出单例实例
-let enhancedErrorHandlerInstance: EnhancedErrorHandler | null = null;
+// 导出端口特定的实例管理
+const enhancedErrorHandlerInstances: Map<number, EnhancedErrorHandler> = new Map();
+let defaultEnhancedErrorHandlerInstance: EnhancedErrorHandler | null = null;
 
-export function getEnhancedErrorHandler(): EnhancedErrorHandler {
-  if (!enhancedErrorHandlerInstance) {
-    enhancedErrorHandlerInstance = new EnhancedErrorHandler();
+export function getEnhancedErrorHandler(serverPort?: number): EnhancedErrorHandler {
+  if (serverPort) {
+    if (!enhancedErrorHandlerInstances.has(serverPort)) {
+      enhancedErrorHandlerInstances.set(serverPort, new EnhancedErrorHandler(serverPort));
+    }
+    return enhancedErrorHandlerInstances.get(serverPort)!;
+  } else {
+    if (!defaultEnhancedErrorHandlerInstance) {
+      defaultEnhancedErrorHandlerInstance = new EnhancedErrorHandler();
+    }
+    return defaultEnhancedErrorHandlerInstance;
   }
-  return enhancedErrorHandlerInstance;
 }

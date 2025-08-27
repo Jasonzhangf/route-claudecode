@@ -1,8 +1,14 @@
-# RCC v4.0 模块化路由代理系统
+# RCC v4.1 模块化路由代理系统
 
 ## 项目概述
 
-Route Claude Code (RCC) v4.0 是一个严格模块化的AI路由代理系统，采用三层架构设计：客户端模块 → 路由器模块 → 流水线Worker。系统禁止mockup响应，所有错误通过标准API error handler处理，确保无静默失败。
+Route Claude Code (RCC) v4.1 是一个严格模块化的AI路由代理系统，采用三层架构设计：客户端模块 → 路由器模块 → 流水线Worker。系统禁止mockup响应，所有错误通过标准API error handler处理，确保无静默失败。
+
+### 🎉 v4.1 新特性
+- **OpenAI & Qwen混合配置支持**: 完整支持OpenAI和Qwen提供商的混合配置
+- **增强工具调用**: 修复ModelScope/Qwen API工具调用序列验证问题
+- **跨平台兼容**: 增强Windows路径兼容性和跨平台支持
+- **智能超时管理**: 优化超时配置(60秒标准，200秒长上下文任务)
 
 ### 核心特性
 - **双模式CLI**: Server模式和Client模式，支持独立运行和透明代理

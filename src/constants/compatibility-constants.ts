@@ -42,9 +42,9 @@ export const DEFAULT_PORTS = {
 } as const;
 
 export const DEFAULT_TIMEOUTS = {
-  STANDARD: 30000,
-  LONG: 60000,
-  SHORT: 15000
+  STANDARD: 60000, // 增加到60秒以支持复杂AI推理任务
+  LONG: 120000, // 增加到2分钟以支持更复杂的任务
+  SHORT: 30000 // 短超时从15秒增加到30秒
 } as const;
 
 export const DEFAULT_RETRY_CONFIG = {

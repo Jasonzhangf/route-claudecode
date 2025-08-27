@@ -226,6 +226,7 @@ program
 // 获取错误类型图标
 function getTypeIcon(type: ErrorType): string {
   const icons: Record<ErrorType, string> = {
+    [ErrorType.SERVER_ERROR]: '🖥️',
     [ErrorType.FILTER_ERROR]: '🔍',
     [ErrorType.SOCKET_ERROR]: '🔌',
     [ErrorType.TIMEOUT_ERROR]: '⏰',

@@ -21,7 +21,7 @@ export const SERVER_DEFAULTS = {
     MAX_REQUEST_SIZE: 50 * 1024 * 1024, // 50MB，增加到50MB
     KEEP_ALIVE_TIMEOUT: 30000, // 30秒
     CONNECTION_TIMEOUT: 5000,   // 5秒连接超时
-    REQUEST_TIMEOUT: 30000,     // 30秒请求超时
+    REQUEST_TIMEOUT: 60000,     // 60秒请求超时，支持更长处理时间
     SHUTDOWN_TIMEOUT: 10000,    // 10秒优雅关闭超时
   },
 

@@ -87,7 +87,7 @@ export const PIPELINE_ERROR_MESSAGES = {
  * 组件创建配置
  */
 export const COMPONENT_CREATION = {
-  DEFAULT_TIMEOUT: 30000,
+  DEFAULT_TIMEOUT: 60000, // 增加到60秒以支持复杂AI推理任务
   MAX_RETRIES: 3,
   DEFAULT_BATCH_SIZE: 1
 } as const;
@@ -96,9 +96,9 @@ export const COMPONENT_CREATION = {
  * 组件默认配置
  */
 export const COMPONENT_DEFAULTS = {
-  SERVER_TIMEOUT: 30000,
+  SERVER_TIMEOUT: 60000, // 增加到60秒以支持复杂AI推理任务
   SERVER_MAX_RETRIES: 3,
-  PROTOCOL_TIMEOUT: 30000
+  PROTOCOL_TIMEOUT: 60000 // 增加到60秒以支持复杂AI推理任务
 } as const;
 
 /**

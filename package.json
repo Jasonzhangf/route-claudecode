@@ -1,7 +1,7 @@
 {
   "name": "route-claude-code",
-  "version": "4.0.1",
-  "description": "Route Claude Code v4.0 - TypeScript Edition",
+  "version": "4.1.0",
+  "description": "Route Claude Code v4.1 - Enhanced OpenAI & Qwen Support with Mixed Configuration",
   "main": "dist/cli.js",
   "bin": {
     "rcc4": "./dist/cli.js"

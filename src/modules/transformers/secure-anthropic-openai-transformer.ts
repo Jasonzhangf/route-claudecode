@@ -340,39 +340,28 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     }
 
     // 🔍 Critical debug: Track all calls to the Transformer
-    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] ========== PROCESS CALLED ==========');
-    console.log('🔥 [TRANSFORMER DEBUG] Timestamp:', new Date().toISOString());
-    console.log('🔥 [TRANSFORMER DEBUG] Input type:', typeof input);
-    console.log('🔥 [TRANSFORMER DEBUG] Input keys:', Object.keys(input as any));
-    console.log('🔥 [TRANSFORMER DEBUG] Transformer status:', this.status);
-    console.log('🔥 [TRANSFORMER DEBUG] Transformer ID:', this.id);
+    // Debug logging removed for cleaner output
     
     if ((input as any).model) {
-      console.log('🔥 [TRANSFORMER DEBUG] Model:', (input as any).model);
+      // Model debug logging removed
     }
     if ((input as any).messages) {
-      console.log('🔥 [TRANSFORMER DEBUG] Messages count:', (input as any).messages?.length);
+      // Messages count debug logging removed
       // 检查是否有tool_result内容
       const hasToolResult = (input as any).messages?.some((msg: any) => 
         Array.isArray(msg.content) && msg.content.some((item: any) => item.type === 'tool_result')
       );
-      console.log('🔥 [TRANSFORMER DEBUG] Has tool_result content:', hasToolResult);
+      // Tool result debug logging removed
     }
-    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] Starting transformation...');
+    // Transformation start debug logging removed
     
     // 🔧 Simple debug - avoid complex operations that might fail
-    console.log('🔥 [TRANSFORMER DEBUG] Input type check:', typeof input);
-    console.log('🔥 [TRANSFORMER DEBUG] Input not null:', input !== null && input !== undefined);
+    // Input type checking debug removed
     
     if (input && typeof input === 'object') {
       try {
         const inputKeys = Object.keys(input);
-        console.log('🔥 [TRANSFORMER DEBUG] Input keys:', inputKeys);
-        console.log('🔥 [TRANSFORMER DEBUG] Has tools field:', inputKeys.includes('tools'));
-        if (inputKeys.includes('tools')) {
-          console.log('🔥 [TRANSFORMER DEBUG] Tools type:', typeof (input as any).tools);
-          console.log('🔥 [TRANSFORMER DEBUG] Tools array:', Array.isArray((input as any).tools));
-        }
+        // Input keys and tools field debug logging removed
       } catch (e) {
         console.error('🚨 [TRANSFORMER DEBUG] Key extraction failed:', e.message);
       }
@@ -380,10 +369,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
 
     const result = this.performTransformation(input);
     
-    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] Transformation completed!');
-    console.log('🔥 [TRANSFORMER DEBUG] Result type:', typeof result);
-    console.log('🔥 [TRANSFORMER DEBUG] Result keys:', Object.keys(result as any));
-    console.log('🔥🔥🔥 [TRANSFORMER DEBUG] ========== PROCESS END ==========');
+    // Transformation completion debug logging removed
     
     return result;
   }
@@ -394,13 +380,13 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   // ============================================================================
 
   private performTransformation(input: unknown): OpenAIRequest | AnthropicResponse {
-    console.log('🔥🔥 [TRANSFORMER PERFORM] performTransformation called!');
+    // Transformation perform debug logging removed
     try {
-      console.log('🔥 [TRANSFORMER PERFORM] Checking input type...');
+      // Input type check debug logging removed
       
       // 🔧 优先检查错误响应 - 避免处理不完整的OpenAI响应
       if (this.isOpenAIErrorResponse(input)) {
-        console.log('🚨 [TRANSFORMER PERFORM] Detected OpenAI error response, propagating error without transformation');
+        // OpenAI error response debug logging removed
         // 错误响应不应该被转换，直接抛出包含完整错误信息的异常
         const errorInput = input as any;
         let errorMessage = 'API Error Response';
@@ -419,25 +405,17 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       }
       
       if (this.isAnthropicRequest(input)) {
-        console.log('🔥 [TRANSFORMER PERFORM] Detected Anthropic request, calling transformAnthropicToOpenAI');
+        // Anthropic request debug logging removed
         return this.transformAnthropicToOpenAI(input as AnthropicRequest);
       } else if (this.isOpenAIRequest(input)) {
-        console.log('🔥 [TRANSFORMER PERFORM] Detected OpenAI request, passing through as-is');
+        // OpenAI request passthrough debug logging removed
         // OpenAI请求直接传递，不需要转换
         return input as OpenAIRequest;
       } else if (this.isOpenAIResponse(input)) {
-        console.log('🔥 [TRANSFORMER PERFORM] Detected OpenAI response, calling transformOpenAIToAnthropic');
+        // OpenAI response debug logging removed
         return this.transformOpenAIToAnthropic(input as OpenAIResponse);
       } else {
-        console.log('🔥 [TRANSFORMER PERFORM] Unsupported input format detected');
-        console.log('🔥 [TRANSFORMER DEBUG] Input details:', {
-          hasObject: !!(input as any)?.object,
-          hasChoices: !!(input as any)?.choices,
-          hasError: !!(input as any)?.error,
-          hasErrors: !!(input as any)?.errors,
-          hasMessage: !!(input as any)?.message,
-          inputKeys: input && typeof input === 'object' ? Object.keys(input) : 'not-object'
-        });
+        // Unsupported format debug logging removed
         
         // 🔧 修复：如果输入看起来像一个响应但格式不完整，尝试提取错误信息
         if (input && typeof input === 'object') {
@@ -467,9 +445,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
 
   private transformAnthropicToOpenAI(request: AnthropicRequest): OpenAIRequest {
     // 🔧 Critical debug: Track transformer execution
-    console.log('🔥🔥 [TRANSFORMER ANTHROPIC->OPENAI] Method called!');
-    console.log('🔥 [TRANSFORMER DEBUG] Request keys:', Object.keys(request));
-    console.log('🔥 [TRANSFORMER DEBUG] Request has tools:', 'tools' in request, typeof request.tools, Array.isArray(request.tools));
+    // ANTHROPIC->OPENAI method call debug logging removed
     
     // 基本验证
     if (!request.model || !request.messages || !Array.isArray(request.messages)) {
@@ -505,36 +481,23 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     }
 
     // 转换工具定义
-    console.log('🔧 [TRANSFORMER DEBUG] 工具转换检查:', {
-      hasTools: !!request.tools,
-      toolsType: typeof request.tools,
-      toolsLength: Array.isArray(request.tools) ? request.tools.length : 'not-array',
-      preserveToolCalls: this.config.preserveToolCalls
-    });
+    // 工具转换检查 debug logging removed
     
     if (request.tools && this.config.preserveToolCalls) {
-      console.log('🔧 [TRANSFORMER DEBUG] 执行工具转换...');
+      // 执行工具转换 debug logging removed
       openaiRequest.tools = this.convertTools(request.tools);
-      console.log('🔧 [TRANSFORMER DEBUG] 工具转换完成:', {
-        originalCount: Array.isArray(request.tools) ? request.tools.length : 0,
-        convertedCount: Array.isArray(openaiRequest.tools) ? openaiRequest.tools.length : 0
-      });
+      // 工具转换完成 debug logging removed
     } else {
-      console.log('🚨 [TRANSFORMER DEBUG] 跳过工具转换 - 条件不满足');
+      // 跳过工具转换 debug logging removed
     }
 
     // 🔍 Debug: Log the final OpenAI request to check JSON validity
-    console.log('🔥 [TRANSFORMER DEBUG] Final OpenAI request:', {
-      modelCount: openaiRequest.model ? 1 : 0,
-      messageCount: openaiRequest.messages?.length || 0,
-      hasTools: !!openaiRequest.tools,
-      hasMaxTokens: typeof openaiRequest.max_tokens === 'number'
-    });
+    // Final OpenAI request debug logging removed
     
     try {
       // Test JSON serialization
       const testJson = JQJsonHandler.stringifyJson(openaiRequest, true);
-      console.log('🔥 [TRANSFORMER DEBUG] JSON serialization test passed, length:', testJson.length);
+      // JSON serialization test debug logging removed
     } catch (error) {
       console.error('🚨 [TRANSFORMER ERROR] JSON serialization failed:', error);
       throw new Error(`Invalid OpenAI request format: ${error}`);
@@ -545,21 +508,11 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
 
   private transformOpenAIToAnthropic(response: OpenAIResponse): AnthropicResponse {
     // 🔧 增强的响应验证 - 检查错误响应格式
-    console.log('🔥🔥 [TRANSFORMER OPENAI->ANTHROPIC] Method called!');
-    console.log('🔥 [TRANSFORMER DEBUG] Response validation:', {
-      hasChoices: !!(response as any)?.choices,
-      choicesIsArray: Array.isArray((response as any)?.choices),
-      choicesLength: Array.isArray((response as any)?.choices) ? (response as any).choices.length : 'not-array',
-      hasObject: !!(response as any)?.object,
-      objectValue: (response as any)?.object,
-      hasError: !!(response as any)?.error,
-      hasErrors: !!(response as any)?.errors,
-      responseKeys: Object.keys(response as any)
-    });
+    // OpenAI to Anthropic method call and response validation debug logging removed
     
     // 🔧 关键修复：检查是否为错误响应，避免访问undefined的choices
     if ((response as any).error || (response as any).errors) {
-      console.log('🚨 [TRANSFORMER DEBUG] Error response detected in transformOpenAIToAnthropic');
+      // Error response detection debug logging removed
       let errorMessage = 'API Error Response';
       
       if ((response as any).error?.message) {
@@ -575,12 +528,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     
     // 基本验证 - 使用更详细的错误信息
     if (!response.choices || !Array.isArray(response.choices) || response.choices.length === 0) {
-      console.log('🚨 [TRANSFORMER DEBUG] Invalid OpenAI response structure:', {
-        hasChoices: !!response.choices,
-        isArray: Array.isArray(response.choices),
-        length: Array.isArray(response.choices) ? response.choices.length : 'not-array',
-        responsePreview: JSON.stringify(response).substring(0, 200)
-      });
+      // Invalid OpenAI response structure debug logging removed
       
       // 尝试从响应中提取有用的错误信息
       let errorDetails = 'missing or empty choices array';
@@ -643,14 +591,10 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   private convertMessages(messages: ReadonlyArray<AnthropicRequest['messages'][0]>): OpenAIRequest['messages'] {
     const convertedMessages: OpenAIRequest['messages'][0][] = [];
 
-    console.log('🔍 [Transformer] convertMessages called with:', messages.length, 'messages');
+    // convertMessages debug logging removed
 
     for (const [msgIndex, message] of messages.entries()) {
-      console.log(`🔍 [Transformer] Processing message ${msgIndex}:`, {
-        role: message.role,
-        contentType: typeof message.content,
-        isArray: Array.isArray(message.content)
-      });
+      // Processing message debug logging removed
 
       if (!message || typeof message !== 'object') {
         continue;
@@ -662,7 +606,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
           role: message.role === 'user' ? 'user' : 'assistant',
           content: message.content,
         });
-        console.log(`✅ [Transformer] Added string message ${msgIndex}`);
+        // Added string message debug logging removed
       } else if (Array.isArray(message.content)) {
         // 🔧 关键修复：正确处理tool_result拆分逻辑
         // 基于demo1转换规则：tool_result必须转换为独立的role="tool"消息
@@ -671,16 +615,11 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
         const toolCalls: any[] = [];
         const toolResults: any[] = [];
 
-        console.log(`🔍 [Transformer] Processing array content with ${message.content.length} items`);
+        // Processing array content debug logging removed
 
         // 第一步：分离不同类型的内容
         for (const [itemIndex, item] of message.content.entries()) {
-          console.log(`🔍 [Transformer] Item ${itemIndex}:`, {
-            type: item?.type,
-            hasToolUseId: !!(item as any)?.tool_use_id,
-            hasName: !!item?.name,
-            hasContent: !!(item as any)?.content
-          });
+          // Item processing debug logging removed
 
           if (!item || typeof item !== 'object') {
             continue;
@@ -688,7 +627,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
 
           if (item.type === 'text' && item.text) {
             textParts.push(item.text);
-            console.log(`📝 [Transformer] Added text part: ${item.text.substring(0, 50)}...`);
+            // Added text part debug logging removed
           } else if (item.type === 'tool_use' && item.name) {
             // Convert Anthropic tool_use to OpenAI tool_calls (for assistant messages)
             toolCalls.push({
@@ -699,7 +638,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
                 arguments: JQJsonHandler.stringifyJson(item.input || {}, true),
               },
             });
-            console.log(`🔧 [Transformer] Added tool_use: ${item.name}`);
+            // Added tool_use debug logging removed
           } else if (item.type === 'tool_result' && (item as any).tool_use_id) {
             // 🎯 关键修复：tool_result转换为独立的OpenAI tool消息
             // 参考demo1场景3：tool_result应该变成独立的role="tool"消息
@@ -711,39 +650,52 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
                 : JQJsonHandler.stringifyJson((item as any).content || '', true),
             };
             toolResults.push(toolResult);
-            console.log(`🔄 [Transformer] Prepared tool_result for separate message: ${(item as any).tool_use_id} -> ${toolResult.content.substring(0, 50)}...`);
+            // Prepared tool_result debug logging removed
           } else {
-            console.log(`⚠️ [Transformer] Unhandled item type: ${item.type}`);
+            // Unhandled item type debug logging removed
           }
         }
 
-        // 第二步：添加工具结果作为独立消息（必须先添加tool消息）
-        // 参考demo1规则：tool_result消息必须在相关的user消息之前
-        for (const toolResult of toolResults) {
-          convertedMessages.push(toolResult);
-          console.log(`✅ [Transformer] Added independent tool result message: ${toolResult.tool_call_id}`);
-        }
-
-        // 第三步：添加主消息（如果有文本内容或工具调用）
-        if (textParts.length > 0 || toolCalls.length > 0) {
-          const mainMessage: any = {
-            role: message.role === 'user' ? 'user' : 'assistant',
-            content: textParts.length > 0 ? textParts.join('\n') : (toolCalls.length > 0 ? null : ''),
+        // 🔧 关键修复：正确的OpenAI工具调用消息顺序
+        // OpenAI规范：assistant(tool_calls) → tool(responses) → user/assistant(next)
+        
+        // 第一步：如果有工具调用，先添加assistant消息
+        if (toolCalls.length > 0 && message.role === 'assistant') {
+          const assistantMessage: any = {
+            role: 'assistant',
+            content: textParts.length > 0 ? textParts.join('\n') : null,
+            tool_calls: toolCalls,
           };
-
-          // 工具调用只能在assistant消息中
-          if (toolCalls.length > 0 && message.role === 'assistant') {
-            mainMessage.tool_calls = toolCalls;
+          convertedMessages.push(assistantMessage);
+        }
+        // 第二步：然后添加工具结果消息（紧跟在assistant的tool_calls之后）
+        else if (toolResults.length > 0) {
+          // tool_result消息应该独立存在，对应之前的tool_calls
+          for (const toolResult of toolResults) {
+            convertedMessages.push(toolResult);
           }
-
-          convertedMessages.push(mainMessage);
-          console.log(`✅ [Transformer] Added main message: role=${mainMessage.role}, textParts=${textParts.length}, toolCalls=${toolCalls.length}`);
+          
+          // 如果还有文本内容，添加为额外的user消息
+          if (textParts.length > 0) {
+            const userMessage: any = {
+              role: message.role === 'user' ? 'user' : 'assistant',
+              content: textParts.join('\n'),
+            };
+            convertedMessages.push(userMessage);
+          }
+        }
+        // 第三步：普通消息（纯文本，无工具调用）
+        else if (textParts.length > 0) {
+          const regularMessage: any = {
+            role: message.role === 'user' ? 'user' : 'assistant', 
+            content: textParts.join('\n'),
+          };
+          convertedMessages.push(regularMessage);
         }
       }
     }
 
-    console.log(`🔍 [Transformer] Final conversion: ${messages.length} input -> ${convertedMessages.length} output messages`);
-    console.log(`🔍 [Transformer] Message roles:`, convertedMessages.map(m => m.role));
+    // Final conversion debug logging removed
     return convertedMessages;
   }
 

@@ -18,8 +18,8 @@
  * 路由器核心默认配置
  */
 export const ROUTER_DEFAULTS = {
-  /** 默认请求超时时间 (毫秒) */
-  TIMEOUT: 30000,
+  /** 默认请求超时时间 (毫秒) - 增加到60秒支持更长处理 */
+  TIMEOUT: 60000,
   
   /** 默认重试次数 */
   RETRY_ATTEMPTS: 3,
@@ -153,8 +153,8 @@ export const PIPELINE_DEFAULTS = {
   /** 流水线初始化超时 (毫秒) */
   INITIALIZATION_TIMEOUT: 30000,
   
-  /** 流水线处理超时 (毫秒) */
-  PROCESSING_TIMEOUT: 120000,
+  /** 流水线处理超时 (毫秒) - longcontext任务需要200秒 */
+  PROCESSING_TIMEOUT: 200000,
   
   /** 流水线空闲超时 (毫秒) */
   IDLE_TIMEOUT: 300000,

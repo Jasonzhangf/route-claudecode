@@ -300,11 +300,27 @@ export class PipelineLayersProcessor {
       model: actualModel,
     };
 
+    // 🔧 为longContext任务设置特殊超时配置
+    let timeoutValue = providerInfo?.timeout || context.metadata.configManager?.getConfiguration()?.server?.requestTimeout || 300000;
+    
+    // 检查是否为longContext任务，设置200秒特殊超时
+    if (context.transformations && context.transformations.length > 0) {
+      const routerTransform = context.transformations.find(t => t.layer === 'router');
+      if (routerTransform && routerTransform.outputModel === 'longContext') {
+        timeoutValue = 200000; // 200秒用于长上下文处理
+        secureLogger.info('🔥 LongContext超时配置', {
+          requestId: context.requestId,
+          timeout: timeoutValue,
+          reason: 'longContext任务需要更长的处理时间'
+        });
+      }
+    }
+
     context.metadata.protocolConfig = {
       endpoint,
       apiKey,
       protocol: providerInfo?.protocol,
-      timeout: providerInfo?.timeout || 30000,
+      timeout: timeoutValue,
       maxRetries: providerInfo?.maxRetries || 3,
       originalModel: request.model,
       actualModel,

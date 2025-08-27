@@ -134,7 +134,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
         config: {
           endpoint: matchingProvider?.api_base_url,
           apiKey: Array.isArray(matchingProvider?.api_key) ? matchingProvider.api_key[0] : matchingProvider?.api_key,
-          timeout: 30000,
+          timeout: 60000, // 增加超时至60秒
           maxRetries: 3,
           actualModel: request.model, // TODO: 需要从上层传递真实的actualModel
           originalModel: request.model,

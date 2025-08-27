@@ -1113,7 +1113,7 @@ export class PipelineServer extends EventEmitter {
         'anthropic-to-openai'
       );
       pipelineSteps.push(transformerRecord);
-      console.log(`   ✅ Layer 2 - Transformer: ${transformerRecord.duration}ms (双向转换完成)`);
+      // Layer 2 - Transformer duration logging removed
 
       // ===== Layer 3: Protocol Layer - 记录协议处理 =====
       const protocolStart = Date.now();

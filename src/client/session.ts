@@ -113,7 +113,7 @@ export class ClientSession extends EventEmitter {
     return {
       serverHost: config.serverHost || getServerHost(),
       serverPort: config.serverPort || getServerPort(),
-      timeout: config.timeout || 30000,
+      timeout: config.timeout || 60000, // 增加默认超时至60秒
       retryCount: config.retryCount || 3,
       retryDelay: config.retryDelay || 1000,
       keepAlive: config.keepAlive ?? true,

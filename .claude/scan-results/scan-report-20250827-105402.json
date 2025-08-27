@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-27 10:54:02",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/architecture-engineer/scripts/start-gemini-cli.sh",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

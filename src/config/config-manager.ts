@@ -559,7 +559,7 @@ export class ConfigManager {
     // 返回默认的客户端配置
     return {
       serverUrl: 'http://localhost:3456',
-      timeout: 30000,
+      timeout: 60000, // 增加默认超时至60秒
       retryAttempts: 3,
       retryDelay: 1000,
     };

@@ -34,20 +34,48 @@ export interface ErrorClassification {
  */
 export class ErrorClassifier {
   private patterns: ErrorPattern[] = [
-    // Filter错误（最高优先级）
+    // 服务器错误（最高优先级 - 外部API问题，影响所有用户）
     {
-      type: ErrorType.FILTER_ERROR,
+      type: ErrorType.SERVER_ERROR,
       patterns: [
-        'Cannot read properties of undefined (reading \'filter\')',
-        'Cannot read property \'filter\' of undefined',
-        '.filter is not a function',
-        'TypeError.*filter.*undefined',
-        'filter.*undefined.*reading'
+        'Server error: 502',
+        'Server error: 503', 
+        'Server error: 504',
+        'Server error: 524',
+        'Server error: 5\\d{2}',
+        'HTTP 502',
+        'HTTP 503',
+        'HTTP 504', 
+        'HTTP 524',
+        'HTTP 5\\d{2}',
+        'Internal Server Error',
+        'Bad Gateway',
+        'Service Unavailable',
+        'Gateway Timeout',
+        'server returned error'
       ],
       priority: 100
     },
 
-    // Socket相关错误
+    // 认证错误（高优先级 - 影响用户访问）
+    {
+      type: ErrorType.AUTH_ERROR,
+      patterns: [
+        'authentication failed',
+        'invalid api key',
+        'unauthorized',
+        'forbidden',
+        'invalid_api_key',
+        'authentication error',
+        'token expired',
+        'access denied',
+        'HTTP 401',
+        'HTTP 403'
+      ],
+      priority: 95
+    },
+
+    // Socket错误（高优先级 - 网络连接问题，影响服务稳定性）
     {
       type: ErrorType.SOCKET_ERROR,
       patterns: [
@@ -68,7 +96,7 @@ export class ErrorClassifier {
       priority: 90
     },
 
-    // 超时错误
+    // 超时错误（中高优先级 - 常见的性能问题）
     {
       type: ErrorType.TIMEOUT_ERROR,
       patterns: [
@@ -80,10 +108,10 @@ export class ErrorClassifier {
         'read timeout',
         'write timeout'
       ],
-      priority: 80
+      priority: 85
     },
 
-    // 连接错误
+    // 连接错误（中优先级 - DNS和网络配置问题）
     {
       type: ErrorType.CONNECTION_ERROR,
       patterns: [
@@ -96,25 +124,7 @@ export class ErrorClassifier {
         'DNS resolution failed',
         'host not found'
       ],
-      priority: 70
-    },
-
-    // 认证错误
-    {
-      type: ErrorType.AUTH_ERROR,
-      patterns: [
-        'authentication failed',
-        'invalid api key',
-        'unauthorized',
-        'forbidden',
-        'invalid_api_key',
-        'authentication error',
-        'token expired',
-        'access denied',
-        'HTTP 401',
-        'HTTP 403'
-      ],
-      priority: 85
+      priority: 80
     },
 
     // 流水线错误
@@ -155,7 +165,7 @@ export class ErrorClassifier {
       priority: 65
     },
 
-    // 验证错误
+    // 验证错误（中低优先级 - 输入参数问题）
     {
       type: ErrorType.VALIDATION_ERROR,
       patterns: [
@@ -169,6 +179,19 @@ export class ErrorClassifier {
         'constraint.*violation'
       ],
       priority: 60
+    },
+
+    // Filter错误（低优先级 - 内部代码bug，不影响系统运行）
+    {
+      type: ErrorType.FILTER_ERROR,
+      patterns: [
+        'Cannot read properties of undefined \\(reading \'filter\'\\)',
+        'Cannot read property \'filter\' of undefined',
+        '\\.filter is not a function',
+        'TypeError.*filter.*undefined',
+        'filter.*undefined.*reading'
+      ],
+      priority: 40
     }
   ];
 
@@ -269,15 +292,18 @@ export class ErrorClassifier {
    * 测试模式是否匹配
    */
   private testPattern(pattern: string, text: string): boolean {
+    const normalizedText = text.toLowerCase();
+    const normalizedPattern = pattern.toLowerCase();
+    
     if (pattern.includes('.*') || pattern.includes('\\')) {
       // 处理正则表达式模式
-      const regex = new RegExp(pattern, 'i');
-      const isMatched = regex.test(text);
+      const regex = new RegExp(normalizedPattern, 'i');
+      const isMatched = regex.test(normalizedText);
       
       if (!isMatched) {
         secureLogger.debug('Regex pattern did not match', {
-          pattern,
-          text: text.substring(0, 100),
+          pattern: normalizedPattern,
+          text: normalizedText.substring(0, 100),
           regexTest: false
         });
       }
@@ -285,8 +311,8 @@ export class ErrorClassifier {
       return isMatched;
     }
     
-    // 简单字符串包含匹配
-    return text.includes(pattern.toLowerCase());
+    // 🔧 修复关键BUG: 简单字符串包含匹配需要两边都转小写
+    return normalizedText.includes(normalizedPattern);
   }
 
   /**
@@ -441,6 +467,7 @@ export class ErrorClassifier {
    */
   public getErrorTypeDescription(type: ErrorType): string {
     const descriptions: Record<ErrorType, string> = {
+      [ErrorType.SERVER_ERROR]: 'HTTP server errors and API response failures',
       [ErrorType.FILTER_ERROR]: 'Array filter method called on undefined or null values',
       [ErrorType.SOCKET_ERROR]: 'Network socket connection issues',
       [ErrorType.TIMEOUT_ERROR]: 'Request or operation timeout errors',

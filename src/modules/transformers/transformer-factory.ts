@@ -68,7 +68,7 @@ export class SecureTransformerFactory implements IModuleFactory {
 
     // 安全检查：确保不允许废弃实现
     if (this.config.allowDeprecated) {
-      console.warn('⚠️ WARNING: Deprecated transformers are allowed. This may pose security risks.');
+      // WARNING: Deprecated transformers are allowed. This may pose security risks.
     }
 
     this.logSecurityEvent('factory-initialized', {
@@ -289,7 +289,7 @@ export class SecureTransformerFactory implements IModuleFactory {
         details: this.sanitizeLogData(details),
       };
 
-      console.log(`[SECURITY][${timestamp}] TransformerFactory: ${event}`, JQJsonHandler.stringifyJson(logEntry));
+      // Security logging removed for cleaner output
     }
   }
 

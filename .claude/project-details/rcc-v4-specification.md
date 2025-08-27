@@ -5,7 +5,8 @@
 **项目名称**: Route Claude Code (RCC) v4.0  
 **项目类型**: 模块化路由代理系统  
 **开发语言**: TypeScript/Node.js  
-**架构模式**: 严格模块化，流水线处理  
+**架构模式**: 六层平行流水线架构  
+**设计规范**: [RCC v4.0 六层平行架构规范](./rcc-v4-six-layer-parallel-architecture.md)  
 
 ## 核心需求
 

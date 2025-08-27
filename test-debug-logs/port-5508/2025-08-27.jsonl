@@ -1096,3 +1096,4 @@
 {"timestamp":"2025-08-27T01:26:03.044Z","level":"INFO","message":"RCC Server started with pipeline system","data":{"port":5508,"host":"0.0.0.0","config":"/Users/fanzhang/.route-claudecode/config/v4/single-provider/gemini-cli-v4-5508.json"}}
 {"timestamp":"2025-08-27T01:26:03.052Z","level":"INFO","message":"Loaded blacklist persistence data","data":{"counters":0,"blocks":0,"file":"/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/data/pipeline-blacklist.json"}}
 {"timestamp":"2025-08-27T01:26:03.056Z","level":"INFO","message":"Precise pipeline blacklist manager initialized","data":{"enabled":true,"destroyRulesCount":3,"enabledDestroyRules":0,"activeCounters":0,"temporaryBlocks":0}}
+{"timestamp":"2025-08-27T04:47:23.291Z","level":"ERROR","message":"Uncaught exception","data":{"error":"write EPIPE"}}
