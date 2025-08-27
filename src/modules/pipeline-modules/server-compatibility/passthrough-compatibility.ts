@@ -209,62 +209,18 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
   }
 
   /**
-   * 根据maxTokens限制请求大小，防止JSON过大
+   * 🔧 FIXED: 移除所有大小限制 - 保持完整请求
    */
   private async limitRequestSize(request: StandardRequest, maxTokens: number): Promise<StandardRequest> {
-    // 粗略估算JSON大小（字符数近似token数）
+    // 记录请求信息但不进行任何截断
     const requestJson = JQJsonHandler.stringifyJson(request);
-    const estimatedTokens = requestJson.length / 4; // 粗略估算：4字符≈1token
+    const estimatedTokens = requestJson.length / 4;
     
-    console.log(`   📏 请求大小检查: ${requestJson.length} 字符, 估算 ${Math.round(estimatedTokens)} tokens, 限制 ${maxTokens} tokens`);
+    console.log(`   📏 请求信息: ${requestJson.length} 字符, 估算 ${Math.round(estimatedTokens)} tokens`);
+    console.log(`   🚫 已禁用大小限制和截断功能，保持完整请求`);
     
-    if (estimatedTokens <= maxTokens) {
-      console.log('   ✅ 请求大小在限制范围内，无需截断');
-      return request;
-    }
-
-    console.log('   ⚠️ 请求过大，开始截断处理...');
-    
-    // 创建副本进行截断
-    const truncatedRequest = { ...request };
-    
-    // 1. 优先截断tools数组（通常是最大的部分）
-    if (truncatedRequest.tools && Array.isArray(truncatedRequest.tools)) {
-      const originalToolsLength = truncatedRequest.tools.length;
-      // 保留前50%的工具，或最多10个
-      const maxTools = Math.min(Math.floor(originalToolsLength * 0.5), 10);
-      if (truncatedRequest.tools.length > maxTools) {
-        truncatedRequest.tools = truncatedRequest.tools.slice(0, maxTools);
-        console.log(`   🔧 截断工具数组: ${originalToolsLength} -> ${truncatedRequest.tools.length}`);
-      }
-    }
-    
-    // 2. 检查截断后的大小
-    const truncatedJson = JQJsonHandler.stringifyJson(truncatedRequest);
-    const newEstimatedTokens = truncatedJson.length / 4;
-    
-    console.log(`   📏 截断后大小: ${truncatedJson.length} 字符, 估算 ${Math.round(newEstimatedTokens)} tokens`);
-    
-    // 3. 如果还是太大，进一步截断消息内容
-    if (newEstimatedTokens > maxTokens && truncatedRequest.messages) {
-      for (let i = 0; i < truncatedRequest.messages.length; i++) {
-        const message = truncatedRequest.messages[i];
-        if (message.content && typeof message.content === 'string') {
-          // 截断字符串内容到最多2000字符
-          if (message.content.length > 2000) {
-            message.content = message.content.substring(0, 2000) + '... [内容已截断]';
-            console.log(`   ✂️ 截断消息 ${i} 内容: 长度限制到2000字符`);
-          }
-        }
-      }
-    }
-    
-    const finalJson = JQJsonHandler.stringifyJson(truncatedRequest);
-    const finalEstimatedTokens = finalJson.length / 4;
-    
-    console.log(`   ✅ 最终请求大小: ${finalJson.length} 字符, 估算 ${Math.round(finalEstimatedTokens)} tokens`);
-    
-    return truncatedRequest;
+    // 直接返回原始请求，不做任何修改
+    return request;
   }
 
   async healthCheck(): Promise<{ healthy: boolean; details: any }> {

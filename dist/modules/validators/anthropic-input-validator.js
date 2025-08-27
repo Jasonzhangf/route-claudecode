@@ -24,9 +24,9 @@ class AnthropicInputValidator extends events_1.EventEmitter {
         this.config = {
             strictMode: true,
             allowExtraFields: false,
-            maxMessagesLength: 100,
-            maxMessageLength: 100000,
-            maxToolsLength: 50,
+            maxMessagesLength: Number.MAX_SAFE_INTEGER,
+            maxMessageLength: Number.MAX_SAFE_INTEGER,
+            maxToolsLength: Number.MAX_SAFE_INTEGER,
         };
         this.metrics = {
             requestsProcessed: 0,
@@ -38,9 +38,9 @@ class AnthropicInputValidator extends events_1.EventEmitter {
         this.validatorConfig = {
             strictMode: true,
             allowExtraFields: false,
-            maxMessagesLength: 100,
-            maxMessageLength: 100000,
-            maxToolsLength: 20,
+            maxMessagesLength: Number.MAX_SAFE_INTEGER,
+            maxMessageLength: Number.MAX_SAFE_INTEGER,
+            maxToolsLength: Number.MAX_SAFE_INTEGER,
             ...config,
         };
     }

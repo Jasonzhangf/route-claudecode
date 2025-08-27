@@ -15,6 +15,7 @@ import {
   StatusOptions,
   ConfigOptions,
   ServerStatus,
+  HappyOptions,
 } from '../interfaces/client/cli-interface';
 import { CommandParser } from './command-parser';
 import { ArgumentValidator } from './argument-validator';
@@ -26,9 +27,12 @@ import { JQJsonHandler } from '../utils/jq-json-handler';
 import { QwenAuthManager } from './auth/qwen-auth-manager';
 import { ModelTestHistoryManager } from './history/model-test-history-manager';
 import { getProviderRequestTimeout } from '../constants/timeout-defaults';
+import type { RCCv4Config } from '../config/config-types';
 // import { ApiModelFetcher, FetchedModel } from './api-model-fetcher';
 import * as path from 'path';
 import * as os from 'os';
+import { spawn } from 'child_process';
+import * as fs from 'fs';
 
 /**
  * CLI执行选项
@@ -110,14 +114,19 @@ export class RCCCli implements CLICommands {
       // 5. 执行命令
       await this.parser.executeCommand(mergedCommand);
     } catch (error) {
+      // Zero Fallback Policy: 立即抛出错误，不进行fallback处理
       this.handleError(error);
     }
   }
+
+
 
   /**
    * 启动服务器模式
    */
   async start(options: StartOptions): Promise<void> {
+    // 启动 happy-cli 守护进程
+    // await this.startHappyCliDaemon();
     try {
       // 验证必需参数
       if (!options.config) {
@@ -329,6 +338,7 @@ export class RCCCli implements CLICommands {
       await this.authenticateProvider(provider, index);
 
     } catch (error) {
+      // Zero Fallback Policy: 认证失败立即抛出，不尝试fallback
       this.handleError(error);
     }
   }
@@ -507,6 +517,7 @@ export class RCCCli implements CLICommands {
       if (options.verbose) {
         console.error('   Stack trace:', (error as Error).stack);
       }
+      // Zero Fallback Policy: Provider更新失败立即抛出
       this.handleError(error);
     }
   }
@@ -1197,13 +1208,26 @@ export class RCCCli implements CLICommands {
       apiKey: 'rcc4-proxy-key'
     });
 
-    // 启动 claude 子进程
+    // 启动 happy-cli 子进程
     const spawn = require('child_process').spawn;
     
     try {
-      // 传递所有命令行参数给 claude，除了 rcc4 特定的参数
+      // 获取 happy-cli 路径
+      const happyCliPath = path.resolve(os.homedir(), 'Documents/github/happy-cli');
+      const entrypoint = path.join(happyCliPath, 'dist', 'index.mjs');
+
+      if (!require('fs').existsSync(entrypoint)) {
+        secureLogger.warn('[Happy-CLI] Entrypoint not found, falling back to claude command.', { entrypoint });
+        if (!this.options.suppressOutput) {
+          console.warn('⚠️  [Happy-CLI] Could not find happy-cli, falling back to claude command.');
+        }
+        // 回退到原始的 claude 命令
+        return this.startClaudeDirectly(options, baseUrl, apiKey);
+      }
+
+      // 传递所有命令行参数给 happy-cli，除了 rcc4 特定的参数
       const originalArgs = process.argv.slice(2);
-      const claudeArgs: string[] = [];
+      const happyCliArgs: string[] = [];
       
       // 跳过 rcc4 特定参数和它们的值
       for (let i = 0; i < originalArgs.length; i++) {
@@ -1225,22 +1249,22 @@ export class RCCCli implements CLICommands {
           continue;
         } else {
           // 保留其他所有参数
-          claudeArgs.push(arg);
+          happyCliArgs.push(arg);
         }
       }
 
-      // 如果没有参数，让 claude 使用默认行为
-      // 不需要添加 --interactive，claude 会自动进入交互模式
+      // 如果没有参数，让 happy-cli 使用默认行为
 
-      secureLogger.info('启动claude命令', {
-        claudeArgs,
+      secureLogger.info('启动happy-cli命令', {
+        happyCliArgs,
+        entrypoint,
         env: {
           ANTHROPIC_BASE_URL: baseUrl,
           ANTHROPIC_API_KEY: apiKey
         }
       });
 
-      const claude = spawn('claude', claudeArgs, {
+      const happyCli = spawn('node', [entrypoint, ...happyCliArgs], {
         stdio: 'inherit',  // 恢复inherit模式以确保交互正常
         env: {
           ...process.env,
@@ -1275,23 +1299,27 @@ export class RCCCli implements CLICommands {
         secureLogger.error('Process stderr严重错误', { error: error.message });
       });
 
-      claude.on('close', (code) => {
-        secureLogger.info('Claude进程退出', { exitCode: code });
+      happyCli.on('close', (code) => {
+        secureLogger.info('Happy-CLI进程退出', { exitCode: code });
         process.exit(code || 0);
       });
 
-      claude.on('error', (error) => {
-        secureLogger.error('Claude进程错误', { error: error.message });
-        console.error(`❌ Failed to start claude: ${error.message}`);
+      happyCli.on('error', (error) => {
+        secureLogger.error('Happy-CLI进程错误', { error: error.message });
+        console.error(`❌ Failed to start happy-cli: ${error.message}`);
         process.exit(1);
       });
 
-      // 等待一小段时间确保claude启动
+      // 等待一小段时间确保happy-cli启动
       await new Promise(resolve => setTimeout(resolve, 500));
 
     } catch (error) {
-      secureLogger.error('启动claude客户端失败', { error: error.message });
-      throw new Error(`Failed to start claude client: ${error.message}`);
+      secureLogger.error('启动happy-cli客户端失败', { error: error.message });
+      // 如果 happy-cli 启动失败，回退到 claude 命令
+      if (!this.options.suppressOutput) {
+        console.warn('⚠️  Failed to start happy-cli, falling back to claude command.');
+      }
+      return this.startClaudeDirectly(options, baseUrl, apiKey);
     }
   }
 
@@ -2442,6 +2470,85 @@ export class RCCCli implements CLICommands {
         return 'http://localhost:1234/v1';
       default:
         return 'http://localhost:1234/v1';
+    }
+  }
+  /**
+   * Directly starts the Claude command (as a fallback for happy-cli).
+   * @internal
+   * @private
+   */
+  private async startClaudeDirectly(options: CodeOptions, baseUrl: string, apiKey: string): Promise<void> {
+    try {
+      // 查找 Claude 可执行文件
+      const claudeCommand = await this.findClaudeExecutable();
+      
+      if (!claudeCommand) {
+        console.error('❌ Claude 命令未找到。请确保已安装 Claude CLI。');
+        return;
+      }
+
+      console.log(`📍 Found Claude at: ${claudeCommand}`);
+      console.log('🚀 Starting Claude with RCC proxy integration...');
+
+      // 设置环境变量
+      const env = {
+        ...process.env,
+        ANTHROPIC_BASE_URL: baseUrl,
+        ANTHROPIC_API_KEY: apiKey,
+        RCC_PROXY_MODE: 'active',
+      };
+
+      // 启动 Claude 进程
+      const claudeProcess = spawn(claudeCommand, [], {
+        env,
+        stdio: 'inherit',
+        shell: process.platform === 'win32',
+      });
+
+      claudeProcess.on('error', (error: any) => {
+        console.error('❌ Failed to start Claude:', error.message);
+        process.exit(1);
+      });
+
+      claudeProcess.on('exit', (code: number | null) => {
+        console.log(`👋 Claude exited with code ${code}`);
+        process.exit(code || 0);
+      });
+
+      // 处理进程信号
+      process.on('SIGINT', () => {
+        console.log('\n🛑 Stopping Claude proxy...');
+        claudeProcess.kill('SIGINT');
+      });
+
+      process.on('SIGTERM', () => {
+        console.log('\n🛑 Terminating Claude proxy...');
+        claudeProcess.kill('SIGTERM');
+      });
+
+      console.log('✅ Claude started with RCC proxy integration');
+      console.log('💡 All AI requests will be transparently routed through RCC');
+      console.log(`🌐 Proxy URL: ${baseUrl}`);
+
+    } catch (error: any) {
+      console.error('❌ Failed to start Claude directly:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * 查找 Claude 可执行文件
+   */
+  private async findClaudeExecutable(): Promise<string | null> {
+    const { execSync } = await import('child_process');
+
+    try {
+      // 尝试通过 which/where 命令查找
+      const command = process.platform === 'win32' ? 'where' : 'which';
+      const result = execSync(`${command} claude`, { encoding: 'utf8' });
+      return result.trim();
+    } catch (error) {
+      return null;
     }
   }
 }

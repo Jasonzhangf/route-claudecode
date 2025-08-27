@@ -407,20 +407,10 @@ export class DebugCollectorImpl extends EventEmitter implements DebugCollector {
   }
 
   private limitDataSize(data: any): any {
-    const maxSize = 10000; // 10KB
-    const jsonString = JQJsonHandler.stringifyJson(data, true);
-
-    if (jsonString.length <= maxSize) {
-      return data;
-    }
-
-    // 如果数据过大，进行截断
-    return {
-      ...data,
-      _truncated: true,
-      _originalSize: jsonString.length,
-      _message: 'Data truncated due to size limit',
-    };
+    // 🔧 FIXED: 移除数据大小限制 - 保持完整的调试数据
+    // 不再截断调试数据，保留完整信息用于问题诊断
+    console.log(`🐛 [Debug] 保留完整调试数据，不进行大小限制`);
+    return data;
   }
 
   private deepClone(obj: any): any {

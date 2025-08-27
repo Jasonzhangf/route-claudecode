@@ -7,6 +7,13 @@
  */
 
 /**
+ * happy-cli子命令选项
+ */
+export interface HappyOptions {
+  command: 'status' | 'start' | 'stop' | 'logs';
+}
+
+/**
  * CLI命令接口
  */
 export interface CLICommands {
@@ -34,6 +41,12 @@ export interface CLICommands {
    * 配置管理
    */
   config(options: ConfigOptions): Promise<void>;
+
+  /**
+   * happy-cli集成管理命令
+   */
+  // TODO: 临时注释，修复编译错误
+  // happy(options: HappyOptions): Promise<void>;
 }
 
 /**

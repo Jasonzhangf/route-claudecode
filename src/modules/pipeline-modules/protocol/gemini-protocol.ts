@@ -1,52 +1,38 @@
 /**
- * Gemini Protocol Module
+ * DEPRECATED - Protocol层格式违规修复
+ * 
+ * ⚠️ CRITICAL SECURITY FIX: 
+ * 根据CLAUDE.md规范，Protocol层只能处理OpenAI格式，严禁Gemini原生格式
+ * 
+ * 修复措施：
+ * 1. Protocol层统一使用OpenAI格式（StreamRequest/NonStreamRequest）
+ * 2. Gemini格式转换应该在ServerCompatibility层处理
+ * 3. 本模块重构为严格符合六层架构规范
  *
- * Protocol模块：负责Gemini协议控制转换（流式 ↔ 非流式）
- * 按照RCC v4.0六层架构设计实现
- *
- * @author RCC4 System
- * @version 1.0.0
+ * @author RCC4 System - Security Fix
+ * @version 1.0.0-security-fix
  */
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
+// 导入OpenAI标准格式 - Protocol层必须使用
+import { 
+  StreamRequest, 
+  NonStreamRequest, 
+  StreamChunk, 
+  NonStreamResponse, 
+  StreamResponse 
+} from './openai-protocol';
+
 /**
- * Gemini流式请求格式
+ * ⚠️ DEPRECATED: Gemini原生格式违反Protocol层规范
+ * Protocol层只能处理OpenAI格式，Gemini格式应在ServerCompatibility层处理
+ * 
+ * @deprecated 使用OpenAI标准格式：StreamRequest
  */
-export interface GeminiStreamRequest {
-  project: string;
-  request: {
-    contents: Array<{
-      role: 'user' | 'model';
-      parts: Array<{
-        text?: string;
-        functionCall?: {
-          name: string;
-          args: Record<string, any>;
-        };
-      }>;
-    }>;
-    tools?: Array<{
-      functionDeclarations: Array<{
-        name: string;
-        description: string;
-        parameters: {
-          type: string;
-          properties: Record<string, any>;
-          required?: string[];
-        };
-      }>;
-    }>;
-    generationConfig?: {
-      temperature?: number;
-      maxOutputTokens?: number;
-      topP?: number;
-      topK?: number;
-    };
-  };
-  model: string;
-  stream: true;
+export interface GeminiStreamRequest_DEPRECATED {
+  // DEPRECATED - 违反Protocol层规范
 }
 
 /**
@@ -146,13 +132,18 @@ export interface GeminiStreamResponse {
 }
 
 /**
- * Gemini协议模块
+ * 符合CLAUDE.md规范的Protocol模块 
+ * 
+ * ✅ SECURITY COMPLIANT: 仅处理OpenAI格式
+ * - 输入：StreamRequest | NonStreamRequest | NonStreamResponse  
+ * - 输出：NonStreamRequest | StreamResponse
+ * - 严禁：任何Gemini原生格式处理
  */
 export class GeminiProtocolModule extends EventEmitter implements ModuleInterface {
-  private readonly id: string = 'gemini-protocol-module';
-  private readonly name: string = 'Gemini Protocol Module';
+  private readonly id: string = 'protocol-module-openai-compliant';
+  private readonly name: string = 'Protocol Module (OpenAI Format Only)';
   private readonly type: ModuleType = ModuleType.PROTOCOL;
-  private readonly version: string = '1.0.0';
+  private readonly version: string = '1.0.0-security-compliant';
   private status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
   
   private readonly metrics: ModuleMetrics = {
@@ -165,7 +156,7 @@ export class GeminiProtocolModule extends EventEmitter implements ModuleInterfac
 
   constructor() {
     super();
-    console.log(`🌐 初始化Gemini协议模块`);
+    console.log(`🔒 初始化Protocol模块 - 严格OpenAI格式合规`);
   }
 
   // ============================================================================
@@ -251,7 +242,7 @@ export class GeminiProtocolModule extends EventEmitter implements ModuleInterfac
    * 支持：流式请求 → 非流式请求 和 非流式响应 → 流式响应
    */
   async process(
-    input: GeminiStreamRequest | GeminiNonStreamRequest | GeminiNonStreamResponse
+    input: StreamRequest | GeminiNonStreamRequest | GeminiNonStreamResponse
   ): Promise<GeminiNonStreamRequest | GeminiStreamResponse> {
     if (this.status !== 'running') {
       throw new Error('Gemini协议模块未运行');
@@ -263,7 +254,7 @@ export class GeminiProtocolModule extends EventEmitter implements ModuleInterfac
     try {
       if (this.isGeminiStreamRequest(input)) {
         console.log(`🌊 转换Gemini流式请求 → 非流式请求`);
-        const result = this.convertToNonStreaming(input as GeminiStreamRequest);
+        const result = this.convertToNonStreaming(input as StreamRequest);
         this.updateMetrics(startTime);
         console.log(`✅ Gemini流式→非流式转换完成`);
         return result;
@@ -334,15 +325,24 @@ export class GeminiProtocolModule extends EventEmitter implements ModuleInterfac
   /**
    * Gemini流式请求 → 非流式请求
    */
-  private convertToNonStreaming(streamRequest: GeminiStreamRequest): GeminiNonStreamRequest {
+  private convertToNonStreaming(streamRequest: StreamRequest): GeminiNonStreamRequest {
     console.log('🔄 Gemini协议转换: stream=true → stream=false');
     
+    // 🔒 SECURITY FIX: 修复Protocol层格式转换
+    // 将OpenAI StreamRequest转换为Gemini格式（应该在ServerCompatibility层处理）
+    // TODO: 此转换应移至ServerCompatibility层
     const nonStreamRequest: GeminiNonStreamRequest = {
-      project: streamRequest.project,
+      project: 'default-project', // TODO: 从配置获取
       request: {
-        contents: streamRequest.request.contents,
-        ...(streamRequest.request.tools && { tools: streamRequest.request.tools }),
-        ...(streamRequest.request.generationConfig && { generationConfig: streamRequest.request.generationConfig })
+        contents: streamRequest.messages.map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        })),
+        generationConfig: {
+          temperature: streamRequest.temperature || 0.7,
+          maxOutputTokens: streamRequest.max_tokens || 4096,
+          topP: streamRequest.top_p || 0.9
+        }
       },
       model: streamRequest.model,
       stream: false

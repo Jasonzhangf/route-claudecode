@@ -211,10 +211,8 @@ export class SecureLogger {
       source: source,
     };
 
-    // 截断过长的消息
-    if (logEntry.message.length > this.config.maxLogLength) {
-      logEntry.message = logEntry.message.substring(0, this.config.maxLogLength) + '...[TRUNCATED]';
-    }
+    // 🔧 FIXED: 移除日志消息截断 - 保留完整日志信息
+    // 不再截断日志消息，保持完整的日志记录用于调试
 
     // 格式化输出
     const formattedMessage = this.formatLogEntry(logEntry);

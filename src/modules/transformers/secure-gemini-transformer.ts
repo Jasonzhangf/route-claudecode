@@ -1,9 +1,9 @@
 /**
  * Secure Gemini Transformer
  * 
- * 基于RCC4架构的真正Gemini转换器
- * 处理Anthropic ↔ Gemini协议的双向转换
- * 基于已验证的cloudcode-pa.googleapis.com API格式
+ * 基于RCC4架构的Gemini专用转换器
+ * 处理Anthropic → OpenAI协议格式转换，专门针对Gemini Provider优化
+ * 符合RCC4六层流水线架构规范：Transformer层输出必须是OpenAI格式
  * 
  * @author RCC4 System 
  * @version 1.0.0
@@ -233,7 +233,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
     try {
       this.metrics.requestsProcessed++;
       
-      const result = this.performTransformation(input);
+      const result = this.performAnthropicToGeminiTransformation(input);
       
       // 更新指标
       const processingTime = Date.now() - startTime;
@@ -283,18 +283,15 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
   // 核心转换逻辑
   // ============================================================================
 
-  private performTransformation(input: unknown): GeminiRequest | AnthropicResponse {
+  private performAnthropicToGeminiTransformation(input: unknown): any {
     if (this.isAnthropicRequest(input)) {
-      console.log('🔄 [GEMINI TRANSFORMER] Converting Anthropic → Gemini');
+      console.log('🔄 [GEMINI TRANSFORMER] Converting Anthropic → Gemini format');
       return this.transformAnthropicToGemini(input as AnthropicRequest);
-    } else if (this.isGeminiResponse(input)) {
-      console.log('🔄 [GEMINI TRANSFORMER] Converting Gemini → Anthropic');
-      return this.transformGeminiToAnthropic(input);
     } else {
       console.error('❌ [GEMINI TRANSFORMER] Unsupported input format');
       throw new TransformerValidationError(
         'Unsupported input format for Gemini transformer',
-        ['Input must be Anthropic request or Gemini response'],
+        ['Input must be Anthropic request'],
         { inputType: typeof input }
       );
     }
@@ -315,32 +312,28 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
       );
     }
 
-    // 映射模型名称（基于验证的模型）
+    // 映射模型名称到Gemini模型
     const geminiModel = this.mapAnthropicToGeminiModel(request.model);
     
-    // 转换消息格式
+    // 转换消息格式为Gemini标准
     const contents = this.convertAnthropicMessagesToGeminiContents(request.messages, request.system);
     
-    // 转换工具定义
+    // 转换工具定义为Gemini格式
     const tools = request.tools ? this.convertAnthropicToolsToGeminiTools(request.tools) : undefined;
 
-    // 构建Gemini请求（基于验证的格式）
+    // 构建Gemini格式请求
     const geminiRequest: GeminiRequest = {
       project: this.defaultProjectId,
       request: {
         contents,
-        ...(tools && { tools }),
+        ...(tools && tools.length > 0 && { tools }),
         generationConfig: {
           ...(request.temperature !== undefined && { temperature: request.temperature }),
           ...(request.max_tokens !== undefined && { 
             maxOutputTokens: Math.min(request.max_tokens, this.config.maxTokens) 
           }),
           ...(request.top_p !== undefined && { topP: request.top_p }),
-          ...(request.top_k !== undefined && { topK: request.top_k }),
-          thinkingConfig: {
-            include_thoughts: false,
-            thinkingBudget: 0
-          }
+          ...(request.top_k !== undefined && { topK: request.top_k })
         }
       },
       model: geminiModel
@@ -349,7 +342,8 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
     console.log('✅ [GEMINI TRANSFORMER] Anthropic → Gemini conversion completed', {
       originalModel: request.model,
       geminiModel,
-      messageCount: contents.length
+      contentCount: contents.length,
+      hasTools: !!tools && tools.length > 0
     });
 
     return geminiRequest;
@@ -420,66 +414,180 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
     return modelMap[anthropicModel] || 'gemini-2.5-flash';
   }
 
-  private convertAnthropicMessagesToGeminiContents(messages: any[], systemPrompt?: string): any[] {
-    const contents = [];
-    let systemText = systemPrompt || '';
+  private convertAnthropicMessagesToOpenAIMessages(messages: any[], systemPrompt?: string): any[] {
+    const openAIMessages = [];
+    
+    // 添加系统消息（如果存在）
+    if (systemPrompt) {
+      openAIMessages.push({
+        role: 'system',
+        content: systemPrompt
+      });
+    }
 
     for (const message of messages) {
       if (message.role === 'system') {
-        // 收集系统消息
+        // 系统消息添加到开头
         if (typeof message.content === 'string') {
-          systemText += (systemText ? '\n' : '') + message.content;
+          openAIMessages.unshift({
+            role: 'system',
+            content: message.content
+          });
         }
         continue;
       }
 
       if (message.role === 'user') {
-        let text = '';
+        let content = '';
         
-        // 将系统消息添加到第一个用户消息中
-        if (systemText && contents.length === 0) {
-          text = systemText + '\n';
-          systemText = ''; // 清空避免重复
-        }
-
         if (typeof message.content === 'string') {
-          text += message.content;
+          content = message.content;
         } else if (Array.isArray(message.content)) {
           for (const part of message.content) {
             if (part.type === 'text' && part.text) {
-              text += part.text;
+              content += part.text;
             }
           }
         }
 
-        contents.push({
+        openAIMessages.push({
           role: 'user',
-          parts: [{ text }]
+          content
         });
 
       } else if (message.role === 'assistant') {
-        let text = '';
+        let content = '';
+        const tool_calls = [];
         
         if (typeof message.content === 'string') {
-          text = message.content;
+          content = message.content;
         } else if (Array.isArray(message.content)) {
           for (const part of message.content) {
             if (part.type === 'text' && part.text) {
-              text += part.text;
+              content += part.text;
+            } else if (part.type === 'tool_use') {
+              tool_calls.push({
+                id: part.id || `call_${Date.now()}`,
+                type: 'function',
+                function: {
+                  name: part.name,
+                  arguments: JSON.stringify(part.input || {})
+                }
+              });
             }
           }
         }
 
-        contents.push({
-          role: 'model',
-          parts: [{ text }]
-        });
+        const assistantMessage: any = {
+          role: 'assistant',
+          content
+        };
+
+        if (tool_calls.length > 0) {
+          assistantMessage.tool_calls = tool_calls;
+        }
+
+        openAIMessages.push(assistantMessage);
+      }
+    }
+
+    return openAIMessages;
+  }
+
+  private convertAnthropicToolsToOpenAITools(anthropicTools: any[]): any[] {
+    return anthropicTools.map(tool => ({
+      type: 'function',
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.input_schema
+      }
+    }));
+  }
+
+  /**
+   * 转换Anthropic消息到Gemini contents格式
+   */
+  private convertAnthropicMessagesToGeminiContents(messages: any[], systemPrompt?: string): any[] {
+    const contents = [];
+
+    // 处理系统消息 - Gemini将其作为第一个user消息
+    if (systemPrompt) {
+      contents.push({
+        role: 'user',
+        parts: [{ text: systemPrompt }]
+      });
+    }
+
+    for (const message of messages) {
+      if (message.role === 'system' && !systemPrompt) {
+        // 系统消息转为user消息
+        if (typeof message.content === 'string') {
+          contents.push({
+            role: 'user',
+            parts: [{ text: message.content }]
+          });
+        }
+        continue;
+      }
+
+      if (message.role === 'user') {
+        let textContent = '';
+        
+        if (typeof message.content === 'string') {
+          textContent = message.content;
+        } else if (Array.isArray(message.content)) {
+          for (const part of message.content) {
+            if (part.type === 'text' && part.text) {
+              textContent += part.text;
+            }
+          }
+        }
+
+        if (textContent) {
+          contents.push({
+            role: 'user',
+            parts: [{ text: textContent }]
+          });
+        }
+
+      } else if (message.role === 'assistant') {
+        const parts = [];
+        
+        if (typeof message.content === 'string') {
+          if (message.content) {
+            parts.push({ text: message.content });
+          }
+        } else if (Array.isArray(message.content)) {
+          for (const part of message.content) {
+            if (part.type === 'text' && part.text) {
+              parts.push({ text: part.text });
+            } else if (part.type === 'tool_use') {
+              parts.push({
+                functionCall: {
+                  name: part.name,
+                  args: part.input || {}
+                }
+              });
+            }
+          }
+        }
+
+        if (parts.length > 0) {
+          contents.push({
+            role: 'model',
+            parts
+          });
+        }
       }
     }
 
     return contents;
   }
 
+  /**
+   * 转换Anthropic工具到Gemini工具格式
+   */
   private convertAnthropicToolsToGeminiTools(anthropicTools: any[]): any[] {
     return [{
       functionDeclarations: anthropicTools.map(tool => ({

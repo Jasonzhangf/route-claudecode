@@ -39,6 +39,15 @@ export interface ConfigSearchLocation {
 }
 
 /**
+ * Happy-Cli配置
+ */
+export interface HappyCliConfig {
+  enabled: boolean;        // 是否启用happy-cli集成
+  path?: string;           // happy-cli项目根目录的可选路径
+  autoStart?: boolean;     // 随rcc4 start自动启动
+}
+
+/**
  * v4配置结构
  */
 export interface RCCv4Config {
@@ -54,6 +63,7 @@ export interface RCCv4Config {
   providers?: Record<string, any>; // 兼容旧版本
   pipelines?: any[]; // 兼容旧版本
   router?: Record<string, string>; // 支持简化的demo1风格路由配置
+  happyCli?: HappyCliConfig; // Happy-Cli集成配置
 }
 
 /**

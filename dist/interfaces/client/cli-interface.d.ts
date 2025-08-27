@@ -6,6 +6,12 @@
  * @author Jason Zhang
  */
 /**
+ * happy-cli子命令选项
+ */
+export interface HappyOptions {
+    command: 'status' | 'start' | 'stop' | 'logs';
+}
+/**
  * CLI命令接口
  */
 export interface CLICommands {

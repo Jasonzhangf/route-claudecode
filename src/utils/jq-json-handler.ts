@@ -181,8 +181,14 @@ export class JQJsonHandler {
      */
     static extractField<T = any>(filePath: string, selector: string): T {
         try {
-            const command = `jq -r '${selector}' "${filePath}"`;
-            const result = execSync(command, { encoding: 'utf8' }).trim();
+            // 🔒 SECURITY FIX: 防止命令注入攻击
+            // 使用execFileSync和参数数组，避免shell命令注入
+            // TODO: 添加输入验证方法
+            
+            const result = execFileSync('jq', ['-r', selector, filePath], { 
+                encoding: 'utf8',
+                timeout: 5000 // 防止挂起攻击
+            }).trim();
             
             // 处理不同类型的结果
             if (result === 'null') {
@@ -477,11 +483,14 @@ export class JQJsonHandler {
     private static fixNumericLiterals(jsonString: string): string {
         try {
             console.log(`🔧 [JQ-NUMERIC-FIX] 开始修复数值字面量错误`);
+            console.log(`🔧 [JQ-NUMERIC-FIX] 原始JSON长度: ${jsonString.length}`);
             
             let fixed = jsonString;
+            const originalLength = jsonString.length;
             
             // 1. 修复无效的科学记数法 (如 1.23e+abc -> 1.23)
-            fixed = fixed.replace(/([0-9]+\.?[0-9]*)[eE][+\-]?[^0-9][^,}\]\s]*/g, '$1');
+            // 🔒 SECURITY FIX: 只在数值上下文中修复科学记数法，避免影响字符串
+            fixed = fixed.replace(/:\s*([0-9]+\.?[0-9]*)[eE][+\-]?[^0-9][^,}\]\s]*(?=[,}\]\s])/g, ': $1');
             
             // 2. 修复不完整的小数 (如 123. -> 123.0)
             fixed = fixed.replace(/([0-9]+)\.([\s,}\]])/g, '$1.0$2');
@@ -492,8 +501,9 @@ export class JQJsonHandler {
             // 4. 修复开头的小数点 (如 .123 -> 0.123)
             fixed = fixed.replace(/([\[\{:,\s])\.([0-9]+)/g, '$10.$2');
             
-            // 5. 修复非法的数值字符 (移除数字后面的非法字符)
-            fixed = fixed.replace(/([0-9]+\.?[0-9]*)[^0-9eE+\-,}\]\s][^,}\]\s]*/g, '$1');
+            // 5. 修复非法的数值字符 (移除数字后面的非法字符，但保护字符串内容)
+            // 🔒 SECURITY FIX: 更安全的数值修复，避免破坏JSON字符串内的路径
+            fixed = fixed.replace(/:\s*([0-9]+\.?[0-9]*)[^0-9eE+\-,}\]\s"'][^,}\]\s"']*(?=[,}\]\s])/g, ': $1');
             
             // 6. 修复超长的数值 (截断到合理长度)
             fixed = fixed.replace(/([0-9]{20,})/g, (match) => {
@@ -506,7 +516,19 @@ export class JQJsonHandler {
             fixed = fixed.replace(/:\s*Infinity\b/g, ': null');
             fixed = fixed.replace(/:\s*-Infinity\b/g, ': null');
             
-            console.log(`🔧 [JQ-NUMERIC-FIX] 数值修复完成`);
+            // 验证修复后的JSON长度变化
+            if (fixed.length !== originalLength) {
+                console.log(`🔧 [JQ-NUMERIC-FIX] JSON长度变化: ${originalLength} -> ${fixed.length}`);
+            }
+            
+            // 验证修复后的JSON是否可以解析
+            try {
+                JSON.parse(fixed);
+                console.log(`✅ [JQ-NUMERIC-FIX] 数值修复完成，JSON格式有效`);
+            } catch (parseError) {
+                console.warn(`⚠️ [JQ-NUMERIC-FIX] 修复后JSON仍有格式问题: ${parseError.message}`);
+            }
+            
             return fixed;
             
         } catch (error) {

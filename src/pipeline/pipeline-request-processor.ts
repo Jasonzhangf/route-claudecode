@@ -11,6 +11,7 @@
 
 import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
+import { PIPELINE_RETRY_CONSTANTS } from '../constants/pipeline-retry-constants';
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { getServerPort, SERVER_DEFAULTS } from '../constants/server-defaults';
 import { MergedConfig } from '../config/config-reader';
@@ -499,10 +500,26 @@ export class PipelineRequestProcessor extends EventEmitter {
           transparentErrorHandling: true
         });
         
+        // 检查其他可用流水线
+        const availablePipelines = routingDecision.availablePipelines || [];
+        const remainingPipelines = availablePipelines.filter(id => id !== pipelineId);
+        
+        if (remainingPipelines.length > 0 && PIPELINE_RETRY_CONSTANTS.ERROR_HANDLING.SERVER_LAYER_RETRY_ENABLED) {
+          try {
+            const updatedRoutingDecision = { ...routingDecision, selectedPipeline: remainingPipelines[0] };
+            return await this.pipelineLayersProcessor.processServerLayer(compatibleRequest, updatedRoutingDecision, context);
+          } catch (retryError) {
+            secureLogger.error(PIPELINE_RETRY_CONSTANTS.LOG_MESSAGES.RETRY_FAILED, { requestId });
+          }
+        }
+        
         // 执行智能错误恢复
+        const pipelineParts = pipelineId.split(PIPELINE_RETRY_CONSTANTS.DEFAULT_VALUES.PIPELINE_SEPARATOR);
+        const providerName = pipelineParts[0] || pipelineId;
+        const modelName = pipelineParts[1] || '';
         const zeroFallbackError = ZeroFallbackErrorFactory.createProviderFailure(
-          pipelineId.split('-')[0] || 'unknown', // 从pipelineId提取provider名称
-          pipelineId.split('-')[1] || 'unknown', // 从pipelineId提取model名称  
+          providerName,
+          modelName,
           serverError.message,
           { 
             requestId, 

@@ -113,40 +113,39 @@ export class AIServiceError extends BaseThirdPartyServiceError {
   ): string {
     const baseMessage = `${serviceName} service error for model ${model}`;
     const originalMessage = originalError?.message || 'Unknown error';
-    // 截取错误内容前100字
-    const truncatedContent =
-      originalMessage.length <= 100 ? originalMessage : originalMessage.substring(0, 100) + '...';
+    // 🔧 FIXED: 移除错误消息截断 - 保留完整错误信息
+    const fullContent = originalMessage; // 保留完整的错误消息
 
     switch (errorType) {
       case ThirdPartyServiceErrorType.AI_SERVICE_AUTHENTICATION_FAILED:
-        return `${baseMessage}: Authentication failed - API key invalid or expired. Content: ${truncatedContent}`;
+        return `${baseMessage}: Authentication failed - API key invalid or expired. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_RATE_LIMITED:
-        return `${baseMessage}: Rate limit exceeded. Retry after: ${originalError?.headers?.['retry-after'] || 'unknown'}. Content: ${truncatedContent}`;
+        return `${baseMessage}: Rate limit exceeded. Retry after: ${originalError?.headers?.['retry-after'] || 'unknown'}. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_MODEL_UNAVAILABLE:
-        return `${baseMessage}: Model not available or not supported. Content: ${truncatedContent}`;
+        return `${baseMessage}: Model not available or not supported. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_TIMEOUT:
-        return `${baseMessage}: Request timeout after ${originalError?.timeout || 'unknown'}ms. Content: ${truncatedContent}`;
+        return `${baseMessage}: Request timeout after ${originalError?.timeout || 'unknown'}ms. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_INTERNAL_ERROR:
-        return `${baseMessage}: Internal server error occurred. Status: ${originalError?.status || 'unknown'}. Content: ${truncatedContent}`;
+        return `${baseMessage}: Internal server error occurred. Status: ${originalError?.status || 'unknown'}. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_BAD_REQUEST:
-        return `${baseMessage}: Bad request - invalid parameters or format. Status: ${originalError?.status || 'unknown'}. Content: ${truncatedContent}`;
+        return `${baseMessage}: Bad request - invalid parameters or format. Status: ${originalError?.status || 'unknown'}. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_QUOTA_EXCEEDED:
-        return `${baseMessage}: API quota exceeded. Content: ${truncatedContent}`;
+        return `${baseMessage}: API quota exceeded. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_NETWORK_ERROR:
-        return `${baseMessage}: Network connection error. Content: ${truncatedContent}`;
+        return `${baseMessage}: Network connection error. Content: ${fullContent}`;
 
       case ThirdPartyServiceErrorType.AI_SERVICE_UNAVAILABLE:
-        return `${baseMessage}: Service temporarily unavailable. Status: ${originalError?.status || 'unknown'}. Content: ${truncatedContent}`;
+        return `${baseMessage}: Service temporarily unavailable. Status: ${originalError?.status || 'unknown'}. Content: ${fullContent}`;
 
       default:
-        return `${baseMessage}: Unknown error occurred. Status: ${originalError?.status || 'unknown'}. Content: ${truncatedContent}`;
+        return `${baseMessage}: Unknown error occurred. Status: ${originalError?.status || 'unknown'}. Content: ${fullContent}`;
     }
   }
 }

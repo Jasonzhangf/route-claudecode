@@ -121,7 +121,10 @@ async function findClaudeCodeExecutable(): Promise<string | null> {
         const expandedPath = path.replace('%USERNAME%', process.env.USERNAME || '');
         await fs.access(expandedPath);
         return expandedPath;
-      } catch {
+      } catch (error) {
+        // Zero Fallback Policy: 记录路径检查失败但继续尝试其他路径
+        // 这是合理的fallback，因为我们正在尝试多个可能的路径
+        console.debug(`Path not found: ${path}, trying next...`);
         continue;
       }
     }

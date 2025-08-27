@@ -242,5 +242,15 @@ export declare class RCCCli implements CLICommands {
      * 获取Provider的默认端点 (已废弃 - 现在使用配置驱动)
      */
     private getDefaultEndpointForProvider;
+    /**
+     * Directly starts the Claude command (as a fallback for happy-cli).
+     * @internal
+     * @private
+     */
+    private startClaudeDirectly;
+    /**
+     * 查找 Claude 可执行文件
+     */
+    private findClaudeExecutable;
 }
 //# sourceMappingURL=rcc-cli.d.ts.map

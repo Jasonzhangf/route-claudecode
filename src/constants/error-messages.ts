@@ -165,6 +165,24 @@ export const QWEN_AUTH_ERRORS = {
   TOKEN_RECREATION_FAILED: 'Qwen token自动recreate流程失败',
 } as const;
 
+// Gemini协议相关错误
+export const GEMINI_PROTOCOL_ERRORS = {
+  MODULE_NOT_RUNNING: 'Gemini Native Protocol Module not running',
+  PROVIDER_NOT_FOUND: 'Gemini provider not found',
+  PROVIDER_LOOKUP_FAILED: 'Provider lookup failed',
+  PROCESSING_COMPLETED: 'Processing completed',
+  PROCESSING_FAILED: 'Processing failed',
+  REQUEST_NULL: 'Gemini request is null or undefined',
+  MISSING_PROJECT: 'Gemini request missing project field',
+  MISSING_REQUEST: 'Gemini request missing request field',
+  INVALID_CONTENTS: 'Gemini request.contents must be an array',
+  EMPTY_CONTENTS: 'Gemini request.contents cannot be empty',
+  MISSING_MODEL: 'Gemini request missing model field',
+  INVALID_ROLE: 'Invalid role in content',
+  INVALID_PARTS: 'Content parts must be an array',
+  MISSING_CONTENT: 'Content part must have either text or functionCall',
+} as const;
+
 // 统一错误消息导出
 export const ERROR_MESSAGES = {
   ...GENERAL_ERRORS,
@@ -180,6 +198,7 @@ export const ERROR_MESSAGES = {
   ...VALIDATION_ERRORS,
   ...SECURITY_ERRORS,
   ...QWEN_AUTH_ERRORS,
+  ...GEMINI_PROTOCOL_ERRORS,
 } as const;
 
 // 错误消息类型定义

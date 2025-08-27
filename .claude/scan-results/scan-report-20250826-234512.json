@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-26 23:45:12",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/constants/pipeline-retry-constants.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

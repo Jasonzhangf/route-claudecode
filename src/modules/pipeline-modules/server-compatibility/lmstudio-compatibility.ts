@@ -522,15 +522,9 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
    * 从配置文件获取模型的最大输出token限制
    */
   private getModelMaxTokens(model: string): number {
-    // 从配置中获取模型的maxTokens设置
-    if (this.config && this.config.maxTokens && this.config.maxTokens[model]) {
-      // 使用保守的输出token限制，约为总上下文的1/4，确保不超限
-      const contextLimit = this.config.maxTokens[model];
-      return Math.min(contextLimit / 4, 4096); // 最大4096输出tokens
-    }
-
-    // 如果配置中没有找到，使用保守的默认值
-    return 1024;
+    // 🔧 FIXED: 移除token限制 - 不再限制输出token数量
+    // 返回用户请求的max_tokens，或者不设置限制
+    return undefined; // 让模型自行决定输出长度
   }
 
   /**
@@ -543,14 +537,11 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
         throw new Error('流式处理暂未实现'); // TODO: 实现流式处理
       } else {
         // 非流式处理
-        // 限制max_tokens防止超出LM Studio上下文长度
-        const modelMaxTokens = this.getModelMaxTokens(request.model);
-        const limitedMaxTokens = request.max_tokens ? Math.min(request.max_tokens, modelMaxTokens) : modelMaxTokens;
-
+        // 🔧 FIXED: 移除token限制 - 直接传递用户请求的max_tokens
         const response = await this.openaiClient.chat.completions.create({
           model: request.model,
           messages: request.messages as any,
-          max_tokens: limitedMaxTokens,
+          max_tokens: request.max_tokens, // 直接使用用户请求的值，不做限制
           temperature: request.temperature,
           top_p: request.top_p,
           frequency_penalty: request.frequency_penalty,

@@ -15,6 +15,7 @@ import {
   SecureTransformerConfig,
   TransformerSecurityError,
 } from './secure-anthropic-openai-transformer';
+import { SecureGeminiTransformer } from './secure-gemini-transformer';
 import { getSafeMaxTokens, validateMaxTokens } from '../../constants/api-defaults';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 /**
@@ -22,9 +23,9 @@ import { JQJsonHandler } from '../../utils/jq-json-handler';
  */
 export enum SecureTransformerType {
   ANTHROPIC_TO_OPENAI = 'anthropic-to-openai',
+  GEMINI_TO_OPENAI = 'gemini-to-openai',
   // 未来可以添加其他安全的transformer类型
   // OPENAI_TO_ANTHROPIC = 'openai-to-anthropic',
-  // GEMINI_TO_OPENAI = 'gemini-to-openai',
 }
 
 /**
@@ -110,6 +111,10 @@ export class SecureTransformerFactory implements IModuleFactory {
     switch (transformerType) {
       case SecureTransformerType.ANTHROPIC_TO_OPENAI:
         transformer = new SecureAnthropicToOpenAITransformer(secureConfig);
+        break;
+
+      case SecureTransformerType.GEMINI_TO_OPENAI:
+        transformer = new SecureGeminiTransformer(secureConfig);
         break;
 
       default:

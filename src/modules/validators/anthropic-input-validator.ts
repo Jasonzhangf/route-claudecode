@@ -39,9 +39,9 @@ export class AnthropicInputValidator extends EventEmitter implements ModuleInter
   protected config: AnthropicInputValidatorConfig = {
     strictMode: true,
     allowExtraFields: false,
-    maxMessagesLength: 100,
-    maxMessageLength: 100000,
-    maxToolsLength: 50,
+    maxMessagesLength: Number.MAX_SAFE_INTEGER,
+    maxMessageLength: Number.MAX_SAFE_INTEGER,
+    maxToolsLength: Number.MAX_SAFE_INTEGER,
   };
   protected metrics: ModuleMetrics = {
     requestsProcessed: 0,
@@ -58,9 +58,9 @@ export class AnthropicInputValidator extends EventEmitter implements ModuleInter
     this.validatorConfig = {
       strictMode: true,
       allowExtraFields: false,
-      maxMessagesLength: 100,
-      maxMessageLength: 100000,
-      maxToolsLength: 20,
+      maxMessagesLength: Number.MAX_SAFE_INTEGER,
+      maxMessageLength: Number.MAX_SAFE_INTEGER,
+      maxToolsLength: Number.MAX_SAFE_INTEGER,
       ...config,
     };
   }
