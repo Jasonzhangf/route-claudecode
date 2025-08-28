@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-08-28 12:50:13",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/scripts/validate-pipeline-flow.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}
