@@ -1,0 +1,40 @@
+{
+  "// === RCC v4.0 测试统一格式配置 ===": "",
+  "// 测试新的protocol -> transformer和serverCompatibility自动选择逻辑": "",
+  "version": "4.0",
+  "templateVersion": "1.0.0",
+  "description": "测试统一格式配置文件",
+  "lastUpdated": "2025-08-22T08:23:00Z",
+  "// === PROVIDERS 区 ===": "",
+  "Providers": [
+    {
+      "name": "lmstudio-test",
+      "protocol": "openai",
+      "api_base_url": "http://localhost:1234/v1",
+      "api_key": "test-key",
+      "models": [
+        "llama-3.1-8b-instruct"
+      ],
+      "serverCompatibility": {
+        "use": "lmstudio",
+        "options": {
+          "timeout": 30000,
+          "retries": 3,
+          "testMode": true
+        }
+      }
+    }
+  ],
+  "// === ROUTER 区 ===": "",
+  "Router": {
+    "default": "lmstudio-test,llama-3.1-8b-instruct"
+  },
+  "// === 服务器配置 ===": "",
+  "server": {
+    "port": 5510,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  "APIKEY": "rcc4-test-key",
+  "HOST": "0.0.0.0"
+}
