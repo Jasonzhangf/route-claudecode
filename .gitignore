@@ -1,2 +1,65 @@
+# 示例文件和临时目录
 examples
 .kiro
+
+# 构建产物
+dist/
+build/
+*.tsbuildinfo
+
+# 依赖
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量和配置
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 敏感配置文件
+config/**/auth/
+**/*apikey*
+**/*api-key*
+**/*secret*
+**/*credential*
+
+# 日志文件
+logs/
+*.log
+debug-logs/
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 测试和报告文件
+tests/reports/
+tests/temp/
+*-test-report.json
+*.test.json
+coverage/
+
+# 备份文件
+*.backup
+*.bak
+*.backup.*
+
+# 扫描结果(保留扫描配置)
+.claude/scan-results/
+.claude/settings.local.json.backup
