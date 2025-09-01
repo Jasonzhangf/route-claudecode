@@ -343,3 +343,5 @@
 [2025-09-01 11:10:04] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/CLEANUP_SUMMARY.md
 [2025-09-01 11:10:04] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/CLEANUP_SUMMARY.md (非代码文件)
 [2025-09-01 11:10:04] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/CLEANUP_SUMMARY.md - 无违规
+[2025-09-01 11:36:03] 开始扫描: .gitignore
+[2025-09-01 11:36:04] 扫描完成: .gitignore - 无违规
