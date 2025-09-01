@@ -7,7 +7,18 @@
  */
 
 import { EventEmitter } from 'events';
-import { IServerManager } from './global-service-registry';
+
+/**
+ * 服务器管理器接口
+ */
+export interface IServerManager {
+  initialize(): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  restart(): Promise<{restartId: string; estimatedDowntime: string}>;
+  getStatus(): any;
+  isHealthy(): boolean;
+}
 
 /**
  * 服务器重启结果
@@ -67,6 +78,33 @@ export class ServerManager extends EventEmitter implements IServerManager {
 
     this.state.status = 'running';
     this.emit('started', { startTime: this.state.startTime });
+  }
+
+  /**
+   * 启动服务器
+   */
+  async start(): Promise<void> {
+    if (this.state.status === 'running') {
+      return;
+    }
+    
+    this.state.status = 'running';
+    this.state.startTime = new Date();
+    this.emit('started', { startTime: this.state.startTime });
+  }
+
+  /**
+   * 停止服务器
+   */
+  async stop(): Promise<void> {
+    if (this.state.status === 'stopped') {
+      return;
+    }
+    
+    this.state.status = 'stopped';
+    this.state.startTime = null;
+    this.state.uptime = 0;
+    this.emit('stopped', { stopTime: new Date() });
   }
 
   /**

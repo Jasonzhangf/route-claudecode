@@ -69,6 +69,7 @@ typings/
 .env.production.local
 
 # Configuration files with sensitive data
+config/*
 config/hybrid-multi-provider-v3-*.json
 config/providers/lmstudio-*.json5
 config/providers/modelscope-*.json5
@@ -126,8 +127,7 @@ provider-connection-test-report.json
 *api-key*
 *auth-token*
 
-# CLI auth files  
-src/cli/auth/
+# User auth files (not source code auth modules)
 auth/
 .auth/
 
@@ -191,3 +191,10 @@ test-results/
 coverage/
 .nyc_output/
 junit.xml
+
+# Provider pipeline test files (may contain API keys)
+*-pipeline-test.json
+*-test-case.json  
+multi-provider-pipeline-test.json
+pipeline-test-report.json
+test-results.json

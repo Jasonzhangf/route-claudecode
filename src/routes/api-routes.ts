@@ -10,6 +10,18 @@ import { Router, RouteGroup } from './router';
 import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
 import { SERVER_DEFAULTS, getCorsConfig, getRateLimitConfig } from '../constants';
 
+// 导入模块管理API函数
+import {
+  createModule,
+  startModule,
+  stopModule,
+  configureModule,
+  processWithModule,
+  getModuleStatus,
+  destroyModule,
+  getAllModulesStatus
+} from '../api/modules/module-management-api';
+
 /**
  * 配置API路由
  */
@@ -51,6 +63,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
               providers: '/api/v1/providers',
               pipelines: '/api/v1/pipelines',
               config: '/api/v1/config',
+              modules: '/api/v1/modules'
             },
           };
         },
@@ -65,7 +78,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         handler: async (req, res, params) => {
           try {
             // 从全局服务获取Provider管理器
-            const { getGlobalProviderManager } = await import('../services/global-service-registry');
+            const { getGlobalProviderManager } = null as any /* TODO: 重构为API调用 */;
             const providerManager = getGlobalProviderManager();
 
             if (!providerManager) {
@@ -126,7 +139,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
           }
 
           try {
-            const { getGlobalProviderManager } = await import('../services/global-service-registry');
+            const { getGlobalProviderManager } = null as any /* TODO: 重构为API调用 */;
             const providerManager = getGlobalProviderManager();
 
             if (!providerManager) {
@@ -185,7 +198,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         path: '/pipelines',
         handler: async (req, res, params) => {
           try {
-            const { getGlobalPipelineManager } = await import('../services/global-service-registry');
+            const { getGlobalPipelineManager } = null as any /* TODO: 重构为API调用 */;
             const pipelineManager = getGlobalPipelineManager();
 
             if (!pipelineManager) {
@@ -216,7 +229,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
 
               return {
                 id,
-                status: status.status,
+                status: (status as any)?.status || 'unknown',
                 moduleCount: (status as any).moduleCount || 0,
                 activeRequests: pipelineActiveExecutions.length,
                 totalProcessed: executionHistory.length,
@@ -270,7 +283,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
           }
 
           try {
-            const { getGlobalPipelineManager } = await import('../services/global-service-registry');
+            const { getGlobalPipelineManager } = null as any /* TODO: 重构为API调用 */;
             const pipelineManager = getGlobalPipelineManager();
 
             if (!pipelineManager) {
@@ -358,7 +371,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         path: '/config',
         handler: async (req, res, params) => {
           try {
-            const { getGlobalConfigManager } = await import('../services/global-service-registry');
+            const { getGlobalConfigManager } = null as any /* TODO: 重构为API调用 */;
             const configManager = getGlobalConfigManager();
 
             if (!configManager) {
@@ -439,7 +452,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
           }
 
           try {
-            const { getGlobalConfigManager } = await import('../services/global-service-registry');
+            const { getGlobalConfigManager } = null as any /* TODO: 重构为API调用 */;
             const configManager = getGlobalConfigManager();
 
             if (!configManager) {
@@ -483,6 +496,251 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         name: 'update-config',
         description: 'Update configuration',
       },
+
+      // 模块管理API路由
+      {
+        method: 'POST',
+        path: '/modules',
+        handler: async (req, res, params) => {
+          try {
+            const request = req.body;
+            if (!request || !request.type || !request.moduleType) {
+              res.statusCode = 400;
+              res.body = {
+                error: 'Bad Request',
+                message: 'Module type and moduleType are required',
+              };
+              return;
+            }
+
+            const result = await createModule(request);
+            res.body = result;
+          } catch (error) {
+            console.error('Failed to create module:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to create module',
+            };
+          }
+        },
+        name: 'create-module',
+        description: 'Create a new module instance',
+      },
+
+      {
+        method: 'POST',
+        path: '/modules/:id/start',
+        handler: async (req, res, params) => {
+          const moduleId = params.id;
+
+          if (!moduleId) {
+            res.statusCode = 400;
+            res.body = {
+              error: 'Bad Request',
+              message: 'Module ID is required',
+            };
+            return;
+          }
+
+          try {
+            const result = await startModule({ id: moduleId });
+            res.body = result;
+          } catch (error) {
+            console.error(`Failed to start module ${moduleId}:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to start module',
+            };
+          }
+        },
+        name: 'start-module',
+        description: 'Start a module instance',
+      },
+
+      {
+        method: 'POST',
+        path: '/modules/:id/stop',
+        handler: async (req, res, params) => {
+          const moduleId = params.id;
+
+          if (!moduleId) {
+            res.statusCode = 400;
+            res.body = {
+              error: 'Bad Request',
+              message: 'Module ID is required',
+            };
+            return;
+          }
+
+          try {
+            const result = await stopModule({ id: moduleId });
+            res.body = result;
+          } catch (error) {
+            console.error(`Failed to stop module ${moduleId}:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to stop module',
+            };
+          }
+        },
+        name: 'stop-module',
+        description: 'Stop a module instance',
+      },
+
+      {
+        method: 'PUT',
+        path: '/modules/:id/configure',
+        handler: async (req, res, params) => {
+          const moduleId = params.id;
+          const config = req.body;
+
+          if (!moduleId) {
+            res.statusCode = 400;
+            res.body = {
+              error: 'Bad Request',
+              message: 'Module ID is required',
+            };
+            return;
+          }
+
+          try {
+            const result = await configureModule({ id: moduleId, config });
+            res.body = result;
+          } catch (error) {
+            console.error(`Failed to configure module ${moduleId}:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to configure module',
+            };
+          }
+        },
+        name: 'configure-module',
+        description: 'Configure a module instance',
+      },
+
+      {
+        method: 'POST',
+        path: '/modules/:id/process',
+        handler: async (req, res, params) => {
+          const moduleId = params.id;
+          const input = req.body;
+
+          if (!moduleId) {
+            res.statusCode = 400;
+            res.body = {
+              error: 'Bad Request',
+              message: 'Module ID is required',
+            };
+            return;
+          }
+
+          try {
+            const result = await processWithModule({ id: moduleId, input });
+            res.body = result;
+          } catch (error) {
+            console.error(`Failed to process with module ${moduleId}:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to process with module',
+            };
+          }
+        },
+        name: 'process-module',
+        description: 'Process input with a module instance',
+      },
+
+      {
+        method: 'GET',
+        path: '/modules/:id/status',
+        handler: async (req, res, params) => {
+          const moduleId = params.id;
+
+          if (!moduleId) {
+            res.statusCode = 400;
+            res.body = {
+              error: 'Bad Request',
+              message: 'Module ID is required',
+            };
+            return;
+          }
+
+          try {
+            const result = await getModuleStatus(moduleId);
+            res.body = result;
+          } catch (error) {
+            console.error(`Failed to get module ${moduleId} status:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to get module status',
+            };
+          }
+        },
+        name: 'get-module-status',
+        description: 'Get module instance status',
+      },
+
+      {
+        method: 'DELETE',
+        path: '/modules/:id',
+        handler: async (req, res, params) => {
+          const moduleId = params.id;
+
+          if (!moduleId) {
+            res.statusCode = 400;
+            res.body = {
+              error: 'Bad Request',
+              message: 'Module ID is required',
+            };
+            return;
+          }
+
+          try {
+            await destroyModule(moduleId);
+            res.body = {
+              success: true,
+              message: 'Module destroyed successfully',
+            };
+          } catch (error) {
+            console.error(`Failed to destroy module ${moduleId}:`, error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to destroy module',
+            };
+          }
+        },
+        name: 'destroy-module',
+        description: 'Destroy a module instance',
+      },
+
+      {
+        method: 'GET',
+        path: '/modules',
+        handler: async (req, res, params) => {
+          try {
+            const result = await getAllModulesStatus();
+            res.body = {
+              modules: result,
+              total: result.length,
+            };
+          } catch (error) {
+            console.error('Failed to get all modules status:', error);
+            res.statusCode = 500;
+            res.body = {
+              error: 'Internal Server Error',
+              message: error instanceof Error ? error.message : 'Failed to get modules status',
+            };
+          }
+        },
+        name: 'get-all-modules-status',
+        description: 'Get status of all module instances',
+      },
     ],
   };
 
@@ -505,7 +763,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         path: '/restart',
         handler: async (req, res, params) => {
           try {
-            const { getGlobalServerManager } = await import('../services/global-service-registry');
+            const { getGlobalServerManager } = null as any /* TODO: 重构为API调用 */;
             const serverManager = getGlobalServerManager();
 
             if (!serverManager) {
@@ -546,7 +804,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         path: '/cache/clear',
         handler: async (req, res, params) => {
           try {
-            const { getGlobalCacheManager } = await import('../services/global-service-registry');
+            const { getGlobalCacheManager } = null as any /* TODO: 重构为API调用 */;
             const cacheManager = getGlobalCacheManager();
 
             if (!cacheManager) {
@@ -587,7 +845,7 @@ export function setupApiRoutes(router: Router, middlewareManager: IMiddlewareMan
         path: '/config/export',
         handler: async (req, res, params) => {
           try {
-            const { getGlobalConfigManager } = await import('../services/global-service-registry');
+            const { getGlobalConfigManager } = null as any /* TODO: 重构为API调用 */;
             const configManager = getGlobalConfigManager();
 
             if (!configManager) {

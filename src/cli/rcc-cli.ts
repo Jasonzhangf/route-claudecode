@@ -19,7 +19,7 @@ import {
 } from '../interfaces/client/cli-interface';
 import { CommandParser } from './command-parser';
 import { ArgumentValidator } from './argument-validator';
-import { ConfigReader } from '../config/config-reader';
+import { ConfigReader, MergedConfig } from '../config/config-reader';
 import { PipelineLifecycleManager } from '../pipeline/pipeline-lifecycle-manager';
 import { secureLogger } from '../utils/secure-logger';
 import { getServerPort } from '../constants/server-defaults';
@@ -57,6 +57,7 @@ export class RCCCli implements CLICommands {
   private historyManager: ModelTestHistoryManager;
   // private apiModelFetcher: ApiModelFetcher;
   private blacklistedModels: Set<string> = new Set();
+  private apiBaseUrl: string;
 
   constructor(options: CLIOptions = {}) {
     this.parser = new CommandParser();
@@ -100,7 +101,7 @@ export class RCCCli implements CLICommands {
 
       // 3. 加载配置
       const systemConfigPath = this.getSystemConfigPath();
-      const config = ConfigReader.loadConfig(
+      const config = await this.loadConfigurationAsync(
         this.options.configPath || 'config/default.json',
         systemConfigPath
       );
@@ -138,7 +139,7 @@ export class RCCCli implements CLICommands {
       if (!effectivePort) {
         try {
           const systemConfigPath = this.getSystemConfigPath();
-          const config = ConfigReader.loadConfig(options.config, systemConfigPath);
+          const config = await this.loadConfigurationAsync(options.config, systemConfigPath);
           effectivePort = config.server?.port;
           if (!effectivePort) {
             throw new Error('Port not found in configuration file and not specified via --port <number>');
@@ -1470,7 +1471,7 @@ export class RCCCli implements CLICommands {
       }
 
       // 加载配置
-      const config = ConfigReader.loadConfig(configPath, this.getSystemConfigPath());
+      const config = await this.loadConfigurationAsync(configPath, this.getSystemConfigPath());
       let hasErrors = false;
 
       // 验证Provider配置
@@ -1617,6 +1618,20 @@ export class RCCCli implements CLICommands {
       });
       return 'config/system-config.json';
     }
+  }
+
+  /**
+   * 加载配置 (支持API化)
+   * 
+   * 当前使用直接调用ConfigReader，未来可扩展为API调用
+   */
+  private async loadConfigurationAsync(configPath: string, systemConfigPath?: string): Promise<MergedConfig> {
+    // TODO: 在API服务器启动后，将替换为InternalAPIClient调用
+    // const { internalAPIClient } = await import('../api/internal-api-client');
+    // return await internalAPIClient.loadConfig(configPath, systemConfigPath);
+    
+    // 当前直接调用ConfigReader
+    return ConfigReader.loadConfig(configPath, systemConfigPath);
   }
 
   /**

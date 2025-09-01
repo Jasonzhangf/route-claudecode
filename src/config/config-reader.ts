@@ -155,10 +155,12 @@ export class ConfigReader {
     
     // 验证每个Provider
     for (const provider of config.Providers) {
-      if (!provider.name || !provider.api_key || !Array.isArray(provider.models)) {
+      // 支持apiKey或api_key字段 (向后兼容)
+      const apiKey = (provider as any).apiKey || (provider as any).api_key;
+      if (!provider.name || !apiKey || !Array.isArray(provider.models)) {
         throw new ConfigError(`Provider配置不完整: ${provider.name || 'unknown'}`, {
           provider,
-          requiredFields: ['name', 'api_key', 'models']
+          requiredFields: ['name', 'apiKey', 'models']
         });
       }
     }

@@ -27,28 +27,94 @@ export interface RequestContext {
 }
 
 /**
- * Pipeline层处理器
+ * API化接口
+ */
+interface APIClientInterface {
+  post(endpoint: string, data: any, requestId?: string): Promise<{ success: boolean; data?: any; error?: any }>;
+}
+
+/**
+ * Pipeline层处理器 - 支持API化改造
  * 负责六层流水线中的四个核心处理层
  */
 export class PipelineLayersProcessor {
   private config: MergedConfig;
   private httpRequestHandler: HttpRequestHandler;
+  private apiClient?: APIClientInterface;
   // 🔧 修复：使用静态计数器确保跨请求持久化
   private static roundRobinCounters = new Map<string, number>();
 
-  constructor(config: MergedConfig, httpRequestHandler: HttpRequestHandler) {
+  constructor(config: MergedConfig, httpRequestHandler: HttpRequestHandler, apiClient?: APIClientInterface) {
     this.config = config;
     this.httpRequestHandler = httpRequestHandler;
+    this.apiClient = apiClient;
+    
+    if (apiClient) {
+      secureLogger.info('Pipeline Layers Processor initialized with API client support');
+    }
   }
 
   /**
-   * 处理Router层 - 路由决策
+   * 处理Router层 - 路由决策 (支持API化)
    */
   public async processRouterLayer(input: any, context: RequestContext): Promise<any> {
+    // 如果配置了API客户端，尝试使用API调用
+    if (this.apiClient) {
+      try {
+        const apiRequest = {
+          input,
+          context: {
+            ...context,
+            startTime: context.startTime.toISOString()
+          }
+        };
+
+        const apiResponse = await this.apiClient.post(
+          '/api/v1/pipeline/router/process',
+          apiRequest,
+          context.requestId
+        );
+
+        if (apiResponse.success && apiResponse.data?.output) {
+          secureLogger.info('Router layer processed via API', {
+            requestId: context.requestId,
+            inputModel: input.model
+          });
+
+          const routingDecision = apiResponse.data.output;
+          context.routingDecision = routingDecision;
+          context.metadata.routingDecision = routingDecision;
+          
+          context.transformations.push({
+            layer: 'router',
+            inputModel: input.model,
+            outputModel: routingDecision.virtualModel,
+            timestamp: new Date(),
+            apiMode: true
+          });
+
+          return routingDecision;
+        }
+      } catch (apiError) {
+        secureLogger.warn('Router layer API call failed, using direct processing', {
+          requestId: context.requestId,
+          error: apiError instanceof Error ? apiError.message : String(apiError)
+        });
+      }
+    }
+
+    // 直接处理逻辑（原有逻辑保持不变）
+    return this.processRouterLayerDirect(input, context);
+  }
+
+  /**
+   * Router层直接处理逻辑
+   */
+  private async processRouterLayerDirect(input: any, context: RequestContext): Promise<any> {
     const { VirtualModelMapper } = require('../../router/virtual-model-mapping');
     const mappedModel = VirtualModelMapper.mapToVirtual(input.model, input);
     
-    secureLogger.info('Model mapping completed', {
+    secureLogger.info('Model mapping completed (direct)', {
       requestId: context.requestId,
       inputModel: input.model,
       mappedModel: mappedModel,
@@ -60,7 +126,7 @@ export class PipelineLayersProcessor {
     let selectedPipeline: string | undefined;
     if (availablePipelines.length > 0) {
       selectedPipeline = this.selectPipelineRoundRobin(availablePipelines);
-      secureLogger.info('Round-robin load balancer selected pipeline', {
+      secureLogger.info('Round-robin load balancer selected pipeline (direct)', {
         requestId: context.requestId,
         selectedPipeline,
         availablePipelines,
@@ -68,7 +134,7 @@ export class PipelineLayersProcessor {
       });
     } else {
       selectedPipeline = undefined;
-      secureLogger.warn('No pipelines available for load balancing', {
+      secureLogger.warn('No pipelines available for load balancing (direct)', {
         requestId: context.requestId,
         mappedModel
       });
@@ -81,12 +147,13 @@ export class PipelineLayersProcessor {
       selectedPipeline: selectedPipeline,
       reasoning: selectedPipeline ? 
         `Selected pipeline ${selectedPipeline} from ${availablePipelines.length} available pipelines for ${mappedModel}` :
-        `No pipelines available for ${mappedModel}`
+        `No pipelines available for ${mappedModel}`,
+      directMode: true
     };
     
     // 🔧 关键调试信息：longContext路由决策追踪
     if (mappedModel === 'longContext') {
-      secureLogger.info('🔥 LongContext路由决策完成', {
+      secureLogger.info('🔥 LongContext路由决策完成 (direct)', {
         requestId: context.requestId,
         originalModel: input.model,
         virtualModel: mappedModel,
@@ -103,6 +170,7 @@ export class PipelineLayersProcessor {
       inputModel: input.model,
       outputModel: mappedModel,
       timestamp: new Date(),
+      directMode: true
     });
     
     // 🔧 修复：确保路由决策信息保存到context中，供Protocol层使用
@@ -113,9 +181,57 @@ export class PipelineLayersProcessor {
   }
 
   /**
-   * 处理Transformer层 - 协议转换
+   * 处理Transformer层 - 协议转换 (支持API化)
    */
   public async processTransformerLayer(input: any, routingDecision: any, context: RequestContext): Promise<any> {
+    // 如果配置了API客户端，尝试使用API调用
+    if (this.apiClient) {
+      try {
+        const apiRequest = {
+          input,
+          routingDecision,
+          context: {
+            ...context,
+            startTime: context.startTime.toISOString()
+          }
+        };
+
+        const apiResponse = await this.apiClient.post(
+          '/api/v1/pipeline/transformer/process',
+          apiRequest,
+          context.requestId
+        );
+
+        if (apiResponse.success && apiResponse.data?.output) {
+          secureLogger.info('Transformer layer processed via API', {
+            requestId: context.requestId
+          });
+
+          context.transformations.push({
+            layer: 'transformer',
+            direction: 'anthropic-to-openai',
+            timestamp: new Date(),
+            apiMode: true
+          });
+
+          return apiResponse.data.output;
+        }
+      } catch (apiError) {
+        secureLogger.warn('Transformer layer API call failed, using direct processing', {
+          requestId: context.requestId,
+          error: apiError instanceof Error ? apiError.message : String(apiError)
+        });
+      }
+    }
+
+    // 直接处理逻辑
+    return this.processTransformerLayerDirect(input, routingDecision, context);
+  }
+
+  /**
+   * Transformer层直接处理逻辑
+   */
+  private async processTransformerLayerDirect(input: any, routingDecision: any, context: RequestContext): Promise<any> {
     const selectedPipelineId = routingDecision.selectedPipeline || (routingDecision.availablePipelines && routingDecision.availablePipelines[0]);
     const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
     const providers = this.config.providers || [];
@@ -124,7 +240,7 @@ export class PipelineLayersProcessor {
     let transformerDirection = 'passthrough';
     let transformedRequest = input;
     
-    secureLogger.info('Transformer layer processing', {
+    secureLogger.info('Transformer layer processing (direct)', {
       requestId: context.requestId,
       providerType,
       providerProtocol: matchingProvider?.protocol,
@@ -139,14 +255,14 @@ export class PipelineLayersProcessor {
         await transformer.start();
         transformedRequest = await transformer.process(input);
         
-        secureLogger.info('Anthropic-to-OpenAI transformation completed', {
+        secureLogger.info('Anthropic-to-OpenAI transformation completed (direct)', {
           requestId: context.requestId,
           hasOutput: !!transformedRequest && Object.keys(transformedRequest).length > 0
         });
       } catch (error) {
-        secureLogger.error('Transformer processing failed', {
+        secureLogger.error('Transformer processing failed (direct)', {
           requestId: context.requestId,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         });
         transformedRequest = input;
       }
@@ -158,14 +274,14 @@ export class PipelineLayersProcessor {
         await transformer.start();
         transformedRequest = await transformer.process(input);
         
-        secureLogger.info('Anthropic-to-OpenAI transformation completed', {
+        secureLogger.info('Anthropic-to-OpenAI transformation completed (direct)', {
           requestId: context.requestId,
           hasOutput: !!transformedRequest && Object.keys(transformedRequest).length > 0
         });
       } catch (error) {
-        secureLogger.error('Transformer processing failed', {
+        secureLogger.error('Transformer processing failed (direct)', {
           requestId: context.requestId,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         });
         transformedRequest = input;
       }
@@ -175,9 +291,10 @@ export class PipelineLayersProcessor {
       layer: 'transformer',
       direction: transformerDirection,
       timestamp: new Date(),
+      directMode: true
     });
 
-    secureLogger.info('Transformer layer completed', {
+    secureLogger.info('Transformer layer completed (direct)', {
       requestId: context.requestId,
       direction: transformerDirection,
       outputSize: transformedRequest ? Object.keys(transformedRequest).length : 0
@@ -187,9 +304,50 @@ export class PipelineLayersProcessor {
   }
 
   /**
-   * 处理Protocol层 - 协议处理
+   * 处理Protocol层 - 协议处理 (支持API化)
    */
   public async processProtocolLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
+    // 如果配置了API客户端，尝试使用API调用
+    if (this.apiClient) {
+      try {
+        const apiRequest = {
+          input: request,
+          routingDecision,
+          context: {
+            ...context,
+            startTime: context.startTime.toISOString()
+          }
+        };
+
+        const apiResponse = await this.apiClient.post(
+          '/api/v1/pipeline/protocol/process',
+          apiRequest,
+          context.requestId
+        );
+
+        if (apiResponse.success && apiResponse.data?.output) {
+          secureLogger.info('Protocol layer processed via API', {
+            requestId: context.requestId
+          });
+
+          return apiResponse.data.output;
+        }
+      } catch (apiError) {
+        secureLogger.warn('Protocol layer API call failed, using direct processing', {
+          requestId: context.requestId,
+          error: apiError instanceof Error ? apiError.message : String(apiError)
+        });
+      }
+    }
+
+    // 直接处理逻辑
+    return this.processProtocolLayerDirect(request, routingDecision, context);
+  }
+
+  /**
+   * Protocol层直接处理逻辑
+   */
+  private async processProtocolLayerDirect(request: any, routingDecision: any, context: RequestContext): Promise<any> {
     const selectedPipelineId = routingDecision.selectedPipeline || (routingDecision.availablePipelines && routingDecision.availablePipelines[0]);
     const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
     let providerInfo = this.config.systemConfig.providerTypes[providerType];
@@ -333,9 +491,50 @@ export class PipelineLayersProcessor {
   }
 
   /**
-   * 处理Server层 - HTTP API调用
+   * 处理Server层 - HTTP API调用 (支持API化)
    */
   public async processServerLayer(request: any, routingDecision: any, context: RequestContext): Promise<any> {
+    // 如果配置了API客户端，尝试使用API调用
+    if (this.apiClient) {
+      try {
+        const apiRequest = {
+          input: request,
+          routingDecision,
+          context: {
+            ...context,
+            startTime: context.startTime.toISOString()
+          }
+        };
+
+        const apiResponse = await this.apiClient.post(
+          '/api/v1/pipeline/server/process',
+          apiRequest,
+          context.requestId
+        );
+
+        if (apiResponse.success && apiResponse.data?.output) {
+          secureLogger.info('Server layer processed via API', {
+            requestId: context.requestId
+          });
+
+          return apiResponse.data.output;
+        }
+      } catch (apiError) {
+        secureLogger.warn('Server layer API call failed, using direct processing', {
+          requestId: context.requestId,
+          error: apiError instanceof Error ? apiError.message : String(apiError)
+        });
+      }
+    }
+
+    // 直接处理逻辑
+    return this.processServerLayerDirect(request, routingDecision, context);
+  }
+
+  /**
+   * Server层直接处理逻辑
+   */
+  private async processServerLayerDirect(request: any, routingDecision: any, context: RequestContext): Promise<any> {
     const protocolConfig = context.metadata.protocolConfig;
     const { endpoint, apiKey, timeout, maxRetries } = protocolConfig;
 

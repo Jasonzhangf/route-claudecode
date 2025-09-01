@@ -5,7 +5,45 @@
  */
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
-import { ModuleProcessingContext } from '../../../config/unified-config-manager';
+// TODO: API化 - 通过Pipeline API获取处理上下文
+// import { ModuleProcessingContext } from '../../../config/unified-config-manager';
+
+/**
+ * 模块处理上下文接口 - API化版本
+ * TODO: 在Pipeline API实施后，这个接口将通过API调用获取
+ */
+interface ModuleProcessingContext {
+  readonly requestId: string;
+  readonly providerName?: string;
+  readonly protocol?: string;
+  readonly config?: {
+    readonly endpoint?: string;
+    readonly apiKey?: string;
+    readonly timeout?: number;
+    readonly maxRetries?: number;
+    readonly actualModel?: string;
+    readonly originalModel?: string;
+    readonly serverCompatibility?: string;
+  };
+  readonly debug?: {
+    readonly enabled: boolean;
+    readonly level: number;
+    readonly outputPath?: string;
+  };
+  metadata?: {
+    architecture?: string;
+    layer?: string;
+    protocolConfig?: {
+      endpoint?: string;
+      apiKey?: string;
+      protocol?: string;
+      timeout?: number;
+      maxRetries?: number;
+      customHeaders?: Record<string, string>;
+    };
+    [key: string]: any;
+  };
+}
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../../utils/secure-logger';
 import * as fs from 'fs/promises';
@@ -14,6 +52,7 @@ import * as os from 'os';
 import { JQJsonHandler } from '../../../utils/jq-json-handler';
 import { QWEN_AUTH_ERRORS } from '../../../constants/error-messages';
 import { API_DEFAULTS } from '../../../constants/api-defaults';
+import { URL_PATTERNS } from '../../../constants/compatibility-constants';
 export interface QwenAuthConfig {
   access_token: string;
   refresh_token: string;
@@ -308,7 +347,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
             requestId: context.requestId
           });
           context.metadata.protocolConfig = {
-            endpoint: 'https://portal.qwen.ai/v1',
+            endpoint: `https://${URL_PATTERNS.QWEN_DOMAIN}/compatible-mode/v1`,
             apiKey: '',
             protocol: 'openai',
             timeout: 120000,
@@ -359,12 +398,16 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
             }
           });
 
-          // 🌐 修正端点URL - 根据resource_url或使用默认端点
-          if (authConfig.resource_url && authConfig.resource_url.trim() !== '') {
-            context.metadata.protocolConfig.endpoint = `https://${authConfig.resource_url}/v1`;
-          } else {
-            context.metadata.protocolConfig.endpoint = 'https://portal.qwen.ai/v1';
-          }
+          // 🌐 API化修复：使用正确的DashScope API端点，忽略OAuth的resource_url
+          // OAuth的resource_url指向chat.qwen.ai，但API调用需要dashscope.aliyuncs.com
+          context.metadata.protocolConfig.endpoint = `https://${URL_PATTERNS.QWEN_DOMAIN}/compatible-mode/v1`;
+          
+          secureLogger.info('🔧 [API-FIX] 使用正确的DashScope API端点', {
+            requestId: context.requestId,
+            oauthResourceUrl: authConfig.resource_url,
+            apiEndpoint: context.metadata.protocolConfig.endpoint,
+            note: 'OAuth resource_url用于聊天界面，API调用需要DashScope端点'
+          });
 
           secureLogger.info('🔥🔥 Qwen HTTP配置注入完成', {
             requestId: context.requestId,

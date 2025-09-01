@@ -17,11 +17,6 @@ export {
   SecureAnthropicToOpenAITransformer,
   SecureTransformerConfig,
   TransformerSecurityError,
-  TransformerValidationError,
-  AnthropicRequest,
-  OpenAIRequest,
-  OpenAIResponse,
-  AnthropicResponse,
 } from './secure-anthropic-openai-transformer';
 
 export {

@@ -128,9 +128,9 @@ async function handleAnthropicProxy(req: any, res: any): Promise<void> {
   }
 
   try {
-    // 获取全局Pipeline服务
-    const { getGlobalPipelineManager } = await import('../services/global-service-registry');
-    const pipelineManager = getGlobalPipelineManager();
+    // TODO: 重构为Pipeline API调用
+    // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+    const pipelineManager = null;
 
     if (!pipelineManager) {
       res.statusCode = 503;
@@ -216,9 +216,9 @@ async function handleOpenAIProxy(req: any, res: any): Promise<void> {
   }
 
   try {
-    // 获取全局Pipeline服务
-    const { getGlobalPipelineManager } = await import('../services/global-service-registry');
-    const pipelineManager = getGlobalPipelineManager();
+    // TODO: 重构为Pipeline API调用
+    // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+    const pipelineManager = null;
 
     if (!pipelineManager) {
       res.statusCode = 503;
@@ -305,9 +305,9 @@ async function handleGeminiProxy(req: any, res: any, model: string): Promise<voi
   }
 
   try {
-    // 获取全局Pipeline服务
-    const { getGlobalPipelineManager } = await import('../services/global-service-registry');
-    const pipelineManager = getGlobalPipelineManager();
+    // TODO: 重构为Pipeline API调用
+    // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+    const pipelineManager = null;
 
     if (!pipelineManager) {
       res.statusCode = 503;
@@ -394,9 +394,11 @@ async function handleUniversalProxy(req: any, res: any, provider: string, model:
 
   try {
     // 获取全局Pipeline服务
-    const { getGlobalPipelineManager, getGlobalProviderManager } = await import('../services/global-service-registry');
-    const pipelineManager = getGlobalPipelineManager();
-    const providerManager = getGlobalProviderManager();
+    // TODO: 重构为API调用
+    // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+    // const providerManager = await routerApiClient.get('/api/v1/router/provider-manager');
+    const pipelineManager = null;
+    const providerManager = null;
 
     if (!pipelineManager || !providerManager) {
       res.statusCode = 503;

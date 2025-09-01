@@ -644,15 +644,14 @@ export class HTTPServer extends EventEmitter {
     // 健康检查端点
     this.addRoute('GET', '/health', async (req, res) => {
       try {
-        const { healthCheckServices } = await import('../services/service-initializer');
-        const healthCheck = await healthCheckServices();
+        const health = this.performHealthChecks();
+        const overallStatus = health.every(check => check.status === 'pass');
 
-        res.statusCode = healthCheck.healthy ? 200 : 503;
+        res.statusCode = overallStatus ? 200 : 503;
         res.body = {
-          status: healthCheck.healthy ? 'healthy' : 'unhealthy',
+          status: overallStatus ? 'healthy' : 'unhealthy',
           timestamp: new Date().toISOString(),
-          services: healthCheck.services,
-          issues: healthCheck.issues,
+          checks: health,
           version: '4.0.0-alpha.1',
         };
       } catch (error) {
@@ -669,12 +668,8 @@ export class HTTPServer extends EventEmitter {
     // 详细状态端点
     this.addRoute('GET', '/status', async (req, res) => {
       try {
-        const { getServiceRegistry } = await import('../services/global-service-registry');
-        const { healthCheckServices } = await import('../services/service-initializer');
-
-        const registry = getServiceRegistry();
-        const healthCheck = await healthCheckServices();
         const serverStatus = this.getStatus();
+        const health = this.performHealthChecks();
 
         res.body = {
           server: {
@@ -687,10 +682,9 @@ export class HTTPServer extends EventEmitter {
             version: serverStatus.version,
           },
           health: {
-            overall: healthCheck.healthy ? 'healthy' : 'unhealthy',
-            issues: healthCheck.issues,
+            overall: health.every(check => check.status === 'pass') ? 'healthy' : 'degraded',
+            checks: health,
           },
-          services: registry.services,
           activePipelines: serverStatus.activePipelines,
           performance: {
             memoryUsage: process.memoryUsage().heapUsed,

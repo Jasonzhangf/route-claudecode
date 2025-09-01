@@ -7,8 +7,19 @@
  */
 
 import { EventEmitter } from 'events';
-import { ICacheManager } from './global-service-registry';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+
+/**
+ * 缓存管理器接口
+ */
+export interface ICacheManager {
+  get(cacheType: string, key: string): any;
+  set(cacheType: string, key: string, value: any, ttl?: number): boolean;
+  delete(cacheType: string, key: string): boolean;
+  clear(cacheType: string): Promise<{itemsCleared: number}>;
+  has(cacheType: string, key: string): boolean;
+  getStats(): {totalItems: number; memoryUsage: number; cacheTypes: string[]};
+}
 
 /**
  * 缓存项

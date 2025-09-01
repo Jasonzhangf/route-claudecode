@@ -33,9 +33,9 @@ export class ErrorResponseNormalizer {
 
     this.debugRecorder.record('error_normalization', {
       server_type: serverType,
-      original_error_type: error.constructor?.name,
-      original_error_message: error.message,
-      original_error_status: error.status || error.statusCode,
+      original_error_type: error?.constructor?.name,
+      original_error_message: error?.message,
+      original_error_status: error?.status || error?.statusCode,
       original_error_data: this.sanitizeErrorData(error),
     });
 
@@ -116,12 +116,12 @@ export class ErrorResponseNormalizer {
           baseError.error.code = 'not_found';
           break;
         case 500:
-          baseError.error.message = 'Internal server error in LM Studio.';
+          baseError.error.message = `Internal server error in LM Studio (HTTP ${error.status}).`;
           baseError.error.type = 'api_error';
           baseError.error.code = 'internal_server_error';
           break;
         default:
-          baseError.error.message = error.message || `LM Studio server error (HTTP ${error.status})`;
+          baseError.error.message = `LM Studio server error (HTTP ${error.status})`;
           baseError.error.type = 'api_error';
           baseError.error.code = `http_${error.status}`;
       }
@@ -234,8 +234,8 @@ export class ErrorResponseNormalizer {
       return baseError;
     }
 
-    // Ollama模型错误
-    if (error.message?.includes('model') && error.message?.includes('not found')) {
+    // Ollama模型错误 - 只处理没有HTTP状态码的情况
+    if (!error.status && error.message?.includes('model') && error.message?.includes('not found')) {
       baseError.error.message = 'Model not found in Ollama. Please pull the model first.';
       baseError.error.type = 'invalid_request_error';
       baseError.error.code = 'model_not_found';
@@ -252,7 +252,12 @@ export class ErrorResponseNormalizer {
           break;
 
         case 404:
-          if (error.message?.includes('model')) {
+          if (error.message?.includes('model') && error.message?.includes('"') && error.message?.includes('not found')) {
+            baseError.error.message = 'Model not found in Ollama. Please pull the model first.';
+            baseError.error.type = 'invalid_request_error';
+            baseError.error.code = 'model_not_found';
+            return baseError;
+          } else if (error.message?.includes('model')) {
             baseError.error.message = 'Model not available in Ollama.';
             baseError.error.type = 'invalid_request_error';
             baseError.error.code = 'model_not_found';
@@ -289,36 +294,36 @@ export class ErrorResponseNormalizer {
   private normalizeGenericError(error: any, baseError: OpenAIErrorResponse): OpenAIErrorResponse {
     this.debugRecorder.record('generic_error_normalization', {
       error_type: typeof error,
-      error_constructor: error.constructor?.name,
-      has_status: !!error.status,
-      has_code: !!error.code,
-      has_message: !!error.message,
+      error_constructor: error?.constructor?.name,
+      has_status: !!error?.status,
+      has_code: !!error?.code,
+      has_message: !!error?.message,
     });
 
     // 网络连接错误
-    if (error.code === 'ECONNREFUSED') {
+    if (error?.code === 'ECONNREFUSED') {
       baseError.error.message = 'Connection refused. Please check if the server is running.';
       baseError.error.type = 'api_error';
-      baseError.error.code = 'connection_error';
+      baseError.error.code = 'connrefused_error';
       return baseError;
     }
 
-    if (error.code === 'ETIMEDOUT') {
+    if (error?.code === 'ETIMEDOUT') {
       baseError.error.message = 'Request timed out.';
       baseError.error.type = 'api_error';
-      baseError.error.code = 'timeout';
+      baseError.error.code = 'timedout_error';
       return baseError;
     }
 
-    if (error.code === 'ENOTFOUND') {
+    if (error?.code === 'ENOTFOUND') {
       baseError.error.message = 'Server not found. Please check the server address.';
       baseError.error.type = 'api_error';
-      baseError.error.code = 'server_not_found';
+      baseError.error.code = 'notfound_error';
       return baseError;
     }
 
     // HTTP状态码通用处理
-    if (error.status) {
+    if (error?.status) {
       switch (error.status) {
         case 400:
           baseError.error.message = 'Bad request. Please check your request parameters.';
@@ -375,7 +380,7 @@ export class ErrorResponseNormalizer {
       }
     } else {
       // 无状态码的通用错误处理
-      baseError.error.message = error.message || 'Unknown error occurred';
+      baseError.error.message = error?.message || 'Unknown error occurred';
       baseError.error.type = 'api_error';
       baseError.error.code = 'unknown_error';
     }
@@ -467,20 +472,20 @@ export class ErrorResponseNormalizer {
    */
   private sanitizeErrorData(error: any): any {
     const sanitized: any = {
-      name: error.name,
-      message: error.message,
-      status: error.status || error.statusCode,
-      code: error.code,
+      name: error?.name,
+      message: error?.message,
+      status: error?.status || error?.statusCode,
+      code: error?.code,
     };
 
     // 移除可能包含敏感信息的字段
-    if (error.response?.data && typeof error.response.data === 'object') {
+    if (error?.response?.data && typeof error.response.data === 'object') {
       sanitized.response_data = {
         error: error.response.data.error?.message || error.response.data.message,
       };
     }
 
-    if (error.config) {
+    if (error?.config) {
       sanitized.config = {
         method: error.config.method,
         url: error.config.url?.replace(/[?&]key=[^&]+/g, '?key=***'), // 隐藏API key

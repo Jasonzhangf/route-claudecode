@@ -43,5 +43,15 @@
     "open": "^10.2.0",
     "openai": "^4.67.3",
     "tiktoken": "^1.0.22"
-  }
+  },
+  "files": [
+    "dist/",
+    "src/",
+    "config/",
+    "data/",
+    "README.md",
+    "CLAUDE.md",
+    "build-and-install.sh",
+    ".env.example"
+  ]
 }

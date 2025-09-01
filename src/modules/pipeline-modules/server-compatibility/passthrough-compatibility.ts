@@ -10,7 +10,45 @@
  */
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
-import { ModuleProcessingContext } from '../../../config/unified-config-manager';
+// TODO: API化 - 通过Pipeline API获取处理上下文
+// import { ModuleProcessingContext } from '../../../config/unified-config-manager';
+
+/**
+ * 模块处理上下文接口 - API化版本
+ * TODO: 在Pipeline API实施后，这个接口将通过API调用获取
+ */
+interface ModuleProcessingContext {
+  readonly requestId: string;
+  readonly providerName?: string;
+  readonly protocol?: string;
+  readonly config?: {
+    readonly endpoint?: string;
+    readonly apiKey?: string;
+    readonly timeout?: number;
+    readonly maxRetries?: number;
+    readonly actualModel?: string;
+    readonly originalModel?: string;
+    readonly serverCompatibility?: string;
+  };
+  readonly debug?: {
+    readonly enabled: boolean;
+    readonly level: number;
+    readonly outputPath?: string;
+  };
+  metadata?: {
+    architecture?: string;
+    layer?: string;
+    protocolConfig?: {
+      endpoint?: string;
+      apiKey?: string;
+      protocol?: string;
+      timeout?: number;
+      maxRetries?: number;
+      customHeaders?: Record<string, string>;
+    };
+    [key: string]: any;
+  };
+}
 import { EventEmitter } from 'events';
 import { JQJsonHandler } from '../../../utils/jq-json-handler';
 export interface PassthroughCompatibilityConfig {
