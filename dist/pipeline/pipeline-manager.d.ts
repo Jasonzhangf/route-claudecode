@@ -1,15 +1,18 @@
 /**
- * Pipeline管理器核心实现
+ * 静态流水线组装系统 - 改造版 Pipeline Manager
  *
- * 负责Pipeline的创建、执行、监控和销毁
+ * 核心职责:
+ * 1. 静态流水线组装系统: 根据路由器输出动态选择模块进行组装
+ * 2. 流水线只组装一次，后续只会销毁和重启
+ * 3. 不负责负载均衡和请求路由(由LoadBalancer处理)
+ * 4. 错误处理策略: 不可恢复的销毁，多次错误拉黑，认证问题处理
  *
- * RCC v4.0 架构更新:
- * - 初始化时创建所有流水线 (Provider.Model.APIKey组合)
- * - 每条流水线在初始化时完成握手连接
- * - Runtime状态管理和零Fallback策略
+ * RCC v4.0 架构更新 (基于用户纠正):
+ * - ❌ 智能动态组装 → ✅ 静态组装+动态模块选择
+ * - ❌ Pipeline负责路由 → ✅ LoadBalancer负责路由
+ * - ✅ 组装一次，销毁重启的生命周期管理
  *
- * @author Jason Zhang
- * @author RCC v4.0
+ * @author RCC v4.0 Architecture Team
  */
 import { EventEmitter } from 'events';
 import { PipelineConfig, ExecutionContext, ExecutionResult, ExecutionRecord, StandardPipelineFactory } from '../interfaces/pipeline/pipeline-framework';
@@ -119,9 +122,13 @@ export declare class PipelineManager extends EventEmitter {
     private configName;
     private configFile;
     private port;
+    private loadBalancer;
+    private pipelineAssemblyStats;
+    private readonly MODULE_SELECTORS;
     constructor(factory: StandardPipelineFactory, systemConfig?: any);
     /**
-     * 初始化流水线系统 - 从Routing Table创建所有流水线 (RCC v4.0)
+     * 静态流水线组装系统初始化 - 根据路由表组装所有流水线
+     * 核心改造: 基于路由器输出动态选择模块进行组装
      */
     initializeFromRoutingTable(routingTable: RoutingTable, configInfo?: {
         name: string;
@@ -129,9 +136,34 @@ export declare class PipelineManager extends EventEmitter {
         port?: number;
     }): Promise<void>;
     /**
+     * 🎯 核心算法: 根据路由器输出动态选择模块
+     * 静态组装系统的关键方法 - 基于路由决策选择正确的模块
+     */
+    private selectModulesBasedOnRouterOutput;
+    /**
+     * 确定服务器模块类型
+     */
+    private determineServerModuleType;
+    /**
+     * 使用动态选择的模块创建流水线
+     */
+    private createCompletePipelineWithSelectedModules;
+    /**
      * 创建完整流水线 (Provider.Model.APIKey组合)
      */
     private createCompletePipeline;
+    /**
+     * 获取模块类型用于创建
+     */
+    private getModuleTypeForCreation;
+    /**
+     * 获取模块配置
+     */
+    private getModuleConfig;
+    /**
+     * 获取模块实例
+     */
+    private getModuleInstance;
     /**
      * 检查系统是否已初始化
      */

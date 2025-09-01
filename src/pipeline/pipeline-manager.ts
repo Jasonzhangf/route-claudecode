@@ -614,6 +614,7 @@ export class PipelineManager extends EventEmitter {
             id: this.pipelineId,
             name: this.pipelineId,
             status: this.status,
+            health: 'healthy', // 默认健康状态
             modules: {
               transformer: moduleIds.transformer,
               protocol: moduleIds.protocol,
@@ -699,11 +700,12 @@ export class PipelineManager extends EventEmitter {
         }
         return 'anthropic'; // 默认
         
-      case ModuleType.PROVIDER:
-        if (moduleName.includes('anthropic')) {
-          return 'anthropic';
-        }
-        return 'anthropic'; // 默认
+      // PROVIDER类型已移除
+      // case ModuleType.PROVIDER:
+      //   if (moduleName.includes('anthropic')) {
+      //     return 'anthropic';
+      //   }
+      //   return 'anthropic'; // 默认
         
       default:
         return 'default';
@@ -747,12 +749,13 @@ export class PipelineManager extends EventEmitter {
           allowExtraFields: false
         };
         
-      case ModuleType.PROVIDER:
-        return {
-          apiKey: config.apiKey,
-          baseURL: config.endpoint,
-          defaultModel: config.targetModel
-        };
+      // PROVIDER配置已移除
+      // case ModuleType.PROVIDER:
+      //   return {
+      //     apiKey: config.apiKey,
+      //     baseURL: config.endpoint,
+      //     defaultModel: config.targetModel
+      //   };
         
       default:
         return {};
@@ -1246,29 +1249,28 @@ export class PipelineManager extends EventEmitter {
    */
   private extractArchitectureDetails(pipeline: CompletePipeline): PipelineTableEntry['architecture'] {
     // 辅助函数：将模块状态转换为字符串
-    const getModuleStatusString = (module: ModuleInterface | undefined): string => {
-      if (!module || !module.getStatus) {
-        return 'runtime';
-      }
-      
-      try {
-        const status = module.getStatus();
-        // 如果status是对象，提取status字段；如果是字符串/枚举，直接使用
-        if (typeof status === 'object' && status.status) {
-          return String(status.status);
-        } else {
-          return String(status);
+      const getModuleStatusString = (module: ModuleInterface | undefined): string => {
+        if (!module || !module.getStatus) {
+          return 'running';
         }
-      } catch (error) {
-        return 'runtime';
-      }
-    };
+        
+        try {
+          const status = module.getStatus();
+          // 如果status是对象，提取status字段；如果是字符串/枚举，直接使用
+          if (typeof status === 'object' && status.status) {
+            return String(status.status);
+          } else {
+            return String(status);
+          }
+        } catch (error) {
+          return 'running';
+        }
+      };
     
     return {
       transformer: {
         id: pipeline.transformer?.getId?.() || `${pipeline.provider}-transformer`,
-        // 🐛 关键修复：使用存储在pipeline中的实际transformer名称
-        name: pipeline.transformerName || 'anthropic-to-openai-transformer',
+        name: 'transformer',
         type: 'transformer',
         status: getModuleStatusString(pipeline.transformer)
       },

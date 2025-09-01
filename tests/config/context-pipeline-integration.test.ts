@@ -650,6 +650,13 @@ async function runContextPipelineIntegrationTests(): Promise<void> {
   }
 }
 
+// Jest测试套件包装器
+describe('Context Pipeline Integration Tests', () => {
+  test('should pass all context pipeline integration tests', async () => {
+    await runContextPipelineIntegrationTests();
+  }, 30000); // 30秒超时
+});
+
 // 执行测试
 if (require.main === module) {
   runContextPipelineIntegrationTests().catch(error => {

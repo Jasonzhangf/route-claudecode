@@ -89,7 +89,7 @@ class RCCCli {
             }
             // 3. 加载配置
             const systemConfigPath = this.getSystemConfigPath();
-            const config = config_reader_1.ConfigReader.loadConfig(this.options.configPath || 'config/default.json', systemConfigPath);
+            const config = await this.loadConfigurationAsync(this.options.configPath || 'config/default.json', systemConfigPath);
             // 4. 合并配置到命令选项
             const mergedCommand = {
                 ...command,
@@ -119,7 +119,7 @@ class RCCCli {
             if (!effectivePort) {
                 try {
                     const systemConfigPath = this.getSystemConfigPath();
-                    const config = config_reader_1.ConfigReader.loadConfig(options.config, systemConfigPath);
+                    const config = await this.loadConfigurationAsync(options.config, systemConfigPath);
                     effectivePort = config.server?.port;
                     if (!effectivePort) {
                         throw new Error('Port not found in configuration file and not specified via --port <number>');
@@ -1312,7 +1312,7 @@ class RCCCli {
                 console.log(`🔍 Validating configuration: ${configPath}`);
             }
             // 加载配置
-            const config = config_reader_1.ConfigReader.loadConfig(configPath, this.getSystemConfigPath());
+            const config = await this.loadConfigurationAsync(configPath, this.getSystemConfigPath());
             let hasErrors = false;
             // 验证Provider配置
             if (config.providers && Array.isArray(config.providers)) {
@@ -1449,6 +1449,18 @@ class RCCCli {
             });
             return 'config/system-config.json';
         }
+    }
+    /**
+     * 加载配置 (支持API化)
+     *
+     * 当前使用直接调用ConfigReader，未来可扩展为API调用
+     */
+    async loadConfigurationAsync(configPath, systemConfigPath) {
+        // TODO: 在API服务器启动后，将替换为InternalAPIClient调用
+        // const { internalAPIClient } = await import('../api/internal-api-client');
+        // return await internalAPIClient.loadConfig(configPath, systemConfigPath);
+        // 当前直接调用ConfigReader
+        return config_reader_1.ConfigReader.loadConfig(configPath, systemConfigPath);
     }
     /**
      * 重置配置

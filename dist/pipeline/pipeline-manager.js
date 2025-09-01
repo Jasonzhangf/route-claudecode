@@ -1,16 +1,19 @@
 "use strict";
 /**
- * Pipeline管理器核心实现
+ * 静态流水线组装系统 - 改造版 Pipeline Manager
  *
- * 负责Pipeline的创建、执行、监控和销毁
+ * 核心职责:
+ * 1. 静态流水线组装系统: 根据路由器输出动态选择模块进行组装
+ * 2. 流水线只组装一次，后续只会销毁和重启
+ * 3. 不负责负载均衡和请求路由(由LoadBalancer处理)
+ * 4. 错误处理策略: 不可恢复的销毁，多次错误拉黑，认证问题处理
  *
- * RCC v4.0 架构更新:
- * - 初始化时创建所有流水线 (Provider.Model.APIKey组合)
- * - 每条流水线在初始化时完成握手连接
- * - Runtime状态管理和零Fallback策略
+ * RCC v4.0 架构更新 (基于用户纠正):
+ * - ❌ 智能动态组装 → ✅ 静态组装+动态模块选择
+ * - ❌ Pipeline负责路由 → ✅ LoadBalancer负责路由
+ * - ✅ 组装一次，销毁重启的生命周期管理
  *
- * @author Jason Zhang
- * @author RCC v4.0
+ * @author RCC v4.0 Architecture Team
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -38,11 +41,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PipelineManager = void 0;
 const events_1 = require("events");
+const base_module_1 = require("../interfaces/module/base-module");
 const secure_logger_1 = require("../utils/secure-logger");
 const jq_json_handler_1 = require("../utils/jq-json-handler");
+const load_balancer_router_1 = require("./load-balancer-router");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const os = __importStar(require("os"));
+// 导入模块管理API函数
+const module_management_api_1 = require("../api/modules/module-management-api");
 /**
  * Pipeline管理器
  */
@@ -55,16 +62,73 @@ class PipelineManager extends events_1.EventEmitter {
         this.configName = '';
         this.configFile = '';
         this.port = 0;
+        // 静态流水线组装系统的新功能
+        this.pipelineAssemblyStats = {
+            totalAssembled: 0,
+            totalDestroyed: 0,
+            assemblyTime: 0,
+            lastAssemblyTimestamp: 0
+        };
+        // 模块选择器映射表 (根据路由器输出动态选择模块)
+        this.MODULE_SELECTORS = {
+            transformer: {
+                'default': 'AnthropicOpenAITransformer'
+            },
+            protocol: {
+                'openai': 'OpenAIProtocolEnhancer',
+                'gemini': 'GeminiProtocolEnhancer',
+                'anthropic': 'AnthropicProtocolEnhancer',
+                'default': 'OpenAIProtocolEnhancer'
+            },
+            serverCompatibility: {
+                'lmstudio': 'LMStudioServerCompatibility',
+                'ollama': 'OllamaServerCompatibility',
+                'vllm': 'VLLMServerCompatibility',
+                'anthropic': 'AnthropicServerCompatibility',
+                'openai': 'PassthroughServerCompatibility',
+                'gemini': 'GeminiServerCompatibility',
+                'modelscope': 'ModelScopeServerCompatibility',
+                'qwen': 'QwenServerCompatibility',
+                'default': 'PassthroughServerCompatibility'
+            },
+            server: {
+                'http': 'HTTPServerModule',
+                'websocket': 'WebSocketServerModule',
+                'default': 'HTTPServerModule'
+            }
+        };
         this.factory = factory;
         this.systemConfig = systemConfig;
+        // 初始化负载均衡路由系统
+        this.loadBalancer = new load_balancer_router_1.LoadBalancerRouter({
+            strategy: 'round_robin',
+            maxErrorCount: 3,
+            blacklistDuration: 300000
+        });
+        // 监听负载均衡器事件 (直接设置)
+        this.loadBalancer.on('destroyPipelineRequired', async ({ pipelineId, pipeline }) => {
+            secure_logger_1.secureLogger.info('🗑️ 负载均衡器请求销毁流水线', { pipelineId });
+            await this.destroyPipeline(pipelineId);
+            this.pipelineAssemblyStats.totalDestroyed++;
+        });
+        this.loadBalancer.on('authenticationRequired', ({ pipelineId }) => {
+            secure_logger_1.secureLogger.warn('🔐 流水线需要认证处理', { pipelineId });
+            this.emit('pipelineAuthenticationRequired', { pipelineId });
+        });
+        this.loadBalancer.on('pipelineReactivated', ({ pipelineId }) => {
+            secure_logger_1.secureLogger.info('♻️ 流水线已重新激活', { pipelineId });
+            this.emit('pipelineReactivated', { pipelineId });
+        });
+        secure_logger_1.secureLogger.info('🏗️ 静态流水线组装系统+负载均衡路由系统初始化完成');
     }
     /**
-     * 初始化流水线系统 - 从Routing Table创建所有流水线 (RCC v4.0)
+     * 静态流水线组装系统初始化 - 根据路由表组装所有流水线
+     * 核心改造: 基于路由器输出动态选择模块进行组装
      */
     async initializeFromRoutingTable(routingTable, configInfo) {
-        secure_logger_1.secureLogger.info('🔧 Initializing all pipelines from routing table...');
+        secure_logger_1.secureLogger.info('🏗️ 静态流水线组装系统启动 - 基于路由表组装流水线');
         if (this.isInitialized) {
-            secure_logger_1.secureLogger.warn('⚠️  Pipeline Manager already initialized');
+            secure_logger_1.secureLogger.warn('⚠️ 流水线组装系统已初始化');
             return;
         }
         // 验证路由表
@@ -126,7 +190,10 @@ class PipelineManager extends events_1.EventEmitter {
                     completePipeline.status = 'runtime';
                     this.pipelines.set(pipelineId, completePipeline);
                     createdPipelines.push(pipelineId);
-                    secure_logger_1.secureLogger.info(`  ✅ Pipeline ready: ${pipelineId}`);
+                    // 注册到负载均衡系统
+                    this.loadBalancer.registerPipeline(completePipeline, virtualModel);
+                    this.pipelineAssemblyStats.totalAssembled++;
+                    secure_logger_1.secureLogger.info(`  ✅ Pipeline ready and registered: ${pipelineId}`);
                 }
             }
             this.isInitialized = true;
@@ -164,175 +231,379 @@ class PipelineManager extends events_1.EventEmitter {
         }
     }
     /**
-     * 创建完整流水线 (Provider.Model.APIKey组合)
+     * 🎯 核心算法: 根据路由器输出动态选择模块
+     * 静态组装系统的关键方法 - 基于路由决策选择正确的模块
      */
-    async createCompletePipeline(config) {
-        secure_logger_1.secureLogger.info(`🏗️  Creating complete pipeline: ${config.pipelineId}`);
-        // 根据Provider类型创建对应的流水线
-        let standardPipeline;
-        if (config.provider === 'lmstudio') {
-            standardPipeline = await this.factory.createLMStudioPipeline(config.targetModel);
+    selectModulesBasedOnRouterOutput(routerOutput, providerType) {
+        const selectedModules = {
+            // 1. Transformer: 统一使用 Anthropic → OpenAI 转换
+            transformer: this.MODULE_SELECTORS.transformer.default,
+            // 2. Protocol: 根据路由器输出的协议选择
+            protocol: this.MODULE_SELECTORS.protocol[routerOutput.protocol] ||
+                this.MODULE_SELECTORS.protocol.default,
+            // 3. ServerCompatibility: 根据provider类型选择
+            serverCompatibility: this.MODULE_SELECTORS.serverCompatibility[providerType] ||
+                this.MODULE_SELECTORS.serverCompatibility.default,
+            // 4. Server: 根据endpoint类型选择 (默认HTTP)
+            server: this.determineServerModuleType(routerOutput.endpoint)
+        };
+        secure_logger_1.secureLogger.debug('🎯 模块选择决策完成', {
+            routerOutput,
+            providerType,
+            selectedModules,
+            architecture: 'static-assembly-dynamic-selection'
+        });
+        return selectedModules;
+    }
+    /**
+     * 确定服务器模块类型
+     */
+    determineServerModuleType(endpoint) {
+        if (!endpoint)
+            return this.MODULE_SELECTORS.server.default;
+        if (endpoint.includes('ws://') || endpoint.includes('wss://')) {
+            return this.MODULE_SELECTORS.server.websocket || this.MODULE_SELECTORS.server.default;
         }
-        else if (config.provider === 'openai') {
-            standardPipeline = await this.factory.createOpenAIPipeline(config.targetModel);
-        }
-        else if (config.provider === 'anthropic') {
-            standardPipeline = await this.factory.createAnthropicPipeline(config.targetModel);
-        }
-        else {
-            // 使用通用方法创建
-            const pipelineConfig = {
-                id: config.pipelineId,
-                name: `${config.provider} Pipeline - ${config.targetModel}`,
-                description: `Complete pipeline for ${config.provider}.${config.targetModel}`,
-                provider: config.provider,
-                model: config.targetModel,
-                modules: [], // 模块将由factory根据provider类型填充
-                settings: {
-                    parallel: false,
-                    failFast: true,
-                    timeout: 60000,
-                    retryPolicy: {
-                        enabled: true,
-                        maxRetries: 3,
-                        backoffMultiplier: 2,
-                        initialDelay: 1000,
-                        maxDelay: 10000,
-                        retryableErrors: ['TIMEOUT', 'CONNECTION_ERROR', 'RATE_LIMIT']
-                    },
-                    errorHandling: {
-                        stopOnFirstError: true,
-                        allowPartialSuccess: false,
-                        errorRecovery: false,
-                        fallbackStrategies: []
-                    },
-                    logging: {
-                        enabled: true,
-                        level: 'info',
-                        includeInput: false,
-                        includeOutput: false,
-                        maskSensitiveData: true,
-                        maxLogSize: 1024 * 1024
-                    },
-                    monitoring: {
-                        enabled: true,
-                        collectMetrics: true,
-                        performanceTracking: true,
-                        alerting: {
-                            enabled: false,
-                            thresholds: {
-                                errorRate: 0.1,
-                                responseTime: 5000,
-                                throughput: 10
-                            },
-                            channels: []
-                        }
-                    }
-                }
-            };
-            standardPipeline = await this.factory.createStandardPipeline(pipelineConfig);
-        }
-        // 包装成CompletePipeline接口
-        const completePipeline = {
+        return this.MODULE_SELECTORS.server.default;
+    }
+    /**
+     * 使用动态选择的模块创建流水线
+     */
+    async createCompletePipelineWithSelectedModules(config) {
+        secure_logger_1.secureLogger.info('🏗️ 开始组装流水线 (动态模块选择)', {
+            pipelineId: config.pipelineId,
+            selectedModules: config.selectedModules
+        });
+        // 委托给原有的创建方法，但传递选择的模块
+        return await this.createCompletePipeline({
             pipelineId: config.pipelineId,
             virtualModel: config.virtualModel,
             provider: config.provider,
             targetModel: config.targetModel,
             apiKey: config.apiKey,
-            transformer: standardPipeline.getModule('transformer') || standardPipeline.getAllModules()[0],
-            protocol: standardPipeline.getModule('protocol') || standardPipeline.getAllModules()[1],
-            serverCompatibility: standardPipeline.getModule('serverCompatibility') || standardPipeline.getAllModules()[2],
-            server: standardPipeline.getModule('server') || standardPipeline.getAllModules()[3],
-            // 🐛 关键修复：存储实际使用的配置信息
-            serverCompatibilityName: config.serverCompatibility,
-            transformerName: config.transformer,
-            protocolName: config.protocol,
             endpoint: config.endpoint,
-            status: 'initializing',
-            lastHandshakeTime: new Date(),
-            async execute(request) {
-                secure_logger_1.secureLogger.info(`🔄 Pipeline ${this.pipelineId} executing request`);
-                try {
-                    // 使用StandardPipeline的execute方法，它已经实现了完整的4层处理
-                    const response = await standardPipeline.execute(request, {
-                        metadata: {
-                            requestId: `req_${Date.now()}`,
-                            pipelineId: this.pipelineId,
-                            provider: this.provider,
-                            model: this.targetModel,
-                            priority: 'normal'
+            transformer: config.selectedModules.transformer,
+            protocol: config.selectedModules.protocol,
+            serverCompatibility: config.selectedModules.serverCompatibility
+        });
+    }
+    /**
+     * 创建完整流水线 (Provider.Model.APIKey组合)
+     */
+    async createCompletePipeline(config) {
+        secure_logger_1.secureLogger.info(`🏗️  Creating complete pipeline: ${config.pipelineId}`);
+        // 使用API化模块管理创建模块实例
+        const moduleIds = {};
+        try {
+            // 1. 创建Transformer模块
+            const transformerResponse = await (0, module_management_api_1.createModule)({
+                type: base_module_1.ModuleType.TRANSFORMER,
+                moduleType: this.getModuleTypeForCreation(base_module_1.ModuleType.TRANSFORMER, config.transformer),
+                config: this.getModuleConfig(base_module_1.ModuleType.TRANSFORMER, config)
+            });
+            moduleIds.transformer = transformerResponse.id;
+            await (0, module_management_api_1.startModule)({ id: transformerResponse.id });
+            // 2. 创建Protocol模块
+            const protocolResponse = await (0, module_management_api_1.createModule)({
+                type: base_module_1.ModuleType.PROTOCOL,
+                moduleType: this.getModuleTypeForCreation(base_module_1.ModuleType.PROTOCOL, config.protocol),
+                config: this.getModuleConfig(base_module_1.ModuleType.PROTOCOL, config)
+            });
+            moduleIds.protocol = protocolResponse.id;
+            await (0, module_management_api_1.startModule)({ id: protocolResponse.id });
+            // 3. 创建ServerCompatibility模块
+            const serverCompatibilityResponse = await (0, module_management_api_1.createModule)({
+                type: base_module_1.ModuleType.SERVER_COMPATIBILITY,
+                moduleType: this.getModuleTypeForCreation(base_module_1.ModuleType.SERVER_COMPATIBILITY, config.serverCompatibility),
+                config: this.getModuleConfig(base_module_1.ModuleType.SERVER_COMPATIBILITY, config)
+            });
+            moduleIds.serverCompatibility = serverCompatibilityResponse.id;
+            await (0, module_management_api_1.startModule)({ id: serverCompatibilityResponse.id });
+            // 4. 创建Server模块
+            const serverResponse = await (0, module_management_api_1.createModule)({
+                type: base_module_1.ModuleType.SERVER,
+                moduleType: this.getModuleTypeForCreation(base_module_1.ModuleType.SERVER, 'openai'), // 默认使用OpenAI Server
+                config: this.getModuleConfig(base_module_1.ModuleType.SERVER, config)
+            });
+            moduleIds.server = serverResponse.id;
+            await (0, module_management_api_1.startModule)({ id: serverResponse.id });
+            // 获取模块实例
+            const transformerModule = await this.getModuleInstance(moduleIds.transformer);
+            const protocolModule = await this.getModuleInstance(moduleIds.protocol);
+            const serverCompatibilityModule = await this.getModuleInstance(moduleIds.serverCompatibility);
+            const serverModule = await this.getModuleInstance(moduleIds.server);
+            // 包装成CompletePipeline接口
+            const completePipeline = {
+                pipelineId: config.pipelineId,
+                virtualModel: config.virtualModel,
+                provider: config.provider,
+                targetModel: config.targetModel,
+                apiKey: config.apiKey,
+                transformer: transformerModule,
+                protocol: protocolModule,
+                serverCompatibility: serverCompatibilityModule,
+                server: serverModule,
+                // 🐛 关键修复：存储实际使用的配置信息
+                serverCompatibilityName: config.serverCompatibility,
+                transformerName: config.transformer,
+                protocolName: config.protocol,
+                endpoint: config.endpoint,
+                status: 'initializing',
+                lastHandshakeTime: new Date(),
+                async execute(request) {
+                    secure_logger_1.secureLogger.info(`🔄 Pipeline ${this.pipelineId} executing request`);
+                    try {
+                        // 按顺序处理请求通过各个模块
+                        // 1. Transformer处理
+                        let processedRequest = await (0, module_management_api_1.processWithModule)({
+                            id: moduleIds.transformer,
+                            input: request
+                        });
+                        // 2. Protocol处理
+                        processedRequest = await (0, module_management_api_1.processWithModule)({
+                            id: moduleIds.protocol,
+                            input: processedRequest.output
+                        });
+                        // 3. ServerCompatibility处理
+                        processedRequest = await (0, module_management_api_1.processWithModule)({
+                            id: moduleIds.serverCompatibility,
+                            input: processedRequest.output
+                        });
+                        // 4. Server处理
+                        const response = await (0, module_management_api_1.processWithModule)({
+                            id: moduleIds.server,
+                            input: processedRequest.output
+                        });
+                        secure_logger_1.secureLogger.info(`  ✅ Pipeline ${this.pipelineId} execution completed`);
+                        return response;
+                    }
+                    catch (error) {
+                        secure_logger_1.secureLogger.error(`  ❌ Pipeline ${this.pipelineId} execution failed:`, { error: error.message });
+                        throw error;
+                    }
+                },
+                async handshake() {
+                    secure_logger_1.secureLogger.info(`🤝 Handshaking pipeline ${this.pipelineId}`);
+                    try {
+                        // 检查所有模块的健康状态
+                        const transformerStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.transformer);
+                        const protocolStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.protocol);
+                        const serverCompatibilityStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.serverCompatibility);
+                        const serverStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.server);
+                        if (transformerStatus.health !== 'healthy' ||
+                            protocolStatus.health !== 'healthy' ||
+                            serverCompatibilityStatus.health !== 'healthy' ||
+                            serverStatus.health !== 'healthy') {
+                            throw new Error(`Pipeline ${this.pipelineId} modules not healthy`);
                         }
-                    });
-                    secure_logger_1.secureLogger.info(`  ✅ Pipeline ${this.pipelineId} execution completed`);
-                    return response;
-                }
-                catch (error) {
-                    secure_logger_1.secureLogger.error(`  ❌ Pipeline ${this.pipelineId} execution failed:`, { error: error.message });
-                    throw error;
-                }
-            },
-            async handshake() {
-                secure_logger_1.secureLogger.info(`🤝 Handshaking pipeline ${this.pipelineId}`);
-                try {
-                    // 启动StandardPipeline，这会初始化所有模块
-                    await standardPipeline.start();
-                    // 验证连接
-                    const healthCheck = await this.healthCheck();
-                    if (!healthCheck) {
-                        throw new Error(`Pipeline ${this.pipelineId} handshake failed`);
+                        this.lastHandshakeTime = new Date();
+                        secure_logger_1.secureLogger.info(`✅ Pipeline ${this.pipelineId} handshake completed`);
                     }
-                    this.lastHandshakeTime = new Date();
-                    secure_logger_1.secureLogger.info(`✅ Pipeline ${this.pipelineId} handshake completed`);
-                }
-                catch (error) {
-                    secure_logger_1.secureLogger.error(`❌ Pipeline ${this.pipelineId} handshake failed:`, { error: error.message });
-                    this.status = 'error';
-                    throw error;
-                }
-            },
-            async healthCheck() {
-                try {
-                    // 使用StandardPipeline的状态检查
-                    const status = standardPipeline.getStatus();
-                    return status.status === 'running';
-                }
-                catch (error) {
-                    secure_logger_1.secureLogger.error(`Health check failed for pipeline ${this.pipelineId}:`, { error: error.message });
-                    return false;
-                }
-            },
-            getStatus() {
-                // 使用StandardPipeline的状态，转换为CompletePipeline需要的格式
-                const baseStatus = standardPipeline.getStatus();
-                return {
-                    id: this.pipelineId,
-                    name: this.pipelineId,
-                    status: baseStatus.status,
-                    modules: {}, // 简化模块状态
-                    uptime: Date.now() - this.lastHandshakeTime.getTime(),
-                    performance: {
-                        requestsProcessed: baseStatus.totalRequests,
-                        averageProcessingTime: baseStatus.averageResponseTime,
-                        errorRate: baseStatus.totalRequests > 0 ? baseStatus.errorRequests / baseStatus.totalRequests : 0,
-                        throughput: baseStatus.totalRequests
+                    catch (error) {
+                        secure_logger_1.secureLogger.error(`❌ Pipeline ${this.pipelineId} handshake failed:`, { error: error.message });
+                        this.status = 'error';
+                        throw error;
                     }
-                };
-            },
-            async stop() {
-                secure_logger_1.secureLogger.info(`🛑 Stopping pipeline ${this.pipelineId}`);
-                try {
-                    await standardPipeline.stop();
-                    this.status = 'stopped';
-                    secure_logger_1.secureLogger.info(`✅ Pipeline ${this.pipelineId} stopped`);
+                },
+                async healthCheck() {
+                    try {
+                        // 检查所有模块的健康状态
+                        const transformerStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.transformer);
+                        const protocolStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.protocol);
+                        const serverCompatibilityStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.serverCompatibility);
+                        const serverStatus = await (0, module_management_api_1.getModuleStatus)(moduleIds.server);
+                        return transformerStatus.health === 'healthy' &&
+                            protocolStatus.health === 'healthy' &&
+                            serverCompatibilityStatus.health === 'healthy' &&
+                            serverStatus.health === 'healthy';
+                    }
+                    catch (error) {
+                        secure_logger_1.secureLogger.error(`Health check failed for pipeline ${this.pipelineId}:`, { error: error.message });
+                        return false;
+                    }
+                },
+                getStatus() {
+                    // 返回流水线状态，包含所有模块的状态信息
+                    return {
+                        id: this.pipelineId,
+                        name: this.pipelineId,
+                        status: this.status,
+                        health: 'healthy', // 默认健康状态
+                        modules: {
+                            transformer: moduleIds.transformer,
+                            protocol: moduleIds.protocol,
+                            serverCompatibility: moduleIds.serverCompatibility,
+                            server: moduleIds.server
+                        },
+                        uptime: Date.now() - this.lastHandshakeTime.getTime(),
+                        performance: {
+                            requestsProcessed: 0,
+                            averageProcessingTime: 0,
+                            errorRate: 0,
+                            throughput: 0
+                        }
+                    };
+                },
+                async stop() {
+                    secure_logger_1.secureLogger.info(`🛑 Stopping pipeline ${this.pipelineId}`);
+                    try {
+                        // 停止所有模块
+                        await (0, module_management_api_1.stopModule)({ id: moduleIds.server });
+                        await (0, module_management_api_1.stopModule)({ id: moduleIds.serverCompatibility });
+                        await (0, module_management_api_1.stopModule)({ id: moduleIds.protocol });
+                        await (0, module_management_api_1.stopModule)({ id: moduleIds.transformer });
+                        this.status = 'stopped';
+                        secure_logger_1.secureLogger.info(`✅ Pipeline ${this.pipelineId} stopped`);
+                    }
+                    catch (error) {
+                        secure_logger_1.secureLogger.error(`❌ Pipeline ${this.pipelineId} stop failed:`, { error: error.message });
+                        this.status = 'error';
+                        throw error;
+                    }
                 }
-                catch (error) {
-                    secure_logger_1.secureLogger.error(`❌ Pipeline ${this.pipelineId} stop failed:`, { error: error.message });
-                    this.status = 'error';
-                    throw error;
+            };
+            return completePipeline;
+        }
+        catch (error) {
+            // 如果创建过程中出现错误，清理已创建的模块
+            for (const moduleId of Object.values(moduleIds)) {
+                try {
+                    await (0, module_management_api_1.destroyModule)(moduleId);
+                }
+                catch (cleanupError) {
+                    secure_logger_1.secureLogger.error(`Failed to cleanup module ${moduleId}:`, { error: cleanupError.message });
                 }
             }
+            throw error;
+        }
+    }
+    /**
+     * 获取模块类型用于创建
+     */
+    getModuleTypeForCreation(moduleType, moduleName) {
+        switch (moduleType) {
+            case base_module_1.ModuleType.TRANSFORMER:
+                if (moduleName.includes('anthropic') && moduleName.includes('openai')) {
+                    return 'anthropic-openai';
+                }
+                else if (moduleName.includes('gemini')) {
+                    return 'gemini';
+                }
+                return 'anthropic-openai'; // 默认
+            case base_module_1.ModuleType.PROTOCOL:
+                if (moduleName.includes('openai')) {
+                    return 'openai';
+                }
+                return 'openai'; // 默认
+            case base_module_1.ModuleType.SERVER_COMPATIBILITY:
+                if (moduleName.includes('lmstudio')) {
+                    return 'lmstudio';
+                }
+                return 'lmstudio'; // 默认
+            case base_module_1.ModuleType.SERVER:
+                return 'openai'; // 默认使用OpenAI Server
+            case base_module_1.ModuleType.VALIDATOR:
+                if (moduleName.includes('anthropic')) {
+                    return 'anthropic';
+                }
+                return 'anthropic'; // 默认
+            // PROVIDER类型已移除
+            // case ModuleType.PROVIDER:
+            //   if (moduleName.includes('anthropic')) {
+            //     return 'anthropic';
+            //   }
+            //   return 'anthropic'; // 默认
+            default:
+                return 'default';
+        }
+    }
+    /**
+     * 获取模块配置
+     */
+    getModuleConfig(moduleType, config) {
+        switch (moduleType) {
+            case base_module_1.ModuleType.TRANSFORMER:
+                return {}; // Transformer通常不需要特殊配置
+            case base_module_1.ModuleType.PROTOCOL:
+                return {}; // Protocol通常不需要特殊配置
+            case base_module_1.ModuleType.SERVER_COMPATIBILITY:
+                if (config.serverCompatibility.includes('lmstudio')) {
+                    return {
+                        baseUrl: config.endpoint,
+                        models: [config.targetModel],
+                        timeout: 30000,
+                        maxRetries: 3,
+                        retryDelay: 1000
+                    };
+                }
+                return {}; // 默认配置
+            case base_module_1.ModuleType.SERVER:
+                return {
+                    baseURL: config.endpoint,
+                    timeout: 30000,
+                    maxRetries: 3,
+                    retryDelay: 1000
+                };
+            case base_module_1.ModuleType.VALIDATOR:
+                return {
+                    strictMode: true,
+                    allowExtraFields: false
+                };
+            // PROVIDER配置已移除
+            // case ModuleType.PROVIDER:
+            //   return {
+            //     apiKey: config.apiKey,
+            //     baseURL: config.endpoint,
+            //     defaultModel: config.targetModel
+            //   };
+            default:
+                return {};
+        }
+    }
+    /**
+     * 获取模块实例
+     */
+    async getModuleInstance(moduleId) {
+        // 这里需要一个方法来获取模块实例
+        // 由于API管理模块不直接返回实例，我们需要创建一个包装器
+        const moduleStatus = await (0, module_management_api_1.getModuleStatus)(moduleId);
+        return {
+            getId: () => moduleId,
+            getName: () => moduleStatus.moduleType,
+            getType: () => moduleStatus.type,
+            getVersion: () => '1.0.0',
+            getStatus: () => moduleStatus,
+            getMetrics: () => ({
+                requestsProcessed: 0,
+                averageProcessingTime: 0,
+                errorRate: 0,
+                memoryUsage: 0,
+                cpuUsage: 0
+            }),
+            configure: async (config) => {
+                await (0, module_management_api_1.configureModule)({ id: moduleId, config });
+            },
+            start: async () => {
+                await (0, module_management_api_1.startModule)({ id: moduleId });
+            },
+            stop: async () => {
+                await (0, module_management_api_1.stopModule)({ id: moduleId });
+            },
+            reset: async () => {
+                // 重置逻辑
+            },
+            cleanup: async () => {
+                await (0, module_management_api_1.destroyModule)(moduleId);
+            },
+            healthCheck: async () => {
+                const status = await (0, module_management_api_1.getModuleStatus)(moduleId);
+                return { healthy: status.health === 'healthy', details: {} };
+            },
+            process: async (input) => {
+                const result = await (0, module_management_api_1.processWithModule)({ id: moduleId, input });
+                return result.output;
+            }
         };
-        return completePipeline;
     }
     /**
      * 检查系统是否已初始化
@@ -709,7 +980,7 @@ class PipelineManager extends events_1.EventEmitter {
         // 辅助函数：将模块状态转换为字符串
         const getModuleStatusString = (module) => {
             if (!module || !module.getStatus) {
-                return 'runtime';
+                return 'running';
             }
             try {
                 const status = module.getStatus();
@@ -722,14 +993,13 @@ class PipelineManager extends events_1.EventEmitter {
                 }
             }
             catch (error) {
-                return 'runtime';
+                return 'running';
             }
         };
         return {
             transformer: {
                 id: pipeline.transformer?.getId?.() || `${pipeline.provider}-transformer`,
-                // 🐛 关键修复：使用存储在pipeline中的实际transformer名称
-                name: pipeline.transformerName || 'anthropic-to-openai-transformer',
+                name: 'transformer',
                 type: 'transformer',
                 status: getModuleStatusString(pipeline.transformer)
             },

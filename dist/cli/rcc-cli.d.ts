@@ -27,6 +27,7 @@ export declare class RCCCli implements CLICommands {
     private qwenAuthManager;
     private historyManager;
     private blacklistedModels;
+    private apiBaseUrl;
     constructor(options?: CLIOptions);
     /**
      * 执行CLI命令
@@ -187,6 +188,12 @@ export declare class RCCCli implements CLICommands {
      * 获取系统配置文件路径
      */
     private getSystemConfigPath;
+    /**
+     * 加载配置 (支持API化)
+     *
+     * 当前使用直接调用ConfigReader，未来可扩展为API调用
+     */
+    private loadConfigurationAsync;
     /**
      * 重置配置
      */

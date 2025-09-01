@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-01 16:02:49",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/interfaces/api/pipeline-api.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

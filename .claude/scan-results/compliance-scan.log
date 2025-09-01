@@ -345,3 +345,60 @@
 [2025-09-01 11:10:04] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/CLEANUP_SUMMARY.md - 无违规
 [2025-09-01 11:36:03] 开始扫描: .gitignore
 [2025-09-01 11:36:04] 扫描完成: .gitignore - 无违规
+[2025-09-01 13:20:10] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/load-balancer-errors.ts
+[2025-09-01 13:20:10] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/load-balancer-errors.ts - 无违规
+[2025-09-01 13:21:31] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/load-balancer-router.ts
+[2025-09-01 13:21:31] 硬编码违规: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/load-balancer-router.ts -> 3000
+[2025-09-01 13:21:31] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/load-balancer-router.ts - 发现 1 个违规
+[2025-09-01 13:21:31] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/load-balancer-router.ts - 无违规
+[2025-09-01 15:54:31] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/types/api-response.ts
+[2025-09-01 15:54:31] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/types/api-response.ts - 无违规
+[2025-09-01 16:02:49] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/interfaces/api/pipeline-api.ts
+[2025-09-01 16:02:49] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/interfaces/api/pipeline-api.ts - 无违规
+[2025-09-01 16:06:58] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/README.md
+[2025-09-01 16:06:58] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/README.md (非代码文件)
+[2025-09-01 16:06:58] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/README.md - 无违规
+[2025-09-01 16:08:37] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/PHASE1-COMPLETION-REPORT.md
+[2025-09-01 16:08:37] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/PHASE1-COMPLETION-REPORT.md (非代码文件)
+[2025-09-01 16:08:37] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/PHASE1-COMPLETION-REPORT.md - 无违规
+[2025-09-01 16:22:21] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/modules/router-api.ts
+[2025-09-01 16:22:22] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/modules/router-api.ts - 无违规
+[2025-09-01 16:22:54] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/server.ts
+[2025-09-01 16:22:54] 硬编码违规: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/server.ts -> 5506
+[2025-09-01 16:22:54] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/server.ts - 发现 1 个违规
+[2025-09-01 16:22:54] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/api/server.ts - 无违规
+[2025-09-01 16:26:44] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/PHASE2-API-IMPLEMENTATION.md
+[2025-09-01 16:26:44] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/PHASE2-API-IMPLEMENTATION.md (非代码文件)
+[2025-09-01 16:26:44] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/PHASE2-API-IMPLEMENTATION.md - 无违规
+[2025-09-01 18:36:17] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/multi-provider-pipeline-test.json
+[2025-09-01 18:36:17] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/multi-provider-pipeline-test.json (非代码文件)
+[2025-09-01 18:36:17] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/multi-provider-pipeline-test.json - 无违规
+[2025-09-01 18:39:03] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/shuaihong-pipeline-test.json
+[2025-09-01 18:39:03] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/shuaihong-pipeline-test.json (非代码文件)
+[2025-09-01 18:39:03] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/shuaihong-pipeline-test.json - 无违规
+[2025-09-01 18:39:16] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/modelscope-pipeline-test.json
+[2025-09-01 18:39:16] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/modelscope-pipeline-test.json (非代码文件)
+[2025-09-01 18:39:16] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/modelscope-pipeline-test.json - 无违规
+[2025-09-01 18:39:28] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-pipeline-test.json
+[2025-09-01 18:39:28] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-pipeline-test.json (非代码文件)
+[2025-09-01 18:39:28] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-pipeline-test.json - 无违规
+[2025-09-01 18:39:42] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/lmstudio-pipeline-test.json
+[2025-09-01 18:39:42] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/lmstudio-pipeline-test.json (非代码文件)
+[2025-09-01 18:39:42] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/lmstudio-pipeline-test.json - 无违规
+[2025-09-01 18:53:56] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/README-provider-tests.md
+[2025-09-01 18:53:56] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/README-provider-tests.md (非代码文件)
+[2025-09-01 18:53:56] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/README-provider-tests.md - 无违规
+[2025-09-01 18:57:09] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/shuaihong-test-report.json
+[2025-09-01 18:57:09] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/shuaihong-test-report.json (非代码文件)
+[2025-09-01 18:57:09] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/shuaihong-test-report.json - 无违规
+[2025-09-01 19:11:17] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/comprehensive-provider-test-report.json
+[2025-09-01 19:11:17] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/comprehensive-provider-test-report.json (非代码文件)
+[2025-09-01 19:11:17] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/comprehensive-provider-test-report.json - 无违规
+[2025-09-01 19:20:09] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/process-responses.js
+[2025-09-01 19:20:10] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/process-responses.js - 无违规
+[2025-09-01 19:27:32] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/final-comprehensive-test-summary.json
+[2025-09-01 19:27:32] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/final-comprehensive-test-summary.json (非代码文件)
+[2025-09-01 19:27:32] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/final-comprehensive-test-summary.json - 无违规
+[2025-09-01 19:56:20] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-test-config.json
+[2025-09-01 19:56:20] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-test-config.json (非代码文件)
+[2025-09-01 19:56:20] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-test-config.json - 无违规

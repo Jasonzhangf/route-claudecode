@@ -6,29 +6,6 @@
  *
  * @author Jason Zhang
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.setupProxyRoutes = setupProxyRoutes;
 /**
@@ -132,9 +109,9 @@ async function handleAnthropicProxy(req, res) {
         return;
     }
     try {
-        // 获取全局Pipeline服务
-        const { getGlobalPipelineManager } = await Promise.resolve().then(() => __importStar(require('../services/global-service-registry')));
-        const pipelineManager = getGlobalPipelineManager();
+        // TODO: 重构为Pipeline API调用
+        // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+        const pipelineManager = null;
         if (!pipelineManager) {
             res.statusCode = 503;
             res.body = {
@@ -211,9 +188,9 @@ async function handleOpenAIProxy(req, res) {
         return;
     }
     try {
-        // 获取全局Pipeline服务
-        const { getGlobalPipelineManager } = await Promise.resolve().then(() => __importStar(require('../services/global-service-registry')));
-        const pipelineManager = getGlobalPipelineManager();
+        // TODO: 重构为Pipeline API调用
+        // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+        const pipelineManager = null;
         if (!pipelineManager) {
             res.statusCode = 503;
             res.body = {
@@ -291,9 +268,9 @@ async function handleGeminiProxy(req, res, model) {
         return;
     }
     try {
-        // 获取全局Pipeline服务
-        const { getGlobalPipelineManager } = await Promise.resolve().then(() => __importStar(require('../services/global-service-registry')));
-        const pipelineManager = getGlobalPipelineManager();
+        // TODO: 重构为Pipeline API调用
+        // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+        const pipelineManager = null;
         if (!pipelineManager) {
             res.statusCode = 503;
             res.body = {
@@ -371,9 +348,11 @@ async function handleUniversalProxy(req, res, provider, model) {
     }
     try {
         // 获取全局Pipeline服务
-        const { getGlobalPipelineManager, getGlobalProviderManager } = await Promise.resolve().then(() => __importStar(require('../services/global-service-registry')));
-        const pipelineManager = getGlobalPipelineManager();
-        const providerManager = getGlobalProviderManager();
+        // TODO: 重构为API调用
+        // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
+        // const providerManager = await routerApiClient.get('/api/v1/router/provider-manager');
+        const pipelineManager = null;
+        const providerManager = null;
         if (!pipelineManager || !providerManager) {
             res.statusCode = 503;
             res.body = {
