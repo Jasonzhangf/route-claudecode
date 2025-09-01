@@ -8,6 +8,7 @@
 
 import { ParameterAdapter } from '../parameter-adapter';
 import { OpenAIStandardRequest, DebugRecorder } from '../enhanced-compatibility';
+import { JQJsonHandler } from '../../../../utils/jq-json-handler';
 
 describe('ParameterAdapter', () => {
   let adapter: ParameterAdapter;
@@ -491,7 +492,7 @@ describe('ParameterAdapter', () => {
         temperature: 3.0,
       };
 
-      const originalCopy = JSON.parse(JSON.stringify(originalRequest));
+      const originalCopy = JQJsonHandler.parseJsonString(JQJsonHandler.stringifyJson(originalRequest));
 
       adapter.adaptForDeepSeek(originalRequest);
 

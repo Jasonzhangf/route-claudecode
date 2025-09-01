@@ -7,6 +7,7 @@
  */
 import { Router } from './router';
 import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
+export declare function setGlobalPipelineRequestProcessor(processor: any): void;
 /**
  * 配置代理路由
  */

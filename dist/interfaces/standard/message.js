@@ -8,6 +8,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MessageBuilder = void 0;
+const jq_json_handler_1 = require("../../utils/jq-json-handler");
 /**
  * 消息构建器
  */
@@ -184,7 +185,7 @@ class MessageBuilder {
         // 处理工具调用
         if (openaiMessage.tool_calls) {
             for (const toolCall of openaiMessage.tool_calls) {
-                builder.addToolUseBlock(toolCall.id, toolCall.function.name, JSON.parse(toolCall.function.arguments));
+                builder.addToolUseBlock(toolCall.id, toolCall.function.name, jq_json_handler_1.JQJsonHandler.parseJsonString(toolCall.function.arguments));
             }
         }
         builder.setMetadata({

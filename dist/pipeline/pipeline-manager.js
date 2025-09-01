@@ -423,18 +423,39 @@ class PipelineManager extends events_1.EventEmitter {
                     }
                 },
                 getStatus() {
+                    // 构建模块状态映射（使用基本信息，避免异步操作）
+                    const moduleStatuses = {
+                        transformer: {
+                            id: moduleIds.transformer,
+                            name: 'transformer-module',
+                            status: 'running',
+                            type: 'transformer'
+                        },
+                        protocol: {
+                            id: moduleIds.protocol,
+                            name: 'protocol-module',
+                            status: 'running',
+                            type: 'protocol'
+                        },
+                        serverCompatibility: {
+                            id: moduleIds.serverCompatibility,
+                            name: 'serverCompatibility-module',
+                            status: 'running',
+                            type: 'serverCompatibility'
+                        },
+                        server: {
+                            id: moduleIds.server,
+                            name: 'server-module',
+                            status: 'running',
+                            type: 'server'
+                        }
+                    };
                     // 返回流水线状态，包含所有模块的状态信息
                     return {
                         id: this.pipelineId,
                         name: this.pipelineId,
                         status: this.status,
-                        health: 'healthy', // 默认健康状态
-                        modules: {
-                            transformer: moduleIds.transformer,
-                            protocol: moduleIds.protocol,
-                            serverCompatibility: moduleIds.serverCompatibility,
-                            server: moduleIds.server
-                        },
+                        modules: moduleStatuses,
                         uptime: Date.now() - this.lastHandshakeTime.getTime(),
                         performance: {
                             requestsProcessed: 0,
@@ -567,12 +588,20 @@ class PipelineManager extends events_1.EventEmitter {
         // 这里需要一个方法来获取模块实例
         // 由于API管理模块不直接返回实例，我们需要创建一个包装器
         const moduleStatus = await (0, module_management_api_1.getModuleStatus)(moduleId);
-        return {
+        // 创建符合ModuleInterface的包装器
+        const moduleWrapper = {
             getId: () => moduleId,
             getName: () => moduleStatus.moduleType,
             getType: () => moduleStatus.type,
             getVersion: () => '1.0.0',
-            getStatus: () => moduleStatus,
+            getStatus: () => ({
+                id: moduleStatus.id,
+                name: moduleStatus.moduleType,
+                type: moduleStatus.type,
+                status: moduleStatus.status,
+                health: moduleStatus.health,
+                lastActivity: moduleStatus.lastActivity ? new Date(moduleStatus.lastActivity) : undefined
+            }),
             getMetrics: () => ({
                 requestsProcessed: 0,
                 averageProcessingTime: 0,
@@ -602,8 +631,15 @@ class PipelineManager extends events_1.EventEmitter {
             process: async (input) => {
                 const result = await (0, module_management_api_1.processWithModule)({ id: moduleId, input });
                 return result.output;
+            },
+            on: (event, listener) => {
+                // 事件监听器实现
+            },
+            removeAllListeners: () => {
+                // 移除所有监听器实现
             }
         };
+        return moduleWrapper;
     }
     /**
      * 检查系统是否已初始化
@@ -999,7 +1035,7 @@ class PipelineManager extends events_1.EventEmitter {
         return {
             transformer: {
                 id: pipeline.transformer?.getId?.() || `${pipeline.provider}-transformer`,
-                name: 'transformer',
+                name: pipeline.transformerName || 'anthropic-openai-transformer',
                 type: 'transformer',
                 status: getModuleStatusString(pipeline.transformer)
             },

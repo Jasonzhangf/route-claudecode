@@ -87,25 +87,25 @@ export interface PipelineTableEntry {
             id: string;
             name: string;
             type: string;
-            status: string;
+            status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
         };
         protocol: {
             id: string;
             name: string;
             type: string;
-            status: string;
+            status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
         };
         serverCompatibility: {
             id: string;
             name: string;
             type: string;
-            status: string;
+            status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
         };
         server: {
             id: string;
             name: string;
             type: string;
-            status: string;
+            status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
             endpoint: string;
         };
     };

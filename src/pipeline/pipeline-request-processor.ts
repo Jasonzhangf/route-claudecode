@@ -20,6 +20,8 @@ import { DebugManagerImpl } from '../debug/debug-manager';
 import { PipelineDebugRecorder } from '../debug/pipeline-debug-recorder';
 import { HttpRequestHandler, HttpRequestOptions } from './modules/http-request-handler';
 import { PipelineLayersProcessor } from './modules/pipeline-layers';
+import { InternalAPIClient } from '../api/internal-api-client';
+import { createPipelineLayersAPIProcessor } from '../api/modules/pipeline-layers-api-processor';
 import { PrecisePipelineBlacklistManager } from './modules/precise-blacklist-manager';
 import { IntelligentErrorRecoveryManager, PipelineRecoveryContext, ErrorRecoveryResult } from './intelligent-error-recovery';
 
@@ -100,6 +102,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private pipelineDebugRecorder: PipelineDebugRecorder;
   private httpRequestHandler: HttpRequestHandler;
   private pipelineLayersProcessor: PipelineLayersProcessor;
+  private pipelineLayersAPIProcessor: any; // PipelineLayersAPIProcessor类型在后续定义
   private blacklistManager: PrecisePipelineBlacklistManager;
   private intelligentErrorRecoveryManager: IntelligentErrorRecoveryManager;
 
@@ -154,6 +157,14 @@ export class PipelineRequestProcessor extends EventEmitter {
 
     // 初始化流水线处理层
     this.pipelineLayersProcessor = new PipelineLayersProcessor(config, this.httpRequestHandler);
+    
+    // 创建内部API客户端和PipelineLayersAPIProcessor
+    const internalApiClient = new InternalAPIClient({
+      baseUrl: 'http://localhost:' + (this.config.server?.port ? this.config.server.port + 1 : 5511),
+      timeout: 5000,
+      retries: 3
+    });
+    this.pipelineLayersAPIProcessor = createPipelineLayersAPIProcessor(internalApiClient);
 
     // 初始化精准拉黑管理器
     const blacklistConfig = config.blacklistSettings || {};
@@ -311,7 +322,8 @@ export class PipelineRequestProcessor extends EventEmitter {
       // Step 1: Router层 - 路由决策
       const routerStart = Date.now();
       this.debugManager.recordInput('router', requestId, input);
-      const routingDecision = await this.pipelineLayersProcessor.processRouterLayer(input, context);
+      const routingResult = await this.pipelineLayersAPIProcessor.processRouterLayer(input, context);
+      const routingDecision = routingResult.output;
       this.debugManager.recordOutput('router', requestId, routingDecision);
       context.layerTimings.router = Date.now() - routerStart;
       context.routingDecision = routingDecision;
@@ -319,11 +331,12 @@ export class PipelineRequestProcessor extends EventEmitter {
       // Step 2: Transformer层 - 协议转换
       const transformerStart = Date.now();
       this.debugManager.recordInput('transformer', requestId, { input, routingDecision });
-      const transformedRequest = await this.pipelineLayersProcessor.processTransformerLayer(
+      const transformerResult = await this.pipelineLayersAPIProcessor.processTransformerLayer(
         input,
         routingDecision,
         context
       );
+      const transformedRequest = transformerResult.output;
       this.debugManager.recordOutput('transformer', requestId, transformedRequest);
       context.layerTimings.transformer = Date.now() - transformerStart;
 
@@ -354,11 +367,12 @@ export class PipelineRequestProcessor extends EventEmitter {
       // Step 3: Protocol层 - 协议处理
       const protocolStart = Date.now();
       this.debugManager.recordInput('protocol', requestId, { transformedRequest, routingDecision });
-      const protocolRequest = await this.pipelineLayersProcessor.processProtocolLayer(
+      const protocolResult = await this.pipelineLayersAPIProcessor.processProtocolLayer(
         transformedRequest,
         routingDecision,
         context
       );
+      const protocolRequest = protocolResult.output;
       this.debugManager.recordOutput('protocol', requestId, protocolRequest);
       context.layerTimings.protocol = Date.now() - protocolStart;
 
@@ -446,7 +460,8 @@ export class PipelineRequestProcessor extends EventEmitter {
       
       let response;
       try {
-        response = await this.pipelineLayersProcessor.processServerLayer(compatibleRequest, routingDecision, context);
+        const serverResult = await this.pipelineLayersAPIProcessor.processServerLayer(compatibleRequest, routingDecision, context);
+        response = serverResult.output;
         
         // 成功请求，重置429计数器
         this.blacklistManager.resetRateLimitCounter(pipelineId);
@@ -488,11 +503,12 @@ export class PipelineRequestProcessor extends EventEmitter {
             previousPipelineId: pipelineId
           });
 
-          return await this.pipelineLayersProcessor.processServerLayer(
+          const serverResult = await this.pipelineLayersAPIProcessor.processServerLayer(
             compatibleRequest, 
             updatedRoutingDecision, 
             context
           );
+          return serverResult.output;
         };
 
         // ✅ 智能错误恢复：透明错误处理 + 流水线切换尝试
@@ -554,7 +570,8 @@ export class PipelineRequestProcessor extends EventEmitter {
               });
               
               const updatedRoutingDecision = { ...routingDecision, selectedPipeline: currentPipeline };
-              const result = await this.pipelineLayersProcessor.processServerLayer(compatibleRequest, updatedRoutingDecision, context);
+              const serverResult = await this.pipelineLayersAPIProcessor.processServerLayer(compatibleRequest, updatedRoutingDecision, context);
+          const result = serverResult.output;
               
               secureLogger.info('流水线切换成功', {
                 requestId,
@@ -1891,5 +1908,12 @@ export class PipelineRequestProcessor extends EventEmitter {
     }
 
     return result;
+  }
+
+  /**
+   * 获取PipelineLayersProcessor实例
+   */
+  public getPipelineLayersProcessor(): PipelineLayersProcessor {
+    return this.pipelineLayersProcessor;
   }
 }

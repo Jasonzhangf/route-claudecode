@@ -1,19 +1,21 @@
 /**
  * Secure Anthropic to OpenAI Transformer
  *
- * 统一的、安全的Anthropic ↔ OpenAI协议转换器
- * 修复安全审计报告中发现的所有漏洞和架构问题
+ * 基于CLIProxyAPI实现的严格Anthropic ↔ OpenAI协议转换器
+ * 修复所有格式验证问题，确保Protocol层接收到纯OpenAI格式
  *
  * 安全特性：
  * - 严格的输入验证和边界检查
- * - 安全的JSON解析
+ * - 完整的工具格式转换
+ * - 严格清理所有Anthropic特征字段
  * - 完整的错误处理和日志记录
  * - 资源使用控制
  * - 类型安全保证
  *
  * @author Jason Zhang
- * @version 2.0.0
- * @security-reviewed 2025-08-19
+ * @version 3.0.0
+ * @security-reviewed 2025-09-01
+ * @based-on CLIProxyAPI transformer implementation
  */
 
 import {
@@ -25,6 +27,7 @@ import {
 } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
+import { transformAnthropicToOpenAI } from './anthropic-openai-converter';
 
 
 /**
@@ -74,7 +77,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     
     this.id = `transformer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.name = 'SecureAnthropicToOpenAITransformer';
-    this.version = '2.0.0';
+    this.version = '3.0.0';
     
     this.status = {
       id: this.id,
@@ -231,16 +234,13 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     this.status.lastActivity = new Date();
     
     try {
-      // 模拟处理过程
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
-      // 简单的转换逻辑（实际实现会更复杂）
-      const output = {
-        ...input,
-        converted: true,
-        transformer: this.name,
-        timestamp: new Date().toISOString()
-      };
+      // 验证输入格式
+      if (!input || typeof input !== 'object') {
+        throw new TransformerSecurityError('Invalid input format', 'INVALID_INPUT');
+      }
+
+      // 执行完整的Anthropic → OpenAI转换
+      const output = transformAnthropicToOpenAI(input);
       
       // 更新指标
       this.metrics.requestsProcessed++;

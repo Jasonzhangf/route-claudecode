@@ -298,7 +298,7 @@ export class DebugIntegrationManager extends EventEmitter {
     }
 
     // 深度复制并清理敏感数据
-    const sanitized = JSON.parse(JQJsonHandler.stringifyJson(data));
+    const sanitized = JQJsonHandler.parseJsonString(JQJsonHandler.stringifyJson(data));
 
     const sensitiveFields = ['api_key', 'token', 'authorization', 'password', 'secret'];
 

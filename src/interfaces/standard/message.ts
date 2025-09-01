@@ -6,6 +6,8 @@
  * @author Jason Zhang
  */
 
+import { JQJsonHandler } from '../../utils/jq-json-handler';
+
 /**
  * 消息接口
  */
@@ -356,7 +358,7 @@ export class MessageBuilder {
     // 处理工具调用
     if (openaiMessage.tool_calls) {
       for (const toolCall of openaiMessage.tool_calls) {
-        builder.addToolUseBlock(toolCall.id, toolCall.function.name, JSON.parse(toolCall.function.arguments));
+        builder.addToolUseBlock(toolCall.id, toolCall.function.name, JQJsonHandler.parseJsonString(toolCall.function.arguments));
       }
     }
 

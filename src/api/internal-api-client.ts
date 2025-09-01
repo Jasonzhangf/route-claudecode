@@ -1,4 +1,5 @@
 import { APIResponse } from './types/api-response';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 export interface InternalAPIClientConfig {
   baseUrl: string;
@@ -55,7 +56,7 @@ export class InternalAPIClient {
         };
 
         if (data && (method === 'POST' || method === 'PUT')) {
-          options.body = JSON.stringify(data);
+          options.body = JQJsonHandler.stringifyJson(data);
         }
 
         const response = await fetch(url, options);

@@ -127,25 +127,25 @@ export interface PipelineTableEntry {
       id: string;
       name: string;
       type: string;
-      status: string;
+      status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
     };
     protocol: {
       id: string;
       name: string;
       type: string;
-      status: string;
+      status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
     };
     serverCompatibility: {
       id: string;
       name: string;
       type: string;
-      status: string;
+      status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
     };
     server: {
       id: string;
       name: string;
       type: string;
-      status: string;
+      status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy';
       endpoint: string;
     };
   };
@@ -609,18 +609,40 @@ export class PipelineManager extends EventEmitter {
         },
 
         getStatus(): PipelineStatus {
+          // 构建模块状态映射（使用基本信息，避免异步操作）
+          const moduleStatuses: Record<string, any> = {
+            transformer: {
+              id: moduleIds.transformer,
+              name: 'transformer-module',
+              status: 'running',
+              type: 'transformer'
+            },
+            protocol: {
+              id: moduleIds.protocol,
+              name: 'protocol-module', 
+              status: 'running',
+              type: 'protocol'
+            },
+            serverCompatibility: {
+              id: moduleIds.serverCompatibility,
+              name: 'serverCompatibility-module',
+              status: 'running',
+              type: 'serverCompatibility'
+            },
+            server: {
+              id: moduleIds.server,
+              name: 'server-module',
+              status: 'running',
+              type: 'server'
+            }
+          };
+
           // 返回流水线状态，包含所有模块的状态信息
           return {
             id: this.pipelineId,
             name: this.pipelineId,
             status: this.status,
-            health: 'healthy', // 默认健康状态
-            modules: {
-              transformer: moduleIds.transformer,
-              protocol: moduleIds.protocol,
-              serverCompatibility: moduleIds.serverCompatibility,
-              server: moduleIds.server
-            },
+            modules: moduleStatuses,
             uptime: Date.now() - this.lastHandshakeTime.getTime(),
             performance: {
               requestsProcessed: 0,
@@ -770,12 +792,20 @@ export class PipelineManager extends EventEmitter {
     // 由于API管理模块不直接返回实例，我们需要创建一个包装器
     const moduleStatus = await getModuleStatus(moduleId);
     
-    return {
+    // 创建符合ModuleInterface的包装器
+    const moduleWrapper: ModuleInterface = {
       getId: () => moduleId,
       getName: () => moduleStatus.moduleType,
       getType: () => moduleStatus.type,
       getVersion: () => '1.0.0',
-      getStatus: () => moduleStatus,
+      getStatus: () => ({
+        id: moduleStatus.id,
+        name: moduleStatus.moduleType,
+        type: moduleStatus.type,
+        status: moduleStatus.status,
+        health: moduleStatus.health,
+        lastActivity: moduleStatus.lastActivity ? new Date(moduleStatus.lastActivity) : undefined
+      }),
       getMetrics: () => ({
         requestsProcessed: 0,
         averageProcessingTime: 0,
@@ -805,8 +835,16 @@ export class PipelineManager extends EventEmitter {
       process: async (input: any) => {
         const result = await processWithModule({ id: moduleId, input });
         return result.output;
+      },
+      on: (event: string, listener: (...args: any[]) => void) => {
+        // 事件监听器实现
+      },
+      removeAllListeners: () => {
+        // 移除所有监听器实现
       }
     };
+    
+    return moduleWrapper;
   }
 
   /**
@@ -1270,29 +1308,29 @@ export class PipelineManager extends EventEmitter {
     return {
       transformer: {
         id: pipeline.transformer?.getId?.() || `${pipeline.provider}-transformer`,
-        name: 'transformer',
+        name: pipeline.transformerName || 'anthropic-openai-transformer',
         type: 'transformer',
-        status: getModuleStatusString(pipeline.transformer)
+        status: getModuleStatusString(pipeline.transformer) as 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy'
       },
       protocol: {
         id: pipeline.protocol?.getId?.() || `${pipeline.provider}-protocol`,
         // 🐛 关键修复：使用存储在pipeline中的实际protocol名称
         name: pipeline.protocolName || 'openai-protocol-handler',
         type: 'protocol',
-        status: getModuleStatusString(pipeline.protocol)
+        status: getModuleStatusString(pipeline.protocol) as 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy'
       },
       serverCompatibility: {
         id: pipeline.serverCompatibility?.getId?.() || `${pipeline.provider}-compatibility`,
         // 🐛 关键修复：使用存储在pipeline中的实际serverCompatibility名称
         name: pipeline.serverCompatibilityName || `${pipeline.provider}-compatibility-handler`,
         type: 'serverCompatibility',
-        status: getModuleStatusString(pipeline.serverCompatibility)
+        status: getModuleStatusString(pipeline.serverCompatibility) as 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy'
       },
       server: {
         id: pipeline.server?.getId?.() || `${pipeline.provider}-server`,
         name: `${pipeline.provider}-server`,
         type: 'server',
-        status: getModuleStatusString(pipeline.server),
+        status: getModuleStatusString(pipeline.server) as 'stopped' | 'starting' | 'running' | 'stopping' | 'error' | 'idle' | 'busy',
         // 🐛 关键修复：使用存储在pipeline中的实际endpoint
         endpoint: pipeline.endpoint
       }

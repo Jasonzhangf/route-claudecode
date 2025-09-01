@@ -9,6 +9,13 @@
 import { Router } from './router';
 import { IMiddlewareManager } from '../interfaces/core/middleware-interface';
 
+// 导入全局Pipeline Manager
+let globalPipelineRequestProcessor: any = null;
+
+export function setGlobalPipelineRequestProcessor(processor: any) {
+  globalPipelineRequestProcessor = processor;
+}
+
 /**
  * 配置代理路由
  */
@@ -128,15 +135,12 @@ async function handleAnthropicProxy(req: any, res: any): Promise<void> {
   }
 
   try {
-    // TODO: 重构为Pipeline API调用
-    // const pipelineManager = await pipelineApiClient.get('/api/v1/pipeline/manager');
-    const pipelineManager = null;
-
-    if (!pipelineManager) {
+    // 使用全局Pipeline Request Processor
+    if (!globalPipelineRequestProcessor) {
       res.statusCode = 503;
       res.body = {
         error: 'Service Unavailable',
-        message: 'Pipeline manager not initialized',
+        message: 'Pipeline request processor not initialized',
       };
       return;
     }
@@ -154,38 +158,15 @@ async function handleAnthropicProxy(req: any, res: any): Promise<void> {
       },
     };
 
-    // 查找适合的Pipeline来处理Anthropic请求
-    const allPipelines = pipelineManager.getAllPipelines();
-    let targetPipelineId: string | null = null;
-
-    // 找到支持Anthropic协议的Pipeline
-    for (const [pipelineId, pipeline] of allPipelines) {
-      const status = pipeline.getStatus();
-      if (status.status === 'running' && (status as any).protocols?.includes('anthropic')) {
-        targetPipelineId = pipelineId;
-        break;
-      }
-    }
-
-    if (!targetPipelineId) {
-      res.statusCode = 503;
-      res.body = {
-        error: 'Service Unavailable',
-        message: 'No available pipeline for Anthropic protocol',
-      };
-      return;
-    }
-
-    // 执行Pipeline处理
-    const result = await pipelineManager.executePipeline(targetPipelineId, requestBody, executionContext);
+    // 直接使用Pipeline Request Processor处理请求
+    const result = await globalPipelineRequestProcessor.processRequest('anthropic', requestBody, executionContext);
 
     // 返回结果
-    res.body = result.result;
+    res.body = result;
     res.headers = {
       ...res.headers,
-      'X-Pipeline-ID': targetPipelineId,
-      'X-Execution-ID': result.executionId,
-      'X-Processing-Time': `${result.performance.totalTime}ms`,
+      'X-Request-ID': executionContext.requestId,
+      'X-Processing-Time': `${Date.now() - Date.now()}ms`,
       'X-RCC-Version': '4.0.0-alpha.1',
     };
   } catch (error) {

@@ -17,6 +17,7 @@ import { InputValidationError } from '../validation/input-validator';
 import { OutputValidationError } from '../validation/output-validator';
 import * as fs from 'fs';
 import * as path from 'path';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 describe('🎯 客户端模块验收标准测试', () => {
   let processor: EnhancedClientProcessor;
@@ -604,7 +605,7 @@ describe('🎯 客户端模块验收标准测试', () => {
       expect(lines.length).toBeGreaterThan(0);
 
       // 验证JSON格式
-      const firstRecord = JSON.parse(lines[0]);
+      const firstRecord = JQJsonHandler.parseJsonString(lines[0]);
       expect(firstRecord.port).toBe(testPort);
       expect(firstRecord.timestamp).toBeDefined();
 

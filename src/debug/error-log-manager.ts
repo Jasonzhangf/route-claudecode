@@ -192,7 +192,7 @@ export class ErrorLogManager {
           
           const filePath = path.join(typeDir, typeFile);
           const fileContent = fs.readFileSync(filePath, 'utf8');
-          const errors: ErrorLogEntry[] = JSON.parse(fileContent);
+          const errors: ErrorLogEntry[] = JQJsonHandler.parseJsonString(fileContent);
           
           errors.forEach(error => {
             if (error.timestamp >= startTime && error.timestamp <= endTime) {
@@ -254,7 +254,7 @@ export class ErrorLogManager {
           
           const filePath = path.join(typeDir, typeFile);
           const fileContent = fs.readFileSync(filePath, 'utf8');
-          const errors: ErrorLogEntry[] = JSON.parse(fileContent);
+          const errors: ErrorLogEntry[] = JQJsonHandler.parseJsonString(fileContent);
           
           errors.forEach(error => {
             if (error.timestamp >= startTime && error.timestamp <= endTime) {
@@ -329,7 +329,7 @@ export class ErrorLogManager {
           
           const filePath = path.join(typeDir, typeFile);
           const fileContent = fs.readFileSync(filePath, 'utf8');
-          const errors: ErrorLogEntry[] = JSON.parse(fileContent);
+          const errors: ErrorLogEntry[] = JQJsonHandler.parseJsonString(fileContent);
           
           const validErrors = errors.filter(error => error.timestamp >= cutoffTime);
           cleanedCount += errors.length - validErrors.length;
@@ -400,7 +400,7 @@ export class ErrorLogManager {
     let entries: ErrorLogEntry[] = [];
     if (fs.existsSync(typeFile)) {
       const content = fs.readFileSync(typeFile, 'utf8');
-      entries = JSON.parse(content);
+      entries = JQJsonHandler.parseJsonString(content);
     }
     
     entries.push(entry);
@@ -424,7 +424,7 @@ export class ErrorLogManager {
     let entries: ErrorLogEntry[] = [];
     if (fs.existsSync(pipelineFile)) {
       const content = fs.readFileSync(pipelineFile, 'utf8');
-      entries = JSON.parse(content);
+      entries = JQJsonHandler.parseJsonString(content);
     }
     
     entries.push(entry);

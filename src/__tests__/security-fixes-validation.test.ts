@@ -12,6 +12,7 @@ import * as path from 'path';
 import { SecureConfigManager } from '../utils/config-encryption';
 import { secureLogger, LogLevel } from '../utils/secure-logger';
 import { ConfigReader } from '../config/config-reader';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 // 临时定义用于测试的配置接口
 interface ProviderManagerConfig {
   routingStrategy: string;
@@ -142,7 +143,7 @@ describe('Security Fixes Validation', () => {
 
       // 验证敏感字段被过滤
       const loggedCall = consoleSpy.mock.calls[0];
-      const loggedString = JSON.stringify(loggedCall);
+      const loggedString = JQJsonHandler.stringifyJson(loggedCall);
 
       expect(loggedString).not.toContain('sk-1234567890abcdef');
       expect(loggedString).not.toContain('secret123');
@@ -176,7 +177,7 @@ describe('Security Fixes Validation', () => {
       }
 
       // 验证敏感信息被过滤
-      const auditString = JSON.stringify(auditCall);
+      const auditString = JQJsonHandler.stringifyJson(auditCall);
       expect(auditString).not.toContain('sensitive-key');
 
       // 清理

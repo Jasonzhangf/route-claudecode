@@ -9,6 +9,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 import {
   RCCv4Config,
   ServerCompatibilityProvider,
@@ -78,7 +79,7 @@ export class V4ConfigValidator {
       let config: any;
 
       try {
-        config = JSON.parse(configContent);
+        config = JQJsonHandler.parseJsonString(configContent);
       } catch (parseError) {
         result.valid = false;
         result.errors.push(`Invalid JSON format: ${parseError.message}`);

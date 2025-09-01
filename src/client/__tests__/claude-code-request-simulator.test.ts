@@ -15,6 +15,7 @@ import { PortBasedDebugRecorder } from '../debug/port-based-recorder';
 import { ErrorHandler } from '../../middleware/error-handler';
 import { DebugManagerImpl } from '../../debug/debug-manager';
 import { ClaudeCodeRequest, ClaudeCodeResponse } from '../schemas/claude-code-schemas';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 /**
  * Claude Code请求模拟器
@@ -134,13 +135,13 @@ class ClaudeCodeRequestSimulator {
       content: [
         {
           type: 'text',
-          text: `This is a mock response for your request with model ${request.model}. Your message was: ${JSON.stringify(request.messages[0]?.content || 'No content')}`,
+          text: `This is a mock response for your request with model ${request.model}. Your message was: ${JQJsonHandler.stringifyJson(request.messages[0]?.content || 'No content')}`,
         },
       ],
       model: request.model,
       stop_reason: 'end_turn',
       usage: {
-        input_tokens: this.estimateTokens(JSON.stringify(request.messages)),
+        input_tokens: this.estimateTokens(JQJsonHandler.stringifyJson(request.messages)),
         output_tokens: 50,
       },
     };

@@ -11,6 +11,7 @@ import * as http from 'http';
 import { secureLogger } from '../utils/secure-logger';
 import { RouterAPIProcessor } from './modules/router-api';
 import { PipelineLayersProcessor } from '../pipeline/modules/pipeline-layers';
+import { JQJsonHandler } from '../utils/jq-json-handler';
 
 /**
  * API服务器配置
@@ -172,7 +173,7 @@ export class InternalAPIServer {
       }
 
       try {
-        const requestData = JSON.parse(body);
+        const requestData = JQJsonHandler.parseJsonString(body);
         const result = await this.routerProcessor.processRoute(requestData.input, requestData.context);
         
         await this.sendSuccessResponse(res, result, requestId, startTime);
@@ -191,7 +192,7 @@ export class InternalAPIServer {
       }
 
       try {
-        const requestData = JSON.parse(body);
+        const requestData = JQJsonHandler.parseJsonString(body);
         const result = await this.pipelineProcessor.processTransformerLayer(
           requestData.input,
           requestData.routingDecision,
@@ -217,7 +218,7 @@ export class InternalAPIServer {
       }
 
       try {
-        const requestData = JSON.parse(body);
+        const requestData = JQJsonHandler.parseJsonString(body);
         const result = await this.pipelineProcessor.processProtocolLayer(
           requestData.request,
           requestData.routingDecision,
@@ -243,7 +244,7 @@ export class InternalAPIServer {
       }
 
       try {
-        const requestData = JSON.parse(body);
+        const requestData = JQJsonHandler.parseJsonString(body);
         const result = await this.pipelineProcessor.processServerLayer(
           requestData.request,
           requestData.routingDecision,
@@ -291,7 +292,7 @@ export class InternalAPIServer {
     res.setHeader('X-Request-ID', requestId);
     res.setHeader('X-Processing-Time', processingTime.toString());
     res.writeHead(200);
-    res.end(JSON.stringify(response));
+    res.end(JQJsonHandler.stringifyJson(response));
 
     secureLogger.debug('API response sent', {
       requestId,
@@ -332,7 +333,7 @@ export class InternalAPIServer {
     res.setHeader('X-Request-ID', requestId);
     res.setHeader('X-Processing-Time', processingTime.toString());
     res.writeHead(status);
-    res.end(JSON.stringify(response));
+    res.end(JQJsonHandler.stringifyJson(response));
 
     secureLogger.warn('API error response sent', {
       requestId,

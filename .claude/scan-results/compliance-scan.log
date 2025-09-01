@@ -402,3 +402,7 @@
 [2025-09-01 19:56:20] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-test-config.json
 [2025-09-01 19:56:20] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-test-config.json (非代码文件)
 [2025-09-01 19:56:20] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/qwen-test-config.json - 无违规
+[2025-09-01 22:03:22] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/transformers/anthropic-openai-converter.ts
+[2025-09-01 22:03:22] 静默失败违规: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/transformers/anthropic-openai-converter.ts -> \|\|\s*{}
+[2025-09-01 22:03:22] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/transformers/anthropic-openai-converter.ts - 发现 1 个违规
+[2025-09-01 22:03:22] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/transformers/anthropic-openai-converter.ts - 无违规

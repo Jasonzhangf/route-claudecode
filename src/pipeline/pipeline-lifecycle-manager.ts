@@ -21,6 +21,13 @@ import { PipelineCompatibilityManager } from './pipeline-compatibility-manager';
 import { PipelineTableManager, RoutingTable } from './pipeline-table-manager';
 import { PipelineServerManager, ServerInitializationResult, ServerHealthStatus, ServerMetrics } from './pipeline-server-manager';
 
+// 导入API服务器相关模块
+import { createInternalAPIServer, InternalAPIServer } from '../api/server';
+import { PipelineLayersProcessor } from './modules/pipeline-layers';
+
+// 导入proxy-routes的全局设置函数
+import { setGlobalPipelineRequestProcessor } from '../routes/proxy-routes';
+
 // 导入constants
 import {
   DEFAULT_SERVER_CONFIG,
@@ -78,6 +85,9 @@ export class PipelineLifecycleManager extends EventEmitter {
   private tableManager: PipelineTableManager;
   private serverManager: PipelineServerManager;
 
+  // API服务器
+  private apiServer: InternalAPIServer | null = null;
+
   // 状态追踪
   private activeRequests = new Map<string, RequestContext>();
   private stats: PipelineLifecycleStats;
@@ -91,7 +101,32 @@ export class PipelineLifecycleManager extends EventEmitter {
     this.debugEnabled = debugEnabled || false;
 
     // 加载配置
-    this.config = ConfigReader.loadConfig(userConfigPath, systemConfigPath);
+    try {
+      this.config = ConfigReader.loadConfig(userConfigPath, systemConfigPath);
+    } catch (error) {
+      secureLogger.warn('Configuration file not found, using default configuration', {
+        userConfigPath,
+        systemConfigPath,
+        error: error.message
+      });
+      
+      // 使用默认配置
+      this.config = {
+        Providers: [
+          {
+            name: 'default-provider',
+            api_base_url: 'http://localhost:1234/v1',
+            api_key: 'default-key',
+            models: ['default-model']
+          }
+        ],
+        router: {},
+        server: {
+          port: cliPort || 5510,
+          host: 'localhost'
+        }
+      } as any;
+    }
     
     // 应用CLI端口参数覆盖配置文件中的端口设置
     if (cliPort) {
@@ -224,7 +259,30 @@ export class PipelineLifecycleManager extends EventEmitter {
         throw new Error(`Server initialization failed: ${serverResult.error}`);
       }
 
-      // Step 2: 启动服务器
+      // Step 2: 创建和配置Internal API服务器
+      const apiPort = (this.config.server?.port || DEFAULT_SERVER_CONFIG.PORT) + 1; // API服务器使用主端口+1
+      this.apiServer = createInternalAPIServer(apiPort);
+      
+      // 获取PipelineLayersProcessor并设置到API服务器
+      if (this.requestProcessor && this.apiServer) {
+        const pipelineLayersProcessor = this.requestProcessor.getPipelineLayersProcessor();
+        if (pipelineLayersProcessor) {
+          this.apiServer.setPipelineProcessor(pipelineLayersProcessor);
+          secureLogger.info('PipelineLayersProcessor已注册到InternalAPIServer', {
+            apiPort
+          });
+        }
+      }
+
+      // Step 3: 启动API服务器
+      if (this.apiServer) {
+        await this.apiServer.start();
+        secureLogger.info('Internal API Server started', {
+          port: apiPort
+        });
+      }
+
+      // Step 4: 启动主服务器
       const port = this.config.server?.port || DEFAULT_SERVER_CONFIG.PORT;
       const startSuccess = await this.serverManager.startServer(port);
       if (!startSuccess) {
@@ -235,11 +293,15 @@ export class PipelineLifecycleManager extends EventEmitter {
       this.isInitialized = true;
       this.isRunning = true;
 
+      // 注册全局Pipeline Request Processor以供proxy-routes使用
+      this.registerGlobalPipelineProcessor();
+
       // 开始监控
       this.startMonitoring();
 
       secureLogger.info(LOG_MESSAGES.SERVER_START_SUCCESS, {
         port,
+        apiPort: this.apiServer ? apiPort : 'not configured',
         initializationTime: serverResult.initializationTime,
         uptime: 0,
       });
@@ -274,6 +336,12 @@ export class PipelineLifecycleManager extends EventEmitter {
 
     try {
       secureLogger.info('停止Pipeline系统');
+
+      // 停止API服务器
+      if (this.apiServer) {
+        await this.apiServer.stop();
+        secureLogger.info('Internal API Server stopped');
+      }
 
       // 停止服务器
       const stopSuccess = await this.serverManager.stopServer();
@@ -634,12 +702,31 @@ export class PipelineLifecycleManager extends EventEmitter {
   }
 
   /**
+   * 注册全局Pipeline处理器
+   */
+  private registerGlobalPipelineProcessor(): void {
+    if (this.requestProcessor) {
+      setGlobalPipelineRequestProcessor(this.requestProcessor);
+      secureLogger.info('全局Pipeline Request Processor已注册');
+    } else {
+      secureLogger.error('无法注册全局Pipeline处理器：requestProcessor未初始化');
+    }
+  }
+
+  /**
    * 清理资源
    */
   private async cleanup(): Promise<void> {
     secureLogger.info(LOG_MESSAGES.RESOURCE_CLEANUP_START);
 
     try {
+      // 停止API服务器
+      if (this.apiServer) {
+        await this.apiServer.stop();
+        this.apiServer = null;
+        secureLogger.info('Internal API Server stopped and cleaned up');
+      }
+
       // 清理服务器管理器
       if (this.serverManager) {
         await this.serverManager.cleanup();

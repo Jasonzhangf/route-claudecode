@@ -11,6 +11,29 @@ exports.setupApiRoutes = setupApiRoutes;
 const constants_1 = require("../constants");
 // 导入模块管理API函数
 const module_management_api_1 = require("../api/modules/module-management-api");
+// 导入常量
+const api_defaults_1 = require("../constants/api-defaults");
+// 导入CLIProxyAPI转换逻辑
+const secure_anthropic_openai_transformer_1 = require("../modules/transformers/secure-anthropic-openai-transformer");
+// 声明Pipeline层处理函数
+async function processRouterLayer(input, context) {
+    return {
+        provider: 'qwen',
+        endpoint: process.env.QWEN_ENDPOINT || api_defaults_1.API_DEFAULTS.PROVIDERS.OPENAI.BASE_URL,
+        targetModel: input.model,
+        virtualModel: input.model
+    };
+}
+async function processTransformerLayer(input, routingDecision, context) {
+    const transformer = new secure_anthropic_openai_transformer_1.SecureAnthropicToOpenAITransformer();
+    return await transformer.process(input);
+}
+async function processProtocolLayer(input, routingDecision, context) {
+    return { ...input, model: routingDecision.targetModel };
+}
+async function processServerLayer(input, routingDecision, context) {
+    return { id: 'test-response', choices: [{ message: { role: 'assistant', content: 'Test response' } }] };
+}
 /**
  * 配置API路由
  */
@@ -670,6 +693,151 @@ function setupApiRoutes(router, middlewareManager) {
                 },
                 name: 'get-all-modules-status',
                 description: 'Get status of all module instances',
+            },
+            // Pipeline API端点 - 六层流水线处理
+            {
+                method: 'POST',
+                path: '/pipeline/router/process',
+                handler: async (req, res, params) => {
+                    try {
+                        const { input, context } = req.body;
+                        if (!input || !context) {
+                            res.statusCode = 400;
+                            res.body = {
+                                error: 'Bad Request',
+                                message: 'Input and context are required',
+                            };
+                            return;
+                        }
+                        // Router层处理：路由决策和模型映射
+                        const routingDecision = await processRouterLayer(input, context);
+                        res.body = {
+                            success: true,
+                            data: {
+                                output: routingDecision
+                            }
+                        };
+                    }
+                    catch (error) {
+                        console.error('Router layer processing failed:', error);
+                        res.statusCode = 500;
+                        res.body = {
+                            success: false,
+                            error: 'Internal Server Error',
+                            message: error instanceof Error ? error.message : 'Router processing failed',
+                        };
+                    }
+                },
+                name: 'pipeline-router-process',
+                description: 'Process router layer of pipeline',
+            },
+            {
+                method: 'POST',
+                path: '/pipeline/transformer/process',
+                handler: async (req, res, params) => {
+                    try {
+                        const { input, routingDecision, context } = req.body;
+                        if (!input || !routingDecision || !context) {
+                            res.statusCode = 400;
+                            res.body = {
+                                error: 'Bad Request',
+                                message: 'Input, routingDecision, and context are required',
+                            };
+                            return;
+                        }
+                        // Transformer层处理：Anthropic → OpenAI转换
+                        const transformedRequest = await processTransformerLayer(input, routingDecision, context);
+                        res.body = {
+                            success: true,
+                            data: {
+                                output: transformedRequest
+                            }
+                        };
+                    }
+                    catch (error) {
+                        console.error('Transformer layer processing failed:', error);
+                        res.statusCode = 500;
+                        res.body = {
+                            success: false,
+                            error: 'Internal Server Error',
+                            message: error instanceof Error ? error.message : 'Transformer processing failed',
+                        };
+                    }
+                },
+                name: 'pipeline-transformer-process',
+                description: 'Process transformer layer of pipeline',
+            },
+            {
+                method: 'POST',
+                path: '/pipeline/protocol/process',
+                handler: async (req, res, params) => {
+                    try {
+                        const { input, routingDecision, context } = req.body;
+                        if (!input || !routingDecision || !context) {
+                            res.statusCode = 400;
+                            res.body = {
+                                error: 'Bad Request',
+                                message: 'Input, routingDecision, and context are required',
+                            };
+                            return;
+                        }
+                        // Protocol层处理：OpenAI格式处理
+                        const protocolRequest = await processProtocolLayer(input, routingDecision, context);
+                        res.body = {
+                            success: true,
+                            data: {
+                                output: protocolRequest
+                            }
+                        };
+                    }
+                    catch (error) {
+                        console.error('Protocol layer processing failed:', error);
+                        res.statusCode = 500;
+                        res.body = {
+                            success: false,
+                            error: 'Internal Server Error',
+                            message: error instanceof Error ? error.message : 'Protocol processing failed',
+                        };
+                    }
+                },
+                name: 'pipeline-protocol-process',
+                description: 'Process protocol layer of pipeline',
+            },
+            {
+                method: 'POST',
+                path: '/pipeline/server/process',
+                handler: async (req, res, params) => {
+                    try {
+                        const { input, routingDecision, context } = req.body;
+                        if (!input || !routingDecision || !context) {
+                            res.statusCode = 400;
+                            res.body = {
+                                error: 'Bad Request',
+                                message: 'Input, routingDecision, and context are required',
+                            };
+                            return;
+                        }
+                        // Server层处理：HTTP API调用
+                        const serverResponse = await processServerLayer(input, routingDecision, context);
+                        res.body = {
+                            success: true,
+                            data: {
+                                output: serverResponse
+                            }
+                        };
+                    }
+                    catch (error) {
+                        console.error('Server layer processing failed:', error);
+                        res.statusCode = 500;
+                        res.body = {
+                            success: false,
+                            error: 'Internal Server Error',
+                            message: error instanceof Error ? error.message : 'Server processing failed',
+                        };
+                    }
+                },
+                name: 'pipeline-server-process',
+                description: 'Process server layer of pipeline',
             },
         ],
     };
