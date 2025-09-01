@@ -45,6 +45,53 @@ provider-connection-test-report.json
 *-test-report.json
 *.test.json
 
+# vuepress build output
+.vuepress/dist
+
+# Serverless directories
+.serverless
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# API Keys and sensitive files
+*.key
+*.pem
+*apikey*
+*api-key*
+*auth-token*
+
+# CLI auth files  
+src/cli/auth/
+auth/
+.auth/
+
+# Configuration with secrets
+*secret*
+*credential*
+*private*
+
+# Route Claude Code user configuration and data directories
+.route-claudecode/
+.route-claude-code/
+route-claudecode/
+route-claude-code/
+
+# User configuration files that may contain sensitive data
+config*.json
+*.config.json
+*-config.json
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
 # OS generated files
 .DS_Store
 .DS_Store?
