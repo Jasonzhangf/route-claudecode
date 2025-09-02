@@ -1,0 +1,486 @@
+{
+	"timestamp": "2025-09-01T23:38:01.378Z",
+	"port": 5508,
+	"requestId": "sim_1756769881378_x6b4lnp1z",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:38:01.389Z",
+	"port": 5508,
+	"requestId": "sim_1756769881378_x6b4lnp1z",
+	"output": {
+		"id": "msg_sim_1756769881378_x6b4lnp1z",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:38:43.719Z",
+	"port": 5508,
+	"requestId": "sim_1756769923719_gvqob6dr4",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:38:43.729Z",
+	"port": 5508,
+	"requestId": "sim_1756769923719_gvqob6dr4",
+	"output": {
+		"id": "msg_sim_1756769923719_gvqob6dr4",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 10,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:29.668Z",
+	"port": 5508,
+	"requestId": "sim_1756770089668_xkl482jjb",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:29.679Z",
+	"port": 5508,
+	"requestId": "sim_1756770089668_xkl482jjb",
+	"output": {
+		"id": "msg_sim_1756770089668_xkl482jjb",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:36.535Z",
+	"port": 5508,
+	"requestId": "sim_1756770096535_mrx3nr39a",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:36.545Z",
+	"port": 5508,
+	"requestId": "sim_1756770096535_mrx3nr39a",
+	"output": {
+		"id": "msg_sim_1756770096535_mrx3nr39a",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 10,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:42:40.354Z",
+	"port": 5508,
+	"requestId": "sim_1756770160354_bkwe0xzwq",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:42:40.365Z",
+	"port": 5508,
+	"requestId": "sim_1756770160354_bkwe0xzwq",
+	"output": {
+		"id": "msg_sim_1756770160354_bkwe0xzwq",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:48:38.295Z",
+	"port": 5508,
+	"requestId": "sim_1756770518295_a5kptj388",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:48:38.306Z",
+	"port": 5508,
+	"requestId": "sim_1756770518295_a5kptj388",
+	"output": {
+		"id": "msg_sim_1756770518295_a5kptj388",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:50:32.510Z",
+	"port": 5508,
+	"requestId": "sim_1756770632510_qzhvu41l6",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:50:32.522Z",
+	"port": 5508,
+	"requestId": "sim_1756770632510_qzhvu41l6",
+	"output": {
+		"id": "msg_sim_1756770632510_qzhvu41l6",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 12,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.2000000000000002
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.2000000000000002
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:54:19.623Z",
+	"port": 5508,
+	"requestId": "sim_1756770859623_ghp3sje01",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:54:19.634Z",
+	"port": 5508,
+	"requestId": "sim_1756770859623_ghp3sje01",
+	"output": {
+		"id": "msg_sim_1756770859623_ghp3sje01",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:56:18.901Z",
+	"port": 5508,
+	"requestId": "sim_1756770978901_h4gijpbgc",
+	"input": {
+		"model": "invalid-model",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test error recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:56:18.913Z",
+	"port": 5508,
+	"requestId": "sim_1756770978901_h4gijpbgc",
+	"output": {
+		"id": "msg_sim_1756770978901_h4gijpbgc",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model invalid-model. Your message was: \"Test error recording\""
+			}
+		],
+		"model": "invalid-model",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 12,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.2000000000000002
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.2000000000000002
+		}
+	}
+}

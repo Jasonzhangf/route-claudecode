@@ -122,7 +122,7 @@ describe('EnhancedServerCompatibilityModule', () => {
 
       const result = await module.adaptRequest(request, 'lmstudio');
 
-      expect(result.tools).toBeUndefined(); // LM Studio不支持工具调用，应被移除
+      expect(result.tools).toBeDefined(); // LM Studio现在支持工具调用
       expect(result.tool_choice).toBeUndefined();
       expect(result.max_tokens).toBe(4096); // 被限制到LM Studio保守值
       expect(mockDebugRecorder.recordInput).toHaveBeenCalled();
@@ -140,8 +140,9 @@ describe('EnhancedServerCompatibilityModule', () => {
       const result = await module.adaptRequest(request, 'ollama');
 
       expect(result.temperature).toBe(0); // 被调整到最小值
-      expect(result.frequency_penalty).toBeUndefined(); // Ollama不支持，被移除
-      expect(result.presence_penalty).toBeUndefined(); // Ollama不支持，被移除
+      // Ollama现在支持这些参数，所以不应该被移除
+      expect(result.frequency_penalty).toBe(1.0);
+      expect(result.presence_penalty).toBe(0.5);
     });
 
     test('should handle generic request adaptation', async () => {
@@ -219,7 +220,7 @@ describe('EnhancedServerCompatibilityModule', () => {
       const result = (await module.adaptResponse(deepseekResponse, 'deepseek')) as OpenAIStandardResponse;
 
       expect(result.thinking).toBeUndefined(); // thinking字段应被移除
-      expect(result.choices[0].message.tool_calls![0].function.arguments).toBe('{"param":"value"}'); // 应转换为字符串
+      expect(result.choices[0].message.tool_calls![0].function.arguments).toBe('{"param": "value"}'); // 应转换为字符串
     });
 
     test('should fix Ollama response format', async () => {

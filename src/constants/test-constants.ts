@@ -39,8 +39,8 @@ export const TEST_PROVIDER_CONFIG = {
 } as const;
 
 export const TEST_PIPELINE_PATTERNS = {
-  PIPELINE_ID_REGEX: /^lmstudio-.*-key\d+$/, // 🔧 修复：使用正确的provider名称
-  EXPECTED_PIPELINE_ID: 'lmstudio-gpt-oss-20b-mlx-key0' // 🔧 修复：使用正确的pipeline ID格式
+  PIPELINE_ID_REGEX: /^default-lmstudio-.*-key\d+$/, // 🔧 修复：使用正确的pipeline ID格式
+  EXPECTED_PIPELINE_ID: 'default-lmstudio-gpt-oss-20b-mlx-key0' // 🔧 修复：使用正确的pipeline ID格式
 } as const;
 
 export const TEST_REQUEST_TEMPLATES = {

@@ -143,12 +143,14 @@ describe('Security Fixes Validation', () => {
 
       // 验证敏感字段被过滤
       const loggedCall = consoleSpy.mock.calls[0];
-      const loggedString = JQJsonHandler.stringifyJson(loggedCall);
-
-      expect(loggedString).not.toContain('sk-1234567890abcdef');
-      expect(loggedString).not.toContain('secret123');
-      expect(loggedString).not.toContain('jwt-token-123');
-      expect(loggedString).toContain('public-data');
+      expect(loggedCall).toBeDefined();
+      if (loggedCall) {
+        const loggedString = JQJsonHandler.stringifyJson(loggedCall);
+        expect(loggedString).not.toContain('sk-1234567890abcdef');
+        expect(loggedString).not.toContain('secret123');
+        expect(loggedString).not.toContain('jwt-token-123');
+        expect(loggedString).toContain('public-data');
+      }
 
       // 清理
       consoleSpy.mockRestore();

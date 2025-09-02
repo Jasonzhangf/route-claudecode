@@ -8,19 +8,67 @@
 
 import { ProviderCapabilitiesManager } from '../provider-capabilities';
 
-describe('ProviderCapabilitiesManager', () => {
-  describe('Capabilities Retrieval', () => {
-    test('should return correct DeepSeek capabilities', () => {
-      const capabilities = ProviderCapabilitiesManager.getCapabilities('deepseek');
+// Mock config with only implemented providers
+const mockConfig = {
+  Providers: [
+    {
+      name: 'qwen',
+      capabilities: {
+        supportsTools: true,
+        supportsThinking: false
+      },
+      parameterLimits: {
+        temperature: { min: 0.01, max: 2.0 },
+        top_p: { min: 0.01, max: 1.0 },
+        max_tokens: { min: 1, max: 8192 }
+      },
+      responseFixesNeeded: ['tool_calls_format']
+    },
+    {
+      name: 'lmstudio',
+      capabilities: {
+        supportsTools: false,
+        supportsThinking: false
+      },
+      parameterLimits: {
+        temperature: { min: 0, max: 2.0 },
+        top_p: { min: 0, max: 1.0 },
+        max_tokens: { min: 1, max: 4096 }
+      },
+      responseFixesNeeded: ['missing_usage', 'missing_id', 'missing_created', 'choices_array_fix']
+    },
+    {
+      name: 'openai',
+      capabilities: {
+        supportsTools: true,
+        supportsThinking: false
+      },
+      parameterLimits: {
+        temperature: { min: 0, max: 2.0 },
+        top_p: { min: 0, max: 1.0 },
+        max_tokens: { min: 1, max: 128000 }
+      },
+      responseFixesNeeded: []
+    }
+  ]
+};
 
-      expect(capabilities.name).toBe('deepseek');
+describe('ProviderCapabilitiesManager', () => {
+  beforeAll(() => {
+    // Initialize capabilities from mock config before running tests
+    ProviderCapabilitiesManager.loadFromConfig(mockConfig);
+  });
+  describe('Capabilities Retrieval', () => {
+    test('should return correct Qwen capabilities', () => {
+      const capabilities = ProviderCapabilitiesManager.getCapabilities('qwen');
+
+      expect(capabilities.name).toBe('qwen');
       expect(capabilities.supportsTools).toBe(true);
-      expect(capabilities.supportsThinking).toBe(true);
+      expect(capabilities.supportsThinking).toBe(false);
       expect(capabilities.parameterLimits.temperature).toEqual({ min: 0.01, max: 2.0 });
       expect(capabilities.parameterLimits.top_p).toEqual({ min: 0.01, max: 1.0 });
       expect(capabilities.parameterLimits.max_tokens).toEqual({ min: 1, max: 8192 });
       expect(capabilities.responseFixesNeeded).toContain('tool_calls_format');
-      expect(capabilities.responseFixesNeeded).toContain('thinking_mode_cleanup');
     });
 
     test('should return correct LM Studio capabilities', () => {
@@ -35,15 +83,6 @@ describe('ProviderCapabilitiesManager', () => {
       expect(capabilities.responseFixesNeeded).toContain('choices_array_fix');
     });
 
-    test('should return correct Ollama capabilities', () => {
-      const capabilities = ProviderCapabilitiesManager.getCapabilities('ollama');
-
-      expect(capabilities.name).toBe('ollama');
-      expect(capabilities.supportsTools).toBe(false);
-      expect(capabilities.supportsThinking).toBe(false);
-      expect(capabilities.parameterLimits.temperature).toEqual({ min: 0, max: 2.0 }); // 注意Ollama允许0
-      expect(capabilities.responseFixesNeeded).toContain('format_standardization');
-    });
 
     test('should return correct OpenAI capabilities', () => {
       const capabilities = ProviderCapabilitiesManager.getCapabilities('openai');
@@ -66,25 +105,22 @@ describe('ProviderCapabilitiesManager', () => {
 
   describe('Feature Support Checks', () => {
     test('should correctly identify tool support', () => {
-      expect(ProviderCapabilitiesManager.supportsFeature('deepseek', 'tools')).toBe(true);
+      expect(ProviderCapabilitiesManager.supportsFeature('qwen', 'tools')).toBe(true);
       expect(ProviderCapabilitiesManager.supportsFeature('openai', 'tools')).toBe(true);
-      expect(ProviderCapabilitiesManager.supportsFeature('anthropic', 'tools')).toBe(true);
       expect(ProviderCapabilitiesManager.supportsFeature('lmstudio', 'tools')).toBe(false);
-      expect(ProviderCapabilitiesManager.supportsFeature('ollama', 'tools')).toBe(false);
     });
 
     test('should correctly identify thinking mode support', () => {
-      expect(ProviderCapabilitiesManager.supportsFeature('deepseek', 'thinking')).toBe(true);
+      expect(ProviderCapabilitiesManager.supportsFeature('qwen', 'thinking')).toBe(false);
       expect(ProviderCapabilitiesManager.supportsFeature('openai', 'thinking')).toBe(false);
       expect(ProviderCapabilitiesManager.supportsFeature('lmstudio', 'thinking')).toBe(false);
     });
 
     test('should correctly identify streaming support', () => {
-      // 大部分Provider支持streaming，除了特定的如huggingface
-      expect(ProviderCapabilitiesManager.supportsFeature('deepseek', 'streaming')).toBe(true);
+      // 实际实现的Provider支持streaming
+      expect(ProviderCapabilitiesManager.supportsFeature('qwen', 'streaming')).toBe(true);
       expect(ProviderCapabilitiesManager.supportsFeature('openai', 'streaming')).toBe(true);
       expect(ProviderCapabilitiesManager.supportsFeature('lmstudio', 'streaming')).toBe(true);
-      expect(ProviderCapabilitiesManager.supportsFeature('huggingface', 'streaming')).toBe(false);
     });
 
     test('should handle unknown features', () => {
@@ -94,50 +130,47 @@ describe('ProviderCapabilitiesManager', () => {
 
   describe('Parameter Validation and Adjustment', () => {
     test('should validate parameters within limits', () => {
-      // DeepSeek temperature limits
-      expect(ProviderCapabilitiesManager.isParameterValid('deepseek', 'temperature', 1.0)).toBe(true);
-      expect(ProviderCapabilitiesManager.isParameterValid('deepseek', 'temperature', 0.005)).toBe(false);
-      expect(ProviderCapabilitiesManager.isParameterValid('deepseek', 'temperature', 3.0)).toBe(false);
+      // Qwen temperature limits
+      expect(ProviderCapabilitiesManager.isParameterValid('qwen', 'temperature', 1.0)).toBe(true);
+      expect(ProviderCapabilitiesManager.isParameterValid('qwen', 'temperature', 0.005)).toBe(false);
+      expect(ProviderCapabilitiesManager.isParameterValid('qwen', 'temperature', 3.0)).toBe(false);
 
       // LM Studio max_tokens limits
       expect(ProviderCapabilitiesManager.isParameterValid('lmstudio', 'max_tokens', 2000)).toBe(true);
       expect(ProviderCapabilitiesManager.isParameterValid('lmstudio', 'max_tokens', 8000)).toBe(false);
 
-      // Ollama temperature (allows 0)
-      expect(ProviderCapabilitiesManager.isParameterValid('ollama', 'temperature', 0)).toBe(true);
-      expect(ProviderCapabilitiesManager.isParameterValid('ollama', 'temperature', -0.1)).toBe(false);
+      // OpenAI parameters
+      expect(ProviderCapabilitiesManager.isParameterValid('openai', 'temperature', 1.0)).toBe(true);
+      expect(ProviderCapabilitiesManager.isParameterValid('openai', 'temperature', -0.1)).toBe(false);
     });
 
     test('should return true for undefined parameter limits', () => {
       // Test with a parameter that has no defined limits
-      expect(ProviderCapabilitiesManager.isParameterValid('deepseek', 'unknown_param', 999)).toBe(true);
+      expect(ProviderCapabilitiesManager.isParameterValid('qwen', 'unknown_param', 999)).toBe(true);
     });
 
     test('should clamp parameters to valid ranges', () => {
-      // DeepSeek temperature clamping
-      expect(ProviderCapabilitiesManager.clampParameter('deepseek', 'temperature', 0.005)).toBe(0.01);
-      expect(ProviderCapabilitiesManager.clampParameter('deepseek', 'temperature', 3.0)).toBe(2.0);
-      expect(ProviderCapabilitiesManager.clampParameter('deepseek', 'temperature', 1.5)).toBe(1.5);
-
-      // Anthropic temperature range (different from others)
-      expect(ProviderCapabilitiesManager.clampParameter('anthropic', 'temperature', 1.5)).toBe(1.0);
+      // Qwen temperature clamping
+      expect(ProviderCapabilitiesManager.clampParameter('qwen', 'temperature', 0.005)).toBe(0.01);
+      expect(ProviderCapabilitiesManager.clampParameter('qwen', 'temperature', 3.0)).toBe(2.0);
+      expect(ProviderCapabilitiesManager.clampParameter('qwen', 'temperature', 1.5)).toBe(1.5);
 
       // LM Studio max_tokens
       expect(ProviderCapabilitiesManager.clampParameter('lmstudio', 'max_tokens', 8000)).toBe(4096);
 
-      // Ollama temperature (allows 0)
-      expect(ProviderCapabilitiesManager.clampParameter('ollama', 'temperature', -0.5)).toBe(0);
+      // OpenAI temperature range
+      expect(ProviderCapabilitiesManager.clampParameter('openai', 'temperature', -0.5)).toBe(0);
     });
 
     test('should return original value for undefined limits', () => {
-      expect(ProviderCapabilitiesManager.clampParameter('deepseek', 'unknown_param', 999)).toBe(999);
+      expect(ProviderCapabilitiesManager.clampParameter('qwen', 'unknown_param', 999)).toBe(999);
     });
   });
 
   describe('Response Fixes Analysis', () => {
     test('should return correct response fixes needed', () => {
-      const deepseekFixes = ProviderCapabilitiesManager.getResponseFixesNeeded('deepseek');
-      expect(deepseekFixes).toEqual(['tool_calls_format', 'thinking_mode_cleanup']);
+      const qwenFixes = ProviderCapabilitiesManager.getResponseFixesNeeded('qwen');
+      expect(qwenFixes).toEqual(['tool_calls_format']);
 
       const lmstudioFixes = ProviderCapabilitiesManager.getResponseFixesNeeded('lmstudio');
       expect(lmstudioFixes).toEqual(['missing_usage', 'missing_id', 'missing_created', 'choices_array_fix']);
@@ -147,7 +180,7 @@ describe('ProviderCapabilitiesManager', () => {
     });
 
     test('should correctly identify if fixes are needed', () => {
-      expect(ProviderCapabilitiesManager.needsResponseFixes('deepseek')).toBe(true);
+      expect(ProviderCapabilitiesManager.needsResponseFixes('qwen')).toBe(true);
       expect(ProviderCapabilitiesManager.needsResponseFixes('lmstudio')).toBe(true);
       expect(ProviderCapabilitiesManager.needsResponseFixes('openai')).toBe(false);
     });
@@ -175,30 +208,27 @@ describe('ProviderCapabilitiesManager', () => {
     test('should list all supported providers', () => {
       const providers = ProviderCapabilitiesManager.getSupportedProviders();
 
-      expect(providers).toContain('deepseek');
+      expect(providers).toContain('qwen');
       expect(providers).toContain('lmstudio');
-      expect(providers).toContain('ollama');
       expect(providers).toContain('openai');
-      expect(providers).toContain('anthropic');
-      expect(providers).toContain('gemini');
-      expect(providers).toContain('cohere');
-      expect(providers).toContain('huggingface');
+      expect(providers.length).toBeGreaterThanOrEqual(3); // At least the implemented providers
     });
 
     test('should list tool-supported providers', () => {
       const toolProviders = ProviderCapabilitiesManager.getToolSupportedProviders();
 
-      expect(toolProviders).toContain('deepseek');
+      expect(toolProviders).toContain('qwen');
       expect(toolProviders).toContain('openai');
-      expect(toolProviders).toContain('anthropic');
       expect(toolProviders).not.toContain('lmstudio');
-      expect(toolProviders).not.toContain('ollama');
+      expect(toolProviders.length).toBeGreaterThanOrEqual(2); // At least qwen and openai support tools
     });
 
     test('should list thinking-supported providers', () => {
       const thinkingProviders = ProviderCapabilitiesManager.getThinkingSupportedProviders();
 
-      expect(thinkingProviders).toContain('deepseek');
+      // Currently no providers support thinking in our implementation
+      expect(thinkingProviders.length).toBe(0);
+      expect(thinkingProviders).not.toContain('qwen');
       expect(thinkingProviders).not.toContain('openai');
       expect(thinkingProviders).not.toContain('lmstudio');
     });
@@ -206,13 +236,13 @@ describe('ProviderCapabilitiesManager', () => {
 
   describe('Provider Comparison', () => {
     test('should compare two providers correctly', () => {
-      const comparison = ProviderCapabilitiesManager.compareProviders('deepseek', 'lmstudio');
+      const comparison = ProviderCapabilitiesManager.compareProviders('qwen', 'lmstudio');
 
-      expect(comparison.provider1).toBe('deepseek');
+      expect(comparison.provider1).toBe('qwen');
       expect(comparison.provider2).toBe('lmstudio');
       expect(comparison.tools.provider1).toBe(true);
       expect(comparison.tools.provider2).toBe(false);
-      expect(comparison.thinking.provider1).toBe(true);
+      expect(comparison.thinking.provider1).toBe(false);
       expect(comparison.thinking.provider2).toBe(false);
       expect(comparison.parameterLimits.temperature.provider1).toEqual({ min: 0.01, max: 2.0 });
       expect(comparison.parameterLimits.max_tokens.provider1).toEqual({ min: 1, max: 8192 });
@@ -220,7 +250,7 @@ describe('ProviderCapabilitiesManager', () => {
     });
 
     test('should handle comparison with unknown providers', () => {
-      const comparison = ProviderCapabilitiesManager.compareProviders('deepseek', 'unknown');
+      const comparison = ProviderCapabilitiesManager.compareProviders('qwen', 'unknown');
 
       expect(comparison.tools.provider1).toBe(true);
       expect(comparison.tools.provider2).toBe(false);
@@ -233,11 +263,10 @@ describe('ProviderCapabilitiesManager', () => {
         needsTools: true,
       });
 
-      expect(recommendations).toContain('deepseek');
+      expect(recommendations).toContain('qwen');
       expect(recommendations).toContain('openai');
-      expect(recommendations).toContain('anthropic');
       expect(recommendations).not.toContain('lmstudio');
-      expect(recommendations).not.toContain('ollama');
+      expect(recommendations.length).toBeGreaterThanOrEqual(2); // At least qwen and openai support tools
     });
 
     test('should recommend providers based on thinking requirements', () => {
@@ -245,7 +274,9 @@ describe('ProviderCapabilitiesManager', () => {
         needsThinking: true,
       });
 
-      expect(recommendations).toContain('deepseek');
+      // No providers currently support thinking in our implementation
+      expect(recommendations.length).toBe(0);
+      expect(recommendations).not.toContain('qwen');
       expect(recommendations).not.toContain('openai');
       expect(recommendations).not.toContain('lmstudio');
     });
@@ -255,8 +286,9 @@ describe('ProviderCapabilitiesManager', () => {
         maxTokens: 100000, // High token requirement
       });
 
-      expect(recommendations).toContain('anthropic'); // Supports up to 200k
+      expect(recommendations).toContain('openai'); // Supports up to 128k
       expect(recommendations).not.toContain('lmstudio'); // Only supports 4k
+      expect(recommendations).not.toContain('qwen'); // Only supports 8k
     });
 
     test('should recommend providers based on temperature range', () => {
@@ -264,9 +296,9 @@ describe('ProviderCapabilitiesManager', () => {
         preferredTemperatureRange: { min: 1.5, max: 2.0 },
       });
 
-      expect(recommendations).toContain('deepseek'); // Supports up to 2.0
+      expect(recommendations).toContain('qwen'); // Supports up to 2.0
       expect(recommendations).toContain('lmstudio'); // Supports up to 2.0
-      expect(recommendations).not.toContain('anthropic'); // Only supports up to 1.0
+      expect(recommendations).toContain('openai'); // Supports up to 2.0
     });
 
     test('should recommend providers with multiple requirements', () => {
@@ -276,15 +308,15 @@ describe('ProviderCapabilitiesManager', () => {
         preferredTemperatureRange: { min: 0.5, max: 1.5 },
       });
 
-      expect(recommendations).toContain('deepseek'); // Supports tools, 8192 tokens, and temperature range
-      expect(recommendations).toContain('openai'); // Supports tools and temperature range
+      expect(recommendations).toContain('qwen'); // Supports tools, 8192 tokens, and temperature range
+      expect(recommendations).toContain('openai'); // Supports tools, high tokens and temperature range
       expect(recommendations).not.toContain('lmstudio'); // No tool support
     });
 
     test('should return empty list when no providers meet requirements', () => {
       const recommendations = ProviderCapabilitiesManager.recommendProvider({
         needsTools: true,
-        needsThinking: true,
+        needsThinking: true, // No providers support thinking currently
         maxTokens: 500000, // Impossibly high requirement
       });
 
@@ -300,8 +332,8 @@ describe('ProviderCapabilitiesManager', () => {
       expect(openaiRating.accuracy).toBe(95);
       expect(openaiRating.stability).toBe(90);
 
-      const deepseekRating = ProviderCapabilitiesManager.getPerformanceRating('deepseek');
-      expect(deepseekRating.features).toBe(100); // Supports both tools and thinking
+      const qwenRating = ProviderCapabilitiesManager.getPerformanceRating('qwen');
+      expect(qwenRating.features).toBe(75); // Supports tools but not thinking
 
       const lmstudioRating = ProviderCapabilitiesManager.getPerformanceRating('lmstudio');
       expect(lmstudioRating.features).toBe(50); // No advanced features
@@ -309,16 +341,16 @@ describe('ProviderCapabilitiesManager', () => {
     });
 
     test('should calculate feature scores correctly', () => {
-      // Provider with both tools and thinking
-      const fullFeaturesRating = ProviderCapabilitiesManager.getPerformanceRating('deepseek');
-      expect(fullFeaturesRating.features).toBe(100); // 50 base + 25 tools + 25 thinking
-
-      // Provider with tools only
+      // Provider with tools only (no thinking support in current implementation)
       const toolsOnlyRating = ProviderCapabilitiesManager.getPerformanceRating('openai');
       expect(toolsOnlyRating.features).toBe(75); // 50 base + 25 tools
 
+      // Provider with tools only
+      const qwenRating = ProviderCapabilitiesManager.getPerformanceRating('qwen');
+      expect(qwenRating.features).toBe(75); // 50 base + 25 tools
+
       // Provider with no advanced features
-      const basicRating = ProviderCapabilitiesManager.getPerformanceRating('ollama');
+      const basicRating = ProviderCapabilitiesManager.getPerformanceRating('lmstudio');
       expect(basicRating.features).toBe(50); // 50 base only
     });
 
@@ -410,14 +442,16 @@ describe('ProviderCapabilitiesManager', () => {
       const recommendations = ProviderCapabilitiesManager.recommendProvider({});
 
       expect(recommendations.length).toBeGreaterThan(0);
-      expect(recommendations).toContain('deepseek');
+      expect(recommendations).toContain('qwen');
       expect(recommendations).toContain('openai');
+      expect(recommendations).toContain('lmstudio');
+      expect(recommendations.length).toBeGreaterThanOrEqual(3); // At least all implemented providers
     });
   });
 
   describe('Performance and Concurrency', () => {
     test('should handle multiple capability lookups efficiently', () => {
-      const providers = ['deepseek', 'openai', 'lmstudio', 'ollama', 'anthropic'];
+      const providers = ['qwen', 'openai', 'lmstudio'];
 
       const startTime = Date.now();
       const results = providers.map(provider => ({

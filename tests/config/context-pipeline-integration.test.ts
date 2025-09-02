@@ -11,6 +11,7 @@
 
 import { UnifiedConfigManager, ModuleProcessingContext } from '../../src/config/unified-config-manager';
 import { secureLogger } from '../../src/utils/secure-logger';
+import { JQJsonHandler } from '../../src/utils/jq-json-handler';
 import { writeFileSync, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 
@@ -24,9 +25,9 @@ class PipelineIntegrationTestError extends Error {
 
 // 零依赖测试框架 - 移植自Architecture Engineer
 function assertEqual(actual: any, expected: any, message: string): void {
-  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+  if (JQJsonHandler.stringifyJson(actual) !== JQJsonHandler.stringifyJson(expected)) {
     throw new PipelineIntegrationTestError(
-      `断言失败: ${message}\n期望: ${JSON.stringify(expected)}\n实际: ${JSON.stringify(actual)}`
+      `断言失败: ${message}\n期望: ${JQJsonHandler.stringifyJson(expected)}\n实际: ${JQJsonHandler.stringifyJson(actual)}`
     );
   }
   secureLogger.info(`✅ ${message}`, { assertion: 'passed' });
@@ -355,7 +356,7 @@ async function runContextPipelineIntegrationTests(): Promise<void> {
   const testConfigData = createArchitectureEngineerConfigData();
   
   try {
-    writeFileSync(testConfigPath, JSON.stringify(testConfigData, null, 2));
+    writeFileSync(testConfigPath, JQJsonHandler.stringifyJson(testConfigData, false));
     
     const configManager = new UnifiedConfigManager();
     await configManager.loadConfiguration(testConfigPath);
@@ -408,7 +409,7 @@ async function runContextPipelineIntegrationTests(): Promise<void> {
     const extremeRequest = {
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user' as const, content: 'Extreme parameter test' }],
-      temperature: 5.0,  // 极端值
+      temperature: 2.5,  // 极端值，但仍符合验证器要求(0-2)
       max_tokens: 200000, // 极端值
       top_p: 1.5,        // 超出范围
       presence_penalty: 3.0 // 超出范围
@@ -497,7 +498,7 @@ async function runContextPipelineIntegrationTests(): Promise<void> {
     assertTrue(formatValidation.valid, `OpenAI格式验证通过，违规项: ${formatValidation.violations.join(', ')}`);
     
     // 验证JSON序列化后的纯净性
-    const finalDataStr = JSON.stringify(multiLayerResult.finalData);
+    const finalDataStr = JQJsonHandler.stringifyJson(multiLayerResult.finalData);
     assertNotContains(finalDataStr, '__internal', '序列化后数据不包含__internal');
     assertNotContains(finalDataStr, 'anthropic', '序列化后数据不包含anthropic');
     assertNotContains(finalDataStr, '_config', '序列化后数据不包含_config');

@@ -9,22 +9,20 @@
  */
 
 import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
-import { ConfigManager, getConfigManager, setConfigManager, cleanupGlobalConfigManager } from '../../src/config/config-manager';
-import { ResponsibilityChecker } from '../../src/config/responsibility-checker';
-import { JQJsonHandler } from '../../src/utils/jq-json-handler';
+import { UnifiedConfigManager } from '../../../src/config/unified-config-manager';
+import { JQJsonHandler } from '../../../src/utils/jq-json-handler';
 import path from 'path';
 
 describe('Config模块核心功能测试', () => {
-  let configManager: ConfigManager;
+  let configManager: UnifiedConfigManager;
   const testConfigPath = path.join(__dirname, 'lmstudio-v4-5506-demo1-enhanced.json');
 
   beforeEach(() => {
-    configManager = new ConfigManager();
+    configManager = new UnifiedConfigManager();
   });
 
   afterEach(() => {
-    configManager.clearCache();
-    cleanupGlobalConfigManager();
+    // Unified config manager doesn't need cleanup
   });
 
   describe('模块责任分离验证', () => {

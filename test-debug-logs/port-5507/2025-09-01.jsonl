@@ -1,0 +1,486 @@
+{
+	"timestamp": "2025-09-01T23:38:01.349Z",
+	"port": 5507,
+	"requestId": "sim_1756769881349_202uumvpl",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:38:01.359Z",
+	"port": 5507,
+	"requestId": "sim_1756769881349_202uumvpl",
+	"output": {
+		"id": "msg_sim_1756769881349_202uumvpl",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 10,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:38:43.689Z",
+	"port": 5507,
+	"requestId": "sim_1756769923689_hda8so8j5",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:38:43.700Z",
+	"port": 5507,
+	"requestId": "sim_1756769923689_hda8so8j5",
+	"output": {
+		"id": "msg_sim_1756769923689_hda8so8j5",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:29.641Z",
+	"port": 5507,
+	"requestId": "sim_1756770089641_pnmjwezuh",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:29.650Z",
+	"port": 5507,
+	"requestId": "sim_1756770089641_pnmjwezuh",
+	"output": {
+		"id": "msg_sim_1756770089641_pnmjwezuh",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 9,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.9
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.9
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:36.508Z",
+	"port": 5507,
+	"requestId": "sim_1756770096508_axtsizpe5",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:41:36.517Z",
+	"port": 5507,
+	"requestId": "sim_1756770096508_axtsizpe5",
+	"output": {
+		"id": "msg_sim_1756770096508_axtsizpe5",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 9,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.9
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.9
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:42:40.325Z",
+	"port": 5507,
+	"requestId": "sim_1756770160325_4pn0ns3yp",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:42:40.336Z",
+	"port": 5507,
+	"requestId": "sim_1756770160325_4pn0ns3yp",
+	"output": {
+		"id": "msg_sim_1756770160325_4pn0ns3yp",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 11,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:48:38.265Z",
+	"port": 5507,
+	"requestId": "sim_1756770518265_6rt3u3vhp",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:48:38.277Z",
+	"port": 5507,
+	"requestId": "sim_1756770518265_6rt3u3vhp",
+	"output": {
+		"id": "msg_sim_1756770518265_6rt3u3vhp",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 12,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.2000000000000002
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.2000000000000002
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:50:32.482Z",
+	"port": 5507,
+	"requestId": "sim_1756770632482_nqtv58v6d",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:50:32.492Z",
+	"port": 5507,
+	"requestId": "sim_1756770632482_nqtv58v6d",
+	"output": {
+		"id": "msg_sim_1756770632482_nqtv58v6d",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 10,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:54:19.596Z",
+	"port": 5507,
+	"requestId": "sim_1756770859596_lvsaze298",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:54:19.605Z",
+	"port": 5507,
+	"requestId": "sim_1756770859596_lvsaze298",
+	"output": {
+		"id": "msg_sim_1756770859596_lvsaze298",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 9,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 0.9
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 0.9
+		}
+	}
+}
+{
+	"timestamp": "2025-09-01T23:56:18.868Z",
+	"port": 5507,
+	"requestId": "sim_1756770978868_vltlz0145",
+	"input": {
+		"model": "claude-3-sonnet-20240229",
+		"max_tokens": 1000,
+		"messages": [
+			{
+				"role": "user",
+				"content": "Test debug recording"
+			}
+		]
+	},
+	"metadata": {
+		"userAgent": "ClaudeCodeRequestSimulator/4.0.0",
+		"clientIP": "127.0.0.1",
+		"sessionId": "test_session",
+		"conversationId": "test_conversation"
+	}
+}
+{
+	"timestamp": "2025-09-01T23:56:18.881Z",
+	"port": 5507,
+	"requestId": "sim_1756770978868_vltlz0145",
+	"output": {
+		"id": "msg_sim_1756770978868_vltlz0145",
+		"type": "message",
+		"role": "assistant",
+		"content": [
+			{
+				"type": "text",
+				"text": "This is a mock response for your request with model claude-3-sonnet-20240229. Your message was: \"Test debug recording\""
+			}
+		],
+		"model": "claude-3-sonnet-20240229",
+		"stop_reason": "end_turn",
+		"usage": {
+			"input_tokens": 16,
+			"output_tokens": 50
+		}
+	},
+	"processingTime": 13,
+	"validation": {
+		"inputValidation": {
+			"success": true,
+			"processingTime": 1.3
+		},
+		"outputValidation": {
+			"success": true,
+			"processingTime": 1.3
+		}
+	}
+}
