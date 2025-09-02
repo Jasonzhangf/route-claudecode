@@ -167,6 +167,23 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
     if (!this.isDebugEnabled(moduleName)) return;
 
     try {
+      // 🔍 对 transformer 模块进行特殊处理
+      if (moduleName === 'transformer') {
+        console.log(`🔍 [DEBUG-MANAGER] Transformer输入记录 ${requestId}:`, {
+          输入类型: typeof input,
+          输入是否为空: !input || (typeof input === 'object' && Object.keys(input || {}).length === 0),
+          输入字段: input && typeof input === 'object' ? Object.keys(input) : [],
+          输入预览: input ? JSON.stringify(input).substring(0, 200) + '...' : 'null/undefined',
+          原始输入数据: input
+        });
+        
+        // 深度分析输入数据
+        if (input && typeof input === 'object') {
+          const analysis = this.analyzeTransformerData(input, 'input');
+          console.log(`🔍 [DEBUG-MANAGER] Transformer输入分析:`, analysis);
+        }
+      }
+
       this.recorder.recordModuleInput(moduleName, requestId, input);
 
       this.emit('input-recorded', {
@@ -174,6 +191,8 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
         requestId,
         timestamp: Date.now(),
         dataSize: JQJsonHandler.stringifyJson(input).length,
+        isTransformer: moduleName === 'transformer',
+        enhancedDebugging: moduleName === 'transformer'
       });
     } catch (error) {
       console.error(`记录输入失败 [${moduleName}]:`, error);
@@ -187,13 +206,40 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
     if (!this.isDebugEnabled(moduleName)) return;
 
     try {
+      // 🔍 对 transformer 模块进行特殊处理
+      if (moduleName === 'transformer') {
+        console.log(`🔍 [DEBUG-MANAGER] Transformer输出记录 ${requestId}:`, {
+          输出类型: typeof output,
+          输出是否为空: !output || (typeof output === 'object' && Object.keys(output || {}).length === 0),
+          输出字段: output && typeof output === 'object' ? Object.keys(output) : [],
+          输出预览: output ? JSON.stringify(output).substring(0, 200) + '...' : 'null/undefined',
+          原始输出数据: output
+        });
+        
+        // 深度分析输出数据
+        if (output && typeof output === 'object') {
+          const analysis = this.analyzeTransformerData(output, 'output');
+          console.log(`🔍 [DEBUG-MANAGER] Transformer输出分析:`, analysis);
+          
+          // 检查输出是否为空对象的关键问题
+          if (Object.keys(output).length === 0) {
+            console.error(`❌ [DEBUG-MANAGER] CRITICAL: Transformer输出为空对象！这是用户反馈的核心问题！`);
+          }
+        } else {
+          console.error(`❌ [DEBUG-MANAGER] CRITICAL: Transformer输出不是对象或为空！输出类型: ${typeof output}, 值: ${output}`);
+        }
+      }
+
       this.recorder.recordModuleOutput(moduleName, requestId, output);
 
       this.emit('output-recorded', {
         moduleName,
         requestId,
         timestamp: Date.now(),
-        dataSize: JQJsonHandler.stringifyJson(output).length,
+        dataSize: output ? JQJsonHandler.stringifyJson(output).length : 0,
+        isTransformer: moduleName === 'transformer',
+        enhancedDebugging: moduleName === 'transformer',
+        outputEmpty: moduleName === 'transformer' && (!output || Object.keys(output || {}).length === 0)
       });
     } catch (error) {
       console.error(`记录输出失败 [${moduleName}]:`, error);
@@ -415,6 +461,107 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
     process.once('exit', () => {
       clearInterval(cleanupInterval);
     });
+  }
+
+  /**
+   * 深度分析 transformer 数据
+   */
+  private analyzeTransformerData(data: any, type: 'input' | 'output'): any {
+    if (!data || typeof data !== 'object') {
+      return {
+        format: 'empty',
+        isEmpty: true,
+        type: typeof data,
+        keys: [],
+        hasModel: false,
+        hasMessages: false,
+        hasTools: false,
+        messageCount: 0,
+        toolCount: 0,
+        summary: `${type}为空或不是对象`
+      };
+    }
+
+    const keys = Object.keys(data);
+    const hasModel = 'model' in data;
+    const hasMessages = 'messages' in data && Array.isArray(data.messages);
+    const hasTools = 'tools' in data && Array.isArray(data.tools);
+    const messageCount = hasMessages ? data.messages.length : 0;
+    const toolCount = hasTools ? data.tools.length : 0;
+
+    // 检测格式
+    let format = 'unknown';
+    if (hasMessages) {
+      if (data.system || (hasTools && this.hasAnthropicToolFormat(data.tools))) {
+        format = 'anthropic';
+      } else if (hasTools && this.hasOpenAIToolFormat(data.tools)) {
+        format = 'openai';
+      } else {
+        format = 'chat-completion';
+      }
+    }
+
+    return {
+      format,
+      isEmpty: keys.length === 0,
+      type: typeof data,
+      keys,
+      hasModel,
+      hasMessages,
+      hasTools,
+      messageCount,
+      toolCount,
+      toolFormat: hasTools ? this.analyzeToolFormat(data.tools) : 'none',
+      summary: `${type}: ${keys.length}个字段, ${messageCount}条消息, ${toolCount}个工具, 格式=${format}`,
+      rawData: data // 保留原始数据用于调试
+    };
+  }
+
+  /**
+   * 检查是否有 Anthropic 工具格式
+   */
+  private hasAnthropicToolFormat(tools: any[]): boolean {
+    if (!tools || !Array.isArray(tools) || tools.length === 0) {
+      return false;
+    }
+    
+    const firstTool = tools[0];
+    return firstTool.name && firstTool.input_schema;
+  }
+
+  /**
+   * 检查是否有 OpenAI 工具格式
+   */
+  private hasOpenAIToolFormat(tools: any[]): boolean {
+    if (!tools || !Array.isArray(tools) || tools.length === 0) {
+      return false;
+    }
+    
+    const firstTool = tools[0];
+    return firstTool.type === 'function' && firstTool.function && firstTool.function.parameters;
+  }
+
+  /**
+   * 分析工具格式
+   */
+  private analyzeToolFormat(tools: any[]): string {
+    if (!tools || !Array.isArray(tools) || tools.length === 0) {
+      return 'none';
+    }
+
+    const firstTool = tools[0];
+    
+    // OpenAI 格式：{type: "function", function: {name, description, parameters}}
+    if (firstTool.type === 'function' && firstTool.function && firstTool.function.parameters) {
+      return 'openai';
+    }
+    
+    // Anthropic 格式：{name, description, input_schema}
+    if (firstTool.name && firstTool.input_schema) {
+      return 'anthropic';
+    }
+    
+    return 'unknown';
   }
 }
 

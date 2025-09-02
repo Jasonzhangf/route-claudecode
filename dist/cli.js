@@ -477,7 +477,7 @@ Examples:
      * 显示版本信息
      */
     showVersion() {
-        process.stdout.write('RCC v4.0.0\n');
+        process.stdout.write('RCC v4.1.1\n');
     }
     /**
      * 显示provider命令帮助

@@ -2242,7 +2242,7 @@ class RCCCli {
         // 保留向后兼容，但应该使用provider.api_base_url
         switch (providerType) {
             case 'qwen':
-                return 'https://dashscope.aliyuncs.com/v1';
+                return 'https://portal.qwen.ai/v1';
             case 'modelscope':
                 return 'https://api-inference.modelscope.cn/v1';
             case 'shuaihong':
