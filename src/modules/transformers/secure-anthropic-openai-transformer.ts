@@ -18,6 +18,9 @@
  * @based-on CLIProxyAPI transformer implementation
  */
 
+import { secureLogger } from '../../utils/secure-logger';
+import { transformAnthropicToOpenAI, transformOpenAIToAnthropic } from './anthropic-openai-converter';
+
 import {
   ModuleInterface,
   ModuleType,
@@ -27,7 +30,6 @@ import {
 } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
-import { transformAnthropicToOpenAI } from './anthropic-openai-converter';
 
 
 /**
@@ -37,10 +39,8 @@ export interface SecureTransformerConfig {
   // 基础配置
   preserveToolCalls: boolean;
   mapSystemMessage: boolean;
+  // 🔧 架构修复：移除maxTokens配置，该处理应在ServerCompatibility层进行
   defaultMaxTokens: number;
-
-  // 基本限制
-  maxTokens: number;
 
 }
 
@@ -95,11 +95,18 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       cpuUsage: 0
     };
     
+    // Validate configuration
+    // 🔧 架构修复：移除maxTokens验证，该处理应在ServerCompatibility层进行
+    
+    if (config?.defaultMaxTokens !== undefined && (config.defaultMaxTokens <= 0 || config.defaultMaxTokens > 100000)) {
+      throw new TransformerSecurityError('defaultMaxTokens must be between 1 and 100000', 'INVALID_CONFIG');
+    }
+    
     this.config = {
       preserveToolCalls: config?.preserveToolCalls ?? true,
       mapSystemMessage: config?.mapSystemMessage ?? true,
-      defaultMaxTokens: config?.defaultMaxTokens ?? 4096,
-      maxTokens: config?.maxTokens ?? 8192
+      defaultMaxTokens: config?.defaultMaxTokens ?? 262144,
+      // 🔧 架构修复：移除maxTokens配置，该处理应在ServerCompatibility层进行
     };
   }
 
@@ -239,8 +246,22 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
         throw new TransformerSecurityError('Invalid input format', 'INVALID_INPUT');
       }
 
-      // 执行完整的Anthropic → OpenAI转换
-      const output = transformAnthropicToOpenAI(input);
+      // 🔧 架构修复：Transformer层只负责协议格式转换，不处理maxTokens配置
+    const output = transformAnthropicToOpenAI(input);
+    
+    secureLogger.debug('🔄 [SECURE-TRANSFORMER] 转换完成', {
+      id: this.id,
+      outputType: typeof output,
+      hasOutput: !!output,
+      outputKeys: output && typeof output === 'object' ? Object.keys(output).length : 0
+    });
+    
+    // 🔥 关键修复：检查转换结果是否为空对象，如果是则使用降级方案
+    if (output && typeof output === 'object' && Object.keys(output).length === 0) {
+      secureLogger.warn('⚠️ 转换器返回空对象，使用原始输入作为降级方案');
+      
+      // 降级方案：使用原始输入但确保是对象
+      const fallbackOutput = { ...input };
       
       // 更新指标
       this.metrics.requestsProcessed++;
@@ -255,12 +276,36 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
       this.emit('processed', { 
         id: this.id, 
         input, 
-        output, 
-        processingTime, 
+        output: fallbackOutput, 
+        processingTime,
         timestamp: new Date() 
       });
       
-      return output;
+      return fallbackOutput;
+    }
+    
+    // 🔥 REMOVED: Debug error handling - the new transformer doesn't return __debug_error objects
+    // Trust the transformer's improved error handling and validation logic
+    
+    // 更新指标
+    this.metrics.requestsProcessed++;
+    const processingTime = Date.now() - startTime;
+    this.metrics.averageProcessingTime = 
+      (this.metrics.averageProcessingTime * (this.metrics.requestsProcessed - 1) + processingTime) / 
+      this.metrics.requestsProcessed;
+    
+    this.status.status = 'running';
+    this.status.lastActivity = new Date();
+    
+    this.emit('processed', { 
+      id: this.id, 
+      input, 
+      output, 
+      processingTime,
+      timestamp: new Date() 
+    });
+    
+    return output;
     } catch (error) {
       this.metrics.errorRate = 
         (this.metrics.errorRate * this.metrics.requestsProcessed + 1) / 

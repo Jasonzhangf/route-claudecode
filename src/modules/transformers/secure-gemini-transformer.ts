@@ -134,8 +134,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
     this.config = {
       preserveToolCalls: config?.preserveToolCalls ?? true,
       mapSystemMessage: config?.mapSystemMessage ?? true,
-      defaultMaxTokens: config?.defaultMaxTokens ?? 8192,
-      maxTokens: config?.maxTokens ?? 8192
+      defaultMaxTokens: config?.defaultMaxTokens ?? 262144,
     };
   }
 

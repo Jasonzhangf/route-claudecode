@@ -1,10 +1,5 @@
 // 测试环境配置管理
-import { config } from 'dotenv';
-import * as path from 'path';
-
-// 根据环境加载不同的配置文件
-const env = process.env.NODE_ENV || 'test';
-config({ path: path.resolve(process.cwd(), `.env.${env}`) });
+// Simple configuration without dotenv dependency
 
 // 默认测试配置
 export interface TestConfig {

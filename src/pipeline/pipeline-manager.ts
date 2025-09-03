@@ -206,6 +206,7 @@ export class PipelineManager extends EventEmitter {
       'gemini': 'GeminiServerCompatibility',
       'modelscope': 'ModelScopeServerCompatibility',
       'qwen': 'QwenServerCompatibility',
+      'iflow': 'IFlowServerCompatibility', // IFlow使用专门的兼容性模块
       'default': 'PassthroughServerCompatibility'
     },
     server: {
@@ -746,6 +747,7 @@ export class PipelineManager extends EventEmitter {
         return {}; // Protocol通常不需要特殊配置
         
       case ModuleType.SERVER_COMPATIBILITY:
+        // 为不同provider生成适当的配置
         if (config.serverCompatibility.includes('lmstudio')) {
           return {
             baseUrl: config.endpoint,
@@ -753,6 +755,46 @@ export class PipelineManager extends EventEmitter {
             timeout: 30000,
             maxRetries: 3,
             retryDelay: 1000
+          };
+        } else if (config.serverCompatibility.includes('iflow')) {
+          return {
+            baseUrl: config.endpoint,
+            models: {
+              available: [config.targetModel],
+              default: config.targetModel,
+              mapping: {
+                'deepseek': 'deepseek-r1',
+                'kimi': 'kimi-k2', 
+                'qwen': 'qwen3-coder',
+                'glm': 'glm-4.5'
+              }
+            },
+            authentication: {
+              method: 'Bearer',
+              format: 'Bearer {token}'
+            },
+            parameters: {
+              maxTokens: 262144,
+              enhanceTool: true,
+              authMethod: 'Bearer',
+              supportsTopK: true,
+              supportsFrequencyPenalty: true,
+              hasReasoningContent: true
+            },
+            timeout: 30000,
+            maxRetries: 3,
+            retryDelay: 1000
+          };
+        } else if (config.serverCompatibility.includes('qwen')) {
+          return {
+            baseUrl: config.endpoint,
+            timeout: 30000,
+            maxRetries: 3,
+            retryDelay: 1000,
+            models: [config.targetModel],
+            maxTokens: 262144,
+            enhanceTool: true,
+            authFileName: 'qwen-auth-1'
           };
         }
         return {}; // 默认配置

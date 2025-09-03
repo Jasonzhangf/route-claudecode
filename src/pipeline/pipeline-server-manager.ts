@@ -81,7 +81,7 @@ export class PipelineServerManager extends EventEmitter {
   private startTime: number = 0;
   private metrics: ServerMetrics;
 
-  constructor(config: MergedConfig) {
+  constructor(config: any) {
     super();
     this.config = config;
     this.tableManager = new PipelineTableManager(config);

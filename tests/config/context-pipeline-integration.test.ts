@@ -409,7 +409,7 @@ async function runContextPipelineIntegrationTests(): Promise<void> {
     const extremeRequest = {
       model: 'gpt-3.5-turbo',
       messages: [{ role: 'user' as const, content: 'Extreme parameter test' }],
-      temperature: 2.5,  // 极端值，但仍符合验证器要求(0-2)
+      temperature: 2.0,  // 最大有效值
       max_tokens: 200000, // 极端值
       top_p: 1.5,        // 超出范围
       presence_penalty: 3.0 // 超出范围

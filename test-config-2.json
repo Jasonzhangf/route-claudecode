@@ -1,0 +1,34 @@
+{
+  "Providers": [
+    {
+      "name": "sh",
+      "protocol": "openai",
+      "baseURL": "https://ai.shuaihong.fun/v1",
+      "apiKey": "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl",
+      "models": [
+        {
+          "name": "claude-3-7",
+          "maxTokens": 131072,
+          "capabilities": ["programming"]
+        }
+      ],
+      "serverCompatibility": {
+        "use": "openai",
+        "options": {
+          "maxTokens": 131072,
+          "enhanceTool": true
+        }
+      }
+    }
+  ],
+  "Router": {
+    "default": "sh,claude-3-7"
+  },
+  "server": {
+    "port": 5507,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0"
+}

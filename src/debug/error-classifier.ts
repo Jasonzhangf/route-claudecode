@@ -476,6 +476,7 @@ export class ErrorClassifier {
       [ErrorType.TRANSFORM_ERROR]: 'Data transformation and protocol conversion errors',
       [ErrorType.AUTH_ERROR]: 'Authentication and authorization failures',
       [ErrorType.VALIDATION_ERROR]: 'Input validation and schema verification errors',
+      [ErrorType.RATE_LIMIT_ERROR]: 'Rate limiting and quota exceeded errors',
       [ErrorType.UNKNOWN_ERROR]: 'Unclassified or unrecognized errors'
     };
 

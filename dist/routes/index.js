@@ -21,7 +21,6 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ROUTES_MODULE_VERSION = void 0;
 __exportStar(require("./route-manager"), exports);
-__exportStar(require("./api-routes"), exports);
 __exportStar(require("./health-routes"), exports);
 __exportStar(require("./debug-routes"), exports);
 __exportStar(require("./admin-routes"), exports);

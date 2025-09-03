@@ -28,6 +28,7 @@ export {
   resetGlobalTransformerFactory,
 } from './transformer-factory';
 
+
 // ============================================================================
 // 废弃警告和迁移指南
 // ============================================================================
@@ -115,8 +116,7 @@ export function createDefaultSecurityConfig(): SecureTransformerConfig {
   return {
     preserveToolCalls: true,
     mapSystemMessage: true,
-    defaultMaxTokens: 4096,
-    maxTokens: 8192,
+    defaultMaxTokens: 262144,
   };
 }
 

@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { OpenAIStandardResponse, DebugRecorder } from './enhanced-compatibility';
+import { OpenAIStandardResponse, DebugRecorder } from './types/compatibility-types';
 import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 /**
@@ -478,7 +478,7 @@ export class GenericResponseFixer {
       id: chatId,
       object: 'chat.completion',
       created: timestamp,
-      model: response.model || 'generic-model',
+      model: (response && response.model) || 'generic-model',
       choices: [
         {
           index: 0,
@@ -490,9 +490,9 @@ export class GenericResponseFixer {
         },
       ],
       usage: {
-        prompt_tokens: response.usage?.prompt_tokens || 0,
-        completion_tokens: response.usage?.completion_tokens || 0,
-        total_tokens: response.usage?.total_tokens || 0,
+        prompt_tokens: response && response.usage?.prompt_tokens || 0,
+        completion_tokens: response && response.usage?.completion_tokens || 0,
+        total_tokens: response && response.usage?.total_tokens || 0,
       },
     };
 
@@ -506,6 +506,11 @@ export class GenericResponseFixer {
   }
 
   private extractContent(response: any): string {
+    // 处理null或undefined响应
+    if (response === null || response === undefined) {
+      return '';
+    }
+
     if (typeof response === 'string') {
       return response;
     }
@@ -535,13 +540,18 @@ export class GenericResponseFixer {
   }
 
   private getContentExtractionMethod(response: any): string {
+    // 修复null响应处理
+    if (response === null || response === undefined) {
+      return 'null_response';
+    }
+    
     if (typeof response === 'string') return 'direct_string';
     if (response.content) return 'content_field';
     if (response.choices?.[0]?.message?.content) return 'choices_message_content';
     if (response.message) return 'message_field';
     if (response.text) return 'text_field';
     if (response.output) return 'output_field';
-    throw new Error('Zero Fallback Policy: No valid response format method available');
+    return 'json_stringify'; // 默认使用JSON字符串化而不是抛出错误
   }
 
   private fixUsageStatistics(usage: any): { prompt_tokens: number; completion_tokens: number; total_tokens: number } {
@@ -600,19 +610,19 @@ export class GenericResponseFixer {
       fixes.push('converted_string_to_openai_format');
     }
 
-    if (!original.id && fixed.id) {
+    if ((!original || !original.id) && fixed.id) {
       fixes.push('added_id');
     }
 
-    if (!original.created && fixed.created) {
+    if ((!original || !original.created) && fixed.created) {
       fixes.push('added_created_timestamp');
     }
 
-    if (!original.choices && fixed.choices) {
+    if ((!original || !original.choices) && fixed.choices) {
       fixes.push('created_choices_array');
     }
 
-    if (!original.usage && fixed.usage) {
+    if ((!original || !original.usage) && fixed.usage) {
       fixes.push('created_usage_statistics');
     }
 

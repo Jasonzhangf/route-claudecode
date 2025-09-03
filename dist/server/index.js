@@ -19,9 +19,10 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SERVER_MODULE_VERSION = void 0;
+exports.SERVER_MODULE_VERSION = exports.PipelineServerManager = void 0;
 __exportStar(require("./http-server"), exports);
-__exportStar(require("./pipeline-server"), exports);
+var pipeline_server_manager_1 = require("../pipeline/pipeline-server-manager");
+Object.defineProperty(exports, "PipelineServerManager", { enumerable: true, get: function () { return pipeline_server_manager_1.PipelineServerManager; } });
 __exportStar(require("./server-factory"), exports);
 __exportStar(require("./middleware-manager"), exports);
 __exportStar(require("./request-handler"), exports);

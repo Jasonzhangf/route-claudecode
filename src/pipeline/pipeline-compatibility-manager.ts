@@ -11,11 +11,11 @@
 
 import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
-import { MergedConfig } from '../config/config-reader';
 import { RequestContext } from './pipeline-request-processor';
 // TODO: API化 - 通过Pipeline API获取处理上下文和配置管理器
 // import { ModuleProcessingContext, unifiedConfigManager } from '../config/unified-config-manager';
 import { unifiedConfigManager } from '../config/unified-config-manager';
+import { RoutingTable } from './pipeline-table-manager';
 
 /**
  * 模块处理上下文接口 - API化版本
@@ -82,12 +82,12 @@ export interface CompatibilityModuleInfo {
  * 负责处理所有兼容性相关的逻辑
  */
 export class PipelineCompatibilityManager extends EventEmitter {
-  private config: MergedConfig;
+  private routingTable: RoutingTable | null = null;
   private loadedModules: Map<string, any> = new Map();
 
-  constructor(config: MergedConfig) {
+  constructor(routingTable: RoutingTable | null = null) {
     super();
-    this.config = config;
+    this.routingTable = routingTable;
   }
 
   /**
@@ -100,46 +100,87 @@ export class PipelineCompatibilityManager extends EventEmitter {
   ): Promise<any> {
     try {
       // 🔧 关键修复：使用负载均衡器选中的pipeline，而不是列表第一个
-      const selectedPipelineId = routingDecision.selectedPipeline || routingDecision.availablePipelines[0];
+      const availablePipelines = Array.isArray(routingDecision.availablePipelines) ? routingDecision.availablePipelines : [];
+      const selectedPipelineId = routingDecision.selectedPipeline || (availablePipelines.length > 0 ? availablePipelines[0] : null);
       const providerType = this.extractProviderFromPipelineId(selectedPipelineId);
       
       secureLogger.info('🔥 ServerCompatibility层pipeline选择', {
         requestId: context.requestId,
         selectedPipelineId,
-        availablePipelines: routingDecision.availablePipelines,
+        availablePipelines: availablePipelines,
         extractedProviderType: providerType,
         usedSelectedPipeline: !!routingDecision.selectedPipeline
       });
       
-      // 🔧 关键修复：从新统一配置格式中获取serverCompatibility信息
-      const providers = this.config.providers || [];
-      const matchingProvider = providers.find(p => p.name === providerType);
-      
+      // 🔧 修复：从Providers配置中正确获取serverCompatibility设置
       let compatibilityTag = 'passthrough'; // 默认值
       let compatibilityOptions: any = {};
       
-      if (matchingProvider?.serverCompatibility) {
-        compatibilityTag = matchingProvider.serverCompatibility.use || 'passthrough';
-        compatibilityOptions = matchingProvider.serverCompatibility.options || {};
-        
-        secureLogger.info('🔧 使用新统一配置的serverCompatibility', {
-          requestId: context.requestId,
-          providerType,
-          compatibilityTag,
-          hasOptions: Object.keys(compatibilityOptions).length > 0,
-          architecture: 'unified-format'
-        });
+      // 🔧 优先从Providers配置中获取serverCompatibility设置
+      if (routingDecision?.providers && Array.isArray(routingDecision.providers)) {
+        const selectedProvider = routingDecision.providers.find((p: any) => p.name === providerType);
+        if (selectedProvider?.serverCompatibility) {
+          compatibilityTag = selectedProvider.serverCompatibility.use || 'passthrough';
+          compatibilityOptions = selectedProvider.serverCompatibility.options || {};
+          
+          secureLogger.info('🔧 使用Providers配置中的serverCompatibility', {
+            requestId: context.requestId,
+            providerType,
+            compatibilityTag,
+            hasOptions: Object.keys(compatibilityOptions).length > 0,
+            architecture: 'providers-config'
+          });
+        } else {
+          // 如果在Providers中找不到配置，回退到routingDecision
+          if (routingDecision?.serverCompatibility) {
+            compatibilityTag = routingDecision.serverCompatibility.use || 'passthrough';
+            compatibilityOptions = routingDecision.serverCompatibility.options || {};
+            
+            secureLogger.info('🔧 使用routingDecision中的serverCompatibility', {
+              requestId: context.requestId,
+              providerType,
+              compatibilityTag,
+              hasOptions: Object.keys(compatibilityOptions).length > 0,
+              architecture: 'routing-decision'
+            });
+          } else {
+            // 向后兼容：从 pipeline ID 中推断
+            compatibilityTag = this.extractCompatibilityFromPipelineId(selectedPipelineId, routingDecision);
+            
+            secureLogger.info('🔧 使用向后兼容的compatibility推断', {
+              requestId: context.requestId,
+              providerType,
+              compatibilityTag,
+              pipelineId: selectedPipelineId,
+              architecture: 'backward-compatible'
+            });
+          }
+        }
       } else {
-        // 向后兼容：从 pipeline ID 中推断
-        compatibilityTag = this.extractCompatibilityFromPipelineId(selectedPipelineId);
-        
-        secureLogger.info('🔧 使用向后兼容的compatibility推断', {
-          requestId: context.requestId,
-          providerType,
-          compatibilityTag,
-          pipelineId: selectedPipelineId,
-          architecture: 'backward-compatible'
-        });
+        // 如果没有Providers配置，回退到原有逻辑
+        if (routingDecision?.serverCompatibility) {
+          compatibilityTag = routingDecision.serverCompatibility.use || 'passthrough';
+          compatibilityOptions = routingDecision.serverCompatibility.options || {};
+          
+          secureLogger.info('🔧 使用routingDecision中的serverCompatibility', {
+            requestId: context.requestId,
+            providerType,
+            compatibilityTag,
+            hasOptions: Object.keys(compatibilityOptions).length > 0,
+            architecture: 'routing-decision'
+          });
+        } else {
+          // 向后兼容：从 pipeline ID 中推断
+          compatibilityTag = this.extractCompatibilityFromPipelineId(selectedPipelineId, routingDecision);
+          
+          secureLogger.info('🔧 使用向后兼容的compatibility推断', {
+            requestId: context.requestId,
+            providerType,
+            compatibilityTag,
+            pipelineId: selectedPipelineId,
+            architecture: 'backward-compatible'
+          });
+        }
       }
       
       secureLogger.debug(`${LAYER_NAMES.SERVER_COMPATIBILITY}层处理开始`, {
@@ -171,9 +212,9 @@ export class PipelineCompatibilityManager extends EventEmitter {
         providerName: providerType,
         protocol: 'openai', // ServerCompatibility层后都是OpenAI格式
         config: {
-          endpoint: matchingProvider?.api_base_url,
-          apiKey: Array.isArray(matchingProvider?.api_key) ? matchingProvider.api_key[0] : matchingProvider?.api_key,
-          timeout: 60000, // 增加超时至60秒
+          endpoint: routingDecision?.endpoint || 'http://localhost:8080/v1',
+          apiKey: routingDecision?.apiKey || '',
+          timeout: 30000, // 缩短到30秒，快速失败避免长时间等待
           maxRetries: 3,
           actualModel: request.model, // TODO: 需要从上层传递真实的actualModel
           originalModel: request.model,
@@ -334,6 +375,10 @@ export class PipelineCompatibilityManager extends EventEmitter {
         case 'qwen':
           compatibilityModule = await this.loadQwenCompatibility(compatibilityOptions);
           break;
+        case COMPATIBILITY_TAGS.IFLOW:
+        case 'iflow':
+          compatibilityModule = await this.loadIFlowCompatibility(compatibilityOptions);
+          break;
         case COMPATIBILITY_TAGS.OPENAI:
         case 'openai':
         case COMPATIBILITY_TAGS.DEFAULT:
@@ -380,10 +425,9 @@ export class PipelineCompatibilityManager extends EventEmitter {
       const moduleExports = require(COMPATIBILITY_MODULE_PATHS.LMSTUDIO);
       const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.LMSTUDIO];
       
-      // 🔧 新架构：从新统一配置中获取LM Studio配置
+      // 🔧 新架构：从路由决策中获取LM Studio配置
       const lmstudioConfig = {
-        ...this.getLMStudioConfigFromConfig(),
-        ...compatibilityOptions // 合并新统一配置中的选项
+        ...compatibilityOptions // 使用传入的兼容性选项
       };
       
       secureLogger.debug('🔧 LMStudio兼容性配置', {
@@ -520,6 +564,29 @@ export class PipelineCompatibilityManager extends EventEmitter {
   }
 
   /**
+   * 加载iFlow兼容性模块
+   */
+  private async loadIFlowCompatibility(compatibilityOptions: any = {}): Promise<any> {
+    try {
+      const moduleExports = require(COMPATIBILITY_MODULE_PATHS.IFLOW);
+      const ModuleClass = moduleExports[COMPATIBILITY_MODULE_CLASSES.IFLOW];
+      
+      // 从配置中获取iFlow配置
+      const iflowConfig = this.getIFlowConfigFromConfig();
+      
+      const module = new ModuleClass(iflowConfig);
+      await module.initialize();
+      
+      return module;
+    } catch (error) {
+      secureLogger.error(`${PROVIDER_NAMES.IFLOW}兼容性模块加载失败`, {
+        error: error.message,
+      });
+      throw error;
+    }
+  }
+
+  /**
    * 加载透传兼容性模块
    */
   private async loadPassthroughCompatibility(compatibilityOptions: any = {}): Promise<any> {
@@ -556,7 +623,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
   /**
    * 从流水线ID中提取兼容性标签 (向后兼容)
    */
-  private extractCompatibilityFromPipelineId(pipelineId: string): string {
+  private extractCompatibilityFromPipelineId(pipelineId: string, routingDecision?: any): string {
     // 解析流水线ID格式：provider-model-keyIndex
     const parts = pipelineId.split('-');
     const provider = parts[0] || 'unknown';
@@ -579,7 +646,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
     }
     
     // 🔧 关键修复：移除硬编码fallback，根据API端点动态确定
-    const providerConfig = this.getProviderConfigByName(provider);
+    const providerConfig = this.getProviderConfigByName(provider, routingDecision);
     if (providerConfig) {
       const endpoint = providerConfig.api_base_url || '';
       
@@ -611,18 +678,26 @@ export class PipelineCompatibilityManager extends EventEmitter {
   /**
    * 根据Provider名称获取配置
    */
-  private getProviderConfigByName(providerName: string): any | null {
-    const providers = this.config.providers || [];
-    return providers.find(p => p.name === providerName) || null;
+  private getProviderConfigByName(providerName: string, routingDecision: any): any | null {
+    // 从routingDecision中获取provider配置
+    if (routingDecision?.providers) {
+      return routingDecision.providers.find((p: any) => p.name === providerName) || null;
+    }
+    return null;
   }
 
   /**
-   * 从配置中获取LM Studio配置
+   * 从路由决策中获取LM Studio配置
    */
-  private getLMStudioConfigFromConfig(): any {
-    // 从用户配置中获取LM Studio provider配置
-    const providers = this.config.providers || [];
-    const lmstudioProvider = providers.find(p => 
+  private getLMStudioConfigFromRoutingDecision(routingDecision: any): any {
+    // 从路由表中获取provider配置
+    const providers = this.routingTable?.allPipelines?.map(p => ({
+      name: p.provider,
+      api_base_url: p.endpoint,
+      models: [p.targetModel]
+    })) || [];
+    
+    const lmstudioProvider = providers.find((p: any) => 
       p.name === PROVIDER_NAMES.LMSTUDIO || 
       p.name === PROVIDER_NAMES.OPENAI || 
       p.api_base_url?.includes(URL_PATTERNS.LMSTUDIO_LOCALHOST)
@@ -631,24 +706,20 @@ export class PipelineCompatibilityManager extends EventEmitter {
     if (lmstudioProvider) {
       return {
         baseUrl: lmstudioProvider.api_base_url || DEFAULT_ENDPOINTS.LMSTUDIO,
-        apiKey: lmstudioProvider.api_key || DEFAULT_API_KEYS.LMSTUDIO,
         timeout: DEFAULT_TIMEOUTS.STANDARD,
         maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
         retryDelay: DEFAULT_RETRY_CONFIG.RETRY_DELAY,
         models: lmstudioProvider.models || DEFAULT_MODELS.LMSTUDIO,
-        maxTokens: lmstudioProvider.maxTokens || { [DEFAULT_MODELS.LMSTUDIO[0]]: DEFAULT_MAX_TOKENS.MEDIUM_MODEL },
       };
     }
 
-    // 使用默认配置
+    // 如果没有找到，返回默认配置
     return {
       baseUrl: DEFAULT_ENDPOINTS.LMSTUDIO,
-      apiKey: DEFAULT_API_KEYS.LMSTUDIO,
       timeout: DEFAULT_TIMEOUTS.STANDARD,
       maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
       retryDelay: DEFAULT_RETRY_CONFIG.RETRY_DELAY,
       models: DEFAULT_MODELS.LMSTUDIO,
-      maxTokens: { [DEFAULT_MODELS.LMSTUDIO[0]]: DEFAULT_MAX_TOKENS.MEDIUM_MODEL },
     };
   }
 
@@ -656,7 +727,13 @@ export class PipelineCompatibilityManager extends EventEmitter {
    * 从配置中获取Ollama配置
    */
   private getOllamaConfigFromConfig(): any {
-    const providers = this.config.providers || [];
+    // 从路由表中获取provider配置
+    const providers = this.routingTable?.allPipelines?.map(p => ({
+      name: p.provider,
+      api_base_url: p.endpoint,
+      models: [p.targetModel]
+    })) || [];
+    
     const ollamaProvider = providers.find(p => 
       p.name === PROVIDER_NAMES.OLLAMA || 
       p.api_base_url?.includes(URL_PATTERNS.OLLAMA_LOCALHOST)
@@ -683,7 +760,13 @@ export class PipelineCompatibilityManager extends EventEmitter {
    * 从配置中获取VLLM配置
    */
   private getVLLMConfigFromConfig(): any {
-    const providers = this.config.providers || [];
+    // 从路由表中获取provider配置
+    const providers = this.routingTable?.allPipelines?.map(p => ({
+      name: p.provider,
+      api_base_url: p.endpoint,
+      models: [p.targetModel]
+    })) || [];
+    
     const vllmProvider = providers.find(p => 
       p.name === PROVIDER_NAMES.VLLM || 
       p.api_base_url?.includes(URL_PATTERNS.VLLM_PATTERN)
@@ -692,7 +775,6 @@ export class PipelineCompatibilityManager extends EventEmitter {
     if (vllmProvider) {
       return {
         baseUrl: vllmProvider.api_base_url,
-        apiKey: vllmProvider.api_key,
         timeout: DEFAULT_TIMEOUTS.STANDARD,
         maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
         models: vllmProvider.models || DEFAULT_MODELS.OPENAI,
@@ -711,7 +793,13 @@ export class PipelineCompatibilityManager extends EventEmitter {
    * 从配置中获取ModelScope配置
    */
   private getModelScopeConfigFromConfig(): any {
-    const providers = this.config.providers || [];
+    // 从路由表中获取provider配置
+    const providers = this.routingTable?.allPipelines?.map(p => ({
+      name: p.provider,
+      api_base_url: p.endpoint,
+      models: [p.targetModel]
+    })) || [];
+    
     const modelScopeProvider = providers.find(p => 
       p.name === PROVIDER_NAMES.MODELSCOPE || 
       p.api_base_url?.includes('modelscope.cn')
@@ -723,7 +811,6 @@ export class PipelineCompatibilityManager extends EventEmitter {
         validateInputSchema: true,
         maxToolsPerRequest: 20,
         baseUrl: modelScopeProvider.api_base_url,
-        apiKey: modelScopeProvider.api_key,
         timeout: DEFAULT_TIMEOUTS.STANDARD,
         maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
         models: modelScopeProvider.models || [],
@@ -744,7 +831,13 @@ export class PipelineCompatibilityManager extends EventEmitter {
    * 从配置中获取Anthropic配置
    */
   private getAnthropicConfigFromConfig(): any {
-    const providers = this.config.providers || [];
+    // 从路由表中获取provider配置
+    const providers = this.routingTable?.allPipelines?.map(p => ({
+      name: p.provider,
+      api_base_url: p.endpoint,
+      models: [p.targetModel]
+    })) || [];
+    
     const anthropicProvider = providers.find(p => 
       p.name === PROVIDER_NAMES.ANTHROPIC || 
       p.api_base_url?.includes(URL_PATTERNS.ANTHROPIC_DOMAIN)
@@ -753,7 +846,6 @@ export class PipelineCompatibilityManager extends EventEmitter {
     if (anthropicProvider) {
       return {
         baseUrl: anthropicProvider.api_base_url || DEFAULT_ENDPOINTS.ANTHROPIC,
-        apiKey: anthropicProvider.api_key,
         timeout: DEFAULT_TIMEOUTS.STANDARD,
         maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
         models: anthropicProvider.models || DEFAULT_MODELS.ANTHROPIC,
@@ -772,7 +864,13 @@ export class PipelineCompatibilityManager extends EventEmitter {
    * 从配置中获取Qwen配置
    */
   private getQwenConfigFromConfig(): any {
-    const providers = this.config.providers || [];
+    // 从路由表中获取provider配置
+    const providers = this.routingTable?.allPipelines?.map(p => ({
+      name: p.provider,
+      api_base_url: p.endpoint,
+      models: [p.targetModel]
+    })) || [];
+    
     const qwenProvider = providers.find(p => 
       p.name === PROVIDER_NAMES.QWEN || 
       p.api_base_url?.includes(URL_PATTERNS.QWEN_DOMAIN)
@@ -780,8 +878,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
 
     if (qwenProvider) {
       return {
-        baseUrl: qwenProvider.api_base_url || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-        apiKey: qwenProvider.api_key,
+        baseUrl: qwenProvider.api_base_url || `https://${URL_PATTERNS.QWEN_DOMAIN}/v1`,
         timeout: DEFAULT_TIMEOUTS.STANDARD,
         maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
         models: qwenProvider.models || ['qwen-plus', 'qwen-max'],
@@ -790,11 +887,101 @@ export class PipelineCompatibilityManager extends EventEmitter {
     }
 
     return {
-      baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      baseUrl: `https://${URL_PATTERNS.QWEN_DOMAIN}/v1`,
       timeout: DEFAULT_TIMEOUTS.STANDARD,
       maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
       models: ['qwen-plus', 'qwen-max'],
       authDir: '~/.route-claudecode/auth'
+    };
+  }
+
+  /**
+   * 从配置中获取iFlow配置 - ✅ Configuration-driven implementation
+   */
+  private getIFlowConfigFromConfig(): any {
+    // 从路由表中获取provider配置
+    const providers = this.routingTable?.allPipelines?.map(p => ({
+      name: p.provider,
+      api_base_url: p.endpoint,
+      models: [p.targetModel]
+    })) || [];
+    
+    const iflowProvider = providers.find(p => 
+      p.name === PROVIDER_NAMES.IFLOW || 
+      p.api_base_url?.includes(URL_PATTERNS.IFLOW_DOMAIN)
+    );
+
+    if (iflowProvider) {
+      // ✅ Extract serverCompatibility options for enhanced configuration
+      // Note: In this simplified version, we don't have access to serverCompatibility options
+      return {
+        baseUrl: iflowProvider.api_base_url || DEFAULT_ENDPOINTS.IFLOW,
+        timeout: DEFAULT_TIMEOUTS.STANDARD,
+        maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
+        
+        // ✅ Enhanced model configuration
+        models: {
+          available: iflowProvider.models || DEFAULT_MODELS.IFLOW,
+          default: DEFAULT_MODELS.IFLOW[0],
+          mapping: {
+            'deepseek': 'deepseek-r1',
+            'kimi': 'kimi-k2', 
+            'qwen': 'qwen3-coder',
+            'glm': 'glm-4.5'
+          }
+        },
+        
+        // ✅ Authentication configuration
+        authentication: {
+          method: 'Bearer',
+          format: 'Bearer {token}'
+        },
+        
+        // ✅ Parameter configuration
+        parameters: {
+          topK: { min: 1, max: 100, default: 40 },
+          temperature: { min: 0.1, max: 2.0, default: 0.7 }
+        },
+        
+        // ✅ Endpoint configuration
+        endpoints: {
+          primary: iflowProvider.api_base_url || DEFAULT_ENDPOINTS.IFLOW,
+          fallback: []
+        }
+      };
+    }
+
+    // ✅ Default configuration with proper structure
+    return {
+      baseUrl: DEFAULT_ENDPOINTS.IFLOW,
+      timeout: DEFAULT_TIMEOUTS.STANDARD,
+      maxRetries: DEFAULT_RETRY_CONFIG.MAX_RETRIES,
+      
+      models: {
+        available: DEFAULT_MODELS.IFLOW,
+        default: DEFAULT_MODELS.IFLOW[0],
+        mapping: {
+          'deepseek': 'deepseek-r1',
+          'kimi': 'kimi-k2',
+          'qwen': 'qwen3-coder', 
+          'glm': 'glm-4.5'
+        }
+      },
+      
+      authentication: {
+        method: 'Bearer',
+        format: 'Bearer {token}'
+      },
+      
+      parameters: {
+        topK: { min: 1, max: 100, default: 40 },
+        temperature: { min: 0.1, max: 2.0, default: 0.7 }
+      },
+      
+      endpoints: {
+        primary: DEFAULT_ENDPOINTS.IFLOW,
+        fallback: []
+      }
     };
   }
 
@@ -809,6 +996,7 @@ export class PipelineCompatibilityManager extends EventEmitter {
       COMPATIBILITY_TAGS.ANTHROPIC,
       COMPATIBILITY_TAGS.MODELSCOPE,
       COMPATIBILITY_TAGS.QWEN,
+      COMPATIBILITY_TAGS.IFLOW,
       COMPATIBILITY_TAGS.PASSTHROUGH
     ];
   }

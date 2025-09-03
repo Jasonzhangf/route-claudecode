@@ -4,7 +4,6 @@
  * @author Jason Zhang
  */
 export * from './route-manager';
-export * from './api-routes';
 export * from './health-routes';
 export * from './debug-routes';
 export * from './admin-routes';

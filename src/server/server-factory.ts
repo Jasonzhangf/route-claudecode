@@ -7,7 +7,7 @@
  * @author Jason Zhang
  */
 
-import { PipelineServer, PipelineServerConfig } from './pipeline-server';
+import { PipelineServerManager } from '../pipeline/pipeline-server-manager';
 import { HTTPServer, ServerConfig } from './http-server';
 import { IMiddlewareManager } from '../interfaces/core';
 
@@ -34,12 +34,12 @@ export class ServerFactory {
   }
 
   /**
-   * 创建Pipeline服务器
+   * 创建Pipeline服务器管理器
    * @param config Pipeline服务器配置
-   * @returns PipelineServer Pipeline服务器实例
+   * @returns PipelineServerManager Pipeline服务器管理器实例
    */
-  createPipelineServer(config: PipelineServerConfig): PipelineServer {
-    return new PipelineServer(config, this.middlewareManager);
+  createPipelineServerManager(config: any): PipelineServerManager {
+    return new PipelineServerManager(config);
   }
 
   /**

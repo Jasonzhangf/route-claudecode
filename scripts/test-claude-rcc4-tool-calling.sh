@@ -7,9 +7,9 @@
 set -e
 
 # 脚本配置 - 直接修改以下变量来自定义测试参数
-DEFAULT_PORT="5512"
+DEFAULT_PORT="5511"
 DEFAULT_API_KEY="rcc4-proxy-key"
-DEFAULT_CONFIG="config/config-qwen.json"
+DEFAULT_CONFIG="/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511.json"
 TEST_COMMAND="列出本目录中所有文件夹"
 
 # 配置文件路径说明

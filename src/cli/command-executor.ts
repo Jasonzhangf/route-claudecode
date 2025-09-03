@@ -690,7 +690,7 @@ export class CommandExecutor implements ICommandExecutor {
 
     const modelInfo = qwenModels.map(model => ({
       id: model,
-      maxTokens: 262144, // 256k tokens for Qwen models
+      // 🔧 架构修复：移除CLI层maxTokens硬编码，由ServerCompatibility层处理
       supported: true
     }));
 
@@ -729,7 +729,7 @@ export class CommandExecutor implements ICommandExecutor {
           
           const modelInfo = chatModels.map((model: any) => ({
             id: model.id,
-            maxTokens: this.getModelMaxTokens(model.id),
+            // 🔧 架构修复：移除CLI层maxTokens处理，由ServerCompatibility层负责
             supported: true
           }));
           
@@ -759,7 +759,7 @@ export class CommandExecutor implements ICommandExecutor {
 
     const modelInfo = shuaihongModels.map(model => ({
       id: model,
-      maxTokens: this.getModelMaxTokens(model), // 根据模型动态设置tokens
+      // 🔧 架构修复：移除CLI层maxTokens处理，由ServerCompatibility层负责
       supported: true
     }));
 
@@ -783,7 +783,7 @@ export class CommandExecutor implements ICommandExecutor {
 
     const modelInfo = modelscopeModels.map(model => ({
       id: model,
-      maxTokens: 65536, // 64k tokens for ModelScope models
+      // 🔧 架构修复：移除CLI层maxTokens硬编码，由ServerCompatibility层处理
       supported: true
     }));
 
@@ -822,7 +822,7 @@ export class CommandExecutor implements ICommandExecutor {
           
           const modelInfo = chatModels.map((model: any) => ({
             id: model.id,
-            maxTokens: 131072, // 128k tokens for LM Studio models
+            // 🔧 架构修复：移除CLI层maxTokens硬编码，由ServerCompatibility层处理
             supported: true
           }));
           
@@ -849,7 +849,7 @@ export class CommandExecutor implements ICommandExecutor {
 
     const modelInfo = lmstudioChatModels.map(model => ({
       id: model,
-      maxTokens: 131072, // 128k tokens for LM Studio models
+      // 🔧 架构修复：移除CLI层maxTokens硬编码，由ServerCompatibility层处理
       supported: true
     }));
 
@@ -1306,55 +1306,8 @@ export class CommandExecutor implements ICommandExecutor {
   }
 
   /**
-   * 根据模型名称获取最大token数
+   * 🔧 架构修复：移除CLI层maxTokens处理函数
+   * maxTokens应该在ServerCompatibility层处理，而不是CLI层
+   * CLI层只负责模型发现和配置管理，不应该包含模型能力的硬编码逻辑
    */
-  private getModelMaxTokens(modelId: string): number {
-    const modelLower = modelId.toLowerCase();
-    
-    // Claude模型
-    if (modelLower.includes('claude-3.5') || modelLower.includes('claude-3-opus')) {
-      return 200000; // 200k tokens
-    }
-    if (modelLower.includes('claude-3-haiku') || modelLower.includes('claude-3-sonnet')) {
-      return 200000; // 200k tokens
-    }
-    
-    // GPT模型
-    if (modelLower.includes('gpt-4o')) {
-      return 128000; // 128k tokens
-    }
-    if (modelLower.includes('gpt-4')) {
-      return 128000; // 128k tokens
-    }
-    if (modelLower.includes('gpt-3.5-turbo')) {
-      return 16384; // 16k tokens
-    }
-    
-    // Gemini模型
-    if (modelLower.includes('gemini')) {
-      return 128000; // 128k tokens
-    }
-    
-    // DeepSeek模型
-    if (modelLower.includes('deepseek')) {
-      return 65536; // 64k tokens
-    }
-    
-    // Qwen模型
-    if (modelLower.includes('qwen-long')) {
-      return 10000000; // 10M tokens
-    }
-    if (modelLower.includes('qwen-max')) {
-      return 2000000; // 2M tokens
-    }
-    if (modelLower.includes('qwen3') || modelLower.includes('qwen-plus') || modelLower.includes('qwen-turbo')) {
-      return 1000000; // 1M tokens
-    }
-    if (modelLower.includes('qwen')) {
-      return 131072; // 128k tokens
-    }
-    
-    // 默认值
-    return 65536; // 64k tokens
-  }
 }

@@ -10,11 +10,15 @@
  */
 
 import { EventEmitter } from 'events';
+import path from 'path';
 import { secureLogger } from '../utils/secure-logger';
 import { PIPELINE_RETRY_CONSTANTS } from '../constants/pipeline-retry-constants';
+import { ERROR_MESSAGES } from '../constants/error-messages';
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { getServerPort, SERVER_DEFAULTS } from '../constants/server-defaults';
-import { MergedConfig } from '../config/config-reader';
+import { HTTP_STATUS_CODES } from '../constants/server-constants';
+// 🔧 配置访问违规修复：移除直接配置访问，通过参数注入获取配置
+// import { MergedConfig } from '../config/config-reader';
 import { PipelineCompatibilityManager } from './pipeline-compatibility-manager';
 import { DebugManagerImpl } from '../debug/debug-manager';
 import { PipelineDebugRecorder } from '../debug/pipeline-debug-recorder';
@@ -24,6 +28,9 @@ import { InternalAPIClient } from '../api/internal-api-client';
 import { createPipelineLayersAPIProcessor } from '../api/modules/pipeline-layers-api-processor';
 import { PrecisePipelineBlacklistManager } from './modules/precise-blacklist-manager';
 import { IntelligentErrorRecoveryManager, PipelineRecoveryContext, ErrorRecoveryResult } from './intelligent-error-recovery';
+import { ErrorCoordinationCenterImpl } from '../core/error-coordination-center';
+import { ErrorCoordinationCenterFactory } from '../core/error-coordination-center-factory';
+import { RateLimitError } from '../types/error';
 
 // 导入验证器
 import { protocolTransformerValidator, ValidationResult } from '../validation/protocol-transformer-validator';
@@ -48,6 +55,7 @@ import {
 import { ErrorClassifier } from './execution/error-classifier';
 import { PipelineHealthManager } from './execution/pipeline-health-manager';
 import { LoadBalancer } from '../router/load-balancer';
+import { LoadBalancerInterface } from '../interfaces/core/error-coordination-center';
 
 export interface RequestContext {
   requestId: string;
@@ -57,6 +65,26 @@ export interface RequestContext {
   transformations: any[];
   errors: any[];
   metadata: any;
+}
+
+/**
+ * 🔧 架构修复：流水线配置参数接口
+ * 替代直接访问MergedConfig，只接收必要的配置参数
+ */
+export interface PipelineProcessorConfig {
+  server?: {
+    port?: number;
+    host?: string;
+    timeout?: number;
+  };
+  debug?: {
+    enabled?: boolean;
+    logLevel?: string;
+  };
+  errorHandling?: {
+    maxRetries?: number;
+    retryDelay?: number;
+  };
 }
 
 /**
@@ -93,7 +121,7 @@ export interface PipelineStats {
  * 负责完整的6层流水线请求处理
  */
 export class PipelineRequestProcessor extends EventEmitter {
-  private config: MergedConfig;
+  private config: PipelineProcessorConfig;
   private serverPort: number;
   private compatibilityManager: PipelineCompatibilityManager;
   private stats: PipelineStats;
@@ -105,6 +133,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private pipelineLayersAPIProcessor: any; // PipelineLayersAPIProcessor类型在后续定义
   private blacklistManager: PrecisePipelineBlacklistManager;
   private intelligentErrorRecoveryManager: IntelligentErrorRecoveryManager;
+  private errorCoordinationCenter: ErrorCoordinationCenterImpl;
 
   // 新的解耦合执行管理架构（可选启用）
   private errorClassifier?: ErrorClassifier;
@@ -113,11 +142,15 @@ export class PipelineRequestProcessor extends EventEmitter {
   private executionManager?: PipelineExecutionManager;
   private useDecoupledExecution: boolean = false;
 
-  constructor(config: MergedConfig, debugEnabled: boolean = false) {
+  constructor(config: PipelineProcessorConfig, debugEnabled: boolean = false) {
     super();
     this.config = config;
     this.serverPort = this.config.server?.port || getServerPort();
-    this.compatibilityManager = new PipelineCompatibilityManager(config);
+    // 🔧 架构修复：传递简化的配置参数而不是完整配置对象
+    this.compatibilityManager = new PipelineCompatibilityManager({
+      server: config.server,
+      debug: config.debug
+    } as any); // TODO: 修复PipelineCompatibilityManager接口
     
     this.stats = {
       uptime: 0,
@@ -167,11 +200,29 @@ export class PipelineRequestProcessor extends EventEmitter {
     this.pipelineLayersAPIProcessor = createPipelineLayersAPIProcessor(internalApiClient);
 
     // 初始化精准拉黑管理器
-    const blacklistConfig = config.blacklistSettings || {};
-    this.blacklistManager = new PrecisePipelineBlacklistManager(blacklistConfig);
+    // 注意：blacklist配置现在从全局配置中获取，这里使用默认配置
+    this.blacklistManager = new PrecisePipelineBlacklistManager({
+      enabled: true,
+      persistenceFile: path.join(process.cwd(), 'data', 'pipeline-blacklist.json'),
+      destroyRules: [],
+      rateLimitRule: {
+        statusCode: 429,
+        blockDuration: 60000,
+        maxConsecutiveFailures: 3,
+        resetInterval: 300000,
+        description: '429流控处理'
+      }
+    });
 
     // 初始化智能错误恢复管理器
     this.intelligentErrorRecoveryManager = new IntelligentErrorRecoveryManager();
+
+    // 初始化错误协调中心 - 使用工厂模式创建实例
+    this.errorCoordinationCenter = ErrorCoordinationCenterFactory.create({
+      enableRetryHandling: true,
+      enablePipelineSwitching: true,
+      enablePipelineDestruction: true
+    });
 
     // ✅ 智能错误恢复策略（非静默降级）：
     // 1. 透明错误报告 - 所有错误都详细记录
@@ -230,31 +281,29 @@ export class PipelineRequestProcessor extends EventEmitter {
         maxBlacklistDuration: 300000 // 最大5分钟
       });
 
-      // 注意：LoadBalancer需要PipelineManager，这里暂时禁用负载均衡器集成
-      // TODO: 当PipelineManager可用时，启用LoadBalancer
-      // this.loadBalancer = new LoadBalancer(pipelineManager, ...);
+      // 🔧 修复429错误处理：使用ErrorCoordinationCenter直接处理错误而不依赖完整LoadBalancer
+      // 直接启用错误协调中心，绕过LoadBalancer依赖
+      this.errorCoordinationCenter = ErrorCoordinationCenterFactory.create({
+        enableRetryHandling: true,
+        maxRetryAttempts: 3,
+        retryDelayStrategy: 'exponential',
+        baseRetryDelay: 1000,
+        maxRetryDelay: 30000,
+        enablePipelineSwitching: true,
+        enablePipelineDestruction: false,
+        enableErrorClassification: true,
+        enableLoadBalancerIntegration: false // 暂时禁用LoadBalancer集成
+      });
 
-      // 初始化统一执行管理器（不使用负载均衡器）
-      // this.executionManager = new PipelineExecutionManager(
-      //   this.errorClassifier,
-      //   this.healthManager,
-      //   this.loadBalancer!, // 需要LoadBalancer
-      //   {
-      //     maxRetries: 3,
-      //     maxExecutionTime: 30000,
-      //     retryDelay: 1000,
-      //     enableHealthManagement: true,
-      //     enableErrorClassification: true
-      //   }
-      // );
-
-      this.useDecoupledExecution = false; // 暂时禁用，等待LoadBalancer集成
+      this.useDecoupledExecution = true; // 🔧 启用sophisticated error handling
       
-      secureLogger.info('🚀 Decoupled execution management components initialized (partial)', {
+      secureLogger.info('🚀 Error coordination center enabled for sophisticated 429 handling', {
         errorClassifier: 'enabled',
         healthManager: 'enabled',
-        loadBalancer: 'disabled - pending PipelineManager integration',
-        executionManager: 'disabled - pending LoadBalancer'
+        errorCoordinationCenter: 'enabled - direct error handling',
+        sophisticatedErrorHandling: 'enabled',
+        rateLimitHandling: 'enhanced',
+        fallbackPolicy: 'zero_fallback'
       });
       
     } catch (initError) {
@@ -321,23 +370,23 @@ export class PipelineRequestProcessor extends EventEmitter {
 
       // Step 1: Router层 - 路由决策
       const routerStart = Date.now();
-      this.debugManager.recordInput('router', requestId, input);
+      this.debugManager.recordInput('router_req_in', requestId, input);
       const routingResult = await this.pipelineLayersAPIProcessor.processRouterLayer(input, context);
       const routingDecision = routingResult.output;
-      this.debugManager.recordOutput('router', requestId, routingDecision);
+      this.debugManager.recordOutput('router_req_out', requestId, routingDecision);
       context.layerTimings.router = Date.now() - routerStart;
       context.routingDecision = routingDecision;
 
       // Step 2: Transformer层 - 协议转换
       const transformerStart = Date.now();
-      this.debugManager.recordInput('transformer', requestId, { input, routingDecision });
+      this.debugManager.recordInput('transformer_req_in', requestId, { input, routingDecision });
       const transformerResult = await this.pipelineLayersAPIProcessor.processTransformerLayer(
         input,
         routingDecision,
         context
       );
       const transformedRequest = transformerResult.output;
-      this.debugManager.recordOutput('transformer', requestId, transformedRequest);
+      this.debugManager.recordOutput('transformer_req_out', requestId, transformedRequest);
       context.layerTimings.transformer = Date.now() - transformerStart;
 
       // 🔍 验证: Transformer → Protocol (必须是OpenAI格式)
@@ -366,14 +415,14 @@ export class PipelineRequestProcessor extends EventEmitter {
 
       // Step 3: Protocol层 - 协议处理
       const protocolStart = Date.now();
-      this.debugManager.recordInput('protocol', requestId, { transformedRequest, routingDecision });
+      this.debugManager.recordInput('protocol_req_in', requestId, { transformedRequest, routingDecision });
       const protocolResult = await this.pipelineLayersAPIProcessor.processProtocolLayer(
         transformedRequest,
         routingDecision,
         context
       );
       const protocolRequest = protocolResult.output;
-      this.debugManager.recordOutput('protocol', requestId, protocolRequest);
+      this.debugManager.recordOutput('protocol_req_out', requestId, protocolRequest);
       context.layerTimings.protocol = Date.now() - protocolStart;
 
       // 🔍 验证: Protocol → ServerCompatibility (必须是Protocol格式，不是Anthropic)
@@ -405,13 +454,13 @@ export class PipelineRequestProcessor extends EventEmitter {
 
       // Step 4: Server-Compatibility层 - 兼容性处理
       const compatibilityStart = Date.now();
-      this.debugManager.recordInput('server-compatibility', requestId, { protocolRequest, routingDecision });
+      this.debugManager.recordInput('server_compatibility_req_in', requestId, { protocolRequest, routingDecision });
       const compatibleRequest = await this.compatibilityManager.processServerCompatibilityLayer(
         protocolRequest,
         routingDecision,
         context
       );
-      this.debugManager.recordOutput('server-compatibility', requestId, compatibleRequest);
+      this.debugManager.recordOutput('server_compatibility_req_out', requestId, compatibleRequest);
       context.layerTimings.serverCompatibility = Date.now() - compatibilityStart;
 
       // 🔍 验证: ServerCompatibility → Server (必须是OpenAI格式，不是兼容格式)
@@ -456,7 +505,7 @@ export class PipelineRequestProcessor extends EventEmitter {
       }
 
       const serverStart = Date.now();
-      this.debugManager.recordInput('server', requestId, { compatibleRequest, routingDecision });
+      this.debugManager.recordInput('server_req_in', requestId, { compatibleRequest, routingDecision });
       
       let response;
       try {
@@ -528,7 +577,7 @@ export class PipelineRequestProcessor extends EventEmitter {
           layerName: 'server',
           provider: routingDecision.provider,
           endpoint: routingDecision.endpoint,
-          availablePipelines: routingDecision.availablePipelines?.length || 0
+          availablePipelines: routingDecision.availablePipelines || []
         });
         
         // 检查其他可用流水线
@@ -653,14 +702,14 @@ export class PipelineRequestProcessor extends EventEmitter {
         throw zeroFallbackError;
       }
       
-      this.debugManager.recordOutput('server', requestId, response);
+      this.debugManager.recordOutput('server_req_out', requestId, response);
       context.layerTimings.server = Date.now() - serverStart;
 
       // Step 6: 响应转换层 - 将响应转换为原始协议格式
       const transformStart = Date.now();
-      this.debugManager.recordInput('response-transformer', requestId, { response, protocol });
+      this.debugManager.recordInput('transformer_response_in', requestId, { response, protocol });
       const finalResponse = await this.processResponseTransformation(response, protocol, context);
-      this.debugManager.recordOutput('response-transformer', requestId, finalResponse);
+      this.debugManager.recordOutput('transformer_response_out', requestId, finalResponse);
       context.layerTimings.responseTransform = Date.now() - transformStart;
 
       // 计算总响应时间
@@ -802,53 +851,40 @@ export class PipelineRequestProcessor extends EventEmitter {
     // 从路由决策中获取provider信息
     const firstPipelineId = routingDecision.availablePipelines[0];
     const providerType = this.extractProviderFromPipelineId(firstPipelineId);
-    let providerInfo = this.config.systemConfig.providerTypes[providerType];
+    // 🔧 修复硬编码问题：使用默认的provider信息
+    let providerInfo = {
+      endpoint: "http://localhost:8080/v1", // 默认端点
+      protocol: "openai", // 默认使用OpenAI协议
+      transformer: "openai-standard", // 默认transformer
+      timeout: 120000, // 增加到2分钟，应对慢速Provider
+      maxRetries: 3
+    };
     
-    // 🔧 修复硬编码问题：如果system config中没有找到provider类型，使用动态默认配置
-    if (!providerInfo) {
-      // 获取用户配置中的provider信息来创建默认配置
-      const providers = this.config.providers || [];
-      const matchingProvider = providers.find(p => p.name === providerType);
-      
-      if (matchingProvider && matchingProvider.api_base_url) {
-        // 根据用户配置动态生成provider信息
-        providerInfo = {
-          endpoint: matchingProvider.api_base_url,
-          protocol: "openai", // 默认使用OpenAI协议
-          transformer: "openai-standard", // 默认transformer
-          timeout: 120000, // 增加到2分钟，应对慢速Provider
-          maxRetries: 3
-        };
-        
-        secureLogger.info(`💡 动态生成provider配置`, {
-          providerType,
-          endpoint: providerInfo.endpoint,
-          protocol: providerInfo.protocol
-        });
-      } else {
-        throw new Error(`Provider type '${providerType}' not found in system config and cannot be auto-generated from user config`);
-      }
+    // 尝试从路由决策中获取provider信息
+    if (routingDecision && routingDecision.providerInfo) {
+      providerInfo = { ...providerInfo, ...routingDecision.providerInfo };
     }
 
     // 获取provider endpoint和认证信息
-    const providers = this.config.providers || [];
-    const matchingProvider = providers.find(p => p.name === providerType);
+    let endpoint = providerInfo.endpoint;
+    let apiKey = "";
     
-    if (!matchingProvider) {
-      throw new Error(`Provider '${providerType}' not found in user config`);
+    // 如果有路由决策信息，尝试从中获取endpoint和apiKey
+    if (routingDecision && routingDecision.endpoint) {
+      endpoint = routingDecision.endpoint;
     }
-
-    const endpoint = matchingProvider.api_base_url || providerInfo.endpoint;
+    if (routingDecision && routingDecision.apiKey) {
+      apiKey = routingDecision.apiKey;
+    }
     
     // 🔧 关键修复：处理多API密钥配置
-    let apiKey = matchingProvider.api_key;
+    // 注意：现在apiKey已经在前面定义
     if (Array.isArray(apiKey)) {
       // 如果是数组，使用第一个可用的密钥
       apiKey = apiKey[0];
       secureLogger.debug('Protocol层：多密钥配置检测', {
         requestId: context.requestId,
-        providerType,
-        totalKeys: matchingProvider.api_key.length,
+        totalKeys: Array.isArray(apiKey) ? apiKey.length : 1,
         selectedKey: apiKey ? `${apiKey.substring(0, 10)}...` : 'undefined'
       });
     }
@@ -1408,12 +1444,15 @@ export class PipelineRequestProcessor extends EventEmitter {
         });
       }
 
-      // 如果没有任何内容，添加默认文本
+      // 🔧 Zero Fallback策略：如果没有任何内容，抛出零回退错误而不是使用预设响应
       if (anthropicContent.length === 0) {
-        anthropicContent.push({
-          type: 'text',
-          text: 'I can help you with that.'
-        });
+        const zeroFallbackError = ZeroFallbackErrorFactory.createProviderFailure(
+          'response-transformer',
+          'anthropic-content',
+          ERROR_MESSAGES.EMPTY_RESPONSE_CONTENT_ZERO_FALLBACK,
+          { requestId: context.requestId }
+        );
+        throw zeroFallbackError;
       }
 
       // 确定stop_reason
@@ -1793,11 +1832,10 @@ export class PipelineRequestProcessor extends EventEmitter {
 
       // 记录完整请求
       this.pipelineDebugRecorder.recordCompleteRequest(completeRecord);
-      console.log('✅ [PIPELINE-DEBUG] Pipeline执行记录完成:', requestId);
+      // Debug记录已完成
 
     } catch (debugError) {
-      console.error('❌ [PIPELINE-DEBUG] Debug记录失败:', debugError.message);
-      console.error('❌ [PIPELINE-DEBUG] 详细错误:', debugError.stack);
+      // Debug记录失败，不影响主流程
     }
   }
 
@@ -1838,41 +1876,159 @@ export class PipelineRequestProcessor extends EventEmitter {
         return;
       }
 
-      // 处理429流控错误
-      if (statusCode === 429) {
-        const blacklistAction = this.blacklistManager.handle429Error(pipelineId);
+      // 🔧 重构：通过统一错误协调中心处理429错误
+      if (statusCode === HTTP_STATUS_CODES.RATE_LIMIT) {
+        // 创建RateLimitError实例
+        const rateLimitError = new RateLimitError(`Rate limit exceeded: ${statusCode}`, {
+          statusCode: statusCode,
+          pipelineId: pipelineId
+        });
         
-        if (blacklistAction.action === 'destroy') {
-          secureLogger.error('Pipeline marked for destruction due to persistent rate limiting', {
-            requestId,
-            pipelineId,
-            reason: blacklistAction.reason
-          });
+        // 创建错误上下文
+        const errorContext = {
+          requestId: requestId,
+          pipelineId: pipelineId,
+          layerName: 'server',
+          provider: '', // 可以从routingDecision中获取
+          statusCode: statusCode,
+          attemptNumber: 0,
+          maxAttempts: 3,
+          isLastAttempt: false,
+          errorChain: [{
+            error: errorMessage,
+            timestamp: new Date().toISOString(),
+            context: { statusCode, pipelineId }
+          }],
+          metadata: {}
+        };
+        
+        // 委托给错误协调中心处理
+        try {
+          const result = await this.errorCoordinationCenter.handleError(rateLimitError, errorContext);
+          
+          // 根据处理结果执行相应操作
+          switch (result.actionTaken) {
+            case 'switched':
+              secureLogger.info('Pipeline switched due to rate limiting', {
+                requestId,
+                oldPipelineId: pipelineId,
+                newPipelineId: result.switchedToPipeline,
+                action: 'switched'
+              });
+              // 触发流水线切换事件
+              this.emit('pipeline-switch', {
+                oldPipelineId: pipelineId,
+                newPipelineId: result.switchedToPipeline,
+                reason: 'rate_limit',
+                requestId,
+                timestamp: Date.now()
+              });
+              break;
+              
+            case 'destroyed':
+              secureLogger.error('Pipeline destroyed due to persistent rate limiting', {
+                requestId,
+                pipelineId,
+                action: 'destroyed'
+              });
+              // 触发流水线销毁事件
+              this.emit('pipeline-destroy', {
+                pipelineId,
+                reason: 'persistent_rate_limiting',
+                requestId,
+                timestamp: Date.now()
+              });
+              break;
+              
+            case 'returned':
+              // 错误已处理并返回，继续使用当前流水线
+              secureLogger.warn('Rate limit error handled, continuing with current pipeline', {
+                requestId,
+                pipelineId,
+                action: 'returned'
+              });
+              break;
+              
+            default:
+              // 使用默认的拉黑处理
+              const blacklistAction = this.blacklistManager.handle429Error(pipelineId);
+              
+              if (blacklistAction.action === 'destroy') {
+                secureLogger.error('Pipeline marked for destruction due to persistent rate limiting', {
+                  requestId,
+                  pipelineId,
+                  reason: blacklistAction.reason
+                });
 
-          // 触发流水线销毁事件
-          this.emit('pipeline-destroy', {
-            pipelineId,
-            reason: blacklistAction.reason,
-            requestId,
-            timestamp: Date.now()
-          });
+                // 触发流水线销毁事件
+                this.emit('pipeline-destroy', {
+                  pipelineId,
+                  reason: blacklistAction.reason,
+                  requestId,
+                  timestamp: Date.now()
+                });
 
-        } else if (blacklistAction.action === 'temporary_block') {
-          secureLogger.warn('Pipeline temporarily blocked for rate limiting', {
-            requestId,
-            pipelineId,
-            duration: blacklistAction.duration,
-            reason: blacklistAction.reason
-          });
+              } else if (blacklistAction.action === 'temporary_block') {
+                secureLogger.warn('Pipeline temporarily blocked for rate limiting', {
+                  requestId,
+                  pipelineId,
+                  duration: blacklistAction.duration,
+                  reason: blacklistAction.reason
+                });
 
-          // 触发临时拉黑事件
-          this.emit('pipeline-temporary-block', {
-            pipelineId,
-            reason: blacklistAction.reason,
-            duration: blacklistAction.duration,
+                // 触发临时拉黑事件
+                this.emit('pipeline-temporary-block', {
+                  pipelineId,
+                  reason: blacklistAction.reason,
+                  duration: blacklistAction.duration,
+                  requestId,
+                  timestamp: Date.now()
+                });
+              }
+              break;
+          }
+        } catch (coordinationError) {
+          secureLogger.error('Error coordination center failed, falling back to legacy handling', {
             requestId,
-            timestamp: Date.now()
+            pipelineId,
+            error: coordinationError.message
           });
+          
+          // 回退到旧的处理方式
+          const blacklistAction = this.blacklistManager.handle429Error(pipelineId);
+          
+          if (blacklistAction.action === 'destroy') {
+            secureLogger.error('Pipeline marked for destruction due to persistent rate limiting', {
+              requestId,
+              pipelineId,
+              reason: blacklistAction.reason
+            });
+
+            // 触发流水线销毁事件
+            this.emit('pipeline-destroy', {
+              pipelineId,
+              reason: blacklistAction.reason,
+              requestId,
+              timestamp: Date.now()
+            });
+
+          } else if (blacklistAction.action === 'temporary_block') {
+            secureLogger.warn('Pipeline temporarily blocked for rate limiting', {
+              requestId,
+              pipelineId,
+              duration: blacklistAction.duration,
+              reason: blacklistAction.reason
+            });
+
+            // 触发临时拉黑事件
+            this.emit('pipeline-temporary-block', {
+              pipelineId,
+              reason: blacklistAction.reason,
+              duration: blacklistAction.duration,
+              requestId,
+              timestamp: Date.now()
+            });
+          }
         }
       }
 

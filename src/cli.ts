@@ -513,7 +513,7 @@ Examples:
    * 显示版本信息
    */
   showVersion(): void {
-    process.stdout.write('RCC v4.0.0\n');
+    process.stdout.write('RCC v4.1.2\n');
   }
 
   /**

@@ -1,0 +1,1082 @@
+{
+  "timestamp": "2025-09-03T13:02:55.092Z",
+  "testType": "pipeline-assembler-unit-test",
+  "input": {
+    "pipelineCount": 5
+  },
+  "output": {
+    "pipelineAssemblies": [
+      {
+        "pipelineId": "iflow-glm-4.5-key0",
+        "modules": [
+          {
+            "id": "iflow-glm-4.5-key0-client",
+            "type": "ClientModule",
+            "implementation": "AnthropicClient",
+            "config": {
+              "protocol": "anthropic"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key0-router",
+            "type": "RouterModule",
+            "implementation": "ModelRouter",
+            "config": {
+              "provider": "iflow",
+              "model": "glm-4.5"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key0-transformer",
+            "type": "TransformerModule",
+            "implementation": "AnthropicToOpenAIConverter",
+            "config": {
+              "inputProtocol": "anthropic",
+              "outputProtocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key0-protocol",
+            "type": "ProtocolModule",
+            "implementation": "OpenAIProtocolHandler",
+            "config": {
+              "protocol": "openai",
+              "model": "glm-4.5"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key0-serverCompatibility",
+            "type": "ServerCompatibilityModule",
+            "implementation": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key0-server",
+            "type": "ServerModule",
+            "implementation": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+              "protocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key0-responseTransformer",
+            "type": "ResponseTransformerModule",
+            "implementation": "OpenAIToAnthropicConverter",
+            "config": {
+              "inputProtocol": "openai",
+              "outputProtocol": "anthropic"
+            }
+          }
+        ],
+        "assembly": {
+          "connections": [
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key0-client",
+                "outputs": [
+                  "routedRequest"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key0-router",
+                "inputs": [
+                  "routedRequest"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key0-router",
+                "outputs": [
+                  "transformerInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key0-transformer",
+                "inputs": [
+                  "transformerInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key0-transformer",
+                "outputs": [
+                  "protocolInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key0-protocol",
+                "inputs": [
+                  "protocolInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key0-protocol",
+                "outputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key0-serverCompatibility",
+                "inputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key0-serverCompatibility",
+                "outputs": [
+                  "serverInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key0-server",
+                "inputs": [
+                  "serverInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key0-server",
+                "outputs": [
+                  "rawResponse"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key0-responseTransformer",
+                "inputs": [
+                  "rawResponse"
+                ]
+              },
+              "connectionType": "sequential"
+            }
+          ],
+          "dataFlow": {
+            "isValid": true,
+            "issues": []
+          },
+          "interfaceCompatibility": {
+            "isCompatible": true,
+            "issues": []
+          }
+        }
+      },
+      {
+        "pipelineId": "iflow-glm-4.5-key1",
+        "modules": [
+          {
+            "id": "iflow-glm-4.5-key1-client",
+            "type": "ClientModule",
+            "implementation": "AnthropicClient",
+            "config": {
+              "protocol": "anthropic"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key1-router",
+            "type": "RouterModule",
+            "implementation": "ModelRouter",
+            "config": {
+              "provider": "iflow",
+              "model": "glm-4.5"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key1-transformer",
+            "type": "TransformerModule",
+            "implementation": "AnthropicToOpenAIConverter",
+            "config": {
+              "inputProtocol": "anthropic",
+              "outputProtocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key1-protocol",
+            "type": "ProtocolModule",
+            "implementation": "OpenAIProtocolHandler",
+            "config": {
+              "protocol": "openai",
+              "model": "glm-4.5"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key1-serverCompatibility",
+            "type": "ServerCompatibilityModule",
+            "implementation": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key1-server",
+            "type": "ServerModule",
+            "implementation": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+              "protocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-glm-4.5-key1-responseTransformer",
+            "type": "ResponseTransformerModule",
+            "implementation": "OpenAIToAnthropicConverter",
+            "config": {
+              "inputProtocol": "openai",
+              "outputProtocol": "anthropic"
+            }
+          }
+        ],
+        "assembly": {
+          "connections": [
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key1-client",
+                "outputs": [
+                  "routedRequest"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key1-router",
+                "inputs": [
+                  "routedRequest"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key1-router",
+                "outputs": [
+                  "transformerInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key1-transformer",
+                "inputs": [
+                  "transformerInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key1-transformer",
+                "outputs": [
+                  "protocolInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key1-protocol",
+                "inputs": [
+                  "protocolInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key1-protocol",
+                "outputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key1-serverCompatibility",
+                "inputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key1-serverCompatibility",
+                "outputs": [
+                  "serverInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key1-server",
+                "inputs": [
+                  "serverInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-glm-4.5-key1-server",
+                "outputs": [
+                  "rawResponse"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-glm-4.5-key1-responseTransformer",
+                "inputs": [
+                  "rawResponse"
+                ]
+              },
+              "connectionType": "sequential"
+            }
+          ],
+          "dataFlow": {
+            "isValid": true,
+            "issues": []
+          },
+          "interfaceCompatibility": {
+            "isCompatible": true,
+            "issues": []
+          }
+        }
+      },
+      {
+        "pipelineId": "qwen-qwen3-coder-plus-key0",
+        "modules": [
+          {
+            "id": "qwen-qwen3-coder-plus-key0-client",
+            "type": "ClientModule",
+            "implementation": "AnthropicClient",
+            "config": {
+              "protocol": "anthropic"
+            }
+          },
+          {
+            "id": "qwen-qwen3-coder-plus-key0-router",
+            "type": "RouterModule",
+            "implementation": "ModelRouter",
+            "config": {
+              "provider": "qwen",
+              "model": "qwen3-coder-plus"
+            }
+          },
+          {
+            "id": "qwen-qwen3-coder-plus-key0-transformer",
+            "type": "TransformerModule",
+            "implementation": "AnthropicToOpenAIConverter",
+            "config": {
+              "inputProtocol": "anthropic",
+              "outputProtocol": "openai"
+            }
+          },
+          {
+            "id": "qwen-qwen3-coder-plus-key0-protocol",
+            "type": "ProtocolModule",
+            "implementation": "OpenAIProtocolHandler",
+            "config": {
+              "protocol": "openai",
+              "model": "qwen3-coder-plus"
+            }
+          },
+          {
+            "id": "qwen-qwen3-coder-plus-key0-serverCompatibility",
+            "type": "ServerCompatibilityModule",
+            "implementation": "QwenServerCompatibility",
+            "config": {
+              "use": "qwen",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authFileName": "qwen-auth-1"
+              }
+            }
+          },
+          {
+            "id": "qwen-qwen3-coder-plus-key0-server",
+            "type": "ServerModule",
+            "implementation": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://portal.qwen.ai/v1",
+              "apiKey": "qwen-auth-1",
+              "protocol": "openai"
+            }
+          },
+          {
+            "id": "qwen-qwen3-coder-plus-key0-responseTransformer",
+            "type": "ResponseTransformerModule",
+            "implementation": "OpenAIToAnthropicConverter",
+            "config": {
+              "inputProtocol": "openai",
+              "outputProtocol": "anthropic"
+            }
+          }
+        ],
+        "assembly": {
+          "connections": [
+            {
+              "from": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-client",
+                "outputs": [
+                  "routedRequest"
+                ]
+              },
+              "to": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-router",
+                "inputs": [
+                  "routedRequest"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-router",
+                "outputs": [
+                  "transformerInput"
+                ]
+              },
+              "to": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-transformer",
+                "inputs": [
+                  "transformerInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-transformer",
+                "outputs": [
+                  "protocolInput"
+                ]
+              },
+              "to": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-protocol",
+                "inputs": [
+                  "protocolInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-protocol",
+                "outputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "to": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-serverCompatibility",
+                "inputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-serverCompatibility",
+                "outputs": [
+                  "serverInput"
+                ]
+              },
+              "to": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-server",
+                "inputs": [
+                  "serverInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-server",
+                "outputs": [
+                  "rawResponse"
+                ]
+              },
+              "to": {
+                "moduleId": "qwen-qwen3-coder-plus-key0-responseTransformer",
+                "inputs": [
+                  "rawResponse"
+                ]
+              },
+              "connectionType": "sequential"
+            }
+          ],
+          "dataFlow": {
+            "isValid": true,
+            "issues": []
+          },
+          "interfaceCompatibility": {
+            "isCompatible": true,
+            "issues": []
+          }
+        }
+      },
+      {
+        "pipelineId": "iflow-qwen3-coder-key0",
+        "modules": [
+          {
+            "id": "iflow-qwen3-coder-key0-client",
+            "type": "ClientModule",
+            "implementation": "AnthropicClient",
+            "config": {
+              "protocol": "anthropic"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key0-router",
+            "type": "RouterModule",
+            "implementation": "ModelRouter",
+            "config": {
+              "provider": "iflow",
+              "model": "qwen3-coder"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key0-transformer",
+            "type": "TransformerModule",
+            "implementation": "AnthropicToOpenAIConverter",
+            "config": {
+              "inputProtocol": "anthropic",
+              "outputProtocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key0-protocol",
+            "type": "ProtocolModule",
+            "implementation": "OpenAIProtocolHandler",
+            "config": {
+              "protocol": "openai",
+              "model": "qwen3-coder"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key0-serverCompatibility",
+            "type": "ServerCompatibilityModule",
+            "implementation": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key0-server",
+            "type": "ServerModule",
+            "implementation": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+              "protocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key0-responseTransformer",
+            "type": "ResponseTransformerModule",
+            "implementation": "OpenAIToAnthropicConverter",
+            "config": {
+              "inputProtocol": "openai",
+              "outputProtocol": "anthropic"
+            }
+          }
+        ],
+        "assembly": {
+          "connections": [
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key0-client",
+                "outputs": [
+                  "routedRequest"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key0-router",
+                "inputs": [
+                  "routedRequest"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key0-router",
+                "outputs": [
+                  "transformerInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key0-transformer",
+                "inputs": [
+                  "transformerInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key0-transformer",
+                "outputs": [
+                  "protocolInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key0-protocol",
+                "inputs": [
+                  "protocolInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key0-protocol",
+                "outputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key0-serverCompatibility",
+                "inputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key0-serverCompatibility",
+                "outputs": [
+                  "serverInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key0-server",
+                "inputs": [
+                  "serverInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key0-server",
+                "outputs": [
+                  "rawResponse"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key0-responseTransformer",
+                "inputs": [
+                  "rawResponse"
+                ]
+              },
+              "connectionType": "sequential"
+            }
+          ],
+          "dataFlow": {
+            "isValid": true,
+            "issues": []
+          },
+          "interfaceCompatibility": {
+            "isCompatible": true,
+            "issues": []
+          }
+        }
+      },
+      {
+        "pipelineId": "iflow-qwen3-coder-key1",
+        "modules": [
+          {
+            "id": "iflow-qwen3-coder-key1-client",
+            "type": "ClientModule",
+            "implementation": "AnthropicClient",
+            "config": {
+              "protocol": "anthropic"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key1-router",
+            "type": "RouterModule",
+            "implementation": "ModelRouter",
+            "config": {
+              "provider": "iflow",
+              "model": "qwen3-coder"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key1-transformer",
+            "type": "TransformerModule",
+            "implementation": "AnthropicToOpenAIConverter",
+            "config": {
+              "inputProtocol": "anthropic",
+              "outputProtocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key1-protocol",
+            "type": "ProtocolModule",
+            "implementation": "OpenAIProtocolHandler",
+            "config": {
+              "protocol": "openai",
+              "model": "qwen3-coder"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key1-serverCompatibility",
+            "type": "ServerCompatibilityModule",
+            "implementation": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key1-server",
+            "type": "ServerModule",
+            "implementation": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+              "protocol": "openai"
+            }
+          },
+          {
+            "id": "iflow-qwen3-coder-key1-responseTransformer",
+            "type": "ResponseTransformerModule",
+            "implementation": "OpenAIToAnthropicConverter",
+            "config": {
+              "inputProtocol": "openai",
+              "outputProtocol": "anthropic"
+            }
+          }
+        ],
+        "assembly": {
+          "connections": [
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key1-client",
+                "outputs": [
+                  "routedRequest"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key1-router",
+                "inputs": [
+                  "routedRequest"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key1-router",
+                "outputs": [
+                  "transformerInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key1-transformer",
+                "inputs": [
+                  "transformerInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key1-transformer",
+                "outputs": [
+                  "protocolInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key1-protocol",
+                "inputs": [
+                  "protocolInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key1-protocol",
+                "outputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key1-serverCompatibility",
+                "inputs": [
+                  "compatibilityInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key1-serverCompatibility",
+                "outputs": [
+                  "serverInput"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key1-server",
+                "inputs": [
+                  "serverInput"
+                ]
+              },
+              "connectionType": "sequential"
+            },
+            {
+              "from": {
+                "moduleId": "iflow-qwen3-coder-key1-server",
+                "outputs": [
+                  "rawResponse"
+                ]
+              },
+              "to": {
+                "moduleId": "iflow-qwen3-coder-key1-responseTransformer",
+                "inputs": [
+                  "rawResponse"
+                ]
+              },
+              "connectionType": "sequential"
+            }
+          ],
+          "dataFlow": {
+            "isValid": true,
+            "issues": []
+          },
+          "interfaceCompatibility": {
+            "isCompatible": true,
+            "issues": []
+          }
+        }
+      }
+    ],
+    "connectionValidations": [
+      {
+        "pipelineId": "iflow-glm-4.5-key0",
+        "passed": true,
+        "validationDetails": [
+          {
+            "connection": "iflow-glm-4.5-key0-client -> iflow-glm-4.5-key0-router",
+            "valid": true,
+            "details": "输出: [routedRequest] -> 输入: [routedRequest]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key0-router -> iflow-glm-4.5-key0-transformer",
+            "valid": true,
+            "details": "输出: [transformerInput] -> 输入: [transformerInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key0-transformer -> iflow-glm-4.5-key0-protocol",
+            "valid": true,
+            "details": "输出: [protocolInput] -> 输入: [protocolInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key0-protocol -> iflow-glm-4.5-key0-serverCompatibility",
+            "valid": true,
+            "details": "输出: [compatibilityInput] -> 输入: [compatibilityInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key0-serverCompatibility -> iflow-glm-4.5-key0-server",
+            "valid": true,
+            "details": "输出: [serverInput] -> 输入: [serverInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key0-server -> iflow-glm-4.5-key0-responseTransformer",
+            "valid": true,
+            "details": "输出: [rawResponse] -> 输入: [rawResponse]"
+          }
+        ]
+      },
+      {
+        "pipelineId": "iflow-glm-4.5-key1",
+        "passed": true,
+        "validationDetails": [
+          {
+            "connection": "iflow-glm-4.5-key1-client -> iflow-glm-4.5-key1-router",
+            "valid": true,
+            "details": "输出: [routedRequest] -> 输入: [routedRequest]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key1-router -> iflow-glm-4.5-key1-transformer",
+            "valid": true,
+            "details": "输出: [transformerInput] -> 输入: [transformerInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key1-transformer -> iflow-glm-4.5-key1-protocol",
+            "valid": true,
+            "details": "输出: [protocolInput] -> 输入: [protocolInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key1-protocol -> iflow-glm-4.5-key1-serverCompatibility",
+            "valid": true,
+            "details": "输出: [compatibilityInput] -> 输入: [compatibilityInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key1-serverCompatibility -> iflow-glm-4.5-key1-server",
+            "valid": true,
+            "details": "输出: [serverInput] -> 输入: [serverInput]"
+          },
+          {
+            "connection": "iflow-glm-4.5-key1-server -> iflow-glm-4.5-key1-responseTransformer",
+            "valid": true,
+            "details": "输出: [rawResponse] -> 输入: [rawResponse]"
+          }
+        ]
+      },
+      {
+        "pipelineId": "qwen-qwen3-coder-plus-key0",
+        "passed": true,
+        "validationDetails": [
+          {
+            "connection": "qwen-qwen3-coder-plus-key0-client -> qwen-qwen3-coder-plus-key0-router",
+            "valid": true,
+            "details": "输出: [routedRequest] -> 输入: [routedRequest]"
+          },
+          {
+            "connection": "qwen-qwen3-coder-plus-key0-router -> qwen-qwen3-coder-plus-key0-transformer",
+            "valid": true,
+            "details": "输出: [transformerInput] -> 输入: [transformerInput]"
+          },
+          {
+            "connection": "qwen-qwen3-coder-plus-key0-transformer -> qwen-qwen3-coder-plus-key0-protocol",
+            "valid": true,
+            "details": "输出: [protocolInput] -> 输入: [protocolInput]"
+          },
+          {
+            "connection": "qwen-qwen3-coder-plus-key0-protocol -> qwen-qwen3-coder-plus-key0-serverCompatibility",
+            "valid": true,
+            "details": "输出: [compatibilityInput] -> 输入: [compatibilityInput]"
+          },
+          {
+            "connection": "qwen-qwen3-coder-plus-key0-serverCompatibility -> qwen-qwen3-coder-plus-key0-server",
+            "valid": true,
+            "details": "输出: [serverInput] -> 输入: [serverInput]"
+          },
+          {
+            "connection": "qwen-qwen3-coder-plus-key0-server -> qwen-qwen3-coder-plus-key0-responseTransformer",
+            "valid": true,
+            "details": "输出: [rawResponse] -> 输入: [rawResponse]"
+          }
+        ]
+      },
+      {
+        "pipelineId": "iflow-qwen3-coder-key0",
+        "passed": true,
+        "validationDetails": [
+          {
+            "connection": "iflow-qwen3-coder-key0-client -> iflow-qwen3-coder-key0-router",
+            "valid": true,
+            "details": "输出: [routedRequest] -> 输入: [routedRequest]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key0-router -> iflow-qwen3-coder-key0-transformer",
+            "valid": true,
+            "details": "输出: [transformerInput] -> 输入: [transformerInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key0-transformer -> iflow-qwen3-coder-key0-protocol",
+            "valid": true,
+            "details": "输出: [protocolInput] -> 输入: [protocolInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key0-protocol -> iflow-qwen3-coder-key0-serverCompatibility",
+            "valid": true,
+            "details": "输出: [compatibilityInput] -> 输入: [compatibilityInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key0-serverCompatibility -> iflow-qwen3-coder-key0-server",
+            "valid": true,
+            "details": "输出: [serverInput] -> 输入: [serverInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key0-server -> iflow-qwen3-coder-key0-responseTransformer",
+            "valid": true,
+            "details": "输出: [rawResponse] -> 输入: [rawResponse]"
+          }
+        ]
+      },
+      {
+        "pipelineId": "iflow-qwen3-coder-key1",
+        "passed": true,
+        "validationDetails": [
+          {
+            "connection": "iflow-qwen3-coder-key1-client -> iflow-qwen3-coder-key1-router",
+            "valid": true,
+            "details": "输出: [routedRequest] -> 输入: [routedRequest]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key1-router -> iflow-qwen3-coder-key1-transformer",
+            "valid": true,
+            "details": "输出: [transformerInput] -> 输入: [transformerInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key1-transformer -> iflow-qwen3-coder-key1-protocol",
+            "valid": true,
+            "details": "输出: [protocolInput] -> 输入: [protocolInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key1-protocol -> iflow-qwen3-coder-key1-serverCompatibility",
+            "valid": true,
+            "details": "输出: [compatibilityInput] -> 输入: [compatibilityInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key1-serverCompatibility -> iflow-qwen3-coder-key1-server",
+            "valid": true,
+            "details": "输出: [serverInput] -> 输入: [serverInput]"
+          },
+          {
+            "connection": "iflow-qwen3-coder-key1-server -> iflow-qwen3-coder-key1-responseTransformer",
+            "valid": true,
+            "details": "输出: [rawResponse] -> 输入: [rawResponse]"
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "totalPipelines": 5,
+    "validationResults": {
+      "passed": 5,
+      "failed": 0
+    }
+  }
+}

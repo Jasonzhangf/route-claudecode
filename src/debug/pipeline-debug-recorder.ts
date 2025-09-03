@@ -153,6 +153,13 @@ export class PipelineDebugRecorder {
     duration: number,
     transformType: string = 'anthropic-to-openai'
   ): PipelineLayerRecord {
+    // 🔍 深度分析输入和输出格式
+    const inputAnalysis = this.analyzeTransformerData(input, 'input');
+    const outputAnalysis = this.analyzeTransformerData(output, 'output');
+    
+    // 🔍 检测转换是否成功
+    const transformationSuccess = this.validateTransformation(input, output, transformType);
+    
     const record: PipelineLayerRecord = {
       layer: 'transformer',
       layerOrder: 2,
@@ -162,14 +169,36 @@ export class PipelineDebugRecorder {
       output,
       duration,
       timestamp: new Date().toISOString(),
-      success: true,
+      success: transformationSuccess.success,
+      error: transformationSuccess.success ? undefined : transformationSuccess.error,
       metadata: {
         description: `${transformType}格式转换处理`,
         transformationType: transformType,
-        inputFormat: this.detectFormat(input),
-        outputFormat: this.detectFormat(output),
+        inputFormat: inputAnalysis.format,
+        outputFormat: outputAnalysis.format,
+        inputAnalysis,
+        outputAnalysis,
+        transformationValidation: transformationSuccess,
+        criticalCheck: {
+          inputNotEmpty: this.isNotEmpty(input),
+          outputNotEmpty: this.isNotEmpty(output),
+          formatChanged: inputAnalysis.format !== outputAnalysis.format,
+          toolsConverted: this.checkToolsConversion(input, output),
+          messagesConverted: this.checkMessagesConversion(input, output),
+          modelPreserved: input?.model === output?.model
+        }
       },
     };
+
+    // 🔍 控制台输出关键信息
+    console.log(`🔍 [TRANSFORMER-DEBUG] 转换记录 ${requestId}:`, {
+      输入格式: inputAnalysis.format,
+      输出格式: outputAnalysis.format,
+      输入是否为空: !this.isNotEmpty(input),
+      输出是否为空: !this.isNotEmpty(output),
+      转换是否成功: transformationSuccess.success,
+      错误信息: transformationSuccess.error || 'none'
+    });
 
     return record;
   }
@@ -390,6 +419,162 @@ export class PipelineDebugRecorder {
     }
 
     return 'unknown';
+  }
+
+  /**
+   * 深度分析 transformer 数据
+   */
+  private analyzeTransformerData(data: any, type: 'input' | 'output'): any {
+    if (!data || typeof data !== 'object') {
+      return {
+        format: 'empty',
+        isEmpty: true,
+        type: typeof data,
+        keys: [],
+        hasModel: false,
+        hasMessages: false,
+        hasTools: false,
+        messageCount: 0,
+        toolCount: 0,
+        summary: `${type}为空或不是对象`
+      };
+    }
+
+    const keys = Object.keys(data);
+    const format = this.detectFormat(data);
+    const hasModel = 'model' in data;
+    const hasMessages = 'messages' in data && Array.isArray(data.messages);
+    const hasTools = 'tools' in data && Array.isArray(data.tools);
+    const messageCount = hasMessages ? data.messages.length : 0;
+    const toolCount = hasTools ? data.tools.length : 0;
+
+    // 检测是否为 Anthropic 格式
+    const isAnthropic = (data.system || hasMessages) && !this.hasOpenAIToolFormat(data);
+    
+    // 检测是否为 OpenAI 格式
+    const isOpenAI = hasMessages && this.hasOpenAIToolFormat(data);
+
+    return {
+      format: isAnthropic ? 'anthropic' : (isOpenAI ? 'openai' : format),
+      isEmpty: keys.length === 0,
+      type: typeof data,
+      keys,
+      hasModel,
+      hasMessages,
+      hasTools,
+      messageCount,
+      toolCount,
+      isAnthropic,
+      isOpenAI,
+      toolFormat: hasTools ? this.analyzeToolFormat(data.tools) : 'none',
+      summary: `${type}: ${keys.length}个字段, ${messageCount}条消息, ${toolCount}个工具, 格式=${isAnthropic ? 'anthropic' : (isOpenAI ? 'openai' : 'unknown')}`
+    };
+  }
+
+  /**
+   * 检查是否有 OpenAI 工具格式
+   */
+  private hasOpenAIToolFormat(data: any): boolean {
+    if (!data.tools || !Array.isArray(data.tools) || data.tools.length === 0) {
+      return false;
+    }
+    
+    const firstTool = data.tools[0];
+    return firstTool.type === 'function' && firstTool.function && firstTool.function.parameters;
+  }
+
+  /**
+   * 分析工具格式
+   */
+  private analyzeToolFormat(tools: any[]): string {
+    if (!tools || !Array.isArray(tools) || tools.length === 0) {
+      return 'none';
+    }
+
+    const firstTool = tools[0];
+    
+    // OpenAI 格式：{type: "function", function: {name, description, parameters}}
+    if (firstTool.type === 'function' && firstTool.function && firstTool.function.parameters) {
+      return 'openai';
+    }
+    
+    // Anthropic 格式：{name, description, input_schema}
+    if (firstTool.name && firstTool.input_schema) {
+      return 'anthropic';
+    }
+    
+    return 'unknown';
+  }
+
+  /**
+   * 验证转换是否成功 - 简化版本
+   */
+  private validateTransformation(input: any, output: any, transformType: string): { success: boolean; error?: string } {
+    // 简单检查：只要输出不是null/undefined就算成功
+    if (output === null || output === undefined) {
+      return { success: false, error: '输出为null或undefined' };
+    }
+    
+    // 只要输出是对象类型就算成功
+    return { success: true };
+  }
+
+  /**
+   * 检查数据是否不为空 - 简化版本
+   */
+  private isNotEmpty(data: any): boolean {
+    // 只检查基本的null/undefined情况
+    return data !== null && data !== undefined;
+  }
+
+  /**
+   * 检查工具转换是否正确
+   */
+  private checkToolsConversion(input: any, output: any): boolean {
+    const inputHasTools = input?.tools && Array.isArray(input.tools) && input.tools.length > 0;
+    const outputHasTools = output?.tools && Array.isArray(output.tools) && output.tools.length > 0;
+    
+    // 如果输入没有工具，输出也应该没有工具（或者可以有）
+    if (!inputHasTools) {
+      return true; // 没有工具需要转换，所以算成功
+    }
+    
+    // 如果输入有工具，输出也应该有工具
+    if (inputHasTools && !outputHasTools) {
+      return false; // 工具丢失
+    }
+    
+    // 检查工具数量
+    if (input.tools.length !== output.tools.length) {
+      return false; // 工具数量不匹配
+    }
+    
+    // 检查工具格式转换
+    const inputToolFormat = this.analyzeToolFormat(input.tools);
+    const outputToolFormat = this.analyzeToolFormat(output.tools);
+    
+    // Anthropic → OpenAI 转换应该是 anthropic → openai
+    return inputToolFormat === 'anthropic' && outputToolFormat === 'openai';
+  }
+
+  /**
+   * 检查消息转换是否正确
+   */
+  private checkMessagesConversion(input: any, output: any): boolean {
+    const inputHasMessages = input?.messages && Array.isArray(input.messages);
+    const outputHasMessages = output?.messages && Array.isArray(output.messages);
+    
+    // 如果输入有消息，输出也应该有消息
+    if (inputHasMessages && !outputHasMessages) {
+      return false;
+    }
+    
+    // 如果输入有 system 字段，输出的消息数组应该比输入多1个（system 消息被添加）
+    if (input?.system && inputHasMessages) {
+      return output.messages.length >= input.messages.length;
+    }
+    
+    return true;
   }
 
   /**

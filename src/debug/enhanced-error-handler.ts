@@ -33,7 +33,7 @@ export interface ErrorContext {
   totalTime?: number;
   layerTimings?: Record<string, number>;
   errorCount?: number;
-  availablePipelines?: number;
+  availablePipelines?: string[];
 }
 
 /**

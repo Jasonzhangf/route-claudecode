@@ -880,10 +880,8 @@ export class PipelineTableManager {
       config: { provider: pipelineDef.provider, model: pipelineDef.targetModel, transformationType: transformerType },
       process: async (data: any) => {
         if (transformerType === TRANSFORMER_TYPES.ANTHROPIC_TO_OPENAI) {
-          const { SecureAnthropicToOpenAITransformer } = await import('../modules/transformers/secure-anthropic-openai-transformer');
-          const transformer = new SecureAnthropicToOpenAITransformer();
-          await transformer.start();
-          return transformer.process(data);
+          const { transformAnthropicToOpenAI } = await import('../modules/transformers/anthropic-openai-converter');
+          return transformAnthropicToOpenAI(data);
         }
         return data;
       },

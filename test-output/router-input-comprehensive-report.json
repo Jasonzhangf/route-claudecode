@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-09-03T11:49:33.274Z",
+  "configSource": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511.json",
+  "validations": {
+    "provider": true,
+    "routing": true
+  },
+  "details": {
+    "providerCount": 2,
+    "routingRuleCount": 8,
+    "providerNames": [
+      "qwen",
+      "iflow"
+    ]
+  }
+}

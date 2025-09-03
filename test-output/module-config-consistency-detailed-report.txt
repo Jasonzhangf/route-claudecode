@@ -1,0 +1,813 @@
+模块初始化配置一致性验证报告
+============================
+
+报告生成时间: 2025-09-03T13:03:19.069Z
+输入数据:
+  - 路由器流水线数: 5
+  - 组装器流水线数: 5
+
+详细验证结果:
+
+流水线: iflow-glm-4.5-key0
+模块类型: ClientModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ClientModule",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ClientModule",
+  "implementation": "AnthropicClient",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key0
+模块类型: RouterModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "RouterModule",
+  "config": {
+    "provider": "iflow",
+    "model": "glm-4.5"
+  }
+}
+组装器配置: {
+  "type": "RouterModule",
+  "implementation": "ModelRouter",
+  "config": {
+    "provider": "iflow",
+    "model": "glm-4.5"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key0
+模块类型: TransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "TransformerModule",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "TransformerModule",
+  "implementation": "AnthropicToOpenAIConverter",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key0
+模块类型: ProtocolModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ProtocolModule",
+  "config": {
+    "protocol": "openai",
+    "model": "glm-4.5"
+  }
+}
+组装器配置: {
+  "type": "ProtocolModule",
+  "implementation": "OpenAIProtocolHandler",
+  "config": {
+    "protocol": "openai",
+    "model": "glm-4.5"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key0
+模块类型: ServerCompatibilityModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+组装器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+
+
+流水线: iflow-glm-4.5-key0
+模块类型: ServerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerModule",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+    "protocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "ServerModule",
+  "implementation": "HTTPAPIClient",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+    "protocol": "openai"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key0
+模块类型: ResponseTransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ResponseTransformerModule",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ResponseTransformerModule",
+  "implementation": "OpenAIToAnthropicConverter",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key1
+模块类型: ClientModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ClientModule",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ClientModule",
+  "implementation": "AnthropicClient",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key1
+模块类型: RouterModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "RouterModule",
+  "config": {
+    "provider": "iflow",
+    "model": "glm-4.5"
+  }
+}
+组装器配置: {
+  "type": "RouterModule",
+  "implementation": "ModelRouter",
+  "config": {
+    "provider": "iflow",
+    "model": "glm-4.5"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key1
+模块类型: TransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "TransformerModule",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "TransformerModule",
+  "implementation": "AnthropicToOpenAIConverter",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key1
+模块类型: ProtocolModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ProtocolModule",
+  "config": {
+    "protocol": "openai",
+    "model": "glm-4.5"
+  }
+}
+组装器配置: {
+  "type": "ProtocolModule",
+  "implementation": "OpenAIProtocolHandler",
+  "config": {
+    "protocol": "openai",
+    "model": "glm-4.5"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key1
+模块类型: ServerCompatibilityModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+组装器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+
+
+流水线: iflow-glm-4.5-key1
+模块类型: ServerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerModule",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+    "protocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "ServerModule",
+  "implementation": "HTTPAPIClient",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+    "protocol": "openai"
+  }
+}
+
+
+流水线: iflow-glm-4.5-key1
+模块类型: ResponseTransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ResponseTransformerModule",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ResponseTransformerModule",
+  "implementation": "OpenAIToAnthropicConverter",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+
+
+流水线: qwen-qwen3-coder-plus-key0
+模块类型: ClientModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ClientModule",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ClientModule",
+  "implementation": "AnthropicClient",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+
+
+流水线: qwen-qwen3-coder-plus-key0
+模块类型: RouterModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "RouterModule",
+  "config": {
+    "provider": "qwen",
+    "model": "qwen3-coder-plus"
+  }
+}
+组装器配置: {
+  "type": "RouterModule",
+  "implementation": "ModelRouter",
+  "config": {
+    "provider": "qwen",
+    "model": "qwen3-coder-plus"
+  }
+}
+
+
+流水线: qwen-qwen3-coder-plus-key0
+模块类型: TransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "TransformerModule",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "TransformerModule",
+  "implementation": "AnthropicToOpenAIConverter",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+
+
+流水线: qwen-qwen3-coder-plus-key0
+模块类型: ProtocolModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ProtocolModule",
+  "config": {
+    "protocol": "openai",
+    "model": "qwen3-coder-plus"
+  }
+}
+组装器配置: {
+  "type": "ProtocolModule",
+  "implementation": "OpenAIProtocolHandler",
+  "config": {
+    "protocol": "openai",
+    "model": "qwen3-coder-plus"
+  }
+}
+
+
+流水线: qwen-qwen3-coder-plus-key0
+模块类型: ServerCompatibilityModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "QwenServerCompatibility",
+  "config": {
+    "use": "qwen",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authFileName": "qwen-auth-1"
+    }
+  }
+}
+组装器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "QwenServerCompatibility",
+  "config": {
+    "use": "qwen",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authFileName": "qwen-auth-1"
+    }
+  }
+}
+
+
+流水线: qwen-qwen3-coder-plus-key0
+模块类型: ServerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerModule",
+  "config": {
+    "baseUrl": "https://portal.qwen.ai/v1",
+    "apiKey": "qwen-auth-1",
+    "protocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "ServerModule",
+  "implementation": "HTTPAPIClient",
+  "config": {
+    "baseUrl": "https://portal.qwen.ai/v1",
+    "apiKey": "qwen-auth-1",
+    "protocol": "openai"
+  }
+}
+
+
+流水线: qwen-qwen3-coder-plus-key0
+模块类型: ResponseTransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ResponseTransformerModule",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ResponseTransformerModule",
+  "implementation": "OpenAIToAnthropicConverter",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key0
+模块类型: ClientModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ClientModule",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ClientModule",
+  "implementation": "AnthropicClient",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key0
+模块类型: RouterModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "RouterModule",
+  "config": {
+    "provider": "iflow",
+    "model": "qwen3-coder"
+  }
+}
+组装器配置: {
+  "type": "RouterModule",
+  "implementation": "ModelRouter",
+  "config": {
+    "provider": "iflow",
+    "model": "qwen3-coder"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key0
+模块类型: TransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "TransformerModule",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "TransformerModule",
+  "implementation": "AnthropicToOpenAIConverter",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key0
+模块类型: ProtocolModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ProtocolModule",
+  "config": {
+    "protocol": "openai",
+    "model": "qwen3-coder"
+  }
+}
+组装器配置: {
+  "type": "ProtocolModule",
+  "implementation": "OpenAIProtocolHandler",
+  "config": {
+    "protocol": "openai",
+    "model": "qwen3-coder"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key0
+模块类型: ServerCompatibilityModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+组装器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key0
+模块类型: ServerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerModule",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+    "protocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "ServerModule",
+  "implementation": "HTTPAPIClient",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+    "protocol": "openai"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key0
+模块类型: ResponseTransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ResponseTransformerModule",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ResponseTransformerModule",
+  "implementation": "OpenAIToAnthropicConverter",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key1
+模块类型: ClientModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ClientModule",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ClientModule",
+  "implementation": "AnthropicClient",
+  "config": {
+    "protocol": "anthropic"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key1
+模块类型: RouterModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "RouterModule",
+  "config": {
+    "provider": "iflow",
+    "model": "qwen3-coder"
+  }
+}
+组装器配置: {
+  "type": "RouterModule",
+  "implementation": "ModelRouter",
+  "config": {
+    "provider": "iflow",
+    "model": "qwen3-coder"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key1
+模块类型: TransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "TransformerModule",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "TransformerModule",
+  "implementation": "AnthropicToOpenAIConverter",
+  "config": {
+    "inputProtocol": "anthropic",
+    "outputProtocol": "openai"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key1
+模块类型: ProtocolModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ProtocolModule",
+  "config": {
+    "protocol": "openai",
+    "model": "qwen3-coder"
+  }
+}
+组装器配置: {
+  "type": "ProtocolModule",
+  "implementation": "OpenAIProtocolHandler",
+  "config": {
+    "protocol": "openai",
+    "model": "qwen3-coder"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key1
+模块类型: ServerCompatibilityModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+组装器配置: {
+  "type": "ServerCompatibilityModule",
+  "implementation": "IFlowServerCompatibility",
+  "config": {
+    "use": "iflow",
+    "options": {
+      "maxTokens": 262144,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true
+    }
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key1
+模块类型: ServerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ServerModule",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+    "protocol": "openai"
+  }
+}
+组装器配置: {
+  "type": "ServerModule",
+  "implementation": "HTTPAPIClient",
+  "config": {
+    "baseUrl": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+    "protocol": "openai"
+  }
+}
+
+
+流水线: iflow-qwen3-coder-key1
+模块类型: ResponseTransformerModule
+检查类型: config_consistency
+结果: ✅ 通过
+路由器配置: {
+  "type": "ResponseTransformerModule",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+组装器配置: {
+  "type": "ResponseTransformerModule",
+  "implementation": "OpenAIToAnthropicConverter",
+  "config": {
+    "inputProtocol": "openai",
+    "outputProtocol": "anthropic"
+  }
+}
+

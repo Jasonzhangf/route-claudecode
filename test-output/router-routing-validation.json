@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-09-03T11:49:33.274Z",
+  "validationType": "routing-config",
+  "routingRules": 8,
+  "rules": [
+    {
+      "category": "default",
+      "route": "iflow,glm-4.5;qwen,qwen3-coder-plus"
+    },
+    {
+      "category": "longContext",
+      "route": "qwen,qwen3-coder-plus"
+    },
+    {
+      "category": "background",
+      "route": "qwen,qwen3-coder-plus"
+    },
+    {
+      "category": "think",
+      "route": "iflow,qwen3-coder;qwen,qwen3-coder-plus"
+    },
+    {
+      "category": "webSearch",
+      "route": "iflow,glm-4.5"
+    },
+    {
+      "category": "code",
+      "route": "qwen,qwen3-coder-plus"
+    },
+    {
+      "category": "codeReview",
+      "route": "iflow,qwen3-coder"
+    },
+    {
+      "category": "reasoning",
+      "route": "iflow,qwen3-coder"
+    }
+  ],
+  "isValid": true
+}

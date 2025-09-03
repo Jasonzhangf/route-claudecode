@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-02 21:23:34",
+  "scanned_file": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-v4-5507.json",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

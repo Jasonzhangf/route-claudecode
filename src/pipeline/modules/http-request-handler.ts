@@ -16,6 +16,7 @@ import { secureLogger } from '../../utils/secure-logger';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { HeartbeatManager } from './heartbeat-manager';
 import { API_DEFAULTS } from '../../constants/api-defaults';
+import OpenAI from 'openai';
 
 export interface HttpRequestOptions {
   method?: string;
@@ -546,5 +547,70 @@ export class HttpRequestHandler {
         reject(error);
       }
     });
+  }
+
+  /**
+   * 使用OpenAI SDK处理请求 - 自动处理SSE流解析
+   * @param request OpenAI格式的请求
+   * @param baseURL API基础URL
+   * @param apiKey API密钥
+   * @returns OpenAI格式的响应
+   */
+  async makeOpenAIRequest(request: any, baseURL: string, apiKey: string): Promise<any> {
+    try {
+      secureLogger.info('使用OpenAI SDK发起请求', {
+        baseURL: baseURL.replace(/\/[^/]+$/, '/***'),
+        model: request.model,
+        hasTools: !!request.tools,
+        stream: request.stream
+      });
+
+      // 创建OpenAI客户端
+      const openai = new OpenAI({
+        apiKey: apiKey,
+        baseURL: baseURL.endsWith('/v1') ? baseURL : `${baseURL}/v1`
+      });
+
+      // 使用SDK发起请求，自动处理SSE流
+      const response = await openai.chat.completions.create(request);
+
+      secureLogger.info('OpenAI SDK请求完成', {
+        responseId: response.id,
+        model: response.model,
+        hasChoices: response.choices?.length > 0,
+        finishReason: response.choices?.[0]?.finish_reason
+      });
+
+      return response;
+
+    } catch (openaiError) {
+      secureLogger.error('OpenAI SDK请求失败', {
+        error: openaiError instanceof Error ? openaiError.message : String(openaiError),
+        baseURL: baseURL.replace(/\/[^/]+$/, '/***'),
+        model: request.model
+      });
+
+      // 返回错误格式的响应而不是抛出异常
+      return {
+        id: `chatcmpl-error-${Date.now()}`,
+        object: 'chat.completion',
+        created: Math.floor(Date.now() / 1000),
+        model: request.model || 'unknown',
+        choices: [{
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: `API请求失败: ${openaiError instanceof Error ? openaiError.message : String(openaiError)}`
+          },
+          finish_reason: 'error'
+        }],
+        error: {
+          type: 'api_request_error',
+          message: openaiError instanceof Error ? openaiError.message : String(openaiError),
+          sdk_used: true
+        },
+        usage: { prompt_tokens: 0, completion_tokens: 50, total_tokens: 50 }
+      };
+    }
   }
 }

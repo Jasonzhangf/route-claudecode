@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-09-03T11:53:45.549Z",
+  "module": "router",
+  "interfaceRequirements": {
+    "inputFormat": "UnifiedConfigOutputs.router",
+    "expectedStructure": {
+      "routingRules": "modelMapping object",
+      "providers": "array of provider configurations",
+      "server": "server configuration object"
+    },
+    "outputFormat": "RoutingTable interface compliant"
+  }
+}

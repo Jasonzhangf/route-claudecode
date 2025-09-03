@@ -282,3 +282,115 @@ export interface CompatibilityHooks {
   afterErrorNormalization?: (result: ErrorNormalizationResult) => Promise<void> | void;
   onDebugEvent?: (event: DebugEvent) => Promise<void> | void;
 }
+
+/**
+ * OpenAI标准请求格式
+ */
+export interface OpenAIStandardRequest {
+  model: string;
+  messages: Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+  }>;
+  max_tokens?: number;
+  temperature?: number;
+  top_p?: number;
+  n?: number;
+  stream?: boolean;
+  stop?: string | string[];
+  presence_penalty?: number;
+  frequency_penalty?: number;
+  logit_bias?: Record<string, number>;
+  user?: string;
+  tools?: Array<{
+    type: 'function';
+    function: {
+      name: string;
+      description: string;
+      parameters: any;
+    };
+  }>;
+  tool_choice?: 'none' | 'auto' | {
+    type: 'function';
+    function: { name: string };
+  };
+}
+
+/**
+ * OpenAI标准响应格式
+ */
+export interface OpenAIStandardResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  system_fingerprint?: string;
+  thinking?: any;
+  choices: Array<{
+    index: number;
+    message: {
+      role: 'assistant';
+      content: string | null;
+      tool_calls?: Array<{
+        id: string;
+        type: 'function';
+        function: {
+          name: string;
+          arguments: string;
+        };
+      }>;
+    };
+    finish_reason: string | null;
+  }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+/**
+ * OpenAI错误响应格式
+ */
+export interface OpenAIErrorResponse {
+  error: {
+    message: string;
+    type: string;
+    param?: string;
+    code?: string | number;
+  };
+}
+
+/**
+ * Debug记录器接口
+ */
+export interface DebugRecorder {
+  record(eventType: string, data: any): void;
+  recordInput(moduleType: string, requestId: string, data: any): void;
+  recordOutput(moduleType: string, requestId: string, data: any): void;
+  recordError(moduleType: string, requestId: string, data: any): void;
+}
+
+/**
+ * Provider能力定义
+ */
+export interface ProviderCapabilities {
+  name?: string;
+  tools: boolean;
+  thinking: boolean;
+  streaming: boolean;
+  customParameters: boolean;
+  supportsTools?: boolean;
+  supportsThinking?: boolean;
+  responseFixesNeeded?: boolean;
+  parameterLimits: {
+    maxTokens: number;
+    max_tokens?: number;
+    temperatureMin: number;
+    temperatureMax: number;
+    temperature?: number;
+    topPMin: number;
+    topPMax: number;
+    top_p?: number;
+  };
+}

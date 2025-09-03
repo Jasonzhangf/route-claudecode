@@ -235,6 +235,7 @@ function getTypeIcon(type: ErrorType): string {
     [ErrorType.TRANSFORM_ERROR]: '🔄',
     [ErrorType.AUTH_ERROR]: '🔑',
     [ErrorType.VALIDATION_ERROR]: '✅',
+    [ErrorType.RATE_LIMIT_ERROR]: '🚦',
     [ErrorType.UNKNOWN_ERROR]: '❓'
   };
   

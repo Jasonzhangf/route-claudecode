@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { OpenAIErrorResponse, DebugRecorder } from './enhanced-compatibility';
+import { OpenAIErrorResponse, DebugRecorder } from './types/compatibility-types';
 
 /**
  * 错误响应标准化器

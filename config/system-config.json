@@ -77,6 +77,13 @@
       "serverCompatibility": "generic",
       "timeout": 30000,
       "maxRetries": 3
+    },
+    "iflow": {
+      "protocol": "openai",
+      "transformer": "anthropic-to-openai-transformer",
+      "serverCompatibility": "iflow",
+      "timeout": 60000,
+      "maxRetries": 3
     }
   },
   "// Transformer配置": "",
@@ -171,6 +178,10 @@
     "ollama": {
       "module": "OllamaCompatibilityModule",
       "description": "Ollama本地模型兼容性处理"
+    },
+    "iflow": {
+      "module": "IFlowCompatibilityModule",
+      "description": "iFlow心流AI平台兼容性处理"
     }
   },
   "// 连接握手配置": "",

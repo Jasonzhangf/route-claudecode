@@ -141,16 +141,31 @@ describe('Security Fixes Validation', () => {
         normalField: 'public-data',
       });
 
+      // 验证console.log被调用
+      expect(consoleSpy).toHaveBeenCalled();
+      
       // 验证敏感字段被过滤
-      const loggedCall = consoleSpy.mock.calls[0];
-      expect(loggedCall).toBeDefined();
-      if (loggedCall) {
-        const loggedString = JQJsonHandler.stringifyJson(loggedCall);
-        expect(loggedString).not.toContain('sk-1234567890abcdef');
-        expect(loggedString).not.toContain('secret123');
-        expect(loggedString).not.toContain('jwt-token-123');
-        expect(loggedString).toContain('public-data');
+      const loggedCalls = consoleSpy.mock.calls;
+      expect(loggedCalls.length).toBeGreaterThan(0);
+      
+      // 检查所有调用
+      let foundSensitiveData = false;
+      let foundPublicData = false;
+      
+      for (const call of loggedCalls) {
+        const loggedString = call.map(arg => typeof arg === 'string' ? arg : JQJsonHandler.stringifyJson(arg)).join(' ');
+        if (loggedString.includes('sk-1234567890abcdef') || 
+            loggedString.includes('secret123') || 
+            loggedString.includes('jwt-token-123')) {
+          foundSensitiveData = true;
+        }
+        if (loggedString.includes('public-data')) {
+          foundPublicData = true;
+        }
       }
+      
+      expect(foundSensitiveData).toBe(false);
+      expect(foundPublicData).toBe(true);
 
       // 清理
       consoleSpy.mockRestore();
@@ -170,17 +185,31 @@ describe('Security Fixes Validation', () => {
         timestamp: new Date().toISOString(),
       });
 
+      // 验证console.log被调用
+      expect(consoleSpy).toHaveBeenCalled();
+      
       // 验证审计日志格式
-      const auditCall = consoleSpy.mock.calls.find(call => call[0] && call[0].includes('AUDIT'));
-
-      expect(auditCall).toBeDefined();
-      if (auditCall) {
-        expect(auditCall[0]).toContain('authentication_failure');
+      const auditCalls = consoleSpy.mock.calls;
+      let foundAuditCall = false;
+      let foundAuthFailure = false;
+      let foundSensitiveData = false;
+      
+      for (const call of auditCalls) {
+        const callString = call.map(arg => typeof arg === 'string' ? arg : JQJsonHandler.stringifyJson(arg)).join(' ');
+        if (callString.includes('AUDIT')) {
+          foundAuditCall = true;
+        }
+        if (callString.includes('authentication_failure')) {
+          foundAuthFailure = true;
+        }
+        if (callString.includes('sensitive-key')) {
+          foundSensitiveData = true;
+        }
       }
 
-      // 验证敏感信息被过滤
-      const auditString = JQJsonHandler.stringifyJson(auditCall);
-      expect(auditString).not.toContain('sensitive-key');
+      expect(foundAuditCall).toBe(true);
+      expect(foundAuthFailure).toBe(true);
+      expect(foundSensitiveData).toBe(false);
 
       // 清理
       consoleSpy.mockRestore();

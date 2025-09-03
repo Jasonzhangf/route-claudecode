@@ -14,6 +14,7 @@
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../../utils/secure-logger';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 /**
  * 模块处理上下文接口
@@ -242,7 +243,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
           const fs = require('fs');
           
           if (fs.existsSync(authFilePath)) {
-            const authData = JSON.parse(fs.readFileSync(authFilePath, 'utf8'));
+            const authData = JQJsonHandler.parseJsonString(fs.readFileSync(authFilePath, 'utf8'));
             if (authData.access_token) {
               context.metadata.protocolConfig.apiKey = authData.access_token;
               secureLogger.info('🔑 Qwen OAuth2 token加载成功', {
@@ -432,7 +433,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
       case 'ls':
       case 'list_files':
       case 'list_directory':
-        toolContent = JSON.stringify({
+        toolContent = JQJsonHandler.stringifyJson({
           files: [],
           directories: [],
           total: 0,
@@ -442,7 +443,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
         
       case 'read':
       case 'read_file':
-        toolContent = JSON.stringify({
+        toolContent = JQJsonHandler.stringifyJson({
           content: '',
           size: 0,
           message: 'File read operation completed'
@@ -451,7 +452,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
         
       case 'write':
       case 'write_file':
-        toolContent = JSON.stringify({
+        toolContent = JQJsonHandler.stringifyJson({
           success: true,
           bytes_written: 0,
           message: 'File write operation completed'
@@ -461,7 +462,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
       case 'bash':
       case 'execute':
       case 'run_command':
-        toolContent = JSON.stringify({
+        toolContent = JQJsonHandler.stringifyJson({
           stdout: '',
           stderr: '',
           exit_code: 0,
@@ -471,7 +472,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
         
       default:
         // 通用工具响应
-        toolContent = JSON.stringify({
+        toolContent = JQJsonHandler.stringifyJson({
           status: 'completed',
           result: '',
           message: `Tool ${toolName} executed successfully`,
@@ -634,7 +635,7 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
         if (normalizedToolCall.function) {
           if (typeof normalizedToolCall.function.arguments !== 'string') {
             try {
-              normalizedToolCall.function.arguments = JSON.stringify(normalizedToolCall.function.arguments || {});
+              normalizedToolCall.function.arguments = JQJsonHandler.stringifyJson(normalizedToolCall.function.arguments || {});
             } catch (e) {
               normalizedToolCall.function.arguments = '{}';
             }

@@ -5,7 +5,7 @@
  */
 
 export * from './http-server';
-export * from './pipeline-server';
+export { PipelineServerManager } from '../pipeline/pipeline-server-manager';
 export * from './server-factory';
 export * from './middleware-manager';
 export * from './request-handler';

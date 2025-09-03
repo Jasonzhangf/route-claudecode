@@ -1,0 +1,15 @@
+路由器输入验证摘要
+==================
+验证时间: 2025-09-03T11:49:33.274Z
+配置文件: /Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511.json
+
+验证结果:
+---------
+Provider配置: ✅ 通过
+路由配置: ✅ 通过
+
+详细信息:
+---------
+Provider数量: 2
+路由规则数量: 8
+Provider名称: qwen, iflow

@@ -1,0 +1,1 @@
+{"model": "claude-3-sonnet", "messages": [{"role": "user", "content": "列出本项目下文件列表"}], "tools": [{"name": "list_files", "description": "列出指定目录下的文件", "input_schema": {"type": "object", "properties": {"path": {"type": "string", "description": "要列出文件的目录路径"}}, "required": ["path"]}}]}

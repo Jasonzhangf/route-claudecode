@@ -17,7 +17,7 @@ export { ModuleInterface, StandardRequest, StandardResponse } from './interfaces
 export { ClientModule, createClientModule, createClient, SessionManager, HttpClient } from './client';
 
 // 服务器模块导出
-export { HTTPServer, PipelineServer } from './server';
+export { HTTPServer, PipelineServerManager } from './server';
 
 // 路由器模块导出 - 使用统一的路由器
 export { PipelineRouter } from './router/pipeline-router';

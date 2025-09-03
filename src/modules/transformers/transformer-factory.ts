@@ -225,17 +225,12 @@ export class SecureTransformerFactory implements IModuleFactory {
   private createSecureConfig(userConfig: Partial<SecureTransformerConfig>): SecureTransformerConfig {
     const defaultConfig = this.config.defaultSecurityConfig;
 
-    // 动态计算maxTokens - 优先使用用户配置，否则使用常量中的默认值
-    const userMaxTokens = userConfig.maxTokens || defaultConfig?.maxTokens;
-    const calculatedMaxTokens = getSafeMaxTokens(userMaxTokens, 'lmstudio'); // 默认使用lmstudio的限制
-
     // 合并配置，确保安全默认值
     const mergedConfig: SecureTransformerConfig = {
       // 基础配置
       preserveToolCalls: true,
       mapSystemMessage: true,
       defaultMaxTokens: getSafeMaxTokens(userConfig.defaultMaxTokens),
-      maxTokens: calculatedMaxTokens,
 
       // 覆盖默认配置
       ...defaultConfig,
@@ -249,8 +244,8 @@ export class SecureTransformerFactory implements IModuleFactory {
 
   private validateConfigSecurity(config: SecureTransformerConfig): void {
     // Simple validation for simplified config
-    if (config.maxTokens <= 0 || config.maxTokens > 100000) {
-      throw new Error('maxTokens must be between 1 and 100000');
+    if (config.defaultMaxTokens <= 0 || config.defaultMaxTokens > 100000) {
+      throw new Error('defaultMaxTokens must be between 1 and 100000');
     }
   }
 
@@ -320,7 +315,6 @@ export function createSecureTransformerFactory(
   const defaultConfig: TransformerFactoryConfig = {
     defaultSecurityConfig: {
       // 使用动态计算而不是硬编码
-      maxTokens: getSafeMaxTokens(config.defaultSecurityConfig?.maxTokens, 'lmstudio'),
       preserveToolCalls: true,
       mapSystemMessage: true,
       defaultMaxTokens: 4096,

@@ -14,6 +14,7 @@ export const COMPATIBILITY_TAGS = {
   OPENAI: 'openai',
   MODELSCOPE: 'modelscope',
   QWEN: 'qwen',
+  IFLOW: 'iflow',
   DEFAULT: 'default',
   PASSTHROUGH: 'passthrough'
 } as const;
@@ -25,14 +26,16 @@ export const PROVIDER_NAMES = {
   ANTHROPIC: 'anthropic',
   OPENAI: 'openai',
   MODELSCOPE: 'modelscope',
-  QWEN: 'qwen'
+  QWEN: 'qwen',
+  IFLOW: 'iflow'
 } as const;
 
 export const DEFAULT_ENDPOINTS = {
   LMSTUDIO: 'http://localhost:1234/v1',
   OLLAMA: 'http://localhost:11434',
   VLLM: 'http://localhost:8000',
-  ANTHROPIC: 'https://api.anthropic.com'
+  ANTHROPIC: 'https://api.anthropic.com',
+  IFLOW: 'https://apis.iflow.cn/v1'
 } as const;
 
 export const DEFAULT_PORTS = {
@@ -62,7 +65,8 @@ export const DEFAULT_MODELS = {
   LMSTUDIO: ['gpt-oss-20b-mlx'],
   OLLAMA: ['llama2'],
   ANTHROPIC: ['claude-3-sonnet'],
-  OPENAI: ['gpt-3.5-turbo']
+  OPENAI: ['gpt-3.5-turbo'],
+  IFLOW: ['deepseek-r1', 'kimi-k2', 'qwen3-coder', 'glm-4.5']
 } as const;
 
 export const DEFAULT_MAX_TOKENS = {
@@ -79,6 +83,7 @@ export const COMPATIBILITY_MODULE_PATHS = {
   ANTHROPIC: '../modules/pipeline-modules/server-compatibility/anthropic-compatibility',
   MODELSCOPE: '../modules/pipeline-modules/server-compatibility/modelscope-compatibility',
   QWEN: '../modules/pipeline-modules/server-compatibility/qwen-compatibility',
+  IFLOW: '../modules/pipeline-modules/server-compatibility/iflow-compatibility',
   PASSTHROUGH: '../modules/pipeline-modules/server-compatibility/passthrough-compatibility'
 } as const;
 
@@ -89,6 +94,7 @@ export const COMPATIBILITY_MODULE_CLASSES = {
   ANTHROPIC: 'AnthropicCompatibilityModule',
   MODELSCOPE: 'ModelScopeCompatibilityModule',
   QWEN: 'QwenCompatibilityModule',
+  IFLOW: 'IFlowCompatibilityModule',
   PASSTHROUGH: 'PassthroughCompatibilityModule'
 } as const;
 
@@ -98,7 +104,8 @@ export const PROVIDER_TO_COMPATIBILITY_MAPPING = {
   [PROVIDER_NAMES.VLLM]: COMPATIBILITY_TAGS.VLLM,
   [PROVIDER_NAMES.ANTHROPIC]: COMPATIBILITY_TAGS.ANTHROPIC,
   [PROVIDER_NAMES.MODELSCOPE]: COMPATIBILITY_TAGS.MODELSCOPE,
-  [PROVIDER_NAMES.QWEN]: COMPATIBILITY_TAGS.QWEN
+  [PROVIDER_NAMES.QWEN]: COMPATIBILITY_TAGS.QWEN,
+  [PROVIDER_NAMES.IFLOW]: COMPATIBILITY_TAGS.IFLOW
 } as const;
 
 export const URL_PATTERNS = {
@@ -106,7 +113,8 @@ export const URL_PATTERNS = {
   OLLAMA_LOCALHOST: 'localhost:11434',
   VLLM_PATTERN: 'vllm',
   ANTHROPIC_DOMAIN: 'anthropic.com',
-  QWEN_DOMAIN: 'dashscope.aliyuncs.com'
+  QWEN_DOMAIN: 'portal.qwen.ai',
+  IFLOW_DOMAIN: 'iflow.cn'
 } as const;
 
 export const LAYER_NAMES = {

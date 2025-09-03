@@ -216,14 +216,17 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager {
           原始输出数据: output
         });
         
-        // 深度分析输出数据
+        // 🔧 修复：深度分析输出数据，正确判断转换是否成功
         if (output && typeof output === 'object') {
           const analysis = this.analyzeTransformerData(output, 'output');
           console.log(`🔍 [DEBUG-MANAGER] Transformer输出分析:`, analysis);
           
-          // 检查输出是否为空对象的关键问题
+          // 🔧 修复：检查输出是否为空对象的关键问题
           if (Object.keys(output).length === 0) {
             console.error(`❌ [DEBUG-MANAGER] CRITICAL: Transformer输出为空对象！这是用户反馈的核心问题！`);
+          } else if (output.model && output.messages) {
+            // 如果有模型和消息字段，说明转换成功
+            console.log(`✅ [DEBUG-MANAGER] Transformer转换成功: 模型=${output.model}, 消息数=${Array.isArray(output.messages) ? output.messages.length : 0}, 工具数=${Array.isArray(output.tools) ? output.tools.length : 0}`);
           }
         } else {
           console.error(`❌ [DEBUG-MANAGER] CRITICAL: Transformer输出不是对象或为空！输出类型: ${typeof output}, 值: ${output}`);

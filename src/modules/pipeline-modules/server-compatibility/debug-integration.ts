@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { DebugRecorder } from './enhanced-compatibility';
+import { DebugRecorder } from './types/compatibility-types';
 import {
   DebugEvent,
   CompatibilityMetrics,

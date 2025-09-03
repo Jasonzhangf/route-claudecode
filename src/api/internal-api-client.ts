@@ -1,5 +1,7 @@
 import { APIResponse } from './types/api-response';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { API_DEFAULTS } from '../constants/api-defaults';
+import { secureLogger } from '../utils/secure-logger';
 
 export interface InternalAPIClientConfig {
   baseUrl: string;
@@ -14,8 +16,8 @@ export class InternalAPIClient {
 
   constructor(config: InternalAPIClientConfig) {
     this.baseUrl = config.baseUrl;
-    this.timeout = config.timeout || 5000;
-    this.retries = config.retries || 3;
+    this.timeout = config.timeout || API_DEFAULTS.HTTP_CONFIG.INTERNAL_API_TIMEOUT;
+    this.retries = config.retries || API_DEFAULTS.HTTP_CONFIG.API_RETRY_DELAYS.MAX_ATTEMPTS - 1;
   }
 
   async post<T>(endpoint: string, data: any): Promise<APIResponse<T>> {
@@ -70,10 +72,24 @@ export class InternalAPIClient {
         return result;
       } catch (error) {
         lastError = error as Error;
-        if (i < this.retries) {
-          // Exponential backoff
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 100));
+        
+        // 如果是最后一次尝试，不再重试
+        if (i >= this.retries) {
+          break;
         }
+        
+        // 区分不同类型的错误，使用适当的退避策略
+        const isAbortError = error instanceof Error && error.name === 'AbortError';
+        const isTimeoutError = isAbortError || (error instanceof Error && error.message.includes('aborted'));
+        
+        // 计算退避延迟时间
+        const baseDelay = API_DEFAULTS.HTTP_CONFIG.API_RETRY_DELAYS.BASE_DELAY;
+        const multiplier = isTimeoutError 
+          ? API_DEFAULTS.HTTP_CONFIG.API_RETRY_DELAYS.TIMEOUT_MULTIPLIER
+          : 1;
+        const backoffTime = Math.pow(2, i) * baseDelay * multiplier;
+        
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
       }
     }
 

@@ -8,7 +8,7 @@
  */
 export { ModuleInterface, StandardRequest, StandardResponse } from './interfaces';
 export { ClientModule, createClientModule, createClient, SessionManager, HttpClient } from './client';
-export { HTTPServer, PipelineServer } from './server';
+export { HTTPServer, PipelineServerManager } from './server';
 export { PipelineRouter } from './router/pipeline-router';
 export { SimpleRouter } from './router/simple-router';
 export { PIPELINE_MODULE_VERSION, PipelineModuleInterface } from './pipeline';

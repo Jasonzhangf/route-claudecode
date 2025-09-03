@@ -108,8 +108,10 @@ export interface UnifiedConfigOutputs {
 interface RawConfigInput {
   readonly providers?: readonly {
     readonly name: string;
-    readonly api_base_url: string;
-    readonly api_key: string | readonly string[];
+    readonly api_base_url?: string;
+    readonly api_key?: string | readonly string[];
+    readonly baseURL?: string;
+    readonly apiKey?: string | readonly string[];
     readonly models: readonly (string | { name: string; max_token: number })[];
     readonly weight?: number;
     readonly serverCompatibility?: string;
@@ -270,7 +272,11 @@ export class UnifiedConfigManager {
     }
     
     for (const provider of config.providers) {
-      if (!provider.name || !provider.api_key || !provider.models) {
+      // 支持多种字段命名方式（向后兼容）
+      const apiKey = provider.apiKey || provider.api_key;
+      const baseUrl = provider.baseURL || provider.api_base_url;
+      
+      if (!provider.name || !apiKey || !provider.models) {
         throw new ConfigurationLoadError(`Provider配置不完整: ${JQJsonHandler.stringifyJson(provider)}`);
       }
     }
@@ -330,13 +336,34 @@ export class UnifiedConfigManager {
       },
       
       provider: {
-        providers: providers,
+        providers: providers.map(p => ({
+          ...p,
+          // 标准化字段名
+          api_base_url: p.api_base_url || p.baseURL,
+          api_key: p.api_key || p.apiKey
+        })),
         serverCompatibilityProviders: providers
           .filter(p => p.serverCompatibility)
-          .reduce((acc, p) => ({ ...acc, [p.name]: p }), {}),
+          .reduce((acc, p) => ({ 
+            ...acc, 
+            [p.name]: {
+              ...p,
+              // 标准化字段名
+              api_base_url: p.api_base_url || p.baseURL,
+              api_key: p.api_key || p.apiKey
+            }
+          }), {}),
         standardProviders: providers
           .filter(p => !p.serverCompatibility)
-          .reduce((acc, p) => ({ ...acc, [p.name]: p }), {}),
+          .reduce((acc, p) => ({ 
+            ...acc, 
+            [p.name]: {
+              ...p,
+              // 标准化字段名
+              api_base_url: p.api_base_url || p.baseURL,
+              api_key: p.api_key || p.apiKey
+            }
+          }), {}),
         models: providers.reduce((acc, p) => ({ 
           ...acc, 
           [p.name]: p.models.map(model => 
@@ -345,8 +372,8 @@ export class UnifiedConfigManager {
               : model
           )
         }), {}),
-        endpoints: providers.reduce((acc, p) => ({ ...acc, [p.name]: p.api_base_url }), {}),
-        apiKeys: providers.reduce((acc, p) => ({ ...acc, [p.name]: p.api_key }), {}),
+        endpoints: providers.reduce((acc, p) => ({ ...acc, [p.name]: p.api_base_url || p.baseURL }), {}),
+        apiKeys: providers.reduce((acc, p) => ({ ...acc, [p.name]: p.api_key || p.apiKey }), {}),
         protocolMappings: providers.reduce((acc, p) => ({ ...acc, [p.name]: p.protocol || 'openai' }), {})
       },
       
@@ -355,8 +382,8 @@ export class UnifiedConfigManager {
           ...acc, 
           [p.name]: {
             type: p.protocol || 'openai',
-            endpoint: p.api_base_url,
-            authentication: p.api_key
+            endpoint: p.api_base_url || p.baseURL,
+            authentication: p.api_key || p.apiKey
           }
         }), {}),
         mappings: providers.reduce((acc, p) => ({ ...acc, [p.name]: p.protocol || 'openai' }), {}),

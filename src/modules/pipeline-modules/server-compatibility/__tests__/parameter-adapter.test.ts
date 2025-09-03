@@ -7,7 +7,7 @@
  */
 
 import { ParameterAdapter } from '../parameter-adapter';
-import { OpenAIStandardRequest, DebugRecorder } from '../enhanced-compatibility';
+import { OpenAIStandardRequest, DebugRecorder } from '../types/compatibility-types';
 import { JQJsonHandler } from '../../../../utils/jq-json-handler';
 
 describe('ParameterAdapter', () => {

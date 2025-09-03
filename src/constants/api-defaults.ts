@@ -134,6 +134,26 @@ export const API_DEFAULTS = {
     GATEWAY_TIMEOUT: 504,
   },
 
+  // API错误码
+  API_ERROR_CODES: {
+    TIMEOUT_ERROR: 'TIMEOUT_ERROR',
+    NETWORK_ERROR: 'NETWORK_ERROR',
+    INTERNAL_API_ERROR: 'INTERNAL_API_ERROR',
+    ABORT_ERROR: 'ABORT_ERROR',
+    SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
+    PROVIDER_FAILURE: 'PROVIDER_FAILURE',
+  },
+
+  // 错误消息模板
+  ERROR_MESSAGES: {
+    TIMEOUT_ERROR: 'Request timeout after {attempts} attempts',
+    NETWORK_ERROR: 'Network error after {attempts} attempts',
+    INTERNAL_API_ERROR: 'Internal API error: {message}',
+    ABORT_ERROR: 'Request was aborted',
+    SERVICE_UNAVAILABLE: 'Service temporarily unavailable',
+    PROVIDER_FAILURE: 'Provider {provider} failed for model {model}',
+  },
+
   // Content-Type常量
   CONTENT_TYPES: {
     JSON: 'application/json',
@@ -170,6 +190,12 @@ export const API_DEFAULTS = {
     HEARTBEAT_INTERVAL: 30000, // 30 seconds heartbeat interval
     LONG_REQUEST_TIMEOUT: 200000, // 200 seconds timeout for longcontext requests
     STANDARD_REQUEST_TIMEOUT: 60000, // 60 seconds standard timeout
+    INTERNAL_API_TIMEOUT: 30000, // 30 seconds for internal API calls (适应AI Provider响应时间)
+    API_RETRY_DELAYS: {
+      BASE_DELAY: 100, // 基础延迟 100ms
+      TIMEOUT_MULTIPLIER: 10, // 超时错误延迟倍数
+      MAX_ATTEMPTS: 4, // 最大重试次数
+    },
   },
 
   // 默认用户代理
@@ -219,6 +245,16 @@ export const API_DEFAULTS = {
     PRIMARY: 5506,
     SECONDARY: 5507,
     ALTERNATIVE: 5508,
+  },
+
+  // Provider配置字段映射
+  PROVIDER_CONFIG_FIELDS: {
+    BASE_URL_FIELDS: ['baseURL', 'api_base_url', 'base_url'] as const,
+    API_KEY_FIELDS: ['apiKey', 'api_key'] as const,
+    CONFIG_KEYS: {
+      PROVIDERS: 'providers',
+      PROVIDERS_CAPITAL: 'Providers'
+    } as const,
   },
 
   // 标准token配置
@@ -549,3 +585,8 @@ export function parsePipelineId(pipelineId: string): { provider: string; model: 
     keySuffix: parts[parts.length - 1]
   };
 }
+
+/**
+ * 导出Provider配置字段映射
+ */
+export const PROVIDER_CONFIG_FIELDS = API_DEFAULTS.PROVIDER_CONFIG_FIELDS;

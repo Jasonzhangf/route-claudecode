@@ -193,11 +193,31 @@ export class InternalAPIServer {
 
       try {
         const requestData = JQJsonHandler.parseJsonString(body);
+        
+        secureLogger.info('🔧 [API Server] Transformer请求数据', {
+          requestId,
+          hasInput: !!requestData.input,
+          inputKeys: Object.keys(requestData.input || {}),
+          inputTools: requestData.input?.tools?.length || 0,
+          hasRoutingDecision: !!requestData.routingDecision,
+          hasPipelineProcessor: !!this.pipelineProcessor
+        });
+        
         const result = await this.pipelineProcessor.processTransformerLayer(
           requestData.input,
           requestData.routingDecision,
           requestData.context
         );
+        
+        secureLogger.info('🔧 [API Server] Transformer处理结果', {
+          requestId,
+          resultType: typeof result,
+          resultKeys: Object.keys(result || {}),
+          resultTools: result?.tools?.length || 0,
+          isNull: result === null,
+          isUndefined: result === undefined,
+          resultStringified: result ? JSON.stringify(result).substring(0, 200) : 'null/undefined'
+        });
         
         await this.sendSuccessResponse(res, {
           output: result,
@@ -205,7 +225,8 @@ export class InternalAPIServer {
         }, requestId, startTime);
         return;
       } catch (error) {
-        await this.sendErrorResponse(res, 500, 'Transformer processing failed', error, requestId, startTime);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        await this.sendErrorResponse(res, 500, errorMessage, error, requestId, startTime);
         return;
       }
     }
@@ -231,7 +252,8 @@ export class InternalAPIServer {
         }, requestId, startTime);
         return;
       } catch (error) {
-        await this.sendErrorResponse(res, 500, 'Protocol processing failed', error, requestId, startTime);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        await this.sendErrorResponse(res, 500, errorMessage, error, requestId, startTime);
         return;
       }
     }
@@ -257,7 +279,8 @@ export class InternalAPIServer {
         }, requestId, startTime);
         return;
       } catch (error) {
-        await this.sendErrorResponse(res, 500, 'Server processing failed', error, requestId, startTime);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        await this.sendErrorResponse(res, 500, errorMessage, error, requestId, startTime);
         return;
       }
     }

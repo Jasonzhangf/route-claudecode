@@ -58,7 +58,9 @@ npm uninstall -g rcc4 2>/dev/null || true
 
 # 9. 全局安装
 echo "🔧 全局安装npm包..."
-npm install -g "./$PACKAGE_FILE"
+echo "   - 安装路径: ./$PACKAGE_FILE"
+echo "   - 执行命令: npm install -g ./$PACKAGE_FILE"
+npm install -g "./$PACKAGE_FILE" --verbose
 
 # 10. 验证安装
 echo ""

@@ -12,6 +12,7 @@ import { EventEmitter } from 'events';
 import { ServerStatus } from '../interfaces';
 import { getMaxRequestSize, getHttpRequestTimeout, getKeepAliveTimeout } from '../constants';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import { RCCError } from '../types/error';
 
 import { IRequestContext, IResponseContext, HTTPMethod } from '../interfaces/core/server-interface';
 
@@ -299,7 +300,7 @@ export class HTTPServer extends EventEmitter {
       // 发送响应
       await this.sendResponse(res, responseContext);
     } catch (error) {
-      this.handleError(error, req, res);
+      await this.handleError(error, req, res);
     }
   }
 
@@ -602,33 +603,75 @@ export class HTTPServer extends EventEmitter {
   }
 
   /**
-   * 处理错误
+   * 处理错误 - 改进版错误处理
    */
   private handleError(error: unknown, req: http.IncomingMessage, res: http.ServerResponse): void {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
-    const statusCode = 500;
+    let statusCode = 500;
+    let userMessage = 'Service temporarily unavailable';
+    let suggestions = ['Please try again in a few moments', 'If the problem persists, contact technical support'];
 
-    console.error(`❌ Server Error: ${message}`);
-    if (error instanceof Error && this.config.debug) {
-      console.error(error.stack);
+    // 检查具体错误类型并提供更好的错误信息
+    if (error instanceof Error) {
+      const errorMsg = error.message.toLowerCase();
+      
+      // 处理undefined filter错误
+      if (errorMsg.includes('cannot read properties of undefined') && errorMsg.includes('filter')) {
+        statusCode = 503;
+        userMessage = 'Service is processing your request but encountered a data handling issue';
+        suggestions = [
+          'This is a temporary system issue, please retry after 30 seconds',
+          'Try simplifying your request if the problem persists',
+          'Contact technical support if the issue continues'
+        ];
+      }
+      // 处理429流控错误
+      else if (errorMsg.includes('rate limit') || errorMsg.includes('429') || errorMsg.includes('too many requests')) {
+        statusCode = 429;
+        userMessage = 'Request rate limit exceeded, please wait before retrying';
+        suggestions = [
+          'Wait 60 seconds before making another request',
+          'Reduce your request frequency to avoid this issue',
+          'Consider batching multiple operations together'
+        ];
+      }
+      // 处理网络连接错误
+      else if (errorMsg.includes('econnrefused') || errorMsg.includes('connection') || errorMsg.includes('timeout')) {
+        statusCode = 502;
+        userMessage = 'Unable to connect to backend services';
+        suggestions = [
+          'This is a temporary connectivity issue, please retry',
+          'Check your network connection',
+          'Service may be under maintenance'
+        ];
+      }
     }
 
     if (!res.headersSent) {
       res.statusCode = statusCode;
       res.setHeader('Content-Type', 'application/json');
-      res.end(
-        JQJsonHandler.stringifyJson(
-          {
-            error: 'Internal Server Error',
-            message: this.config.debug ? message : 'An unexpected error occurred',
-          },
-          true
-        )
-      );
+      res.setHeader('X-Request-ID', this.generateRequestId());
+      
+      const responseBody = {
+        error: {
+          code: `HTTP_${statusCode}`,
+          message: userMessage,
+          technical_reason: this.config.debug ? message : 'An unexpected error occurred'
+        },
+        suggestions: suggestions,
+        retry_info: {
+          can_retry: statusCode !== 401 && statusCode !== 403,
+          retry_after_seconds: statusCode === 429 ? 60 : 30
+        },
+        timestamp: new Date().toISOString()
+      };
+
+      res.end(JQJsonHandler.stringifyJson(responseBody, true));
     }
 
     this.emit('error', error);
   }
+
 
   /**
    * 生成请求ID

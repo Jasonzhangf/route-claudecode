@@ -1,0 +1,67 @@
+{
+  "timestamp": "2025-09-03T11:28:36.822Z",
+  "providerAnalysis": [
+    {
+      "name": "qwen",
+      "protocol": "openai",
+      "baseUrl": "https://portal.qwen.ai/v1",
+      "hasApiKey": true,
+      "apiKeyType": "string",
+      "modelCount": 1,
+      "hasServerCompatibility": true,
+      "serverCompatibilityType": "qwen"
+    },
+    {
+      "name": "iflow",
+      "protocol": "openai",
+      "baseUrl": "https://apis.iflow.cn/v1",
+      "hasApiKey": true,
+      "apiKeyType": "array",
+      "modelCount": 4,
+      "hasServerCompatibility": true,
+      "serverCompatibilityType": "iflow"
+    }
+  ],
+  "routingAnalysis": {
+    "ruleCount": 8,
+    "rules": [
+      {
+        "category": "default",
+        "route": "iflow,glm-4.5;qwen,qwen3-coder-plus"
+      },
+      {
+        "category": "longContext",
+        "route": "qwen,qwen3-coder-plus"
+      },
+      {
+        "category": "background",
+        "route": "qwen,qwen3-coder-plus"
+      },
+      {
+        "category": "think",
+        "route": "iflow,qwen3-coder;qwen,qwen3-coder-plus"
+      },
+      {
+        "category": "webSearch",
+        "route": "iflow,glm-4.5"
+      },
+      {
+        "category": "code",
+        "route": "qwen,qwen3-coder-plus"
+      },
+      {
+        "category": "codeReview",
+        "route": "iflow,qwen3-coder"
+      },
+      {
+        "category": "reasoning",
+        "route": "iflow,qwen3-coder"
+      }
+    ]
+  },
+  "serverAnalysis": {
+    "port": 5511,
+    "host": "0.0.0.0",
+    "debug": true
+  }
+}

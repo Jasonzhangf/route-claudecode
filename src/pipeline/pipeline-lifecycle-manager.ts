@@ -12,8 +12,33 @@
  */
 
 import { EventEmitter } from 'events';
-import { ConfigReader, MergedConfig } from '../config/config-reader';
+// 🔧 配置访问违规修复：移除直接配置访问，通过参数注入获取配置
+// import { ConfigReader, MergedConfig } from '../config/config-reader';
+import { ConfigReader } from '../config/config-reader';
 import { secureLogger } from '../utils/secure-logger';
+
+/**
+ * Pipeline生命周期管理器配置接口 - 替代直接配置访问
+ * 只包含生命周期管理器实际需要的配置字段
+ */
+export interface PipelineLifecycleConfig {
+  providers?: Array<{
+    name: string;
+    api_base_url?: string;
+    api_key?: string;
+    models?: string[];
+  }>;
+  router?: Record<string, string>;
+  server?: {
+    port?: number;
+    host?: string;
+    timeout?: number;
+  };
+  debug?: {
+    enabled?: boolean;
+    logLevel?: string;
+  };
+}
 
 // 导入新的分拆模块
 import { PipelineRequestProcessor, RequestContext, PipelineStats } from './pipeline-request-processor';
@@ -74,7 +99,7 @@ export interface LifecycleHealthStatus {
  * 使用分拆的专门模块处理不同职责
  */
 export class PipelineLifecycleManager extends EventEmitter {
-  private config: MergedConfig;
+  private config: PipelineLifecycleConfig;
   private isRunning = false;
   private startTime?: Date;
   private isInitialized = false;
@@ -112,7 +137,7 @@ export class PipelineLifecycleManager extends EventEmitter {
       
       // 使用默认配置
       this.config = {
-        Providers: [
+        providers: [
           {
             name: 'default-provider',
             api_base_url: 'http://localhost:1234/v1',
@@ -166,16 +191,41 @@ export class PipelineLifecycleManager extends EventEmitter {
     secureLogger.debug('初始化分拆模块');
 
     // 1. 初始化流水线表管理器
-    this.tableManager = new PipelineTableManager(this.config);
+    // 创建兼容的MergedConfig对象
+    const mergedConfig: any = {
+      providers: this.config.providers || [],
+      router: this.config.router || {},
+      server: this.config.server || { port: 5506, host: "localhost", debug: false },
+      apiKey: "",
+      blacklistSettings: { timeout429: 60000, timeoutError: 300000 },
+      systemConfig: { providerTypes: {} }
+    };
+    this.tableManager = new PipelineTableManager(mergedConfig);
 
     // 2. 初始化兼容性管理器
-    this.compatibilityManager = new PipelineCompatibilityManager(this.config);
+    this.compatibilityManager = new PipelineCompatibilityManager(null);
 
     // 3. 初始化请求处理器 (传递debug选项)
-    this.requestProcessor = new PipelineRequestProcessor(this.config, this.debugEnabled);
+    this.requestProcessor = new PipelineRequestProcessor({
+      server: this.config.server,
+      debug: this.config.debug,
+      errorHandling: {
+        maxRetries: 3,
+        retryDelay: 1000
+      }
+    }, this.debugEnabled);
 
     // 4. 初始化服务器管理器
-    this.serverManager = new PipelineServerManager(this.config);
+    // 创建兼容的MergedConfig对象用于服务器管理器
+    const serverConfig: any = {
+      providers: this.config.providers || [],
+      router: this.config.router || {},
+      server: this.config.server || { port: 5506, host: "localhost", debug: false },
+      apiKey: "",
+      blacklistSettings: { timeout429: 60000, timeoutError: 300000 },
+      systemConfig: { providerTypes: {} }
+    };
+    this.serverManager = new PipelineServerManager(serverConfig);
 
     secureLogger.debug('所有分拆模块初始化完成');
   }
@@ -553,7 +603,7 @@ export class PipelineLifecycleManager extends EventEmitter {
   /**
    * 获取配置信息
    */
-  getConfig(): MergedConfig {
+  getConfig(): PipelineLifecycleConfig {
     return this.config;
   }
 

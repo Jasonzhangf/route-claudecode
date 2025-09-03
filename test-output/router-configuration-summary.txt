@@ -1,0 +1,17 @@
+路由器配置分析报告
+==================
+分析时间: 2025-09-03T11:53:45.549Z
+配置源: /Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511.json
+
+配置概要:
+--------
+提供商数量: 2
+路由规则数: 8
+流水线类别数: 8
+
+生成文件:
+--------
+inputValidation: router-input-validation.json
+decisionMapping: router-decision-mapping.json
+pipelineConfiguration: router-pipeline-configuration.json
+interfaceData: router-module-interface.json

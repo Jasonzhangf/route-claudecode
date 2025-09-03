@@ -1,5 +1,5 @@
 // 自定义测试报告器
-import { TestReport, TestResult } from './test-types';
+import { TestReport, TestResult } from '../utils/test-types';
 
 export class CustomTestReporter {
   private report: TestReport;

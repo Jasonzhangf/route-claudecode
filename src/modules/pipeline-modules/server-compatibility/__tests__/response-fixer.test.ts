@@ -12,7 +12,7 @@ import {
   OllamaResponseFixer,
   GenericResponseFixer,
 } from '../response-compatibility-fixer';
-import { DebugRecorder, OpenAIStandardResponse } from '../enhanced-compatibility';
+import { DebugRecorder, OpenAIStandardResponse } from '../types/compatibility-types';
 
 describe('Response Compatibility Fixers', () => {
   let mockDebugRecorder: DebugRecorder;

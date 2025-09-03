@@ -7,7 +7,7 @@
  */
 
 import { ErrorResponseNormalizer } from '../error-response-normalizer';
-import { DebugRecorder, OpenAIErrorResponse } from '../enhanced-compatibility';
+import { DebugRecorder, OpenAIErrorResponse } from '../types/compatibility-types';
 
 describe('ErrorResponseNormalizer', () => {
   let normalizer: ErrorResponseNormalizer;

@@ -19,6 +19,20 @@ export const GENERAL_ERRORS = {
   UNKNOWN_ERROR: 'Unknown error occurred',
 } as const;
 
+// Provider相关错误消息
+export const PROVIDER_ERRORS = {
+  NOT_FOUND: 'Provider not found',
+  API_KEY_MISSING: 'API key not found for provider',
+  REQUEST_FAILED: 'Server request failed with status',
+} as const;
+
+// 日志消息常量
+export const LOG_MESSAGES = {
+  OPENAI_SDK_REQUEST_START: '使用OpenAI SDK执行请求 - 自动SSE处理',
+  OPENAI_SDK_REQUEST_COMPLETE: 'OpenAI SDK请求完成',
+  OPENAI_SDK_REQUEST_FAILED: 'OpenAI SDK请求失败',
+} as const;
+
 // 配置相关错误
 export const CONFIG_ERRORS = {
   CONFIG_NOT_FOUND: 'Configuration file not found',
@@ -95,6 +109,7 @@ export const ZERO_FALLBACK_ERRORS = {
   PROVIDER_UNAVAILABLE_ZERO_FALLBACK: 'Provider unavailable - Zero fallback policy enforced',
   CONFIGURATION_LOAD_FAILED_ZERO_FALLBACK: 'Configuration loading failed - Zero fallback policy enforced',
   SILENT_FAILURE_NOT_ALLOWED: 'Silent failure not allowed under zero fallback policy',
+  EMPTY_RESPONSE_CONTENT_ZERO_FALLBACK: 'Empty response content detected - Zero fallback policy prevents default content',
 } as const;
 
 // 服务器相关错误
@@ -183,6 +198,54 @@ export const GEMINI_PROTOCOL_ERRORS = {
   MISSING_CONTENT: 'Content part must have either text or functionCall',
 } as const;
 
+// 错误协调中心相关错误
+export const ERROR_COORDINATION_ERRORS = {
+  CENTER_PROCESSING_FAILED: 'Error coordination center failed to process the error',
+  CLASSIFICATION_FAILED: 'Error classification failed',
+  STRATEGY_EXECUTION_FAILED: 'Error handling strategy execution failed',
+  RESPONSE_GENERATION_FAILED: 'Error response generation failed',
+  EMERGENCY_RESPONSE_TRIGGERED: 'Emergency error response triggered',
+  COORDINATION_CENTER_UNAVAILABLE: 'Error coordination center is unavailable',
+} as const;
+
+// 错误处理策略相关消息
+export const ERROR_STRATEGY_MESSAGES = {
+  RATE_LIMIT_WAIT_REQUIRED: 'Rate limit exceeded. Please wait before retrying',
+  PIPELINE_BLACKLISTED: 'Pipeline has been temporarily blacklisted due to repeated failures',
+  RETRY_RECOMMENDED: 'Temporary error detected. Retry recommended with backoff',
+  FATAL_ERROR_OCCURRED: 'A fatal error occurred that cannot be recovered from',
+  IMMEDIATE_RETURN_REQUIRED: 'Error requires immediate return to client',
+  GENERIC_SERVICE_ERROR: 'Service error occurred',
+  PROVIDER_TEMPORARILY_UNAVAILABLE: 'Service provider is temporarily unavailable',
+  INTERNAL_SERVER_ERROR: 'An internal server error occurred',
+  UPSTREAM_SERVICE_ERROR: 'The upstream service returned an error',
+} as const;
+
+// 错误响应相关消息
+export const ERROR_RESPONSE_MESSAGES = {
+  RATE_LIMIT_SUGGESTION: 'Wait for the specified time before retrying. Consider implementing exponential backoff',
+  BLACKLIST_SUGGESTION: 'The system will automatically retry with other available pipelines',
+  RETRY_SUGGESTION: 'Use exponential backoff for subsequent retries',
+  FATAL_ERROR_SUGGESTION: 'Check your request parameters and authentication. Contact support if the issue persists',
+  LOCAL_ERROR_SUGGESTION: 'This is a system error. Please contact support',
+  REMOTE_ERROR_SUGGESTION: 'The request failed at the service provider level. Check your request and try again',
+  COORDINATION_ERROR_SUGGESTION: 'This is a system error. Please contact support',
+} as const;
+
+// HTTP状态码相关错误消息
+export const HTTP_STATUS_ERRORS = {
+  HTTP_400: 'Bad Request - Invalid parameters or format',
+  HTTP_401: 'Unauthorized - Authentication failed',
+  HTTP_403: 'Forbidden - Insufficient permissions',
+  HTTP_404: 'Not Found - Resource not available',
+  HTTP_408: 'Request Timeout - Operation timed out',
+  HTTP_429: 'Too Many Requests - Rate limit exceeded',
+  HTTP_500: 'Internal Server Error - System error occurred',
+  HTTP_502: 'Bad Gateway - Upstream service error',
+  HTTP_503: 'Service Unavailable - Service temporarily unavailable',
+  HTTP_504: 'Gateway Timeout - Upstream timeout',
+} as const;
+
 // 统一错误消息导出
 export const ERROR_MESSAGES = {
   ...GENERAL_ERRORS,
@@ -199,6 +262,10 @@ export const ERROR_MESSAGES = {
   ...SECURITY_ERRORS,
   ...QWEN_AUTH_ERRORS,
   ...GEMINI_PROTOCOL_ERRORS,
+  ...ERROR_COORDINATION_ERRORS,
+  ...ERROR_STRATEGY_MESSAGES,
+  ...ERROR_RESPONSE_MESSAGES,
+  ...HTTP_STATUS_ERRORS,
 } as const;
 
 // 错误消息类型定义

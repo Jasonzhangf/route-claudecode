@@ -1430,25 +1430,13 @@ class RCCCli {
      * 获取系统配置文件路径
      */
     getSystemConfigPath() {
-        // 优先级：环境变量 > ~/.route-claudecode/config > 开发环境路径
+        // 优先级：环境变量 > 本地系统路径（固定）
         if (process.env.RCC_SYSTEM_CONFIG_PATH) {
             return process.env.RCC_SYSTEM_CONFIG_PATH;
         }
-        // 用户级系统配置路径
-        const userConfigPath = path.join(os.homedir(), '.route-claudecode', 'config', 'system-config.json');
-        // 检查文件是否存在，如果存在则使用
-        try {
-            require('fs').accessSync(userConfigPath);
-            return userConfigPath;
-        }
-        catch (error) {
-            // 文件不存在，使用开发环境路径作为fallback
-            secure_logger_1.secureLogger.warn('User system config not found, using development path', {
-                attempted: userConfigPath,
-                fallback: 'config/system-config.json'
-            });
-            return 'config/system-config.json';
-        }
+        // 🔧 修复：直接使用本地系统路径，不搜索用户配置文件夹
+        // 系统配置应该是系统级别的配置，不应该依赖用户路径
+        return 'config/system-config.json';
     }
     /**
      * 加载配置 (支持API化)

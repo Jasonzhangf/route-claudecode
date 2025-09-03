@@ -164,14 +164,16 @@ if command -v jq >/dev/null 2>&1; then
                 
                 # 读取测试结果
                 if command -v jq >/dev/null 2>&1; then
-                    test_status=$(jq -r '.success // false' "$unit_test_report" 2>/dev/null)
+                    failed_count=$(jq -r '.numFailedTests // 0' "$unit_test_report" 2>/dev/null)
                     test_count=$(jq -r '.numTotalTests // 0' "$unit_test_report" 2>/dev/null)
                     passed_count=$(jq -r '.numPassedTests // 0' "$unit_test_report" 2>/dev/null)
                     
-                    if [ "$test_status" = "true" ]; then
+                    if [ "$failed_count" = "0" ] && [ "$test_count" -gt "0" ]; then
+                        test_status="true"
                         echo "✅ 测试状态: 全部通过 ($passed_count/$test_count)" >&2
                     else
-                        echo "❌ 测试状态: 有失败 ($passed_count/$test_count)" >&2
+                        test_status="false"
+                        echo "❌ 测试状态: 有失败 ($passed_count/$test_count, 失败:$failed_count)" >&2
                     fi
                 fi
                 

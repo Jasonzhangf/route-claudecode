@@ -109,9 +109,9 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
       ...config
     };
     
-    // 动态设置maxTokens，支持配置文件覆盖，默认128K
+    // 动态设置maxTokens，支持配置文件覆盖，默认256K
     if (!this.config.maxTokens) {
-      this.config.maxTokens = 131072; // 默认128K tokens限制
+      this.config.maxTokens = 262144; // 默认256K tokens限制，匹配现代大模型需求
     }
     this.currentStatus = {
       id: 'passthrough-compatibility',

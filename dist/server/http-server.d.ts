@@ -128,7 +128,7 @@ export declare class HTTPServer extends EventEmitter {
      */
     private sendResponse;
     /**
-     * 处理错误
+     * 处理错误 - 改进版错误处理
      */
     private handleError;
     /**
