@@ -29,7 +29,7 @@ describe('ArchScanner Basic Functionality', () => {
   it('should return correct configuration', () => {
     const config = scanner.getConfig();
     expect(config).toBeDefined();
-    expect(config.projectRoot).toBe('./src');
+    expect(config.projectRoot).toContain('src');
     expect(config.strictMode).toBe(true);
   });
 

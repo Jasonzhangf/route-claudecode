@@ -1,23 +1,18 @@
-# Protocol模块
+# 协议模块 (Protocol Module)
 
 ## 模块概述
 
-Protocol模块负责协议控制转换，主要处理流式和非流式请求之间的转换，以及协议标准验证。
+协议模块负责协议控制转换，主要处理流式和非流式请求之间的转换，以及协议标准验证。该模块实现了ModuleInterface接口，支持API化管理。
 
 ## 目录结构
 
 ```
-src/pipeline/modules/protocol/
-├── README.md                    # Protocol模块文档
-├── index.ts                     # 模块入口
-├── protocol-module.ts           # 基础Protocol类
-├── openai-protocol.ts           # OpenAI协议处理
-├── anthropic-protocol.ts        # Anthropic协议处理
-├── gemini-protocol.ts           # Gemini协议处理
-└── types/
-    ├── protocol-types.ts        # 协议类型定义
-    ├── stream-types.ts          # 流式处理类型
-    └── validation-types.ts      # 验证相关类型
+protocol/
+├── README.md                    # 协议模块文档
+├── openai-protocol.ts           # OpenAI协议处理模块
+├── gemini-protocol.ts           # Gemini协议处理模块
+├── gemini-native-protocol.ts    # Gemini原生协议处理模块
+└── base-pipeline-module.ts      # 基础流水线模块类
 ```
 
 ## 核心功能
@@ -40,18 +35,34 @@ src/pipeline/modules/protocol/
 ## 接口定义
 
 ```typescript
-interface ProtocolModule extends PipelineModule {
-  name: 'protocol';
-  protocol: string;
+interface ModuleInterface {
+  // 基础信息
+  getId(): string;
+  getName(): string;
+  getType(): ModuleType;
+  getVersion(): string;
   
-  // 流式 → 非流式
-  convertToNonStreaming(streamRequest: StreamRequest): Promise<NonStreamRequest>;
+  // 状态管理
+  getStatus(): ModuleStatus;
+  getMetrics(): ModuleMetrics;
   
-  // 非流式 → 流式
-  convertToStreaming(nonStreamResponse: NonStreamResponse): Promise<StreamResponse>;
+  // 生命周期
+  configure(config: any): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  process(input: any): Promise<any>;
+  reset(): Promise<void>;
+  cleanup(): Promise<void>;
+  healthCheck(): Promise<{ healthy: boolean; details: any }>;
   
-  validateProtocolRequest(request: ProtocolRequest): boolean;
-  validateProtocolResponse(response: ProtocolResponse): boolean;
+  // 模块间通信
+  addConnection(module: ModuleInterface): void;
+  removeConnection(moduleId: string): void;
+  getConnection(moduleId: string): ModuleInterface | undefined;
+  getConnections(): ModuleInterface[];
+  sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+  broadcastToModules(message: any, type?: string): Promise<void>;
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
 }
 ```
 
@@ -59,64 +70,55 @@ interface ProtocolModule extends PipelineModule {
 
 ### OpenAI协议处理
 ```typescript
-export class OpenAIProtocol implements ProtocolModule {
-  name = 'protocol' as const;
-  protocol = 'openai';
+export class OpenAIProtocolModule extends EventEmitter implements ModuleInterface {
+  async process(
+    input: StreamRequest | NonStreamRequest | NonStreamResponse
+  ): Promise<NonStreamRequest | StreamResponse> {
+    if (this.isStreamRequest(input)) {
+      return this.convertToNonStreaming(input as StreamRequest);
+    } else if (this.isNonStreamRequest(input)) {
+      return input as NonStreamRequest;
+    } else if (this.isNonStreamResponse(input)) {
+      return this.convertToStreaming(input as NonStreamResponse);
+    } else {
+      throw new Error('不支持的输入格式');
+    }
+  }
 
-  async convertToNonStreaming(streamRequest: OpenAIStreamRequest): Promise<OpenAINonStreamRequest> {
+  convertToNonStreaming(streamRequest: StreamRequest): NonStreamRequest {
     // 移除流式标志
-    const nonStreamRequest = { ...streamRequest };
-    delete nonStreamRequest.stream;
+    const nonStreamRequest: NonStreamRequest = {
+      model: streamRequest.model,
+      messages: streamRequest.messages,
+      max_tokens: streamRequest.max_tokens,
+      temperature: streamRequest.temperature,
+      top_p: streamRequest.top_p,
+      frequency_penalty: streamRequest.frequency_penalty,
+      presence_penalty: streamRequest.presence_penalty,
+      stop: streamRequest.stop,
+      stream: false, // 转换为非流式
+      tools: streamRequest.tools,
+      tool_choice: streamRequest.tool_choice,
+    };
     
     return nonStreamRequest;
   }
 
-  async convertToStreaming(nonStreamResponse: OpenAINonStreamResponse): Promise<OpenAIStreamResponse> {
+  convertToStreaming(nonStreamResponse: NonStreamResponse): StreamResponse {
     // 将单个响应转换为流式响应
-    const streamChunks = this.createStreamChunks(nonStreamResponse);
-    return this.generateStreamResponse(streamChunks);
-  }
-
-  validateProtocolRequest(request: OpenAIRequest): boolean {
-    // 验证必需字段
-    if (!request.model || !request.messages) {
-      return false;
-    }
-    
-    // 验证messages格式
-    return this.validateMessages(request.messages);
-  }
-}
-```
-
-### Anthropic协议处理
-```typescript
-export class AnthropicProtocol implements ProtocolModule {
-  name = 'protocol' as const;
-  protocol = 'anthropic';
-
-  validateProtocolRequest(request: AnthropicRequest): boolean {
-    // 验证Anthropic特有字段
-    if (!request.model || !request.messages) {
-      return false;
-    }
-    
-    // 验证max_tokens字段
-    if (!request.max_tokens || request.max_tokens <= 0) {
-      return false;
-    }
-    
-    return this.validateAnthropicMessages(request.messages);
+    const chunks = this.createStreamChunks(nonStreamResponse);
+    return {
+      chunks,
+      aggregatedResponse: nonStreamResponse
+    };
   }
 }
 ```
 
 ### Gemini协议处理
 ```typescript
-export class GeminiProtocol implements ProtocolModule {
-  name = 'protocol' as const;
-  protocol = 'gemini';
-
+export class GeminiProtocolModule extends EventEmitter implements ModuleInterface {
+  // Gemini协议特有处理逻辑
   validateProtocolRequest(request: GeminiRequest): boolean {
     // 验证Gemini特有字段
     if (!request.contents || !Array.isArray(request.contents)) {
@@ -139,7 +141,7 @@ interface StreamRequest {
 }
 
 interface NonStreamRequest {
-  // stream字段被移除
+  // stream字段被移除或设为false
   // 其他请求参数保持不变
 }
 ```
@@ -148,7 +150,7 @@ interface NonStreamRequest {
 ```typescript
 interface StreamResponse {
   chunks: StreamChunk[];
-  metadata: StreamMetadata;
+  aggregatedResponse: NonStreamResponse;
 }
 
 interface StreamChunk {
@@ -258,3 +260,5 @@ class StreamConversionError extends Error {
 - ✅ 完整的协议验证
 - ✅ 流式处理支持
 - ✅ 标准错误处理
+- ✅ API化管理支持
+- ✅ 模块化接口实现

@@ -844,3 +844,52 @@
 [2025-09-04 21:02:04] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/arch-scanner/detection/internal/rule-based-violation-detector.ts - 无违规
 [2025-09-04 21:03:08] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/arch-scanner/analysis/internal/typescript-module-analyzer.ts
 [2025-09-04 21:03:08] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/arch-scanner/analysis/internal/typescript-module-analyzer.ts - 无违规
+[2025-09-04 21:08:36] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/arch-scanner/__tests__/integration/arch-scanner-integration.test.ts
+[2025-09-04 21:08:36] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/arch-scanner/__tests__/integration/arch-scanner-integration.test.ts - 无违规
+[2025-09-04 21:09:36] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/arch-scanner-demo.ts
+[2025-09-04 21:09:36] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/arch-scanner-demo.ts - 无违规
+[2025-09-04 21:09:47] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/core/module-connection.ts
+[2025-09-04 21:09:47] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/core/module-connection.ts - 无违规
+[2025-09-04 21:10:33] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/core/__tests__/module-architecture.test.ts
+[2025-09-04 21:10:33] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/core/__tests__/module-architecture.test.ts - 无违规
+[2025-09-04 21:11:58] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/core/__tests__/complete-module-system.test.ts
+[2025-09-04 21:11:59] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/core/__tests__/complete-module-system.test.ts - 无违规
+[2025-09-04 21:16:08] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/docs/module-architecture-documentation.md
+[2025-09-04 21:16:08] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/docs/module-architecture-documentation.md (非代码文件)
+[2025-09-04 21:16:08] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/docs/module-architecture-documentation.md - 无违规
+[2025-09-04 21:25:58] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/transformer/README.md
+[2025-09-04 21:25:58] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/transformer/README.md (非代码文件)
+[2025-09-04 21:25:58] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/transformer/README.md - 无违规
+[2025-09-04 21:27:40] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/protocol/README.md
+[2025-09-04 21:27:40] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/protocol/README.md (非代码文件)
+[2025-09-04 21:27:40] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/protocol/README.md - 无违规
+[2025-09-04 21:29:29] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server-compatibility/README.md
+[2025-09-04 21:29:29] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server-compatibility/README.md (非代码文件)
+[2025-09-04 21:29:29] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server-compatibility/README.md - 无违规
+[2025-09-04 21:33:14] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server/README.md
+[2025-09-04 21:33:14] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server/README.md (非代码文件)
+[2025-09-04 21:33:14] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server/README.md - 无违规
+[2025-09-04 21:35:11] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/README.md
+[2025-09-04 21:35:11] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/README.md (非代码文件)
+[2025-09-04 21:35:11] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/README.md - 无违规
+[2025-09-04 21:36:43] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/README.md
+[2025-09-04 21:36:43] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/README.md (非代码文件)
+[2025-09-04 21:36:43] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/README.md - 无违规
+[2025-09-04 21:41:12] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/README.md
+[2025-09-04 21:41:12] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/README.md (非代码文件)
+[2025-09-04 21:41:12] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/README.md - 无违规
+[2025-09-04 21:41:50] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/README.md
+[2025-09-04 21:41:50] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/README.md (非代码文件)
+[2025-09-04 21:41:50] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/README.md - 无违规
+[2025-09-04 21:42:46] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/transformer/README.md
+[2025-09-04 21:42:46] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/transformer/README.md (非代码文件)
+[2025-09-04 21:42:46] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/transformer/README.md - 无违规
+[2025-09-04 21:43:43] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/protocol/README.md
+[2025-09-04 21:43:43] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/protocol/README.md (非代码文件)
+[2025-09-04 21:43:43] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/protocol/README.md - 无违规
+[2025-09-04 21:45:19] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server-compatibility/README.md
+[2025-09-04 21:45:19] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server-compatibility/README.md (非代码文件)
+[2025-09-04 21:45:19] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server-compatibility/README.md - 无违规
+[2025-09-04 21:46:13] 开始扫描: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server/README.md
+[2025-09-04 21:46:13] 跳过文件: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server/README.md (非代码文件)
+[2025-09-04 21:46:13] 扫描完成: /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/project-details/modules/pipeline/server/README.md - 无违规

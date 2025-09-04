@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-04 21:08:36",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/arch-scanner/__tests__/integration/arch-scanner-integration.test.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

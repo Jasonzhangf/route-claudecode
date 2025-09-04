@@ -1,7 +1,7 @@
 /**
- * !W�h
+ * Module Manager
  * 
- * #!W��Ѱ}h�
+ * 负责模块的注册、管理和生命周期控制
  * 
  * @author Jason Zhang
  */
@@ -10,35 +10,35 @@ import { ModuleInterface } from '../../interfaces/module/base-module';
 import { secureLogger } from '../../utils/secure-logger';
 
 /**
- * !W�h{
+ * 模块管理器
  */
 export class ModuleManager {
   private modules: Map<string, ModuleInterface> = new Map();
   private dependencies: Map<string, string[]> = new Map();
 
   /**
-   * �!W
+   * 注册模块
    */
   async registerModule(module: ModuleInterface): Promise<void> {
     this.modules.set(module.getId(), module);
   }
 
   /**
-   * ��!W
+   * 获取模块
    */
   getModule(moduleId: string): ModuleInterface | undefined {
     return this.modules.get(moduleId);
   }
 
   /**
-   * ��@	!W
+   * 获取所有模块
    */
   getAllModules(): ModuleInterface[] {
     return Array.from(this.modules.values());
   }
 
   /**
-   * �d!W
+   * 注销模块
    */
   async unregisterModule(moduleId: string): Promise<void> {
     const module = this.modules.get(moduleId);
@@ -49,7 +49,7 @@ export class ModuleManager {
   }
 
   /**
-   * /�@	!W
+   * 启动所有模块
    */
   async startAllModules(): Promise<void> {
     for (const module of this.modules.values()) {
@@ -65,7 +65,7 @@ export class ModuleManager {
   }
 
   /**
-   * \b@	!W
+   * 停止所有模块
    */
   async stopAllModules(): Promise<void> {
     for (const module of this.modules.values()) {

@@ -1,13 +1,39 @@
-# Server-Compatibility模块 - 精简版设计
+# 服务器兼容性模块 (Server Compatibility Module)
 
 ## 模块概述
 
-Server-Compatibility模块专注于处理不同AI服务商的**响应兼容性差异**。由于使用OpenAI SDK，大部分请求格式已标准化，本模块主要负责：
+服务器兼容性模块专注于处理不同AI服务商的**响应兼容性差异**。由于使用OpenAI SDK，大部分请求格式已标准化，本模块主要负责：
 1. **响应后处理**：修复各Provider响应格式不一致问题
 2. **参数范围适配**：调整超出Provider限制的参数
 3. **错误标准化**：统一不同Provider的错误响应格式
 
 **重要**：移除模型映射功能，该功能属于Router层职责。
+
+## 目录结构
+
+```
+server-compatibility/
+├── README.md                          # 本设计文档
+├── adaptive-compatibility.ts          # 智能自适应兼容性模块
+├── lmstudio-compatibility.ts          # LM Studio兼容性模块
+├── modelscope-compatibility.ts        # ModelScope兼容性模块
+├── qwen-compatibility.ts              # Qwen兼容性模块
+├── ollama-compatibility.ts            # Ollama兼容性模块
+├── vllm-compatibility.ts              # vLLM兼容性模块
+├── iflow-compatibility.ts             # IFlow兼容性模块
+├── passthrough-compatibility.ts       # 透传兼容性模块
+├── response-compatibility-fixer.ts    # 响应兼容性修复器
+├── parameter-adapter.ts               # 参数适配器
+├── error-response-normalizer.ts       # 错误响应标准化器
+├── debug-integration.ts               # Debug集成模块
+├── types/
+│   └── compatibility-types.ts         # 兼容性类型定义
+└── __tests__/
+    ├── error-normalizer.test.ts       # 错误标准化器测试
+    ├── parameter-adapter.test.ts      # 参数适配器测试
+    ├── provider-capabilities.test.ts  # Provider能力测试
+    └── response-fixer.test.ts         # 响应修复器测试
+```
 
 ## 架构定位
 
@@ -21,22 +47,6 @@ Protocol Layer      ← 流式转非流式，格式验证(已完备)
 Server-Compatibility ← 【本模块】参数适配+响应修复
     ↓
 Server Layer        ← OpenAI SDK 请求发送(已标准化)
-```
-
-## 目录结构
-
-```
-src/modules/pipeline-modules/server-compatibility/
-├── README.md                          # 本设计文档
-├── enhanced-compatibility.ts          # 主兼容性模块
-├── response-compatibility-fixer.ts    # 响应修复器
-├── parameter-adapter.ts               # 参数适配器
-├── error-response-normalizer.ts       # 错误标准化器
-├── provider-capabilities.ts           # Provider能力配置
-└── types/
-    ├── compatibility-types.ts         # 兼容性类型定义
-    ├── provider-types.ts              # Provider特定类型
-    └── response-fix-types.ts          # 响应修复类型
 ```
 
 ## 核心功能重定义
@@ -62,25 +72,38 @@ src/modules/pipeline-modules/server-compatibility/
 ## 接口定义
 
 ```typescript
-interface EnhancedServerCompatibilityModule extends PipelineModule {
-  name: 'server-compatibility';
-  serverType: string;
+interface ModuleInterface {
+  // 基础信息
+  getId(): string;
+  getName(): string;
+  getType(): ModuleType;
+  getVersion(): string;
   
-  // 请求参数适配（轻量级，无模型映射）
-  adaptRequest(request: OpenAIStandardRequest, serverType: string): Promise<OpenAIStandardRequest>;
+  // 状态管理
+  getStatus(): ModuleStatus;
+  getMetrics(): ModuleMetrics;
   
-  // 响应兼容性修复（重点功能）
-  adaptResponse(response: any, serverType: string): Promise<OpenAIStandardResponse>;
+  // 生命周期
+  configure(config: any): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  process(input: any): Promise<any>;
+  reset(): Promise<void>;
+  cleanup(): Promise<void>;
+  healthCheck(): Promise<{ healthy: boolean; details: any }>;
   
-  // 错误响应标准化
-  normalizeError(error: any, serverType: string): Promise<OpenAIErrorResponse>;
-  
-  // Provider能力检查
-  getProviderCapabilities(serverType: string): ProviderCapabilities;
+  // 模块间通信
+  addConnection(module: ModuleInterface): void;
+  removeConnection(moduleId: string): void;
+  getConnection(moduleId: string): ModuleInterface | undefined;
+  getConnections(): ModuleInterface[];
+  sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+  broadcastToModules(message: any, type?: string): Promise<void>;
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
 }
 
 // 核心类型定义
-interface OpenAIStandardRequest {
+interface StandardRequest {
   model: string;
   messages: OpenAIMessage[];
   max_tokens?: number;
@@ -94,7 +117,7 @@ interface OpenAIStandardRequest {
   tool_choice?: 'none' | 'auto' | 'required' | { type: 'function'; function: { name: string } };
 }
 
-interface OpenAIStandardResponse {
+interface StandardResponse {
   id: string;
   object: 'chat.completion';
   created: number;
@@ -103,178 +126,63 @@ interface OpenAIStandardResponse {
   usage: OpenAIUsage;
   system_fingerprint?: string;
 }
-
-interface ProviderCapabilities {
-  name: string;
-  supportsTools: boolean;
-  supportsThinking: boolean;
-  parameterLimits: {
-    temperature?: { min: number; max: number };
-    top_p?: { min: number; max: number };
-    max_tokens?: { min: number; max: number };
-  };
-  responseFixesNeeded: string[]; // 需要修复的响应问题类型
-}
 ```
 
-## Provider响应修复策略
+## Provider兼容性策略
 
-### 1. LM Studio响应修复
+### 1. LM Studio兼容性模块
 ```typescript
-class LMStudioResponseFixer {
-  async fixResponse(response: any): Promise<OpenAIStandardResponse> {
-    const debugRecorder = this.getDebugRecorder();
-    
-    debugRecorder.record('lmstudio_response_fix_start', {
-      original_structure: this.analyzeResponseStructure(response),
-      has_usage: !!response.usage,
-      has_choices: !!response.choices
-    });
-    
-    // 1. 必需字段补全
-    const fixedResponse = {
-      id: response.id || `chatcmpl-lms-${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
-      object: 'chat.completion',
-      created: response.created || Math.floor(Date.now() / 1000),
-      model: response.model || 'local-model',
-      choices: this.fixChoicesArray(response.choices || []),
-      usage: this.fixUsageStatistics(response.usage),
-      system_fingerprint: response.system_fingerprint // 可选字段
-    };
-    
-    // 2. 记录修复操作
-    debugRecorder.record('lmstudio_response_fix_completed', {
-      fixes_applied: this.getAppliedFixes(response, fixedResponse),
-      final_structure_valid: this.validateOpenAIFormat(fixedResponse)
-    });
-    
-    return fixedResponse;
-  }
-  
-  private fixUsageStatistics(usage: any): OpenAIUsage {
-    const fixedUsage = {
-      prompt_tokens: usage?.prompt_tokens || 0,
-      completion_tokens: usage?.completion_tokens || 0,
-      total_tokens: usage?.total_tokens || 0
-    };
-    
-    // 自动计算total_tokens如果缺失
-    if (fixedUsage.total_tokens === 0) {
-      fixedUsage.total_tokens = fixedUsage.prompt_tokens + fixedUsage.completion_tokens;
-    }
-    
-    return fixedUsage;
-  }
-  
-  private fixChoicesArray(choices: any[]): OpenAIChoice[] {
-    if (!Array.isArray(choices) || choices.length === 0) {
-      return [{
-        index: 0,
-        message: { role: 'assistant', content: '' },
-        finish_reason: 'stop'
-      }];
-    }
-    
-    return choices.map((choice, index) => ({
-      index: choice.index ?? index,
-      message: {
-        role: 'assistant',
-        content: choice.message?.content || '',
-        tool_calls: choice.message?.tool_calls ? 
-          this.fixToolCallsFormat(choice.message.tool_calls) : undefined
-      },
-      finish_reason: choice.finish_reason || 'stop'
-    }));
-  }
-  
-  private fixToolCallsFormat(toolCalls: any[]): OpenAIToolCall[] {
-    return toolCalls.map(toolCall => ({
-      id: toolCall.id || `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      type: 'function',
-      function: {
-        name: toolCall.function?.name || '',
-        arguments: typeof toolCall.function?.arguments === 'string' 
-          ? toolCall.function.arguments 
-          : JSON.stringify(toolCall.function?.arguments || {})
+class AdaptiveCompatibilityModule extends EventEmitter implements ModuleInterface {
+  async process(input: StandardRequest | any): Promise<StandardRequest | any> {
+    // 检查输入类型：请求 vs 响应
+    if (this.isRequest(input)) {
+      console.log('🔄 [AdaptiveCompatibility] 处理请求阶段');
+      // 优先检查适配标记
+      if (this.providerConfig?.compatibilityAdapter) {
+        return this.useAdaptedStrategy(input as StandardRequest, this.providerConfig.compatibilityAdapter);
       }
-    }));
+      // 使用通用策略
+      return this.useGenericStrategy(input as StandardRequest);
+    } else {
+      console.log('🔄 [AdaptiveCompatibility] 处理响应阶段');
+      // 响应阶段：转换为标准OpenAI格式
+      return this.handleResponse(input);
+    }
+  }
+  
+  private convertModelScopeResponseToOpenAI(response: any): any {
+    // ModelScope响应转换为标准OpenAI格式
+    // 处理ModelScope的流式响应结构
   }
 }
 ```
 
-### 2. DeepSeek响应修复
+### 2. ModelScope兼容性模块
 ```typescript
-class DeepSeekResponseFixer {
-  async fixResponse(response: any): Promise<OpenAIStandardResponse> {
-    const debugRecorder = this.getDebugRecorder();
-    
-    // DeepSeek通常返回标准格式，但处理思考模式特殊情况
-    const fixedResponse = {
-      ...response,
-      object: 'chat.completion' // 确保object字段正确
-    };
-    
-    // 处理思考模式的特殊响应
-    if (response.thinking && response.thinking.length > 0) {
-      debugRecorder.record('deepseek_thinking_mode_detected', {
-        thinking_content_length: response.thinking.length,
-        has_reasoning_chain: true
-      });
-      // 思考内容不暴露给客户端，仅记录调试信息
-      delete fixedResponse.thinking; // 移除非标准字段
-    }
-    
-    // 工具调用格式确保正确
-    if (fixedResponse.choices) {
-      fixedResponse.choices = fixedResponse.choices.map(choice => {
-        if (choice.message?.tool_calls) {
-          choice.message.tool_calls = choice.message.tool_calls.map(toolCall => ({
-            ...toolCall,
-            function: {
-              ...toolCall.function,
-              arguments: typeof toolCall.function?.arguments === 'string'
-                ? toolCall.function.arguments
-                : JSON.stringify(toolCall.function?.arguments || {})
-            }
-          }));
-        }
-        return choice;
-      });
-    }
-    
-    return fixedResponse;
-  }
+class ModelScopeCompatibilityModule extends EventEmitter implements ModuleInterface {
+  // ModelScope特定处理逻辑
+  // 注意：实际的多Key轮询在Server层处理，这里主要做请求预处理
 }
 ```
 
-### 3. 请求参数适配（移除模型映射）
+### 3. Qwen兼容性模块
+```typescript
+class QwenCompatibilityModule extends EventEmitter implements ModuleInterface {
+  // Qwen特定处理逻辑
+  // 包括参数适配和响应格式修复
+}
+```
+
+## 参数适配策略
+
+### 参数范围调整
 ```typescript
 class ParameterAdapter {
-  adaptForDeepSeek(request: OpenAIStandardRequest): OpenAIStandardRequest {
-    const adapted = { ...request };
-    
-    // DeepSeek工具调用优化
-    if (adapted.tools && adapted.tools.length > 0) {
-      adapted.tool_choice = adapted.tool_choice || 'auto';
-    }
-    
-    // 参数范围限制
-    if (adapted.max_tokens && adapted.max_tokens > 8192) {
-      adapted.max_tokens = 8192; // DeepSeek限制
-    }
-    
-    return adapted;
-  }
-  
-  adaptForLMStudio(request: OpenAIStandardRequest): OpenAIStandardRequest {
+  adaptForLMStudio(request: StandardRequest): StandardRequest {
     const adapted = { ...request };
     
     // LM Studio通常不支持工具调用
     if (adapted.tools) {
-      this.debugRecorder.record('lmstudio_tools_removed', {
-        reason: 'lmstudio_limited_tool_support',
-        removed_tools_count: adapted.tools.length
-      });
       delete adapted.tools;
       delete adapted.tool_choice;
     }
@@ -289,6 +197,52 @@ class ParameterAdapter {
     }
     
     return adapted;
+  }
+}
+```
+
+## 响应修复策略
+
+### 通用响应修复
+```typescript
+class ResponseCompatibilityFixer {
+  private convertGenericResponseToOpenAI(response: any): any {
+    // 通用响应格式转换
+    const chatId = `chatcmpl-${this.generateUUID()}`;
+    const timestamp = Math.floor(Date.now() / 1000);
+    
+    let content = '';
+    if (typeof response === 'string') {
+      content = response;
+    } else if (response.content) {
+      content = this.extractContentFromResponse(response.content);
+    } else {
+      content = response.text || response.output || JSON.stringify(response);
+    }
+    
+    const openaiResponse = {
+      id: chatId,
+      object: 'chat.completion',
+      created: timestamp,
+      model: response.model || 'generic-model',
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: 'assistant',
+            content: content,
+          },
+          finish_reason: 'stop',
+        },
+      ],
+      usage: {
+        prompt_tokens: response.usage?.prompt_tokens || 0,
+        completion_tokens: response.usage?.completion_tokens || 0,
+        total_tokens: response.usage?.total_tokens || 0,
+      },
+    };
+    
+    return openaiResponse;
   }
 }
 ```
@@ -308,121 +262,14 @@ class ErrorResponseNormalizer {
       }
     };
     
-    this.debugRecorder.record('error_normalization', {
-      server_type: serverType,
-      original_error_type: error.constructor?.name,
-      original_error_message: error.message
-    });
-    
     switch (serverType) {
       case 'lmstudio':
         return this.normalizeLMStudioError(error, baseError);
-      case 'deepseek':
-        return this.normalizeDeepSeekError(error, baseError);
-      case 'ollama':
-        return this.normalizeOllamaError(error, baseError);
+      case 'modelscope':
+        return this.normalizeModelScopeError(error, baseError);
       default:
         return this.normalizeGenericError(error, baseError);
     }
-  }
-  
-  private normalizeLMStudioError(error: any, baseError: OpenAIErrorResponse): OpenAIErrorResponse {
-    // LM Studio特定错误处理
-    if (error.message?.includes('model not loaded')) {
-      baseError.error.message = 'Model not available on local server';
-      baseError.error.type = 'invalid_request_error';
-      baseError.error.code = 'model_not_found';
-    } else if (error.message?.includes('context length')) {
-      baseError.error.message = 'Request exceeds maximum context length';
-      baseError.error.type = 'invalid_request_error';
-      baseError.error.code = 'context_length_exceeded';
-    } else {
-      baseError.error.message = error.message || 'LM Studio server error';
-      baseError.error.type = 'api_error';
-    }
-    
-    return baseError;
-  }
-  
-  private normalizeDeepSeekError(error: any, baseError: OpenAIErrorResponse): OpenAIErrorResponse {
-    // DeepSeek特定错误处理
-    if (error.status === 429) {
-      baseError.error.message = 'Rate limit exceeded';
-      baseError.error.type = 'rate_limit_error';
-      baseError.error.code = 'rate_limit_exceeded';
-    } else if (error.status === 401) {
-      baseError.error.message = 'Invalid API key';
-      baseError.error.type = 'authentication_error';
-      baseError.error.code = 'invalid_api_key';
-    } else {
-      baseError.error.message = error.message || 'DeepSeek API error';
-      baseError.error.type = 'api_error';
-    }
-    
-    return baseError;
-  }
-}
-```
-
-## Provider能力配置
-
-### Provider能力定义
-```typescript
-class ProviderCapabilitiesManager {
-  private static capabilities: Record<string, ProviderCapabilities> = {
-    deepseek: {
-      name: 'deepseek',
-      supportsTools: true,
-      supportsThinking: true,
-      parameterLimits: {
-        temperature: { min: 0.01, max: 2.0 },
-        top_p: { min: 0.01, max: 1.0 },
-        max_tokens: { min: 1, max: 8192 }
-      },
-      responseFixesNeeded: ['tool_calls_format', 'thinking_mode_cleanup']
-    },
-    
-    lmstudio: {
-      name: 'lmstudio',
-      supportsTools: false,
-      supportsThinking: false,
-      parameterLimits: {
-        temperature: { min: 0.01, max: 2.0 },
-        top_p: { min: 0.01, max: 1.0 },
-        max_tokens: { min: 1, max: 4096 }
-      },
-      responseFixesNeeded: ['missing_usage', 'missing_id', 'missing_created', 'choices_array_fix']
-    },
-    
-    ollama: {
-      name: 'ollama',
-      supportsTools: false,
-      supportsThinking: false,
-      parameterLimits: {
-        temperature: { min: 0, max: 2.0 },
-        top_p: { min: 0, max: 1.0 },
-        max_tokens: { min: 1, max: 8192 }
-      },
-      responseFixesNeeded: ['format_standardization', 'usage_calculation']
-    }
-  };
-  
-  static getCapabilities(serverType: string): ProviderCapabilities {
-    return this.capabilities[serverType] || this.getDefaultCapabilities();
-  }
-  
-  private static getDefaultCapabilities(): ProviderCapabilities {
-    return {
-      name: 'unknown',
-      supportsTools: false,
-      supportsThinking: false,
-      parameterLimits: {
-        temperature: { min: 0, max: 2.0 },
-        top_p: { min: 0, max: 1.0 },
-        max_tokens: { min: 1, max: 4096 }
-      },
-      responseFixesNeeded: ['basic_standardization']
-    };
   }
 }
 ```
@@ -431,61 +278,34 @@ class ProviderCapabilitiesManager {
 
 ### Debug记录集成
 ```typescript
-class EnhancedServerCompatibilityModule {
-  private debugRecorder: DebugRecorder;
-  
-  constructor(debugRecorder: DebugRecorder) {
-    this.debugRecorder = debugRecorder;
-  }
-  
-  async adaptResponse(response: any, serverType: string): Promise<OpenAIStandardResponse> {
-    const requestId = this.generateRequestId();
+class AdaptiveCompatibilityModule {
+  async process(input: StandardRequest | any): Promise<StandardRequest | any> {
+    this.currentStatus.lastActivity = new Date();
     
-    // 记录响应修复前状态
-    this.debugRecorder.recordInput('server-compatibility-response', requestId, {
-      server_type: serverType,
-      original_response: response,
-      response_analysis: this.analyzeResponse(response),
-      fixes_needed: this.detectNeededFixes(response, serverType)
+    // 记录处理前状态
+    console.log('🔍 处理输入:', {
+      inputType: typeof input,
+      hasModel: !!input?.model,
+      hasMessages: Array.isArray(input?.messages),
+      isRequest: this.isRequest(input)
     });
     
     try {
-      const fixedResponse = await this.performResponseFixes(response, serverType);
+      // 处理逻辑
+      const result = await this.handleProcessing(input);
       
-      // 记录修复后状态
-      this.debugRecorder.recordOutput('server-compatibility-response', requestId, {
-        server_type: serverType,
-        fixed_response: fixedResponse,
-        fixes_applied: this.getAppliedFixes(response, fixedResponse),
-        validation_passed: this.validateResponse(fixedResponse)
+      // 记录处理后状态
+      console.log('✅ 处理完成:', {
+        resultType: typeof result,
+        hasId: !!result?.id,
+        hasChoices: Array.isArray(result?.choices)
       });
       
-      return fixedResponse;
+      return result;
     } catch (error) {
-      this.debugRecorder.recordError('server-compatibility-response', requestId, {
-        server_type: serverType,
-        error_type: error.constructor.name,
-        error_message: error.message,
-        original_response: response
-      });
+      console.error('❌ 处理失败:', error);
       throw error;
     }
-  }
-  
-  private analyzeResponse(response: any): ResponseAnalysis {
-    return {
-      has_id: !!response.id,
-      has_object: !!response.object,
-      has_created: !!response.created,
-      has_choices: Array.isArray(response.choices),
-      choices_count: Array.isArray(response.choices) ? response.choices.length : 0,
-      has_usage: !!response.usage,
-      usage_complete: response.usage && response.usage.total_tokens > 0,
-      has_tool_calls: response.choices?.[0]?.message?.tool_calls?.length > 0,
-      extra_fields: Object.keys(response).filter(key => 
-        !['id', 'object', 'created', 'model', 'choices', 'usage', 'system_fingerprint'].includes(key)
-      )
-    };
   }
 }
 ```
@@ -494,17 +314,17 @@ class EnhancedServerCompatibilityModule {
 
 ### 第一阶段：基础响应修复
 1. **LM Studio响应修复**：必需字段补全、usage统计修复
-2. **DeepSeek响应清理**：thinking字段处理、标准化
+2. **ModelScope响应清理**：格式标准化、特殊字段处理
 3. **基础错误标准化**：统一错误响应格式
 4. **Debug系统集成**：完整的修复过程记录
 
 ### 第二阶段：参数适配优化  
 1. **参数范围适配**：temperature, max_tokens等限制处理
 2. **工具支持检查**：自动移除不支持的工具调用
-3. **Provider特定优化**：DeepSeek的tool_choice设置等
+3. **Provider特定优化**：各Provider的特定参数调整
 
 ### 第三阶段：扩展和监控
-1. **更多Provider支持**：Ollama, ModelScope等
+1. **更多Provider支持**：Ollama, vLLM, IFlow等
 2. **响应质量监控**：修复效果统计
 3. **性能优化**：修复过程延迟优化
 
@@ -527,3 +347,5 @@ class EnhancedServerCompatibilityModule {
 - ✅ 无模型映射逻辑
 - ✅ 专注响应兼容性处理
 - ✅ 与其他层职责明确分离
+- ✅ API化管理支持
+- ✅ 模块化接口实现

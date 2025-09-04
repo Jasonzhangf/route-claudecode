@@ -1,24 +1,22 @@
-# Transformer模块
+# 转换器模块 (Transformers Module)
 
 ## 模块概述
 
-Transformer模块负责Anthropic格式与目标协议格式之间的双向转换，是流水线的第一个处理环节。
+转换器模块负责不同AI协议之间的格式转换，主要处理Anthropic ↔ OpenAI等协议格式转换。该模块实现了ModuleInterface接口，支持API化管理。
 
 ## 目录结构
 
 ```
-src/pipeline/modules/transformer/
-├── README.md                    # Transformer模块文档
-├── index.ts                     # 模块入口
-├── transformer-module.ts        # 基础Transformer类
-├── openai-transformer.ts        # OpenAI转换器
-├── anthropic-transformer.ts     # Anthropic转换器
-├── gemini-transformer.ts        # Gemini转换器
-└── types/
-    ├── transformer-types.ts     # 转换器类型定义
-    ├── anthropic-types.ts       # Anthropic格式类型
-    ├── openai-types.ts          # OpenAI格式类型
-    └── gemini-types.ts          # Gemini格式类型
+transformers/
+├── README.md                           # 转换器模块文档
+├── index.ts                            # 模块入口
+├── transformer-api.ts                  # Transformer API接口
+├── transformer-factory.ts              # Transformer工厂
+├── secure-anthropic-openai-transformer.ts  # 安全Anthropic→OpenAI转换器
+├── secure-gemini-transformer.ts        # 安全Gemini转换器
+├── anthropic-openai-converter.ts       # Anthropic↔OpenAI转换核心逻辑
+└── __tests__/
+    └── secure-transformer.test.ts      # 安全转换器测试
 ```
 
 ## 核心功能
@@ -38,18 +36,34 @@ src/pipeline/modules/transformer/
 ## 接口定义
 
 ```typescript
-interface TransformerModule extends PipelineModule {
-  name: 'transformer';
-  targetProtocol: string;
+interface ModuleInterface {
+  // 基础信息
+  getId(): string;
+  getName(): string;
+  getType(): ModuleType;
+  getVersion(): string;
   
-  // Anthropic → Target Protocol
-  transformRequest(anthropicRequest: AnthropicRequest): Promise<ProtocolRequest>;
+  // 状态管理
+  getStatus(): ModuleStatus;
+  getMetrics(): ModuleMetrics;
   
-  // Target Protocol → Anthropic  
-  transformResponse(protocolResponse: ProtocolResponse): Promise<AnthropicResponse>;
+  // 生命周期
+  configure(config: any): Promise<void>;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+  process(input: any): Promise<any>;
+  reset(): Promise<void>;
+  cleanup(): Promise<void>;
+  healthCheck(): Promise<{ healthy: boolean; details: any }>;
   
-  validateAnthropicRequest(request: AnthropicRequest): boolean;
-  validateProtocolResponse(response: ProtocolResponse): boolean;
+  // 模块间通信
+  addConnection(module: ModuleInterface): void;
+  removeConnection(moduleId: string): void;
+  getConnection(moduleId: string): ModuleInterface | undefined;
+  getConnections(): ModuleInterface[];
+  sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+  broadcastToModules(message: any, type?: string): Promise<void>;
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
 }
 ```
 
@@ -172,49 +186,32 @@ interface TransformerModule extends PipelineModule {
 - 处理不同协议的流式标记
 
 ### 错误处理
-- 格式验证失败时抛出VALIDATION_ERROR
+- 格式验证失败时抛出TransformerSecurityError
 - 使用标准API error handler
 - 包含具体的转换错误信息
 
 ## 实现示例
 
 ```typescript
-export class OpenAITransformer implements TransformerModule {
-  name = 'transformer' as const;
-  targetProtocol = 'openai';
-
-  async transformRequest(anthropicRequest: AnthropicRequest): Promise<OpenAIRequest> {
-    // 验证输入格式
-    if (!this.validateAnthropicRequest(anthropicRequest)) {
-      throw new ValidationError('Invalid Anthropic request format');
-    }
-
-    // 执行转换
-    const openaiRequest: OpenAIRequest = {
-      model: this.mapModel(anthropicRequest.model),
-      messages: this.convertMessages(anthropicRequest.messages),
-      tools: this.convertTools(anthropicRequest.tools),
-      stream: anthropicRequest.stream
-    };
-
-    return openaiRequest;
+export class SecureAnthropicToOpenAITransformer extends EventEmitter implements ModuleInterface {
+  constructor(config?: Partial<SecureTransformerConfig>) {
+    super();
   }
 
-  async transformResponse(openaiResponse: OpenAIResponse): Promise<AnthropicResponse> {
-    // 验证响应格式
-    if (!this.validateProtocolResponse(openaiResponse)) {
-      throw new ValidationError('Invalid OpenAI response format');
+  async process(input: any): Promise<any> {
+    if (this.status.status !== 'running') {
+      throw new Error('Module is not running');
+    }
+    
+    // 验证输入格式
+    if (!input || typeof input !== 'object') {
+      throw new TransformerSecurityError('Invalid input format', 'INVALID_INPUT');
     }
 
     // 执行转换
-    return {
-      id: openaiResponse.id,
-      type: 'message',
-      role: 'assistant',
-      content: this.convertContent(openaiResponse.choices[0].message.content),
-      model: anthropicRequest.model,
-      usage: this.convertUsage(openaiResponse.usage)
-    };
+    const output = transformAnthropicToOpenAI(input);
+    
+    return output;
   }
 }
 ```
@@ -228,3 +225,5 @@ export class OpenAITransformer implements TransformerModule {
 - ✅ 完整的格式验证
 - ✅ 双向转换支持
 - ✅ 工具调用完整支持
+- ✅ API化管理支持
+- ✅ 模块化接口实现
