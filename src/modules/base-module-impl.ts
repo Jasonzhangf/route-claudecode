@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics, ModuleConnection } from '../interfaces/module/base-module';
 
 /**
  * 基础模块抽象类
@@ -28,7 +28,9 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     lastProcessedAt: undefined,
   };
   protected processingTimes: number[] = [];
+  protected connections: Map<string, ModuleInterface> = new Map();
   protected errors: Error[] = [];
+  protected messageHandlers: Array<(sourceModuleId: string, message: any, type: string) => void> = [];
 
   constructor(id: string, name: string, type: ModuleType, version: string = '1.0.0') {
     super();
@@ -364,5 +366,151 @@ export abstract class BaseModule extends EventEmitter implements ModuleInterface
     }
 
     return 'healthy';
+  }
+
+  /**
+   * 处理模块间消息
+   */
+  private async handleInterModuleMessage(input: any): Promise<any> {
+    const message = input.message;
+    
+    // 调用所有消息处理器
+    for (const handler of this.messageHandlers) {
+      try {
+        handler(message.sourceModuleId, message.content, message.type);
+      } catch (error) {
+        this.recordError(error as Error);
+      }
+    }
+    
+    // 发出事件
+    this.emit('interModuleMessageReceived', { message });
+    
+    // 返回确认响应
+    return {
+      success: true,
+      messageId: message.id,
+      processedAt: Date.now(),
+      processedBy: this.id,
+      sourceModuleId: message.sourceModuleId
+    };
+  }
+
+  /**
+   * 添加模块连接
+   */
+  addConnection(module: ModuleInterface): void {
+    this.connections.set(module.getId(), module);
+  }
+
+  /**
+   * 移除模块连接
+   */
+  removeConnection(moduleId: string): void {
+    this.connections.delete(moduleId);
+  }
+
+  /**
+   * 获取指定模块连接
+   */
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.connections.get(moduleId);
+  }
+
+  /**
+   * 获取所有连接
+   */
+  getConnections(): ModuleInterface[] {
+    return Array.from(this.connections.values());
+  }
+
+  /**
+   * 向连接的模块广播消息
+   */
+  async broadcastToConnected(message: any): Promise<void> {
+    const promises = Array.from(this.connections.values()).map(async (module) => {
+      try {
+        await module.process({ type: 'broadcast', data: message, source: this.id });
+      } catch (error) {
+        console.warn(`Failed to broadcast to module ${module.getId()}:`, error);
+      }
+    });
+    await Promise.allSettled(promises);
+  }
+
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    return this.connections.has(targetModuleId) ? 'connected' : 'disconnected';
+  }
+
+  /**
+   * 发送消息到目标模块
+   */
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    const targetModule = this.connections.get(targetModuleId);
+    if (!targetModule) {
+      throw new Error(`Target module ${targetModuleId} not found`);
+    }
+    
+    const messageWrapper = {
+      id: `${this.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      sourceModuleId: this.id,
+      targetModuleId,
+      type: type || 'default',
+      content: message,
+      timestamp: Date.now()
+    };
+    
+    return await targetModule.process({ 
+      type: 'interModuleMessage', 
+      message: messageWrapper 
+    });
+  }
+
+  /**
+   * 广播消息到所有连接的模块
+   */
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    const broadcastPromises = Array.from(this.connections.values()).map(async (module) => {
+      try {
+        const messageWrapper = {
+          id: `${this.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          sourceModuleId: this.id,
+          targetModuleId: module.getId(),
+          type: type || 'broadcast',
+          content: message,
+          timestamp: Date.now()
+        };
+        
+        await module.process({ 
+          type: 'interModuleMessage', 
+          message: messageWrapper 
+        });
+      } catch (error) {
+        console.warn(`Failed to broadcast to module ${module.getId()}:`, error);
+      }
+    });
+    
+    await Promise.allSettled(broadcastPromises);
+  }
+
+  /**
+   * 监听来自其他模块的消息
+   */
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.messageHandlers.push(listener);
+  }
+
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      return targetModule && typeof targetModule.getId === 'function' && targetModule.getId().length > 0;
+    } catch {
+      return false;
+    }
   }
 }

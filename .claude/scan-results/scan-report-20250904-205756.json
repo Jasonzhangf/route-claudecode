@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-04 20:57:56",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/arch-scanner/reporting/factory/reporting-factory.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

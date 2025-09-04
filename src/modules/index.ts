@@ -37,6 +37,15 @@ export {
   OpenAIServerModule
 } from './pipeline-modules';
 
+// Transformer模块
+export * from './transformer';
+
+// Protocol模块
+export * from './protocol';
+
+// Server Compatibility模块
+export * from './server-compatibility';
+
 // 模块版本信息
 export const MODULES_MODULE_VERSION = '4.0.0-alpha.2';
 

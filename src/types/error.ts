@@ -14,12 +14,14 @@ export class RCCError extends Error {
   public readonly module: string;
   public readonly timestamp: number;
   public readonly context?: Record<string, any>;
+  public readonly isFatal?: boolean;
 
   constructor(
     message: string,
     code: string = 'UNKNOWN_ERROR',
     module: string = 'unknown',
-    context?: Record<string, any>
+    context?: Record<string, any>,
+    isFatal: boolean = false
   ) {
     super(message);
     this.name = 'RCCError';
@@ -27,6 +29,7 @@ export class RCCError extends Error {
     this.module = module;
     this.timestamp = Date.now();
     this.context = context;
+    this.isFatal = isFatal;
 
     // 确保错误堆栈正确
     if (Error.captureStackTrace) {
@@ -61,8 +64,8 @@ export class RCCError extends Error {
  * 配置错误
  */
 export class ConfigError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'CONFIG_ERROR', 'config', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = true) {
+    super(message, 'CONFIG_ERROR', 'config', context, isFatal);
     this.name = 'ConfigError';
   }
 }
@@ -71,8 +74,8 @@ export class ConfigError extends RCCError {
  * 网络错误
  */
 export class NetworkError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'NETWORK_ERROR', 'network', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = false) {
+    super(message, 'NETWORK_ERROR', 'network', context, isFatal);
     this.name = 'NetworkError';
   }
 }
@@ -81,8 +84,8 @@ export class NetworkError extends RCCError {
  * 验证错误
  */
 export class ValidationError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'VALIDATION_ERROR', 'validation', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = true) {
+    super(message, 'VALIDATION_ERROR', 'validation', context, isFatal);
     this.name = 'ValidationError';
   }
 }
@@ -91,8 +94,8 @@ export class ValidationError extends RCCError {
  * 管道错误
  */
 export class PipelineError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'PIPELINE_ERROR', 'pipeline', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = false) {
+    super(message, 'PIPELINE_ERROR', 'pipeline', context, isFatal);
     this.name = 'PipelineError';
   }
 }
@@ -101,8 +104,8 @@ export class PipelineError extends RCCError {
  * 转换错误
  */
 export class TransformError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'TRANSFORM_ERROR', 'transformer', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = false) {
+    super(message, 'TRANSFORM_ERROR', 'transformer', context, isFatal);
     this.name = 'TransformError';
   }
 }
@@ -111,8 +114,8 @@ export class TransformError extends RCCError {
  * 认证错误
  */
 export class AuthError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'AUTH_ERROR', 'auth', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = true) {
+    super(message, 'AUTH_ERROR', 'auth', context, isFatal);
     this.name = 'AuthError';
   }
 }
@@ -121,8 +124,8 @@ export class AuthError extends RCCError {
  * 限流错误
  */
 export class RateLimitError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'RATE_LIMIT_ERROR', 'rate-limiter', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = false) {
+    super(message, 'RATE_LIMIT_ERROR', 'rate-limiter', context, isFatal);
     this.name = 'RateLimitError';
   }
 }
@@ -131,8 +134,8 @@ export class RateLimitError extends RCCError {
  * 超时错误
  */
 export class TimeoutError extends RCCError {
-  constructor(message: string, context?: Record<string, any>) {
-    super(message, 'TIMEOUT_ERROR', 'timeout', context);
+  constructor(message: string, context?: Record<string, any>, isFatal: boolean = false) {
+    super(message, 'TIMEOUT_ERROR', 'timeout', context, isFatal);
     this.name = 'TimeoutError';
   }
 }
@@ -143,8 +146,8 @@ export class TimeoutError extends RCCError {
 export class CLIError extends RCCError {
   public readonly details?: Record<string, any>;
 
-  constructor(message: string, details?: Record<string, any>) {
-    super(message, 'CLI_ERROR', 'cli', details);
+  constructor(message: string, details?: Record<string, any>, isFatal: boolean = false) {
+    super(message, 'CLI_ERROR', 'cli', details, isFatal);
     this.name = 'CLIError';
     this.details = details;
   }
@@ -177,6 +180,7 @@ export const ERROR_CODES = {
   PIPELINE_INIT_FAILED: 'PIPELINE_INIT_FAILED',
   PIPELINE_EXECUTION_FAILED: 'PIPELINE_EXECUTION_FAILED',
   MODULE_NOT_FOUND: 'MODULE_NOT_FOUND',
+  MODULE_NOT_RUNNING: 'MODULE_NOT_RUNNING',
 
   // 转换错误
   TRANSFORM_FAILED: 'TRANSFORM_FAILED',

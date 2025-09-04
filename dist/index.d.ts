@@ -11,13 +11,12 @@ export { ClientModule, createClientModule, createClient, SessionManager, HttpCli
 export { HTTPServer, PipelineServerManager } from './server';
 export { PipelineRouter } from './router/pipeline-router';
 export { SimpleRouter } from './router/simple-router';
-export { PIPELINE_MODULE_VERSION, PipelineModuleInterface } from './pipeline';
 export { PipelineManager } from './pipeline/pipeline-manager';
 export { StandardPipeline } from './pipeline/standard-pipeline';
 export { StandardPipelineFactoryImpl as PipelineFactoryImpl } from './pipeline/pipeline-factory';
 export { ModuleRegistry as PipelineModuleRegistry } from './pipeline/module-registry';
 export * from './debug';
-export { ConfigManager, RCCv4Config, ServerCompatibilityProvider, StandardProvider } from './config';
+export { ConfigPreprocessor, ConfigReader, RoutingTable, ConfigPreprocessResult } from './config';
 export { secureLogger, DataValidator } from './utils';
 export { ErrorHandler } from './middleware';
 export { ROUTES_MODULE_VERSION } from './routes';

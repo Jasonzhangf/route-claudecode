@@ -122,34 +122,10 @@ export interface PipelineManagerStats {
     lastCleanup: Date;
 }
 /**
- * 流水线生命周期管理器接口
+ * 流水线生命周期管理器接口 (已废弃)
+ *
+ * @deprecated 使用UnifiedInitializer替代
  */
-export interface PipelineLifecycleManager {
-    /**
-     * 初始化流水线
-     */
-    initialize(pipeline: Pipeline): Promise<void>;
-    /**
-     * 启动流水线
-     */
-    start(pipeline: Pipeline): Promise<void>;
-    /**
-     * 停止流水线
-     */
-    stop(pipeline: Pipeline): Promise<void>;
-    /**
-     * 重启流水线
-     */
-    restart(pipeline: Pipeline): Promise<void>;
-    /**
-     * 销毁流水线
-     */
-    destroy(pipeline: Pipeline): Promise<void>;
-    /**
-     * 获取生命周期状态
-     */
-    getLifecycleStatus(pipelineId: string): LifecycleStatus;
-}
 /**
  * 生命周期状态
  */

@@ -27,8 +27,7 @@ describe('SecureAnthropicToOpenAITransformer', () => {
     config = {
       preserveToolCalls: true,
       mapSystemMessage: true,
-      defaultMaxTokens: 4096,
-      maxTokens: 8192,
+      defaultMaxTokens: 8192,
     };
 
     transformer = new SecureAnthropicToOpenAITransformer(config);
@@ -194,7 +193,7 @@ describe('SecureAnthropicToOpenAITransformer', () => {
     test('应该处理配置错误', () => {
       expect(() => {
         new SecureAnthropicToOpenAITransformer({
-          maxTokens: -1, // 无效配置
+          defaultMaxTokens: -1, // 无效配置
         });
       }).toThrow(TransformerSecurityError);
     });
@@ -242,7 +241,6 @@ describe('SecureTransformerFactory', () => {
   beforeEach(() => {
     factory = createSecureTransformerFactory({
       defaultSecurityConfig: {
-        maxTokens: 8192,
         preserveToolCalls: true,
         mapSystemMessage: true,
         defaultMaxTokens: 4096,
@@ -272,14 +270,14 @@ describe('SecureTransformerFactory', () => {
     test('应该验证配置安全性', async () => {
       await expect(
         factory.createTransformer(SecureTransformerType.ANTHROPIC_TO_OPENAI, {
-          maxTokens: -1, // 无效配置
+          defaultMaxTokens: -1, // 无效配置
         })
       ).rejects.toThrow();
     });
 
     test('应该跟踪创建的实例', async () => {
       const transformer1 = await factory.createTransformer(SecureTransformerType.ANTHROPIC_TO_OPENAI, {
-        maxTokens: 4096,
+        defaultMaxTokens: 4096,
       });
 
       const instances = factory.getCreatedInstances();
@@ -293,7 +291,6 @@ describe('SecureTransformerFactory', () => {
       const factoryWithDeprecated = createSecureTransformerFactory({
         allowDeprecated: false,
         defaultSecurityConfig: {
-          maxTokens: 8192,
           preserveToolCalls: true,
           mapSystemMessage: true,
           defaultMaxTokens: 4096,
@@ -316,7 +313,7 @@ describe('SecureTransformerFactory', () => {
   describe('配置合并', () => {
     test('应该正确合并默认配置和用户配置', async () => {
       const transformer = await factory.createTransformer(SecureTransformerType.ANTHROPIC_TO_OPENAI, {
-        maxTokens: 4096,
+        defaultMaxTokens: 4096,
       });
 
       expect(transformer).toBeDefined();

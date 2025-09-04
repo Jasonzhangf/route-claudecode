@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-09-04 09:51:18",
+  "scanned_file": "src/__tests__/scheduler/runtime-scheduler.test.ts",
+  "violations_found": true,
+  "violation_count": 1,
+  "violations": [
+    "HARDCODING: 在 src/__tests__/scheduler/runtime-scheduler.test.ts 中发现硬编码: 3000"
+  ],
+  "scan_status": "completed"
+}

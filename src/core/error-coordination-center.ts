@@ -23,6 +23,8 @@ import {
 import { ErrorType } from '../debug/error-log-manager';
 import { RCCError, ERROR_CODES, NetworkError, TimeoutError, RateLimitError } from '../types/error';
 import { ErrorLogger } from '../debug/error-logger';
+import { secureLogger } from '../utils/secure-logger';
+import { ErrorResponseFormatter } from '../utils/error-response-formatter';
 
 /**
  * 默认配置
@@ -80,11 +82,32 @@ export class ErrorCoordinationCenterImpl implements ErrorCoordinationCenter {
       // 3. 确定处理策略
       const strategy = this.determineStrategy(error, classification, context);
       
-      // 4. 执行策略
+      // 4. 记录策略决策
+      secureLogger.info('Error handling strategy determined', {
+        requestId: context.requestId,
+        errorType: classification.type,
+        strategyType: strategy.type,
+        isRetryable: classification.isRetryable,
+        isFatal: classification.isFatal,
+        requiresPipelineSwitch: classification.requiresPipelineSwitch,
+        requiresPipelineDestruction: classification.requiresPipelineDestruction
+      });
+      
+      // 5. 执行策略
       const result = await this.executeStrategy(strategy, context);
       
-      // 5. 记录处理结果
+      // 6. 记录处理结果
       this.errorLogger.logHandlingResult(result, context);
+      
+      // 7. 记录最终处理结果监控
+      secureLogger.info('Error handling completed', {
+        requestId: context.requestId,
+        actionTaken: result.actionTaken,
+        success: result.success,
+        errorType: classification.type,
+        isRetryable: classification.isRetryable,
+        isFatal: classification.isFatal
+      });
       
       return result;
     } catch (handlingError) {
@@ -318,23 +341,9 @@ export class ErrorCoordinationCenterImpl implements ErrorCoordinationCenter {
    * 格式化错误响应
    */
   formatErrorResponse(error: Error, context: ErrorContext, httpStatusCode?: number): any {
-    return {
-      error: {
-        message: error.message,
-        requestId: context.requestId,
-        timestamp: new Date().toISOString(),
-        pipelineId: context.pipelineId,
-        layerName: context.layerName,
-        provider: context.provider,
-        model: context.model,
-        httpStatusCode: httpStatusCode || 500,
-        ...(error instanceof RCCError ? {
-          code: error.code,
-          module: error.module,
-          context: error.context
-        } : {})
-      }
-    };
+    // 使用统一的错误响应格式化器
+    const formatter = new ErrorResponseFormatter();
+    return formatter.formatErrorResponse(error, context, httpStatusCode);
   }
 
   /**
@@ -343,6 +352,35 @@ export class ErrorCoordinationCenterImpl implements ErrorCoordinationCenter {
   async logError(error: Error, context: ErrorContext, classification: ErrorClassification): Promise<void> {
     // 使用错误日志记录器记录错误
     await this.errorLogger.logError(error, context, classification);
+    
+    // 记录错误处理中心调用监控
+    this.logErrorHandlingCenterInvocation(error, context, classification);
+  }
+  
+  /**
+   * 记录错误处理中心调用监控
+   */
+  private logErrorHandlingCenterInvocation(error: Error, context: ErrorContext, classification: ErrorClassification): void {
+    // 增加统计计数
+    this.totalErrors++;
+    const currentCount = this.errorStats.get(classification.type) || 0;
+    this.errorStats.set(classification.type, currentCount + 1);
+    
+    // 记录监控日志
+    secureLogger.info('Error handled by coordination center', {
+      errorType: classification.type,
+      errorMessage: error.message,
+      requestId: context.requestId,
+      pipelineId: context.pipelineId,
+      layerName: context.layerName,
+      provider: context.provider,
+      isRetryable: classification.isRetryable,
+      isFatal: classification.isFatal,
+      requiresPipelineSwitch: classification.requiresPipelineSwitch,
+      requiresPipelineDestruction: classification.requiresPipelineDestruction,
+      confidence: classification.confidence,
+      matchedPattern: classification.matchedPattern
+    });
   }
 
   /**
@@ -464,7 +502,9 @@ export class ErrorCoordinationCenterImpl implements ErrorCoordinationCenter {
     const retryableTypes = [
       ErrorType.CONNECTION_ERROR,
       ErrorType.TIMEOUT_ERROR,
-      ErrorType.RATE_LIMIT_ERROR
+      ErrorType.RATE_LIMIT_ERROR,
+      ErrorType.SERVER_ERROR,
+      ErrorType.SOCKET_ERROR
     ];
     
     return retryableTypes.includes(errorType);
@@ -474,10 +514,16 @@ export class ErrorCoordinationCenterImpl implements ErrorCoordinationCenter {
    * 判断错误是否致命
    */
   private isErrorFatal(error: Error, errorType: ErrorType): boolean {
-    // 配置错误和验证错误通常致命
+    // 配置错误、验证错误和认证错误通常致命
     const fatalTypes = [
-      ErrorType.VALIDATION_ERROR
+      ErrorType.VALIDATION_ERROR,
+      ErrorType.AUTH_ERROR
     ];
+    
+    // 如果是RCCError且标记为致命错误，则认为是致命错误
+    if (error instanceof RCCError && error.isFatal) {
+      return true;
+    }
     
     return fatalTypes.includes(errorType);
   }
@@ -486,26 +532,57 @@ export class ErrorCoordinationCenterImpl implements ErrorCoordinationCenter {
    * 判断是否需要流水线切换
    */
   private requiresPipelineSwitch(error: Error, errorType: ErrorType): boolean {
-    // 网络错误、超时错误和限流错误可能需要切换流水线
+    // 网络错误、超时错误、限流错误和服务器错误可能需要切换流水线
     const switchTypes = [
       ErrorType.CONNECTION_ERROR,
       ErrorType.TIMEOUT_ERROR,
-      ErrorType.RATE_LIMIT_ERROR
+      ErrorType.RATE_LIMIT_ERROR,
+      ErrorType.SERVER_ERROR,
+      ErrorType.SOCKET_ERROR
     ];
     
-    return switchTypes.includes(errorType);
+    // 如果错误消息中包含特定关键字，也需要切换流水线
+    const errorMessage = error.message.toLowerCase();
+    const switchKeywords = [
+      'socket hang up',
+      'econnreset',
+      'econnrefused',
+      'etimedout',
+      'enotfound',
+      'server error',
+      'bad gateway',
+      'service unavailable',
+      'gateway timeout'
+    ];
+    
+    const hasSwitchKeyword = switchKeywords.some(keyword => errorMessage.includes(keyword));
+    
+    return switchTypes.includes(errorType) || hasSwitchKeyword;
   }
 
   /**
    * 判断是否需要销毁流水线
    */
   private requiresPipelineDestruction(error: Error, errorType: ErrorType): boolean {
-    // 严重的网络错误或持续的超时错误可能需要销毁流水线
+    // 严重的网络错误、持续的超时错误和服务器错误可能需要销毁流水线
     const destroyTypes = [
-      ErrorType.CONNECTION_ERROR
+      ErrorType.CONNECTION_ERROR,
+      ErrorType.SERVER_ERROR
     ];
     
-    return destroyTypes.includes(errorType);
+    // 如果错误发生多次且是致命错误，则需要销毁流水线
+    const errorMessage = error.message.toLowerCase();
+    const destroyKeywords = [
+      'econnrefused',
+      'enotfound',
+      'invalid api key',
+      'unauthorized',
+      'forbidden'
+    ];
+    
+    const hasDestroyKeyword = destroyKeywords.some(keyword => errorMessage.includes(keyword));
+    
+    return destroyTypes.includes(errorType) || hasDestroyKeyword;
   }
 
   /**

@@ -1,0 +1,458 @@
+{
+  "configName": "qwen-iflow-mixed-v4-5511",
+  "configFile": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511.json",
+  "generatedAt": "2025-09-03T14:30:00Z",
+  "totalPipelines": 5,
+  "pipelinesGroupedByVirtualModel": {
+    "default": [
+      {
+        "pipelineId": "iflow-glm-4.5-key0",
+        "virtualModel": "default",
+        "provider": "iflow",
+        "targetModel": "glm-4.5",
+        "apiKeyIndex": 0,
+        "endpoint": "https://apis.iflow.cn/v1",
+        "status": "runtime",
+        "createdAt": "2025-09-03T14:30:00Z",
+        "handshakeTime": 1200,
+        "architecture": {
+          "transformer": {
+            "type": "AnthropicToOpenAIConverter",
+            "config": {}
+          },
+          "protocol": {
+            "type": "OpenAIProtocolHandler",
+            "config": {
+              "model": "glm-4.5"
+            }
+          },
+          "serverCompatibility": {
+            "type": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          "server": {
+            "type": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+              "protocol": "openai"
+            }
+          }
+        }
+      },
+      {
+        "pipelineId": "iflow-glm-4.5-key1",
+        "virtualModel": "default",
+        "provider": "iflow",
+        "targetModel": "glm-4.5",
+        "apiKeyIndex": 1,
+        "endpoint": "https://apis.iflow.cn/v1",
+        "status": "runtime",
+        "createdAt": "2025-09-03T14:30:00Z",
+        "handshakeTime": 1100,
+        "architecture": {
+          "transformer": {
+            "type": "AnthropicToOpenAIConverter",
+            "config": {}
+          },
+          "protocol": {
+            "type": "OpenAIProtocolHandler",
+            "config": {
+              "model": "glm-4.5"
+            }
+          },
+          "serverCompatibility": {
+            "type": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          "server": {
+            "type": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+              "protocol": "openai"
+            }
+          }
+        }
+      }
+    ],
+    "coding": [
+      {
+        "pipelineId": "qwen-qwen3-coder-plus-key0",
+        "virtualModel": "coding",
+        "provider": "qwen",
+        "targetModel": "qwen3-coder-plus",
+        "apiKeyIndex": 0,
+        "endpoint": "https://portal.qwen.ai/v1",
+        "status": "runtime",
+        "createdAt": "2025-09-03T14:30:00Z",
+        "handshakeTime": 800,
+        "architecture": {
+          "transformer": {
+            "type": "AnthropicToOpenAIConverter",
+            "config": {}
+          },
+          "protocol": {
+            "type": "OpenAIProtocolHandler",
+            "config": {
+              "model": "qwen3-coder-plus"
+            }
+          },
+          "serverCompatibility": {
+            "type": "QwenServerCompatibility",
+            "config": {
+              "use": "qwen",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authFileName": "qwen-auth-1"
+              }
+            }
+          },
+          "server": {
+            "type": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://portal.qwen.ai/v1",
+              "apiKey": "qwen-auth-1",
+              "protocol": "openai"
+            }
+          }
+        }
+      },
+      {
+        "pipelineId": "iflow-qwen3-coder-key0",
+        "virtualModel": "coding",
+        "provider": "iflow",
+        "targetModel": "qwen3-coder",
+        "apiKeyIndex": 0,
+        "endpoint": "https://apis.iflow.cn/v1",
+        "status": "runtime",
+        "createdAt": "2025-09-03T14:30:00Z",
+        "handshakeTime": 900,
+        "architecture": {
+          "transformer": {
+            "type": "AnthropicToOpenAIConverter",
+            "config": {}
+          },
+          "protocol": {
+            "type": "OpenAIProtocolHandler",
+            "config": {
+              "model": "qwen3-coder"
+            }
+          },
+          "serverCompatibility": {
+            "type": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          "server": {
+            "type": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+              "protocol": "openai"
+            }
+          }
+        }
+      },
+      {
+        "pipelineId": "iflow-qwen3-coder-key1",
+        "virtualModel": "coding",
+        "provider": "iflow",
+        "targetModel": "qwen3-coder",
+        "apiKeyIndex": 1,
+        "endpoint": "https://apis.iflow.cn/v1",
+        "status": "runtime",
+        "createdAt": "2025-09-03T14:30:00Z",
+        "handshakeTime": 950,
+        "architecture": {
+          "transformer": {
+            "type": "AnthropicToOpenAIConverter",
+            "config": {}
+          },
+          "protocol": {
+            "type": "OpenAIProtocolHandler",
+            "config": {
+              "model": "qwen3-coder"
+            }
+          },
+          "serverCompatibility": {
+            "type": "IFlowServerCompatibility",
+            "config": {
+              "use": "iflow",
+              "options": {
+                "maxTokens": 262144,
+                "enhanceTool": true,
+                "authMethod": "Bearer",
+                "supportsTopK": true,
+                "supportsFrequencyPenalty": true,
+                "hasReasoningContent": true
+              }
+            }
+          },
+          "server": {
+            "type": "HTTPAPIClient",
+            "config": {
+              "baseUrl": "https://apis.iflow.cn/v1",
+              "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+              "protocol": "openai"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "allPipelines": [
+    {
+      "pipelineId": "iflow-glm-4.5-key0",
+      "virtualModel": "default",
+      "provider": "iflow",
+      "targetModel": "glm-4.5",
+      "apiKeyIndex": 0,
+      "endpoint": "https://apis.iflow.cn/v1",
+      "status": "runtime",
+      "createdAt": "2025-09-03T14:30:00Z",
+      "handshakeTime": 1200,
+      "architecture": {
+        "transformer": {
+          "type": "AnthropicToOpenAIConverter",
+          "config": {}
+        },
+        "protocol": {
+          "type": "OpenAIProtocolHandler",
+          "config": {
+            "model": "glm-4.5"
+          }
+        },
+        "serverCompatibility": {
+          "type": "IFlowServerCompatibility",
+          "config": {
+            "use": "iflow",
+            "options": {
+              "maxTokens": 262144,
+              "enhanceTool": true,
+              "authMethod": "Bearer",
+              "supportsTopK": true,
+              "supportsFrequencyPenalty": true,
+              "hasReasoningContent": true
+            }
+          }
+        },
+        "server": {
+          "type": "HTTPAPIClient",
+          "config": {
+            "baseUrl": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+            "protocol": "openai"
+          }
+        }
+      }
+    },
+    {
+      "pipelineId": "iflow-glm-4.5-key1",
+      "virtualModel": "default",
+      "provider": "iflow",
+      "targetModel": "glm-4.5",
+      "apiKeyIndex": 1,
+      "endpoint": "https://apis.iflow.cn/v1",
+      "status": "runtime",
+      "createdAt": "2025-09-03T14:30:00Z",
+      "handshakeTime": 1100,
+      "architecture": {
+        "transformer": {
+          "type": "AnthropicToOpenAIConverter",
+          "config": {}
+        },
+        "protocol": {
+          "type": "OpenAIProtocolHandler",
+          "config": {
+            "model": "glm-4.5"
+          }
+        },
+        "serverCompatibility": {
+          "type": "IFlowServerCompatibility",
+          "config": {
+            "use": "iflow",
+            "options": {
+              "maxTokens": 262144,
+              "enhanceTool": true,
+              "authMethod": "Bearer",
+              "supportsTopK": true,
+              "supportsFrequencyPenalty": true,
+              "hasReasoningContent": true
+            }
+          }
+        },
+        "server": {
+          "type": "HTTPAPIClient",
+          "config": {
+            "baseUrl": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+            "protocol": "openai"
+          }
+        }
+      }
+    },
+    {
+      "pipelineId": "qwen-qwen3-coder-plus-key0",
+      "virtualModel": "coding",
+      "provider": "qwen",
+      "targetModel": "qwen3-coder-plus",
+      "apiKeyIndex": 0,
+      "endpoint": "https://portal.qwen.ai/v1",
+      "status": "runtime",
+      "createdAt": "2025-09-03T14:30:00Z",
+      "handshakeTime": 800,
+      "architecture": {
+        "transformer": {
+          "type": "AnthropicToOpenAIConverter",
+          "config": {}
+        },
+        "protocol": {
+          "type": "OpenAIProtocolHandler",
+          "config": {
+            "model": "qwen3-coder-plus"
+          }
+        },
+        "serverCompatibility": {
+          "type": "QwenServerCompatibility",
+          "config": {
+            "use": "qwen",
+            "options": {
+              "maxTokens": 262144,
+              "enhanceTool": true,
+              "authFileName": "qwen-auth-1"
+            }
+          }
+        },
+        "server": {
+          "type": "HTTPAPIClient",
+          "config": {
+            "baseUrl": "https://portal.qwen.ai/v1",
+            "apiKey": "qwen-auth-1",
+            "protocol": "openai"
+          }
+        }
+      }
+    },
+    {
+      "pipelineId": "iflow-qwen3-coder-key0",
+      "virtualModel": "coding",
+      "provider": "iflow",
+      "targetModel": "qwen3-coder",
+      "apiKeyIndex": 0,
+      "endpoint": "https://apis.iflow.cn/v1",
+      "status": "runtime",
+      "createdAt": "2025-09-03T14:30:00Z",
+      "handshakeTime": 900,
+      "architecture": {
+        "transformer": {
+          "type": "AnthropicToOpenAIConverter",
+          "config": {}
+        },
+        "protocol": {
+          "type": "OpenAIProtocolHandler",
+          "config": {
+            "model": "qwen3-coder"
+          }
+        },
+        "serverCompatibility": {
+          "type": "IFlowServerCompatibility",
+          "config": {
+            "use": "iflow",
+            "options": {
+              "maxTokens": 262144,
+              "enhanceTool": true,
+              "authMethod": "Bearer",
+              "supportsTopK": true,
+              "supportsFrequencyPenalty": true,
+              "hasReasoningContent": true
+            }
+          }
+        },
+        "server": {
+          "type": "HTTPAPIClient",
+          "config": {
+            "baseUrl": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+            "protocol": "openai"
+          }
+        }
+      }
+    },
+    {
+      "pipelineId": "iflow-qwen3-coder-key1",
+      "virtualModel": "coding",
+      "provider": "iflow",
+      "targetModel": "qwen3-coder",
+      "apiKeyIndex": 1,
+      "endpoint": "https://apis.iflow.cn/v1",
+      "status": "runtime",
+      "createdAt": "2025-09-03T14:30:00Z",
+      "handshakeTime": 950,
+      "architecture": {
+        "transformer": {
+          "type": "AnthropicToOpenAIConverter",
+          "config": {}
+        },
+        "protocol": {
+          "type": "OpenAIProtocolHandler",
+          "config": {
+            "model": "qwen3-coder"
+          }
+        },
+        "serverCompatibility": {
+          "type": "IFlowServerCompatibility",
+          "config": {
+            "use": "iflow",
+            "options": {
+              "maxTokens": 262144,
+              "enhanceTool": true,
+              "authMethod": "Bearer",
+              "supportsTopK": true,
+              "supportsFrequencyPenalty": true,
+              "hasReasoningContent": true
+            }
+          }
+        },
+        "server": {
+          "type": "HTTPAPIClient",
+          "config": {
+            "baseUrl": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+            "protocol": "openai"
+          }
+        }
+      }
+    }
+  ]
+}

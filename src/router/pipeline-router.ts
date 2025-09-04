@@ -93,17 +93,17 @@ export class PipelineRouter {
   }
 
   /**
-   * 检查并重新加载流水线表 (如果已过期)
+   * 检查并重新加载流水线表 (如果已过期) - 内部方法
    * @param configName 配置名称
    * @param maxAge 最大年龄（毫秒），默认5分钟
    */
-  refreshIfStale(configName: string, maxAge?: number): boolean {
+  private _refreshIfStale(configName: string, maxAge?: number): boolean {
     try {
       if (PipelineTableLoader.isPipelineTableStale(configName, maxAge)) {
         secureLogger.info('🔄 Pipeline table is stale, reloading...', { configName });
         
         const newRoutingTable = PipelineTableLoader.loadPipelineTable(configName);
-        this.updateRoutingTable(newRoutingTable);
+        this._updateRoutingTable(newRoutingTable);
         
         secureLogger.info('✅ Pipeline table refreshed', { configName });
         return true;
@@ -124,7 +124,7 @@ export class PipelineRouter {
    * 具体选择哪个流水线由负载均衡器决定
    */
   route(inputModel: string): PipelineRoutingDecision {
-    const virtualModel = this.mapToVirtualModel(inputModel);
+    const virtualModel = this._mapToVirtualModel(inputModel);
     
     // 获取该虚拟模型对应的所有流水线
     const availableRoutes = this.routingTable.routes[virtualModel];
@@ -142,7 +142,7 @@ export class PipelineRouter {
         availablePipelines: defaultRoutes
           .filter(route => route.isActive && route.health !== 'unhealthy')
           .map(route => route.pipelineId),
-        globalPipelinePool: this.getAllHealthyPipelines(),
+        globalPipelinePool: this._getAllHealthyPipelines(),
         reasoning: `Using default route ${this.routingTable.defaultRoute} for ${inputModel}`,
       };
     }
@@ -167,16 +167,16 @@ export class PipelineRouter {
       originalModel: inputModel,
       virtualModel,
       availablePipelines: healthyPipelines,
-      globalPipelinePool: this.getAllHealthyPipelines(),
+      globalPipelinePool: this._getAllHealthyPipelines(),
       reasoning: `Found ${healthyPipelines.length} healthy pipelines for ${virtualModel}`,
     };
   }
 
   /**
-   * 将输入模型映射到目标模型类型
+   * 将输入模型映射到目标模型类型 - 内部方法
    * 使用基于算法的5个有意义的模型分类
    */
-  mapToVirtualModel(inputModel: string, request?: any): string {
+  private _mapToVirtualModel(inputModel: string, request?: any): string {
     try {
       const targetModel = VirtualModelMapper.mapToVirtual(inputModel, request || {});
       return targetModel;
@@ -198,9 +198,9 @@ export class PipelineRouter {
   }
 
   /**
-   * 更新路由表 - 用于运行时更新流水线状态
+   * 更新路由表 - 用于运行时更新流水线状态 - 内部方法
    */
-  updateRoutingTable(newRoutingTable: RoutingTable): void {
+  private _updateRoutingTable(newRoutingTable: RoutingTable): void {
     this.routingTable = newRoutingTable;
     secureLogger.info('Routing table updated', {
       routeCount: Object.keys(newRoutingTable.routes).length,
@@ -209,9 +209,9 @@ export class PipelineRouter {
   }
 
   /**
-   * 获取当前路由表状态
+   * 获取当前路由表状态 - 内部方法
    */
-  getRoutingTableStatus(): {
+  private _getRoutingTableStatus(): {
     totalRoutes: number;
     healthyPipelines: number;
     unhealthyPipelines: number;
@@ -245,9 +245,9 @@ export class PipelineRouter {
   }
 
   /**
-   * 标记流水线为不健康
+   * 标记流水线为不健康 - 内部方法
    */
-  markPipelineUnhealthy(pipelineId: string, reason: string): void {
+  private _markPipelineUnhealthy(pipelineId: string, reason: string): void {
     for (const routes of Object.values(this.routingTable.routes)) {
       const route = routes.find(r => r.pipelineId === pipelineId);
       if (route) {
@@ -264,9 +264,9 @@ export class PipelineRouter {
   }
 
   /**
-   * 标记流水线为健康
+   * 标记流水线为健康 - 内部方法
    */
-  markPipelineHealthy(pipelineId: string): void {
+  private _markPipelineHealthy(pipelineId: string): void {
     for (const routes of Object.values(this.routingTable.routes)) {
       const route = routes.find(r => r.pipelineId === pipelineId);
       if (route) {
@@ -282,9 +282,9 @@ export class PipelineRouter {
   }
 
   /**
-   * 获取路由器统计信息
+   * 获取路由器统计信息 - 内部方法
    */
-  getStatistics(): {
+  private _getStatistics(): {
     totalProviders: number;
     totalBlacklisted: number;
     totalRoutes: number;
@@ -292,7 +292,7 @@ export class PipelineRouter {
     unhealthyPipelines: number;
     routeDetails: Record<string, { total: number; healthy: number; }>;
   } {
-    const status = this.getRoutingTableStatus();
+    const status = this._getRoutingTableStatus();
     
     // 计算Provider数量（去重）
     const uniqueProviders = new Set<string>();
@@ -313,20 +313,20 @@ export class PipelineRouter {
   }
 
   /**
-   * 清理过期的黑名单条目
+   * 清理过期的黑名单条目 - 内部方法
    * 注意：当前实现中没有blacklist功能，这是一个空操作
    */
-  cleanupExpiredBlacklists(): void {
+  private _cleanupExpiredBlacklists(): void {
     // 当前PipelineRouter没有blacklist功能
     // 这是为了保持向后兼容性的空实现
     secureLogger.debug('Cleanup expired blacklists called (no-op in PipelineRouter)');
   }
 
   /**
-   * 将API密钥加入黑名单
+   * 将API密钥加入黑名单 - 内部方法
    * 注意：当前实现中没有blacklist功能，这是一个空操作
    */
-  blacklistKey(apiKey: string, reason: string, duration?: number): void {
+  private _blacklistKey(apiKey: string, reason: string, duration?: number): void {
     // 当前PipelineRouter没有blacklist功能
     // 这是为了保持向后兼容性的空实现
     secureLogger.warn('Blacklist key called (no-op in PipelineRouter)', {
@@ -336,9 +336,9 @@ export class PipelineRouter {
   }
 
   /**
-   * 获取所有健康流水线的全局池
+   * 获取所有健康流水线的全局池 - 内部方法
    */
-  private getAllHealthyPipelines(): string[] {
+  private _getAllHealthyPipelines(): string[] {
     const allHealthyPipelines: string[] = [];
     
     for (const routes of Object.values(this.routingTable.routes)) {

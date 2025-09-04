@@ -15,13 +15,14 @@ import { JQJsonHandler } from '../../utils/jq-json-handler';
 // 🔧 配置访问违规修复：移除直接配置访问，通过参数注入获取配置
 // import { MergedConfig } from '../../config/config-reader';
 import { HttpRequestHandler, HttpRequestOptions } from './http-request-handler';
+import { RCCError } from '../../types/error';
 
 /**
  * Pipeline层处理器配置接口 - 替代直接配置访问
  * 只包含Pipeline层实际需要的配置字段，避免依赖完整配置对象
+ * 注意：实际的路由决策由路由器生成并通过context传递
  */
 export interface PipelineLayersConfig {
-  router?: Record<string, string>;  // 路由映射配置
   providers?: Array<{
     name: string;
     baseURL?: string;
@@ -42,7 +43,7 @@ export interface PipelineLayersConfig {
 }
 import { API_DEFAULTS, generatePipelineId, PROVIDER_CONFIG_FIELDS } from '../../constants/api-defaults';
 import { transformAnthropicToOpenAI } from '../../modules/transformers/anthropic-openai-converter';
-import { PROVIDER_ERRORS, LOG_MESSAGES } from '../../constants/error-messages';
+import { PROVIDER_ERRORS, LOG_MESSAGES, ROUTING_ERRORS } from '../../constants/error-messages';
 import { ZeroFallbackErrorFactory } from '../../interfaces/core/zero-fallback-errors';
 
 export interface RequestContext {
@@ -77,15 +78,28 @@ export class PipelineLayersProcessor {
    */
   public async processRouterLayer(input: any, context: RequestContext): Promise<any> {
     try {
-      secureLogger.info('Router layer processing directly', {
+      secureLogger.info('Router layer validating routing decision', {
         requestId: context.requestId,
         inputModel: input.model
       });
 
-      // 直接处理路由逻辑，而不是通过API调用
-      const routingDecision = this.makeRoutingDecision(input.model, context);
+      // 验证路由决策是否存在
+      if (!context.routingDecision) {
+        const error = new RCCError(
+          `${ROUTING_ERRORS.ROUTING_DECISION_MISSING} ${input.model}`,
+          'ROUTING_DECISION_MISSING',
+          'pipeline-router',
+          { model: input.model, requestId: context.requestId }
+        );
+        secureLogger.error('Router layer processing failed - missing routing decision', {
+          requestId: context.requestId,
+          error: error.message
+        });
+        throw error;
+      }
+
+      const routingDecision = context.routingDecision;
       
-      context.routingDecision = routingDecision;
       context.metadata.routingDecision = routingDecision;
       
       context.transformations.push({
@@ -96,10 +110,11 @@ export class PipelineLayersProcessor {
         apiMode: false
       });
 
-      secureLogger.info('Router layer processed directly', {
+      secureLogger.info('Router layer validated routing decision', {
         requestId: context.requestId,
         inputModel: input.model,
-        outputModel: routingDecision.virtualModel
+        outputModel: routingDecision.virtualModel,
+        availablePipelinesCount: routingDecision.availablePipelines?.length || 0
       });
 
       return routingDecision;
@@ -206,33 +221,6 @@ export class PipelineLayersProcessor {
 
   
 
-  /**
-   * 执行路由决策
-   */
-  private makeRoutingDecision(model: string, context: RequestContext): any {
-    // 获取可用的流水线
-    const availablePipelines = this.getAvailablePipelinesForMappedModel(model);
-    
-    if (availablePipelines.length === 0) {
-      throw new Error(`No available pipelines for model: ${model}`);
-    }
-    
-    // 选择流水线
-    const selectedPipeline = this.selectPipelineRoundRobin(availablePipelines);
-    
-    // 从流水线ID中提取provider和模型信息
-    const [providerName, ...modelParts] = selectedPipeline.split('-');
-    const modelName = modelParts.slice(0, -1).join('-'); // 移除key部分
-    
-    return {
-      provider: providerName,
-      virtualModel: model,
-      targetModel: modelName,
-      selectedPipeline: selectedPipeline,
-      availablePipelines: availablePipelines,
-      originalModel: model
-    };
-  }
 
   /**
    * 转换请求格式 - 完整的Anthropic到OpenAI转换
@@ -373,7 +361,13 @@ export class PipelineLayersProcessor {
     });
     
     if (!provider) {
-      throw new Error(`Provider not found: ${routingDecision.provider}`);
+      const error = new RCCError(
+        `${PROVIDER_ERRORS.NOT_FOUND}: ${routingDecision.provider}`,
+        'PROVIDER_NOT_FOUND',
+        'pipeline-server',
+        { provider: routingDecision.provider, requestId: context.requestId }
+      );
+      throw error;
     }
     
     // 🔥 关键修复：优先使用protocolConfig，其次才用provider配置
@@ -450,95 +444,4 @@ export class PipelineLayersProcessor {
     return selectedPipeline;
   }
 
-  private getAvailablePipelinesForMappedModel(mappedModel: string): string[] {
-    const routerConfig = (this.config as any).router || (this.config as any).Router || (this.config as any).routing;
-    
-    secureLogger.info('🔍 Pipeline routing debug - 详细配置检查', {
-      mappedModel,
-      configKeys: Object.keys(this.config || {}),
-      hasRouter: !!(this.config as any).router,
-      hasRouterCapital: !!(this.config as any).Router,
-      routerConfig: routerConfig,
-      routerConfigKeys: routerConfig ? Object.keys(routerConfig) : 'none',
-      routerConfigForModel: routerConfig ? routerConfig[mappedModel] : 'not found',
-      providersCount: (this.config as any).providers?.length || (this.config as any).Providers?.length || 0
-    });
-    
-    if (routerConfig && routerConfig[mappedModel]) {
-      const routeEntry = routerConfig[mappedModel];
-      // 🔧 修复：解析所有路由选项，支持跨provider切换
-      const allRoutes = routeEntry.split(';').map((route: string) => route.trim());
-      const availablePipelines: string[] = [];
-      
-      secureLogger.info('🔧 解析路由配置', {
-        mappedModel,
-        routeEntry,
-        allRoutes
-      });
-      
-      for (const route of allRoutes) {
-        const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
-        
-        if (providerName && modelName) {
-          const pipelineId = generatePipelineId(providerName, modelName);
-          availablePipelines.push(pipelineId);
-          
-          secureLogger.debug('🔧 生成pipeline ID', {
-            route,
-            providerName,
-            modelName,
-            pipelineId
-          });
-        } else {
-          secureLogger.warn('🚨 路由解析失败', {
-            route,
-            providerName,
-            modelName
-          });
-        }
-      }
-      
-      secureLogger.info('🔧 Pipeline生成完成', {
-        mappedModel,
-        generatedPipelines: availablePipelines,
-        totalCount: availablePipelines.length
-      });
-      
-      if (availablePipelines.length > 0) {
-        return availablePipelines;
-      }
-    }
-    
-    if (mappedModel !== 'default' && routerConfig?.default) {
-      const defaultRoute = routerConfig.default;
-      // 🔧 修复：解析所有默认路由选项
-      const allDefaultRoutes = defaultRoute.split(';').map((route: string) => route.trim());
-      const availablePipelines: string[] = [];
-      
-      for (const route of allDefaultRoutes) {
-        const [providerName, modelName] = route.split(',').map((s: string) => s.trim());
-        
-        if (providerName && modelName) {
-          const pipelineId = generatePipelineId(providerName, modelName);
-          availablePipelines.push(pipelineId);
-        }
-      }
-      
-      if (availablePipelines.length > 0) {
-        return availablePipelines;
-      }
-    }
-    
-    const providers = (this.config as any).providers;
-    if (providers?.length > 0) {
-      const firstProvider = providers[0];
-      if (firstProvider.models?.length > 0) {
-        const modelName = firstProvider.models[0];
-        const pipelineId = generatePipelineId(firstProvider.name, modelName);
-        return [pipelineId];
-      }
-    }
-    
-    return [];
-  }
 }

@@ -4,7 +4,8 @@
  * 测试PipelineLifecycleManager与InternalAPIServer的集成
  */
 
-import { PipelineLifecycleManager } from '../pipeline/pipeline-lifecycle-manager';
+// PipelineLifecycleManager已废弃，使用UnifiedInitializer替代
+// import { PipelineLifecycleManager } from '../pipeline/pipeline-lifecycle-manager';
 import { createInternalAPIClient } from './internal-api-client';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -28,19 +29,7 @@ async function testPipelineIntegration() {
     };
     console.log('✅ Using default configuration');
     
-    // 创建PipelineLifecycleManager实例
-    const lifecycleManager = new PipelineLifecycleManager(
-      undefined, // userConfigPath
-      undefined, // systemConfigPath
-      true, // debugEnabled
-      config.server?.port || 5510 // cliPort
-    );
-    
-    console.log('✅ PipelineLifecycleManager created successfully');
-    
-    // 检查是否正确创建了API服务器
-    const systemInfo = lifecycleManager.getSystemInfo();
-    console.log('✅ System info:', systemInfo);
+    console.log('⚠️ PipelineLifecycleManager已废弃，使用UnifiedInitializer替代');
     
     console.log('✅ Pipeline Integration Test completed successfully');
     

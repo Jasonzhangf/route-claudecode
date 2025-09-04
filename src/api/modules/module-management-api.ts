@@ -16,6 +16,7 @@ import { OpenAIProtocolModule } from '../../modules/pipeline-modules/protocol/op
 
 // Server-Compatibility模块
 import { LMStudioCompatibilityModule } from '../../modules/pipeline-modules/server-compatibility/lmstudio-compatibility';
+import { IFlowCompatibilityModule } from '../../modules/pipeline-modules/server-compatibility/iflow-compatibility';
 
 // Server模块
 import { OpenAIServerModule } from '../../modules/pipeline-modules/server/openai-server';
@@ -25,6 +26,9 @@ import { AnthropicInputValidator } from '../../modules/validators/anthropic-inpu
 
 // Provider模块
 import { AnthropicProtocolHandler } from '../../modules/providers/anthropic-protocol-handler';
+
+// 错误消息常量
+import { ERROR_MESSAGES } from '../../constants/error-messages';
 
 // 存储所有模块实例
 const moduleInstances = new Map<string, ModuleInterface>();
@@ -158,9 +162,15 @@ export async function createModule(request: CreateModuleRequest): Promise<Create
       switch (request.moduleType) {
         case 'lmstudio':
           if (!request.config) {
-            throw new Error('LMStudio compatibility module requires config');
+            throw new Error(ERROR_MESSAGES.REQUIRED_FIELD_MISSING);
           }
           module = new LMStudioCompatibilityModule(request.config);
+          break;
+        case 'iflow':
+          if (!request.config) {
+            throw new Error(ERROR_MESSAGES.REQUIRED_FIELD_MISSING);
+          }
+          module = new IFlowCompatibilityModule(request.config);
           break;
         default:
           throw new Error(`Unsupported server compatibility module type: ${request.moduleType}`);
@@ -171,7 +181,7 @@ export async function createModule(request: CreateModuleRequest): Promise<Create
       switch (request.moduleType) {
         case 'openai':
           if (!request.config) {
-            throw new Error('OpenAI server module requires config');
+            throw new Error(ERROR_MESSAGES.REQUIRED_FIELD_MISSING);
           }
           module = new OpenAIServerModule(request.config);
           break;

@@ -27,7 +27,7 @@ export class PipelineTableLoader {
    * @returns RoutingTable对象
    */
   static loadPipelineTable(configName: string): RoutingTable {
-    const generatedDir = path.join(os.homedir(), '.route-claudecode', 'config', 'generated');
+    const generatedDir = path.join(process.cwd(), 'generated');
     const fileName = `${configName}-pipeline-table.json`;
     const filePath = path.join(generatedDir, fileName);
 
@@ -75,7 +75,7 @@ export class PipelineTableLoader {
    * @returns 配置名称列表
    */
   static listAvailablePipelineTables(): string[] {
-    const generatedDir = path.join(os.homedir(), '.route-claudecode', 'config', 'generated');
+    const generatedDir = path.join(process.cwd(), 'generated');
     
     try {
       if (!fs.existsSync(generatedDir)) {
@@ -214,7 +214,7 @@ export class PipelineTableLoader {
    * @returns 是否需要刷新
    */
   static isPipelineTableStale(configName: string, maxAge: number = ROUTING_TABLE_DEFAULTS.CACHE_TTL): boolean {
-    const generatedDir = path.join(os.homedir(), '.route-claudecode', 'config', 'generated');
+    const generatedDir = path.join(process.cwd(), 'generated');
     const fileName = `${configName}-pipeline-table.json`;
     const filePath = path.join(generatedDir, fileName);
 

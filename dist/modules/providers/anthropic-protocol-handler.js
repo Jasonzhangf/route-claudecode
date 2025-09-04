@@ -72,6 +72,8 @@ class AnthropicProtocolHandler extends events_1.EventEmitter {
         };
         this.processingTimes = [];
         this.errors = [];
+        // ModuleInterface连接管理方法
+        this.connections = new Map();
         this.protocolConfig = {
             apiKey: '',
             defaultModel: 'claude-3-sonnet-20240229',
@@ -535,6 +537,51 @@ class AnthropicProtocolHandler extends events_1.EventEmitter {
             }
             return false;
         }
+    }
+    addConnection(module) {
+        this.connections.set(module.getId(), module);
+    }
+    removeConnection(moduleId) {
+        this.connections.delete(moduleId);
+    }
+    getConnection(moduleId) {
+        return this.connections.get(moduleId);
+    }
+    getConnections() {
+        return Array.from(this.connections.values());
+    }
+    hasConnection(moduleId) {
+        return this.connections.has(moduleId);
+    }
+    clearConnections() {
+        this.connections.clear();
+    }
+    getConnectionCount() {
+        return this.connections.size;
+    }
+    // 模块间通信方法
+    async sendToModule(targetModuleId, message, type) {
+        const targetModule = this.connections.get(targetModuleId);
+        if (targetModule) {
+            // 发送消息到目标模块
+            targetModule.onModuleMessage((sourceModuleId, msg, msgType) => {
+                this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
+            });
+            return Promise.resolve({ success: true, targetModuleId, message, type });
+        }
+        return Promise.resolve({ success: false, targetModuleId, message, type });
+    }
+    async broadcastToModules(message, type) {
+        const promises = [];
+        this.connections.forEach(module => {
+            promises.push(this.sendToModule(module.getId(), message, type));
+        });
+        await Promise.allSettled(promises);
+    }
+    onModuleMessage(listener) {
+        this.on('moduleMessage', (data) => {
+            listener(data.fromModuleId, data.message, data.type);
+        });
     }
 }
 exports.AnthropicProtocolHandler = AnthropicProtocolHandler;

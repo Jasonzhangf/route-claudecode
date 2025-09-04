@@ -625,10 +625,10 @@ async function gracefulShutdown(): Promise<void> {
   }, 10000); // 10秒超时
   
   try {
-    // 如果有全局的PipelineLifecycleManager实例，关闭它
-    const globalManager = (global as any).pipelineLifecycleManager;
+    // 如果有全局的UnifiedInitializer实例，关闭它
+    const globalManager = (global as any).unifiedInitializer;
     if (globalManager && typeof globalManager.stop === 'function') {
-      secureLogger.info('正在停止PipelineLifecycleManager...');
+      secureLogger.info('正在停止UnifiedInitializer...');
       await globalManager.stop();
     }
     

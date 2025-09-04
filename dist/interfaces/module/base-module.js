@@ -19,6 +19,14 @@ var ModuleType;
     ModuleType["SERVER_COMPATIBILITY"] = "server-compatibility";
     ModuleType["COMPATIBILITY"] = "compatibility";
     ModuleType["SERVER"] = "server";
+    ModuleType["ROUTER"] = "router";
+    ModuleType["PIPELINE"] = "pipeline";
+    ModuleType["CLIENT"] = "client";
+    ModuleType["CONFIG"] = "config";
+    ModuleType["DEBUG"] = "debug";
+    ModuleType["ERROR_HANDLER"] = "error-handler";
+    ModuleType["MIDDLEWARE"] = "middleware";
+    ModuleType["PROVIDER"] = "provider";
 })(ModuleType || (exports.ModuleType = ModuleType = {}));
 /**
  * 模块事件类型

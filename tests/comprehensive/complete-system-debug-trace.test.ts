@@ -26,7 +26,7 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import { ConfigReader } from '../../src/config/config-reader';
 import { PipelineManager } from '../../src/pipeline/pipeline-manager';
-import { LoadBalancerRouter } from '../../src/pipeline/load-balancer-router';
+import { LoadBalancer } from '../../src/router/load-balancer';
 import { StandardPipelineFactoryImpl } from '../../src/pipeline/pipeline-factory';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -93,7 +93,7 @@ describe('Complete System Debug Trace Test', () => {
   let configPath: string;
   let configReader: ConfigReader;
   let pipelineManager: PipelineManager;
-  let loadBalancer: LoadBalancerRouter;
+  let loadBalancer: LoadBalancer;
   let pipelineFactory: StandardPipelineFactoryImpl;
   let traceResult: SystemDebugTraceResult;
 
@@ -214,7 +214,10 @@ describe('Complete System Debug Trace Test', () => {
     pipelineManager = new PipelineManager(pipelineFactory);
 
     // 初始化负载均衡路由器
-    loadBalancer = new LoadBalancerRouter();
+    // LoadBalancer需要PipelineManager实例
+    // 在测试环境中使用模拟的PipelineManager
+    const mockPipelineManager = {} as any;
+    loadBalancer = new LoadBalancer(mockPipelineManager);
 
     // 生成路由映射
     const providerMappings = expandedProviders.map(p => ({ providerId: p.name, provider: p }));

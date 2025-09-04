@@ -201,6 +201,10 @@ export declare class PipelineManager extends EventEmitter {
      */
     getAllPipelineStatus(): Record<string, PipelineStatus>;
     /**
+     * 获取调度器状态（符合PipelineModuleInterface接口）
+     */
+    getStatus(): any;
+    /**
      * 获取活跃执行
      */
     getActiveExecutions(): ExecutionRecord[];

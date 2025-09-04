@@ -13,7 +13,7 @@ import { EventEmitter } from 'events';
 import path from 'path';
 import { secureLogger } from '../utils/secure-logger';
 import { PIPELINE_RETRY_CONSTANTS } from '../constants/pipeline-retry-constants';
-import { ERROR_MESSAGES } from '../constants/error-messages';
+import { ERROR_MESSAGES, ROUTING_ERRORS } from '../constants/error-messages';
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { getServerPort, SERVER_DEFAULTS } from '../constants/server-defaults';
 import { HTTP_STATUS_CODES } from '../constants/server-constants';
@@ -30,7 +30,8 @@ import { PrecisePipelineBlacklistManager } from './modules/precise-blacklist-man
 import { IntelligentErrorRecoveryManager, PipelineRecoveryContext, ErrorRecoveryResult } from './intelligent-error-recovery';
 import { ErrorCoordinationCenterImpl } from '../core/error-coordination-center';
 import { ErrorCoordinationCenterFactory } from '../core/error-coordination-center-factory';
-import { RateLimitError } from '../types/error';
+import { RateLimitError, RCCError } from '../types/error';
+import { PipelineRouter } from '../router/pipeline-router';
 
 // 导入验证器
 import { protocolTransformerValidator, ValidationResult } from '../validation/protocol-transformer-validator';
@@ -85,6 +86,7 @@ export interface PipelineProcessorConfig {
     maxRetries?: number;
     retryDelay?: number;
   };
+  router?: PipelineRouter; // 添加路由器实例类型
 }
 
 /**
@@ -134,6 +136,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private blacklistManager: PrecisePipelineBlacklistManager;
   private intelligentErrorRecoveryManager: IntelligentErrorRecoveryManager;
   private errorCoordinationCenter: ErrorCoordinationCenterImpl;
+  private router: PipelineRouter | null = null; // 添加路由器实例
 
   // 新的解耦合执行管理架构（可选启用）
   private errorClassifier?: ErrorClassifier;
@@ -188,8 +191,14 @@ export class PipelineRequestProcessor extends EventEmitter {
     // 初始化HTTP请求处理器
     this.httpRequestHandler = new HttpRequestHandler();
 
-    // 初始化流水线处理层
-    this.pipelineLayersProcessor = new PipelineLayersProcessor(config, this.httpRequestHandler);
+    // 初始化流水线处理层，传递简化配置
+    // 注意：路由器决策通过context传递，不直接传递路由配置
+    const layersConfig = {
+      providers: (config as any).providers, // 从原始配置中提取providers
+      server: config.server,
+      debug: config.debug
+    };
+    this.pipelineLayersProcessor = new PipelineLayersProcessor(layersConfig, this.httpRequestHandler);
     
     // 创建内部API客户端和PipelineLayersAPIProcessor
     const internalApiClient = new InternalAPIClient({
@@ -253,6 +262,9 @@ export class PipelineRequestProcessor extends EventEmitter {
     this.debugManager.initialize(this.serverPort).catch(error => {
       secureLogger.warn('Failed to initialize debug manager console capture', { error, port: this.serverPort });
     });
+    
+    // 初始化路由器
+    this.router = this.config.router || null;
   }
 
   /**
@@ -337,6 +349,76 @@ export class PipelineRequestProcessor extends EventEmitter {
   // 包含: processRequest (主协调逻辑), 统计处理, 错误管理
   // 职责: 六层流水线的协调和统计管理
   // ========================================================================================
+  
+  /**
+   * 生成路由决策 - 通过PipelineRouter生成路由决策
+   */
+  private async generateRoutingDecision(input: any, context: RequestContext): Promise<any> {
+    // 添加调试日志来查看路由器对象的实际状态
+    secureLogger.debug('Router object debug info', {
+      requestId: context.requestId,
+      routerExists: !!this.router,
+      routerType: typeof this.router,
+      routerConstructor: this.router?.constructor?.name,
+      routerHasRouteMethod: !!this.router?.route,
+      routerRouteMethodType: typeof this.router?.route,
+    });
+    
+    if (!this.router) {
+      const error = new RCCError(
+        'Router not initialized',
+        'ROUTER_NOT_INITIALIZED',
+        'pipeline-request-processor',
+        { requestId: context.requestId }
+      );
+      secureLogger.error('Router not initialized when generating routing decision', {
+        requestId: context.requestId,
+        error: error.message
+      });
+      throw error;
+    }
+    
+    // 检查路由器是否有route方法
+    if (typeof this.router.route !== 'function') {
+      const error = new RCCError(
+        'Router does not have route method',
+        'ROUTER_INVALID',
+        'pipeline-request-processor',
+        { 
+          requestId: context.requestId,
+          routerType: typeof this.router,
+          routerConstructor: this.router?.constructor?.name,
+        }
+      );
+      secureLogger.error('Router does not have route method', {
+        requestId: context.requestId,
+        error: error.message,
+        routerType: typeof this.router,
+        routerConstructor: this.router?.constructor?.name,
+      });
+      throw error;
+    }
+    
+    try {
+      const routingDecision = this.router.route(input.model);
+      
+      secureLogger.info('Routing decision generated', {
+        requestId: context.requestId,
+        originalModel: routingDecision.originalModel,
+        virtualModel: routingDecision.virtualModel,
+        availablePipelinesCount: routingDecision.availablePipelines?.length || 0,
+      });
+      
+      return routingDecision;
+    } catch (error) {
+      secureLogger.error('Failed to generate routing decision', {
+        requestId: context.requestId,
+        error: error.message,
+        stack: error.stack,
+      });
+      throw error;
+    }
+  }
 
   /**
    * 处理Pipeline请求 - 完整的6层处理逻辑
@@ -368,11 +450,14 @@ export class PipelineRequestProcessor extends EventEmitter {
         executionContext: executionContext.debug ? executionContext : '[CONTEXT_PRESENT]',
       });
 
-      // Step 1: Router层 - 路由决策
+      // Step 1: Router层 - 路由决策 (通过PipelineRouter生成而不是通过API调用)
       const routerStart = Date.now();
       this.debugManager.recordInput('router_req_in', requestId, input);
-      const routingResult = await this.pipelineLayersAPIProcessor.processRouterLayer(input, context);
-      const routingDecision = routingResult.output;
+      
+      // 🔧 修复：通过PipelineRouter生成路由决策而不是通过API调用
+      // 这样做符合架构原则：路由决策在路由模块中完成
+      const routingDecision = await this.generateRoutingDecision(input, context);
+      
       this.debugManager.recordOutput('router_req_out', requestId, routingDecision);
       context.layerTimings.router = Date.now() - routerStart;
       context.routingDecision = routingDecision;
@@ -780,23 +865,38 @@ export class PipelineRequestProcessor extends EventEmitter {
         }
       } as any);
 
-      // 记录到增强错误处理系统
+      // 通过错误处理中心处理错误
+      const errorContext: any = {
+        requestId,
+        pipelineId: context.routingDecision?.selectedPipeline,
+        layerName: 'pipeline-request-processor',
+        provider: context.routingDecision?.provider,
+        totalTime,
+        layerTimings: context.layerTimings,
+        errorCount: context.errors.length,
+        attemptNumber: 0,
+        maxAttempts: 3,
+        isLastAttempt: false
+      };
+
       try {
-        const errorHandler = getEnhancedErrorHandler(this.serverPort);
-        await errorHandler.handleError(error, {
+        await this.errorCoordinationCenter.handleError(error, errorContext);
+      } catch (coordinationError) {
+        secureLogger.warn('Error coordination center failed, falling back to enhanced error handler', {
           requestId,
-          pipelineId: context.routingDecision?.selectedPipeline,
-          layerName: 'pipeline-request-processor',
-          provider: context.routingDecision?.provider,
-          totalTime,
-          layerTimings: context.layerTimings,
-          errorCount: context.errors.length
+          error: coordinationError.message
         });
-      } catch (enhancedErrorHandlerError) {
-        secureLogger.warn('Enhanced error handler failed', {
-          requestId,
-          error: enhancedErrorHandlerError.message
-        });
+        
+        // 回退到增强错误处理系统
+        try {
+          const errorHandler = getEnhancedErrorHandler(this.serverPort);
+          await errorHandler.handleError(error, errorContext);
+        } catch (enhancedErrorHandlerError) {
+          secureLogger.warn('Enhanced error handler also failed', {
+            requestId,
+            error: enhancedErrorHandlerError.message
+          });
+        }
       }
 
       secureLogger.error('Request processing failed', {
@@ -1387,7 +1487,7 @@ export class PipelineRequestProcessor extends EventEmitter {
 
     // 如果原始协议是anthropic，将OpenAI格式转换为Anthropic格式
     if (originalProtocol === 'anthropic') {
-      return this.transformOpenAIToAnthropic(response, context);
+      return await this.transformOpenAIToAnthropic(response, context);
     }
 
     // 如果原始协议是openai或其他，保持原格式
@@ -1397,7 +1497,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   /**
    * 将OpenAI格式响应转换为Anthropic格式
    */
-  private transformOpenAIToAnthropic(openaiResponse: any, context: RequestContext): any {
+  private async transformOpenAIToAnthropic(openaiResponse: any, context: RequestContext): Promise<any> {
     try {
       // 🔧 修复：检查是否为错误响应
       if (openaiResponse.error) {
@@ -1464,7 +1564,7 @@ export class PipelineRequestProcessor extends EventEmitter {
       }
 
       // 构建Anthropic格式的响应
-      const anthropicResponse = {
+      const anthropicResponse: any = {
         id: `msg_${Date.now()}`,
         type: 'message',
         role: 'assistant',
@@ -1477,6 +1577,16 @@ export class PipelineRequestProcessor extends EventEmitter {
           output_tokens: openaiResponse.usage?.completion_tokens || 0
         }
       };
+      
+      // 🔧 关键修复：处理iFlow特有的字段
+      if (openaiResponse.reasoning_content) {
+        anthropicResponse.reasoning_content = openaiResponse.reasoning_content;
+      }
+      
+      // 处理其他可能的提供商特定字段
+      if (openaiResponse.iflow_reasoning) {
+        anthropicResponse.reasoning_content = openaiResponse.iflow_reasoning;
+      }
 
       context.transformations.push({
         layer: 'response-transformer',
@@ -1506,44 +1616,22 @@ export class PipelineRequestProcessor extends EventEmitter {
       // 记录到增强错误处理系统
       try {
         const errorHandler = getEnhancedErrorHandler(this.serverPort);
-        errorHandler.handleError(error, {
+        await errorHandler.handleError(error, {
           requestId: context.requestId,
           layerName: 'response-transformer',
           protocol: 'openai-to-anthropic',
           originalResponseId: openaiResponse?.id,
           hasOriginalResponse: !!openaiResponse
-        }).catch(enhancedErrorHandlerError => {
-          secureLogger.warn('Enhanced error handler failed during response transformation', {
-            requestId: context.requestId,
-            error: enhancedErrorHandlerError.message
-          });
         });
       } catch (enhancedErrorHandlerError) {
-        secureLogger.warn('Enhanced error handler initialization failed during response transformation', {
+        secureLogger.warn('Enhanced error handler failed during response transformation', {
           requestId: context.requestId,
           error: enhancedErrorHandlerError.message
         });
       }
 
-      // 返回备用的Anthropic格式响应
-      return {
-        id: `msg_${Date.now()}`,
-        type: 'message',
-        role: 'assistant',
-        content: [
-          {
-            type: 'text',
-            text: '⚠️ 响应转换失败，但RCC4流水线处理成功。'
-          }
-        ],
-        model: 'rcc4-router',
-        stop_reason: 'end_turn',
-        stop_sequence: null,
-        usage: {
-          input_tokens: 10,
-          output_tokens: 15
-        }
-      };
+      // 抛出错误，由统一错误处理中心处理
+      throw error;
     }
   }
 

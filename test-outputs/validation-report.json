@@ -1,0 +1,166 @@
+{
+  "timestamp": "2025-09-04T01:51:06.334Z",
+  "originalConfigFile": "/Users/fanzhang/.route-claudecode/config.json",
+  "generatedFiles": {
+    "routingTable": "./test-outputs/routing-table.json",
+    "pipelineConfigs": "./test-outputs/pipeline-configs.json"
+  },
+  "validation": {
+    "providersValidation": {
+      "originalCount": 2,
+      "processedCount": 2,
+      "matches": [
+        {
+          "name": "lmstudio",
+          "apiBaseUrlMatch": true,
+          "apiKeyMatch": true,
+          "modelsMatch": true,
+          "priorityMatch": true
+        },
+        {
+          "name": "qwen",
+          "apiBaseUrlMatch": true,
+          "apiKeyMatch": true,
+          "modelsMatch": true,
+          "priorityMatch": true
+        }
+      ],
+      "mismatches": []
+    },
+    "routesValidation": {
+      "originalRoutes": {
+        "default": "lmstudio,llama-3.1-8b",
+        "coding": "lmstudio,qwen2.5-coder-32b",
+        "longContext": "qwen,qwen-max",
+        "reasoning": "qwen,qwen3-coder-plus"
+      },
+      "processedRoutes": {
+        "default": "lmstudio,llama-3.1-8b",
+        "coding": "lmstudio,qwen2.5-coder-32b",
+        "longContext": "qwen,qwen-max",
+        "reasoning": "qwen,qwen3-coder-plus"
+      },
+      "exactMatches": [
+        "default: lmstudio,llama-3.1-8b",
+        "coding: lmstudio,qwen2.5-coder-32b",
+        "longContext: qwen,qwen-max",
+        "reasoning: qwen,qwen3-coder-plus"
+      ],
+      "mismatches": []
+    },
+    "serverValidation": {
+      "originalServer": {
+        "port": 5506,
+        "host": "0.0.0.0",
+        "debug": true
+      },
+      "processedServer": {
+        "port": 5506,
+        "host": "0.0.0.0",
+        "debug": true
+      },
+      "matches": [
+        "port: 5506",
+        "host: 0.0.0.0",
+        "debug: true"
+      ],
+      "mismatches": []
+    },
+    "pipelineValidation": {
+      "totalPipelines": 4,
+      "sixLayerCompliance": [
+        {
+          "pipelineId": "pipeline_lmstudio_llama-3.1-8b",
+          "hasSixLayers": true,
+          "correctLayerOrder": true,
+          "layerNames": [
+            "client",
+            "router",
+            "transformer",
+            "protocol",
+            "server-compatibility",
+            "server"
+          ]
+        },
+        {
+          "pipelineId": "pipeline_lmstudio_qwen2.5-coder-32b",
+          "hasSixLayers": true,
+          "correctLayerOrder": true,
+          "layerNames": [
+            "client",
+            "router",
+            "transformer",
+            "protocol",
+            "server-compatibility",
+            "server"
+          ]
+        },
+        {
+          "pipelineId": "pipeline_qwen_qwen-max",
+          "hasSixLayers": true,
+          "correctLayerOrder": true,
+          "layerNames": [
+            "client",
+            "router",
+            "transformer",
+            "protocol",
+            "server-compatibility",
+            "server"
+          ]
+        },
+        {
+          "pipelineId": "pipeline_qwen_qwen3-coder-plus",
+          "hasSixLayers": true,
+          "correctLayerOrder": true,
+          "layerNames": [
+            "client",
+            "router",
+            "transformer",
+            "protocol",
+            "server-compatibility",
+            "server"
+          ]
+        }
+      ],
+      "providerEndpointMatches": [
+        {
+          "pipelineId": "pipeline_lmstudio_llama-3.1-8b",
+          "provider": "lmstudio",
+          "endpointMatch": true,
+          "apiKeyMatch": true
+        },
+        {
+          "pipelineId": "pipeline_lmstudio_qwen2.5-coder-32b",
+          "provider": "lmstudio",
+          "endpointMatch": true,
+          "apiKeyMatch": true
+        },
+        {
+          "pipelineId": "pipeline_qwen_qwen-max",
+          "provider": "qwen",
+          "endpointMatch": true,
+          "apiKeyMatch": true
+        },
+        {
+          "pipelineId": "pipeline_qwen_qwen3-coder-plus",
+          "provider": "qwen",
+          "endpointMatch": true,
+          "apiKeyMatch": true
+        }
+      ]
+    }
+  },
+  "summary": {
+    "totalValidations": {
+      "providersMatched": 2,
+      "providersMismatched": 0,
+      "routesMatched": 4,
+      "routesMismatched": 0,
+      "serverMatched": 3,
+      "serverMismatched": 0,
+      "pipelinesWithSixLayers": 4,
+      "pipelinesWithCorrectOrder": 4
+    }
+  },
+  "overallSuccess": true
+}

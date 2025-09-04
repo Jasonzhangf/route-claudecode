@@ -645,7 +645,14 @@ export class PipelineServerManager extends EventEmitter {
     try {
       // 创建PipelineRequestProcessor实例
       const { PipelineRequestProcessor } = require('./pipeline-request-processor');
-      const processor = new PipelineRequestProcessor(this.config, true); // Enable debug mode
+      
+      // 确保配置中包含路由器实例
+      const processorConfig = {
+        ...this.config,
+        router: this.router
+      };
+      
+      const processor = new PipelineRequestProcessor(processorConfig, true); // Enable debug mode
       
       // 创建执行上下文
       const executionContext = {
@@ -773,9 +780,9 @@ export class PipelineServerManager extends EventEmitter {
   private convertToRouterTable(tableRoutingTable: TableRoutingTable): RouterRoutingTable {
     const routes: Record<string, any[]> = {};
     
-    // 转换每个虚拟模型的流水线定义为路由定义
-    for (const [virtualModel, pipelines] of Object.entries(tableRoutingTable.pipelinesGroupedByVirtualModel)) {
-      routes[virtualModel] = pipelines.map(pipeline => ({
+    // 转换每个模型类型的流水线定义为路由定义
+    for (const [modelType, pipelines] of Object.entries(tableRoutingTable.pipelinesGroupedByVirtualModel)) {
+      routes[modelType] = pipelines.map(pipeline => ({
         routeId: `${pipeline.pipelineId}-route`,
         routeName: pipeline.pipelineId,
         virtualModel: pipeline.virtualModel,
@@ -784,6 +791,8 @@ export class PipelineServerManager extends EventEmitter {
         pipelineId: pipeline.pipelineId,
         isActive: pipeline.status === 'runtime',
         health: 'healthy' as const,
+        // 添加serverCompatibility信息，确保流水线组装器能够正确选择模块
+        serverCompatibility: this.extractServerCompatibilityFromPipeline(pipeline)
       }));
     }
 
@@ -794,5 +803,35 @@ export class PipelineServerManager extends EventEmitter {
       routes,
       defaultRoute,
     };
+  }
+  
+  /**
+   * 从流水线定义中提取serverCompatibility类型
+   */
+  private extractServerCompatibilityFromPipeline(pipeline: any): string {
+    // 从流水线的架构信息中提取serverCompatibility类型
+    const serverCompatibilityType = pipeline.architecture?.serverCompatibility?.type;
+    
+    if (serverCompatibilityType) {
+      // 根据架构类型映射到serverCompatibility标识符
+      if (serverCompatibilityType.includes('IFlow') || serverCompatibilityType.includes('iflow')) {
+        return 'iflow';
+      } else if (serverCompatibilityType.includes('LMStudio') || serverCompatibilityType.includes('lmstudio')) {
+        return 'lmstudio';
+      } else if (serverCompatibilityType.includes('Qwen') || serverCompatibilityType.includes('qwen')) {
+        return 'qwen';
+      } else if (serverCompatibilityType.includes('ModelScope') || serverCompatibilityType.includes('modelscope')) {
+        return 'modelscope';
+      } else if (serverCompatibilityType.includes('Anthropic') || serverCompatibilityType.includes('anthropic')) {
+        return 'anthropic';
+      } else if (serverCompatibilityType.includes('OpenAI') || serverCompatibilityType.includes('openai')) {
+        return 'openai';
+      } else if (serverCompatibilityType.includes('Gemini') || serverCompatibilityType.includes('gemini')) {
+        return 'gemini';
+      }
+    }
+    
+    // 如果无法从架构信息中提取，则回退到使用provider名称
+    return pipeline.provider;
   }
 }

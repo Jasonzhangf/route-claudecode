@@ -108,9 +108,21 @@ export class HttpRequestHandler {
 
   /**
    * 判断错误是否应该重试
-   * API错误(4xx)和认证错误不重试，网络错误和服务器错误(5xx)可重试
+   * 配合错误处理中心的策略决策
    */
   public shouldRetryError(error: Error, statusCode?: number): boolean {
+    // 明确不应该重试的错误类型
+    const noRetryStatusCodes = [400, 401, 403, 404];
+    if (statusCode && noRetryStatusCodes.includes(statusCode)) {
+      return false;
+    }
+    
+    // 明确应该重试的错误类型
+    const retryStatusCodes = [429, 500, 502, 503, 504];
+    if (statusCode && retryStatusCodes.includes(statusCode)) {
+      return true;
+    }
+    
     // 超时错误 - 可重试
     if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
       return true;
@@ -124,17 +136,14 @@ export class HttpRequestHandler {
       return true;
     }
     
-    // 如果有HTTP状态码
-    if (statusCode !== undefined) {
-      // 4xx客户端错误 - 不重试 (API Schema错误、认证错误等)
-      if (statusCode >= 400 && statusCode < 500) {
-        return false;
-      }
-      
-      // 5xx服务器错误 - 可重试
-      if (statusCode >= 500) {
-        return true;
-      }
+    // 限流错误 - 可重试
+    if (statusCode === 429) {
+      return true;
+    }
+    
+    // 服务器错误 - 可重试
+    if (statusCode && statusCode >= 500) {
+      return true;
     }
     
     // 其他网络相关错误 - 可重试
@@ -590,27 +599,9 @@ export class HttpRequestHandler {
         model: request.model
       });
 
-      // 返回错误格式的响应而不是抛出异常
-      return {
-        id: `chatcmpl-error-${Date.now()}`,
-        object: 'chat.completion',
-        created: Math.floor(Date.now() / 1000),
-        model: request.model || 'unknown',
-        choices: [{
-          index: 0,
-          message: {
-            role: 'assistant',
-            content: `API请求失败: ${openaiError instanceof Error ? openaiError.message : String(openaiError)}`
-          },
-          finish_reason: 'error'
-        }],
-        error: {
-          type: 'api_request_error',
-          message: openaiError instanceof Error ? openaiError.message : String(openaiError),
-          sdk_used: true
-        },
-        usage: { prompt_tokens: 0, completion_tokens: 50, total_tokens: 50 }
-      };
+      // 🔧 关键修复：抛出异常而不是返回错误响应
+      // 这样可以确保PipelineRequestProcessor正确处理错误
+      throw openaiError;
     }
   }
 }

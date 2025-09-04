@@ -304,11 +304,10 @@ export const DEVELOPMENT_ROUTER_CONFIG = {
  * 支持的负载均衡策略
  */
 export const LOAD_BALANCE_STRATEGIES = {
-  ROUND_ROBIN: 'round-robin',
-  LEAST_CONNECTIONS: 'least-connections',
-  WEIGHTED: 'weighted',
-  HEALTH_BASED: 'health-based',
-  SIMPLE: 'simple'
+  ROUND_ROBIN: 'round_robin',
+  LEAST_CONNECTIONS: 'least_connections',
+  RANDOM: 'random',
+  PRIORITY_BASED: 'priority_based'
 } as const;
 
 /**

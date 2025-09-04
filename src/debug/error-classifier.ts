@@ -52,7 +52,9 @@ export class ErrorClassifier {
         'Bad Gateway',
         'Service Unavailable',
         'Gateway Timeout',
-        'server returned error'
+        'server returned error',
+        'upstream connect error',
+        'upstream request timeout'
       ],
       priority: 100
     },
@@ -70,7 +72,11 @@ export class ErrorClassifier {
         'token expired',
         'access denied',
         'HTTP 401',
-        'HTTP 403'
+        'HTTP 403',
+        'API key is invalid',
+        'invalid authentication',
+        'no permission',
+        'insufficient permissions'
       ],
       priority: 95
     },
@@ -106,7 +112,11 @@ export class ErrorClassifier {
         'operation timeout',
         'connection timeout',
         'read timeout',
-        'write timeout'
+        'write timeout',
+        'deadline exceeded',
+        'context deadline exceeded',
+        'upstream timeout',
+        'client timeout'
       ],
       priority: 85
     },

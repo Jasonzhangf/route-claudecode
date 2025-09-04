@@ -27,7 +27,6 @@ export { SimpleRouter } from './router/simple-router';
 // export * from './router'; // DEPRECATED: Use CoreRouter instead
 
 // 流水线模块导出 - 避免与interfaces中的命名冲突
-export { PIPELINE_MODULE_VERSION, PipelineModuleInterface } from './pipeline';
 export { PipelineManager } from './pipeline/pipeline-manager';
 export { StandardPipeline } from './pipeline/standard-pipeline';
 export { StandardPipelineFactoryImpl as PipelineFactoryImpl } from './pipeline/pipeline-factory';
@@ -36,8 +35,8 @@ export { ModuleRegistry as PipelineModuleRegistry } from './pipeline/module-regi
 // Debug系统导出
 export * from './debug';
 
-// 配置模块导出 - 选择性导出避免冲突
-export { ConfigManager, RCCv4Config, ServerCompatibilityProvider, StandardProvider } from './config';
+// 配置模块导出 - 零接口暴露设计
+export { ConfigPreprocessor, ConfigReader, RoutingTable, ConfigPreprocessResult } from './config';
 
 // 工具函数导出 - 选择性导出避免冲突
 export { secureLogger, DataValidator } from './utils';

@@ -100,6 +100,7 @@ export interface StandardResponse {
 export class PassthroughCompatibilityModule extends EventEmitter implements ModuleInterface {
   private config: PassthroughCompatibilityConfig;
   private currentStatus: ModuleStatus;
+  private connections: Map<string, ModuleInterface> = new Map();
 
   constructor(config: PassthroughCompatibilityConfig = { mode: 'passthrough' }) {
     super();
@@ -282,6 +283,62 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
       cpuUsage: 0,
       lastProcessedAt: this.currentStatus.lastActivity,
     };
+  }
+
+  // ModuleInterface连接管理方法
+  addConnection(module: ModuleInterface): void {
+    this.connections.set(module.getId(), module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.connections.delete(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.connections.get(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return Array.from(this.connections.values());
+  }
+
+  hasConnection(moduleId: string): boolean {
+    return this.connections.has(moduleId);
+  }
+
+  clearConnections(): void {
+    this.connections.clear();
+  }
+
+  getConnectionCount(): number {
+    return this.connections.size;
+  }
+
+  // 模块间通信方法
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    const targetModel = this.connections.get(targetModuleId);
+    if (targetModel) {
+      // 发送消息到目标模块
+      targetModel.onModuleMessage((sourceModuleId: string, msg: any, msgType: string) => {
+        this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
+      });
+      return Promise.resolve({ success: true, targetModuleId, message, type });
+    }
+    return Promise.resolve({ success: false, targetModuleId, message, type });
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    const promises: Promise<any>[] = [];
+    this.connections.forEach(module => {
+      promises.push(this.sendToModule(module.getId(), message, type));
+    });
+    await Promise.allSettled(promises);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.on('moduleMessage', (data: any) => {
+      listener(data.fromModuleId, data.message, data.type);
+    });
   }
 
   // ============================================================================

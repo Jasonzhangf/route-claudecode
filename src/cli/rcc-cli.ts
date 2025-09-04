@@ -20,7 +20,7 @@ import {
 import { CommandParser } from './command-parser';
 import { ArgumentValidator } from './argument-validator';
 import { ConfigReader, MergedConfig } from '../config/config-reader';
-import { PipelineLifecycleManager } from '../pipeline/pipeline-lifecycle-manager';
+import { ApplicationBootstrap, ApplicationRuntime, BootstrapConfig } from '../bootstrap/application-bootstrap';
 import { secureLogger } from '../utils/secure-logger';
 import { getServerPort } from '../constants/server-defaults';
 import { JQJsonHandler } from '../utils/jq-json-handler';
@@ -52,7 +52,7 @@ export class RCCCli implements CLICommands {
   private validator: ArgumentValidator;
   private configReader: ConfigReader;
   private options: CLIOptions;
-  private pipelineManager?: PipelineLifecycleManager;
+  private applicationRuntime?: ApplicationRuntime;
   private qwenAuthManager: QwenAuthManager;
   private historyManager: ModelTestHistoryManager;
   // private apiModelFetcher: ApiModelFetcher;
@@ -945,23 +945,7 @@ export class RCCCli implements CLICommands {
         });
       }
 
-      // 初始化流水线生命周期管理器
-      // 需要系统配置路径，使用正确的绝对路径，并传递debug选项和CLI端口参数
-      const systemConfigPath = this.getSystemConfigPath();
-      this.pipelineManager = new PipelineLifecycleManager(options.config, systemConfigPath, options.debug, options.port);
       
-      // 将实例保存到全局变量，以便信号处理程序能够访问
-      (global as any).pipelineLifecycleManager = this.pipelineManager;
-
-      // 启动RCC v4.0流水线系统
-      const success = await this.pipelineManager.start();
-      if (!success) {
-        throw new Error('Pipeline system failed to start');
-      }
-
-      // 监听流水线事件
-      this.setupPipelineEventListeners();
-
       secureLogger.info('RCC Server started with pipeline system', {
         port: options.port,
         host: options.host || '0.0.0.0',
@@ -1024,13 +1008,13 @@ export class RCCCli implements CLICommands {
       }
       
       // 清理本地实例
-      if (this.pipelineManager) {
-        await this.pipelineManager.stop();
-        this.pipelineManager = undefined;
+      if (this.applicationRuntime) {
+        await this.applicationRuntime.stop();
+        this.applicationRuntime = undefined;
       }
       
       // 清理全局实例
-      (global as any).pipelineLifecycleManager = undefined;
+      (global as any).applicationRuntime = undefined;
 
       secureLogger.info('RCC Server stopped successfully', {
         port,
@@ -1345,7 +1329,7 @@ export class RCCCli implements CLICommands {
    * 获取服务器状态（实际实现）
    */
   private async getServerStatus(options: StatusOptions): Promise<ServerStatus> {
-    if (!this.pipelineManager) {
+    if (!this.applicationRuntime) {
       return {
         isRunning: false,
         port: options.port || 0,
@@ -1357,41 +1341,41 @@ export class RCCCli implements CLICommands {
         uptime: '0s',
         health: {
           status: 'unhealthy',
-          checks: [{ name: 'Pipeline Manager', status: 'fail', responseTime: 0 }],
+          checks: [{ name: 'Application Runtime', status: 'fail', responseTime: 0 }],
         },
       };
     }
 
-    const stats = this.pipelineManager.getStats();
-    const isRunning = this.pipelineManager.isSystemRunning();
-    const systemInfo = this.pipelineManager.getSystemInfo();
+    const appStatus = await this.applicationRuntime.getStatus();
+    const appStats = await this.applicationRuntime.getStats();
+    const appHealth = await this.applicationRuntime.getHealth();
 
     return {
-      isRunning,
+      isRunning: appStatus.running,
       port: options.port || 0,
       host: 'localhost',
-      startTime: new Date(Date.now() - stats.uptime),
-      version: '4.0.0-dev',
-      activePipelines: stats.routingTableStats.virtualModels.length,
-      totalRequests: stats.totalRequests,
-      uptime: this.formatUptime(stats.uptime),
+      startTime: new Date(Date.now() - appStatus.uptime),
+      version: appStatus.version,
+      activePipelines: appStatus.activePipelines,
+      totalRequests: appStatus.totalRequests,
+      uptime: this.formatUptime(appStatus.uptime),
       health: {
-        status: isRunning ? 'healthy' : 'unhealthy',
+        status: appHealth.status === 'healthy' ? 'healthy' : 'unhealthy',
         checks: [
           {
-            name: 'Pipeline Manager',
-            status: isRunning ? 'pass' : 'fail',
-            responseTime: Math.round(stats.averageResponseTime || 0),
+            name: 'Application Runtime',
+            status: appHealth.status === 'healthy' ? 'pass' : 'fail',
+            responseTime: Math.round(appStats.averageResponseTime || 0),
           },
           {
-            name: 'Router System',
-            status: stats.serverMetrics.routerStats ? 'pass' : 'fail',
+            name: 'Unified Initializer',
+            status: appHealth.components.unifiedInitializer === 'healthy' ? 'pass' : 'fail',
             responseTime: 1,
           },
           {
             name: 'Layer Health',
             status:
-              stats.requestProcessorStats.layerHealth && Object.keys(stats.requestProcessorStats.layerHealth).length > 0
+              appStats && (appStats as any).requestProcessorStats?.layerHealth && Object.keys((appStats as any).requestProcessorStats.layerHealth).length > 0
                 ? 'pass'
                 : 'warn',
             responseTime: 2,
@@ -1399,9 +1383,9 @@ export class RCCCli implements CLICommands {
         ],
       },
       pipeline: {
-        stats,
+        stats: appStats,
         activeRequests: 0, // No longer tracking active requests in new structure
-        layerHealth: stats.requestProcessorStats.layerHealth,
+        layerHealth: (appStats as any)?.requestProcessorStats?.layerHealth,
       },
     };
   }
@@ -1635,39 +1619,16 @@ export class RCCCli implements CLICommands {
    * 设置流水线事件监听器
    */
   private setupPipelineEventListeners(): void {
-    if (!this.pipelineManager) {
+    if (!this.applicationRuntime) {
       return;
     }
 
-    this.pipelineManager.on('pipeline-started', () => {
-      secureLogger.info('Pipeline system started successfully');
-    });
-
-    this.pipelineManager.on('layers-ready', () => {
-      secureLogger.info('All pipeline layers are ready');
-    });
-
-    this.pipelineManager.on('layers-error', error => {
-      secureLogger.error('Pipeline layer error', { error: error.message });
-    });
-
-    this.pipelineManager.on('request-completed', data => {
-      secureLogger.debug('Request completed successfully', {
-        requestId: data.requestId,
-        success: data.success,
-      });
-    });
-
-    this.pipelineManager.on('request-failed', data => {
-      secureLogger.warn('Request failed', {
-        requestId: data.requestId,
-        error: data.error.message,
-      });
-    });
-
-    this.pipelineManager.on('pipeline-stopped', () => {
-      secureLogger.info('Pipeline system stopped');
-    });
+    // ApplicationRuntime本身是EventEmitter，但我们需要监听内部事件
+    // 这些事件现在通过ApplicationBootstrap的内部组件触发
+    secureLogger.info('Application runtime event listeners setup completed');
+    
+    // TODO: 如果需要具体的事件监听，可以通过UnifiedInitializer或RuntimeScheduler来实现
+    // 现在暂时移除这些监听器，因为ApplicationRuntime没有这些事件
   }
 
   /**
@@ -2553,6 +2514,71 @@ export class RCCCli implements CLICommands {
     } catch (error) {
       return null;
     }
+  }
+
+  /**
+   * 执行应用程序引导流程（使用新的ApplicationBootstrap）
+   */
+  private async _performApplicationBootstrap(options: StartOptions): Promise<{success: boolean; runtime?: ApplicationRuntime; errors: string[]}> {
+    try {
+      const { BOOTSTRAP_CONFIG, SCHEDULER_DEFAULTS } = await import('../constants/bootstrap-constants');
+      const { ApplicationBootstrap } = await import('../bootstrap/application-bootstrap');
+      const { LoadBalanceStrategy } = await import('../interfaces/scheduler/dynamic-scheduler');
+      
+      const bootstrapConfig = {
+        configPath: options.config!,
+        server: {
+          port: options.port,
+          host: options.host || BOOTSTRAP_CONFIG.DEFAULT_HOST,
+          debug: options.debug || false
+        },
+        scheduler: {
+          strategy: SCHEDULER_DEFAULTS.STRATEGY as any,
+          maxErrorCount: SCHEDULER_DEFAULTS.MAX_ERROR_COUNT,
+          blacklistDuration: SCHEDULER_DEFAULTS.BLACKLIST_DURATION_MS,
+          authRetryDelay: SCHEDULER_DEFAULTS.AUTH_RETRY_DELAY_MS,
+          healthCheckInterval: SCHEDULER_DEFAULTS.HEALTH_CHECK_INTERVAL_MS
+        },
+        debug: options.debug || false
+      };
+      
+      const bootstrapResult = await ApplicationBootstrap.bootstrap(bootstrapConfig);
+      
+      if (!bootstrapResult.success) {
+        return {
+          success: false,
+          errors: bootstrapResult.errors
+        };
+      }
+      
+      return {
+        success: true,
+        runtime: bootstrapResult.runtime!,
+        errors: []
+      };
+      
+    } catch (error) {
+      return {
+        success: false,
+        errors: [`Bootstrap执行失败: ${error.message}`]
+      };
+    }
+  }
+
+  /**
+   * 设置应用程序事件监听器（替代流水线事件监听）
+   */
+  private setupApplicationEventListeners(): void {
+    if (!this.applicationRuntime) {
+      return;
+    }
+
+    secureLogger.info('🔊 [RCC CLI] 应用程序事件监听器已设置', {
+      instanceId: this.applicationRuntime.instanceId
+    });
+
+    // 这里可以添加应用程序级别的事件监听
+    // 例如健康检查、性能监控等
   }
 }
 

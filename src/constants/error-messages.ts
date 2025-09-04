@@ -99,6 +99,7 @@ export const ROUTING_ERRORS = {
   LOAD_BALANCING_FAILED: 'Load balancing failed',
   ROUTING_TABLE_INVALID: 'Routing table is invalid',
   VIRTUAL_MODEL_MAPPING_FAILED: 'Virtual model mapping failed',
+  ROUTING_DECISION_MISSING: 'Routing decision missing for model',
 } as const;
 
 // 零Fallback策略相关错误
@@ -198,6 +199,18 @@ export const GEMINI_PROTOCOL_ERRORS = {
   MISSING_CONTENT: 'Content part must have either text or functionCall',
 } as const;
 
+// iFlow协议相关错误
+export const IFLOW_ERRORS = {
+  CONNECTION_FAILED: 'Unable to connect to iFlow API server',
+  REQUEST_TIMEOUT: 'Request to iFlow API timed out',
+  INVALID_REQUEST: 'Invalid request to iFlow API',
+  AUTHENTICATION_FAILED: 'Invalid or missing API key for iFlow',
+  RATE_LIMIT_EXCEEDED: 'Rate limit exceeded for iFlow API',
+  SERVER_ERROR: 'iFlow API server error',
+  UNKNOWN_ERROR: 'Unknown iFlow API error',
+  INTERNAL_ERROR: 'Internal error in iFlow compatibility module',
+} as const;
+
 // 错误协调中心相关错误
 export const ERROR_COORDINATION_ERRORS = {
   CENTER_PROCESSING_FAILED: 'Error coordination center failed to process the error',
@@ -262,6 +275,7 @@ export const ERROR_MESSAGES = {
   ...SECURITY_ERRORS,
   ...QWEN_AUTH_ERRORS,
   ...GEMINI_PROTOCOL_ERRORS,
+  ...IFLOW_ERRORS,
   ...ERROR_COORDINATION_ERRORS,
   ...ERROR_STRATEGY_MESSAGES,
   ...ERROR_RESPONSE_MESSAGES,
@@ -283,3 +297,4 @@ export type ValidationError = typeof VALIDATION_ERRORS[keyof typeof VALIDATION_E
 export type SecurityError = typeof SECURITY_ERRORS[keyof typeof SECURITY_ERRORS];
 export type QwenAuthError = typeof QWEN_AUTH_ERRORS[keyof typeof QWEN_AUTH_ERRORS];
 export type ZeroFallbackError = typeof ZERO_FALLBACK_ERRORS[keyof typeof ZERO_FALLBACK_ERRORS];
+export type IFlowError = typeof IFLOW_ERRORS[keyof typeof IFLOW_ERRORS];

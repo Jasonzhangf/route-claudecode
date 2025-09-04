@@ -16,6 +16,14 @@ export enum ModuleType {
   SERVER_COMPATIBILITY = 'server-compatibility',
   COMPATIBILITY = 'compatibility',
   SERVER = 'server',
+  ROUTER = 'router',
+  PIPELINE = 'pipeline',
+  CLIENT = 'client',
+  CONFIG = 'config',
+  DEBUG = 'debug',
+  ERROR_HANDLER = 'error-handler',
+  MIDDLEWARE = 'middleware',
+  PROVIDER = 'provider',
 }
 
 /**
@@ -135,10 +143,81 @@ export interface ModuleInterface {
   healthCheck(): Promise<{ healthy: boolean; details: any }>;
 
   /**
+   * 添加连接的模块
+   */
+  addConnection(module: ModuleInterface): void;
+
+  /**
+   * 移除连接的模块
+   */
+  removeConnection(moduleId: string): void;
+
+  /**
+   * 获取连接的模块
+   */
+  getConnection(moduleId: string): ModuleInterface | undefined;
+
+  /**
+   * 获取所有连接的模块
+   */
+  getConnections(): ModuleInterface[];
+
+  /**
+   * 发送消息到目标模块
+   */
+  sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+
+  /**
+   * 广播消息到所有连接的模块
+   */
+  broadcastToModules(message: any, type?: string): Promise<void>;
+
+  /**
+   * 监听来自其他模块的消息
+   */
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+
+  /**
    * 事件监听器
    */
   on(event: string, listener: (...args: any[]) => void): void;
   removeAllListeners(): void;
+}
+
+/**
+ * 模块连接器接口
+ * 用于模块间的标准化通信
+ */
+export interface ModuleConnection {
+  /**
+   * 发送消息到目标模块
+   */
+  send(targetModuleId: string, message: any): Promise<any>;
+
+  /**
+   * 广播消息到所有模块
+   */
+  broadcast(message: any): Promise<void>;
+
+  /**
+   * 监听来自其他模块的消息
+   */
+  onMessage(listener: (sourceModuleId: string, message: any) => void): void;
+
+  /**
+   * 建立模块间连接
+   */
+  connect(targetModuleId: string): Promise<void>;
+
+  /**
+   * 断开模块间连接
+   */
+  disconnect(targetModuleId: string): Promise<void>;
+
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error';
 }
 
 /**

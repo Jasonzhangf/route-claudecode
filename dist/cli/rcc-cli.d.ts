@@ -23,7 +23,7 @@ export declare class RCCCli implements CLICommands {
     private validator;
     private configReader;
     private options;
-    private pipelineManager?;
+    private applicationRuntime?;
     private qwenAuthManager;
     private historyManager;
     private blacklistedModels;
@@ -259,5 +259,13 @@ export declare class RCCCli implements CLICommands {
      * 查找 Claude 可执行文件
      */
     private findClaudeExecutable;
+    /**
+     * 执行应用程序引导流程（使用新的ApplicationBootstrap）
+     */
+    private _performApplicationBootstrap;
+    /**
+     * 设置应用程序事件监听器（替代流水线事件监听）
+     */
+    private setupApplicationEventListeners;
 }
 //# sourceMappingURL=rcc-cli.d.ts.map

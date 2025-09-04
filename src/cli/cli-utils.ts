@@ -38,7 +38,7 @@ export interface DetailedServerStatus extends ServerStatus {
     averageResponseTime: number;
   };
   services: {
-    pipelineManager: boolean;
+    applicationRuntime: boolean;
     providerManager: boolean;
     configManager: boolean;
   };
@@ -107,7 +107,7 @@ export async function getServerDetailedStatus(
         averageResponseTime: data.performance?.averageResponseTime || 0,
       },
       services: {
-        pipelineManager: data.services?.pipelineManager || false,
+        applicationRuntime: data.services?.applicationRuntime || false,
         providerManager: data.services?.providerManager || false,
         configManager: data.services?.configManager || false,
       },
@@ -128,7 +128,7 @@ export async function getServerDetailedStatus(
         averageResponseTime: 0,
       },
       services: {
-        pipelineManager: false,
+        applicationRuntime: false,
         providerManager: false,
         configManager: false,
       },
@@ -265,7 +265,7 @@ export function displayServerStatus(status: DetailedServerStatus, detailed: bool
     if (detailed) {
       // 详细信息
       console.log('\n🔧 Services:');
-      console.log(`├─ Pipeline Manager: ${status.services.pipelineManager ? '✅' : '❌'}`);
+      console.log(`├─ Application Runtime: ${status.services.applicationRuntime ? '✅' : '❌'}`);
       console.log(`├─ Provider Manager: ${status.services.providerManager ? '✅' : '❌'}`);
       console.log(`└─ Config Manager: ${status.services.configManager ? '✅' : '❌'}`);
 

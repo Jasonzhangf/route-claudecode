@@ -125,5 +125,16 @@ export declare class OpenAIProtocolHandler extends EventEmitter implements Modul
      * 测试API连接
      */
     testConnection(): Promise<boolean>;
+    private connections;
+    addConnection(module: ModuleInterface): void;
+    removeConnection(moduleId: string): void;
+    getConnection(moduleId: string): ModuleInterface | undefined;
+    getConnections(): ModuleInterface[];
+    hasConnection(moduleId: string): boolean;
+    clearConnections(): void;
+    getConnectionCount(): number;
+    sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+    broadcastToModules(message: any, type?: string): Promise<void>;
+    onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
 }
 //# sourceMappingURL=openai-protocol-handler.d.ts.map

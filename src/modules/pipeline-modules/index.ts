@@ -16,6 +16,7 @@ export { OpenAIProtocolModule } from './protocol/openai-protocol';
 export { LMStudioCompatibilityModule } from './server-compatibility/lmstudio-compatibility';
 export { OllamaCompatibilityModule } from './server-compatibility/ollama-compatibility';
 export { VLLMCompatibilityModule } from './server-compatibility/vllm-compatibility';
+export { IFlowCompatibilityModule } from './server-compatibility/iflow-compatibility';
 
 // Server层
 export { OpenAIServerModule } from './server/openai-server';

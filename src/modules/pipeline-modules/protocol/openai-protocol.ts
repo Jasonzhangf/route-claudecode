@@ -143,6 +143,7 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
   private readonly type: any = 'protocol';
   private readonly version: string = '1.0.0';
   private status: ModuleStatus['health'] = 'healthy';
+  private connections: Map<string, ModuleInterface> = new Map();
 
   constructor() {
     super();
@@ -569,5 +570,61 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
 
   async healthCheck(): Promise<{ healthy: boolean; details: any }> {
     return { healthy: true, details: {} };
+  }
+
+  // ModuleInterface连接管理方法
+  addConnection(module: ModuleInterface): void {
+    this.connections.set(module.getId(), module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.connections.delete(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.connections.get(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return Array.from(this.connections.values());
+  }
+
+  hasConnection(moduleId: string): boolean {
+    return this.connections.has(moduleId);
+  }
+
+  clearConnections(): void {
+    this.connections.clear();
+  }
+
+  getConnectionCount(): number {
+    return this.connections.size;
+  }
+
+  // 模块间通信方法
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    const targetModule = this.connections.get(targetModuleId);
+    if (targetModule) {
+      // 发送消息到目标模块
+      targetModule.onModuleMessage((sourceModuleId: string, msg: any, msgType: string) => {
+        this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
+      });
+      return Promise.resolve({ success: true, targetModuleId, message, type });
+    }
+    return Promise.resolve({ success: false, targetModuleId, message, type });
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    const promises: Promise<any>[] = [];
+    this.connections.forEach(module => {
+      promises.push(this.sendToModule(module.getId(), message, type));
+    });
+    await Promise.allSettled(promises);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.on('moduleMessage', (data: any) => {
+      listener(data.fromModuleId, data.message, data.type);
+    });
   }
 }

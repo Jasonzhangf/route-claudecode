@@ -26,6 +26,7 @@ export declare class AnthropicOutputValidator extends EventEmitter implements Mo
     protected readonly version: string;
     protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
     protected metrics: ModuleMetrics;
+    protected connections: Map<string, ModuleInterface>;
     getId(): string;
     getName(): string;
     getType(): ModuleType;
@@ -42,6 +43,16 @@ export declare class AnthropicOutputValidator extends EventEmitter implements Mo
         details: any;
     }>;
     process(input: any): Promise<any>;
+    addConnection(module: ModuleInterface): void;
+    removeConnection(moduleId: string): void;
+    getConnection(moduleId: string): ModuleInterface | undefined;
+    getConnections(): ModuleInterface[];
+    hasConnection(moduleId: string): boolean;
+    clearConnections(): void;
+    getConnectionCount(): number;
+    sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+    broadcastToModules(message: any, type?: string): Promise<void>;
+    onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
     private validatorConfig;
     constructor(id?: string, config?: Partial<AnthropicOutputValidatorConfig>);
     /**

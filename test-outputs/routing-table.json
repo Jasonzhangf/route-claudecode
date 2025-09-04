@@ -1,0 +1,54 @@
+{
+  "providers": [
+    {
+      "name": "lmstudio",
+      "priority": 1,
+      "api_base_url": "http://localhost:1234/v1",
+      "api_key": "lm-studio",
+      "models": [
+        "llama-3.1-8b",
+        "qwen2.5-coder-32b"
+      ],
+      "serverCompatibility": {
+        "use": "lmstudio",
+        "options": {
+          "maxTokens": 32768,
+          "enhanceTool": true
+        }
+      }
+    },
+    {
+      "name": "qwen",
+      "priority": 2,
+      "api_base_url": "https://portal.qwen.ai/v1",
+      "api_key": "qwen-auth-1",
+      "models": [
+        "qwen3-coder-plus",
+        "qwen-max"
+      ],
+      "serverCompatibility": {
+        "use": "qwen",
+        "options": {
+          "maxTokens": 32768,
+          "enhanceTool": true,
+          "authFileName": "qwen-auth-1"
+        }
+      }
+    }
+  ],
+  "routes": {
+    "default": "lmstudio,llama-3.1-8b",
+    "coding": "lmstudio,qwen2.5-coder-32b",
+    "longContext": "qwen,qwen-max",
+    "reasoning": "qwen,qwen3-coder-plus"
+  },
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  "apiKey": "rcc4-proxy-key",
+  "version": "4.1",
+  "description": "RCC v4.0 统一主配置文件 - 清理优化版",
+  "lastUpdated": "2025-09-04T01:49:21.136Z"
+}

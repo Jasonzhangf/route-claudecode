@@ -26,6 +26,7 @@ export declare class AnthropicInputValidator extends EventEmitter implements Mod
     protected readonly type: ModuleType;
     protected readonly version: string;
     protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error';
+    protected connections: Map<string, ModuleInterface>;
     protected config: AnthropicInputValidatorConfig;
     protected metrics: ModuleMetrics;
     private validatorConfig;
@@ -84,5 +85,15 @@ export declare class AnthropicInputValidator extends EventEmitter implements Mod
      * 验证无额外字段
      */
     private validateNoExtraFields;
+    addConnection(module: ModuleInterface): void;
+    removeConnection(moduleId: string): void;
+    getConnection(moduleId: string): ModuleInterface | undefined;
+    getConnections(): ModuleInterface[];
+    hasConnection(moduleId: string): boolean;
+    clearConnections(): void;
+    getConnectionCount(): number;
+    sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+    broadcastToModules(message: any, type?: string): Promise<void>;
+    onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
 }
 //# sourceMappingURL=anthropic-input-validator.d.ts.map

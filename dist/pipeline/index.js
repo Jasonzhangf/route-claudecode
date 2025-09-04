@@ -1,22 +1,23 @@
 "use strict";
 /**
- * RCC v4.0 流水线模块
+ * 流水线模块导出文件
  *
- * 处理11模块流水线的动态管理和执行
+ * RCC v4.0 架构重构核心组件
+ * 遵循零接口暴露设计原则
  *
- * @author Jason Zhang
+ * @author RCC v4.0 Architecture Team
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ModuleRegistry = exports.StandardPipelineFactoryImpl = exports.StandardPipeline = exports.PipelineManager = exports.PIPELINE_MODULE_VERSION = void 0;
-// 版本信息
-exports.PIPELINE_MODULE_VERSION = '4.0.0-alpha.1';
-// 核心Pipeline组件
+exports.PIPELINE_MODULE_VERSION = exports.PipelineModule = exports.PipelineManager = exports.RuntimeScheduler = exports.UnifiedInitializer = void 0;
+// 核心组件 - 遵循零接口暴露设计
+var unified_initializer_1 = require("./unified-initializer");
+Object.defineProperty(exports, "UnifiedInitializer", { enumerable: true, get: function () { return unified_initializer_1.UnifiedInitializer; } });
+var runtime_scheduler_1 = require("./runtime-scheduler");
+Object.defineProperty(exports, "RuntimeScheduler", { enumerable: true, get: function () { return runtime_scheduler_1.RuntimeScheduler; } });
 var pipeline_manager_1 = require("./pipeline-manager");
 Object.defineProperty(exports, "PipelineManager", { enumerable: true, get: function () { return pipeline_manager_1.PipelineManager; } });
-var standard_pipeline_1 = require("./standard-pipeline");
-Object.defineProperty(exports, "StandardPipeline", { enumerable: true, get: function () { return standard_pipeline_1.StandardPipeline; } });
-var pipeline_factory_1 = require("./pipeline-factory");
-Object.defineProperty(exports, "StandardPipelineFactoryImpl", { enumerable: true, get: function () { return pipeline_factory_1.StandardPipelineFactoryImpl; } });
-var module_registry_1 = require("./module-registry");
-Object.defineProperty(exports, "ModuleRegistry", { enumerable: true, get: function () { return module_registry_1.ModuleRegistry; } });
+var pipeline_module_1 = require("./pipeline-module");
+Object.defineProperty(exports, "PipelineModule", { enumerable: true, get: function () { return pipeline_module_1.PipelineModule; } });
+// 模块版本信息
+exports.PIPELINE_MODULE_VERSION = '4.0.0-unified';
 //# sourceMappingURL=index.js.map

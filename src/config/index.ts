@@ -1,35 +1,20 @@
 /**
  * RCC v4.0 Configuration Module Exports
  *
- * 统一导出所有配置相关的模块和类型
+ * 重构后的配置模块 - 零接口暴露设计
+ * 只导出ConfigPreprocessor和相关类型
  *
- * @author Jason Zhang
+ * @author Claude - Refactored
  */
 
-// 核心模块 (推荐使用)
-export { ConfigManager, getConfigManager, setConfigManager, cleanupGlobalConfigManager } from './config-manager';
-export { ConfigReader } from './config-reader';
-export { ConfigParser } from './config-parser';
-export { ConfigValidator } from './config-validator';
-export { ConfigTransformer } from './config-transformer';
+// 唯一的配置处理接口
+export { ConfigPreprocessor } from './config-preprocessor';
 
-// 类型定义
-export * from './config-types';
-
-// 向后兼容模块 (已弃用)
-export * from './user-config-loader';
-
-// 默认导出配置管理器
-export { getConfigManager as default } from './config-manager';
+// 路由表类型定义
+export * from './routing-table-types';
 
 // 模块版本信息
-export const CONFIG_MODULE_VERSION = '4.0.0-refactored';
+export const CONFIG_MODULE_VERSION = '4.1.0-preprocessor';
 
-// 新的模块接口
-export interface ConfigModuleInterface {
-  version: string;
-  loadConfig(): Promise<any>;
-  validateConfig(config: any): boolean;
-}
-
-// 旧接口已删除
+// 保留ConfigReader用于向后兼容（临时）
+export { ConfigReader } from './config-reader';
