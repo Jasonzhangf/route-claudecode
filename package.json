@@ -1,6 +1,6 @@
 {
   "name": "route-claude-code",
-  "version": "4.1.3",
+  "version": "4.2.0",
   "description": "Route Claude Code v4.1 - Enhanced OpenAI & Qwen Support with Mixed Configuration",
   "main": "dist/cli.js",
   "bin": {
