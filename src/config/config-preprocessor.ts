@@ -4,7 +4,8 @@ import {
   ProviderInfo, 
   RouteMapping, 
   ServerInfo,
-  ConfigPreprocessResult
+  ConfigPreprocessResult,
+  ModelInfo
 } from './routing-table-types';
 
 // Export the result type for external use
@@ -79,17 +80,52 @@ export class ConfigPreprocessor {
   }
   
   private static _expandProviders(providers: any[]): ProviderInfo[] {
-    return providers.map(provider => ({
-      name: provider.name,
-      priority: provider.priority || 1,
-      api_base_url: provider.api_base_url || 'http://localhost:1234/v1',
-      api_key: provider.api_key || 'default-key',
-      models: provider.models || ['default-model'],
-      serverCompatibility: provider.serverCompatibility || {
-        use: provider.name,
-        options: {}
+    return providers.map(provider => {
+      // 处理serverCompatibility配置，但不添加硬编码默认值
+      let serverCompatibility = provider.serverCompatibility;
+      
+      // 如果没有提供serverCompatibility配置，使用最小结构
+      if (!serverCompatibility) {
+        serverCompatibility = {
+          use: provider.name,
+          options: {}
+        };
       }
-    }));
+      
+      // 确保options对象存在
+      if (!serverCompatibility.options) {
+        serverCompatibility.options = {};
+      }
+      
+      // 处理模型配置，支持字符串和对象格式
+      let models: (string | ModelInfo)[] = [];
+      if (Array.isArray(provider.models)) {
+        models = provider.models.map(model => {
+          if (typeof model === 'string') {
+            return model;
+          } else if (typeof model === 'object' && model.name) {
+            return {
+              name: model.name,
+              maxTokens: model.maxTokens,
+              ...model
+            };
+          }
+          return String(model);
+        });
+      } else {
+        models = [`${provider.name}-default-model`];
+      }
+      
+      return {
+        name: provider.name,
+        priority: provider.priority || 1,
+        api_base_url: provider.api_base_url,
+        api_key: provider.api_key,
+        maxTokens: provider.maxTokens,
+        models: models,
+        serverCompatibility: serverCompatibility
+      };
+    });
   }
   
   private static _generateRoutes(routerConfig: any, providers: ProviderInfo[]): RouteMapping {

@@ -8,7 +8,7 @@ describe('RouterPreprocessor', () => {
   const testOutputDir = path.join(__dirname, 'test-outputs');
   
   beforeAll(() => {
-    if (\!fs.existsSync(testOutputDir)) {
+    if (!fs.existsSync(testOutputDir)) {
       fs.mkdirSync(testOutputDir, { recursive: true });
     }
   });
@@ -19,7 +19,7 @@ describe('RouterPreprocessor', () => {
     expect(configResult.success).toBe(true);
     
     // 处理路由表
-    const result = await RouterPreprocessor.preprocess(configResult.routingTable\!);
+    const result = await RouterPreprocessor.preprocess(configResult.routingTable!);
     
     // 保存结果
     fs.writeFileSync(
@@ -40,7 +40,7 @@ describe('RouterPreprocessor', () => {
 
   test('应该生成正确的流水线层配置', async () => {
     const configResult = ConfigPreprocessor.preprocess(testConfigPath);
-    const result = await RouterPreprocessor.preprocess(configResult.routingTable\!);
+    const result = await RouterPreprocessor.preprocess(configResult.routingTable!);
     
     const pipelineConfigs = result.pipelineConfigs || [];
     expect(pipelineConfigs.length).toBeGreaterThan(0);
@@ -51,4 +51,3 @@ describe('RouterPreprocessor', () => {
     }
   });
 });
-EOF < /dev/null

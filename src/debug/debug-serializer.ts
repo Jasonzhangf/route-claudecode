@@ -64,8 +64,8 @@ export interface DebugSerializer {
     options?: Partial<SerializationOptions>
   ): Promise<SerializationResult>;
   deserializeModuleRecord(data: string | Buffer): Promise<DeserializationResult<ModuleRecord>>;
-  calculateSize(obj: any): number;
-  validateDataIntegrity(data: any): boolean;
+  calculateSize(obj: unknown): number;
+  validateDataIntegrity(data: unknown): boolean;
 }
 
 /**
@@ -175,14 +175,14 @@ export class DebugSerializerImpl implements DebugSerializer {
   /**
    * 计算对象大小（字节）
    */
-  calculateSize(obj: any): number {
+  calculateSize(obj: unknown): number {
     return Buffer.byteLength(JQJsonHandler.stringifyJson(obj, true), 'utf8');
   }
 
   /**
    * 验证数据完整性
    */
-  validateDataIntegrity(data: any): boolean {
+  validateDataIntegrity(data: unknown): boolean {
     try {
       // 检查基本结构
       if (!data || typeof data !== 'object') {
@@ -200,7 +200,7 @@ export class DebugSerializerImpl implements DebugSerializer {
 
   // ===== Private Helper Methods =====
 
-  private async serializeObject(obj: any, options: SerializationOptions): Promise<SerializationResult> {
+  private async serializeObject(obj: unknown, options: SerializationOptions): Promise<SerializationResult> {
     try {
       // 预处理对象（移除循环引用等）
       const processedObj = this.preprocessObject(obj);
@@ -292,10 +292,10 @@ export class DebugSerializerImpl implements DebugSerializer {
     }
   }
 
-  private preprocessObject(obj: any): any {
+  private preprocessObject(obj: unknown): unknown {
     const seen = new WeakSet();
 
-    const process = (value: any): any => {
+    const process = (value: unknown): unknown => {
       if (value === null || typeof value !== 'object') {
         return value;
       }
@@ -332,7 +332,7 @@ export class DebugSerializerImpl implements DebugSerializer {
       }
 
       // 处理普通对象
-      const result: any = {};
+      const result: Record<string, unknown> = {};
       for (const [key, val] of Object.entries(value)) {
         result[key] = process(val);
       }
@@ -343,8 +343,8 @@ export class DebugSerializerImpl implements DebugSerializer {
     return process(obj);
   }
 
-  private postprocessObject(obj: any): any {
-    const process = (value: any): any => {
+  private postprocessObject(obj: unknown): unknown {
+    const process = (value: unknown): unknown => {
       if (value === null || typeof value !== 'object') {
         return value;
       }
@@ -367,7 +367,7 @@ export class DebugSerializerImpl implements DebugSerializer {
       }
 
       // 处理普通对象
-      const result: any = {};
+      const result: Record<string, unknown> = {};
       for (const [key, val] of Object.entries(value)) {
         result[key] = process(val);
       }

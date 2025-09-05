@@ -24,6 +24,8 @@ export enum ModuleType {
   ERROR_HANDLER = 'error-handler',
   MIDDLEWARE = 'middleware',
   PROVIDER = 'provider',
+  SERVICE = 'service',
+  UTILITY = 'utility',
 }
 
 /**
@@ -338,4 +340,104 @@ export interface ModuleEventData {
   eventType: ModuleEventType;
   timestamp: Date;
   data?: any;
+}
+
+/**
+ * 简单的ModuleInterface适配器类
+ * 为现有类提供快速的ModuleInterface实现
+ */
+export class SimpleModuleAdapter implements ModuleInterface {
+  private moduleId: string;
+  private moduleName: string;
+  private moduleType: ModuleType;
+  private moduleVersion: string;
+  private status: ModuleStatus;
+  private metrics: ModuleMetrics;
+  private connections = new Map<string, ModuleInterface>();
+  private messageListeners = new Set<(sourceModuleId: string, message: any, type: string) => void>();
+  private isStarted = false;
+
+  constructor(id: string, name: string, type: ModuleType, version = '1.0.0') {
+    this.moduleId = id;
+    this.moduleName = name;
+    this.moduleType = type;
+    this.moduleVersion = version;
+    this.status = { id, name, type, status: 'stopped', health: 'healthy' };
+    this.metrics = { requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0 };
+  }
+
+  getId(): string { return this.moduleId; }
+  getName(): string { return this.moduleName; }
+  getType(): ModuleType { return this.moduleType; }
+  getVersion(): string { return this.moduleVersion; }
+  getStatus(): ModuleStatus { return { ...this.status }; }
+  getMetrics(): ModuleMetrics { return { ...this.metrics }; }
+
+  async configure(config: any): Promise<void> {
+    this.status.status = 'idle';
+  }
+
+  async start(): Promise<void> {
+    this.isStarted = true;
+    this.status.status = 'running';
+  }
+
+  async stop(): Promise<void> {
+    this.isStarted = false;
+    this.status.status = 'stopped';
+  }
+
+  async process(input: any): Promise<any> {
+    this.metrics.requestsProcessed++;
+    return input;
+  }
+
+  async reset(): Promise<void> {
+    this.metrics = { requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0 };
+  }
+
+  async cleanup(): Promise<void> {
+    this.connections.clear();
+    this.messageListeners.clear();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return { healthy: this.isStarted, details: { status: this.status } };
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.connections.set(module.getId(), module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.connections.delete(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.connections.get(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return Array.from(this.connections.values());
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    return message;
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    // Empty implementation
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.messageListeners.add(listener);
+  }
+
+  on(event: string, listener: (...args: any[]) => void): void {
+    // Empty implementation - could use EventEmitter if needed
+  }
+
+  removeAllListeners(): void {
+    this.messageListeners.clear();
+  }
 }

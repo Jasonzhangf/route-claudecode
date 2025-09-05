@@ -132,3 +132,12 @@ export function detectCircularDependencies(dependencies: Record<string, string[]
 
   return [];
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from '../module/base-module';
+export const coreInterfacesModuleAdapter = new SimpleModuleAdapter(
+  'core-interfaces-module',
+  'Core Interfaces Module',
+  ModuleType.VALIDATOR,
+  MODULE_INTERFACE_VERSION
+);

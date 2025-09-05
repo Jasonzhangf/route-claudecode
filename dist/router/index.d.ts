@@ -1,16 +1,19 @@
 /**
  * RCC v4.0 Router模块导出
  *
- * 重构后的路由器模块 - 零接口暴露设计
- * 只导出RouterPreprocessor和必要的类型定义
+ * 严格遵循零接口暴露设计原则
+ * 只导出RouterPreprocessor门面和必要类型
  *
- * @version 4.1.0-preprocessor
- * @author Claude - Refactored
+ * @version 4.1.0-zero-interface
+ * @author Claude - Zero Interface Refactored
  */
 export { RouterPreprocessor } from './router-preprocessor';
 export type { PipelineConfig, PipelineLayer, RouterPreprocessResult } from './router-preprocessor';
-export { PipelineRouter } from './pipeline-router';
-export type { PipelineRoute, PipelineRoutingDecision } from './pipeline-router';
-export { LoadBalancer, DEFAULT_LOAD_BALANCER_CONFIG } from './load-balancer';
-export declare const ROUTER_MODULE_VERSION = "4.1.0-preprocessor";
+export declare const ROUTER_MODULE_VERSION = "4.1.0-zero-interface";
+import { ModuleType } from '../interfaces/module/base-module';
+export declare function getRouterModuleInfo(): {
+    name: string;
+    version: string;
+    type: ModuleType;
+};
 //# sourceMappingURL=index.d.ts.map

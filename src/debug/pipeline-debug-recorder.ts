@@ -20,13 +20,13 @@ export interface PipelineLayerRecord {
   layerOrder: number;
   module: string;
   moduleId: string;
-  input: any;
-  output: any;
+  input: unknown;
+  output: unknown;
   duration: number;
   timestamp: string;
   success: boolean;
   error?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export interface CompletePipelineDebugRecord {
@@ -34,8 +34,8 @@ export interface CompletePipelineDebugRecord {
   timestamp: string;
   port: number;
   protocol: 'anthropic' | 'openai' | 'gemini';
-  originalRequest: any;
-  finalResponse: any;
+  originalRequest: unknown;
+  finalResponse: unknown;
   totalDuration: number;
   pipelineSteps: PipelineLayerRecord[];
   compliance: {

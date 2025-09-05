@@ -6,18 +6,18 @@
  * @author RCC v4.0
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_PIPELINE_DEBUG_CONFIG = exports.PipelineDebugSystemFactory = exports.RequestTestSystem = exports.PipelineDebugSystem = exports.DebugManagerImpl = exports.DEBUG_MODULE_VERSION = void 0;
+exports.debugModuleAdapter = exports.DEFAULT_PIPELINE_DEBUG_CONFIG = exports.PipelineDebugSystemFactory = exports.RequestTestSystem = exports.PipelineDebugSystem = exports.DebugManagerImpl = exports.DEBUG_MODULE_VERSION = void 0;
 // 模块版本信息
 exports.DEBUG_MODULE_VERSION = '4.0.0-alpha.2';
 // 原有Debug系统
 var debug_manager_1 = require("./debug-manager");
 Object.defineProperty(exports, "DebugManagerImpl", { enumerable: true, get: function () { return debug_manager_1.DebugManagerImpl; } });
-// 新增: Pipeline调试系统
+// Pipeline调试系统
 var pipeline_debug_system_1 = require("./pipeline-debug-system");
 Object.defineProperty(exports, "PipelineDebugSystem", { enumerable: true, get: function () { return pipeline_debug_system_1.PipelineDebugSystem; } });
 var request_test_system_1 = require("./request-test-system");
 Object.defineProperty(exports, "RequestTestSystem", { enumerable: true, get: function () { return request_test_system_1.RequestTestSystem; } });
-// 导入用于类型注解
+// 导入类以供内部工厂使用
 const pipeline_debug_system_2 = require("./pipeline-debug-system");
 const request_test_system_2 = require("./request-test-system");
 /**
@@ -60,4 +60,7 @@ exports.DEFAULT_PIPELINE_DEBUG_CONFIG = {
     enableLayerDiagnostics: true,
     logLevel: 'info'
 };
+// ModuleInterface implementation for architecture compliance
+const base_module_1 = require("../interfaces/module/base-module");
+exports.debugModuleAdapter = new base_module_1.SimpleModuleAdapter('debug-module', 'Debug System Module', base_module_1.ModuleType.DEBUG, exports.DEBUG_MODULE_VERSION);
 //# sourceMappingURL=index.js.map

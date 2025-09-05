@@ -85,24 +85,29 @@ export {
 /**
  * 检查是否为安全的transformer实例
  */
-export function isSecureTransformer(transformer: any): boolean {
-  return transformer && transformer.constructor.name === 'SecureAnthropicToOpenAITransformer';
+export function isSecureTransformer(transformer: unknown): boolean {
+  return transformer && 
+    typeof transformer === 'object' && 
+    transformer.constructor?.name === 'SecureAnthropicToOpenAITransformer';
 }
 
 /**
  * 验证transformer配置的安全性
  */
-export function validateSecurityConfig(config: any): config is SecureTransformerConfig {
+export function validateSecurityConfig(config: unknown): config is SecureTransformerConfig {
   try {
+    if (typeof config !== 'object' || config === null) {
+      return false;
+    }
+    
+    const cfg = config as Record<string, unknown>;
     return (
-      typeof config === 'object' &&
-      config !== null &&
-      typeof config.apiMaxTokens === 'number' &&
-      config.apiMaxTokens > 0 &&
-      config.apiMaxTokens <= 100000 &&
-      typeof config.processingTimeoutMs === 'number' &&
-      config.processingTimeoutMs >= 1000 &&
-      config.processingTimeoutMs <= 300000
+      typeof cfg.apiMaxTokens === 'number' &&
+      cfg.apiMaxTokens > 0 &&
+      cfg.apiMaxTokens <= 100000 &&
+      typeof cfg.processingTimeoutMs === 'number' &&
+      cfg.processingTimeoutMs >= 1000 &&
+      cfg.processingTimeoutMs <= 300000
     );
   } catch {
     return false;

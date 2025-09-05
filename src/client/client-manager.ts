@@ -12,16 +12,24 @@ import {
   ClientProxyStatus,
   IEnvironmentExporter,
 } from '../interfaces/core/cli-abstraction';
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+  SimpleModuleAdapter,
+} from '../interfaces/module/base-module';
 
 /**
  * 客户端代理实现
  */
-export class ClientProxy extends EventEmitter implements IClientProxy {
+export class ClientProxy extends EventEmitter implements IClientProxy, ModuleInterface {
   private config: ClientProxyConfig;
   private isStarted = false;
   private proxyServer?: any; // HTTP代理服务器
   private serverConnection?: any; // 到RCC服务器的连接
   private status: ClientProxyStatus;
+  private moduleAdapter: SimpleModuleAdapter;
 
   constructor() {
     super();
@@ -29,17 +37,88 @@ export class ClientProxy extends EventEmitter implements IClientProxy {
     this.status = {
       connected: false,
     };
+    this.moduleAdapter = new SimpleModuleAdapter(
+      'client-proxy',
+      'Client Proxy',
+      ModuleType.CLIENT,
+      '1.0.0'
+    );
+  }
+
+  // ModuleInterface implementations
+  getId(): string { return this.moduleAdapter.getId(); }
+  getName(): string { return this.moduleAdapter.getName(); }
+  getType(): ModuleType { return this.moduleAdapter.getType(); }
+  getVersion(): string { return this.moduleAdapter.getVersion(); }
+  getStatus(): ModuleStatus { return this.moduleAdapter.getStatus(); }
+  getMetrics(): ModuleMetrics { return this.moduleAdapter.getMetrics(); }
+
+  async configure(config: ClientProxyConfig): Promise<void> {
+    await this.moduleAdapter.configure(config);
+  }
+
+  async initialize(): Promise<void> {
+    await this.moduleAdapter.start();
+  }
+
+  async reset(): Promise<void> {
+    await this.moduleAdapter.reset();
+  }
+
+  async cleanup(): Promise<void> {
+    await this.moduleAdapter.cleanup();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return this.moduleAdapter.healthCheck();
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.moduleAdapter.addConnection(module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.moduleAdapter.removeConnection(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.moduleAdapter.getConnection(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return this.moduleAdapter.getConnections();
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    return this.moduleAdapter.sendToModule(targetModuleId, message, type);
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    await this.moduleAdapter.broadcastToModules(message, type);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.moduleAdapter.onModuleMessage(listener);
+  }
+
+  removeAllListeners(event?: string | symbol): this {
+    this.moduleAdapter.removeAllListeners();
+    super.removeAllListeners(event);
+    return this;
+  }
+
+  async process(input: any): Promise<any> {
+    return this.moduleAdapter.process(input);
   }
 
   /**
    * 启动客户端代理
    */
-  async start(config: ClientProxyConfig): Promise<void> {
+  async start(): Promise<void> {
     if (this.isStarted) {
       throw new Error('Client proxy is already started');
     }
 
-    this.config = { ...config };
 
     try {
       // 建立到服务器的连接
@@ -226,7 +305,89 @@ export class ClientProxy extends EventEmitter implements IClientProxy {
 /**
  * 环境变量导出器实现
  */
-export class EnvironmentExporter implements IEnvironmentExporter {
+export class EnvironmentExporter implements IEnvironmentExporter, ModuleInterface {
+  private moduleAdapter: SimpleModuleAdapter;
+
+  constructor() {
+    this.moduleAdapter = new SimpleModuleAdapter(
+      'environment-exporter',
+      'Environment Exporter',
+      ModuleType.CLIENT,
+      '1.0.0'
+    );
+  }
+
+  // ModuleInterface implementations
+  getId(): string { return this.moduleAdapter.getId(); }
+  getName(): string { return this.moduleAdapter.getName(); }
+  getType(): ModuleType { return this.moduleAdapter.getType(); }
+  getVersion(): string { return this.moduleAdapter.getVersion(); }
+  getStatus(): ModuleStatus { return this.moduleAdapter.getStatus(); }
+  getMetrics(): ModuleMetrics { return this.moduleAdapter.getMetrics(); }
+
+  async configure(config: any): Promise<void> {
+    await this.moduleAdapter.configure(config);
+  }
+
+  async start(): Promise<void> {
+    await this.moduleAdapter.start();
+  }
+
+  async stop(): Promise<void> {
+    await this.moduleAdapter.stop();
+  }
+
+  async reset(): Promise<void> {
+    await this.moduleAdapter.reset();
+  }
+
+  async cleanup(): Promise<void> {
+    await this.moduleAdapter.cleanup();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return this.moduleAdapter.healthCheck();
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.moduleAdapter.addConnection(module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.moduleAdapter.removeConnection(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.moduleAdapter.getConnection(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return this.moduleAdapter.getConnections();
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    return this.moduleAdapter.sendToModule(targetModuleId, message, type);
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    await this.moduleAdapter.broadcastToModules(message, type);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.moduleAdapter.onModuleMessage(listener);
+  }
+
+  on(event: string, listener: (...args: any[]) => void): void {
+    this.moduleAdapter.on(event, listener);
+  }
+
+  removeAllListeners(): void {
+    this.moduleAdapter.removeAllListeners();
+  }
+
+  async process(input: any): Promise<any> {
+    return this.moduleAdapter.process(input);
+  }
   /**
    * 导出代理设置
    */

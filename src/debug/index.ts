@@ -27,11 +27,11 @@ export { DebugAnalyzer } from './debug-analyzer';
 export { DebugCollector } from './debug-collector';
 export { ReplaySystem } from './replay-system';
 
-// 新增: Pipeline调试系统
+// Pipeline调试系统
 export { PipelineDebugSystem } from './pipeline-debug-system';
 export { RequestTestSystem } from './request-test-system';
 
-// 导入用于类型注解
+// 导入类以供内部工厂使用
 import { PipelineDebugSystem } from './pipeline-debug-system';
 import { RequestTestSystem } from './request-test-system';
 
@@ -59,7 +59,11 @@ export class PipelineDebugSystemFactory {
   /**
    * 创建完整的Pipeline调试系统
    */
-  static createDebugSystem(pipelineManager: any, pipelineRouter?: any, loadBalancer?: any): {
+  static createDebugSystem(
+    pipelineManager: unknown, 
+    pipelineRouter?: unknown, 
+    loadBalancer?: unknown
+  ): {
     pipelineDebug: PipelineDebugSystem;
     requestTest: RequestTestSystem;
   } {
@@ -75,7 +79,7 @@ export class PipelineDebugSystemFactory {
   /**
    * 创建基础Pipeline调试系统
    */
-  static createPipelineDebugSystem(pipelineManager: any): PipelineDebugSystem {
+  static createPipelineDebugSystem(pipelineManager: unknown): PipelineDebugSystem {
     return new PipelineDebugSystem(pipelineManager);
   }
   
@@ -83,9 +87,9 @@ export class PipelineDebugSystemFactory {
    * 创建请求测试系统
    */
   static createRequestTestSystem(
-    pipelineManager: any,
-    pipelineRouter?: any,
-    loadBalancer?: any
+    pipelineManager: unknown,
+    pipelineRouter?: unknown,
+    loadBalancer?: unknown
   ): RequestTestSystem {
     return new RequestTestSystem(pipelineManager, pipelineRouter, loadBalancer);
   }
@@ -111,3 +115,12 @@ export const DEFAULT_PIPELINE_DEBUG_CONFIG: PipelineDebugConfig = {
   enableLayerDiagnostics: true,
   logLevel: 'info'
 };
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from '../interfaces/module/base-module';
+export const debugModuleAdapter = new SimpleModuleAdapter(
+  'debug-module',
+  'Debug System Module',
+  ModuleType.DEBUG,
+  DEBUG_MODULE_VERSION
+);

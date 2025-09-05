@@ -21,4 +21,6 @@ export type { Message, ContentBlock, MessageRole } from './standard/message';
 export { MessageBuilder } from './standard/message';
 export type { Tool, FunctionDefinition, ToolExecutor } from './standard/tool';
 export { ToolBuilder } from './standard/tool';
+import { SimpleModuleAdapter } from './module/base-module';
+export declare const interfacesModuleAdapter: SimpleModuleAdapter;
 //# sourceMappingURL=index.d.ts.map

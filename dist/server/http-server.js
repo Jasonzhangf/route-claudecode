@@ -36,6 +36,7 @@ const url = __importStar(require("url"));
 const events_1 = require("events");
 const constants_1 = require("../constants");
 const jq_json_handler_1 = require("../utils/jq-json-handler");
+const base_module_1 = require("../interfaces/module/base-module");
 /**
  * HTTP服务器核心类
  */
@@ -56,7 +57,77 @@ class HTTPServer extends events_1.EventEmitter {
             debug: false,
             ...config,
         };
+        this.moduleAdapter = new base_module_1.SimpleModuleAdapter('http-server', 'HTTP Server', base_module_1.ModuleType.SERVER, '4.0.0');
         this.initializeRoutes();
+    }
+    // ModuleInterface implementations
+    getId() { return this.moduleAdapter.getId(); }
+    getName() { return this.moduleAdapter.getName(); }
+    getType() { return this.moduleAdapter.getType(); }
+    getVersion() { return this.moduleAdapter.getVersion(); }
+    getStatus() { return this.moduleAdapter.getStatus(); }
+    getMetrics() { return this.moduleAdapter.getMetrics(); }
+    async configure(config) {
+        await this.moduleAdapter.configure(config);
+        this.config = { ...this.config, ...config };
+    }
+    async reset() {
+        await this.moduleAdapter.reset();
+        this.requestCount = 0;
+    }
+    async cleanup() {
+        await this.moduleAdapter.cleanup();
+        await this.stop();
+    }
+    async healthCheck() {
+        const baseHealth = await this.moduleAdapter.healthCheck();
+        return {
+            healthy: baseHealth.healthy && this.isRunning,
+            details: {
+                ...baseHealth.details,
+                server: {
+                    running: this.isRunning,
+                    uptime: this.startTime ? Date.now() - this.startTime.getTime() : 0,
+                    requestCount: this.requestCount,
+                    connections: this.connections.size,
+                    routes: this.routes.size
+                }
+            }
+        };
+    }
+    addConnection(module) {
+        this.moduleAdapter.addConnection(module);
+    }
+    removeConnection(moduleId) {
+        this.moduleAdapter.removeConnection(moduleId);
+    }
+    getConnection(moduleId) {
+        return this.moduleAdapter.getConnection(moduleId);
+    }
+    getConnections() {
+        return this.moduleAdapter.getConnections();
+    }
+    async sendToModule(targetModuleId, message, type) {
+        return this.moduleAdapter.sendToModule(targetModuleId, message, type);
+    }
+    async broadcastToModules(message, type) {
+        await this.moduleAdapter.broadcastToModules(message, type);
+    }
+    onModuleMessage(listener) {
+        this.moduleAdapter.onModuleMessage(listener);
+    }
+    on(event, listener) {
+        super.on(event, listener);
+        this.moduleAdapter.on(event, listener);
+        return this;
+    }
+    removeAllListeners() {
+        this.moduleAdapter.removeAllListeners();
+        super.removeAllListeners();
+        return this;
+    }
+    async process(input) {
+        return this.moduleAdapter.process(input);
     }
     /**
      * 初始化默认路由
@@ -201,9 +272,9 @@ class HTTPServer extends events_1.EventEmitter {
         });
     }
     /**
-     * 获取服务器状态
+     * 获取服务器详细状态
      */
-    getStatus() {
+    getServerStatus() {
         return {
             isRunning: this.isRunning,
             port: this.config.port,
@@ -598,7 +669,7 @@ class HTTPServer extends events_1.EventEmitter {
         // 详细状态端点
         this.addRoute('GET', '/status', async (req, res) => {
             try {
-                const serverStatus = this.getStatus();
+                const serverStatus = this.getServerStatus();
                 const health = this.performHealthChecks();
                 res.body = {
                     server: {
@@ -712,7 +783,7 @@ class HTTPServer extends events_1.EventEmitter {
      * 处理状态请求
      */
     async handleStatus(req, res) {
-        res.body = this.getStatus();
+        res.body = this.getServerStatus();
     }
     /**
      * 处理版本信息请求

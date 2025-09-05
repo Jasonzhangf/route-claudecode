@@ -32,7 +32,11 @@ export class TypeScriptModuleAnalyzer implements ModuleAnalyzerInterface {
     
     for (const filePath of tsFiles) {
       const moduleInfo = await this.analyzeModule(filePath);
-      modules.push(moduleInfo);
+      
+      // 只包含非unknown类型的模块和核心模块入口文件
+      if (moduleInfo.type !== 'unknown' || this.isImportantModuleFile(filePath)) {
+        modules.push(moduleInfo);
+      }
     }
 
     return modules;
@@ -404,5 +408,44 @@ export class TypeScriptModuleAnalyzer implements ModuleAnalyzerInterface {
     
     const regex = new RegExp(`^${regexPattern}$`);
     return regex.test(filePath);
+  }
+
+  /**
+   * 判断是否是重要的模块文件（即使type为unknown也应该包含）
+   * 只关注RCC v4.0的12个核心模块入口文件
+   */
+  private isImportantModuleFile(filePath: string): boolean {
+    const relativePath = path.relative(this.config.projectRoot, filePath);
+    
+    // RCC v4.0 的12个核心模块入口文件
+    const coreModulePaths = [
+      'src/client/index.ts',
+      'src/router/index.ts',
+      'src/pipeline/index.ts',
+      'src/config/index.ts',
+      'src/server/index.ts',
+      'src/middleware/index.ts',
+      'src/debug/index.ts',
+      'src/types/index.ts',
+      'src/cli.ts',
+      'src/index.ts'
+    ];
+    
+    // 检查是否是核心模块的入口文件
+    if (coreModulePaths.includes(relativePath)) {
+      return true;
+    }
+    
+    // 检查是否是核心模块的主要管理器文件
+    const coreManagerPaths = [
+      'src/modules/auth/index.ts',
+      'src/modules/transformers/index.ts'
+    ];
+    
+    if (coreManagerPaths.includes(relativePath)) {
+      return true;
+    }
+    
+    return false;
   }
 }

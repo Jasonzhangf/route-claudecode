@@ -16,7 +16,7 @@
  */
 import { EventEmitter } from 'events';
 import { PipelineConfig, ExecutionContext, ExecutionResult, ExecutionRecord, StandardPipelineFactory } from '../interfaces/pipeline/pipeline-framework';
-import { ModuleInterface } from '../interfaces/module/base-module';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
 import { PipelineStatus } from '../interfaces/module/pipeline-module';
 import { RoutingTable } from '../router/pipeline-router';
 /**
@@ -113,7 +113,15 @@ export interface PipelineTableEntry {
 /**
  * Pipeline管理器
  */
-export declare class PipelineManager extends EventEmitter {
+export declare class PipelineManager extends EventEmitter implements ModuleInterface {
+    private moduleId;
+    private moduleName;
+    private moduleVersion;
+    private moduleStatus;
+    private moduleMetrics;
+    private connections;
+    private messageListeners;
+    private isStarted;
     private pipelines;
     private activeExecutions;
     private factory;
@@ -193,9 +201,9 @@ export declare class PipelineManager extends EventEmitter {
      */
     cancelExecution(executionId: string): Promise<boolean>;
     /**
-     * 获取Pipeline状态
+     * 获取指定Pipeline状态
      */
-    getPipelineStatus(pipelineId: string): PipelineStatus | null;
+    getPipelineStatusById(pipelineId: string): PipelineStatus | null;
     /**
      * 获取所有Pipeline状态
      */
@@ -203,7 +211,7 @@ export declare class PipelineManager extends EventEmitter {
     /**
      * 获取调度器状态（符合PipelineModuleInterface接口）
      */
-    getStatus(): any;
+    getPipelineStatus(): any;
     /**
      * 获取活跃执行
      */
@@ -217,9 +225,7 @@ export declare class PipelineManager extends EventEmitter {
      */
     healthCheck(): Promise<{
         healthy: boolean;
-        pipelines: number;
-        activeExecutions: number;
-        issues: string[];
+        details: any;
     }>;
     /**
      * 设置Pipeline事件监听器
@@ -261,5 +267,28 @@ export declare class PipelineManager extends EventEmitter {
      * 生成debug版本的流水线表数据 (包含更多调试信息)
      */
     private generateDebugPipelineTableData;
+    getId(): string;
+    getName(): string;
+    getType(): ModuleType;
+    getVersion(): string;
+    getStatus(): ModuleStatus;
+    getMetrics(): ModuleMetrics;
+    configure(config: any): Promise<void>;
+    initialize(): Promise<void>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    process(input: any): Promise<any>;
+    reset(): Promise<void>;
+    cleanup(): Promise<void>;
+    isRunning(): boolean;
+    addConnection(module: any): void;
+    removeConnection(moduleId: string): void;
+    getConnection(moduleId: string): any;
+    getConnections(): any[];
+    sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+    broadcastToModules(message: any, type?: string): Promise<void>;
+    onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+    on(event: string | symbol, listener: (...args: any[]) => void): this;
+    removeAllListeners(event?: string | symbol): this;
 }
 //# sourceMappingURL=pipeline-manager.d.ts.map

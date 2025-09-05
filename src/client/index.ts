@@ -6,10 +6,9 @@
  * @author Jason Zhang
  */
 
-// 导出客户端功能
-export * from './session';
-export * from './http';
-export * from './client-manager';
+// 零接口暴露设计 - 只导出必要的公共接口
+export type { ClientSession } from './session';
+export type { HttpClient } from './http';
 
 // 模块版本信息
 export const CLIENT_MODULE_VERSION = '4.0.0-alpha.2';
@@ -50,7 +49,7 @@ export interface ClientModuleConfig {
 /**
  * 客户端模块主类
  */
-export class ClientModule {
+export class ClientModule implements ModuleInterface {
   public readonly version = CLIENT_MODULE_VERSION;
 
   private sessionManager: SessionManager;
@@ -58,6 +57,14 @@ export class ClientModule {
   private proxy: ClientProxy;
   private envExporter: EnvironmentExporter;
   private initialized = false;
+
+  // ModuleInterface implementation properties
+  private moduleId: string = 'client-module';
+  private moduleName: string = 'Client Module';
+  private moduleStatus: ModuleStatus;
+  private moduleMetrics: ModuleMetrics;
+  private moduleConnections = new Map<string, ModuleInterface>();
+  private moduleMessageListeners = new Set<(sourceModuleId: string, message: any, type: string) => void>();
 
   constructor(
     private config: any,
@@ -68,6 +75,22 @@ export class ClientModule {
     this.httpClient = new HttpClient(this.sessionManager, this.errorHandler);
     this.proxy = new ClientProxy();
     this.envExporter = new EnvironmentExporter();
+
+    // 初始化ModuleInterface属性
+    this.moduleStatus = {
+      id: this.moduleId,
+      name: this.moduleName,
+      type: ModuleType.CLIENT,
+      status: 'stopped',
+      health: 'healthy'
+    };
+    this.moduleMetrics = {
+      requestsProcessed: 0,
+      averageProcessingTime: 0,
+      errorRate: 0,
+      memoryUsage: 0,
+      cpuUsage: 0
+    };
   }
 
   /**
@@ -234,7 +257,12 @@ export class ClientModule {
         await this.proxy.stop();
       }
 
+      // 清理ModuleInterface资源
+      this.moduleConnections.clear();
+      this.moduleMessageListeners.clear();
+
       this.initialized = false;
+      this.moduleStatus.status = 'stopped';
       console.log('🧹 Client module cleaned up successfully');
     } catch (error) {
       this.errorHandler.handleError(error as Error, {
@@ -245,6 +273,60 @@ export class ClientModule {
       throw error;
     }
   }
+
+  // ===== ModuleInterface Implementation =====
+
+  getId(): string { return this.moduleId; }
+  getName(): string { return this.moduleName; }
+  getType(): ModuleType { return ModuleType.CLIENT; }
+  getVersion(): string { return this.version; }
+  getStatus(): ModuleStatus { return { ...this.moduleStatus }; }
+  getMetrics(): ModuleMetrics { return { ...this.moduleMetrics }; }
+
+  async configure(config: any): Promise<void> {
+    this.config = { ...this.config, ...config };
+    this.moduleStatus.status = 'idle';
+  }
+
+  async start(): Promise<void> {
+    await this.initialize();
+    this.moduleStatus.status = 'running';
+  }
+
+  async stop(): Promise<void> {
+    await this.cleanup();
+    this.moduleStatus.status = 'stopped';
+  }
+
+  async process(input: any): Promise<any> {
+    this.moduleMetrics.requestsProcessed++;
+    this.moduleStatus.lastActivity = new Date();
+    return input;
+  }
+
+  async reset(): Promise<void> {
+    this.moduleMetrics = {
+      requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0
+    };
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return { healthy: this.initialized, details: { status: this.moduleStatus } };
+  }
+
+  addConnection(module: ModuleInterface): void { this.moduleConnections.set(module.getId(), module); }
+  removeConnection(moduleId: string): void { this.moduleConnections.delete(moduleId); }
+  getConnection(moduleId: string): ModuleInterface | undefined { return this.moduleConnections.get(moduleId); }
+  getConnections(): ModuleInterface[] { return Array.from(this.moduleConnections.values()); }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> { return message; }
+  async broadcastToModules(message: any, type?: string): Promise<void> { }
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.moduleMessageListeners.add(listener);
+  }
+
+  on(event: string, listener: (...args: any[]) => void): void { }
+  removeAllListeners(): void { this.moduleMessageListeners.clear(); }
 }
 
 /**
@@ -287,3 +369,19 @@ export async function createClient(config: ClientModuleConfig = {}): Promise<Cli
 export { SessionError, HttpError };
 // 导出CLI错误类
 export { CLIError } from '../types/error';
+
+// ModuleInterface实现相关导入
+import { 
+  ModuleInterface, 
+  ModuleType, 
+  ModuleStatus, 
+  ModuleMetrics,
+  SimpleModuleAdapter
+} from '../interfaces/module/base-module';
+
+export const clientModuleAdapter = new SimpleModuleAdapter(
+  'client-module',
+  'Client Module',
+  ModuleType.CLIENT,
+  CLIENT_MODULE_VERSION
+);

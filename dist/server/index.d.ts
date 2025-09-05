@@ -1,22 +1,21 @@
 /**
  * 服务器模块入口文件
  *
- * @author Jason Zhang
+ * 严格遵循零接口暴露设计原则
+ * 只导出ServerFactory门面和必要类型
+ *
+ * @version 4.0.0-zero-interface
+ * @author Jason Zhang - Zero Interface Refactored
  */
-export * from './http-server';
-export { PipelineServerManager } from '../pipeline/pipeline-server-manager';
-export * from './server-factory';
-export * from './middleware-manager';
-export * from './request-handler';
-export * from './response-builder';
-export * from './route-manager';
-export * from './health-checker';
-export * from './security';
-export * from './monitoring';
-export declare const SERVER_MODULE_VERSION = "4.0.0-alpha.2";
-export interface ServerModuleInterface {
+export { ServerFactory } from './server-factory';
+export { HealthChecker } from './health-checker';
+export type { ServerConfig } from './http-server';
+export type { HealthCheckResult } from './health-checker';
+export declare const SERVER_MODULE_VERSION = "4.0.0-zero-interface";
+import { ModuleType } from '../interfaces/module/base-module';
+export declare function getServerModuleInfo(): {
+    name: string;
     version: string;
-    start(): Promise<void>;
-    stop(): Promise<void>;
-}
+    type: ModuleType;
+};
 //# sourceMappingURL=index.d.ts.map

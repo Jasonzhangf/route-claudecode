@@ -155,11 +155,13 @@ export class ConfigParser {
   /**
    * 验证Demo1配置格式
    */
-  private isValidDemo1Config(data: any): boolean {
-    return data && 
-           Array.isArray(data.Providers) && 
-           data.Router && 
-           typeof data.APIKEY === 'string';
+  private isValidDemo1Config(data: unknown): boolean {
+    return data !== null && 
+           typeof data === 'object' &&
+           data !== undefined &&
+           Array.isArray((data as Record<string, unknown>).Providers) && 
+           (data as Record<string, unknown>).Router !== undefined && 
+           typeof (data as Record<string, unknown>).APIKEY === 'string';
   }
 
   /**
@@ -272,7 +274,7 @@ export class ConfigParser {
   /**
    * 验证解析结果的基本结构
    */
-  validateBasicStructure(data: any): void {
+  validateBasicStructure(data: unknown): void {
     if (data === null || data === undefined) {
       throw new Error('Configuration data is null or undefined');
     }

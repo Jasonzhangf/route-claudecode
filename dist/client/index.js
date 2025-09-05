@@ -6,28 +6,10 @@
  *
  * @author Jason Zhang
  */
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CLIError = exports.HttpError = exports.SessionError = exports.ClientModule = exports.CLIENT_MODULE_VERSION = void 0;
+exports.clientModuleAdapter = exports.CLIError = exports.HttpError = exports.SessionError = exports.ClientModule = exports.CLIENT_MODULE_VERSION = void 0;
 exports.createClientModule = createClientModule;
 exports.createClient = createClient;
-// 导出客户端功能
-__exportStar(require("./session"), exports);
-__exportStar(require("./http"), exports);
-__exportStar(require("./client-manager"), exports);
 // 模块版本信息
 exports.CLIENT_MODULE_VERSION = '4.0.0-alpha.2';
 // 导入核心类
@@ -47,11 +29,31 @@ class ClientModule {
         this.errorHandler = errorHandler;
         this.version = exports.CLIENT_MODULE_VERSION;
         this.initialized = false;
+        // ModuleInterface implementation properties
+        this.moduleId = 'client-module';
+        this.moduleName = 'Client Module';
+        this.moduleConnections = new Map();
+        this.moduleMessageListeners = new Set();
         // 初始化组件
         this.sessionManager = new session_1.SessionManager(this.errorHandler);
         this.httpClient = new http_1.HttpClient(this.sessionManager, this.errorHandler);
         this.proxy = new client_manager_1.ClientProxy();
         this.envExporter = new client_manager_1.EnvironmentExporter();
+        // 初始化ModuleInterface属性
+        this.moduleStatus = {
+            id: this.moduleId,
+            name: this.moduleName,
+            type: base_module_1.ModuleType.CLIENT,
+            status: 'stopped',
+            health: 'healthy'
+        };
+        this.moduleMetrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0
+        };
     }
     /**
      * 初始化模块
@@ -196,7 +198,11 @@ class ClientModule {
             if (this.proxy.isConnected()) {
                 await this.proxy.stop();
             }
+            // 清理ModuleInterface资源
+            this.moduleConnections.clear();
+            this.moduleMessageListeners.clear();
             this.initialized = false;
+            this.moduleStatus.status = 'stopped';
             console.log('🧹 Client module cleaned up successfully');
         }
         catch (error) {
@@ -208,6 +214,49 @@ class ClientModule {
             throw error;
         }
     }
+    // ===== ModuleInterface Implementation =====
+    getId() { return this.moduleId; }
+    getName() { return this.moduleName; }
+    getType() { return base_module_1.ModuleType.CLIENT; }
+    getVersion() { return this.version; }
+    getStatus() { return { ...this.moduleStatus }; }
+    getMetrics() { return { ...this.moduleMetrics }; }
+    async configure(config) {
+        this.config = { ...this.config, ...config };
+        this.moduleStatus.status = 'idle';
+    }
+    async start() {
+        await this.initialize();
+        this.moduleStatus.status = 'running';
+    }
+    async stop() {
+        await this.cleanup();
+        this.moduleStatus.status = 'stopped';
+    }
+    async process(input) {
+        this.moduleMetrics.requestsProcessed++;
+        this.moduleStatus.lastActivity = new Date();
+        return input;
+    }
+    async reset() {
+        this.moduleMetrics = {
+            requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0
+        };
+    }
+    async healthCheck() {
+        return { healthy: this.initialized, details: { status: this.moduleStatus } };
+    }
+    addConnection(module) { this.moduleConnections.set(module.getId(), module); }
+    removeConnection(moduleId) { this.moduleConnections.delete(moduleId); }
+    getConnection(moduleId) { return this.moduleConnections.get(moduleId); }
+    getConnections() { return Array.from(this.moduleConnections.values()); }
+    async sendToModule(targetModuleId, message, type) { return message; }
+    async broadcastToModules(message, type) { }
+    onModuleMessage(listener) {
+        this.moduleMessageListeners.add(listener);
+    }
+    on(event, listener) { }
+    removeAllListeners() { this.moduleMessageListeners.clear(); }
 }
 exports.ClientModule = ClientModule;
 /**
@@ -246,4 +295,7 @@ async function createClient(config = {}) {
 // 导出CLI错误类
 var error_1 = require("../types/error");
 Object.defineProperty(exports, "CLIError", { enumerable: true, get: function () { return error_1.CLIError; } });
+// ModuleInterface实现相关导入
+const base_module_1 = require("../interfaces/module/base-module");
+exports.clientModuleAdapter = new base_module_1.SimpleModuleAdapter('client-module', 'Client Module', base_module_1.ModuleType.CLIENT, exports.CLIENT_MODULE_VERSION);
 //# sourceMappingURL=index.js.map

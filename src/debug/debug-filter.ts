@@ -22,7 +22,7 @@ export interface SensitiveFieldConfig {
  * 过滤结果
  */
 export interface FilterResult {
-  filtered: any;
+  filtered: unknown;
   hasChanges: boolean;
   sensitiveFields: string[];
 }
@@ -31,11 +31,11 @@ export interface FilterResult {
  * Debug数据过滤器接口
  */
 export interface DebugFilter {
-  filterRequest(request: any): FilterResult;
-  filterResponse(response: any): FilterResult;
-  filterError(error: any): FilterResult;
-  filterModuleInput(input: any): FilterResult;
-  filterModuleOutput(output: any): FilterResult;
+  filterRequest(request: unknown): FilterResult;
+  filterResponse(response: unknown): FilterResult;
+  filterError(error: unknown): FilterResult;
+  filterModuleInput(input: unknown): FilterResult;
+  filterModuleOutput(output: unknown): FilterResult;
   addSensitivePattern(pattern: RegExp): void;
   removeSensitivePattern(pattern: RegExp): void;
 }
@@ -55,7 +55,7 @@ export class DebugFilterImpl implements DebugFilter {
   /**
    * 过滤请求数据
    */
-  filterRequest(request: any): FilterResult {
+  filterRequest(request: unknown): FilterResult {
     const filtered = this.deepClone(request);
     const sensitiveFields: string[] = [];
     let hasChanges = false;
@@ -86,7 +86,7 @@ export class DebugFilterImpl implements DebugFilter {
   /**
    * 过滤响应数据
    */
-  filterResponse(response: any): FilterResult {
+  filterResponse(response: unknown): FilterResult {
     const filtered = this.deepClone(response);
     const sensitiveFields: string[] = [];
     let hasChanges = false;
@@ -117,7 +117,7 @@ export class DebugFilterImpl implements DebugFilter {
   /**
    * 过滤错误信息
    */
-  filterError(error: any): FilterResult {
+  filterError(error: unknown): FilterResult {
     const filtered = this.deepClone(error);
     const sensitiveFields: string[] = [];
     let hasChanges = false;
@@ -152,14 +152,14 @@ export class DebugFilterImpl implements DebugFilter {
   /**
    * 过滤模块输入
    */
-  filterModuleInput(input: any): FilterResult {
+  filterModuleInput(input: unknown): FilterResult {
     return this.filterObject(input, 'input');
   }
 
   /**
    * 过滤模块输出
    */
-  filterModuleOutput(output: any): FilterResult {
+  filterModuleOutput(output: unknown): FilterResult {
     return this.filterObject(output, 'output');
   }
 
@@ -228,7 +228,7 @@ export class DebugFilterImpl implements DebugFilter {
     };
   }
 
-  private filterObject(obj: any, basePath: string): FilterResult {
+  private filterObject(obj: unknown, basePath: string): FilterResult {
     if (obj === null || obj === undefined) {
       return { filtered: obj, hasChanges: false, sensitiveFields: [] };
     }
@@ -252,8 +252,8 @@ export class DebugFilterImpl implements DebugFilter {
     return { filtered: obj, hasChanges: false, sensitiveFields: [] };
   }
 
-  private filterArray(arr: any[], basePath: string): FilterResult {
-    const filtered: any[] = [];
+  private filterArray(arr: unknown[], basePath: string): FilterResult {
+    const filtered: unknown[] = [];
     const sensitiveFields: string[] = [];
     let hasChanges = false;
 
@@ -351,7 +351,7 @@ export class DebugFilterImpl implements DebugFilter {
     return this.sensitiveConfig.valuePatterns.some(pattern => pattern.test(value));
   }
 
-  private deepClone(obj: any): any {
+  private deepClone(obj: unknown): unknown {
     if (obj === null || typeof obj !== 'object') {
       return obj;
     }
@@ -364,7 +364,7 @@ export class DebugFilterImpl implements DebugFilter {
       return obj.map(item => this.deepClone(item));
     }
 
-    const cloned: any = {};
+    const cloned: Record<string, unknown> = {};
     for (const key in obj) {
       if (obj.hasOwnProperty(key)) {
         cloned[key] = this.deepClone(obj[key]);

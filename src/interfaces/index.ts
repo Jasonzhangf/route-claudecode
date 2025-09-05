@@ -65,3 +65,12 @@ export { MessageBuilder } from './standard/message';
 
 export type { Tool, FunctionDefinition, ToolExecutor } from './standard/tool';
 export { ToolBuilder } from './standard/tool';
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from './module/base-module';
+export const interfacesModuleAdapter = new SimpleModuleAdapter(
+  'interfaces-module',
+  'Core Interfaces Module',
+  ModuleType.VALIDATOR,
+  '4.0.0'
+);

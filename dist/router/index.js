@@ -2,24 +2,32 @@
 /**
  * RCC v4.0 Router模块导出
  *
- * 重构后的路由器模块 - 零接口暴露设计
- * 只导出RouterPreprocessor和必要的类型定义
+ * 严格遵循零接口暴露设计原则
+ * 只导出RouterPreprocessor门面和必要类型
  *
- * @version 4.1.0-preprocessor
- * @author Claude - Refactored
+ * @version 4.1.0-zero-interface
+ * @author Claude - Zero Interface Refactored
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ROUTER_MODULE_VERSION = exports.DEFAULT_LOAD_BALANCER_CONFIG = exports.LoadBalancer = exports.PipelineRouter = exports.RouterPreprocessor = void 0;
-// 唯一的路由处理接口
+exports.ROUTER_MODULE_VERSION = exports.RouterPreprocessor = void 0;
+exports.getRouterModuleInfo = getRouterModuleInfo;
+// 主要门面接口 - 零接口暴露设计
 var router_preprocessor_1 = require("./router-preprocessor");
 Object.defineProperty(exports, "RouterPreprocessor", { enumerable: true, get: function () { return router_preprocessor_1.RouterPreprocessor; } });
-// 保留核心路由器类（用于向后兼容，但内部方法已封装）
-var pipeline_router_1 = require("./pipeline-router");
-Object.defineProperty(exports, "PipelineRouter", { enumerable: true, get: function () { return pipeline_router_1.PipelineRouter; } });
-// 负载均衡器（保留用于系统集成）
-var load_balancer_1 = require("./load-balancer");
-Object.defineProperty(exports, "LoadBalancer", { enumerable: true, get: function () { return load_balancer_1.LoadBalancer; } });
-Object.defineProperty(exports, "DEFAULT_LOAD_BALANCER_CONFIG", { enumerable: true, get: function () { return load_balancer_1.DEFAULT_LOAD_BALANCER_CONFIG; } });
 // 模块版本信息
-exports.ROUTER_MODULE_VERSION = '4.1.0-preprocessor';
+exports.ROUTER_MODULE_VERSION = '4.1.0-zero-interface';
+// 内部模块适配器 - 不暴露实现细节
+const base_module_1 = require("../interfaces/module/base-module");
+// 私有模块适配器工厂函数
+function createRouterModuleAdapter() {
+    return new base_module_1.SimpleModuleAdapter('router-module', 'Router Module', base_module_1.ModuleType.ROUTER, exports.ROUTER_MODULE_VERSION);
+}
+// 只导出获取模块信息的函数，而不是实例
+function getRouterModuleInfo() {
+    return {
+        name: 'router-module',
+        version: exports.ROUTER_MODULE_VERSION,
+        type: base_module_1.ModuleType.ROUTER
+    };
+}
 //# sourceMappingURL=index.js.map

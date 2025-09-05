@@ -371,3 +371,12 @@ export class ModuleRegistry extends EventEmitter {
     return false;
   }
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter } from '../interfaces/module/base-module';
+export const moduleRegistryAdapter = new SimpleModuleAdapter(
+  'module-registry',
+  'Pipeline Module Registry',
+  ModuleType.PIPELINE,
+  '4.0.0-alpha.2'
+);

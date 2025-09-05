@@ -8,8 +8,15 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
 import { JQJsonHandler } from '../utils/jq-json-handler';
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+} from '../interfaces/module/base-module';
 
 /**
  * 错误类型枚举
@@ -94,14 +101,40 @@ export interface ErrorSummaryReport {
 /**
  * 错误日志管理器
  */
-export class ErrorLogManager {
+export class ErrorLogManager extends EventEmitter implements ModuleInterface {
+  // ModuleInterface properties
+  private moduleId = 'error-log-manager';
+  private moduleName = 'Error Log Manager';
+  private moduleVersion = '4.0.0';
+  private moduleStatus: ModuleStatus;
+  private moduleMetrics: ModuleMetrics;
+  private connections = new Map<string, ModuleInterface>();
+  private messageListeners = new Set<(sourceModuleId: string, message: any, type: string) => void>();
+  private isStarted = false;
   private basePath: string;
   private serverPort?: number;
   private initialized: boolean = false;
 
   constructor(basePath: string = '~/.route-claudecode/debug-logs', serverPort?: number) {
+    super();
     this.basePath = this.expandHomePath(basePath);
     this.serverPort = serverPort;
+    
+    // Initialize ModuleInterface properties
+    this.moduleStatus = {
+      id: this.moduleId,
+      name: this.moduleName,
+      type: ModuleType.DEBUG,
+      status: 'stopped',
+      health: 'healthy'
+    };
+    this.moduleMetrics = {
+      requestsProcessed: 0,
+      averageProcessingTime: 0,
+      errorRate: 0,
+      memoryUsage: 0,
+      cpuUsage: 0
+    };
   }
 
   /**
@@ -478,6 +511,29 @@ export class ErrorLogManager {
 
     return recommendations;
   }
+
+  // === ModuleInterface implementation ===
+  getId() { return this.moduleId; }
+  getName() { return this.moduleName; }
+  getType() { return ModuleType.DEBUG; }
+  getVersion() { return this.moduleVersion; }
+  getStatus() { return { ...this.moduleStatus }; }
+  getMetrics() { return { ...this.moduleMetrics }; }
+  async configure(config: any) { this.moduleStatus.status = 'idle'; }
+  async start() { this.isStarted = true; this.moduleStatus.status = 'running'; await this.initialize(); }
+  async stop() { this.isStarted = false; this.moduleStatus.status = 'stopped'; }
+  async process(input: any) { this.moduleMetrics.requestsProcessed++; return input; }
+  async reset() { this.moduleMetrics = { requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0 }; }
+  async cleanup() { this.connections.clear(); this.messageListeners.clear(); }
+  async healthCheck() { return { healthy: this.initialized, details: { status: this.moduleStatus } }; }
+  addConnection(module: ModuleInterface) { this.connections.set(module.getId(), module); }
+  removeConnection(moduleId: string) { this.connections.delete(moduleId); }
+  getConnection(moduleId: string) { return this.connections.get(moduleId); }
+  getConnections() { return Array.from(this.connections.values()); }
+  async sendToModule(targetModuleId: string, message: any, type?: string) { return message; }
+  async broadcastToModules(message: any, type?: string) { }
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void) { this.messageListeners.add(listener); }
+  removeAllListeners(event?: string | symbol) { super.removeAllListeners(event); if (!event) this.messageListeners.clear(); return this; }
 }
 
 // 导出端口特定的实例管理

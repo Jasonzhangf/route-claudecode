@@ -22,7 +22,9 @@ export declare enum ModuleType {
     DEBUG = "debug",
     ERROR_HANDLER = "error-handler",
     MIDDLEWARE = "middleware",
-    PROVIDER = "provider"
+    PROVIDER = "provider",
+    SERVICE = "service",
+    UTILITY = "utility"
 }
 /**
  * 模块状态接口
@@ -299,5 +301,46 @@ export interface ModuleEventData {
     eventType: ModuleEventType;
     timestamp: Date;
     data?: any;
+}
+/**
+ * 简单的ModuleInterface适配器类
+ * 为现有类提供快速的ModuleInterface实现
+ */
+export declare class SimpleModuleAdapter implements ModuleInterface {
+    private moduleId;
+    private moduleName;
+    private moduleType;
+    private moduleVersion;
+    private status;
+    private metrics;
+    private connections;
+    private messageListeners;
+    private isStarted;
+    constructor(id: string, name: string, type: ModuleType, version?: string);
+    getId(): string;
+    getName(): string;
+    getType(): ModuleType;
+    getVersion(): string;
+    getStatus(): ModuleStatus;
+    getMetrics(): ModuleMetrics;
+    configure(config: any): Promise<void>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    process(input: any): Promise<any>;
+    reset(): Promise<void>;
+    cleanup(): Promise<void>;
+    healthCheck(): Promise<{
+        healthy: boolean;
+        details: any;
+    }>;
+    addConnection(module: ModuleInterface): void;
+    removeConnection(moduleId: string): void;
+    getConnection(moduleId: string): ModuleInterface | undefined;
+    getConnections(): ModuleInterface[];
+    sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+    broadcastToModules(message: any, type?: string): Promise<void>;
+    onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+    on(event: string, listener: (...args: any[]) => void): void;
+    removeAllListeners(): void;
 }
 //# sourceMappingURL=base-module.d.ts.map

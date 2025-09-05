@@ -22,4 +22,6 @@ export interface RoutesModuleInterface {
     addRoute(route: any): void;
     matchRoute(url: string, method: string): any;
 }
+import { SimpleModuleAdapter } from '../interfaces/module/base-module';
+export declare const routesModuleAdapter: SimpleModuleAdapter;
 //# sourceMappingURL=index.d.ts.map

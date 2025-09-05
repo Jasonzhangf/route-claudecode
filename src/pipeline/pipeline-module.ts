@@ -10,8 +10,22 @@
 import { UnifiedInitializer, UnifiedInitializerConfig, InitializationResult } from './unified-initializer';
 import { RuntimeScheduler, RuntimeSchedulerConfig, ScheduleRequest, ScheduleResponse } from './runtime-scheduler';
 import { PipelineManager } from './pipeline-manager';
-import { PipelineModuleInterface } from './index';
 import { PIPELINE_MODULE_VERSION } from './index';
+
+// 定义流水线模块接口
+export interface PipelineModuleInterface {
+  manager: PipelineManager;
+  initializer: UnifiedInitializer;
+  scheduler: RuntimeScheduler;
+  version: string;
+}
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+  SimpleModuleAdapter,
+} from '../interfaces/module/base-module';
 
 /**
  * 流水线模块统一实现
@@ -19,12 +33,13 @@ import { PIPELINE_MODULE_VERSION } from './index';
  * 整合UnifiedInitializer、RuntimeScheduler和PipelineManager
  * 提供符合PipelineModuleInterface的统一接口
  */
-export class PipelineModule implements PipelineModuleInterface {
+export class PipelineModule implements PipelineModuleInterface, ModuleInterface {
   public readonly version: string = PIPELINE_MODULE_VERSION;
   
   private initializer: UnifiedInitializer;
   private scheduler: RuntimeScheduler;
   private pipelineManager: PipelineManager | null = null;
+  private moduleAdapter: SimpleModuleAdapter;
   
   constructor(
     initializerConfig?: UnifiedInitializerConfig,
@@ -32,6 +47,80 @@ export class PipelineModule implements PipelineModuleInterface {
   ) {
     this.initializer = new UnifiedInitializer(initializerConfig);
     this.scheduler = new RuntimeScheduler(schedulerConfig);
+    this.moduleAdapter = new SimpleModuleAdapter(
+      'pipeline-module',
+      'Pipeline Module',
+      ModuleType.PIPELINE,
+      PIPELINE_MODULE_VERSION
+    );
+  }
+
+  // ModuleInterface implementations
+  getId(): string { return this.moduleAdapter.getId(); }
+  getName(): string { return this.moduleAdapter.getName(); }
+  getType(): ModuleType { return this.moduleAdapter.getType(); }
+  getVersion(): string { return this.moduleAdapter.getVersion(); }
+  getModuleStatus(): ModuleStatus { return this.moduleAdapter.getStatus(); }
+  getMetrics(): ModuleMetrics { return this.moduleAdapter.getMetrics(); }
+
+  async configure(config: any): Promise<void> {
+    await this.moduleAdapter.configure(config);
+  }
+
+  async start(): Promise<void> {
+    await this.moduleAdapter.start();
+  }
+
+  async stop(): Promise<void> {
+    await this.moduleAdapter.stop();
+  }
+
+  async reset(): Promise<void> {
+    await this.moduleAdapter.reset();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return this.moduleAdapter.healthCheck();
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.moduleAdapter.addConnection(module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.moduleAdapter.removeConnection(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.moduleAdapter.getConnection(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return this.moduleAdapter.getConnections();
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    return this.moduleAdapter.sendToModule(targetModuleId, message, type);
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    await this.moduleAdapter.broadcastToModules(message, type);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.moduleAdapter.onModuleMessage(listener);
+  }
+
+  on(event: string, listener: (...args: any[]) => void): void {
+    this.moduleAdapter.on(event, listener);
+  }
+
+  removeAllListeners(): void {
+    this.moduleAdapter.removeAllListeners();
+  }
+
+  async process(input: any): Promise<any> {
+    return this.moduleAdapter.process(input);
   }
   
   /**
@@ -91,6 +180,7 @@ export class PipelineModule implements PipelineModuleInterface {
    */
   async cleanup(): Promise<void> {
     await this.scheduler.cleanup();
+    await this.moduleAdapter.cleanup();
     // PipelineManager和UnifiedInitializer的清理由它们自己管理
   }
 }

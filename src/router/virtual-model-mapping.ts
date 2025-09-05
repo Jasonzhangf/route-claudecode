@@ -20,7 +20,7 @@ export interface VirtualModelMappingRule {
     toolTypes?: string[];
     hasThinking?: boolean;
     isStreaming?: boolean;
-    customCondition?: (request: any) => boolean;
+    customCondition?: (request: Record<string, unknown>) => boolean;
   };
   virtualModel: VirtualModelType;
   priority: number; // 数字越小优先级越高
@@ -78,9 +78,10 @@ export function getModelMappingRules(): VirtualModelMappingRule[] {
       inputModel: '*',
       conditions: {
         hasTools: true,
-        customCondition: (request: any) => {
+        customCondition: (request: Record<string, unknown>) => {
           // 排除web搜索工具，那些属于WEB_SEARCH类型
-          const toolTypes = request.tools?.map((tool: any) => tool.type || tool.name || '').join(' ').toLowerCase();
+          const tools = request.tools as Array<Record<string, unknown>> | undefined;
+          const toolTypes = tools?.map((tool) => String(tool.type || tool.name || '')).join(' ').toLowerCase() || '';
           return !toolTypes.includes('web') && !toolTypes.includes('search') && !toolTypes.includes('browser');
         }
       },
@@ -108,7 +109,7 @@ export class VirtualModelMapper {
    * @param request 完整的请求对象 (用于条件判断)
    * @returns 虚拟模型类型
    */
-  static mapToVirtual(inputModel: string, request: any): VirtualModelType | string {
+  static mapToVirtual(inputModel: string, request: Record<string, unknown>): VirtualModelType | string {
     // 精确计算token数量 - 使用配置化参数
     const tokenCount = this.estimateTokenCount(request);
 
@@ -145,7 +146,7 @@ export class VirtualModelMapper {
    */
   private static matchesRule(
     inputModel: string,
-    request: any,
+    request: Record<string, unknown>,
     tokenCount: number,
     rule: VirtualModelMappingRule
   ): boolean {
@@ -176,8 +177,11 @@ export class VirtualModelMapper {
 
     // 检查特定工具类型
     if (conditions.toolTypes && conditions.toolTypes.length > 0) {
+      const tools = request.tools as Array<Record<string, unknown>> | undefined;
       const hasRequiredTools = conditions.toolTypes.some(toolType =>
-        request.tools?.some((tool: any) => tool.type?.includes(toolType) || tool.name?.includes(toolType))
+        tools?.some((tool) => 
+          String(tool.type || '').includes(toolType) || String(tool.name || '').includes(toolType)
+        )
       );
       if (!hasRequiredTools) return false;
     }
@@ -221,7 +225,7 @@ export class VirtualModelMapper {
   /**
    * 精确估算token数量 - 使用配置化参数
    */
-  private static estimateTokenCount(request: any): number {
+  private static estimateTokenCount(request: Record<string, unknown>): number {
     let tokenCount = 0;
 
     // 计算消息token - 使用更精确的估算

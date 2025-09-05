@@ -30,6 +30,21 @@ export interface ValidationResult {
 }
 
 /**
+ * 单个验证规则定义
+ */
+export interface ValidationRule {
+  type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null';
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  minItems?: number;
+  maxItems?: number;
+  pattern?: RegExp;
+  enum?: any[];
+  properties?: ValidationSchema;
+}
+
+/**
  * 数据验证器类
  */
 export class DataValidator {

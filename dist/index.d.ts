@@ -7,8 +7,9 @@
  * @version 4.0.0-alpha.2
  */
 export { ModuleInterface, StandardRequest, StandardResponse } from './interfaces';
-export { ClientModule, createClientModule, createClient, SessionManager, HttpClient } from './client';
-export { HTTPServer, PipelineServerManager } from './server';
+export type { ClientSession, HttpClient } from './client';
+export { CLIENT_MODULE_VERSION } from './client';
+export { ServerFactory, HealthChecker } from './server';
 export { PipelineRouter } from './router/pipeline-router';
 export { SimpleRouter } from './router/simple-router';
 export { PipelineManager } from './pipeline/pipeline-manager';
@@ -16,11 +17,13 @@ export { StandardPipeline } from './pipeline/standard-pipeline';
 export { StandardPipelineFactoryImpl as PipelineFactoryImpl } from './pipeline/pipeline-factory';
 export { ModuleRegistry as PipelineModuleRegistry } from './pipeline/module-registry';
 export * from './debug';
-export { ConfigPreprocessor, ConfigReader, RoutingTable, ConfigPreprocessResult } from './config';
+export { ConfigPreprocessor } from './config';
+export type { RoutingTable, ConfigPreprocessResult } from './config';
 export { secureLogger, DataValidator } from './utils';
-export { ErrorHandler } from './middleware';
+export { MiddlewareFactory } from './middleware';
 export { ROUTES_MODULE_VERSION } from './routes';
 export { StandardRequest as RCCRequest, StandardResponse as RCCResponse } from './types';
+export { interfacesModuleAdapter } from './interfaces';
 export declare const VERSION = "4.0.0-alpha.2";
 export declare const BUILD_DATE: string;
 /**
@@ -42,4 +45,6 @@ export declare class RouteClaudeCode {
      */
     getBuildDate(): string;
 }
+import { SimpleModuleAdapter } from './interfaces/module/base-module';
+export declare const mainModuleAdapter: SimpleModuleAdapter;
 //# sourceMappingURL=index.d.ts.map

@@ -62,10 +62,10 @@ export interface RequestContext {
   requestId: string;
   startTime: Date;
   layerTimings: Record<string, number>;
-  routingDecision?: any;
-  transformations: any[];
-  errors: any[];
-  metadata: any;
+  routingDecision?: unknown;
+  transformations: unknown[];
+  errors: Error[];
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -114,8 +114,8 @@ export interface PipelineStats {
   successfulRequests: number;
   failedRequests: number;
   averageResponseTime: number;
-  layerHealth: Record<string, any>;
-  routerStats: any;
+  layerHealth: Record<string, unknown>;
+  routerStats: Record<string, unknown>;
 }
 
 /**
@@ -132,7 +132,7 @@ export class PipelineRequestProcessor extends EventEmitter {
   private pipelineDebugRecorder: PipelineDebugRecorder;
   private httpRequestHandler: HttpRequestHandler;
   private pipelineLayersProcessor: PipelineLayersProcessor;
-  private pipelineLayersAPIProcessor: any; // PipelineLayersAPIProcessor类型在后续定义
+  private pipelineLayersAPIProcessor: unknown; // PipelineLayersAPIProcessor类型在后续定义
   private blacklistManager: PrecisePipelineBlacklistManager;
   private intelligentErrorRecoveryManager: IntelligentErrorRecoveryManager;
   private errorCoordinationCenter: ErrorCoordinationCenterImpl;

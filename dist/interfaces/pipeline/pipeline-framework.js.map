@@ -1,1 +1,1 @@
-{"version":3,"file":"pipeline-framework.js","sourceRoot":"","sources":["../../../src/interfaces/pipeline/pipeline-framework.ts"],"names":[],"mappings":";AAAA;;;;;;GAMG;;;AAEH;;GAEG;AACH,uDAAkF;AAKzE,2FALA,wBAAU,OAKA"}
+{"version":3,"file":"pipeline-framework.js","sourceRoot":"","sources":["../../../src/interfaces/pipeline/pipeline-framework.ts"],"names":[],"mappings":";AAAA;;;;;;GAMG;;;AAEH;;GAEG;AACH,uDAAkF;AAKzE,2FALA,wBAAU,OAKA;AAohBnB,6DAA6D;AAC7D,uDAA4D;AAC/C,QAAA,8BAA8B,GAAG,IAAI,iCAAmB,CACnE,2BAA2B,EAC3B,+BAA+B,EAC/B,wBAAU,CAAC,QAAQ,EACnB,eAAe,CAChB,CAAC"}

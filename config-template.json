@@ -1,0 +1,53 @@
+{
+  "version": "4.0",
+  "templateVersion": "1.0.0",
+  "description": "RCC v4.0 标准配置模板",
+  "lastUpdated": "2025-09-05T00:00:00Z",
+  "Providers": [
+    {
+      "name": "example-provider",
+      "protocol": "openai",
+      "api_base_url": "https://api.example.com/v1",
+      "api_key": "your-api-key-here",
+      "maxTokens": 32768,
+      "models": [
+        {
+          "name": "example-model-1",
+          "maxTokens": 131072
+        },
+        {
+          "name": "example-model-2"
+        },
+        "example-model-3"
+      ],
+      "serverCompatibility": {
+        "use": "example-provider",
+        "options": {
+          "enhanceTool": true
+        }
+      }
+    }
+  ],
+  "router": {
+    "default": "example-provider,example-model-1"
+  },
+  "MultiKeyConfig": {
+    "rotationStrategy": "round-robin",
+    "keyFailureHandling": {
+      "maxRetries": 3,
+      "retryDelay": 1000,
+      "blacklistDuration": 300000
+    },
+    "loadBalancing": {
+      "enabled": true,
+      "trackUsage": true,
+      "resetInterval": 3600000
+    }
+  },
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  "apiKey": "rcc4-proxy-key"
+}

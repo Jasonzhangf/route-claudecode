@@ -8,7 +8,7 @@
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ToolBuilder = exports.MessageBuilder = exports.StandardResponseBuilder = exports.StandardRequestBuilder = void 0;
+exports.interfacesModuleAdapter = exports.ToolBuilder = exports.MessageBuilder = exports.StandardResponseBuilder = exports.StandardRequestBuilder = void 0;
 var request_1 = require("./standard/request");
 Object.defineProperty(exports, "StandardRequestBuilder", { enumerable: true, get: function () { return request_1.StandardRequestBuilder; } });
 var response_1 = require("./standard/response");
@@ -17,4 +17,7 @@ var message_1 = require("./standard/message");
 Object.defineProperty(exports, "MessageBuilder", { enumerable: true, get: function () { return message_1.MessageBuilder; } });
 var tool_1 = require("./standard/tool");
 Object.defineProperty(exports, "ToolBuilder", { enumerable: true, get: function () { return tool_1.ToolBuilder; } });
+// ModuleInterface implementation for architecture compliance
+const base_module_1 = require("./module/base-module");
+exports.interfacesModuleAdapter = new base_module_1.SimpleModuleAdapter('interfaces-module', 'Core Interfaces Module', base_module_1.ModuleType.VALIDATOR, '4.0.0');
 //# sourceMappingURL=index.js.map

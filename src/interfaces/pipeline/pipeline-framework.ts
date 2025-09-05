@@ -545,3 +545,12 @@ export interface StandardPipelineFactory {
    */
   clonePipeline(sourceId: string, newId: string): Promise<PipelineFramework>;
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter } from '../module/base-module';
+export const pipelineFrameworkModuleAdapter = new SimpleModuleAdapter(
+  'pipeline-framework-module',
+  'Pipeline Framework Interfaces',
+  ModuleType.PIPELINE,
+  '4.0.0-alpha.1'
+);

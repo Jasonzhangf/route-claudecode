@@ -1,16 +1,14 @@
 /**
- * 模块系统入口文件
+ * 模块系统 - 零接口暴露门面
  *
- * @author Jason Zhang
+ * 严格遵循零接口暴露设计原则，只导出最必要的模块接口
+ *
+ * @version 4.0.0-zero-interface
+ * @author Jason Zhang - Zero Interface Refactored
  */
 
-// 核心模块实现
-export * from './base-module-impl';
-
-// 核心功能模块
-export * from './providers';
-export * from './validators';
-export * from './routing';
+// 核心模块适配器 - 只导出公共接口
+export type { ModuleInterface, ModuleType } from '../interfaces/module/base-module';
 
 // Transformers - 选择性导出避免冲突
 export {
@@ -55,3 +53,12 @@ export interface ModulesModuleInterface {
   registerModule(module: any): void;
   getModule(moduleId: string): any;
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from '../interfaces/module/base-module';
+export const modulesModuleAdapter = new SimpleModuleAdapter(
+  'modules-module',
+  'Core Modules System',
+  ModuleType.PIPELINE,
+  MODULES_MODULE_VERSION
+);

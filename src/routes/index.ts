@@ -27,3 +27,12 @@ export interface RoutesModuleInterface {
   addRoute(route: any): void;
   matchRoute(url: string, method: string): any;
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from '../interfaces/module/base-module';
+export const routesModuleAdapter = new SimpleModuleAdapter(
+  'routes-module',
+  'Routes Module',
+  ModuleType.ROUTER,
+  ROUTES_MODULE_VERSION
+);

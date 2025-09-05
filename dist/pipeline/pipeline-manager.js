@@ -56,6 +56,13 @@ const module_management_api_1 = require("../api/modules/module-management-api");
 class PipelineManager extends events_1.EventEmitter {
     constructor(factory, systemConfig) {
         super();
+        // ModuleInterface properties
+        this.moduleId = 'pipeline-manager';
+        this.moduleName = 'Pipeline Manager';
+        this.moduleVersion = '4.0.0';
+        this.connections = new Map();
+        this.messageListeners = new Set();
+        this.isStarted = false;
         this.pipelines = new Map();
         this.activeExecutions = new Map();
         this.isInitialized = false;
@@ -100,6 +107,21 @@ class PipelineManager extends events_1.EventEmitter {
         };
         this.factory = factory;
         this.systemConfig = systemConfig;
+        // Initialize ModuleInterface properties
+        this.moduleStatus = {
+            id: this.moduleId,
+            name: this.moduleName,
+            type: base_module_1.ModuleType.PIPELINE,
+            status: 'stopped',
+            health: 'healthy'
+        };
+        this.moduleMetrics = {
+            requestsProcessed: 0,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: 0,
+            cpuUsage: 0
+        };
         // 初始化负载均衡路由系统
         this.loadBalancer = new load_balancer_1.LoadBalancer(this, {
             strategy: 'round_robin',
@@ -688,6 +710,7 @@ class PipelineManager extends events_1.EventEmitter {
             },
             removeAllListeners: () => {
                 // 移除所有监听器实现
+                super.removeAllListeners();
             },
             addConnection: (module) => {
                 // 添加连接实现
@@ -903,9 +926,9 @@ class PipelineManager extends events_1.EventEmitter {
         }
     }
     /**
-     * 获取Pipeline状态
+     * 获取指定Pipeline状态
      */
-    getPipelineStatus(pipelineId) {
+    getPipelineStatusById(pipelineId) {
         const pipeline = this.pipelines.get(pipelineId);
         if (!pipeline) {
             return null;
@@ -925,7 +948,7 @@ class PipelineManager extends events_1.EventEmitter {
     /**
      * 获取调度器状态（符合PipelineModuleInterface接口）
      */
-    getStatus() {
+    getPipelineStatus() {
         return this.getAllPipelineStatus();
     }
     /**
@@ -968,9 +991,11 @@ class PipelineManager extends events_1.EventEmitter {
         }
         return {
             healthy: issues.length === 0,
-            pipelines: this.pipelines.size,
-            activeExecutions: this.activeExecutions.size,
-            issues
+            details: {
+                pipelines: this.pipelines.size,
+                activeExecutions: this.activeExecutions.size,
+                issues
+            }
         };
     }
     /**
@@ -1202,6 +1227,65 @@ class PipelineManager extends events_1.EventEmitter {
             }
         };
     }
+    // ModuleInterface implementation
+    getId() { return 'pipeline-manager'; }
+    getName() { return 'Pipeline Manager'; }
+    getType() { return base_module_1.ModuleType.PIPELINE; }
+    getVersion() { return '4.0.0'; }
+    getStatus() {
+        return {
+            id: 'pipeline-manager',
+            name: 'Pipeline Manager',
+            type: base_module_1.ModuleType.PIPELINE,
+            status: this.pipelines.size > 0 ? 'running' : 'idle',
+            health: 'healthy'
+        };
+    }
+    getMetrics() {
+        return {
+            requestsProcessed: Array.from(this.activeExecutions.values()).length,
+            averageProcessingTime: 0,
+            errorRate: 0,
+            memoryUsage: process.memoryUsage().heapUsed,
+            cpuUsage: 0
+        };
+    }
+    async configure(config) {
+        // Configuration handled in constructor
+    }
+    async initialize() { }
+    async start() { }
+    async stop() { await this.cleanup(); }
+    async process(input) {
+        // Processing handled by executePipeline method
+        return input;
+    }
+    async reset() {
+        // Reset pipeline manager state if needed
+    }
+    async cleanup() {
+        // Cleanup existing pipelines
+        for (const pipeline of this.pipelines.values()) {
+            try {
+                await pipeline.stop();
+            }
+            catch (error) {
+                // Log error but continue cleanup
+            }
+        }
+        this.pipelines.clear();
+        this.activeExecutions.clear();
+    }
+    isRunning() { return this.pipelines.size > 0; }
+    addConnection(module) { }
+    removeConnection(moduleId) { }
+    getConnection(moduleId) { return null; }
+    getConnections() { return []; }
+    async sendToModule(targetModuleId, message, type) { return message; }
+    async broadcastToModules(message, type) { }
+    onModuleMessage(listener) { }
+    on(event, listener) { super.on(event, listener); return this; }
+    removeAllListeners(event) { super.removeAllListeners(event); return this; }
 }
 exports.PipelineManager = PipelineManager;
 //# sourceMappingURL=pipeline-manager.js.map

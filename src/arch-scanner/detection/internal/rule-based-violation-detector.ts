@@ -73,12 +73,16 @@ export class RuleBasedViolationDetector implements ViolationDetectorInterface {
       return violations; // 跳过内部实现文件
     }
     
-    // 检查是否实现了ModuleInterface
+    // 检查是否实现了ModuleInterface或使用了SimpleModuleAdapter
     const hasModuleInterface = moduleInfo.implementations.some(impl => 
       impl.implements?.includes('ModuleInterface')
     );
     
-    if (!hasModuleInterface) {
+    const hasModuleAdapter = moduleInfo.exports.some(exp => 
+      exp.name.includes('ModuleAdapter') || exp.name.includes('moduleAdapter')
+    );
+    
+    if (!hasModuleInterface && !hasModuleAdapter) {
       violations.push({
         id: this.generateViolationId(),
         ruleId: 'MODULE_INTERFACE_REQUIRED',
@@ -88,7 +92,7 @@ export class RuleBasedViolationDetector implements ViolationDetectorInterface {
         line: 1,
         column: 1,
         context: {
-          suggestion: `Add "implements ModuleInterface" to the main ${moduleInfo.type} module class`
+          suggestion: `Add "implements ModuleInterface" to the main ${moduleInfo.type} module class or use SimpleModuleAdapter`
         }
       });
     }

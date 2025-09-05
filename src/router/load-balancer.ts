@@ -190,7 +190,7 @@ export class LoadBalancer extends EventEmitter {
 
     // 获取该category的所有流水线ID
     const categoryPipelines = routingTable.pipelinesGroupedByVirtualModel[virtualModel]
-      .map((pipeline: any) => pipeline.pipelineId);
+      .map((pipeline: { pipelineId: string }) => pipeline.pipelineId);
 
     // 过滤出健康的可用流水线（排除黑名单、临时阻塞和指定排除的）
     const healthyPipelines = categoryPipelines.filter((pipelineId: string) => {
@@ -630,13 +630,14 @@ export class LoadBalancer extends EventEmitter {
 
   // === 事件处理器 ===
 
-  private onPipelineSystemInitialized(data: any): void {
+  private onPipelineSystemInitialized(data: { systemId: string; pipelines: string[]; timestamp: string; totalPipelines?: number; createdPipelines?: string[] }): void {
     secureLogger.info('🔧 Pipeline system initialized, updating load balancer', {
-      totalPipelines: data.totalPipelines
+      totalPipelines: data.totalPipelines || data.pipelines.length
     });
 
     // 初始化所有流水线的权重信息
-    for (const pipelineId of data.createdPipelines) {
+    const pipelinesToInit = data.createdPipelines || data.pipelines;
+    for (const pipelineId of pipelinesToInit) {
       this.pipelineWeights.set(pipelineId, {
         pipelineId,
         weight: 100,
@@ -648,13 +649,13 @@ export class LoadBalancer extends EventEmitter {
     }
   }
 
-  private onExecutionCompleted(data: any): void {
+  private onExecutionCompleted(data: { pipelineId: string; responseTime: number; success: boolean; timestamp: string; executionResult?: any }): void {
     if (!this.config.enableMetrics) {
       return;
     }
 
-    const pipelineId = data.executionResult.executionRecord.pipelineId;
-    const responseTime = data.executionResult.performance.totalTime;
+    const pipelineId = data.executionResult?.executionRecord?.pipelineId || data.pipelineId;
+    const responseTime = data.executionResult?.performance?.totalTime || data.responseTime;
 
     // 更新响应时间历史
     const history = this.responseTimeHistory.get(pipelineId) || [];
@@ -674,12 +675,12 @@ export class LoadBalancer extends EventEmitter {
     }
   }
 
-  private onExecutionFailed(data: any): void {
+  private onExecutionFailed(data: { pipelineId: string; error: string; timestamp: string; errorType?: string; executionResult?: any }): void {
     if (!this.config.enableMetrics) {
       return;
     }
 
-    const pipelineId = data.executionResult.executionRecord.pipelineId;
+    const pipelineId = data.executionResult?.executionRecord?.pipelineId || data.pipelineId;
     
     // 更新错误计数
     const currentErrorCount = this.errorCounts.get(pipelineId) || 0;

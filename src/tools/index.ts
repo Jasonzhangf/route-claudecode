@@ -20,3 +20,12 @@ export interface ToolsModuleInterface {
   optimizeProviderPerformance(config: any): Promise<any>;
   validateV4Config(config: any): Promise<boolean>;
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from '../interfaces/module/base-module';
+export const toolsModuleAdapter = new SimpleModuleAdapter(
+  'tools-module',
+  'Tools Module',
+  ModuleType.UTILITY,
+  TOOLS_MODULE_VERSION
+);

@@ -158,8 +158,9 @@ export interface Usage {
   total_tokens: number;
 }
 
-// Import ModuleType from base module
+// 导入标准ModuleType定义 - 避免重复定义
 import { ModuleType } from '../interfaces/module/base-module';
+export { ModuleType };
 
 // 模块接口类型
 export interface ModuleInterface {
@@ -171,9 +172,6 @@ export interface ModuleInterface {
   validate(input: any): Promise<ValidationResult>;
   getMetrics(): ModuleMetrics;
 }
-
-// 导入标准ModuleType定义
-export { ModuleType } from '../interfaces/module/base-module';
 
 export interface ValidationResult {
   valid: boolean;
@@ -191,3 +189,12 @@ export interface ModuleMetrics {
 export interface TypesModuleInterface {
   version: string;
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter } from '../interfaces/module/base-module';
+export const typesModuleAdapter = new SimpleModuleAdapter(
+  'types-module',
+  'Core Types Module',
+  ModuleType.VALIDATOR,
+  TYPES_MODULE_VERSION
+);

@@ -35,18 +35,18 @@ export declare class PipelineDebugSystemFactory {
     /**
      * 创建完整的Pipeline调试系统
      */
-    static createDebugSystem(pipelineManager: any, pipelineRouter?: any, loadBalancer?: any): {
+    static createDebugSystem(pipelineManager: unknown, pipelineRouter?: unknown, loadBalancer?: unknown): {
         pipelineDebug: PipelineDebugSystem;
         requestTest: RequestTestSystem;
     };
     /**
      * 创建基础Pipeline调试系统
      */
-    static createPipelineDebugSystem(pipelineManager: any): PipelineDebugSystem;
+    static createPipelineDebugSystem(pipelineManager: unknown): PipelineDebugSystem;
     /**
      * 创建请求测试系统
      */
-    static createRequestTestSystem(pipelineManager: any, pipelineRouter?: any, loadBalancer?: any): RequestTestSystem;
+    static createRequestTestSystem(pipelineManager: unknown, pipelineRouter?: unknown, loadBalancer?: unknown): RequestTestSystem;
 }
 /**
  * Pipeline调试系统配置
@@ -62,4 +62,6 @@ export interface PipelineDebugConfig {
  * 默认Pipeline调试配置
  */
 export declare const DEFAULT_PIPELINE_DEBUG_CONFIG: PipelineDebugConfig;
+import { SimpleModuleAdapter } from '../interfaces/module/base-module';
+export declare const debugModuleAdapter: SimpleModuleAdapter;
 //# sourceMappingURL=index.d.ts.map

@@ -15,6 +15,13 @@ import { MergedConfig } from '../config/config-reader';
 import { PipelineRouter, RoutingTable as RouterRoutingTable } from '../router/pipeline-router';
 import { PipelineTableManager, RoutingTable as TableRoutingTable } from './pipeline-table-manager';
 import { HTTPServer } from '../server/http-server';
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+  SimpleModuleAdapter,
+} from '../interfaces/module/base-module';
 import { 
   DEFAULT_TIMEOUTS,
   DEFAULT_RETRY_CONFIG,
@@ -70,7 +77,7 @@ export interface ServerMetrics {
  * Pipeline服务器管理器
  * 负责服务器的完整生命周期管理
  */
-export class PipelineServerManager extends EventEmitter {
+export class PipelineServerManager extends EventEmitter implements ModuleInterface {
   private config: MergedConfig;
   private tableManager: PipelineTableManager;
   private server: HTTPServer | null = null;
@@ -80,11 +87,18 @@ export class PipelineServerManager extends EventEmitter {
   private isRunning: boolean = false;
   private startTime: number = 0;
   private metrics: ServerMetrics;
+  private moduleAdapter: SimpleModuleAdapter;
 
   constructor(config: any) {
     super();
     this.config = config;
     this.tableManager = new PipelineTableManager(config);
+    this.moduleAdapter = new SimpleModuleAdapter(
+      'pipeline-server-manager',
+      'Pipeline Server Manager',
+      ModuleType.SERVER,
+      '4.0.0'
+    );
     
     this.metrics = {
       uptime: 0,
@@ -95,6 +109,91 @@ export class PipelineServerManager extends EventEmitter {
       routerStats: {},
       memoryUsage: 0,
     };
+  }
+
+  // ModuleInterface implementations
+  getId(): string { return this.moduleAdapter.getId(); }
+  getName(): string { return this.moduleAdapter.getName(); }
+  getType(): ModuleType { return this.moduleAdapter.getType(); }
+  getVersion(): string { return this.moduleAdapter.getVersion(); }
+  getStatus(): ModuleStatus { return this.moduleAdapter.getStatus(); }
+  getMetrics(): ModuleMetrics { return this.moduleAdapter.getMetrics(); }
+
+  async configure(config: any): Promise<void> {
+    await this.moduleAdapter.configure(config);
+    this.config = { ...this.config, ...config };
+  }
+
+  async start(): Promise<void> {
+    await this.moduleAdapter.start();
+    await this.initializeServer();
+    await this.startServer();
+  }
+
+  async stop(): Promise<void> {
+    await this.stopServer();
+    await this.moduleAdapter.stop();
+  }
+
+  async reset(): Promise<void> {
+    await this.moduleAdapter.reset();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    const baseHealth = await this.moduleAdapter.healthCheck();
+    const serverHealth = await this.getHealthStatus();
+    
+    return {
+      healthy: baseHealth.healthy && serverHealth.healthy,
+      details: {
+        ...baseHealth.details,
+        server: serverHealth
+      }
+    };
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.moduleAdapter.addConnection(module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.moduleAdapter.removeConnection(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.moduleAdapter.getConnection(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return this.moduleAdapter.getConnections();
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    return this.moduleAdapter.sendToModule(targetModuleId, message, type);
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    await this.moduleAdapter.broadcastToModules(message, type);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.moduleAdapter.onModuleMessage(listener);
+  }
+
+  on(event: string, listener: (...args: any[]) => void): this {
+    super.on(event, listener);
+    this.moduleAdapter.on(event, listener);
+    return this;
+  }
+
+  removeAllListeners(): this {
+    this.moduleAdapter.removeAllListeners();
+    super.removeAllListeners();
+    return this;
+  }
+
+  async process(input: any): Promise<any> {
+    return this.moduleAdapter.process(input);
   }
 
   /**
@@ -316,7 +415,7 @@ export class PipelineServerManager extends EventEmitter {
         const serverHealth = await this.server[SERVER_METHODS.HEALTH_CHECK]();
         if (!serverHealth.healthy) {
           healthy = false;
-          errors.push(`${ERROR_MESSAGES.SERVER_HEALTH_CHECK_FAILED}: ${serverHealth.error || 'unknown error'}`);
+          errors.push(`${ERROR_MESSAGES.SERVER_HEALTH_CHECK_FAILED}: ${serverHealth.details ? JSON.stringify(serverHealth.details) : 'unknown error'}`);
         }
       } catch (error) {
         healthy = false;
@@ -733,6 +832,9 @@ export class PipelineServerManager extends EventEmitter {
       if (this.tableManager) {
         this.tableManager.clearCache();
       }
+
+      // 清理模块适配器
+      await this.moduleAdapter.cleanup();
 
       // 重置状态
       this.server = null;

@@ -132,6 +132,7 @@ export interface Usage {
     total_tokens: number;
 }
 import { ModuleType } from '../interfaces/module/base-module';
+export { ModuleType };
 export interface ModuleInterface {
     id: string;
     name: string;
@@ -141,7 +142,6 @@ export interface ModuleInterface {
     validate(input: any): Promise<ValidationResult>;
     getMetrics(): ModuleMetrics;
 }
-export { ModuleType } from '../interfaces/module/base-module';
 export interface ValidationResult {
     valid: boolean;
     errors: string[];
@@ -155,4 +155,6 @@ export interface ModuleMetrics {
 export interface TypesModuleInterface {
     version: string;
 }
+import { SimpleModuleAdapter } from '../interfaces/module/base-module';
+export declare const typesModuleAdapter: SimpleModuleAdapter;
 //# sourceMappingURL=index.d.ts.map

@@ -14,6 +14,7 @@ import { secureLogger } from '../utils/secure-logger';
 import { VirtualModelMapper } from './virtual-model-mapping';
 import { PipelineTableLoader } from './pipeline-table-loader';
 import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
+import type { RoutingRequest } from './router-interface';
 
 export interface PipelineRoute {
   routeId: string;
@@ -176,7 +177,7 @@ export class PipelineRouter {
    * 将输入模型映射到目标模型类型 - 内部方法
    * 使用基于算法的5个有意义的模型分类
    */
-  private _mapToVirtualModel(inputModel: string, request?: any): string {
+  private _mapToVirtualModel(inputModel: string, request?: RoutingRequest): string {
     try {
       const targetModel = VirtualModelMapper.mapToVirtual(inputModel, request || {});
       return targetModel;

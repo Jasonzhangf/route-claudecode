@@ -19,7 +19,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ROUTES_MODULE_VERSION = void 0;
+exports.routesModuleAdapter = exports.ROUTES_MODULE_VERSION = void 0;
 __exportStar(require("./route-manager"), exports);
 __exportStar(require("./health-routes"), exports);
 __exportStar(require("./debug-routes"), exports);
@@ -35,4 +35,7 @@ __exportStar(require("./param-validator"), exports);
 __exportStar(require("./route-matcher"), exports);
 // 模块版本信息
 exports.ROUTES_MODULE_VERSION = '4.0.0-alpha.2';
+// ModuleInterface implementation for architecture compliance
+const base_module_1 = require("../interfaces/module/base-module");
+exports.routesModuleAdapter = new base_module_1.SimpleModuleAdapter('routes-module', 'Routes Module', base_module_1.ModuleType.ROUTER, exports.ROUTES_MODULE_VERSION);
 //# sourceMappingURL=index.js.map

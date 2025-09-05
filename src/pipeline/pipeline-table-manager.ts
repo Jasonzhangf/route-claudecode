@@ -14,6 +14,13 @@ import { MergedConfig } from '../config/config-reader';
 import { ExpandedRouting, ExpandedProvider } from '../config/provider-expander';
 import { PipelineError } from '../types/error';
 import { ZeroFallbackErrorFactory } from '../interfaces/core/zero-fallback-errors';
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+  SimpleModuleAdapter,
+} from '../interfaces/module/base-module';
 import { 
   DEFAULT_ENDPOINTS,
   DEFAULT_TIMEOUTS,
@@ -100,14 +107,108 @@ export interface PipelineDefinition {
  * Pipeline表管理器
  * 负责生成和管理流水线路由表
  */
-export class PipelineTableManager {
+export class PipelineTableManager implements ModuleInterface {
   private config: MergedConfig;
   private cachedTable: RoutingTable | null = null;
   private tableGeneratedAt: number = 0;
   private cacheValidityMs: number = 300000; // 5分钟缓存有效期
+  private moduleAdapter: SimpleModuleAdapter;
 
   constructor(config: MergedConfig) {
     this.config = config;
+    this.moduleAdapter = new SimpleModuleAdapter(
+      'pipeline-table-manager',
+      'Pipeline Table Manager',
+      ModuleType.PIPELINE,
+      '4.0.0'
+    );
+  }
+
+  // ModuleInterface implementations
+  getId(): string { return this.moduleAdapter.getId(); }
+  getName(): string { return this.moduleAdapter.getName(); }
+  getType(): ModuleType { return this.moduleAdapter.getType(); }
+  getVersion(): string { return this.moduleAdapter.getVersion(); }
+  getStatus(): ModuleStatus { return this.moduleAdapter.getStatus(); }
+  getMetrics(): ModuleMetrics { return this.moduleAdapter.getMetrics(); }
+
+  async configure(config: any): Promise<void> {
+    await this.moduleAdapter.configure(config);
+    this.config = { ...this.config, ...config };
+  }
+
+  async start(): Promise<void> {
+    await this.moduleAdapter.start();
+  }
+
+  async stop(): Promise<void> {
+    await this.moduleAdapter.stop();
+  }
+
+  async reset(): Promise<void> {
+    await this.moduleAdapter.reset();
+    this.clearCache();
+  }
+
+  async cleanup(): Promise<void> {
+    await this.moduleAdapter.cleanup();
+    this.clearCache();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    const baseHealth = await this.moduleAdapter.healthCheck();
+    
+    return {
+      healthy: baseHealth.healthy,
+      details: {
+        ...baseHealth.details,
+        cacheStatus: {
+          hasCachedTable: !!this.cachedTable,
+          cacheAge: this.cachedTable ? Date.now() - this.tableGeneratedAt : null,
+          cacheValid: this.cachedTable ? (Date.now() - this.tableGeneratedAt) < this.cacheValidityMs : false
+        }
+      }
+    };
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.moduleAdapter.addConnection(module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.moduleAdapter.removeConnection(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.moduleAdapter.getConnection(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return this.moduleAdapter.getConnections();
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    return this.moduleAdapter.sendToModule(targetModuleId, message, type);
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    await this.moduleAdapter.broadcastToModules(message, type);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.moduleAdapter.onModuleMessage(listener);
+  }
+
+  on(event: string, listener: (...args: any[]) => void): void {
+    this.moduleAdapter.on(event, listener);
+  }
+
+  removeAllListeners(): void {
+    this.moduleAdapter.removeAllListeners();
+  }
+
+  async process(input: any): Promise<any> {
+    return this.moduleAdapter.process(input);
   }
 
   /**

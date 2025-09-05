@@ -110,4 +110,6 @@ export declare class ModuleRegistry extends EventEmitter {
      */
     private hasCyclicDependency;
 }
+import { SimpleModuleAdapter } from '../interfaces/module/base-module';
+export declare const moduleRegistryAdapter: SimpleModuleAdapter;
 //# sourceMappingURL=module-registry.d.ts.map

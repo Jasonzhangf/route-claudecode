@@ -5,9 +5,8 @@
  *
  * @author Jason Zhang
  */
-export * from './session';
-export * from './http';
-export * from './client-manager';
+export type { ClientSession } from './session';
+export type { HttpClient } from './http';
 export declare const CLIENT_MODULE_VERSION = "4.0.0-alpha.2";
 import { ClientSession, SessionManager, SessionError } from './session';
 import { HttpClient, HttpError } from './http';
@@ -40,7 +39,7 @@ export interface ClientModuleConfig {
 /**
  * 客户端模块主类
  */
-export declare class ClientModule {
+export declare class ClientModule implements ModuleInterface {
     private config;
     private errorHandler;
     readonly version = "4.0.0-alpha.2";
@@ -49,6 +48,12 @@ export declare class ClientModule {
     private proxy;
     private envExporter;
     private initialized;
+    private moduleId;
+    private moduleName;
+    private moduleStatus;
+    private moduleMetrics;
+    private moduleConnections;
+    private moduleMessageListeners;
     constructor(config: any, errorHandler: ErrorHandler);
     /**
      * 初始化模块
@@ -94,6 +99,30 @@ export declare class ClientModule {
      * 清理模块资源
      */
     cleanup(): Promise<void>;
+    getId(): string;
+    getName(): string;
+    getType(): ModuleType;
+    getVersion(): string;
+    getStatus(): ModuleStatus;
+    getMetrics(): ModuleMetrics;
+    configure(config: any): Promise<void>;
+    start(): Promise<void>;
+    stop(): Promise<void>;
+    process(input: any): Promise<any>;
+    reset(): Promise<void>;
+    healthCheck(): Promise<{
+        healthy: boolean;
+        details: any;
+    }>;
+    addConnection(module: ModuleInterface): void;
+    removeConnection(moduleId: string): void;
+    getConnection(moduleId: string): ModuleInterface | undefined;
+    getConnections(): ModuleInterface[];
+    sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+    broadcastToModules(message: any, type?: string): Promise<void>;
+    onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+    on(event: string, listener: (...args: any[]) => void): void;
+    removeAllListeners(): void;
 }
 /**
  * 客户端工厂函数
@@ -105,4 +134,6 @@ export declare function createClientModule(config: ClientModuleConfig, errorHand
 export declare function createClient(config?: ClientModuleConfig): Promise<ClientModule>;
 export { SessionError, HttpError };
 export { CLIError } from '../types/error';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics, SimpleModuleAdapter } from '../interfaces/module/base-module';
+export declare const clientModuleAdapter: SimpleModuleAdapter;
 //# sourceMappingURL=index.d.ts.map

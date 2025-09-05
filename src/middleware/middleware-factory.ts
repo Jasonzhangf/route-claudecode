@@ -19,6 +19,22 @@ import {
 
 import { IMiddlewareFunction } from '../interfaces/core/server-interface';
 
+// 中间件配置类型
+export interface MiddlewareConfig {
+  cors?: CorsOptions;
+  logger?: LoggerOptions;
+  auth?: AuthenticationOptions;
+  validation?: ValidationOptions;
+  rateLimit?: RateLimitOptions;
+}
+
+// 中间件选项类型
+export interface MiddlewareOptions {
+  enabled: boolean;
+  order?: number;
+  config?: any;
+}
+
 // 导入具体的中间件实现
 import { cors } from './cors';
 import { logger } from './logger';

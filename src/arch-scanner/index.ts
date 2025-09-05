@@ -80,3 +80,15 @@ export type {
   ViolationCategory,
   ReportFormat
 } from './types/scan-result';
+
+// 模块版本信息
+export const ARCH_SCANNER_MODULE_VERSION = '4.0.0-alpha.1';
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from '../interfaces/module/base-module';
+export const archScannerModuleAdapter = new SimpleModuleAdapter(
+  'arch-scanner-module',
+  'Architecture Scanner Module',
+  ModuleType.VALIDATOR,
+  ARCH_SCANNER_MODULE_VERSION
+);

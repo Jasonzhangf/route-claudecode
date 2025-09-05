@@ -8,6 +8,7 @@
 import { EventEmitter } from 'events';
 import { ServerStatus } from '../interfaces';
 import { IRequestContext, IResponseContext } from '../interfaces/core/server-interface';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
 /**
  * HTTP请求上下文
  */
@@ -49,7 +50,7 @@ export interface ServerConfig {
 /**
  * HTTP服务器核心类
  */
-export declare class HTTPServer extends EventEmitter {
+export declare class HTTPServer extends EventEmitter implements ModuleInterface {
     private server;
     private routes;
     private middleware;
@@ -58,7 +59,31 @@ export declare class HTTPServer extends EventEmitter {
     private startTime;
     private requestCount;
     private connections;
+    private moduleAdapter;
     constructor(config: ServerConfig);
+    getId(): string;
+    getName(): string;
+    getType(): ModuleType;
+    getVersion(): string;
+    getStatus(): ModuleStatus;
+    getMetrics(): ModuleMetrics;
+    configure(config: any): Promise<void>;
+    reset(): Promise<void>;
+    cleanup(): Promise<void>;
+    healthCheck(): Promise<{
+        healthy: boolean;
+        details: any;
+    }>;
+    addConnection(module: ModuleInterface): void;
+    removeConnection(moduleId: string): void;
+    getConnection(moduleId: string): ModuleInterface | undefined;
+    getConnections(): ModuleInterface[];
+    sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
+    broadcastToModules(message: any, type?: string): Promise<void>;
+    onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+    on(event: string, listener: (...args: any[]) => void): this;
+    removeAllListeners(): this;
+    process(input: any): Promise<any>;
     /**
      * 初始化默认路由
      */
@@ -80,9 +105,9 @@ export declare class HTTPServer extends EventEmitter {
      */
     stop(): Promise<void>;
     /**
-     * 获取服务器状态
+     * 获取服务器详细状态
      */
-    getStatus(): ServerStatus;
+    getServerStatus(): ServerStatus;
     /**
      * 处理HTTP请求
      */

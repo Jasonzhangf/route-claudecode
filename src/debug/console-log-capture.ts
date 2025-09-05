@@ -17,7 +17,7 @@ export interface ConsoleLogEntry {
   message: string;
   port?: number;
   requestId?: string;
-  args: any[];
+  args: unknown[];
 }
 
 // 用于跟踪当前请求ID的上下文
@@ -64,27 +64,27 @@ export class ConsoleLogCapture {
     this.captureEnabled = true;
     
     // 重写console方法
-    console.log = (...args: any[]) => {
+    console.log = (...args: unknown[]) => {
       this.writeLogEntry('log', args);
       this.originalConsole.log(...args);
     };
     
-    console.info = (...args: any[]) => {
+    console.info = (...args: unknown[]) => {
       this.writeLogEntry('info', args);
       this.originalConsole.info(...args);
     };
     
-    console.warn = (...args: any[]) => {
+    console.warn = (...args: unknown[]) => {
       this.writeLogEntry('warn', args);
       this.originalConsole.warn(...args);
     };
     
-    console.error = (...args: any[]) => {
+    console.error = (...args: unknown[]) => {
       this.writeLogEntry('error', args);
       this.originalConsole.error(...args);
     };
     
-    console.debug = (...args: any[]) => {
+    console.debug = (...args: unknown[]) => {
       this.writeLogEntry('debug', args);
       this.originalConsole.debug(...args);
     };
@@ -128,7 +128,7 @@ export class ConsoleLogCapture {
     return requestContext.run({ requestId, port }, fn);
   }
   
-  private writeLogEntry(level: ConsoleLogEntry['level'], args: any[]): void {
+  private writeLogEntry(level: ConsoleLogEntry['level'], args: unknown[]): void {
     const timestamp = new Date().toISOString();
     const message = args.map(arg => this.formatArgument(arg)).join(' ');
     const context = requestContext.getStore();
@@ -180,7 +180,7 @@ export class ConsoleLogCapture {
     }
   }
   
-  private formatArgument(arg: any): string {
+  private formatArgument(arg: unknown): string {
     if (typeof arg === 'string') {
       return arg;
     } else if (typeof arg === 'object') {
@@ -190,7 +190,7 @@ export class ConsoleLogCapture {
     }
   }
   
-  private safeStringify(obj: any): string {
+  private safeStringify(obj: unknown): string {
     try {
       // 简单的字符串化，避免复杂的JSON操作可能触发JQJsonHandler警告
       if (obj === null) return 'null';

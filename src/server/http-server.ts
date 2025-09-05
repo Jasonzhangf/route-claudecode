@@ -15,6 +15,13 @@ import { JQJsonHandler } from '../utils/jq-json-handler';
 import { RCCError } from '../types/error';
 
 import { IRequestContext, IResponseContext, HTTPMethod } from '../interfaces/core/server-interface';
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+  SimpleModuleAdapter,
+} from '../interfaces/module/base-module';
 
 /**
  * HTTP请求上下文
@@ -65,7 +72,7 @@ export interface ServerConfig {
 /**
  * HTTP服务器核心类
  */
-export class HTTPServer extends EventEmitter {
+export class HTTPServer extends EventEmitter implements ModuleInterface {
   private server: http.Server | null = null;
   private routes: Map<string, Route[]> = new Map();
   private middleware: MiddlewareFunction[] = [];
@@ -74,6 +81,7 @@ export class HTTPServer extends EventEmitter {
   private startTime: Date | null = null;
   private requestCount: number = 0;
   private connections: Set<any> = new Set();
+  private moduleAdapter: SimpleModuleAdapter;
 
   constructor(config: ServerConfig) {
     super();
@@ -85,7 +93,99 @@ export class HTTPServer extends EventEmitter {
       ...config,
     };
 
+    this.moduleAdapter = new SimpleModuleAdapter(
+      'http-server',
+      'HTTP Server',
+      ModuleType.SERVER,
+      '4.0.0'
+    );
+
     this.initializeRoutes();
+  }
+
+  // ModuleInterface implementations
+  getId(): string { return this.moduleAdapter.getId(); }
+  getName(): string { return this.moduleAdapter.getName(); }
+  getType(): ModuleType { return this.moduleAdapter.getType(); }
+  getVersion(): string { return this.moduleAdapter.getVersion(); }
+  getStatus(): ModuleStatus { return this.moduleAdapter.getStatus(); }
+  getMetrics(): ModuleMetrics { return this.moduleAdapter.getMetrics(); }
+
+  async configure(config: any): Promise<void> {
+    await this.moduleAdapter.configure(config);
+    this.config = { ...this.config, ...config };
+  }
+
+  async reset(): Promise<void> {
+    await this.moduleAdapter.reset();
+    this.requestCount = 0;
+  }
+
+  async cleanup(): Promise<void> {
+    await this.moduleAdapter.cleanup();
+    await this.stop();
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    const baseHealth = await this.moduleAdapter.healthCheck();
+    
+    return {
+      healthy: baseHealth.healthy && this.isRunning,
+      details: {
+        ...baseHealth.details,
+        server: {
+          running: this.isRunning,
+          uptime: this.startTime ? Date.now() - this.startTime.getTime() : 0,
+          requestCount: this.requestCount,
+          connections: this.connections.size,
+          routes: this.routes.size
+        }
+      }
+    };
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.moduleAdapter.addConnection(module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.moduleAdapter.removeConnection(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.moduleAdapter.getConnection(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return this.moduleAdapter.getConnections();
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    return this.moduleAdapter.sendToModule(targetModuleId, message, type);
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    await this.moduleAdapter.broadcastToModules(message, type);
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.moduleAdapter.onModuleMessage(listener);
+  }
+
+  on(event: string, listener: (...args: any[]) => void): this {
+    super.on(event, listener);
+    this.moduleAdapter.on(event, listener);
+    return this;
+  }
+
+  removeAllListeners(): this {
+    this.moduleAdapter.removeAllListeners();
+    super.removeAllListeners();
+    return this;
+  }
+
+  async process(input: any): Promise<any> {
+    return this.moduleAdapter.process(input);
   }
 
   /**
@@ -258,9 +358,9 @@ export class HTTPServer extends EventEmitter {
   }
 
   /**
-   * 获取服务器状态
+   * 获取服务器详细状态
    */
-  getStatus(): ServerStatus {
+  getServerStatus(): ServerStatus {
     return {
       isRunning: this.isRunning,
       port: this.config.port,
@@ -711,7 +811,7 @@ export class HTTPServer extends EventEmitter {
     // 详细状态端点
     this.addRoute('GET', '/status', async (req, res) => {
       try {
-        const serverStatus = this.getStatus();
+        const serverStatus = this.getServerStatus();
         const health = this.performHealthChecks();
 
         res.body = {
@@ -836,7 +936,7 @@ export class HTTPServer extends EventEmitter {
    * 处理状态请求
    */
   private async handleStatus(req: RequestContext, res: ResponseContext): Promise<void> {
-    res.body = this.getStatus();
+    res.body = this.getServerStatus();
   }
 
   /**

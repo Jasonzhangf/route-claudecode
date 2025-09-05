@@ -6,6 +6,7 @@
  * @author Jason Zhang
  */
 
+import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
 import { JQJsonHandler } from '../utils/jq-json-handler';
 import { ConfigReader, MergedConfig } from './config-reader';
@@ -21,10 +22,16 @@ import {
   ConfigLoadOptions,
 } from './config-types';
 import { LoaderOptions } from '../interfaces/router/config-manager-interfaces';
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+} from '../interfaces/module/base-module';
 
 // Simple type for backward compatibility
 interface LoadResult {
-  config?: any;
+  config?: unknown;
   loadTime?: number;
   success?: boolean;
   fromCache?: boolean;
@@ -64,14 +71,14 @@ export interface ConfigChangeEvent {
   type: 'loaded' | 'reloaded' | 'validated' | 'error';
   configDir: string;
   timestamp: Date;
-  data?: any;
+  data?: unknown;
   error?: Error;
 }
 
 /**
  * 配置管理器
  */
-export class ConfigManager {
+export class ConfigManager extends EventEmitter implements ModuleInterface {
   private configReader: ConfigReader;
   private validator: ConfigValidator;
   private transformer: ConfigTransformer;
@@ -79,9 +86,21 @@ export class ConfigManager {
   private currentConfigDir: string | null = null;
   private options: ConfigManagerOptions;
   private stats: ConfigManagerStats;
-  private eventListeners: Map<string, Function[]> = new Map();
+  private eventListeners: Map<string, ((...args: unknown[]) => void)[]> = new Map();
+  
+  // ModuleInterface properties
+  private moduleId: string;
+  private moduleName: string;
+  private moduleVersion: string;
+  private moduleStatus: ModuleStatus;
+  private moduleMetrics: ModuleMetrics;
+  private connections: Map<string, ModuleInterface> = new Map();
+  private messageListeners: Set<(sourceModuleId: string, message: any, type: string) => void> = new Set();
+  private isStarted = false;
 
   constructor(options: ConfigManagerOptions = {}) {
+    super();
+    
     this.options = {
       defaultConfigDir: 'config/v4',
       autoReload: false,
@@ -103,6 +122,25 @@ export class ConfigManager {
       lastReloadTime: null,
       currentConfigDir: null,
       cacheStats: { size: 0, items: [] },
+    };
+
+    // Initialize ModuleInterface properties
+    this.moduleId = 'config-manager';
+    this.moduleName = 'Configuration Manager';
+    this.moduleVersion = '4.0.0';
+    this.moduleStatus = {
+      id: this.moduleId,
+      name: this.moduleName,
+      type: ModuleType.CONFIG,
+      status: 'stopped',
+      health: 'healthy'
+    };
+    this.moduleMetrics = {
+      requestsProcessed: 0,
+      averageProcessingTime: 0,
+      errorRate: 0,
+      memoryUsage: 0,
+      cpuUsage: 0
     };
   }
 
@@ -350,7 +388,7 @@ export class ConfigManager {
   /**
    * 处理环境变量替换
    */
-  async processEnvironmentVariables(config?: any): Promise<any> {
+  async processEnvironmentVariables(config?: unknown): Promise<unknown> {
     const targetConfig = config || this.currentConfig;
 
     if (!targetConfig) {
@@ -374,7 +412,7 @@ export class ConfigManager {
   /**
    * 清理敏感信息
    */
-  sanitizeConfig(config?: RCCv4Config, sensitiveFields?: string[]): any {
+  sanitizeConfig(config?: RCCv4Config, sensitiveFields?: string[]): unknown {
     const targetConfig = config || this.currentConfig;
 
     if (!targetConfig) {
@@ -457,27 +495,30 @@ export class ConfigManager {
   }
 
   /**
-   * 添加事件监听器
+   * 添加事件监听器 (兼容ModuleInterface)
    */
-  on(event: string, listener: Function): void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, []);
+  on(event: string | symbol, listener: (...args: unknown[]) => void): this {
+    super.on(event, listener);
+    if (!this.eventListeners.has(event.toString())) {
+      this.eventListeners.set(event.toString(), []);
     }
-
-    this.eventListeners.get(event)!.push(listener);
+    this.eventListeners.get(event.toString())!.push(listener);
+    return this;
   }
 
   /**
    * 移除事件监听器
    */
-  off(event: string, listener: Function): void {
-    const listeners = this.eventListeners.get(event);
+  off(event: string | symbol, listener: (...args: unknown[]) => void): this {
+    super.off(event, listener);
+    const listeners = this.eventListeners.get(event.toString());
     if (listeners) {
       const index = listeners.indexOf(listener);
       if (index > -1) {
         listeners.splice(index, 1);
       }
     }
+    return this;
   }
 
   /**
@@ -519,6 +560,17 @@ export class ConfigManager {
   private updateCacheStats(): void {
     // ConfigReader doesn't provide cache stats currently
     this.stats.cacheStats = { size: 0, items: [] };
+  }
+
+  /**
+   * 移除所有事件监听器
+   */
+  removeAllListeners(event?: string | symbol): this {
+    super.removeAllListeners(event);
+    if (!event) {
+      this.messageListeners.clear();
+    }
+    return this;
   }
 
   /**
@@ -890,17 +942,78 @@ export class ConfigManager {
   /**
    * 清理资源
    */
-  cleanup(): void {
+  async cleanup(): Promise<void> {
     // ConfigReader doesn't need cleanup
 
     // 清除事件监听器
     this.eventListeners.clear();
+    this.removeAllListeners();
+
+    // 清理ModuleInterface资源
+    this.connections.clear();
+    this.messageListeners.clear();
 
     // 重置状态
     this.currentConfig = null;
     this.currentConfigDir = null;
+    this.moduleStatus.status = 'stopped';
 
     secureLogger.info('🧹 配置管理器已清理');
+  }
+
+  // ===== ModuleInterface Implementation =====
+
+  getId(): string { return this.moduleId; }
+  getName(): string { return this.moduleName; }
+  getType(): ModuleType { return ModuleType.CONFIG; }
+  getVersion(): string { return this.moduleVersion; }
+  getStatus(): ModuleStatus { return { ...this.moduleStatus }; }
+  getMetrics(): ModuleMetrics { return { ...this.moduleMetrics }; }
+
+  async configure(config: any): Promise<void> {
+    this.options = { ...this.options, ...config };
+    this.moduleStatus.status = 'idle';
+  }
+
+  async start(): Promise<void> {
+    this.isStarted = true;
+    this.moduleStatus.status = 'running';
+  }
+
+  async stop(): Promise<void> {
+    this.isStarted = false;
+    this.moduleStatus.status = 'stopped';
+  }
+
+  async process(input: any): Promise<any> {
+    this.moduleMetrics.requestsProcessed++;
+    this.moduleStatus.lastActivity = new Date();
+    if (typeof input === 'string') {
+      return await this.loadConfig(input);
+    }
+    return input;
+  }
+
+  async reset(): Promise<void> {
+    this.moduleMetrics = {
+      requestsProcessed: 0, averageProcessingTime: 0, errorRate: 0, memoryUsage: 0, cpuUsage: 0
+    };
+    this.moduleStatus.status = 'idle';
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return { healthy: this.isStarted && this.currentConfig !== null, details: { status: this.moduleStatus } };
+  }
+
+  addConnection(module: ModuleInterface): void { this.connections.set(module.getId(), module); }
+  removeConnection(moduleId: string): void { this.connections.delete(moduleId); }
+  getConnection(moduleId: string): ModuleInterface | undefined { return this.connections.get(moduleId); }
+  getConnections(): ModuleInterface[] { return Array.from(this.connections.values()); }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> { return message; }
+  async broadcastToModules(message: any, type?: string): Promise<void> { }
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.messageListeners.add(listener);
   }
 }
 

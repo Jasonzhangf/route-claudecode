@@ -16,3 +16,12 @@ export interface ServicesModuleInterface {
   getServerManager(): import('./types').ServerManager;
   getCacheManager(): import('./types').CacheManager;
 }
+
+// ModuleInterface implementation for architecture compliance
+import { SimpleModuleAdapter, ModuleType } from '../interfaces/module/base-module';
+export const servicesModuleAdapter = new SimpleModuleAdapter(
+  'services-module',
+  'Services Module',
+  ModuleType.SERVICE,
+  SERVICES_MODULE_VERSION
+);

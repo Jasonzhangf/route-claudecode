@@ -8,17 +8,27 @@
  */
 
 /**
+ * 模型信息接口
+ */
+export interface ModelInfo {
+  name: string;
+  maxTokens?: number;
+  [key: string]: unknown;
+}
+
+/**
  * Provider信息接口
  */
 export interface ProviderInfo {
   name: string;
   priority?: number;
   api_base_url: string;
-  api_key: string;
-  models: string[];
+  api_key: string | string[];
+  maxTokens?: number;
+  models: (string | ModelInfo)[];
   serverCompatibility?: {
     use: string;
-    options: Record<string, any>;
+    options: Record<string, unknown>;
   };
 }
 
@@ -60,7 +70,7 @@ export interface ConfigPreprocessResult {
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
   metadata: {
     configPath: string;

@@ -12,6 +12,12 @@
 import { EventEmitter } from 'events';
 import { secureLogger } from '../utils/secure-logger';
 import { RequestContext } from './pipeline-request-processor';
+import {
+  ModuleInterface,
+  ModuleType,
+  ModuleStatus,
+  ModuleMetrics,
+} from '../interfaces/module/base-module';
 // TODO: API化 - 通过Pipeline API获取处理上下文和配置管理器
 // import { ModuleProcessingContext, unifiedConfigManager } from '../config/unified-config-manager';
 import { unifiedConfigManager } from '../config/unified-config-manager';
@@ -81,13 +87,38 @@ export interface CompatibilityModuleInfo {
  * Pipeline兼容性管理器
  * 负责处理所有兼容性相关的逻辑
  */
-export class PipelineCompatibilityManager extends EventEmitter {
+export class PipelineCompatibilityManager extends EventEmitter implements ModuleInterface {
+  private moduleId = 'pipeline-compatibility-manager';
+  private moduleName = 'Pipeline Compatibility Manager';
+  private moduleType = ModuleType.PIPELINE;
+  private moduleVersion = '4.0.0';
+  private isStarted = false;
+  private connections = new Map<string, ModuleInterface>();
+  private messageListeners = new Set<(sourceModuleId: string, message: any, type: string) => void>();
+  private moduleStatus: ModuleStatus;
+  private moduleMetrics: ModuleMetrics;
   private routingTable: RoutingTable | null = null;
   private loadedModules: Map<string, any> = new Map();
 
   constructor(routingTable: RoutingTable | null = null) {
     super();
     this.routingTable = routingTable;
+    
+    // Initialize ModuleInterface properties
+    this.moduleStatus = {
+      id: this.moduleId,
+      name: this.moduleName,
+      type: ModuleType.SERVER_COMPATIBILITY,
+      status: 'stopped',
+      health: 'healthy'
+    };
+    this.moduleMetrics = {
+      requestsProcessed: 0,
+      averageProcessingTime: 0,
+      errorRate: 0,
+      memoryUsage: 0,
+      cpuUsage: 0
+    };
   }
 
   /**
@@ -1020,5 +1051,133 @@ export class PipelineCompatibilityManager extends EventEmitter {
     
     this.loadedModules.clear();
     secureLogger.info('兼容性管理器清理完成');
+  }
+
+  // ===== ModuleInterface 实现 =====
+
+  getId(): string {
+    return this.moduleId;
+  }
+
+  getName(): string {
+    return this.moduleName;
+  }
+
+  getType(): ModuleType {
+    return this.moduleType;
+  }
+
+  getVersion(): string {
+    return this.moduleVersion;
+  }
+
+  getStatus(): ModuleStatus {
+    return {
+      ...this.moduleStatus,
+      lastActivity: new Date()
+    };
+  }
+
+  getMetrics(): ModuleMetrics {
+    return {
+      ...this.moduleMetrics,
+      lastProcessedAt: new Date()
+    };
+  }
+
+  async configure(config: any): Promise<void> {
+    // Configuration logic if needed
+    this.moduleStatus.status = 'idle';
+  }
+
+  async start(): Promise<void> {
+    this.isStarted = true;
+    this.moduleStatus.status = 'running';
+  }
+
+  async stop(): Promise<void> {
+    this.isStarted = false;
+    this.moduleStatus.status = 'stopped';
+    await this.cleanup();
+  }
+
+  async process(input: any): Promise<any> {
+    this.moduleMetrics.requestsProcessed++;
+    // This is handled by processServerCompatibilityLayer
+    return input;
+  }
+
+  async reset(): Promise<void> {
+    this.moduleMetrics = {
+      requestsProcessed: 0,
+      averageProcessingTime: 0,
+      errorRate: 0,
+      memoryUsage: 0,
+      cpuUsage: 0
+    };
+  }
+
+  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
+    return {
+      healthy: this.isStarted,
+      details: {
+        loadedModules: this.loadedModules.size,
+        status: this.moduleStatus
+      }
+    };
+  }
+
+  addConnection(module: ModuleInterface): void {
+    this.connections.set(module.getId(), module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.connections.delete(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.connections.get(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return Array.from(this.connections.values());
+  }
+
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    const targetModule = this.connections.get(targetModuleId);
+    if (targetModule) {
+      return await targetModule.process(message);
+    }
+    return message;
+  }
+
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    for (const module of this.connections.values()) {
+      try {
+        await module.process(message);
+      } catch (error) {
+        secureLogger.warn('广播消息到模块失败', {
+          targetModule: module.getId(),
+          error: error.message
+        });
+      }
+    }
+  }
+
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.messageListeners.add(listener);
+  }
+
+  on(event: string | symbol, listener: (...args: any[]) => void): this {
+    super.on(event, listener);
+    return this;
+  }
+
+  removeAllListeners(event?: string | symbol): this {
+    super.removeAllListeners(event);
+    if (!event) {
+      this.messageListeners.clear();
+    }
+    return this;
   }
 }

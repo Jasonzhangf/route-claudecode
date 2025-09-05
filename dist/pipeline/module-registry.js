@@ -7,8 +7,9 @@
  * @author Jason Zhang
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ModuleRegistry = void 0;
+exports.moduleRegistryAdapter = exports.ModuleRegistry = void 0;
 const events_1 = require("events");
+const base_module_1 = require("../interfaces/module/base-module");
 /**
  * 模块注册表
  */
@@ -293,4 +294,7 @@ class ModuleRegistry extends events_1.EventEmitter {
     }
 }
 exports.ModuleRegistry = ModuleRegistry;
+// ModuleInterface implementation for architecture compliance
+const base_module_2 = require("../interfaces/module/base-module");
+exports.moduleRegistryAdapter = new base_module_2.SimpleModuleAdapter('module-registry', 'Pipeline Module Registry', base_module_1.ModuleType.PIPELINE, '4.0.0-alpha.2');
 //# sourceMappingURL=module-registry.js.map

@@ -2,22 +2,32 @@
 /**
  * 流水线模块导出文件
  *
- * RCC v4.0 架构重构核心组件
- * 遵循零接口暴露设计原则
+ * 严格遵循零接口暴露设计原则
+ * 只导出PipelineManager门面和必要类型
  *
- * @author RCC v4.0 Architecture Team
+ * @version 4.0.0-zero-interface
+ * @author RCC v4.0 Architecture Team - Zero Interface Refactored
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PIPELINE_MODULE_VERSION = exports.PipelineModule = exports.PipelineManager = exports.RuntimeScheduler = exports.UnifiedInitializer = void 0;
-// 核心组件 - 遵循零接口暴露设计
-var unified_initializer_1 = require("./unified-initializer");
-Object.defineProperty(exports, "UnifiedInitializer", { enumerable: true, get: function () { return unified_initializer_1.UnifiedInitializer; } });
-var runtime_scheduler_1 = require("./runtime-scheduler");
-Object.defineProperty(exports, "RuntimeScheduler", { enumerable: true, get: function () { return runtime_scheduler_1.RuntimeScheduler; } });
+exports.PIPELINE_MODULE_VERSION = exports.PipelineManager = void 0;
+exports.getPipelineModuleInfo = getPipelineModuleInfo;
+// 主要门面接口 - 零接口暴露设计
 var pipeline_manager_1 = require("./pipeline-manager");
 Object.defineProperty(exports, "PipelineManager", { enumerable: true, get: function () { return pipeline_manager_1.PipelineManager; } });
-var pipeline_module_1 = require("./pipeline-module");
-Object.defineProperty(exports, "PipelineModule", { enumerable: true, get: function () { return pipeline_module_1.PipelineModule; } });
 // 模块版本信息
-exports.PIPELINE_MODULE_VERSION = '4.0.0-unified';
+exports.PIPELINE_MODULE_VERSION = '4.0.0-zero-interface';
+// 内部模块适配器 - 不暴露实现细节
+const base_module_1 = require("../interfaces/module/base-module");
+// 私有模块适配器工厂函数
+function createPipelineModuleAdapter() {
+    return new base_module_1.SimpleModuleAdapter('pipeline-module', 'Pipeline Module', base_module_1.ModuleType.PIPELINE, exports.PIPELINE_MODULE_VERSION);
+}
+// 只导出获取模块信息的函数，而不是实例
+function getPipelineModuleInfo() {
+    return {
+        name: 'pipeline-module',
+        version: exports.PIPELINE_MODULE_VERSION,
+        type: base_module_1.ModuleType.PIPELINE
+    };
+}
 //# sourceMappingURL=index.js.map
