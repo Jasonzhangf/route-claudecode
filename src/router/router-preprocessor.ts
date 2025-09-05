@@ -109,14 +109,13 @@ export class RouterPreprocessor {
   
   /**
    * 默认流水线层配置（内部）
+   * 流水线从transformer层开始到server层结束
    */
   private static readonly _DEFAULT_LAYERS: PipelineLayer[] = [
-    { name: 'client', type: 'client', order: 1, config: {} },
-    { name: 'router', type: 'router', order: 2, config: {} },
-    { name: 'transformer', type: 'transformer', order: 3, config: {} },
-    { name: 'protocol', type: 'protocol', order: 4, config: {} },
-    { name: 'server-compatibility', type: 'server-compatibility', order: 5, config: {} },
-    { name: 'server', type: 'server', order: 6, config: {} }
+    { name: 'transformer', type: 'transformer', order: 1, config: {} },
+    { name: 'protocol', type: 'protocol', order: 2, config: {} },
+    { name: 'server-compatibility', type: 'server-compatibility', order: 3, config: {} },
+    { name: 'server', type: 'server', order: 4, config: {} }
   ];
   
   /**
@@ -213,25 +212,39 @@ export class RouterPreprocessor {
     
     // 为每个路由生成流水线路由
     for (const [routeName, routeSpec] of Object.entries(routingTable.routes)) {
-      // 解析路由规格："provider,model"
-      const [provider, model] = routeSpec.split(',');
+      // 解析路由规格："provider,model" 或 "provider1,model1;provider2,model2;..."
+      const routeOptions = routeSpec.split(';');
       const targetModel = routeName; // 路由名称作为目标模型
       
-      const pipelineRoute: _PipelineRoute = {
-        routeId: `route_${routeName}_${provider}`,
-        routeName: routeName,
-        virtualModel: targetModel,
-        provider: provider.trim(),
-        apiKeyIndex: 0, // 默认使用第一个API密钥
-        pipelineId: `pipeline_${provider.trim()}_${model.trim()}`,
-        isActive: true,
-        health: 'healthy'
-      };
-      
-      if (!routes[targetModel]) {
-        routes[targetModel] = [];
+      for (let i = 0; i < routeOptions.length; i++) {
+        const [provider, model] = routeOptions[i].split(',');
+        if (!provider || !model) continue;
+        
+        const providerInfo = routingTable.providers.find(p => p.name === provider.trim());
+        if (!providerInfo) continue;
+        
+        // 获取API密钥数组
+        const apiKeys = Array.isArray(providerInfo.api_key) ? providerInfo.api_key : [providerInfo.api_key];
+        
+        // 为每个API密钥生成一个路由条目
+        for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+          const pipelineRoute: _PipelineRoute = {
+            routeId: `route_${routeName}_${provider.trim()}_${i}_${keyIndex}`,
+            routeName: routeName,
+            virtualModel: targetModel,
+            provider: provider.trim(),
+            apiKeyIndex: keyIndex,
+            pipelineId: `pipeline_${provider.trim()}_${model.trim()}_${keyIndex}`,
+            isActive: true,
+            health: 'healthy'
+          };
+          
+          if (!routes[targetModel]) {
+            routes[targetModel] = [];
+          }
+          routes[targetModel].push(pipelineRoute);
+        }
       }
-      routes[targetModel].push(pipelineRoute);
     }
     
     // 按Provider优先级排序
@@ -259,30 +272,56 @@ export class RouterPreprocessor {
    */
   private static _generatePipelineConfigs(routingTable: RoutingTable): PipelineConfig[] {
     const pipelineConfigs: PipelineConfig[] = [];
+    const generatedPipelines = new Set<string>(); // 避免重复生成相同的流水线
     
     for (const [routeName, routeSpec] of Object.entries(routingTable.routes)) {
-      // 解析路由规格："provider,model"
-      const [providerName, modelName] = routeSpec.split(',');
-      const provider = routingTable.providers.find(p => p.name === providerName.trim());
+      // 解析路由规格："provider,model" 或 "provider1,model1;provider2,model2;..."
+      const routeOptions = routeSpec.split(';');
       
-      if (!provider) {
-        secureLogger.warn(`Provider not found for route: ${providerName.trim()}`);
-        continue;
+      for (let i = 0; i < routeOptions.length; i++) {
+        const [providerName, modelName] = routeOptions[i].split(',');
+        if (!providerName || !modelName) continue;
+        
+        const provider = routingTable.providers.find(p => p.name === providerName.trim());
+        
+        if (!provider) {
+          secureLogger.warn(`Provider not found for route: ${providerName.trim()}`);
+          continue;
+        }
+        
+        // 获取API密钥数组
+        const apiKeys = Array.isArray(provider.api_key) ? provider.api_key : [provider.api_key];
+        
+        // 为每个API密钥生成一个流水线配置
+        for (let keyIndex = 0; keyIndex < apiKeys.length; keyIndex++) {
+          const pipelineKey = `${providerName.trim()}_${modelName.trim()}_${keyIndex}`;
+          if (generatedPipelines.has(pipelineKey)) {
+            continue; // 避免重复生成相同的流水线
+          }
+          
+          const apiKey = apiKeys[keyIndex];
+          
+          const pipelineConfig: PipelineConfig = {
+            pipelineId: `pipeline_${providerName.trim()}_${modelName.trim()}_${keyIndex}`,
+            routeId: `route_${routeName}_${providerName.trim()}_${i}_${keyIndex}`,
+            provider: providerName.trim(),
+            model: modelName.trim(),
+            endpoint: provider.api_base_url,
+            apiKey: apiKey,
+            timeout: 60000, // 默认超时
+            maxRetries: 3, // 默认重试次数
+            layers: this._generateLayerConfigs(provider, { 
+              routeName, 
+              providerName: providerName.trim(), 
+              modelName: modelName.trim(),
+              apiKeyIndex: keyIndex
+            })
+          };
+          
+          pipelineConfigs.push(pipelineConfig);
+          generatedPipelines.add(pipelineKey);
+        }
       }
-      
-      const pipelineConfig: PipelineConfig = {
-        pipelineId: `pipeline_${providerName.trim()}_${modelName.trim()}`,
-        routeId: `route_${routeName}_${providerName.trim()}`,
-        provider: providerName.trim(),
-        model: modelName.trim(),
-        endpoint: provider.api_base_url,
-        apiKey: provider.api_key,
-        timeout: 60000, // 默认超时
-        maxRetries: 3, // 默认重试次数
-        layers: this._generateLayerConfigs(provider, { routeName, providerName: providerName.trim(), modelName: modelName.trim() })
-      };
-      
-      pipelineConfigs.push(pipelineConfig);
     }
     
     return pipelineConfigs;
@@ -291,18 +330,139 @@ export class RouterPreprocessor {
   /**
    * 生成层配置（内部方法）
    */
-  private static _generateLayerConfigs(provider: ProviderInfo, route: any): PipelineLayer[] {
-    return this._DEFAULT_LAYERS.map(layer => ({
-      ...layer,
-      config: {
-        ...layer.config,
-        provider: provider.name,
-        model: route.modelName,
-        endpoint: provider.api_base_url,
-        apiKey: provider.api_key,
-        timeout: 60000
+  private static _generateLayerConfigs(provider: ProviderInfo, route: { modelName: string; routeName: string; apiKeyIndex?: number; [key: string]: unknown }): PipelineLayer[] {
+    // 获取模型的maxTokens值
+    let modelMaxTokens: number | undefined;
+    
+    // 首先从模型级别获取maxTokens
+    for (const model of provider.models) {
+      if (typeof model === 'object' && model.name === route.modelName && model.maxTokens !== undefined) {
+        modelMaxTokens = model.maxTokens;
+        break;
       }
-    }));
+    }
+    
+    // 如果模型级别没有，则从Provider级别获取
+    if (modelMaxTokens === undefined && provider.maxTokens !== undefined) {
+      modelMaxTokens = provider.maxTokens;
+    }
+    
+    // 获取正确的API密钥索引
+    const apiKeyIndex = route.apiKeyIndex || 0;
+    const apiKeys = Array.isArray(provider.api_key) ? provider.api_key : [provider.api_key];
+    const selectedApiKey = apiKeys[apiKeyIndex] || apiKeys[0];
+    
+    return this._DEFAULT_LAYERS.map(layer => {
+      // 根据不同层类型生成特定配置
+      let layerConfig: Record<string, unknown> = {};
+
+      switch (layer.type) {
+        case 'client':
+          // 客户端层只需要基础信息
+          layerConfig = {
+            provider: provider.name,
+            model: route.modelName
+          };
+          break;
+          
+        case 'router':
+          // 路由层需要路由相关信息
+          layerConfig = {
+            provider: provider.name,
+            model: route.modelName
+          };
+          break;
+          
+        case 'transformer':
+          // 转换层需要端点和认证信息
+          layerConfig = {
+            provider: provider.name,
+            model: route.modelName,
+            endpoint: provider.api_base_url,
+            apiKey: selectedApiKey
+          };
+          break;
+          
+        case 'protocol':
+          // 协议层需要模型和端点信息
+          layerConfig = {
+            provider: provider.name,
+            model: route.modelName,
+            endpoint: provider.api_base_url
+          };
+          break;
+          
+        case 'server-compatibility':
+          // 服务器兼容层需要完整的兼容性配置
+          layerConfig = {
+            provider: provider.name,
+            model: route.modelName,
+            endpoint: provider.api_base_url,
+            apiKey: selectedApiKey,
+            timeout: 60000
+          };
+          
+          // 添加serverCompatibility配置和maxTokens
+          if (provider.serverCompatibility) {
+            // 先添加基本的serverCompatibility配置
+            layerConfig = {
+              ...layerConfig,
+              ...provider.serverCompatibility
+            };
+            // 如果有options，则用options中的值覆盖同名属性
+            if (provider.serverCompatibility.options) {
+              layerConfig = {
+                ...layerConfig,
+                ...provider.serverCompatibility.options
+              };
+            }
+            // 移除嵌套的options对象本身，避免重复
+            delete layerConfig.options;
+          }
+          
+          // 添加modelMaxTokens配置（如果存在），但不覆盖options中的值
+          if (modelMaxTokens !== undefined && layerConfig.maxTokens === undefined) {
+            layerConfig.maxTokens = modelMaxTokens;
+          }
+          break;
+          
+        case 'server':
+          // 服务器层需要完整的连接配置
+          layerConfig = {
+            provider: provider.name,
+            model: route.modelName,
+            endpoint: provider.api_base_url,
+            apiKey: selectedApiKey,
+            timeout: 60000
+          };
+          
+          // 添加maxTokens配置（如果存在）
+          if (modelMaxTokens !== undefined) {
+            layerConfig.maxTokens = modelMaxTokens;
+          }
+          break;
+          
+        default:
+          // 默认配置
+          layerConfig = {
+            provider: provider.name,
+            model: route.modelName,
+            endpoint: provider.api_base_url,
+            apiKey: selectedApiKey,
+            timeout: 60000
+          };
+          
+          // 添加maxTokens配置（如果存在）
+          if (modelMaxTokens !== undefined) {
+            layerConfig.maxTokens = modelMaxTokens;
+          }
+      }
+
+      return {
+        ...layer,
+        config: layerConfig
+      };
+    });
   }
   
   /**
