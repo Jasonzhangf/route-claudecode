@@ -1,20 +1,26 @@
 /**
- * LM Studio Server Compatibility Module
+ * LM Studio Server Compatibility Module - 四层双向处理架构实现
  *
- * 按照RCC v4.0架构规范实现的LM Studio兼容性模块
+ * 按照RCC v4.0四层双向处理架构规范实现的LM Studio兼容性模块
  * 作为Server-Compatibility层处理LM Studio特定的OpenAI API变种
+ * 支持：
+ * - 预配置模块：所有配置在组装时固化，运行时零配置传递
+ * - 双向处理：processRequest和processResponse接口
+ * - OpenAI格式内转换：仅处理OpenAI格式到Provider特定调整
+ * - 并发安全：无状态设计支持多请求并发
  *
  * @author Jason Zhang
+ * @version 2.0.0 - 四层双向处理架构
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { OpenAI } from 'openai';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import JQJsonHandler from '../../error-handler/src/utils/jq-json-handler';
 /**
- * LM Studio配置接口
+ * LM Studio预配置接口 - 在组装时固化的配置
  */
-export interface LMStudioCompatibilityConfig {
+export interface LMStudioCompatibilityPreConfig {
   baseUrl: string;
   apiKey?: string;
   timeout: number;
@@ -22,7 +28,27 @@ export interface LMStudioCompatibilityConfig {
   retryDelay: number;
   models: string[];
   maxTokens?: Record<string, number>; // 每个模型的最大token限制
+  // 新增：双向处理配置
+  enableRequestProcessing?: boolean;
+  enableResponseProcessing?: boolean;
+  modelMappingRules?: Record<string, string>;
+  parameterLimits?: Record<string, any>;
+  concurrencyLimit?: number;
 }
+
+/**
+ * 四层双向处理接口
+ */
+export interface BidirectionalCompatibilityProcessor {
+  processRequest(input: any): Promise<any>;
+  processResponse(input: any): Promise<any>;
+}
+
+/**
+ * LM Studio配置接口 - 兼容性保持
+ * @deprecated 使用 LMStudioCompatibilityPreConfig
+ */
+export interface LMStudioCompatibilityConfig extends LMStudioCompatibilityPreConfig {}
 
 /**
  * 标准协议请求接口（OpenAI格式）
@@ -106,31 +132,59 @@ export interface LMStudioResponse extends StandardResponse {
 }
 
 /**
- * LM Studio Server Compatibility Module实现
+ * LM Studio Server Compatibility Module实现 - 四层双向处理架构
  */
-export class LMStudioCompatibilityModule extends EventEmitter implements ModuleInterface {
+export class LMStudioCompatibilityModule extends EventEmitter implements ModuleInterface, BidirectionalCompatibilityProcessor {
   private readonly id: string = 'lmstudio-compatibility';
   private readonly name: string = 'LM Studio Compatibility Module';
   private readonly type: any = 'server-compatibility';
-  private readonly version: string = '1.0.0';
-  private readonly config: LMStudioCompatibilityConfig;
+  private readonly version: string = '2.0.0';
+  private readonly preConfig: LMStudioCompatibilityPreConfig;
+  private readonly isPreConfigured: boolean = true;
   private openaiClient: OpenAI;
   private status: any = 'healthy';
   private isInitialized = false;
   private connections: Map<string, ModuleInterface> = new Map();
+  private metrics = {
+    requestsProcessed: 0,
+    responsesProcessed: 0,
+    errorsHandled: 0,
+    averageProcessingTime: 0,
+    totalProcessingTime: 0
+  };
 
-  constructor(config: LMStudioCompatibilityConfig) {
+  constructor(preConfig: LMStudioCompatibilityPreConfig) {
     super();
-    this.config = config;
+    
+    // 固化预配置 - 运行时不可更改
+    this.preConfig = {
+      baseUrl: preConfig.baseUrl,
+      apiKey: preConfig.apiKey,
+      timeout: preConfig.timeout,
+      maxRetries: preConfig.maxRetries,
+      retryDelay: preConfig.retryDelay,
+      models: [...preConfig.models], // 深拷贝避免外部修改
+      maxTokens: preConfig.maxTokens ? { ...preConfig.maxTokens } : undefined,
+      enableRequestProcessing: preConfig.enableRequestProcessing ?? true,
+      enableResponseProcessing: preConfig.enableResponseProcessing ?? true,
+      modelMappingRules: preConfig.modelMappingRules ? { ...preConfig.modelMappingRules } : {},
+      parameterLimits: preConfig.parameterLimits ? { ...preConfig.parameterLimits } : {},
+      concurrencyLimit: preConfig.concurrencyLimit ?? 10
+    };
 
     // 使用官方OpenAI SDK连接LM Studio
     this.openaiClient = new OpenAI({
-      baseURL: config.baseUrl,
-      apiKey: config.apiKey || 'lm-studio', // LM Studio通常不需要真实的API Key
-      timeout: config.timeout,
+      baseURL: this.preConfig.baseUrl,
+      apiKey: this.preConfig.apiKey || 'lm-studio', // LM Studio通常不需要真实的API Key
+      timeout: this.preConfig.timeout,
     });
 
-    console.log(`🔧 初始化LM Studio兼容模块: ${config.baseUrl}`);
+    console.log(`🔧 初始化LM Studio兼容模块 (预配置模式): ${this.preConfig.baseUrl}`, {
+      enableRequestProcessing: this.preConfig.enableRequestProcessing,
+      enableResponseProcessing: this.preConfig.enableResponseProcessing,
+      modelsCount: this.preConfig.models.length,
+      concurrencyLimit: this.preConfig.concurrencyLimit
+    });
   }
 
   // ModuleInterface实现
@@ -169,9 +223,11 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       return;
     }
 
-    console.log(`🚀 初始化LM Studio兼容模块...`);
-    console.log(`   端点: ${this.config.baseUrl}`);
-    console.log(`   支持模型: ${this.config.models.join(', ')}`);
+    console.log(`🚀 初始化LM Studio兼容模块 (预配置模式)...`);
+    console.log(`   端点: ${this.preConfig.baseUrl}`);
+    console.log(`   支持模型: ${this.preConfig.models.join(', ')}`);
+    console.log(`   启用请求处理: ${this.preConfig.enableRequestProcessing}`);
+    console.log(`   启用响应处理: ${this.preConfig.enableResponseProcessing}`);
 
     try {
       // 测试连接LM Studio
@@ -197,7 +253,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
     if (!this.isInitialized) {
       await this.initialize();
     }
-    console.log(`▶️ LM Studio兼容模块已启动`);
+    console.log(`▶️ LM Studio兼容模块已启动 (预配置模式)`);
   }
 
   /**
@@ -210,29 +266,37 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
   }
 
   /**
-   * 处理请求 - 核心功能
-   * 将标准OpenAI协议请求适配为LM Studio兼容格式，但仍返回请求格式给下一层
+   * 处理请求 - 四层双向处理架构主接口
+   * 将标准OpenAI协议请求适配为LM Studio兼容格式
    */
-  async process(input: StandardRequest): Promise<StandardRequest> {
-    if (!this.isInitialized) {
-      throw new Error('LM Studio兼容模块未初始化');
-    }
-
+  async processRequest(input: StandardRequest): Promise<StandardRequest> {
     const startTime = Date.now();
-    console.log(`🔄 LM Studio兼容处理: ${input.model}`);
-
+    
     try {
+      // 检查是否启用请求处理
+      if (!this.preConfig.enableRequestProcessing) {
+        console.log(`➡️ LM Studio请求处理已禁用，直接传递`);
+        this.updateRequestMetrics(Date.now() - startTime, true);
+        return input;
+      }
+      
+      if (!this.isInitialized) {
+        throw new Error('LM Studio兼容模块未初始化');
+      }
+
+      console.log(`🔄 LM Studio兼容处理 (请求): ${input.model}`);
+
       // 验证输入
       this.validateStandardRequest(input);
 
       // 适配请求以确保LM Studio兼容性
       const adaptedRequest = this.adaptRequestForLMStudio(input);
 
-      const processingTime = Date.now() - startTime;
-      console.log(`✅ LM Studio兼容处理完成 (${processingTime}ms)`);
+      this.updateRequestMetrics(Date.now() - startTime, true);
+      console.log(`✅ LM Studio请求兼容处理完成 (${Date.now() - startTime}ms)`);
 
       this.emit('requestProcessed', {
-        processingTime,
+        processingTime: Date.now() - startTime,
         success: true,
         model: input.model,
       });
@@ -240,8 +304,9 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       // 返回适配后的请求格式，让Server层负责实际API调用
       return adaptedRequest;
     } catch (error) {
+      this.updateRequestMetrics(Date.now() - startTime, false);
       const processingTime = Date.now() - startTime;
-      console.error(`❌ LM Studio兼容处理失败 (${processingTime}ms):`, error.message);
+      console.error(`❌ LM Studio请求兼容处理失败 (${processingTime}ms):`, error.message);
 
       this.emit('requestProcessed', {
         processingTime,
@@ -252,6 +317,63 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
 
       throw error;
     }
+  }
+
+  /**
+   * 处理响应 - 四层双向处理架构主接口
+   * 适配LM Studio响应以确保标准OpenAI兼容性
+   */
+  async processResponse(input: any): Promise<any> {
+    const startTime = Date.now();
+    
+    try {
+      // 检查是否启用响应处理
+      if (!this.preConfig.enableResponseProcessing) {
+        console.log(`➡️ LM Studio响应处理已禁用，直接传递`);
+        this.updateResponseMetrics(Date.now() - startTime, true);
+        return input;
+      }
+      
+      if (!this.isInitialized) {
+        throw new Error('LM Studio兼容模块未初始化');
+      }
+
+      console.log(`🔄 LM Studio兼容处理 (响应)`);
+
+      // 适配响应以确保标准OpenAI兼容性
+      const adaptedResponse = this.adaptLMStudioResponseToStandard(input);
+
+      this.updateResponseMetrics(Date.now() - startTime, true);
+      console.log(`✅ LM Studio响应兼容处理完成 (${Date.now() - startTime}ms)`);
+
+      this.emit('responseProcessed', {
+        processingTime: Date.now() - startTime,
+        success: true
+      });
+
+      return adaptedResponse;
+    } catch (error) {
+      this.updateResponseMetrics(Date.now() - startTime, false);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ LM Studio响应兼容处理失败 (${processingTime}ms):`, error.message);
+
+      this.emit('responseProcessed', {
+        processingTime,
+        success: false,
+        error: error.message
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * 处理请求 - 兼容旧接口
+   * @deprecated 使用 processRequest
+   */
+  async process(input: StandardRequest): Promise<StandardRequest> {
+    // 调用新的双向处理接口
+    return await this.processRequest(input);
   }
 
   /**
@@ -491,8 +613,8 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
 
     // 🔧 关键修复：检查映射后的实际模型是否支持
     const actualModel = this.mapVirtualModelToActual(request.model);
-    if (!this.config.models.includes(actualModel)) {
-      throw new Error(`映射后的模型 ${actualModel} (来自虚拟模型 ${request.model}) 不在支持列表中: ${this.config.models.join(', ')}`);
+    if (!this.preConfig.models.includes(actualModel)) {
+      throw new Error(`映射后的模型 ${actualModel} (来自虚拟模型 ${request.model}) 不在支持列表中: ${this.preConfig.models.join(', ')}`);
     }
   }
 
@@ -646,52 +768,182 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       return models.data.map(model => model.id);
     } catch (error) {
       console.warn('获取LM Studio模型列表失败，使用配置中的模型列表');
-      return this.config.models;
+      return this.preConfig.models;
     }
   }
 
   /**
-   * 将虚拟模型映射到实际的LM Studio模型
+   * 更新请求处理指标
+   */
+  private updateRequestMetrics(processingTime: number, success: boolean): void {
+    this.metrics.requestsProcessed++;
+    this.updateCommonMetrics(processingTime, success);
+  }
+
+  /**
+   * 更新响应处理指标
+   */
+  private updateResponseMetrics(processingTime: number, success: boolean): void {
+    this.metrics.responsesProcessed++;
+    this.updateCommonMetrics(processingTime, success);
+  }
+
+  /**
+   * 更新通用指标
+   */
+  private updateCommonMetrics(processingTime: number, success: boolean): void {
+    this.metrics.totalProcessingTime += processingTime;
+    const totalOperations = this.metrics.requestsProcessed + this.metrics.responsesProcessed;
+    this.metrics.averageProcessingTime = this.metrics.totalProcessingTime / Math.max(totalOperations, 1);
+    
+    if (!success) {
+      this.metrics.errorsHandled++;
+    }
+  }
+
+  /**
+   * 适配LM Studio响应到标准OpenAI格式
+   */
+  private adaptLMStudioResponseToStandard(lmstudioResponse: any): any {
+    try {
+      // 如果响应已经是标准OpenAI格式，直接返回
+      if (this.isStandardOpenAIResponse(lmstudioResponse)) {
+        console.log(`✅ LM Studio响应已是标准格式`);
+        return lmstudioResponse;
+      }
+
+      // 处理LM Studio特定的响应格式
+      const standardResponse = {
+        ...lmstudioResponse,
+        // 确保usage字段格式正确
+        usage: this.normalizeUsageField(lmstudioResponse.usage),
+        // 确保choices字段格式正确
+        choices: this.normalizeChoicesField(lmstudioResponse.choices)
+      };
+
+      console.log(`🔧 LM Studio响应已标准化`);
+      return standardResponse;
+    } catch (error) {
+      console.warn(`⚠️ LM Studio响应适配失败，返回原始响应:`, error.message);
+      return lmstudioResponse;
+    }
+  }
+
+  /**
+   * 检查是否为标准OpenAI响应格式
+   */
+  private isStandardOpenAIResponse(response: any): boolean {
+    return response && 
+           response.choices && 
+           Array.isArray(response.choices) && 
+           response.usage &&
+           typeof response.usage.total_tokens === 'number';
+  }
+
+  /**
+   * 标准化usage字段
+   */
+  private normalizeUsageField(usage: any): any {
+    if (!usage) {
+      return { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 };
+    }
+
+    return {
+      prompt_tokens: usage.prompt_tokens || usage.input_tokens || 0,
+      completion_tokens: usage.completion_tokens || usage.output_tokens || 0,
+      total_tokens: usage.total_tokens || 
+                   (usage.prompt_tokens || usage.input_tokens || 0) + 
+                   (usage.completion_tokens || usage.output_tokens || 0)
+    };
+  }
+
+  /**
+   * 标准化choices字段
+   */
+  private normalizeChoicesField(choices: any[]): any[] {
+    if (!Array.isArray(choices)) {
+      return [];
+    }
+
+    return choices.map(choice => ({
+      ...choice,
+      // 确保finish_reason字段存在
+      finish_reason: choice.finish_reason || 'stop'
+    }));
+  }
+
+  /**
+   * 将虚拟模型映射到实际的LM Studio模型 - 使用预配置的映射规则
    */
   private mapVirtualModelToActual(virtualModel: string): string {
-    // 虚拟模型到实际模型的映射
-    const modelMapping: Record<string, string> = {
-      'default': this.config.models[0] || 'llama-3.1-8b-instruct',
-      'reasoning': this.config.models[0] || 'llama-3.1-8b-instruct', 
-      'longContext': this.config.models[0] || 'llama-3.1-8b-instruct',
-      'webSearch': this.config.models[0] || 'llama-3.1-8b-instruct',
-      'background': this.config.models[0] || 'llama-3.1-8b-instruct',
+    // 使用预配置的模型映射规则
+    const customMapping = this.preConfig.modelMappingRules || {};
+    if (customMapping[virtualModel]) {
+      console.log(`🔄 自定义虚拟模型映射: ${virtualModel} -> ${customMapping[virtualModel]}`);
+      return customMapping[virtualModel];
+    }
+
+    // 默认虚拟模型到实际模型的映射
+    const defaultModelMapping: Record<string, string> = {
+      'default': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
+      'reasoning': this.preConfig.models[0] || 'llama-3.1-8b-instruct', 
+      'longContext': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
+      'webSearch': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
+      'background': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
     };
 
     // 如果是虚拟模型，返回映射的实际模型
-    if (modelMapping[virtualModel]) {
-      console.log(`🔄 虚拟模型映射: ${virtualModel} -> ${modelMapping[virtualModel]}`);
-      return modelMapping[virtualModel];
+    if (defaultModelMapping[virtualModel]) {
+      console.log(`🔄 虚拟模型映射: ${virtualModel} -> ${defaultModelMapping[virtualModel]}`);
+      return defaultModelMapping[virtualModel];
     }
 
     // 如果已经是实际模型名称，直接返回
-    if (this.config.models.includes(virtualModel)) {
+    if (this.preConfig.models.includes(virtualModel)) {
       return virtualModel;
     }
 
     // 如果都不匹配，返回默认模型
-    console.warn(`⚠️ 未知模型 ${virtualModel}，使用默认模型 ${this.config.models[0]}`);
-    return this.config.models[0] || 'llama-3.1-8b-instruct';
+    console.warn(`⚠️ 未知模型 ${virtualModel}，使用默认模型 ${this.preConfig.models[0]}`);
+    return this.preConfig.models[0] || 'llama-3.1-8b-instruct';
   }
 
   // Missing ModuleInterface methods
   getMetrics(): ModuleMetrics {
+    const totalOperations = this.metrics.requestsProcessed + this.metrics.responsesProcessed;
     return {
-      requestsProcessed: 0,
-      averageProcessingTime: 0,
-      errorRate: 0,
+      requestsProcessed: totalOperations,
+      averageProcessingTime: this.metrics.averageProcessingTime,
+      errorRate: this.metrics.errorsHandled / Math.max(totalOperations, 1),
       memoryUsage: 0,
       cpuUsage: 0,
+      // 扩展指标
+      customMetrics: {
+        requestsProcessed: this.metrics.requestsProcessed,
+        responsesProcessed: this.metrics.responsesProcessed,
+        totalProcessingTime: this.metrics.totalProcessingTime,
+        isPreConfigured: this.isPreConfigured,
+        enableRequestProcessing: this.preConfig.enableRequestProcessing,
+        enableResponseProcessing: this.preConfig.enableResponseProcessing,
+        modelsCount: this.preConfig.models.length,
+        concurrencyLimit: this.preConfig.concurrencyLimit
+      }
     };
   }
 
   async configure(config: any): Promise<void> {
-    // Configuration logic
+    // 预配置模式：拒绝运行时配置更改
+    if (this.isPreConfigured) {
+      console.warn('LM Studio Compatibility module is pre-configured, runtime configuration ignored', {
+        moduleId: this.id,
+        attemptedConfig: Object.keys(config || {}),
+        currentPreConfig: Object.keys(this.preConfig)
+      });
+      return;
+    }
+    
+    // 非预配置模式下的传统配置（保持向后兼容）
+    console.log('LM Studio Compatibility module configured (legacy mode)');
   }
 
   async reset(): Promise<void> {
@@ -756,5 +1008,30 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
     this.on('moduleMessage', (data: any) => {
       listener(data.fromModuleId, data.message, data.type);
     });
+  }
+  
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
 }

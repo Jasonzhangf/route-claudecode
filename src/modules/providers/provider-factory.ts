@@ -8,7 +8,7 @@
 
 import { OpenAIProtocolHandler, OpenAIProtocolConfig } from './openai-protocol-handler';
 import { AnthropicProtocolHandler, AnthropicProtocolConfig } from './anthropic-protocol-handler';
-import { ModuleInterface } from '../../interfaces/module/base-module';
+import { ModuleInterface } from '../interfaces/module/base-module';
 
 /**
  * 支持的Provider Protocol类型

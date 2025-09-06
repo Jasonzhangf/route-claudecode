@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 /**
  * 告警级别枚举

@@ -96,6 +96,11 @@
           },
           {
             "type": "command",
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_tooluse_enhanced_logging_hook_json.sh",
+            "blocking": true
+          },
+          {
+            "type": "command",
             "command": "bash /Users/fanzhang/.claude/hooks/pre_edit_package_json_guard_hook_json.sh",
             "blocking": true
           },
@@ -117,6 +122,11 @@
           {
             "type": "command",
             "command": "bash /Users/fanzhang/.claude/hooks/pre_write_hardcoding_checker_json.sh",
+            "blocking": true
+          },
+          {
+            "type": "command",
+            "command": "bash /Users/fanzhang/.claude/hooks/pre_write_root_dir_blocker_json.sh",
             "blocking": true
           }
         ]

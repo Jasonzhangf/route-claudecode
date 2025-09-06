@@ -25,7 +25,7 @@ import {
   ToolMessage,
 } from '../../interfaces/standard/message';
 import { Tool } from '../../interfaces/standard/tool';
-import { JQJsonHandler } from '../../utils/jq-json-handler';
+import JQJsonHandler from '../../../error-handler/src/utils/jq-json-handler';
 /**
  * OpenAI Protocol配置接口
  */
@@ -651,5 +651,30 @@ export class OpenAIProtocolHandler extends EventEmitter implements ModuleInterfa
     this.on('moduleMessage', (data: any) => {
       listener(data.fromModuleId, data.message, data.type);
     });
+  }
+  
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
 }

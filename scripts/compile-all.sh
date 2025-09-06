@@ -8,8 +8,8 @@ set -e
 echo "🚀 开始全量编译所有模块..."
 echo "⏰ 开始时间: $(date)"
 
-# 当前可用模块列表 (不包含pipeline，因为还需要重构)
-MODULES=("config" "router")
+# 重组后的模块列表 (transformers已移入pipeline-modules, debug已拆分为logging和error-handler)
+MODULES=("config" "router" "api" "client" "core" "interfaces" "server" "tools" "logging" "error-handler")
 FAILED_MODULES=()
 SUCCESS_COUNT=0
 TOTAL_TIME_START=$(date +%s)
@@ -58,7 +58,8 @@ fi
 # 生成模块API网关
 echo ""
 echo "🔧 生成模块API网关..."
-cat > "compiled-modules/index.js" << 'EOF'
+mkdir -p "node_modules/@rcc"
+cat > "node_modules/@rcc/index.js" << 'EOF'
 /**
  * RCC v4.0 模块API网关
  * 
@@ -89,7 +90,7 @@ module.exports.__moduleInfo = {
 };
 EOF
 
-cat > "compiled-modules/index.d.ts" << 'EOF'
+cat > "node_modules/@rcc/index.d.ts" << 'EOF'
 /**
  * RCC v4.0 模块API网关类型声明
  * 
@@ -116,11 +117,16 @@ export const __moduleInfo: ModuleInfo;
 EOF
 
 echo "✅ 模块API网关生成完成"
-echo "  - JavaScript: compiled-modules/index.js"  
-echo "  - 声明文件: compiled-modules/index.d.ts"
+echo "  - JavaScript: node_modules/@rcc/index.js"  
+echo "  - 声明文件: node_modules/@rcc/index.d.ts"
+
+# 清理临时的compiled-modules目录
+echo ""
+echo "🧹 清理临时的compiled-modules目录..."
+rm -rf "compiled-modules"
 
 echo ""
 echo "🎉 全量编译完成!"
-echo "📁 编译产物位置: compiled-modules/"
+echo "📁 编译产物位置: node_modules/@rcc/"
 echo "🔍 可用模块: ${MODULES[*]}"
 echo "⚠️  注意: pipeline模块需要重构后才能迁移"

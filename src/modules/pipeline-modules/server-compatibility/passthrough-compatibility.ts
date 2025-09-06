@@ -9,7 +9,7 @@
  * @author Jason Zhang
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
 // TODO: API化 - 通过Pipeline API获取处理上下文
 // import { ModuleProcessingContext } from '../../../config/unified-config-manager';
 
@@ -50,7 +50,7 @@ interface ModuleProcessingContext {
   };
 }
 import { EventEmitter } from 'events';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import JQJsonHandler from '../../error-handler/src/utils/jq-json-handler';
 export interface PassthroughCompatibilityConfig {
   mode: 'passthrough';
   maxTokens?: number;
@@ -456,5 +456,30 @@ export class PassthroughCompatibilityModule extends EventEmitter implements Modu
            typeof tool.description === 'string' &&
            tool.input_schema &&
            typeof tool.input_schema === 'object';
+  }
+  
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
 }

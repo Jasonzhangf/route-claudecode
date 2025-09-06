@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { ModuleInterface, ModuleStatus, ModuleMetrics, ModuleType } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleMetrics, ModuleType } from '../../modules/interfaces/module/base-module';
 
 /**
  * 基础流水线模块抽象类
@@ -239,6 +239,31 @@ export abstract class BasePipelineModule extends EventEmitter implements ModuleI
     this.on('moduleMessage', (data: any) => {
       listener(data.fromModuleId, data.message, data.type);
     });
+  }
+  
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
 
   // 受保护的方法，子类需要实现

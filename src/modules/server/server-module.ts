@@ -7,9 +7,9 @@
  */
 
 import { BaseModule } from '../base-module-impl';
-import { ModuleType } from '../../interfaces/module/base-module';
-import { secureLogger } from '../../utils/secure-logger';
-import { RCCError, ERROR_CODES } from '../../types/error';
+import { ModuleType } from '../interfaces/module/base-module';
+import { secureLogger } from '../utils';
+import { RCCError, RCCErrorCode } from '../types/src';
 
 /**
  * Server Configuration Interface
@@ -85,7 +85,7 @@ export class ServerModule extends BaseModule {
 
     throw new RCCError(
       'Server is not running',
-      ERROR_CODES.MODULE_NOT_RUNNING,
+      RCCErrorCode.MODULE_CONNECTION_FAILED,
       'server-module'
     );
   }

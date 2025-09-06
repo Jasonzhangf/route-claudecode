@@ -1,6 +1,7 @@
 /**
  * Qwen Server Compatibility模块
  * 职责明确版本 - 仅负责必要的兼容性调整
+ * 支持双向兼容性处理：请求和响应
  * 
  * 职责：
  * 1. 仅做工具格式微调（如果需要）
@@ -11,46 +12,11 @@
  * 参考：CLIProxyAPI qwen_client.go 架构
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-import { secureLogger } from '../../../utils/secure-logger';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
-
-/**
- * 模块处理上下文接口
- */
-interface ModuleProcessingContext {
-  readonly requestId: string;
-  readonly providerName?: string;
-  readonly protocol?: string;
-  readonly config?: {
-    readonly endpoint?: string;
-    readonly apiKey?: string;
-    readonly timeout?: number;
-    readonly maxRetries?: number;
-    readonly actualModel?: string;
-    readonly originalModel?: string;
-    readonly serverCompatibility?: string;
-  };
-  readonly debug?: {
-    readonly enabled: boolean;
-    readonly level: number;
-    readonly outputPath?: string;
-  };
-  metadata?: {
-    architecture?: string;
-    layer?: string;
-    protocolConfig?: {
-      endpoint?: string;
-      apiKey?: string;
-      protocol?: string;
-      timeout?: number;
-      maxRetries?: number;
-      customHeaders?: Record<string, string>;
-    };
-    [key: string]: any;
-  };
-}
+import { secureLogger } from '../../error-handler/src/utils/secure-logger';
+import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
+import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
 
 export interface QwenCompatibilityConfig {
   baseUrl: string;
@@ -63,78 +29,23 @@ export interface QwenCompatibilityConfig {
 /**
  * Qwen兼容性模块 - 职责明确版本
  * 参考CLIProxyAPI的设计理念：简单、专一、高效
+ * 支持双向兼容性处理：请求和响应
  */
-export class QwenCompatibilityModule extends EventEmitter implements ModuleInterface {
-  private readonly id: string = 'qwen-compatibility';
-  private readonly name: string = 'Qwen Compatibility Module';
-  private readonly type: any = 'server-compatibility';
-  private readonly version: string = '2.0.0';
+export class QwenCompatibilityModule extends ServerCompatibilityModule {
   private readonly config: QwenCompatibilityConfig;
-  private status: any = 'healthy';
   private isInitialized = false;
-  private connections: Map<string, ModuleInterface> = new Map();
 
   constructor(config: QwenCompatibilityConfig) {
-    super();
+    super('qwen-compatibility', 'Qwen Compatibility Module', '2.0.0');
     this.config = config;
     
     console.log(`🔧 初始化Qwen兼容模块: ${config.baseUrl}`);
   }
 
-  // ModuleInterface实现
-  getId(): string {
-    return this.id;
-  }
-
-  getName(): string {
-    return this.name;
-  }
-
-  getType(): any {
-    return this.type;
-  }
-
-  getVersion(): string {
-    return this.version;
-  }
-
-  getStatus(): any {
-    return this.status;
-  }
-
-  getMetrics(): ModuleMetrics {
-    return {
-      requestsProcessed: 0,
-      averageProcessingTime: 0,
-      errorRate: 0,
-      memoryUsage: 0,
-      cpuUsage: 0
-    };
-  }
-
-  async configure(config: any): Promise<void> {
-    // 配置已在构造函数中处理
-    console.log(`🔧 Qwen兼容模块配置更新`);
-  }
-
-  async reset(): Promise<void> {
-    console.log(`🔄 Qwen兼容模块重置`);
-    this.status = 'healthy';
-    this.emit('statusChanged', { health: this.status });
-  }
-
-  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
-    return {
-      healthy: this.status === 'healthy',
-      details: {
-        status: this.status,
-        initialized: this.isInitialized,
-        endpoint: this.config.baseUrl
-      }
-    };
-  }
-
-  async initialize(): Promise<void> {
+  /**
+   * 初始化方法
+   */
+  protected async initialize(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
@@ -143,35 +54,12 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
     console.log(`   端点: ${this.config.baseUrl}`);
 
     try {
-      this.status = 'healthy';
       this.isInitialized = true;
-
-      this.emit('statusChanged', { health: this.status });
       console.log(`✅ Qwen兼容模块初始化完成`);
     } catch (error) {
-      this.status = 'unhealthy';
-      this.emit('statusChanged', { health: this.status });
       console.error(`❌ Qwen兼容模块初始化失败:`, error.message);
       throw error;
     }
-  }
-
-  async start(): Promise<void> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-  }
-
-  async stop(): Promise<void> {
-    this.status = 'stopped';
-    this.emit('statusChanged', { health: this.status });
-    console.log(`🛑 Qwen兼容模块已停止`);
-  }
-
-  async cleanup(): Promise<void> {
-    await this.stop();
-    this.removeAllListeners();
-    console.log(`🧹 Qwen兼容模块清理完成`);
   }
 
   /**
@@ -263,22 +151,22 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
             secureLogger.error('❌ Qwen auth文件不存在', {
               requestId: context.requestId,
               authFile: authFilePath
+              });
+            }
+          } catch (authError) {
+            secureLogger.error('❌ Qwen auth加载失败', {
+              requestId: context.requestId,
+              error: authError.message
             });
           }
-        } catch (authError) {
-          secureLogger.error('❌ Qwen auth加载失败', {
+          
+          secureLogger.debug('🔧 Qwen协议配置已设置', {
             requestId: context.requestId,
-            error: authError.message
+            endpoint: this.config.baseUrl,
+            hasApiKey: !!context.metadata.protocolConfig.apiKey,
+            apiKeyLength: context.metadata.protocolConfig.apiKey?.length || 0
           });
         }
-        
-        secureLogger.debug('🔧 Qwen协议配置已设置', {
-          requestId: context.requestId,
-          endpoint: this.config.baseUrl,
-          hasApiKey: !!context.metadata.protocolConfig.apiKey,
-          apiKeyLength: context.metadata.protocolConfig.apiKey?.length || 0
-        });
-      }
 
       secureLogger.debug('✅ Qwen兼容性处理完成', {
         requestId: context.requestId,
@@ -298,6 +186,84 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
 
       // 失败时返回原始请求，不中断流水线
       return request;
+    }
+  }
+
+  /**
+   * 处理响应 - Qwen响应兼容性处理
+   */
+  async processResponse(response: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
+    try {
+      secureLogger.debug('🔥 Qwen响应兼容性处理开始', {
+        requestId: context.requestId,
+        responseType: typeof response,
+        hasChoices: !!response?.choices,
+        choicesCount: response?.choices?.length || 0,
+        hasObject: !!response?.object,
+        hasId: !!response?.id
+      });
+
+      // 如果不是有效的响应对象，直接返回
+      if (!response || typeof response !== 'object') {
+        secureLogger.debug('⚠️ Qwen响应不是有效对象，跳过处理');
+        return response;
+      }
+
+      // 创建处理后的响应副本
+      const processedResponse = { ...response };
+
+      // 1. 🔧 修复Qwen API响应格式兼容性问题
+      // Qwen有时返回的choices可能格式略有差异，需要标准化
+      if (processedResponse.choices && Array.isArray(processedResponse.choices)) {
+        processedResponse.choices = this.normalizeQwenChoices(processedResponse.choices, context.requestId);
+      }
+
+      // 2. 🔧 确保响应包含必要的OpenAI兼容字段
+      if (!processedResponse.id) {
+        processedResponse.id = `chatcmpl-qwen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      if (!processedResponse.object) {
+        processedResponse.object = 'chat.completion';
+      }
+
+      if (!processedResponse.created) {
+        processedResponse.created = Math.floor(Date.now() / 1000);
+      }
+
+      // 3. 🔧 修复Qwen工具调用响应格式
+      if (processedResponse.choices) {
+        for (let i = 0; i < processedResponse.choices.length; i++) {
+          const choice = processedResponse.choices[i];
+          if (choice.message && choice.message.tool_calls) {
+            choice.message.tool_calls = this.normalizeQwenToolCalls(choice.message.tool_calls, context.requestId);
+          }
+        }
+      }
+
+      // 4. 🔧 处理usage信息兼容性
+      if (processedResponse.usage) {
+        processedResponse.usage = this.normalizeQwenUsage(processedResponse.usage, context.requestId);
+      }
+
+      secureLogger.debug('✅ Qwen响应兼容性处理完成', {
+        requestId: context.requestId,
+        hasValidId: !!processedResponse.id,
+        hasValidObject: !!processedResponse.object,
+        choicesProcessed: processedResponse.choices?.length || 0
+      });
+
+      return processedResponse;
+
+    } catch (error) {
+      secureLogger.error('❌ Qwen响应兼容性处理失败', {
+        requestId: context.requestId,
+        error: error.message,
+        stack: error.stack
+      });
+
+      // 失败时返回原始响应，不中断流水线
+      return response;
     }
   }
 
@@ -490,85 +456,6 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
   }
 
   /**
-   * 🔥 关键新增：处理Qwen响应兼容性
-   * 参考CLIProxyAPI的Qwen响应处理逻辑
-   */
-  async processResponse(response: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
-    try {
-      secureLogger.debug('🔥 Qwen响应兼容性处理开始', {
-        requestId: context.requestId,
-        responseType: typeof response,
-        hasChoices: !!response?.choices,
-        choicesCount: response?.choices?.length || 0,
-        hasObject: !!response?.object,
-        hasId: !!response?.id
-      });
-
-      // 如果不是有效的响应对象，直接返回
-      if (!response || typeof response !== 'object') {
-        secureLogger.debug('⚠️ Qwen响应不是有效对象，跳过处理');
-        return response;
-      }
-
-      // 创建处理后的响应副本
-      const processedResponse = { ...response };
-
-      // 1. 🔧 修复Qwen API响应格式兼容性问题
-      // Qwen有时返回的choices可能格式略有差异，需要标准化
-      if (processedResponse.choices && Array.isArray(processedResponse.choices)) {
-        processedResponse.choices = this.normalizeQwenChoices(processedResponse.choices, context.requestId);
-      }
-
-      // 2. 🔧 确保响应包含必要的OpenAI兼容字段
-      if (!processedResponse.id) {
-        processedResponse.id = `chatcmpl-qwen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      }
-
-      if (!processedResponse.object) {
-        processedResponse.object = 'chat.completion';
-      }
-
-      if (!processedResponse.created) {
-        processedResponse.created = Math.floor(Date.now() / 1000);
-      }
-
-      // 3. 🔧 修复Qwen工具调用响应格式
-      if (processedResponse.choices) {
-        for (let i = 0; i < processedResponse.choices.length; i++) {
-          const choice = processedResponse.choices[i];
-          if (choice.message && choice.message.tool_calls) {
-            choice.message.tool_calls = this.normalizeQwenToolCalls(choice.message.tool_calls, context.requestId);
-          }
-        }
-      }
-
-      // 4. 🔧 处理usage信息兼容性
-      if (processedResponse.usage) {
-        processedResponse.usage = this.normalizeQwenUsage(processedResponse.usage, context.requestId);
-      }
-
-      secureLogger.debug('✅ Qwen响应兼容性处理完成', {
-        requestId: context.requestId,
-        hasValidId: !!processedResponse.id,
-        hasValidObject: !!processedResponse.object,
-        choicesProcessed: processedResponse.choices?.length || 0
-      });
-
-      return processedResponse;
-
-    } catch (error) {
-      secureLogger.error('❌ Qwen响应兼容性处理失败', {
-        requestId: context.requestId,
-        error: error.message,
-        stack: error.stack
-      });
-
-      // 失败时返回原始响应，不中断流水线
-      return response;
-    }
-  }
-
-  /**
    * 标准化Qwen API的choices数组
    */
   private normalizeQwenChoices(choices: any[], requestId: string): any[] {
@@ -702,72 +589,5 @@ export class QwenCompatibilityModule extends EventEmitter implements ModuleInter
     }
   }
 
-  /**
-   * 兼容旧接口的process方法
-   */
-  async process(request: any): Promise<any> {
-    const context: ModuleProcessingContext = {
-      requestId: Date.now().toString(),
-      providerName: 'qwen',
-      protocol: 'openai'
-    };
-    
-    return this.processRequest(request, null, context);
-  }
-
-  // ModuleInterface连接管理方法
-  addConnection(module: ModuleInterface): void {
-    this.connections.set(module.getId(), module);
-  }
-
-  removeConnection(moduleId: string): void {
-    this.connections.delete(moduleId);
-  }
-
-  getConnection(moduleId: string): ModuleInterface | undefined {
-    return this.connections.get(moduleId);
-  }
-
-  getConnections(): ModuleInterface[] {
-    return Array.from(this.connections.values());
-  }
-
-  hasConnection(moduleId: string): boolean {
-    return this.connections.has(moduleId);
-  }
-
-  clearConnections(): void {
-    this.connections.clear();
-  }
-
-  getConnectionCount(): number {
-    return this.connections.size;
-  }
-
-  // 模块间通信方法
-  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
-    const targetModule = this.connections.get(targetModuleId);
-    if (targetModule) {
-      // 发送消息到目标模块
-      targetModule.onModuleMessage((sourceModuleId: string, msg: any, msgType: string) => {
-        this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
-      });
-      return Promise.resolve({ success: true, targetModuleId, message, type });
-    }
-    return Promise.resolve({ success: false, targetModuleId, message, type });
-  }
-
-  async broadcastToModules(message: any, type?: string): Promise<void> {
-    const promises: Promise<any>[] = [];
-    this.connections.forEach(module => {
-      promises.push(this.sendToModule(module.getId(), message, type));
-    });
-    await Promise.allSettled(promises);
-  }
-
-  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
-    this.on('moduleMessage', (data: any) => {
-      listener(data.fromModuleId, data.message, data.type);
-    });
-  }
+  // 兼容旧接口的process方法已在基类中实现
 }

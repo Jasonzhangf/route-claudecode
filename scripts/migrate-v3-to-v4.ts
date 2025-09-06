@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { SecureConfigManager } from '../src/utils/config-encryption';
 import { secureLogger } from '../src/utils/secure-logger';
+import { JQJsonHandler } from '../src/utils/jq-json-handler';
 
 /**
  * v3配置结构（实际格式）
@@ -132,7 +133,7 @@ class ConfigMigrator {
     }
 
     const content = fs.readFileSync(configPath, 'utf8');
-    const config = JSON.parse(content);
+    const config = JQJsonHandler.parseJsonString(content);
     
     secureLogger.info(`📄 已加载v3配置: ${configPath}`);
     return config;

@@ -1,0 +1,69 @@
+{
+  "testCases": [
+    {
+      "id": "basic-conversion",
+      "description": "基础转换测试",
+      "request": {
+        "model": "claude-3-opus-20240229",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Hello, how are you?"
+          }
+        ],
+        "max_tokens": 1000,
+        "temperature": 0.7
+      }
+    },
+    {
+      "id": "tool-calling",
+      "description": "工具调用测试",
+      "request": {
+        "model": "claude-3-opus-20240229",
+        "messages": [
+          {
+            "role": "user",
+            "content": "List all files in the current directory"
+          }
+        ],
+        "tools": [
+          {
+            "name": "list_files",
+            "description": "List files in a directory",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "The directory path to list"
+                }
+              },
+              "required": [
+                "path"
+              ]
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "tool",
+          "name": "list_files"
+        }
+      }
+    },
+    {
+      "id": "streaming-request",
+      "description": "流式请求测试",
+      "request": {
+        "model": "claude-3-opus-20240229",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Write a short story about a robot learning to paint"
+          }
+        ],
+        "max_tokens": 2000,
+        "stream": true
+      }
+    }
+  ]
+}

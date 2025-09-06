@@ -1,0 +1,188 @@
+{
+  "transformer": {
+    "anthropic_to_openai": {
+      "req_input_table": {
+        "model": {
+          "source": "model",
+          "target": "model",
+          "transform": "direct"
+        },
+        "messages": {
+          "source": "messages",
+          "target": "messages",
+          "transform": "anthropic_to_openai_messages"
+        },
+        "system": {
+          "source": "system",
+          "target": "messages[role=system]",
+          "transform": "anthropic_system_to_openai_message"
+        },
+        "max_tokens": {
+          "source": "max_tokens",
+          "target": "max_tokens",
+          "transform": "direct"
+        },
+        "temperature": {
+          "source": "temperature",
+          "target": "temperature",
+          "transform": "direct"
+        },
+        "tools": {
+          "source": "tools",
+          "target": "tools",
+          "transform": "anthropic_to_openai_tools"
+        }
+      },
+      "resp_input_table": {
+        "id": {
+          "source": "id",
+          "target": "id",
+          "transform": "direct"
+        },
+        "choices": {
+          "source": "choices",
+          "target": "content",
+          "transform": "openai_choices_to_anthropic_content"
+        },
+        "usage": {
+          "source": "usage",
+          "target": "__internal.usage",
+          "transform": "store_internal"
+        }
+      }
+    },
+    "openai_to_anthropic": {
+      "req_input_table": {
+        "model": {
+          "source": "model",
+          "target": "model",
+          "transform": "direct"
+        },
+        "messages": {
+          "source": "messages",
+          "target": "messages",
+          "transform": "openai_to_anthropic_messages"
+        }
+      },
+      "resp_input_table": {
+        "id": {
+          "source": "id",
+          "target": "id",
+          "transform": "direct"
+        },
+        "content": {
+          "source": "choices[0].message.content",
+          "target": "content",
+          "transform": "openai_content_to_anthropic_content"
+        },
+        "tool_calls": {
+          "source": "choices[0].message.tool_calls",
+          "target": "content",
+          "transform": "openai_tool_calls_to_anthropic_content"
+        }
+      }
+    }
+  },
+  "server_compatibility": {
+    "iflow": {
+      "req_input_table": {
+        "temperature": {
+          "source": "temperature",
+          "target": "temperature",
+          "transform": "range_limit",
+          "params": {
+            "min": 0,
+            "max": 1
+          }
+        },
+        "top_k": {
+          "source": "temperature",
+          "target": "top_k",
+          "transform": "dynamic_calculate",
+          "params": {
+            "formula": "Math.floor(temperature * 50)"
+          }
+        },
+        "model": {
+          "source": "model",
+          "target": "model",
+          "transform": "model_mapping",
+          "params": {
+            "mapping": {
+              "gpt-4": "iflow-plus",
+              "gpt-3.5-turbo": "iflow-standard"
+            }
+          }
+        }
+      },
+      "resp_input_table": {
+        "id": {
+          "source": "id",
+          "target": "id",
+          "transform": "ensure_prefix",
+          "params": {
+            "prefix": "chatcmpl-iflow-"
+          }
+        },
+        "object": {
+          "source": "object",
+          "target": "object",
+          "transform": "ensure_value",
+          "params": {
+            "value": "chat.completion"
+          }
+        }
+      }
+    },
+    "qwen": {
+      "req_input_table": {
+        "messages": {
+          "source": "messages",
+          "target": "messages",
+          "transform": "qwen_tool_flow_fix"
+        },
+        "tools": {
+          "source": "tools",
+          "target": "tools",
+          "transform": "openai_tools_validate"
+        }
+      },
+      "resp_input_table": {
+        "choices": {
+          "source": "choices",
+          "target": "choices",
+          "transform": "qwen_choices_normalize"
+        },
+        "tool_calls": {
+          "source": "choices[0].message.tool_calls",
+          "target": "choices[0].message.tool_calls",
+          "transform": "qwen_tool_calls_normalize"
+        }
+      }
+    },
+    "modelscope": {
+      "req_input_table": {
+        "tools": {
+          "source": "tools",
+          "target": "tools",
+          "transform": "anthropic_to_openai_tools"
+        },
+        "model": {
+          "source": "__internal.actualModel",
+          "target": "model",
+          "transform": "direct"
+        }
+      },
+      "resp_input_table": {
+        "id": {
+          "source": "id",
+          "target": "id",
+          "transform": "ensure_prefix",
+          "params": {
+            "prefix": "chatcmpl-modelscope-"
+          }
+        }
+      }
+    }
+  }
+}

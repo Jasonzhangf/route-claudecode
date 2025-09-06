@@ -133,32 +133,47 @@ type DevelopmentError =
 
 **标准编译流程**:
 
-1. **本地开发编译**:
+1. **单模块编译**:
    ```bash
-   # 使用固定的本地编译脚本
-   ./build.sh
-   
-   # 或直接使用npm脚本
-   npm run build
+   # 编译单个模块到node_modules/@rcc/<module-name>
+   ./scripts/compile-module.sh <module-name>
    ```
 
-2. **全局安装编译**:
+2. **全量编译**:
    ```bash
-   # 使用固定的安装脚本 (编译 + 全局安装)
-   ./install.sh
+   # 编译所有模块并清理临时目录
+   ./scripts/compile-all.sh
    ```
 
-3. **禁止的编译方式**:
+3. **全局安装编译**:
+   ```bash
+   # 使用标准构建和安装脚本
+   ./build-and-install.sh
+   ```
+
+4. **禁止的编译方式**:
    ```bash
    # ❌ 禁止创建新的编译脚本
    # ❌ 禁止修改现有编译脚本的核心逻辑
    # ❌ 禁止绕过TypeScript编译直接修改dist文件
+   # ❌ 禁止手动创建compiled-modules目录内容
    ```
+
+**模块编译工作原理**:
+
+RCC v4.0采用了改进的模块编译系统，确保项目根目录保持干净：
+
+1. **编译阶段**: 模块源码编译到临时目录`compiled-modules/<module-name>`
+2. **移动阶段**: 将编译产物移动到最终目录`node_modules/@rcc/<module-name>`
+3. **清理阶段**: 删除临时的`compiled-modules`目录，保持项目根目录干净
 
 **编译验证检查**:
 ```bash
 # 自动化验证脚本
 bash .claude/rules/scripts/typescript-only-check.sh
+
+# 模块编译验证
+bash .claude/rules/scripts/module-compilation-check.sh
 ```
 
 #### Phase 5: 测试验证 (Testing & Validation)

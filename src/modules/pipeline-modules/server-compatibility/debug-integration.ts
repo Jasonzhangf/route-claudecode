@@ -14,7 +14,7 @@ import {
   CompatibilityStats,
   ServerCompatibilityConfig,
 } from './types/compatibility-types';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import JQJsonHandler from '../../error-handler/src/utils/jq-json-handler';
 
 /**
  * 调试集成管理器

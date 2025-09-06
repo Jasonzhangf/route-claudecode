@@ -556,10 +556,9 @@ source scripts/dev/pre-development-check.sh
 echo "🔍 代码规范检查..."
 source scripts/dev/coding-compliance-check.sh
 
-# 3. TypeScript编译
-echo "⚙️ TypeScript编译..."
-npx tsc --noEmit # 类型检查
-npx tsc # 编译
+# 3. 模块编译
+echo "⚙️ 模块编译..."
+./scripts/compile-all.sh
 
 # 4. 代码质量检查
 echo "🧹 代码质量检查..."
@@ -581,17 +580,17 @@ scripts/dev/validate-docs.sh
 # 8. 构建验证
 echo "✅ 构建验证..."
 verify_build_output() {
-    local required_modules=("client" "router" "pipeline" "debug" "config" "error-handler" "types")
+    local required_modules=("config" "router" "api" "client" "core" "interfaces" "server" "tools" "logging" "error-handler")
     
     for module in "${required_modules[@]}"; do
-        if [ ! -f "dist/$module/index.js" ]; then
-            echo "❌ 模块构建失败: $module"
+        if [ ! -f "node_modules/@rcc/$module/index.js" ]; then
+            echo "❌ 模块构建失败: @rcc/$module"
             exit 1
         fi
         
         # 检查模块导出
-        if ! grep -q "exports\." "dist/$module/index.js"; then
-            echo "❌ 模块导出检查失败: $module"
+        if ! grep -q "exports\." "node_modules/@rcc/$module/index.js"; then
+            echo "❌ 模块导出检查失败: @rcc/$module"
             exit 1
         fi
     done
@@ -601,11 +600,22 @@ verify_build_output() {
 
 verify_build_output
 
-# 9. 安全检查
+# 9. 模块引用验证
+echo "🔗 模块引用验证..."
+verify_module_references() {
+    # 验证关键模块可以被正确引用
+    node -e "require('@rcc/config'); console.log('✅ @rcc/config 引用验证通过')"
+    node -e "require('@rcc/router'); console.log('✅ @rcc/router 引用验证通过')"
+    echo "✅ 模块引用验证通过"
+}
+
+verify_module_references
+
+# 10. 安全检查
 echo "🔒 安全检查..."
 npm audit --audit-level moderate
 
-# 10. 生成构建报告
+# 11. 生成构建报告
 echo "📊 生成构建报告..."
 generate_build_report() {
     local report_file="./build-reports/build-$(date +%Y%m%d-%H%M%S).json"
@@ -622,8 +632,8 @@ generate_build_report() {
     "coveragePercentage": $(npm run test:coverage --silent | grep -o "[0-9]\+\.[0-9]\+%" | head -1)
   },
   "buildSize": {
-    "totalSize": "$(du -sh dist | cut -f1)",
-    "moduleCount": $(find dist -name "index.js" | wc -l)
+    "totalSize": "$(du -sh node_modules/@rcc | cut -f1)",
+    "moduleCount": $(find node_modules/@rcc -name "index.js" | wc -l)
   },
   "qualityChecks": {
     "hardcodingViolations": 0,
@@ -641,8 +651,8 @@ generate_build_report
 
 echo "🎉 完整构建流程完成！"
 echo "📊 构建统计:"
-echo "  - 模块数量: $(find dist -name "index.js" | wc -l)"
-echo "  - 构建大小: $(du -sh dist | cut -f1)"
+echo "  - 模块数量: $(find node_modules/@rcc -name "index.js" | wc -l)"
+echo "  - 构建大小: $(du -sh node_modules/@rcc | cut -f1)"
 echo "  - 构建时间: $(date)"
 ```
 
@@ -679,9 +689,9 @@ echo "  - 构建时间: $(date)"
 
 #### 构建验证检查
 - [ ] **编译成功**: TypeScript编译无错误
-- [ ] **模块导出**: 所有必要接口正确导出
-- [ ] **依赖完整**: 无缺失的依赖项
-- [ ] **构建大小**: 构建产物大小合理
+- [ ] **模块编译**: 所有模块已正确编译到node_modules/@rcc/
+- [ ] **模块引用**: 模块可以通过标准npm包方式引用
+- [ ] **目录结构**: 项目根目录保持干净，无compiled-modules目录
 
 ### 自动化检查脚本
 
@@ -706,7 +716,10 @@ npm run lint:check
 npm run type:check
 npm run format:check
 
-echo "5️⃣ 构建验证检查..."
+echo "5️⃣ 模块编译检查..."
+bash .claude/rules/scripts/module-compilation-check.sh
+
+echo "6️⃣ 构建验证检查..."
 source scripts/build/complete-build.sh
 
 echo "🎉 所有检查通过，可以提交代码！"
@@ -722,5 +735,6 @@ echo "🎉 所有检查通过，可以提交代码！"
 4. **文档同步**: 强制的文档更新和同步机制
 5. **自动化保障**: 完整的自动化检查和构建流程
 6. **质量门禁**: 多层次的质量检查和验证
+7. **目录结构**: 改进的模块编译系统确保项目根目录保持干净
 
 **所有开发人员必须严格遵循这些规则，任何违反P0级规则的代码都将被立即拒绝。通过这套规则体系，我们确保RCC v4.0项目的高质量、高可靠性和高可维护性。**

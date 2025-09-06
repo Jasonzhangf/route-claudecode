@@ -13,7 +13,7 @@
  * @version 1.0.0-security-fix
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../modules/interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
 // 导入OpenAI标准格式 - Protocol层必须使用
@@ -232,62 +232,6 @@ export class GeminiProtocolModule extends EventEmitter implements ModuleInterfac
         metrics: this.metrics
       }
     };
-  }
-
-  // ModuleInterface连接管理方法
-  addConnection(module: ModuleInterface): void {
-    this.connections.set(module.getId(), module);
-  }
-
-  removeConnection(moduleId: string): void {
-    this.connections.delete(moduleId);
-  }
-
-  getConnection(moduleId: string): ModuleInterface | undefined {
-    return this.connections.get(moduleId);
-  }
-
-  getConnections(): ModuleInterface[] {
-    return Array.from(this.connections.values());
-  }
-
-  hasConnection(moduleId: string): boolean {
-    return this.connections.has(moduleId);
-  }
-
-  clearConnections(): void {
-    this.connections.clear();
-  }
-
-  getConnectionCount(): number {
-    return this.connections.size;
-  }
-
-  // 模块间通信方法
-  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
-    const targetModule = this.connections.get(targetModuleId);
-    if (targetModule) {
-      // 发送消息到目标模块
-      targetModule.onModuleMessage((sourceModuleId: string, msg: any, msgType: string) => {
-        this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
-      });
-      return Promise.resolve({ success: true, targetModuleId, message, type });
-    }
-    return Promise.resolve({ success: false, targetModuleId, message, type });
-  }
-
-  async broadcastToModules(message: any, type?: string): Promise<void> {
-    const promises: Promise<any>[] = [];
-    this.connections.forEach(module => {
-      promises.push(this.sendToModule(module.getId(), message, type));
-    });
-    await Promise.allSettled(promises);
-  }
-
-  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
-    this.on('moduleMessage', (data: any) => {
-      listener(data.fromModuleId, data.message, data.type);
-    });
   }
 
   // ============================================================================
@@ -518,6 +462,85 @@ export class GeminiProtocolModule extends EventEmitter implements ModuleInterfac
   removeAllListeners(event?: string | symbol): this {
     super.removeAllListeners(event);
     return this;
+  }
+  
+  // ModuleInterface连接管理方法
+  // private connections: Map<string, ModuleInterface> = new Map(); // 重复声明，已移除
+  
+  addConnection(module: ModuleInterface): void {
+    this.connections.set(module.getId(), module);
+  }
+
+  removeConnection(moduleId: string): void {
+    this.connections.delete(moduleId);
+  }
+
+  getConnection(moduleId: string): ModuleInterface | undefined {
+    return this.connections.get(moduleId);
+  }
+
+  getConnections(): ModuleInterface[] {
+    return Array.from(this.connections.values());
+  }
+  
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
+  }
+  
+  /**
+   * 发送消息到目标模块
+   */
+  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
+    const targetModule = this.connections.get(targetModuleId);
+    if (targetModule) {
+      // 发送消息到目标模块
+      targetModule.onModuleMessage((sourceModuleId: string, msg: any, msgType: string) => {
+        this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
+      });
+      return Promise.resolve({ success: true, targetModuleId, message, type });
+    }
+    return Promise.resolve({ success: false, targetModuleId, message, type });
+  }
+  
+  /**
+   * 广播消息到所有连接的模块
+   */
+  async broadcastToModules(message: any, type?: string): Promise<void> {
+    const promises: Promise<any>[] = [];
+    this.connections.forEach(module => {
+      promises.push(this.sendToModule(module.getId(), message, type));
+    });
+    await Promise.allSettled(promises);
+  }
+  
+  /**
+   * 监听来自其他模块的消息
+   */
+  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
+    this.on('moduleMessage', (data: any) => {
+      listener(data.fromModuleId, data.message, data.type);
+    });
   }
 }
 

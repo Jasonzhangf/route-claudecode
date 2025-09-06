@@ -1,8 +1,12 @@
-# 转换器模块 (Transformers Module)
+# Transformer层 - 双向协议转换模块
 
 ## 模块概述
 
-转换器模块负责不同AI协议之间的格式转换，主要处理Anthropic ↔ OpenAI等协议格式转换。该模块实现了ModuleInterface接口，支持API化管理。
+**位置**: 流水线第1层 (Transformer Layer)
+**职责**: Anthropic ↔ Provider协议双向转换
+**架构**: 预配置 + 双向处理 + 模板字段表转换
+
+Transformer层是流水线的第一层，负责Anthropic格式与Provider协议（OpenAI/Gemini/etc）之间的双向转换。采用预配置模板和模板字段表转换，替代硬编码逻辑。
 
 ## 目录结构
 

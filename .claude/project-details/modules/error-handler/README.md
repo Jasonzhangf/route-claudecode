@@ -1,16 +1,21 @@
-# 错误处理模块 (Error Handler Module)
+# 错误处理模块 (Error Handler Module) - 统一错误协调重构版
 
 ## 模块概述
 
-错误处理模块是RCC v4.0系统的统一错误管理中心，负责捕获、处理、记录和报告系统中的所有错误。
+错误处理模块是RCC v4.0系统的统一错误管理中心，负责捕获、处理、记录和报告系统中的所有错误。采用增强的错误协调中心设计，提供统一的错误处理流程和分类管理。
 
-## 模块职责
+## 核心设计理念
 
-1. **错误捕获**: 统一捕获系统中的所有错误
-2. **错误处理**: 标准化错误处理流程
-3. **错误记录**: 记录错误信息用于调试和分析
-4. **错误报告**: 向用户和监控系统报告错误
-5. **错误分类**: 对错误进行分类和优先级管理
+### ✅ 统一错误协调中心
+- **集中管理**: 所有错误通过统一的协调中心处理
+- **分类处理**: 不同类型的错误采用不同的处理策略
+- **上下文保留**: 完整的错误上下文信息保留和传递
+- **链式追踪**: 支持完整的错误链追踪机制
+
+### 🔒 安全性原则
+- **敏感信息过滤**: 自动过滤和保护敏感错误信息
+- **安全日志**: 安全日志记录和审计机制
+- **权限控制**: 错误处理的权限控制和访问限制
 
 ## 模块结构
 
@@ -18,42 +23,84 @@
 error-handler/
 ├── README.md                          # 本模块设计文档
 ├── index.ts                           # 模块入口和导出
-├── error-handler.ts                   # 错误处理器
-├── error-formatter.ts                 # 错误格式化器
+├── enhanced-error-handler.ts           # 增强错误处理器
+├── error-classifier.ts                # 错误分类器
+├── error-log-cli.ts                   # 错误日志CLI
+├── error-log-manager.ts               # 错误日志管理器
 ├── error-logger.ts                    # 错误记录器
-├── error-categories.ts                # 错误分类管理
-├── error-codes.ts                     # 错误码定义
-├── error-filters.ts                   # 错误过滤器
-├── error-reporter.ts                  # 错误报告器
-└── types/                             # 错误处理相关类型定义
+├── unified-error-coordinator.ts       # 统一错误协调器
+├── unified-error-processing-flow.ts   # 统一错误处理流程
+├── unified-error-response-normalizer.ts # 统一错误响应标准化器
+├── server-compatibility-error-adapter.ts # 服务器兼容性错误适配器
+├── error-coordination-center-factory.ts # 错误协调中心工厂
+├── utils/                             # 工具目录
+│   ├── secure-logger.ts               # 安全日志记录器
+│   └── jq-json-handler.ts             # JSON处理工具
+└── types/                             # 类型定义目录
     ├── error-types.ts                 # 错误类型定义
     └── error-handler-types.ts         # 错误处理器类型定义
 ```
 
 ## 核心组件
 
-### 错误处理器 (ErrorHandler)
-负责错误处理的主逻辑，是模块的主入口点。
+### 统一错误协调器 (UnifiedErrorCoordinator) - 核心协调组件
+负责错误处理的统一协调和分发：
 
-### 错误格式化器 (ErrorFormatter)
-标准化错误信息的格式化输出。
+#### 功能特性
+- **错误接收**: 接收系统中所有类型的错误
+- **分类处理**: 根据错误类型进行分类处理
+- **策略执行**: 执行预定义的错误处理策略
+- **日志记录**: 统一的错误日志记录机制
+- **响应生成**: 生成标准化的错误响应
 
-### 错误记录器 (ErrorLogger)
-记录错误信息到日志系统。
+#### 接口定义
+```typescript
+class UnifiedErrorCoordinator {
+  // 错误处理主方法
+  async handleError(error: any, context?: ErrorContext): Promise<ErrorHandlingResult>;
+  
+  // 错误分类
+  classifyError(error: any): ErrorClassification;
+  
+  // 策略执行
+  executeStrategy(error: any, classification: ErrorClassification): Promise<ErrorHandlingResult>;
+  
+  // 日志记录
+  logError(error: any, context?: ErrorContext): void;
+  
+  // 响应生成
+  generateResponse(error: any, classification: ErrorClassification): ErrorResponse;
+}
+```
 
-### 错误分类管理 (ErrorCategories)
-管理错误的分类和优先级。
+### 增强错误处理器 (EnhancedErrorHandler) - 增强处理组件
+提供增强的错误处理功能：
 
-### 错误码定义 (ErrorCodes)
-定义系统中使用的标准错误码。
+#### 功能特性
+- **多层处理**: 支持多层错误处理机制
+- **重试机制**: 自动重试和错误恢复
+- **降级处理**: 优雅的错误降级处理
+- **监控集成**: 与系统监控集成
 
-### 错误过滤器 (ErrorFilters)
-过滤敏感信息，确保错误信息安全性。
+### 错误分类器 (ErrorClassifier) - 智能分类组件
+智能分类各种错误类型：
 
-### 错误报告器 (ErrorReporter)
-向用户和监控系统报告错误信息。
+#### 功能特性
+- **自动识别**: 自动识别错误类型和严重程度
+- **上下文分析**: 分析错误上下文信息
+- **模式匹配**: 基于模式匹配的错误分类
+- **动态更新**: 支持分类规则的动态更新
 
-## 错误分类
+### 安全日志记录器 (SecureLogger) - 安全日志组件
+提供安全的日志记录功能：
+
+#### 功能特性
+- **敏感信息过滤**: 自动过滤敏感信息
+- **结构化日志**: 结构化的日志格式
+- **安全存储**: 安全日志存储机制
+- **审计追踪**: 完整的审计追踪功能
+
+## 错误分类体系
 
 ### 客户端错误 (ClientError)
 - CLI命令错误
@@ -85,72 +132,71 @@ error-handler/
 - 输出数据验证错误
 - 格式验证错误
 
-## 错误码标准
+### 服务器兼容性错误 (ServerCompatibilityError)
+- 协议不兼容错误
+- 参数适配错误
+- 响应格式错误
 
-```typescript
-// 客户端错误 (1000-1999)
-const CLIENT_ERRORS = {
-  CLI_INVALID_COMMAND: 1001,
-  CLI_MISSING_ARGUMENT: 1002,
-  CLI_INVALID_OPTION: 1003,
-  SERVER_START_FAILED: 1004,
-  SERVER_STOP_FAILED: 1005
-};
+## 统一错误处理流程
 
-// 路由器错误 (2000-2999)
-const ROUTER_ERRORS = {
-  CONFIG_LOAD_FAILED: 2001,
-  CONFIG_VALIDATION_FAILED: 2002,
-  ROUTING_DECISION_FAILED: 2003,
-  LOAD_BALANCING_FAILED: 2004,
-  SESSION_FLOW_CONTROL_FAILED: 2005
-};
-
-// 流水线错误 (3000-3999)
-const PIPELINE_ERRORS = {
-  PIPELINE_CREATION_FAILED: 3001,
-  PIPELINE_EXECUTION_FAILED: 3002,
-  MODULE_PROCESSING_FAILED: 3003,
-  TRANSFORMER_FAILED: 3004,
-  PROTOCOL_HANDLING_FAILED: 3005
-};
-
-// 配置错误 (4000-4999)
-const CONFIG_ERRORS = {
-  CONFIG_FILE_NOT_FOUND: 4001,
-  CONFIG_PARSE_FAILED: 4002,
-  CONFIG_VALIDATION_FAILED: 4003,
-  ENV_VARIABLE_MISSING: 4004
-};
-
-// 网络错误 (5000-5999)
-const NETWORK_ERRORS = {
-  CONNECTION_TIMEOUT: 5001,
-  DNS_RESOLUTION_FAILED: 5002,
-  SSL_HANDSHAKE_FAILED: 5003,
-  HTTP_STATUS_ERROR: 5004
-};
 ```
+错误发生
+    ↓
+错误捕获 (try-catch)
+    ↓
+错误包装 (RCCError)
+    ↓
+统一错误协调器
+    ↓
+错误分类和优先级评估
+    ↓
+敏感信息过滤
+    ↓
+错误记录到安全日志系统
+    ↓
+执行预定义处理策略
+    ↓
+生成标准化错误响应
+    ↓
+错误统计和监控上报
+```
+
+## 错误处理策略
+
+### 重试策略
+- **网络错误重试**: 自动重试网络相关错误
+- **配置错误重试**: 配置更新后的自动重试
+- **服务错误重试**: 服务暂时不可用时的重试
+
+### 降级策略
+- **功能降级**: 部分功能不可用时的优雅降级
+- **性能降级**: 高负载时的性能降级处理
+- **响应降级**: 响应时间过长时的降级处理
+
+### 通知策略
+- **实时通知**: 严重错误的实时通知机制
+- **定期报告**: 定期错误统计报告
+- **阈值告警**: 错误数量超过阈值时的告警
 
 ## 接口定义
 
 ```typescript
 interface ErrorHandlerModuleInterface {
   initialize(): Promise<void>;
-  handleError(error: RCCError): void;
+  handleError(error: RCCError): Promise<ErrorHandlingResult>;
   formatError(error: RCCError): string;
   logError(error: RCCError): void;
   reportError(error: RCCError): void;
   getErrorStats(): ErrorStatistics;
 }
 
-interface ErrorHandlerInterface {
-  handleClientError(error: ClientError): void;
-  handleRouterError(error: RouterError): void;
-  handlePipelineError(error: PipelineError): void;
-  handleConfigError(error: ConfigError): void;
-  handleNetworkError(error: NetworkError): void;
-  handleValidationError(error: ValidationError): void;
+interface UnifiedErrorCoordinatorInterface {
+  handleClientError(error: ClientError, context?: ErrorContext): Promise<ErrorHandlingResult>;
+  handleRouterError(error: RouterError, context?: ErrorContext): Promise<ErrorHandlingResult>;
+  handlePipelineError(error: PipelineError, context?: ErrorContext): Promise<ErrorHandlingResult>;
+  handleConfigError(error: ConfigError, context?: ErrorContext): Promise<ErrorHandlingResult>;
+  handleNetworkError(error: NetworkError, context?: ErrorContext): Promise<ErrorHandlingResult>;
+  handleValidationError(error: ValidationError, context?: ErrorContext): Promise<ErrorHandlingResult>;
 }
 
 interface ErrorFormatterInterface {
@@ -162,40 +208,21 @@ interface ErrorFormatterInterface {
 }
 
 interface ErrorLoggerInterface {
-  logClientError(error: ClientError): void;
-  logRouterError(error: RouterError): void;
-  logPipelineError(error: PipelineError): void;
-  logConfigError(error: ConfigError): void;
-  logNetworkError(error: NetworkError): void;
-  logValidationError(error: ValidationError): void;
+  logClientError(error: ClientError, context?: ErrorContext): void;
+  logRouterError(error: RouterError, context?: ErrorContext): void;
+  logPipelineError(error: PipelineError, context?: ErrorContext): void;
+  logConfigError(error: ConfigError, context?: ErrorContext): void;
+  logNetworkError(error: NetworkError, context?: ErrorContext): void;
+  logValidationError(error: ValidationError, context?: ErrorContext): void;
 }
-```
-
-## 错误处理流程
-
-```
-错误发生
-    ↓
-错误捕获 (try-catch)
-    ↓
-错误包装 (RCCError)
-    ↓
-错误分类和优先级评估
-    ↓
-敏感信息过滤
-    ↓
-错误记录到日志系统
-    ↓
-错误格式化和用户报告
-    ↓
-错误统计和监控上报
 ```
 
 ## 依赖关系
 
-- 被所有其他模块依赖以处理错误
-- 依赖日志模块进行错误记录
-- 依赖配置模块获取错误处理配置
+- **被所有其他模块依赖**以处理错误
+- **依赖安全日志模块**进行错误记录
+- **依赖配置模块**获取错误处理配置
+- **依赖调试模块**获取调试信息
 
 ## 设计原则
 
@@ -206,3 +233,82 @@ interface ErrorLoggerInterface {
 5. **可追溯性**: 完整的错误链追踪
 6. **可配置性**: 支持灵活的错误处理策略
 7. **监控集成**: 与监控系统集成，支持告警
+8. **性能优化**: 高效的错误处理和记录机制
+
+## 使用示例
+
+### 基本错误处理
+```typescript
+import { UnifiedErrorCoordinator } from '@rcc/error-handler';
+
+// 创建错误协调器实例
+const errorCoordinator = new UnifiedErrorCoordinator();
+
+// 处理错误
+try {
+  // 可能出错的代码
+  await someOperation();
+} catch (error) {
+  // 统一错误处理
+  await errorCoordinator.handleError(error, {
+    module: 'example-module',
+    operation: 'someOperation',
+    context: { additionalInfo: 'example' }
+  });
+}
+```
+
+### 错误分类处理
+```typescript
+// 分类处理不同类型错误
+const classification = errorCoordinator.classifyError(error);
+switch (classification.type) {
+  case 'NETWORK_ERROR':
+    // 网络错误处理
+    await handleNetworkError(error);
+    break;
+  case 'CONFIG_ERROR':
+    // 配置错误处理
+    await handleConfigError(error);
+    break;
+  default:
+    // 默认错误处理
+    await errorCoordinator.handleError(error);
+}
+```
+
+### 自定义错误处理策略
+```typescript
+// 注册自定义处理策略
+errorCoordinator.registerStrategy('CUSTOM_ERROR', async (error) => {
+  // 自定义处理逻辑
+  await customErrorHandling(error);
+  return { handled: true, recovery: true };
+});
+```
+
+## 测试策略
+
+### 单元测试覆盖
+- **错误分类**: 测试各种错误类型的正确分类
+- **处理策略**: 验证不同错误处理策略的正确执行
+- **日志记录**: 确保错误日志的正确记录和过滤
+- **响应生成**: 验证错误响应的标准化生成
+
+### 集成测试
+- **模块集成**: 验证与其他模块的错误处理集成
+- **性能测试**: 验证大规模错误处理的性能
+- **安全测试**: 验证敏感信息的正确过滤和保护
+
+## 性能指标
+
+- **错误处理延迟**: < 5ms
+- **日志记录性能**: < 1ms
+- **内存使用**: < 10MB
+- **并发处理**: 支持 1000+ 并发错误处理
+
+## 版本历史
+
+- **v4.1.0** (当前): 统一错误协调中心重构
+- **v4.0.0**: 增强错误处理功能
+- **v3.x**: 基础错误处理机制

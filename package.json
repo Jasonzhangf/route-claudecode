@@ -1,65 +1,36 @@
 {
-  "name": "route-claude-code",
-  "version": "4.2.0",
-  "description": "Route Claude Code v4.1 - Enhanced OpenAI & Qwen Support with Mixed Configuration",
-  "main": "dist/cli.js",
-  "bin": {
-    "rcc4": "./dist/cli.js"
-  },
+  "name": "route-claudecode",
+  "version": "4.0.0",
+  "description": "Claude Code Router v4.0 - A high-performance, scalable multi-AI provider routing and transformation system",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc --skipLibCheck",
-    "type-check": "tsc --noEmit",
-    "type-check-strict": "tsc --noEmit --strict",
-    "start": "node dist/cli.js",
-    "dev": "tsc --watch",
-    "clean": "rm -rf dist",
-    "test": "jest --coverage --json --outputFile=./test-results/unit-test-report.json",
-    "test:unit": "jest tests/unit/",
-    "test:integration": "jest tests/integration/",
-    "test:watch": "jest --watch",
-    "test:pipeline": "ts-node src/api/test-pipeline-integration.ts",
-    "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
-    "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
-    "lint": "tsc --noEmit",
-    "lint:fix": "prettier --write \"src/**/*.{ts,js,json,md}\" && tsc --noEmit"
+    "build": "tsc",
+    "start:test": "npx ts-node src/index.ts --port 5511",
+    "start:ccr": "cd ../claude-code-router && npm start -- --port 5510",
+    "test:basic": "npx jest src/__tests__/basic-transformer.test.ts",
+    "test:tools": "npx jest src/__tests__/tool-calling-transformer.test.ts",
+    "test:streaming": "npx jest src/__tests__/streaming-protocol.test.ts",
+    "test:complex": "npx jest src/__tests__/complex-scenarios.test.ts",
+    "test:all": "./scripts/run-test-suite.sh",
+    "test:compare": "./scripts/generate-comparison-report.sh",
+    "test:verify": "./scripts/verify-fixes.sh",
+    "fix:auto": "./scripts/auto-fix.sh",
+    "fix:verify": "./scripts/auto-fix.sh --verify-only",
+    "fix:dry-run": "./scripts/auto-fix.sh --dry-run"
   },
-  "devDependencies": {
-    "@types/axios": "^0.9.36",
-    "@types/express": "^5.0.3",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^20.19.11",
-    "@types/supertest": "^6.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.39.1",
-    "babel-jest": "^30.0.5",
-    "jest": "^30.0.5",
-    "jest-json-reporter": "^1.2.2",
-    "json5": "^2.2.3",
-    "prettier": "^3.6.2",
-    "supertest": "^7.1.4",
-    "ts-jest": "^29.4.1",
-    "typescript": "^5.0.0"
-  },
+  "keywords": [
+    "claude",
+    "code",
+    "router",
+    "ai",
+    "llm",
+    "transformer",
+    "openai",
+    "anthropic"
+  ],
+  "author": "Jason Zhang",
+  "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.30.0",
-    "@google-ai/generativelanguage": "^2.7.0",
-    "@musistudio/llms": "^1.0.30",
-    "@types/commander": "^2.12.0",
-    "axios": "^1.11.0",
-    "chalk": "^4.1.2",
-    "commander": "^14.0.0",
-    "express": "^5.1.0",
-    "open": "^10.2.0",
-    "openai": "^4.67.3",
-    "tiktoken": "^1.0.22"
-  },
-  "files": [
-    "dist/",
-    "src/",
-    "config/",
-    "data/",
-    "README.md",
-    "CLAUDE.md",
-    "build-and-install.sh",
-    ".env.example"
-  ]
+    "axios": "^1.11.0"
+  }
 }

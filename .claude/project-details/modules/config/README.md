@@ -1,159 +1,156 @@
-# 配置模块 (Config Module)
+# 配置模块 (Config Module) - 零接口暴露重构版
 
 ## 模块概述
 
-配置模块是RCC v4.0系统的配置管理中心，负责系统配置的加载、验证、管理和动态更新。
+配置模块是RCC v4.0系统的配置管理中心，负责系统配置的加载、验证、管理和动态更新。采用严格的零接口暴露设计，确保模块的安全性和封装性。
 
-## 模块职责
+## 核心设计理念
 
-1. **配置加载**: 从文件系统加载系统配置
-2. **配置验证**: 验证配置文件的格式和内容正确性
-3. **配置管理**: 管理配置的生命周期和变更
-4. **动态更新**: 支持配置的动态更新和重载
-5. **环境适配**: 支持环境变量替换和配置覆盖
+### ✅ 零接口暴露设计模式
+- **唯一入口**: 只暴露`ConfigPreprocessor`门面类
+- **静态方法**: 所有功能通过静态方法`preprocess()`访问
+- **一次性生命周期**: 处理完成后立即销毁，不留任何引用
+- **类型安全**: 严格的TypeScript类型定义和验证
+
+### 🔒 安全性原则
+- **敏感信息过滤**: 自动过滤和保护敏感配置信息
+- **配置验证**: 完整的输入验证和错误处理机制
+- **最小权限**: 模块只能访问必要配置，不能修改系统其他部分
 
 ## 模块结构
 
 ```
 config/
 ├── README.md                          # 本模块设计文档
-├── index.ts                           # 模块入口和导出
-├── config-manager.ts                   # 配置管理器
-├── config-validator.ts                # 配置验证器
-├── config-loader.ts                   # 配置加载器
-├── config-watcher.ts                  # 配置监视器
-├── config-encryptor.ts                # 配置加密器
-├── environment-processor.ts            # 环境变量处理器
-└── schemas/                           # 配置Schema定义
-    ├── provider-config-schema.ts      # Provider配置Schema
-    ├── routing-config-schema.ts      # 路由配置Schema
-    └── debug-config-schema.ts        # Debug配置Schema
+├── index.ts                           # 模块统一导出（零接口暴露）
+├── config-preprocessor.ts             # 配置预处理器（唯一公开类）
+├── routing-table-types.ts             # 路由表类型定义
+└── __tests__/                         # 测试目录
+    ├── config-preprocessor.test.ts    # 预处理器单元测试
+    └── test-outputs/                  # 测试输出目录
 ```
 
 ## 核心组件
 
-### 配置管理器 (ConfigManager)
-负责配置的完整生命周期管理，是模块的主入口点。
+### 配置预处理器 (ConfigPreprocessor) - 唯一公开组件
+实现一次性预处理模式，严格遵循零接口暴露设计：
 
-### 配置加载器 (ConfigLoader)
-负责从文件系统加载配置文件，支持多种配置格式。
+#### 生命周期
+1. **实例化** → 系统启动时创建
+2. **预处理** → `preprocess()`方法执行配置处理
+3. **销毁** → 处理完成后自动销毁，无持久引用
 
-### 配置验证器 (ConfigValidator)
-验证配置文件的格式和内容正确性，确保配置有效。
+#### 功能特性
+- **配置文件解析**: 支持v4格式配置文件解析
+- **Provider信息扩展**: 自动扩展Provider配置信息
+- **路由映射生成**: 根据配置生成完整的路由映射
+- **服务器配置标准化**: 统一服务器配置格式
+- **错误处理**: 完善的错误捕获和报告机制
 
-### 配置监视器 (ConfigWatcher)
-监视配置文件变化，支持动态配置更新。
+#### 接口定义
+```typescript
+class ConfigPreprocessor {
+  // 唯一的公开方法 - 零接口暴露设计
+  static preprocess(configPath: string): ConfigPreprocessResult;
+}
 
-### 配置加密器 (ConfigEncryptor)
-处理敏感配置信息的加密和解密。
-
-### 环境变量处理器 (EnvironmentProcessor)
-处理环境变量替换和配置覆盖。
+interface ConfigPreprocessResult {
+  success: boolean;
+  routingTable?: RoutingTable;
+  error?: {
+    code: string;
+    message: string;
+    details: any;
+  };
+  metadata: {
+    configPath: string;
+    processingTime: number;
+    timestamp: string;
+    sourceFormat: string;
+  };
+}
+```
 
 ## 配置文件结构
 
-```
-~/.route-claudecode/
-├── config/
-│   ├── providers.json                 # Provider配置
-│   ├── routing.json                   # 路由配置
-│   ├── debug.json                      # Debug配置
-│   ├── security.json                  # 安全配置
-│   └── generated/                      # 动态生成的配置
-│       ├── routing-table.json          # 生成的路由表
-│       └── provider-status.json        # Provider状态
-├── debug/                              # Debug记录目录
-└── logs/                               # 日志目录
-```
-
-## 配置类型
-
-### Provider配置
+### 标准v4配置文件
 ```json
 {
-  "providers": [
+  "version": "4.1",
+  "Providers": [
     {
-      "name": "openai",
-      "protocol": "openai",
-      "baseUrl": "https://api.openai.com/v1",
-      "apiKey": "${OPENAI_API_KEY}",
-      "models": ["gpt-4", "gpt-3.5-turbo"],
-      "maxTokens": 4096,
-      "availability": true
+      "name": "lmstudio",
+      "priority": 1,
+      "api_base_url": "http://localhost:1234/v1",
+      "api_key": "lm-studio",
+      "models": ["llama-3.1-8b", "qwen2.5-coder-32b"]
     }
-  ]
-}
-```
-
-### 路由配置
-```json
-{
-  "routes": [
-    {
-      "category": "default",
-      "rules": [
-        {
-          "provider": "openai",
-          "model": "gpt-4",
-          "weight": 0.7
-        },
-        {
-          "provider": "anthropic", 
-          "model": "claude-3",
-          "weight": 0.3
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Debug配置
-```json
-{
-  "debug": {
-    "enabled": true,
-    "level": "info",
-    "saveRequests": true,
-    "captureLevel": "full"
-  }
-}
-```
-
-## 接口定义
-
-```typescript
-interface ConfigModuleInterface {
-  initialize(): Promise<void>;
-  loadConfig(): Promise<RCCConfig>;
-  validateConfig(config: RCCConfig): boolean;
-  watchConfig(): void;
-  getConfig(): RCCConfig;
-  updateConfig(config: RCCConfig): Promise<void>;
-  reloadConfig(): Promise<void>;
-}
-
-interface ConfigManagerInterface {
-  loadProviderConfig(): Promise<ProviderConfig[]>;
-  loadRoutingConfig(): Promise<RoutingConfig>;
-  loadDebugConfig(): Promise<DebugConfig>;
-  validateProviderConfig(config: ProviderConfig[]): boolean;
-  validateRoutingConfig(config: RoutingConfig): boolean;
-  generateRoutingTable(): Promise<GeneratedRoutingTable>;
+  ],
+  "router": {
+    "default": "lmstudio,llama-3.1-8b",
+    "coding": "lmstudio,qwen2.5-coder-32b"
+  },
+  "server": {
+    "port": 5506,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  "APIKEY": "rcc4-proxy-key"
 }
 ```
 
 ## 依赖关系
 
-- 被所有其他模块依赖以获取配置信息
-- 依赖文件系统进行配置文件读写
-- 依赖环境变量进行配置覆盖
+- **上游依赖**: 配置预处理器不依赖其他模块
+- **下游依赖**: 为RouterPreprocessor提供标准化路由表
+- **支撑模块**: 
+  - ErrorHandler模块提供错误处理支持
+  - Debug模块提供调试信息记录
 
 ## 设计原则
 
-1. **安全性**: 敏感信息加密存储，防止配置信息泄露
-2. **灵活性**: 支持多种配置来源和格式
-3. **可靠性**: 完善的配置验证机制，防止错误配置导致系统故障
-4. **动态性**: 支持配置的动态更新和重载
-5. **可维护性**: 清晰的配置结构和文档
-6. **标准化**: 使用JSON Schema验证配置格式
+1. **零接口暴露**: 严格封装内部实现，只暴露必要接口
+2. **一次性处理**: 预处理器完成任务后立即销毁
+3. **类型安全**: 100% TypeScript类型检查
+4. **配置驱动**: 所有行为通过配置文件控制
+5. **错误容忍**: 完善的错误处理和恢复机制
+6. **性能优化**: 高效的配置处理和内存管理
+7. **测试覆盖**: 完整的单元测试和集成测试
+
+## 使用示例
+
+```typescript
+// 正确使用方式 - 零接口暴露设计
+import { ConfigPreprocessor } from '@rcc/config';
+
+// 一次性预处理配置文件
+const result = ConfigPreprocessor.preprocess('/path/to/config.json');
+
+if (result.success) {
+  // 使用生成的路由表
+  const routingTable = result.routingTable;
+  // 传递给下一个预处理器
+} else {
+  // 处理错误
+  console.error('配置预处理失败:', result.error);
+}
+```
+
+## 测试策略
+
+### 单元测试覆盖
+- **配置文件解析**: 测试各种格式配置文件的正确解析
+- **Provider扩展**: 验证Provider信息的正确扩展
+- **路由生成**: 确保路由映射的完整性和正确性
+- **错误处理**: 验证各种错误场景的处理能力
+
+### 集成测试
+- **与RouterPreprocessor集成**: 验证配置输出与路由输入的兼容性
+- **性能测试**: 验证大规模配置文件的处理性能
+- **安全测试**: 验证敏感信息的正确过滤和保护
+
+## 版本历史
+
+- **v4.1.0** (当前): 零接口暴露重构，一次性预处理器设计
+- **v4.0.0**: 基础配置管理功能
+- **v3.x**: 早期配置加载和验证功能

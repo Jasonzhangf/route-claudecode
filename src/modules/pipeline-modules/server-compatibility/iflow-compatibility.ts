@@ -1,46 +1,23 @@
 /**
  * iFlow Server Compatibility Module
  * Handles iFlow API compatibility adjustments with enhanced tool calling and response processing
+ * Supports bidirectional compatibility processing: request and response
  */
 
-import { ModuleInterface, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-import { secureLogger } from '../../../utils/secure-logger';
-import { API_DEFAULTS } from '../../../constants/api-defaults';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import { secureLogger } from '../../../error-handler/src/utils/secure-logger';
+import { API_DEFAULTS } from '../../../constants/src/bootstrap-constants';
+import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
 import { OpenAIStandardResponse, OpenAIErrorResponse } from './types/compatibility-types';
-import { ERROR_MESSAGES } from '../../../constants/error-messages';
+import { ERROR_MESSAGES } from '../../../constants/src/bootstrap-constants';
+import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
 
 // ✅ Configuration-driven constants - no more hardcoding
 const IFLOW_CONSTANTS = {
   MILLISECONDS_PER_SECOND: 1000,  // Mathematical constant - acceptable
   MODULE_VERSION: '1.0.0'         // Module version - acceptable
 };
-
-interface ModuleProcessingContext {
-  readonly requestId: string;
-  readonly providerName?: string;
-  readonly protocol?: string;
-  readonly config?: {
-    readonly endpoint?: string;
-    readonly apiKey?: string;
-    readonly timeout?: number;
-    readonly maxRetries?: number;
-    readonly actualModel?: string;
-    readonly originalModel?: string;
-  };
-  metadata?: {
-    protocolConfig?: {
-      endpoint?: string;
-      apiKey?: string;
-      protocol?: string;
-      timeout?: number;
-      maxRetries?: number;
-      customHeaders?: Record<string, string>;
-    };
-    [key: string]: any;
-  };
-}
 
 export interface IFlowCompatibilityConfig {
   baseUrl: string;
@@ -74,24 +51,12 @@ export interface IFlowCompatibilityConfig {
   };
 }
 
-export class IFlowCompatibilityModule extends EventEmitter implements ModuleInterface {
-  private readonly id: string = 'iflow-compatibility';
-  private readonly name: string = 'iFlow Compatibility Module';
-  private readonly type: any = 'server-compatibility';
-  private readonly version: string = IFLOW_CONSTANTS.MODULE_VERSION;
+export class IFlowCompatibilityModule extends ServerCompatibilityModule {
   private readonly config: IFlowCompatibilityConfig;
-  private status: any = 'healthy';
   private isInitialized = false;
-  private connections: Map<string, ModuleInterface> = new Map();
-  private metrics = {
-    requestsProcessed: 0,
-    errorsHandled: 0,
-    responsesFixed: 0,
-    toolCallsProcessed: 0
-  };
 
   constructor(config: IFlowCompatibilityConfig) {
-    super();
+    super('iflow-compatibility', 'iFlow Compatibility Module', IFLOW_CONSTANTS.MODULE_VERSION);
     this.config = config;
     
     secureLogger.info('Initialize iFlow compatibility module', {
@@ -101,94 +66,25 @@ export class IFlowCompatibilityModule extends EventEmitter implements ModuleInte
     });
   }
 
-  getId(): string { 
-    return this.id; 
-  }
-
-  getName(): string { 
-    return this.name; 
-  }
-
-  getType(): any { 
-    return this.type; 
-  }
-
-  getVersion(): string { 
-    return this.version; 
-  }
-
-  getStatus(): any { 
-    return this.status; 
-  }
-
-  getMetrics(): ModuleMetrics {
-    return {
-      requestsProcessed: this.metrics.requestsProcessed,
-      averageProcessingTime: 0,
-      errorRate: this.metrics.errorsHandled / Math.max(this.metrics.requestsProcessed, 1),
-      memoryUsage: 0,
-      cpuUsage: 0
-    };
-  }
-
-  async configure(config: any): Promise<void> {
-    secureLogger.info('iFlow compatibility module config updated');
-  }
-
-  async reset(): Promise<void> {
-    this.status = 'healthy';
-    this.emit('statusChanged', { health: this.status });
-  }
-
-  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
-    return {
-      healthy: this.status === 'healthy',
-      details: {
-        status: this.status,
-        initialized: this.isInitialized,
-        endpoint: this.config.baseUrl,
-        defaultModel: this.config.models.default
-      }
-    };
-  }
-
-  async initialize(): Promise<void> {
+  /**
+   * 初始化方法
+   */
+  protected async initialize(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
     try {
-      this.status = 'healthy';
       this.isInitialized = true;
-      this.emit('statusChanged', { health: this.status });
       secureLogger.info('iFlow compatibility module initialized');
     } catch (error) {
-      this.status = 'unhealthy';
-      this.emit('statusChanged', { health: this.status });
       secureLogger.error('iFlow compatibility module init failed:', { error: error.message });
       throw error;
     }
   }
 
-  async start(): Promise<void> {
-    if (!this.isInitialized) {
-      await this.initialize();
-    }
-  }
-
-  async stop(): Promise<void> {
-    this.status = 'stopped';
-    this.emit('statusChanged', { health: this.status });
-  }
-
-  async cleanup(): Promise<void> {
-    await this.stop();
-    this.removeAllListeners();
-  }
-
   async processRequest(request: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
     try {
-      this.metrics.requestsProcessed++;
       const processedRequest = { ...request };
 
       // ✅ Configuration-driven model selection
@@ -212,7 +108,6 @@ export class IFlowCompatibilityModule extends EventEmitter implements ModuleInte
       // 🔧 工具格式处理 - 确保工具调用格式兼容
       if (processedRequest.tools && Array.isArray(processedRequest.tools)) {
         processedRequest.tools = this.normalizeToolCalls(processedRequest.tools, context.requestId);
-        this.metrics.toolCallsProcessed += processedRequest.tools.length;
       }
 
       // ✅ Configuration-driven parameter processing
@@ -280,7 +175,6 @@ export class IFlowCompatibilityModule extends EventEmitter implements ModuleInte
       return processedRequest;
 
     } catch (error) {
-      this.metrics.errorsHandled++;
       secureLogger.error('iFlow compatibility processing failed', {
         requestId: context.requestId,
         error: error.message,
@@ -414,14 +308,12 @@ export class IFlowCompatibilityModule extends EventEmitter implements ModuleInte
   async processResponse(response: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
     try {
       if (!response || typeof response !== 'object') {
-        this.metrics.errorsHandled++;
         return response;
       }
 
       // 验证和修复响应格式
       const validatedResponse = this.validateAndFixResponse(response, context.requestId);
       if (validatedResponse) {
-        this.metrics.responsesFixed++;
         return validatedResponse;
       }
 
@@ -473,7 +365,6 @@ export class IFlowCompatibilityModule extends EventEmitter implements ModuleInte
       return processedResponse;
 
     } catch (error) {
-      this.metrics.errorsHandled++;
       secureLogger.error('iFlow response processing failed', {
         requestId: context.requestId,
         error: error.message,
@@ -804,16 +695,6 @@ export class IFlowCompatibilityModule extends EventEmitter implements ModuleInte
     }
   }
 
-  async process(request: any): Promise<any> {
-    const context: ModuleProcessingContext = {
-      requestId: Date.now().toString(),
-      providerName: 'iflow',
-      protocol: 'openai'
-    };
-    
-    return this.processRequest(request, null, context);
-  }
-
   /**
    * 统一错误处理方法占位符
    */
@@ -827,61 +708,5 @@ export class IFlowCompatibilityModule extends EventEmitter implements ModuleInte
         param: null,
       },
     };
-  }
-
-  // ModuleInterface连接管理方法
-  addConnection(module: ModuleInterface): void {
-    this.connections.set(module.getId(), module);
-  }
-
-  removeConnection(moduleId: string): void {
-    this.connections.delete(moduleId);
-  }
-
-  getConnection(moduleId: string): ModuleInterface | undefined {
-    return this.connections.get(moduleId);
-  }
-
-  getConnections(): ModuleInterface[] {
-    return Array.from(this.connections.values());
-  }
-
-  hasConnection(moduleId: string): boolean {
-    return this.connections.has(moduleId);
-  }
-
-  clearConnections(): void {
-    this.connections.clear();
-  }
-
-  getConnectionCount(): number {
-    return this.connections.size;
-  }
-
-  // 模块间通信方法
-  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
-    const targetModule = this.connections.get(targetModuleId);
-    if (targetModule) {
-      // 发送消息到目标模块
-      targetModule.onModuleMessage((sourceModuleId: string, msg: any, msgType: string) => {
-        this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
-      });
-      return Promise.resolve({ success: true, targetModuleId, message, type });
-    }
-    return Promise.resolve({ success: false, targetModuleId, message, type });
-  }
-
-  async broadcastToModules(message: any, type?: string): Promise<void> {
-    const promises: Promise<any>[] = [];
-    this.connections.forEach(module => {
-      promises.push(this.sendToModule(module.getId(), message, type));
-    });
-    await Promise.allSettled(promises);
-  }
-
-  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
-    this.on('moduleMessage', (data: any) => {
-      listener(data.fromModuleId, data.message, data.type);
-    });
   }
 }

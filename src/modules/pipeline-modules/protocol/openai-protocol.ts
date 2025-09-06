@@ -1,13 +1,18 @@
 /**
- * OpenAI Protocol Module
+ * OpenAI Protocol Module - 四层双向处理架构实现
  *
  * Protocol模块：负责协议控制转换（流式 ↔ 非流式）
- * 按照RCC v4.0四层架构设计实现
+ * 按照RCC v4.0四层双向处理架构设计实现：
+ * - 预配置模块：所有配置在组装时固化
+ * - 双向处理：processRequest和processResponse接口
+ * - 协议内控制：流式↔非流式转换、参数验证、错误处理
+ * - 并发安全：无状态设计支持多请求并发
  *
  * @author Jason Zhang
+ * @version 2.0.0 - 四层双向处理架构
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
 /**
@@ -135,58 +140,287 @@ export interface StreamResponse {
 }
 
 /**
- * OpenAI协议模块
+ * 协议错误类型
  */
-export class OpenAIProtocolModule extends EventEmitter implements ModuleInterface {
+export class ProtocolError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly details?: any
+  ) {
+    super(message);
+    this.name = 'ProtocolError';
+  }
+}
+
+/**
+ * 四层双向协议控制器接口
+ */
+export interface BidirectionalProtocolController {
+  processRequest(input: any): Promise<any>;
+  processResponse(input: any): Promise<any>;
+  validateProtocol(data: any): boolean;
+  handleProtocolError(error: any): any;
+}
+
+/**
+ * 协议预配置接口
+ */
+export interface ProtocolPreConfig {
+  enableStreamConversion?: boolean;
+  enableProtocolValidation?: boolean;
+  defaultStreamMode?: boolean;
+  maxRequestSize?: number;
+  timeout?: number;
+  concurrencyLimit?: number;
+}
+
+/**
+ * 协议控制器接口 - 兼容性保持
+ * @deprecated 使用 BidirectionalProtocolController
+ */
+export interface ProtocolController extends BidirectionalProtocolController {}
+
+/**
+ * OpenAI协议模块 - 四层双向处理架构实现
+ * 支持完整的协议内控制机制和预配置模块
+ */
+export class OpenAIProtocolModule extends EventEmitter implements ModuleInterface, BidirectionalProtocolController, ProtocolController {
   private readonly id: string = 'openai-protocol-module';
   private readonly name: string = 'OpenAI Protocol Module';
-  private readonly type: any = 'protocol';
-  private readonly version: string = '1.0.0';
-  private status: ModuleStatus['health'] = 'healthy';
+  private readonly type: ModuleType = ModuleType.PROTOCOL;
+  private readonly version: string = '2.0.0';
+  private preConfig: ProtocolPreConfig;
+  private status: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
   private connections: Map<string, ModuleInterface> = new Map();
+  private readonly isPreConfigured: boolean = true;
+  private metrics = {
+    requestsProcessed: 0,
+    responsesProcessed: 0,
+    errorsHandled: 0,
+    streamConversions: 0,
+    nonStreamConversions: 0,
+    averageProcessingTime: 0,
+    totalProcessingTime: 0
+  };
 
-  constructor() {
+  constructor(preConfig?: ProtocolPreConfig) {
     super();
-    console.log(`🌐 初始化OpenAI协议模块`);
+    
+    // 固化预配置 - 运行时不可更改
+    this.preConfig = {
+      enableStreamConversion: preConfig?.enableStreamConversion ?? true,
+      enableProtocolValidation: preConfig?.enableProtocolValidation ?? true,
+      defaultStreamMode: preConfig?.defaultStreamMode ?? false,
+      maxRequestSize: preConfig?.maxRequestSize ?? 10 * 1024 * 1024, // 10MB
+      timeout: preConfig?.timeout ?? 30000,
+      concurrencyLimit: preConfig?.concurrencyLimit ?? 20
+    };
+    
+    console.log(`🌐 初始化OpenAI协议模块 (预配置模式)`, {
+      enableStreamConversion: this.preConfig.enableStreamConversion,
+      enableProtocolValidation: this.preConfig.enableProtocolValidation,
+      defaultStreamMode: this.preConfig.defaultStreamMode
+    });
   }
 
-  // 移除重复的ModuleInterface实现
+  /**
+   * 处理请求 - 四层双向处理架构主接口
+   */
+  async processRequest(input: any): Promise<any> {
+    const startTime = Date.now();
+    
+    try {
+      // 预配置验证
+      if (!this.preConfig.enableProtocolValidation) {
+        console.log(`➡️ 协议验证已禁用，直接传递请求`);
+        this.updateRequestMetrics(Date.now() - startTime, true);
+        return input;
+      }
+      
+      // 验证协议格式
+      this.validateProtocol(input);
+      
+      // 处理流式控制（如果启用）
+      if (this.preConfig.enableStreamConversion && this.isStreamRequest(input)) {
+        console.log(`🌊 协议控制: 流式请求 → 非流式请求`);
+        const result = this.convertToNonStreaming(input as StreamRequest);
+        this.metrics.streamConversions++;
+        this.updateRequestMetrics(Date.now() - startTime, true);
+        console.log(`✅ 协议流式控制完成 (${Date.now() - startTime}ms)`);
+        return result;
+      } else if (this.isNonStreamRequest(input)) {
+        console.log(`➡️ 协议控制: 非流式请求直接传递`);
+        this.updateRequestMetrics(Date.now() - startTime, true);
+        console.log(`✅ 协议请求处理完成 (${Date.now() - startTime}ms)`);
+        return input;
+      } else {
+        throw new ProtocolError('不支持的请求格式', 'UNSUPPORTED_REQUEST_FORMAT');
+      }
+    } catch (error) {
+      this.updateRequestMetrics(Date.now() - startTime, false);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ 协议请求处理失败 (${processingTime}ms):`, error.message);
+      throw error;
+    }
+  }
 
   /**
-   * 处理协议转换
-   * 支持：流式请求 → 非流式请求 和 非流式响应 → 流式响应
+   * 处理响应 - 四层双向处理架构主接口
+   */
+  async processResponse(input: any): Promise<any> {
+    const startTime = Date.now();
+    
+    try {
+      // 预配置验证
+      if (!this.preConfig.enableProtocolValidation) {
+        console.log(`➡️ 协议验证已禁用，直接传递响应`);
+        this.updateResponseMetrics(Date.now() - startTime, true);
+        return input;
+      }
+      
+      // 验证协议格式
+      this.validateProtocol(input);
+      
+      // 处理流式控制（如果启用）
+      if (this.preConfig.enableStreamConversion && this.isNonStreamResponse(input)) {
+        console.log(`🔄 协议控制: 非流式响应 → 流式响应`);
+        const result = this.convertToStreaming(input as NonStreamResponse);
+        this.metrics.streamConversions++;
+        this.updateResponseMetrics(Date.now() - startTime, true);
+        console.log(`✅ 协议响应流式控制完成 (${Date.now() - startTime}ms)`);
+        return result;
+      } else if (this.isStreamResponse(input)) {
+        console.log(`➡️ 协议控制: 流式响应直接传递`);
+        this.updateResponseMetrics(Date.now() - startTime, true);
+        console.log(`✅ 协议响应处理完成 (${Date.now() - startTime}ms)`);
+        return input;
+      } else {
+        throw new ProtocolError('不支持的响应格式', 'UNSUPPORTED_RESPONSE_FORMAT');
+      }
+    } catch (error) {
+      this.updateResponseMetrics(Date.now() - startTime, false);
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ 协议响应处理失败 (${processingTime}ms):`, error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * 处理协议转换 - 兼容旧接口
+   * @deprecated 使用 processRequest 或 processResponse
    */
   async process(
     input: StreamRequest | NonStreamRequest | NonStreamResponse
   ): Promise<NonStreamRequest | StreamResponse> {
-    const startTime = Date.now();
-
-    try {
-      if (this.isStreamRequest(input)) {
-        console.log(`🌊 转换流式请求 → 非流式请求`);
-        const result = this.convertToNonStreaming(input as StreamRequest);
-        const processingTime = Date.now() - startTime;
-        console.log(`✅ 流式→非流式转换完成 (${processingTime}ms)`);
-        return result;
-      } else if (this.isNonStreamRequest(input)) {
-        console.log(`➡️ 非流式请求直接传递`);
-        const processingTime = Date.now() - startTime;
-        console.log(`✅ 非流式请求处理完成 (${processingTime}ms)`);
-        return input as NonStreamRequest;
-      } else if (this.isNonStreamResponse(input)) {
-        console.log(`🔄 转换非流式响应 → 流式响应`);
-        const result = this.convertToStreaming(input as NonStreamResponse);
-        const processingTime = Date.now() - startTime;
-        console.log(`✅ 非流式→流式转换完成 (${processingTime}ms)`);
-        return result;
-      } else {
-        throw new Error('不支持的输入格式');
-      }
-    } catch (error) {
-      const processingTime = Date.now() - startTime;
-      console.error(`❌ 协议转换失败 (${processingTime}ms):`, error.message);
-      throw error;
+    // 自动检测是请求还是响应，调用相应的新接口
+    if (this.isRequest(input)) {
+      return await this.processRequest(input);
+    } else if (this.isResponse(input)) {
+      return await this.processResponse(input);
+    } else {
+      throw new ProtocolError('不支持的输入格式', 'UNSUPPORTED_FORMAT');
     }
+  }
+
+
+
+  /**
+   * 协议验证 - 基于预配置的验证规则
+   */
+  validateProtocol(data: any): boolean {
+    // 如果禁用了协议验证，直接返回true
+    if (!this.preConfig.enableProtocolValidation) {
+      return true;
+    }
+    
+    if (!data || typeof data !== 'object') {
+      throw new ProtocolError('无效的协议数据格式', 'INVALID_PROTOCOL_DATA');
+    }
+    
+    // 检查请求大小限制
+    const dataSize = JSON.stringify(data).length;
+    if (dataSize > this.preConfig.maxRequestSize!) {
+      throw new ProtocolError(
+        `请求大小超出限制: ${dataSize} > ${this.preConfig.maxRequestSize}`, 
+        'REQUEST_SIZE_EXCEEDED'
+      );
+    }
+    
+    // 验证必需字段
+    if (this.isRequest(data)) {
+      if (!data.model || typeof data.model !== 'string') {
+        throw new ProtocolError('缺少或无效的model字段', 'INVALID_MODEL_FIELD');
+      }
+      
+      if (!Array.isArray(data.messages)) {
+        throw new ProtocolError('缺少或无效的messages字段', 'INVALID_MESSAGES_FIELD');
+      }
+    } else if (this.isResponse(data)) {
+      if (!data.id || typeof data.id !== 'string') {
+        throw new ProtocolError('缺少或无效的id字段', 'INVALID_ID_FIELD');
+      }
+      
+      if (!data.object || !['chat.completion', 'chat.completion.chunk'].includes(data.object)) {
+        throw new ProtocolError('缺少或无效的object字段', 'INVALID_OBJECT_FIELD');
+      }
+    }
+    
+    return true;
+  }
+
+  /**
+   * 协议错误处理
+   */
+  handleProtocolError(error: any): any {
+    this.metrics.errorsHandled++;
+    
+    if (error instanceof ProtocolError) {
+      console.error(`❌ 协议错误 [${error.code}]: ${error.message}`);
+      // 返回标准化错误格式
+      return {
+        error: {
+          type: 'protocol_error',
+          code: error.code,
+          message: error.message,
+          details: error.details
+        }
+      };
+    } else {
+      console.error(`❌ 未知协议错误: ${error.message}`);
+      // 返回通用错误格式
+      return {
+        error: {
+          type: 'unknown_error',
+          code: 'UNKNOWN_PROTOCOL_ERROR',
+          message: error.message
+        }
+      };
+    }
+  }
+
+  /**
+   * 判断是否为请求
+   */
+  private isRequest(input: any): boolean {
+    return input && (
+      input.messages !== undefined || 
+      input.model !== undefined || 
+      input.system !== undefined ||
+      input.tools !== undefined
+    );
+  }
+
+  /**
+   * 判断是否为响应
+   */
+  private isResponse(input: any): boolean {
+    return input && (
+      input.choices !== undefined || 
+      input.id !== undefined || 
+      input.object !== undefined ||
+      input.usage !== undefined
+    );
   }
 
   /**
@@ -235,6 +469,13 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
     const hasResponseIdentifiers = input.id || input.created || input.model;
 
     return hasValidObject && hasValidUsage && hasResponseIdentifiers;
+  }
+
+  /**
+   * 判断是否为流式响应
+   */
+  private isStreamResponse(input: any): boolean {
+    return input && Array.isArray(input.chunks) && input.aggregatedResponse;
   }
 
   /**
@@ -397,23 +638,23 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
    */
   validateStreamRequest(request: StreamRequest): boolean {
     if (!request.model || typeof request.model !== 'string') {
-      throw new Error('缺少model参数');
+      throw new ProtocolError('缺少model参数', 'MISSING_MODEL');
     }
 
     if (!Array.isArray(request.messages) || request.messages.length === 0) {
-      throw new Error('缺少messages参数或格式无效');
+      throw new ProtocolError('缺少messages参数或格式无效', 'INVALID_MESSAGES');
     }
 
     if (request.stream !== true) {
-      throw new Error('stream参数必须为true');
+      throw new ProtocolError('stream参数必须为true', 'INVALID_STREAM_FLAG');
     }
 
     for (const message of request.messages) {
       if (!message.role || !['system', 'user', 'assistant', 'tool'].includes(message.role)) {
-        throw new Error(`无效的消息角色: ${message.role}`);
+        throw new ProtocolError(`无效的消息角色: ${message.role}`, 'INVALID_MESSAGE_ROLE');
       }
       if (!message.content || typeof message.content !== 'string') {
-        throw new Error('消息内容不能为空');
+        throw new ProtocolError('消息内容不能为空', 'EMPTY_MESSAGE_CONTENT');
       }
     }
 
@@ -425,19 +666,19 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
    */
   validateNonStreamResponse(response: NonStreamResponse): boolean {
     if (!response.id || typeof response.id !== 'string') {
-      throw new Error('缺少响应ID');
+      throw new ProtocolError('缺少响应ID', 'MISSING_RESPONSE_ID');
     }
 
     if (response.object !== 'chat.completion') {
-      throw new Error('无效的响应对象类型');
+      throw new ProtocolError('无效的响应对象类型', 'INVALID_RESPONSE_OBJECT');
     }
 
     if (!Array.isArray(response.choices) || response.choices.length === 0) {
-      throw new Error('缺少响应choices');
+      throw new ProtocolError('缺少响应choices', 'MISSING_RESPONSE_CHOICES');
     }
 
     if (!response.usage || typeof response.usage.total_tokens !== 'number') {
-      throw new Error('缺少usage信息');
+      throw new ProtocolError('缺少usage信息', 'MISSING_USAGE_INFO');
     }
 
     return true;
@@ -449,7 +690,7 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
    */
   aggregateStreamChunks(chunks: StreamChunk[]): NonStreamResponse {
     if (chunks.length === 0) {
-      throw new Error('chunk列表不能为空');
+      throw new ProtocolError('chunk列表不能为空', 'EMPTY_CHUNKS_LIST');
     }
 
     const firstChunk = chunks[0];
@@ -521,7 +762,7 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
   }
 
   getType(): ModuleType {
-    return ModuleType.PROTOCOL;
+    return this.type;
   }
 
   getVersion(): string {
@@ -532,24 +773,46 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
     return {
       id: this.id,
       name: this.name,
-      type: ModuleType.PROTOCOL,
+      type: this.type,
       status: 'running',
       health: this.status,
     };
   }
 
   getMetrics(): ModuleMetrics {
+    const totalOperations = this.metrics.requestsProcessed + this.metrics.responsesProcessed;
     return {
-      requestsProcessed: 0,
-      averageProcessingTime: 0,
-      errorRate: 0,
+      requestsProcessed: totalOperations,
+      averageProcessingTime: this.metrics.averageProcessingTime,
+      errorRate: this.metrics.errorsHandled / Math.max(totalOperations, 1),
       memoryUsage: 0,
       cpuUsage: 0,
+      // 扩展指标
+      customMetrics: {
+        requestsProcessed: this.metrics.requestsProcessed,
+        responsesProcessed: this.metrics.responsesProcessed,
+        streamConversions: this.metrics.streamConversions,
+        nonStreamConversions: this.metrics.nonStreamConversions,
+        totalProcessingTime: this.metrics.totalProcessingTime,
+        isPreConfigured: this.isPreConfigured,
+        enableStreamConversion: this.preConfig.enableStreamConversion
+      }
     };
   }
 
   async configure(config: any): Promise<void> {
-    // Configuration logic
+    // 预配置模式：拒绝运行时配置更改
+    if (this.isPreConfigured) {
+      console.warn('Protocol module is pre-configured, runtime configuration ignored', {
+        moduleId: this.id,
+        attemptedConfig: Object.keys(config || {}),
+        currentPreConfig: Object.keys(this.preConfig)
+      });
+      return;
+    }
+    
+    // 非预配置模式下的传统配置（保持向后兼容）
+    console.log('Protocol module configured (legacy mode)');
   }
 
   async start(): Promise<void> {
@@ -561,15 +824,66 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
   }
 
   async reset(): Promise<void> {
-    // Reset logic
+    this.metrics = {
+      requestsProcessed: 0,
+      responsesProcessed: 0,
+      errorsHandled: 0,
+      streamConversions: 0,
+      nonStreamConversions: 0,
+      averageProcessingTime: 0,
+      totalProcessingTime: 0
+    };
+  }
+
+  /**
+   * 更新请求处理指标
+   */
+  private updateRequestMetrics(processingTime: number, success: boolean): void {
+    this.metrics.requestsProcessed++;
+    this.updateCommonMetrics(processingTime, success);
+  }
+
+  /**
+   * 更新响应处理指标
+   */
+  private updateResponseMetrics(processingTime: number, success: boolean): void {
+    this.metrics.responsesProcessed++;
+    this.updateCommonMetrics(processingTime, success);
+  }
+
+  /**
+   * 更新通用指标
+   */
+  private updateCommonMetrics(processingTime: number, success: boolean): void {
+    this.metrics.totalProcessingTime += processingTime;
+    const totalOperations = this.metrics.requestsProcessed + this.metrics.responsesProcessed;
+    this.metrics.averageProcessingTime = this.metrics.totalProcessingTime / Math.max(totalOperations, 1);
+    
+    if (!success) {
+      this.metrics.errorsHandled++;
+    }
   }
 
   async cleanup(): Promise<void> {
     // Cleanup logic
+    this.removeAllListeners();
   }
 
   async healthCheck(): Promise<{ healthy: boolean; details: any }> {
-    return { healthy: true, details: {} };
+    return { 
+      healthy: this.status === 'healthy' || this.status === 'degraded', 
+      details: { 
+        status: this.status,
+        metrics: this.metrics,
+        preConfig: this.preConfig,
+        isPreConfigured: this.isPreConfigured,
+        capabilities: {
+          streamConversion: this.preConfig.enableStreamConversion,
+          protocolValidation: this.preConfig.enableProtocolValidation,
+          concurrencyLimit: this.preConfig.concurrencyLimit
+        }
+      } 
+    };
   }
 
   // ModuleInterface连接管理方法
@@ -626,5 +940,30 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
     this.on('moduleMessage', (data: any) => {
       listener(data.fromModuleId, data.message, data.type);
     });
+  }
+  
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
 }

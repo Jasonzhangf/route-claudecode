@@ -9,7 +9,7 @@
 import { MetricsCollector, ProviderHealthStatus, SystemMetrics, AggregatedMetric } from './metrics-collector';
 import { AlertManager, Alert } from './alert-manager';
 import { HealthMonitor } from './health-monitor';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 /**
  * 仪表板配置
  */

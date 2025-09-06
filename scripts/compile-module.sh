@@ -14,7 +14,8 @@ if [ -z "$MODULE_NAME" ]; then
 fi
 
 MODULE_PATH="src/modules/$MODULE_NAME"
-OUTPUT_PATH="compiled-modules/$MODULE_NAME"
+TEMP_OUTPUT_PATH="compiled-modules/$MODULE_NAME"
+FINAL_OUTPUT_PATH="node_modules/@rcc/$MODULE_NAME"
 
 if [ ! -d "$MODULE_PATH" ]; then
   echo "❌ 错误: 模块 '$MODULE_NAME' 不存在"
@@ -24,12 +25,14 @@ fi
 
 echo "🔧 开始编译模块: $MODULE_NAME"
 echo "📂 源码路径: $MODULE_PATH"
-echo "📁 输出路径: $OUTPUT_PATH"
+echo "📁 临时输出路径: $TEMP_OUTPUT_PATH"
+echo "📁 最终输出路径: $FINAL_OUTPUT_PATH"
 
 # 清理旧的编译产物
 echo "🧹 清理旧的编译产物..."
-rm -rf "$OUTPUT_PATH"
-mkdir -p "$OUTPUT_PATH"
+rm -rf "$TEMP_OUTPUT_PATH"
+rm -rf "$FINAL_OUTPUT_PATH"
+mkdir -p "$TEMP_OUTPUT_PATH"
 
 # 检查模块tsconfig.json是否存在
 if [ ! -f "$MODULE_PATH/tsconfig.json" ]; then
@@ -53,15 +56,15 @@ fi
 
 # 验证编译产物
 echo "✅ 验证编译产物..."
-if [ ! -f "$OUTPUT_PATH/index.js" ]; then
-  echo "❌ 编译失败: 未找到编译产物 $OUTPUT_PATH/index.js"
+if [ ! -f "$TEMP_OUTPUT_PATH/index.js" ]; then
+  echo "❌ 编译失败: 未找到编译产物 $TEMP_OUTPUT_PATH/index.js"
   echo "📁 实际生成的文件:"
-  ls -la "$OUTPUT_PATH/" 2>/dev/null || echo "输出目录不存在"
+  ls -la "$TEMP_OUTPUT_PATH/" 2>/dev/null || echo "输出目录不存在"
   exit 1
 fi
 
-if [ ! -f "$OUTPUT_PATH/index.d.ts" ]; then
-  echo "❌ 编译失败: 未找到声明文件 $OUTPUT_PATH/index.d.ts"
+if [ ! -f "$TEMP_OUTPUT_PATH/index.d.ts" ]; then
+  echo "❌ 编译失败: 未找到声明文件 $TEMP_OUTPUT_PATH/index.d.ts"
   exit 1
 fi
 
@@ -70,7 +73,7 @@ echo "📝 生成模块元信息..."
 BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 SOURCE_HASH=$(find "$MODULE_PATH/src" -name '*.ts' -type f -exec md5sum {} \; 2>/dev/null | md5sum | cut -d' ' -f1)
 
-cat > "$OUTPUT_PATH/package.json" << EOF
+cat > "$TEMP_OUTPUT_PATH/package.json" << EOF
 {
   "name": "@rcc/$MODULE_NAME",
   "version": "4.1.0",
@@ -91,19 +94,24 @@ cat > "$OUTPUT_PATH/package.json" << EOF
 }
 EOF
 
+# 将编译产物移动到最终输出目录
+echo "🚚 将编译产物移动到最终输出目录..."
+mkdir -p "$(dirname "$FINAL_OUTPUT_PATH")"
+mv "$TEMP_OUTPUT_PATH" "$FINAL_OUTPUT_PATH"
+
 # 显示编译结果
 echo ""
 echo "✅ 模块 '$MODULE_NAME' 编译成功!"
 echo "📦 编译产物:"
-echo "  - JavaScript: $OUTPUT_PATH/index.js"
-echo "  - 声明文件: $OUTPUT_PATH/index.d.ts" 
-echo "  - 模块信息: $OUTPUT_PATH/package.json"
+echo "  - JavaScript: $FINAL_OUTPUT_PATH/index.js"
+echo "  - 声明文件: $FINAL_OUTPUT_PATH/index.d.ts" 
+echo "  - 模块信息: $FINAL_OUTPUT_PATH/package.json"
 echo "🕒 编译时间: $BUILD_TIME"
 echo "🔐 源码哈希: $SOURCE_HASH"
 
 # 显示文件大小
-JS_SIZE=$(wc -c < "$OUTPUT_PATH/index.js" | xargs)
-DTS_SIZE=$(wc -c < "$OUTPUT_PATH/index.d.ts" | xargs)
+JS_SIZE=$(wc -c < "$FINAL_OUTPUT_PATH/index.js" | xargs)
+DTS_SIZE=$(wc -c < "$FINAL_OUTPUT_PATH/index.d.ts" | xargs)
 echo "📊 文件大小:"
 echo "  - index.js: ${JS_SIZE} bytes"
 echo "  - index.d.ts: ${DTS_SIZE} bytes"

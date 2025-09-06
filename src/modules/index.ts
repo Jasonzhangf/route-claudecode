@@ -8,7 +8,7 @@
  */
 
 // 核心模块适配器 - 只导出公共接口
-export type { ModuleInterface, ModuleType } from '../interfaces/module/base-module';
+export type { ModuleInterface, ModuleType } from './interfaces/module/base-module';
 
 // Transformers - 选择性导出避免冲突
 export {
@@ -23,7 +23,7 @@ export {
   SECURITY_LIMITS,
   SUPPORTED_SECURE_VERSIONS,
   DEPRECATED_TRANSFORMER_IDS
-} from './transformers';
+} from './pipeline-modules/transformers';
 
 // Pipeline模块系统 - 选择性导出避免冲突
 export {
@@ -36,13 +36,18 @@ export {
 } from './pipeline-modules';
 
 // Transformer模块
-export * from './transformer';
+export * from './pipeline-modules/transformers';
 
-// Protocol模块
-export * from './protocol';
-
-// Server Compatibility模块
-export * from './server-compatibility';
+// Error Handler模块
+export { 
+  ErrorCoordinationCenter,
+  RCCError,
+  ValidationError,
+  TransformError,
+  AuthError,
+  ERROR_CODES,
+  ErrorSeverity
+} from './error-handler';
 
 // 模块版本信息
 export const MODULES_MODULE_VERSION = '4.0.0-alpha.2';
@@ -55,10 +60,22 @@ export interface ModulesModuleInterface {
 }
 
 // ModuleInterface implementation for architecture compliance
-import { SimpleModuleAdapter, ModuleType } from '../interfaces/module/base-module';
-export const modulesModuleAdapter = new SimpleModuleAdapter(
-  'modules-module',
-  'Core Modules System',
-  ModuleType.PIPELINE,
-  MODULES_MODULE_VERSION
-);
+import { ModuleType } from './interfaces/module/base-module';
+import { BaseModule } from './base-module-impl';
+
+class ModulesModuleAdapter extends BaseModule {
+  constructor() {
+    super(
+      'modules-module',
+      'Core Modules System',
+      ModuleType.PIPELINE,
+      MODULES_MODULE_VERSION
+    );
+  }
+  
+  protected async onProcess(input: any): Promise<any> {
+    return input;
+  }
+}
+
+export const modulesModuleAdapter = new ModulesModuleAdapter();

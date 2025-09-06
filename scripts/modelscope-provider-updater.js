@@ -10,6 +10,7 @@
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { JQJsonHandler } = require('../src/utils/jq-json-handler');
 
 const MODELSCOPE_CONFIG_PATH = '/Users/fanzhang/.route-claudecode/config/v4/single-provider/modelscope-v4-5508.json';
 
@@ -47,7 +48,7 @@ function makeModelScopeAPIRequest(path, apiKey, method = 'GET', data = null) {
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
         try {
-          const response = JSON.parse(data);
+          const response = JQJsonHandler.parseJsonString(data);
           resolve({ 
             status: res.statusCode, 
             data: response,
@@ -66,7 +67,7 @@ function makeModelScopeAPIRequest(path, apiKey, method = 'GET', data = null) {
     req.on('error', reject);
     
     if (data) {
-      req.write(JSON.stringify(data));
+      req.write(JQJsonHandler.stringifyJson(data));
     }
     
     req.end();
@@ -184,7 +185,7 @@ async function testAllModelsMaxTokens() {
 }
 
 function updateModelScopeConfig(modelLimits) {
-  const existingConfig = JSON.parse(fs.readFileSync(MODELSCOPE_CONFIG_PATH, 'utf8'));
+  const existingConfig = JQJsonHandler.parseJsonString(fs.readFileSync(MODELSCOPE_CONFIG_PATH, 'utf8'));
   
   if (!existingConfig.serverCompatibilityProviders) {
     existingConfig.serverCompatibilityProviders = {};
@@ -222,7 +223,7 @@ function updateModelScopeConfig(modelLimits) {
   const backupPath = MODELSCOPE_CONFIG_PATH + '.backup-' + Date.now();
   fs.writeFileSync(backupPath, fs.readFileSync(MODELSCOPE_CONFIG_PATH));
   
-  fs.writeFileSync(MODELSCOPE_CONFIG_PATH, JSON.stringify(existingConfig, null, 2));
+  fs.writeFileSync(MODELSCOPE_CONFIG_PATH, JQJsonHandler.stringifyJson(existingConfig, true));
   
   return existingConfig;
 }

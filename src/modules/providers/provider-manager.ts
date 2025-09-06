@@ -6,11 +6,10 @@
  * @author Jason Zhang
  */
 
-import { ModuleInterface } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus } from '../interfaces/module/base-module';
 import { ProviderFactory, ProviderConfig, ProviderProtocolType } from './provider-factory';
-import { StandardRequest } from '../../interfaces/standard/request';
-import { StandardResponse } from '../../interfaces/standard/response';
-import { ModuleStatus } from '../../interfaces/module/base-module';
+import { StandardRequest, StandardResponse } from '../interfaces/standard/request';
+import { ModuleDebugIntegration } from '../logging/src/debug-integration';
 
 /**
  * Provider路由策略
@@ -74,6 +73,12 @@ export class ProviderManager {
   private routeInfos: Map<string, ProviderRouteInfo>;
   private healthCheckTimer?: NodeJS.Timeout;
   private roundRobinIndex: number;
+  private debugIntegration: ModuleDebugIntegration = new ModuleDebugIntegration({
+    moduleId: 'providers',
+    moduleName: 'ProviderManager',
+    enabled: true,
+    captureLevel: 'full'
+  });
 
   constructor(config: Partial<ProviderManagerConfig> = {}) {
     this.config = {

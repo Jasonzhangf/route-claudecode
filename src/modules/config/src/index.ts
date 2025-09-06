@@ -1,26 +1,28 @@
 /**
- * RCC v4.0 配置管理模块 - 统一导出接口
- * 
- * 零接口暴露设计：只导出公开接口，所有内部实现完全隐藏
- * 
- * @author RCC v4.0 Architecture Team
+ * RCC v4.0 Configuration Module Exports
+ *
+ * 严格遵循零接口暴露设计原则
+ * 只导出ConfigPreprocessor门面和必要类型
+ *
+ * @version 4.1.0-zero-interface
+ * @author Claude - Zero Interface Refactored
  */
 
-// 导出核心配置预处理器
-export { ConfigPreprocessor, ConfigPreprocessResult } from './config-preprocessor';
+// 主要门面接口 - 零接口暴露设计
+export { ConfigPreprocessor } from './config-preprocessor';
 
-// 导出类型定义
-export { 
-  RoutingTable, 
-  ProviderInfo, 
-  RouteMapping 
+// 只导出必要的类型定义
+export type {
+  RoutingTable,
+  ProviderInfo,
+  RouteMapping,
+  ServerInfo as ServerConfig,
+  ConfigPreprocessResult
 } from './routing-table-types';
 
-// 模块元信息（编译时会自动更新）
-export const MODULE_INFO = {
-  name: 'config',
-  version: '4.1.0',
-  description: 'RCC v4.0 Configuration Management Module',
-  apiVersion: '4.1.0',
-  isolationLevel: 'complete'
-} as const;
+// 模块版本信息
+export const CONFIG_MODULE_VERSION = '4.1.0-zero-interface';
+
+// 标准模块接口实现 (暂时注释掉，直到创建config-module文件)
+// export { ConfigModule, createConfigModule, processConfigFile } from './config-module';
+// export type { ConfigModuleInput, ConfigModuleOutput } from './config-module';

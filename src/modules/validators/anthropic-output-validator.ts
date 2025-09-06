@@ -11,7 +11,7 @@ import {
   ModuleType,
   ModuleStatus,
   ModuleMetrics,
-} from '../../interfaces/module/base-module';
+} from '../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
 /**
@@ -30,7 +30,7 @@ export interface AnthropicOutputValidatorConfig {
 export class AnthropicOutputValidator extends EventEmitter implements ModuleInterface {
   protected readonly id: string = 'anthropic-output-validator';
   protected readonly name: string = 'Anthropic Output Validator';
-  protected readonly type: ModuleType = ModuleType.VALIDATOR;
+  protected readonly type: ModuleType = ModuleType.VALIDATION;
   protected readonly version: string = '1.0.0';
   protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
   protected metrics: ModuleMetrics = {
@@ -130,6 +130,31 @@ export class AnthropicOutputValidator extends EventEmitter implements ModuleInte
     this.on('moduleMessage', (data: any) => {
       listener(data.fromModuleId, data.message, data.type);
     });
+  }
+  
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
   private validatorConfig: AnthropicOutputValidatorConfig;
 

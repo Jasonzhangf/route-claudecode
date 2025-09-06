@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics, ModuleConnection } from '../interfaces/module/base-module';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics, ModuleConnection } from './interfaces/module/base-module';
 
 /**
  * 基础模块抽象类

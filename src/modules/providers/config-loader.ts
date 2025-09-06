@@ -11,7 +11,7 @@ import * as path from 'path';
 import * as JSON5 from 'json5';
 // import * as yaml from 'yaml'; // TODO: 安装yaml包或使用替代方案
 import { ProviderConfig } from './provider-factory';
-import { JQJsonHandler } from '../../utils/jq-json-handler';
+import JQJsonHandler from '../error-handler/src/utils/jq-json-handler';
 /**
  * 配置文件格式
  */

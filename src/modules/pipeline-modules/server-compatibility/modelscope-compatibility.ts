@@ -5,14 +5,16 @@
  * - Anthropic工具格式 → OpenAI工具格式转换
  * - ModelScope API兼容性处理
  * - 严格错误处理：失败时立即抛出错误
+ * - 支持双向兼容性处理：请求和响应
  *
  * @author RCC v4.0
  */
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-import { secureLogger } from '../../../utils/secure-logger';
+import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 import { RCCError, ValidationError, TransformError, ERROR_CODES } from '../../../types/error';
+import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
 
 export interface ModelScopeCompatibilityConfig {
   preserveToolCalls: boolean;
@@ -23,64 +25,26 @@ export interface ModelScopeCompatibilityConfig {
 /**
  * ModelScope兼容性模块
  * 专门处理Anthropic → OpenAI工具格式转换
+ * 支持双向兼容性处理：请求和响应
  */
-export class ModelScopeCompatibilityModule extends EventEmitter implements ModuleInterface {
+export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
   private config: ModelScopeCompatibilityConfig;
-  private currentStatus: ModuleStatus;
-  private connections: Map<string, ModuleInterface> = new Map();
 
   constructor(config: ModelScopeCompatibilityConfig = {
     preserveToolCalls: true,
     validateInputSchema: true,
     maxToolsPerRequest: 20
   }) {
-    super();
+    super('modelscope-compatibility', 'ModelScope Compatibility Module', '1.0.0');
     this.config = config;
-    this.currentStatus = {
-      id: 'modelscope-compatibility',
-      name: 'ModelScope Compatibility Module',
-      type: ModuleType.SERVER_COMPATIBILITY,
-      status: 'stopped',
-      health: 'healthy',
-    };
   }
 
-  // ============================================================================
-  // ModuleInterface 实现
-  // ============================================================================
-
-  getId(): string {
-    return this.currentStatus.id;
-  }
-
-  getName(): string {
-    return this.currentStatus.name;
-  }
-
-  getType(): ModuleType {
-    return this.currentStatus.type;
-  }
-
-  getVersion(): string {
-    return '1.0.0';
-  }
-
-  getStatus(): ModuleStatus {
-    return { ...this.currentStatus };
-  }
-
-  async configure(config: any): Promise<void> {
-    this.config = { ...this.config, ...config };
-  }
-
-  async initialize(): Promise<void> {
-    this.currentStatus.status = 'starting';
-    
+  /**
+   * 初始化方法
+   */
+  protected async initialize(): Promise<void> {
     try {
       this.validateConfiguration();
-      this.currentStatus.status = 'running';
-      this.currentStatus.lastActivity = new Date();
-      
       secureLogger.info('✅ ModelScope兼容性模块初始化完成', {
         moduleId: this.getId()
       });
@@ -96,104 +60,6 @@ export class ModelScopeCompatibilityModule extends EventEmitter implements Modul
     }
   }
 
-  async start(): Promise<void> {
-    this.currentStatus.status = 'running';
-    this.currentStatus.lastActivity = new Date();
-  }
-
-  async stop(): Promise<void> {
-    this.currentStatus.status = 'stopped';
-  }
-
-  async reset(): Promise<void> {
-    this.currentStatus.status = 'stopped';
-    this.currentStatus.health = 'healthy';
-    this.currentStatus.error = undefined;
-  }
-
-  async cleanup(): Promise<void> {
-    this.currentStatus.status = 'stopped';
-    this.removeAllListeners();
-  }
-
-  async healthCheck(): Promise<{ healthy: boolean; details: any }> {
-    const healthy = this.currentStatus.status === 'running';
-    return {
-      healthy,
-      details: {
-        status: this.currentStatus.status,
-        lastActivity: this.currentStatus.lastActivity,
-      },
-    };
-  }
-
-  getMetrics(): ModuleMetrics {
-    return {
-      requestsProcessed: 0,
-      averageProcessingTime: 0,
-      errorRate: 0,
-      memoryUsage: 0,
-      cpuUsage: 0,
-      lastProcessedAt: this.currentStatus.lastActivity,
-    };
-  }
-
-  // ModuleInterface连接管理方法
-  addConnection(module: ModuleInterface): void {
-    this.connections.set(module.getId(), module);
-  }
-
-  removeConnection(moduleId: string): void {
-    this.connections.delete(moduleId);
-  }
-
-  getConnection(moduleId: string): ModuleInterface | undefined {
-    return this.connections.get(moduleId);
-  }
-
-  getConnections(): ModuleInterface[] {
-    return Array.from(this.connections.values());
-  }
-
-  hasConnection(moduleId: string): boolean {
-    return this.connections.has(moduleId);
-  }
-
-  clearConnections(): void {
-    this.connections.clear();
-  }
-
-  getConnectionCount(): number {
-    return this.connections.size;
-  }
-
-  // 模块间通信方法
-  async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
-    const targetModule = this.connections.get(targetModuleId);
-    if (targetModule) {
-      // 发送消息到目标模块
-      targetModule.onModuleMessage((sourceModuleId: string, msg: any, msgType: string) => {
-        this.emit('moduleMessage', { fromModuleId: sourceModuleId, message: msg, type: msgType, timestamp: new Date() });
-      });
-      return Promise.resolve({ success: true, targetModuleId, message, type });
-    }
-    return Promise.resolve({ success: false, targetModuleId, message, type });
-  }
-
-  async broadcastToModules(message: any, type?: string): Promise<void> {
-    const promises: Promise<any>[] = [];
-    this.connections.forEach(module => {
-      promises.push(this.sendToModule(module.getId(), message, type));
-    });
-    await Promise.allSettled(promises);
-  }
-
-  onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void {
-    this.on('moduleMessage', (data: any) => {
-      listener(data.fromModuleId, data.message, data.type);
-    });
-  }
-
   // ============================================================================
   // 核心处理方法
   // ============================================================================
@@ -201,10 +67,8 @@ export class ModelScopeCompatibilityModule extends EventEmitter implements Modul
   /**
    * 处理请求 - 主入口点
    */
-  async process(request: any): Promise<any> {
-    this.currentStatus.lastActivity = new Date();
-
-    secureLogger.debug('🔄 ModelScope兼容模块开始处理', {
+  async processRequest(request: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
+    secureLogger.debug('🔄 ModelScope兼容模块开始处理请求', {
       hasTools: !!request.tools,
       toolsCount: Array.isArray(request.tools) ? request.tools.length : 0,
       model: request.model,
@@ -239,13 +103,87 @@ export class ModelScopeCompatibilityModule extends EventEmitter implements Modul
       });
     }
     
-    secureLogger.info('✅ ModelScope兼容模块处理完成', {
+    secureLogger.info('✅ ModelScope兼容模块处理请求完成', {
       originalToolsCount: request.tools?.length || 0,
       processedToolsCount: processedRequest.tools?.length || 0,
       model: processedRequest.model
     });
 
     return processedRequest;
+  }
+
+  /**
+   * 处理响应 - ModelScope响应兼容性处理
+   */
+  async processResponse(response: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
+    try {
+      secureLogger.debug('🔄 ModelScope兼容模块开始处理响应', {
+        hasChoices: !!response.choices,
+        choicesCount: Array.isArray(response.choices) ? response.choices.length : 0,
+        model: response.model,
+        responseKeys: Object.keys(response)
+      });
+
+      // 如果不是有效的响应对象，直接返回
+      if (!response || typeof response !== 'object') {
+        secureLogger.debug('⚠️ ModelScope响应不是有效对象，跳过处理');
+        return response;
+      }
+
+      // 创建处理后的响应副本
+      const processedResponse = { ...response };
+
+      // 1. 🔧 修复ModelScope API响应格式兼容性问题
+      if (processedResponse.choices && Array.isArray(processedResponse.choices)) {
+        processedResponse.choices = this.normalizeModelScopeChoices(processedResponse.choices, context.requestId);
+      }
+
+      // 2. 🔧 确保响应包含必要的OpenAI兼容字段
+      if (!processedResponse.id) {
+        processedResponse.id = `chatcmpl-modelscope-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+
+      if (!processedResponse.object) {
+        processedResponse.object = 'chat.completion';
+      }
+
+      if (!processedResponse.created) {
+        processedResponse.created = Math.floor(Date.now() / 1000);
+      }
+
+      // 3. 🔧 修复ModelScope工具调用响应格式
+      if (processedResponse.choices) {
+        for (let i = 0; i < processedResponse.choices.length; i++) {
+          const choice = processedResponse.choices[i];
+          if (choice.message && choice.message.tool_calls) {
+            choice.message.tool_calls = this.normalizeModelScopeToolCalls(choice.message.tool_calls, context.requestId);
+          }
+        }
+      }
+
+      // 4. 🔧 处理usage信息兼容性
+      if (processedResponse.usage) {
+        processedResponse.usage = this.normalizeModelScopeUsage(processedResponse.usage, context.requestId);
+      }
+
+      secureLogger.info('✅ ModelScope兼容模块处理响应完成', {
+        hasValidId: !!processedResponse.id,
+        hasValidObject: !!processedResponse.object,
+        choicesProcessed: processedResponse.choices?.length || 0
+      });
+
+      return processedResponse;
+
+    } catch (error) {
+      secureLogger.error('❌ ModelScope响应兼容性处理失败', {
+        requestId: context.requestId,
+        error: error.message,
+        stack: error.stack
+      });
+
+      // 失败时返回原始响应，不中断流水线
+      return response;
+    }
   }
 
   // ============================================================================
@@ -442,6 +380,140 @@ export class ModelScopeCompatibilityModule extends EventEmitter implements Modul
       );
       secureLogger.error('配置验证失败', { error: validationError });
       throw validationError;
+    }
+  }
+
+  /**
+   * 标准化ModelScope API的choices数组
+   */
+  private normalizeModelScopeChoices(choices: any[], requestId: string): any[] {
+    try {
+      return choices.map((choice, index) => {
+        const normalizedChoice = { ...choice };
+
+        // 确保index字段存在
+        if (normalizedChoice.index === undefined) {
+          normalizedChoice.index = index;
+        }
+
+        // 确保finish_reason存在
+        if (!normalizedChoice.finish_reason) {
+          if (normalizedChoice.message?.tool_calls) {
+            normalizedChoice.finish_reason = 'tool_calls';
+          } else if (normalizedChoice.message?.content) {
+            normalizedChoice.finish_reason = 'stop';
+          } else {
+            normalizedChoice.finish_reason = 'stop';
+          }
+        }
+
+        // 确保message结构完整
+        if (normalizedChoice.message && typeof normalizedChoice.message === 'object') {
+          if (!normalizedChoice.message.role) {
+            normalizedChoice.message.role = 'assistant';
+          }
+          
+          // 确保content字段存在
+          if (normalizedChoice.message.content === undefined) {
+            normalizedChoice.message.content = normalizedChoice.message.tool_calls ? '' : 'Response generated successfully.';
+          }
+        }
+
+        return normalizedChoice;
+      });
+    } catch (error) {
+      secureLogger.error('❌ ModelScope choices标准化失败', {
+        requestId,
+        error: error.message
+      });
+      return choices;
+    }
+  }
+
+  /**
+   * 标准化ModelScope工具调用格式
+   */
+  private normalizeModelScopeToolCalls(toolCalls: any[], requestId: string): any[] {
+    try {
+      return toolCalls.map((toolCall) => {
+        const normalizedToolCall = { ...toolCall };
+
+        // 确保必需字段存在
+        if (!normalizedToolCall.id) {
+          normalizedToolCall.id = `call_modelscope_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        }
+
+        if (!normalizedToolCall.type) {
+          normalizedToolCall.type = 'function';
+        }
+
+        // 确保function字段结构正确
+        if (normalizedToolCall.function) {
+          if (typeof normalizedToolCall.function.arguments !== 'string') {
+            try {
+              normalizedToolCall.function.arguments = JSON.stringify(normalizedToolCall.function.arguments || {});
+            } catch (e) {
+              normalizedToolCall.function.arguments = '{}';
+            }
+          }
+
+          if (!normalizedToolCall.function.name) {
+            normalizedToolCall.function.name = 'unknown_function';
+          }
+        } else {
+          normalizedToolCall.function = {
+            name: 'unknown_function',
+            arguments: '{}'
+          };
+        }
+
+        return normalizedToolCall;
+      });
+    } catch (error) {
+      secureLogger.error('❌ ModelScope工具调用标准化失败', {
+        requestId,
+        error: error.message
+      });
+      return toolCalls;
+    }
+  }
+
+  /**
+   * 标准化ModelScope usage信息
+   */
+  private normalizeModelScopeUsage(usage: any, requestId: string): any {
+    try {
+      const normalizedUsage = { ...usage };
+
+      // 确保基础字段存在
+      if (normalizedUsage.prompt_tokens === undefined) {
+        normalizedUsage.prompt_tokens = 0;
+      }
+
+      if (normalizedUsage.completion_tokens === undefined) {
+        normalizedUsage.completion_tokens = 0;
+      }
+
+      if (normalizedUsage.total_tokens === undefined) {
+        normalizedUsage.total_tokens = normalizedUsage.prompt_tokens + normalizedUsage.completion_tokens;
+      }
+
+      // ModelScope可能使用不同的字段名，需要映射
+      if (normalizedUsage.input_tokens && !normalizedUsage.prompt_tokens) {
+        normalizedUsage.prompt_tokens = normalizedUsage.input_tokens;
+      }
+
+      if (normalizedUsage.output_tokens && !normalizedUsage.completion_tokens) {
+        normalizedUsage.completion_tokens = normalizedUsage.output_tokens;
+      }
+
+      return normalizedUsage;
+    } catch (error) {
+      secureLogger.error('❌ ModelScope usage标准化失败', {
+        requestId,
+        error: error.message
+      });
+      return usage;
     }
   }
 }

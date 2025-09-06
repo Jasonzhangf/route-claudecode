@@ -124,6 +124,8 @@ async function processRequestWithFallback(request: Request): Promise<Response> {
    npm run validate-config
    # 确保所有测试通过
    npm test
+   # 检查模块编译
+   bash .claude/rules/scripts/module-compilation-check.sh
    ```
 
 2. **代码审查要点** (Code Review Points):
@@ -131,11 +133,13 @@ async function processRequestWithFallback(request: Request): Promise<Response> {
    - 验证错误处理是否符合零fallback标准
    - 确认配置文件遵循零fallback策略
    - 检查模块边界是否清晰
+   - 验证模块编译是否正确
 
 3. **集成测试要求** (Integration Test Requirements):
    - 测试Provider失败时的错误抛出行为
    - 验证配置验证器拒绝fallback配置
    - 确认系统在失败时不进行任何重试或降级
+   - 验证模块间引用使用标准npm包方式
 
 ### 遗留代码处理 (Legacy Code Handling)
 

@@ -18,6 +18,7 @@
 ```
 testing/
 ├── README.md                          # 本模块设计文档
+├── test-framework-v4.md               # RCC v4.0 测试框架文档
 ├── index.ts                           # 模块入口和导出
 ├── test-runner.ts                     # 测试运行器
 ├── test-manager.ts                    # 测试管理器
@@ -25,8 +26,8 @@ testing/
 ├── test-data-manager.ts               # 测试数据管理器
 ├── test-environment.ts                # 测试环境管理器
 ├── test-coverage.ts                   # 测试覆盖率管理器
-├── performance-tester.ts               # 性能测试器
-├── integration-tester.ts                # 集成测试器
+├── performance-tester.ts              # 性能测试器
+├── integration-tester.ts              # 集成测试器
 ├── unit-tester.ts                     # 单元测试器
 ├── mock-server.ts                     # Mock服务器
 ├── fixtures/                         # 测试固件
@@ -35,10 +36,10 @@ testing/
 │   ├── test-configs/                  # 测试配置
 │   └── mock-data/                     # Mock数据
 ├── test-cases/                        # 测试用例
-│   ├── unit-tests/                     # 单元测试用例
+│   ├── unit-tests/                    # 单元测试用例
 │   ├── integration-tests/             # 集成测试用例
 │   ├── e2e-tests/                     # 端到端测试用例
-│   └── performance-tests/              # 性能测试用例
+│   └── performance-tests/             # 性能测试用例
 └── reports/                           # 测试报告
     ├── coverage/                      # 覆盖率报告
     ├── performance/                   # 性能报告
@@ -76,6 +77,18 @@ testing/
 
 ### Mock服务器 (MockServer)
 提供模拟的外部服务，支持离线测试。
+
+## 测试框架
+
+### RCC v4.0 测试框架
+详细文档请参见: [test-framework-v4.md](test-framework-v4.md)
+
+RCC v4.0 测试框架是一个完整的自动化测试系统，包括：
+- **测试用例**: 覆盖所有转换场景的 Jest 测试文件
+- **测试运行器**: 自动化执行测试的 Shell 脚本
+- **比较系统**: RCC v4.0 与 Claude Code Router 结果对比
+- **修复验证**: 自动修复功能验证机制
+- **报告生成**: 详细的测试和比较报告
 
 ## 测试类型
 
@@ -235,6 +248,15 @@ describe('Replay Test Suite', () => {
 });
 ```
 
+### 转换测试 (Transformation Tests)
+详细文档请参见: [test-framework-v4.md](test-framework-v4.md)
+
+RCC v4.0 专门针对 Anthropic 到 OpenAI 格式转换的测试：
+- 基本转换测试
+- 工具调用转换测试
+- 流式协议测试
+- 复杂场景测试
+
 ## 测试配置
 
 ### 测试环境变量
@@ -305,6 +327,7 @@ interface TestRunnerInterface {
   runE2ETests(): Promise<TestResults>;
   runPerformanceTests(): Promise<TestResults>;
   runReplayTests(): Promise<TestResults>;
+  runTransformationTests(): Promise<TestResults>;
 }
 
 interface TestReporterInterface {
@@ -312,6 +335,7 @@ interface TestReporterInterface {
   generateHTMLReport(results: TestResults): string;
   generateJSONReport(results: TestResults): string;
   generateJUnitReport(results: TestResults): string;
+  generateComparisonReport(rccResults: any, ccrResults: any): string;
 }
 
 interface MockServerInterface {

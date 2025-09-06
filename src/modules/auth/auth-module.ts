@@ -9,12 +9,27 @@
  */
 
 import { BaseModule } from '../base-module-impl';
-import { ModuleType } from '../../interfaces/module/base-module';
+import { ModuleType } from '../interfaces/module/base-module';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import axios from 'axios';
-import { secureLogger } from '../../utils/secure-logger';
-import { AuthError, ValidationError } from '../../types/error';
+import { secureLogger } from '../utils';
+import { RCCError, RCCErrorCode } from '../types/src';
+
+// Define auth-specific error classes
+class ValidationError extends RCCError {
+  constructor(message: string, context?: any) {
+    super(message, RCCErrorCode.VALIDATION_ERROR, 'AUTH', context);
+    this.name = 'ValidationError';
+  }
+}
+
+class AuthError extends RCCError {
+  constructor(message: string, context?: any) {
+    super(message, RCCErrorCode.PROVIDER_AUTH_FAILED, 'AUTH', context);
+    this.name = 'AuthError';
+  }
+}
 
 // 为OAuth2 token响应定义接口
 interface OAuth2TokenResponse {
@@ -99,7 +114,7 @@ export class AuthenticationModule extends BaseModule {
     super(
       `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       'AuthenticationModule',
-      ModuleType.VALIDATOR,
+      ModuleType.VALIDATION,
       '1.0.0'
     );
     

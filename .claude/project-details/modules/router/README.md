@@ -1,8 +1,8 @@
-# 路由器模块 (Router Module) - 流水线选择架构
+# 路由器模块 (Router Module) - 流水线选择架构 & 零接口暴露重构版
 
 ## 模块概述
 
-路由器模块是RCC v4.0系统的**流水线选择器**，负责根据输入模型选择合适的流水线，而不是选择Provider。流水线在初始化时已经完全创建并握手连接完毕。
+路由器模块是RCC v4.0系统的**流水线选择器**，负责根据输入模型选择合适的流水线，而不是选择Provider。流水线在初始化时已经完全创建并握手连接完毕。采用严格的零接口暴露设计，确保模块的安全性和封装性。
 
 ## 核心架构原则
 
@@ -17,16 +17,70 @@
 - ~~**动态组装Transformer/Protocol**~~ → 流水线初始化时已组装完毕
 - ~~**运行时协议转换**~~ → 每条流水线包含固定的转换链
 
-## 正确的架构结构
+## 核心设计理念
+
+### ✅ 零接口暴露设计模式
+- **唯一入口**: 只暴露`RouterPreprocessor`门面类
+- **静态方法**: 所有功能通过静态方法`preprocess()`访问
+- **一次性生命周期**: 处理完成后立即销毁，不留任何引用
+- **类型安全**: 严格的TypeScript类型定义和验证
+
+### 🔒 安全性原则
+- **输入验证**: 严格的输入数据验证和过滤
+- **配置验证**: 完整的配置验证和错误处理机制
+- **最小权限**: 模块只能访问必要数据，不能修改系统其他部分
+
+## 模块结构
 
 ```
 router/
-├── README.md                    # 本模块设计文档
-├── index.ts                     # 模块入口和导出  
-├── pipeline-router.ts           # 流水线路由器（唯一实现）
-└── __tests__/
-    └── pipeline-router.test.ts  # 流水线路由器单元测试
+├── README.md                          # 本模块设计文档
+├── index.ts                           # 模块统一导出（零接口暴露）
+├── router-preprocessor.ts             # 路由预处理器（唯一公开类）
+├── routing-table-types.ts             # 路由表类型定义
+└── __tests__/                         # 测试目录
+    ├── router-preprocessor.test.ts    # 预处理器单元测试
+    └── test-outputs/                  # 测试输出目录
 ```
+
+## 核心组件
+
+### 路由预处理器 (RouterPreprocessor) - 唯一公开组件
+实现一次性预处理模式，严格遵循零接口暴露设计：
+
+#### 生命周期
+1. **实例化** → 系统启动时创建
+2. **预处理** → `preprocess()`方法执行路由处理
+3. **销毁** → 处理完成后自动销毁，无持久引用
+
+#### 功能特性
+- **内部路由表生成**: 根据配置生成内部路由表结构
+- **流水线配置生成**: 为每个Provider-APIKey组合生成流水线配置
+- **层配置生成**: 为流水线的每一层生成详细配置
+- **验证机制**: 完善的输入验证和结果验证机制
+
+#### 接口定义
+```typescript
+class RouterPreprocessor {
+  // 唯一的公开方法 - 零接口暴露设计
+  static async preprocess(routingTable: RoutingTable): Promise<RouterPreprocessResult>;
+}
+
+interface RouterPreprocessResult {
+  success: boolean;
+  routingTable?: _InternalRoutingTable;
+  pipelineConfigs?: PipelineConfig[];
+  errors: string[];
+  warnings: string[];
+  stats: {
+    routesCount: number;
+    pipelinesCount: number;
+    processingTimeMs: number;
+  };
+}
+```
+
+## 正确的架构结构
 
 ### 删除的废弃文件
 以下错误设计文件已删除：
@@ -34,33 +88,6 @@ router/
 - ~~`simple-router.ts`~~ → 废弃（错误的运行时决策）
 - ~~`hybrid-multi-provider-router.ts`~~ → 废弃
 - ~~`request-router.ts`~~ → 废弃
-
-## 核心组件
-
-### 流水线路由器 (PipelineRouter) - 唯一正确实现
-纯粹的流水线选择器，严格遵循以下设计：
-
-#### 功能范围
-```typescript
-interface PipelineRouter {
-  // ✅ 流水线选择 - 返回可用流水线列表，不是具体选择
-  route(inputModel: string): PipelineRoutingDecision;
-  
-  // ✅ 路由表管理 - 更新流水线状态
-  updateRoutingTable(newRoutingTable: RoutingTable): void;
-  markPipelineHealthy(pipelineId: string): void;
-  markPipelineUnhealthy(pipelineId: string, reason: string): void;
-  
-  // ✅ 状态查询 - 查看流水线健康状态
-  getRoutingTableStatus(): RoutingTableStatus;
-}
-```
-
-#### 核心特性
-- **零Fallback策略**: 失败时立即抛出错误，不做降级
-- **严格类型安全**: 100% TypeScript，运行时数据验证
-- **单一职责**: 只做路由决策，不越权处理其他功能
-- **配置驱动**: 通过配置文件定义路由规则
 
 ## 核心数据结构
 
@@ -81,19 +108,23 @@ interface PipelineRoute {
 ### 路由表
 ```typescript
 interface RoutingTable {
-  routes: Record<string, PipelineRoute[]>; // virtualModel -> PipelineRoute[]
-  defaultRoute: string;                    // 默认路由
+  providers: ProviderInfo[];
+  routes: RouteMapping;
+  server: ServerInfo;
+  apiKey: string;
+  version: string;
+  description: string;
+  lastUpdated: string;
 }
-```
 
-### 路由决策结果
-```typescript
-interface PipelineRoutingDecision {
-  originalModel: string;        // 原始模型名
-  virtualModel: string;         // 映射的虚拟模型
-  availablePipelines: string[]; // 可用流水线ID列表
-  selectedPipeline?: string;    // 负载均衡器选择的流水线（可选）
-  reasoning: string;            // 决策原因
+interface _InternalRoutingTable {
+  routes: Record<string, _PipelineRoute[]>; // virtualModel -> PipelineRoute[]
+  defaultRoute: string;
+  metadata: {
+    configSource: string;
+    generatedAt: string;
+    preprocessorVersion: string;
+  };
 }
 ```
 
@@ -182,7 +213,7 @@ throw new RoutingRuleNotFoundError(message, code, context);
 ## 依赖关系
 
 ### 上游依赖（Router接收）
-- **ConfigManager**: 提供路由配置
+- **ConfigManager**: 提供路由配置（通过ConfigPreprocessor处理后的结果）
 - **HealthChecker**: 提供Provider健康状态
 - **Pipeline**: 调用Router进行路由决策
 
@@ -203,119 +234,49 @@ HealthChecker → CoreRouter.updateAvailableRoutes() → void
 3. **配置驱动**: 所有路由逻辑通过配置文件定义
 4. **类型安全**: 100% TypeScript，严格的类型检查
 5. **无状态**: 路由决策不依赖内部状态，只依赖配置和输入
+6. **零接口暴露**: 严格封装内部实现，只暴露必要接口
+7. **一次性处理**: 预处理器完成任务后立即销毁
 
 ## 使用示例
 
 ### 基本用法
 ```typescript
-import { CoreRouter, RouterConfig } from './modules/routing/core-router';
+import { RouterPreprocessor } from '@rcc/router';
 
-// 1. 创建配置
-const config: RouterConfig = {
-  id: 'main-router',
-  routingRules: {
-    defaultProvider: 'lmstudio',
-    modelMappings: {
-      'claude-3-5-sonnet': 'lmstudio:llama-3.1-8b',
-      'gpt-4': 'lmstudio:llama-3.1-8b'
-    }
-  },
-  zeroFallbackPolicy: {
-    enabled: true,
-    strictMode: true,
-    errorOnFailure: true,
-    maxRetries: 2
-  }
-};
+// 一次性预处理路由配置
+const result = await RouterPreprocessor.preprocess(routingTable);
 
-// 2. 创建路由器
-const router = new CoreRouter(config);
-
-// 3. 更新可用路由
-router.updateAvailableRoutes([
-  {
-    id: 'lmstudio-route',
-    providerId: 'lmstudio',
-    providerType: 'openai',
-    supportedModels: ['llama-3.1-8b', '*'],
-    available: true,
-    healthStatus: 'healthy',
-    priority: 1
-  }
-]);
-
-// 4. 执行路由决策
-try {
-  const decision = await router.route({
-    id: 'req-123',
-    model: 'claude-3-5-sonnet',
-    priority: 'normal',
-    metadata: {
-      originalFormat: 'anthropic',
-      targetFormat: 'anthropic'
-    },
-    timestamp: new Date()
-  });
-  
-  console.log('路由决策:', decision);
-} catch (error) {
-  if (error instanceof ProviderUnavailableError) {
-    console.error('Provider不可用:', error.message);
-  }
+if (result.success) {
+  // 使用生成的内部路由表和流水线配置
+  const internalRoutingTable = result.routingTable;
+  const pipelineConfigs = result.pipelineConfigs;
+  // 传递给PipelineAssembler
+} else {
+  // 处理错误
+  console.error('路由预处理失败:', result.errors);
 }
 ```
 
 ### 配置更新
 ```typescript
-// 动态更新路由规则
-router.updateRoutingRules({
-  defaultProvider: 'anthropic',
-  modelMappings: {
-    'claude-3-5-sonnet': 'anthropic:claude-3-5-sonnet-20241022'
-  }
-});
-
-// 更新可用路由状态
-router.updateAvailableRoutes([
-  {
-    id: 'anthropic-route',
-    providerId: 'anthropic',
-    providerType: 'anthropic', 
-    supportedModels: ['claude-3-5-sonnet-20241022'],
-    available: true,
-    healthStatus: 'healthy',
-    priority: 1
-  }
-]);
+// 注意：RouterPreprocessor是一次性使用的，更新配置需要重新创建实例
+// 这是零接口暴露设计的一部分，确保配置处理的纯净性
 ```
 
 ## 测试策略
 
 ### 单元测试覆盖
-- **路由决策逻辑**: 测试不同输入的路由选择
-- **配置验证**: 测试配置格式和零Fallback策略
-- **错误处理**: 测试各种错误场景
+- **路由表生成**: 测试内部路由表的正确生成
+- **流水线配置**: 验证流水线配置的完整性和正确性
+- **层配置生成**: 确保各层配置的正确生成
+- **错误处理**: 验证各种错误场景的处理能力
 - **边界条件**: 测试空配置、无可用路由等情况
 
-### 测试用例示例
-```typescript
-describe('CoreRouter', () => {
-  it('should route to available provider', async () => {
-    const decision = await router.route(mockRequest);
-    expect(decision.providerId).toBe('lmstudio');
-  });
-  
-  it('should throw error when no routes available', async () => {
-    router.updateAvailableRoutes([]);
-    await expect(router.route(mockRequest)).rejects.toThrow(ProviderUnavailableError);
-  });
-  
-  it('should enforce zero fallback policy', () => {
-    const config = { ...mockConfig, zeroFallbackPolicy: { enabled: false } };
-    expect(() => new CoreRouter(config)).toThrow(ConfigurationError);
-  });
-});
-```
+### 集成测试
+- **与ConfigPreprocessor集成**: 验证配置输入与路由处理的兼容性
+- **与PipelineAssembler集成**: 验证路由输出与流水线组装的兼容性
+- **性能测试**: 验证大规模路由配置的处理性能
+- **安全测试**: 验证敏感信息的正确处理和保护
 
 ## 性能指标
 
@@ -326,6 +287,7 @@ describe('CoreRouter', () => {
 
 ## 版本历史
 
-- **v4.0.0-beta.1** (当前): 重构为纯粹路由决策器，删除所有重复实现
+- **v4.1.0** (当前): 零接口暴露重构，一次性预处理器设计
+- **v4.0.0-beta.1**: 重构为纯粹路由决策器，删除所有重复实现
 - **v4.0.0-alpha.3** (废弃): 包含混合功能的多路由器设计
 - **v3.x** (废弃): 旧版架构

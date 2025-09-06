@@ -1,3 +1,0 @@
-function validate() {
-  return true;
-}

@@ -4,20 +4,21 @@
     "module": "CommonJS",
     "declaration": true,
     "declarationMap": true,
+    "sourceMap": true,
     "outDir": "../../../compiled-modules/config",
     "rootDir": "./src",
-    "strict": false,
+    "strict": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "removeComments": false,
-    "sourceMap": true,
-    "noEmitOnError": false
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
   "include": [
     "src/**/*"
   ],
   "exclude": [
-    "tests/**/*",
-    "node_modules"
+    "node_modules",
+    "dist",
+    "compiled-modules"
   ]
 }

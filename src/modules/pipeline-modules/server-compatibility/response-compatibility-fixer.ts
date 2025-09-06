@@ -7,7 +7,7 @@
  */
 
 import { OpenAIStandardResponse, DebugRecorder } from './types/compatibility-types';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
 
 /**
  * LM Studio 响应修复器
@@ -33,13 +33,13 @@ export class LMStudioResponseFixer {
     try {
       // 1. 必需字段补全
       const fixedResponse: OpenAIStandardResponse = {
-        id: response.id || `chatcmpl-lms-${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
+        id: response?.id || `chatcmpl-lms-${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
         object: 'chat.completion',
-        created: response.created || Math.floor(Date.now() / 1000),
-        model: response.model || 'local-model',
-        choices: this.fixChoicesArray(response.choices || []),
-        usage: this.fixUsageStatistics(response.usage),
-        system_fingerprint: response.system_fingerprint, // 可选字段
+        created: response?.created || Math.floor(Date.now() / 1000),
+        model: response?.model || 'local-model',
+        choices: this.fixChoicesArray(response?.choices || []),
+        usage: this.fixUsageStatistics(response?.usage),
+        system_fingerprint: response?.system_fingerprint, // 可选字段
       };
 
       const processingTime = Date.now() - fixStartTime;
@@ -126,7 +126,7 @@ export class LMStudioResponseFixer {
     }));
   }
 
-  private analyzeResponseStructure(response: any): any {
+  private analyzeResponseStructure(response: any): Record<string, any> {
     return {
       type: typeof response,
       keys: Object.keys(response || {}),
@@ -209,8 +209,8 @@ export class DeepSeekResponseFixer {
   async fixResponse(response: any): Promise<OpenAIStandardResponse> {
     this.debugRecorder.record('deepseek_response_fix_start', {
       original_structure: this.analyzeResponseStructure(response),
-      has_thinking: !!response.thinking,
-      thinking_length: response.thinking?.length || 0,
+      has_thinking: !!response?.thinking,
+      thinking_length: response?.thinking?.length || 0,
     });
 
     // DeepSeek通常返回标准格式，但处理思考模式特殊情况
@@ -256,7 +256,7 @@ export class DeepSeekResponseFixer {
     return fixedResponse;
   }
 
-  private analyzeResponseStructure(response: any): any {
+  private analyzeResponseStructure(response: any): Record<string, any> {
     return {
       type: typeof response,
       keys: Object.keys(response || {}),
@@ -291,8 +291,8 @@ export class DeepSeekResponseFixer {
   }
 
   private hasToolCallsFormatChanges(original: any, fixed: any): boolean {
-    const originalToolCalls = original.choices?.[0]?.message?.tool_calls;
-    const fixedToolCalls = fixed.choices?.[0]?.message?.tool_calls;
+    const originalToolCalls = original?.choices?.[0]?.message?.tool_calls;
+    const fixedToolCalls = fixed?.choices?.[0]?.message?.tool_calls;
 
     if (!originalToolCalls && !fixedToolCalls) return false;
     if (!originalToolCalls || !fixedToolCalls) return true;
@@ -332,7 +332,7 @@ export class OllamaResponseFixer {
     this.debugRecorder = debugRecorder;
   }
 
-  async fixResponse(response: any): Promise<OpenAIStandardResponse> {
+  async fixResponse(response: unknown): Promise<OpenAIStandardResponse> {
     this.debugRecorder.record('ollama_response_fix_start', {
       original_structure: this.analyzeResponseStructure(response),
       response_type: typeof response,
@@ -345,19 +345,19 @@ export class OllamaResponseFixer {
     let content = '';
     if (typeof response === 'string') {
       content = response;
-    } else if (response.response) {
-      content = response.response; // Ollama特有字段
-    } else if (response.message?.content) {
-      content = response.message.content;
-    } else if (response.choices?.[0]?.message?.content) {
-      content = response.choices[0].message.content;
+    } else if ((response as any).response) {
+      content = (response as any).response; // Ollama特有字段
+    } else if ((response as any).message?.content) {
+      content = (response as any).message.content;
+    } else if ((response as any).choices?.[0]?.message?.content) {
+      content = (response as any).choices[0].message.content;
     }
 
     const fixedResponse: OpenAIStandardResponse = {
-      id: response.id || chatId,
+      id: (response as any).id || chatId,
       object: 'chat.completion',
-      created: response.created || timestamp,
-      model: response.model || 'ollama-model',
+      created: (response as any).created || timestamp,
+      model: (response as any).model || 'ollama-model',
       choices: [
         {
           index: 0,
@@ -365,13 +365,13 @@ export class OllamaResponseFixer {
             role: 'assistant',
             content: content,
           },
-          finish_reason: response.done ? 'stop' : 'length',
+          finish_reason: (response as any).done ? 'stop' : 'length',
         },
       ],
       usage: {
-        prompt_tokens: response.prompt_eval_count || 0,
-        completion_tokens: response.eval_count || 0,
-        total_tokens: (response.prompt_eval_count || 0) + (response.eval_count || 0),
+        prompt_tokens: (response as any).prompt_eval_count || 0,
+        completion_tokens: (response as any).eval_count || 0,
+        total_tokens: ((response as any).prompt_eval_count || 0) + ((response as any).eval_count || 0),
       },
     };
 
@@ -383,7 +383,7 @@ export class OllamaResponseFixer {
     return fixedResponse;
   }
 
-  private analyzeResponseStructure(response: any): any {
+  private analyzeResponseStructure(response: any): Record<string, any> {
     return {
       type: typeof response,
       keys: Object.keys(response || {}),
@@ -405,19 +405,19 @@ export class OllamaResponseFixer {
   private getAppliedFixes(original: any, fixed: OpenAIStandardResponse): string[] {
     const fixes = [];
 
-    if (original.response && !original.choices) {
+    if ((original as any).response && !(original as any).choices) {
       fixes.push('converted_ollama_response_to_choices');
     }
 
-    if (!original.id && fixed.id) {
+    if (!(original as any).id && fixed.id) {
       fixes.push('added_id');
     }
 
-    if (original.prompt_eval_count || original.eval_count) {
+    if ((original as any).prompt_eval_count || (original as any).eval_count) {
       fixes.push('converted_ollama_usage_to_openai_usage');
     }
 
-    if (!original.created && fixed.created) {
+    if (!(original as any).created && fixed.created) {
       fixes.push('added_created_timestamp');
     }
 
@@ -583,7 +583,7 @@ export class GenericResponseFixer {
     return `chatcmpl-generic-${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private analyzeResponseStructure(response: any): any {
+  private analyzeResponseStructure(response: any): Record<string, any> {
     return {
       type: typeof response,
       keys: Object.keys(response || {}),

@@ -7,9 +7,9 @@
  */
 
 import { BaseModule } from '../base-module-impl';
-import { ModuleType, ModuleInterface } from '../../interfaces/module/base-module';
-import { secureLogger } from '../../utils/secure-logger';
-import { RCCError, ERROR_CODES } from '../../types/error';
+import { ModuleType, ModuleInterface } from '../interfaces/module/base-module';
+import { secureLogger } from '../utils';
+import { RCCError, RCCErrorCode } from '../types/src';
 
 /**
  * Error Handler Configuration
@@ -87,7 +87,7 @@ export class ErrorHandlerModule extends BaseModule {
       error: {
         message: error.message,
         type: error.constructor.name,
-        code: error instanceof RCCError ? error.code : ERROR_CODES.UNKNOWN_ERROR
+        code: error instanceof RCCError ? error.code : RCCErrorCode.UNKNOWN_ERROR
       }
     };
 

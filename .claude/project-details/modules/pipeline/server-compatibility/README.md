@@ -1,13 +1,17 @@
-# 服务器兼容性模块 (Server Compatibility Module)
+# ServerCompatibility层 - 双向Provider兼容性模块
 
 ## 模块概述
 
-服务器兼容性模块专注于处理不同AI服务商的**响应兼容性差异**。由于使用OpenAI SDK，大部分请求格式已标准化，本模块主要负责：
-1. **响应后处理**：修复各Provider响应格式不一致问题
-2. **参数范围适配**：调整超出Provider限制的参数
-3. **错误标准化**：统一不同Provider的错误响应格式
+**位置**: 流水线第3层 (ServerCompatibility Layer)
+**职责**: Provider特定的格式微调和兼容性处理
+**架构**: 预配置 + 双向处理 + Provider特定适配
 
-**重要**：移除模型映射功能，该功能属于Router层职责。
+ServerCompatibility层是流水线的第三层，负责Provider特定的格式微调和兼容性处理。通过预配置的Provider适配规则，对请求和响应进行微调，确保与特定AI服务提供商的完全兼容。
+
+**核心功能**:
+1. **Request适配**：字段调整、参数优化、模板转换
+2. **Response标准化**：响应清理、格式标准化、网络重试处理
+3. **Provider微调**：针对每个Provider的特定格式调整
 
 ## 目录结构
 

@@ -169,6 +169,45 @@ fi
 echo "✅ TypeScript-Only检查通过"
 ```
 
+#### 模块编译检查
+
+RCC v4.0采用了改进的模块编译系统，确保项目结构清洁：
+
+```bash
+#!/bin/bash
+# .claude/rules/scripts/module-compilation-check.sh
+
+echo "🔍 检查模块编译系统..."
+
+# 检查编译脚本是否存在
+if [ ! -f "./scripts/compile-module.sh" ] || [ ! -f "./scripts/compile-all.sh" ]; then
+  echo "❌ 错误: 编译脚本缺失"
+  echo "请确保 scripts/compile-module.sh 和 scripts/compile-all.sh 存在"
+  exit 1
+fi
+
+# 检查关键模块是否已编译
+REQUIRED_MODULES=("config" "router")
+for MODULE in "${REQUIRED_MODULES[@]}"; do
+  if [ ! -d "node_modules/@rcc/$MODULE" ]; then
+    echo "❌ 错误: 模块 @rcc/$MODULE 未编译"
+    echo "请运行 ./scripts/compile-all.sh 编译所有模块"
+    exit 1
+  fi
+done
+
+# 验证模块结构
+for MODULE in "${REQUIRED_MODULES[@]}"; do
+  if [ ! -f "node_modules/@rcc/$MODULE/index.js" ] || [ ! -f "node_modules/@rcc/$MODULE/index.d.ts" ]; then
+    echo "❌ 错误: 模块 @rcc/$MODULE 结构不完整"
+    echo "缺少必要的 index.js 或 index.d.ts 文件"
+    exit 1
+  fi
+done
+
+echo "✅ 模块编译检查通过"
+```
+
 #### 开发时实时检查
 
 ```json

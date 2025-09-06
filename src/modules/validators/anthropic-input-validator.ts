@@ -11,9 +11,7 @@ import {
   ModuleType,
   ModuleStatus,
   ModuleMetrics,
-  IStandardRequest,
-  IValidationResult,
-} from '../../interfaces/module/base-module';
+} from '../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
 /**
@@ -33,7 +31,7 @@ export interface AnthropicInputValidatorConfig {
 export class AnthropicInputValidator extends EventEmitter implements ModuleInterface {
   protected readonly id: string = 'anthropic-input-validator';
   protected readonly name: string = 'Anthropic Input Validator';
-  protected readonly type: ModuleType = ModuleType.VALIDATOR;
+  protected readonly type: ModuleType = ModuleType.VALIDATION;
   protected readonly version: string = '1.0.0';
   protected status: 'stopped' | 'starting' | 'running' | 'stopping' | 'error' = 'stopped';
   protected connections: Map<string, ModuleInterface> = new Map();
@@ -557,5 +555,30 @@ export class AnthropicInputValidator extends EventEmitter implements ModuleInter
     this.on('moduleMessage', (data: any) => {
       listener(data.fromModuleId, data.message, data.type);
     });
+  }
+
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
 }

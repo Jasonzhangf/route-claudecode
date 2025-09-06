@@ -14,7 +14,7 @@ import {
   ThirdPartyServiceErrorHandler,
   handleOpenAIError,
 } from '../../../middleware/third-party-service-error-handler';
-import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 /**
  * 服务器请求格式（标准OpenAI格式）
@@ -77,9 +77,9 @@ export interface ServerResponse {
 }
 
 /**
- * OpenAI服务器配置
+ * OpenAI服务器预配置接口 - 四层双向处理架构
  */
-export interface OpenAIServerConfig {
+export interface OpenAIServerPreConfig {
   baseURL?: string;
   apiKey?: string;
   organization?: string;
@@ -93,46 +93,78 @@ export interface OpenAIServerConfig {
     strategy: 'round-robin' | 'random';
     apiKeys: string[];
   };
+  // 新增：双向处理配置
+  enableResponseValidation?: boolean;
+  requestTimeoutMs?: number;
+  maxConcurrentRequests?: number;
 }
 
 /**
- * OpenAI服务器模块
+ * OpenAI服务器配置 - 向后兼容
+ * @deprecated 使用 OpenAIServerPreConfig
  */
-export class OpenAIServerModule extends EventEmitter implements ModuleInterface {
+export interface OpenAIServerConfig extends OpenAIServerPreConfig {}
+
+/**
+ * 四层双向处理接口
+ */
+export interface BidirectionalServerProcessor {
+  processRequest(input: ServerRequest): Promise<ServerRequest>;
+  processResponse(input: ServerResponse): Promise<ServerResponse>;
+}
+
+/**
+ * OpenAI服务器模块 - 四层双向处理架构实现
+ */
+export class OpenAIServerModule extends EventEmitter implements ModuleInterface, BidirectionalServerProcessor {
   private readonly id: string = 'openai-server-module';
   private readonly name: string = 'OpenAI Server Module';
   private readonly type: any = 'server';
-  private readonly version: string = '1.0.0';
-  private readonly config: OpenAIServerConfig;
+  private readonly version: string = '4.0.0';
+  private readonly preConfig: OpenAIServerPreConfig;
   private openaiClient: OpenAI;
   private status: any = 'healthy';
   private isInitialized = false;
   private currentKeyIndex = 0; // 用于round-robin策略
   private connections: Map<string, ModuleInterface> = new Map();
+  private readonly isPreConfigured: boolean = true;
+  private requestMetrics = {
+    totalRequests: 0,
+    totalResponses: 0,
+    avgRequestTime: 0,
+    avgResponseTime: 0
+  };
 
-  constructor(config: OpenAIServerConfig) {
+  constructor(config: OpenAIServerPreConfig | OpenAIServerConfig) {
     super();
-    this.config = config;
+    
+    // 固化预配置 - 支持向后兼容
+    this.preConfig = {
+      ...config,
+      enableResponseValidation: config.enableResponseValidation ?? true,
+      requestTimeoutMs: config.requestTimeoutMs ?? 30000,
+      maxConcurrentRequests: config.maxConcurrentRequests ?? 10
+    };
 
     // 获取要使用的API Key
     const apiKey = this.getApiKey();
 
     // 使用官方OpenAI SDK
     this.openaiClient = new OpenAI({
-      baseURL: config.baseURL,
+      baseURL: this.preConfig.baseURL,
       apiKey: apiKey,
-      organization: config.organization,
-      project: config.project,
-      timeout: config.timeout,
-      maxRetries: config.maxRetries,
+      organization: this.preConfig.organization,
+      project: this.preConfig.project,
+      timeout: this.preConfig.timeout,
+      maxRetries: this.preConfig.maxRetries,
     });
 
-    if (config.multiKeyAuth?.enabled) {
+    if (this.preConfig.multiKeyAuth?.enabled) {
       console.log(
-        `🌐 初始化OpenAI服务器模块: ${config.baseURL || 'https://api.openai.com'} (多Key认证: ${config.multiKeyAuth.apiKeys.length}个Key)`
+        `🌐 初始化OpenAI服务器模块: ${this.preConfig.baseURL || 'https://api.openai.com'} (多Key认证: ${this.preConfig.multiKeyAuth.apiKeys.length}个Key)`
       );
     } else {
-      console.log(`🌐 初始化OpenAI服务器模块: ${config.baseURL || 'https://api.openai.com'}`);
+      console.log(`🌐 初始化OpenAI服务器模块: ${this.preConfig.baseURL || 'https://api.openai.com'}`);
     }
   }
 
@@ -211,9 +243,128 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
   }
 
   /**
-   * 处理服务器请求
+   * 处理请求 - 四层双向处理架构主接口
+   */
+  async processRequest(input: ServerRequest): Promise<ServerRequest> {
+    if (!this.isInitialized) {
+      throw new Error('OpenAI服务器模块未初始化');
+    }
+
+    const startTime = Date.now();
+    console.log(`🌐 OpenAI Server层处理请求开始: ${input?.model}`);
+    console.log(`🔍 Server层接收到的request详细结构:`, JQJsonHandler.stringifyJson(input, false));
+
+    try {
+      // 验证请求
+      this.validateServerRequest(input);
+
+      // 在双向处理架构中，Server层的processRequest主要是预处理和验证
+      // 实际的HTTP调用在后续流程中执行
+      const processedRequest = {
+        ...input,
+        // 添加预处理标记
+        _serverProcessed: true,
+        _processingTimestamp: Date.now()
+      };
+
+      const processingTime = Date.now() - startTime;
+      this.requestMetrics.totalRequests++;
+      this.requestMetrics.avgRequestTime = 
+        (this.requestMetrics.avgRequestTime * (this.requestMetrics.totalRequests - 1) + processingTime) / 
+        this.requestMetrics.totalRequests;
+
+      console.log(`✅ OpenAI Server层请求处理完成 (${processingTime}ms)`);
+
+      this.emit('requestProcessed', {
+        processingTime,
+        success: true,
+        model: input.model,
+        stage: 'request'
+      });
+
+      return processedRequest;
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ OpenAI Server层请求处理失败 (${processingTime}ms):`, error.message);
+
+      this.emit('requestProcessed', {
+        processingTime,
+        success: false,
+        error: error.message,
+        model: input.model,
+        stage: 'request'
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * 处理响应 - 四层双向处理架构主接口
+   */
+  async processResponse(input: ServerResponse): Promise<ServerResponse> {
+    if (!this.isInitialized) {
+      throw new Error('OpenAI服务器模块未初始化');
+    }
+
+    const startTime = Date.now();
+    console.log(`🌐 OpenAI Server层处理响应开始: ${input?.model}`);
+    console.log(`🔍 Server层接收到的response详细结构:`, JQJsonHandler.stringifyJson(input, false));
+
+    try {
+      // 验证响应格式
+      if (this.preConfig.enableResponseValidation) {
+        this.validateServerResponse(input);
+      }
+
+      // 在双向处理架构中，Server层的processResponse主要是后处理和验证
+      const processedResponse = {
+        ...input,
+        // 添加后处理标记
+        _serverProcessed: true,
+        _responseProcessingTimestamp: Date.now()
+      };
+
+      const processingTime = Date.now() - startTime;
+      this.requestMetrics.totalResponses++;
+      this.requestMetrics.avgResponseTime = 
+        (this.requestMetrics.avgResponseTime * (this.requestMetrics.totalResponses - 1) + processingTime) / 
+        this.requestMetrics.totalResponses;
+
+      console.log(`✅ OpenAI Server层响应处理完成 (${processingTime}ms)`);
+
+      this.emit('responseProcessed', {
+        processingTime,
+        success: true,
+        model: input.model,
+        tokensUsed: input.usage?.total_tokens,
+        stage: 'response'
+      });
+
+      return processedResponse;
+    } catch (error) {
+      const processingTime = Date.now() - startTime;
+      console.error(`❌ OpenAI Server层响应处理失败 (${processingTime}ms):`, error.message);
+
+      this.emit('responseProcessed', {
+        processingTime,
+        success: false,
+        error: error.message,
+        model: input.model,
+        stage: 'response'
+      });
+
+      throw error;
+    }
+  }
+
+  /**
+   * 处理服务器请求 - 兼容旧接口
+   * @deprecated 使用 processRequest 和 processResponse
    */
   async process(input: ServerRequest): Promise<ServerResponse> {
+    console.warn('⚠️ process() method is deprecated, use processRequest() and processResponse()');
+    
     if (!this.isInitialized) {
       throw new Error('OpenAI服务器模块未初始化');
     }
@@ -260,7 +411,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
    */
   async authenticate(): Promise<boolean> {
     // 如果配置中禁用了认证检查，直接跳过
-    if (this.config.skipAuthentication === true) {
+    if (this.preConfig.skipAuthentication === true) {
       console.log(`⏭️ 已跳过认证检查 (skipAuthentication=true)`);
       return true;
     }
@@ -275,7 +426,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
       const { standardizedError } = handleOpenAIError(
         error,
         'authentication',
-        this.config.baseURL,
+        this.preConfig.baseURL,
         {
           requestId: `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           moduleId: this.id,
@@ -340,9 +491,9 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
       if (
         error.name === 'APIError' &&
         (error.message.includes('401') || error.message.includes('Unauthorized')) &&
-        this.config.multiKeyAuth?.enabled &&
-        this.config.multiKeyAuth.apiKeys?.length > 1 &&
-        retryCount < this.config.multiKeyAuth.apiKeys.length - 1
+        this.preConfig.multiKeyAuth?.enabled &&
+        this.preConfig.multiKeyAuth.apiKeys?.length > 1 &&
+        retryCount < this.preConfig.multiKeyAuth.apiKeys.length - 1
       ) {
         console.warn(`⚠️  认证失败，尝试轮换API Key (第${retryCount + 1}次重试)`);
 
@@ -358,7 +509,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
       const { standardizedError } = handleOpenAIError(
         error,
         request.model,
-        this.config.baseURL,
+        this.preConfig.baseURL,
         {
           requestId: `openai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           moduleId: this.id,
@@ -560,10 +711,10 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
    */
   private getApiKey(): string {
     // 如果启用了多Key认证
-    if (this.config.multiKeyAuth?.enabled && this.config.multiKeyAuth.apiKeys?.length > 0) {
-      const apiKeys = this.config.multiKeyAuth.apiKeys;
+    if (this.preConfig.multiKeyAuth?.enabled && this.preConfig.multiKeyAuth.apiKeys?.length > 0) {
+      const apiKeys = this.preConfig.multiKeyAuth.apiKeys;
 
-      if (this.config.multiKeyAuth.strategy === 'random') {
+      if (this.preConfig.multiKeyAuth.strategy === 'random') {
         // 随机选择策略
         const randomIndex = Math.floor(Math.random() * apiKeys.length);
         const selectedKey = apiKeys[randomIndex];
@@ -578,9 +729,9 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
     }
 
     // 使用单个API Key
-    if (this.config.apiKey) {
+    if (this.preConfig.apiKey) {
       console.log('🔑 使用单个API Key');
-      return this.config.apiKey;
+      return this.preConfig.apiKey;
     }
 
     throw new Error('未配置API Key：请设置apiKey或启用multiKeyAuth');
@@ -590,23 +741,23 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
    * 轮换到下一个API Key（用于认证失败后的重试）
    */
   private rotateApiKey(): string {
-    if (!this.config.multiKeyAuth?.enabled || !this.config.multiKeyAuth.apiKeys?.length) {
+    if (!this.preConfig.multiKeyAuth?.enabled || !this.preConfig.multiKeyAuth.apiKeys?.length) {
       throw new Error('多Key认证未启用，无法轮换');
     }
 
-    const apiKeys = this.config.multiKeyAuth.apiKeys;
+    const apiKeys = this.preConfig.multiKeyAuth.apiKeys;
     this.currentKeyIndex = (this.currentKeyIndex + 1) % apiKeys.length;
 
     console.log(`🔄 轮换到下一个API Key (索引: ${this.currentKeyIndex})`);
 
     // 更新OpenAI客户端的API Key
     this.openaiClient = new OpenAI({
-      baseURL: this.config.baseURL,
+      baseURL: this.preConfig.baseURL,
       apiKey: apiKeys[this.currentKeyIndex],
-      organization: this.config.organization,
-      project: this.config.project,
-      timeout: this.config.timeout,
-      maxRetries: this.config.maxRetries,
+      organization: this.preConfig.organization,
+      project: this.preConfig.project,
+      timeout: this.preConfig.timeout,
+      maxRetries: this.preConfig.maxRetries,
     });
 
     return apiKeys[this.currentKeyIndex];
@@ -627,19 +778,82 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface 
     return limits[modelName] || { maxTokens: 8192, maxRequestTokens: 6000 };
   }
 
-  // Missing ModuleInterface methods
+  /**
+   * 验证服务器响应格式
+   */
+  private validateServerResponse(response: ServerResponse): void {
+    console.log('🔍 Server层验证响应详细结构:');
+    console.log(`   - Response type: ${typeof response}`);
+    console.log(`   - Response constructor: ${response?.constructor?.name}`);
+    console.log(`   - Response keys: ${response ? Object.keys(response) : 'null/undefined'}`);
+    console.log(`   - Has id: ${!!response?.id}`);
+    console.log(`   - Has choices: ${!!response?.choices}`);
+    console.log(`   - Choices is array: ${Array.isArray(response?.choices)}`);
+    console.log(`   - Full response: ${JQJsonHandler.stringifyJson(response, false)}`);
+
+    if (!response) {
+      throw new Error('响应对象为空');
+    }
+
+    if (!response.id) {
+      throw new Error('缺少响应ID');
+    }
+
+    if (!response.choices || !Array.isArray(response.choices)) {
+      throw new Error('响应choices字段无效');
+    }
+
+    if (response.choices.length === 0) {
+      throw new Error('响应choices数组为空');
+    }
+
+    // 验证第一个choice的基本结构
+    const firstChoice = response.choices[0];
+    if (!firstChoice || typeof firstChoice !== 'object') {
+      throw new Error('第一个choice无效');
+    }
+
+    if (!firstChoice.message || typeof firstChoice.message !== 'object') {
+      throw new Error('choice.message字段无效');
+    }
+
+    if (!firstChoice.message.role) {
+      throw new Error('choice.message.role字段缺失');
+    }
+
+    // 验证usage信息（如果存在）
+    if (response.usage) {
+      if (typeof response.usage !== 'object') {
+        throw new Error('usage字段类型无效');
+      }
+      
+      if (response.usage.total_tokens !== undefined && 
+          (typeof response.usage.total_tokens !== 'number' || response.usage.total_tokens < 0)) {
+        throw new Error('usage.total_tokens字段无效');
+      }
+    }
+
+    console.log('✅ Server层响应验证通过');
+  }
+
+  // ModuleInterface methods implementation
   getMetrics(): ModuleMetrics {
     return {
-      requestsProcessed: 0,
-      averageProcessingTime: 0,
-      errorRate: 0,
-      memoryUsage: 0,
-      cpuUsage: 0,
+      requestsProcessed: this.requestMetrics.totalRequests + this.requestMetrics.totalResponses,
+      averageProcessingTime: (this.requestMetrics.avgRequestTime + this.requestMetrics.avgResponseTime) / 2,
+      errorRate: 0, // TODO: Implement error rate calculation
+      memoryUsage: process.memoryUsage?.()?.heapUsed || 0,
+      cpuUsage: 0, // TODO: Implement CPU usage calculation
     };
   }
 
   async configure(config: any): Promise<void> {
-    // Configuration logic
+    if (this.isPreConfigured) {
+      console.warn('⚠️ Module is pre-configured, runtime configuration ignored');
+      return;
+    }
+    // Legacy configuration support for non-pre-configured instances
+    console.log('🔧 Applying runtime configuration (deprecated mode)');
   }
 
   async reset(): Promise<void> {
