@@ -150,7 +150,9 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
       messages: [],
       // 🔧 架构修复：直接传递输入的max_tokens，不在此层处理配置限制
       max_tokens: inputRequest.max_tokens || API_DEFAULTS.TOKEN_LIMITS.DEFAULT_MAX_TOKENS,
-      temperature: typeof inputRequest.temperature === 'number' ? inputRequest.temperature : 0.7
+      temperature: typeof inputRequest.temperature === 'number' ? inputRequest.temperature : 0.7,
+      // 🔧 修复：添加默认stream字段
+      stream: inputRequest.stream !== undefined ? inputRequest.stream : false
     };
     
     secureLogger.debug('📝 初始化OpenAI请求结构:', {
@@ -208,6 +210,11 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
     if (typeof inputRequest.top_p === 'number') {
       openaiRequest.top_p = inputRequest.top_p;
       secureLogger.debug('📝 映射top_p:', { topP: inputRequest.top_p });
+    }
+
+    if (typeof inputRequest.top_k === 'number') {
+      openaiRequest.top_k = inputRequest.top_k;
+      secureLogger.debug('📝 映射top_k:', { topK: inputRequest.top_k });
     }
 
     if (inputRequest.stop_sequences && Array.isArray(inputRequest.stop_sequences)) {

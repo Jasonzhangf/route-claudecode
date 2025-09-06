@@ -77,10 +77,11 @@ describe('Tool Calling Transformer Tests', () => {
         expect(openaiRequest.messages[1].tool_calls).toBeDefined();
         expect(Array.isArray(openaiRequest.messages[1].tool_calls)).toBe(true);
         expect(openaiRequest.messages[1].tool_calls.length).toBe(1);
-        expect(openaiRequest.messages[1].tool_calls[0].id).toBe(anthropicRequest.messages[1].content[0].id);
+        const toolUse = anthropicRequest.messages[1].content[0] as any;
+        expect(openaiRequest.messages[1].tool_calls[0].id).toBe(toolUse.id);
         expect(openaiRequest.messages[1].tool_calls[0].type).toBe('function');
-        expect(openaiRequest.messages[1].tool_calls[0].function.name).toBe(anthropicRequest.messages[1].content[0].name);
-        expect(openaiRequest.messages[1].tool_calls[0].function.arguments).toBe(JSON.stringify(anthropicRequest.messages[1].content[0].input));
+        expect(openaiRequest.messages[1].tool_calls[0].function.name).toBe(toolUse.name);
+        expect(openaiRequest.messages[1].tool_calls[0].function.arguments).toBe(JSON.stringify(toolUse.input));
     });
 
     test('should handle tool results correctly', () => {

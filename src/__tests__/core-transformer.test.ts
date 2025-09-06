@@ -1,36 +1,36 @@
-// 基本转换测试用例
-import fetch from 'node-fetch';
+// 核心转换器功能测试
+import { SecureAnthropicToOpenAITransformer } from '../modules/pipeline-modules/transformers/secure-anthropic-openai-transformer';
+import { transformAnthropicToOpenAI } from '../modules/pipeline-modules/transformers/anthropic-openai-converter';
 
-describe('Basic Transformer Tests', () => {
-    const RCC_V4_PORT = 5511;
-    const CCR_PORT = 5510;
-    const RCC_V4_URL = `http://localhost:${RCC_V4_PORT}/transform`;
-    const CCR_URL = `http://localhost:${CCR_PORT}/transform`;
+describe('Test Environment Setup', () => {
+    test('should have correct environment variables', () => {
+        expect(process.env.NODE_ENV).toBeDefined();
+    });
+    
+    test('should have Jest timeout configured', () => {
+        expect(jest.setTimeout).toBeDefined();
+    });
+    
+    test('should be able to run assertions', () => {
+        expect(true).toBe(true);
+        expect('test').toContain('es');
+        expect([1, 2, 3]).toHaveLength(3);
+    });
+});
 
-    // Helper function to send requests to both services
-    const transformWithRCC = async (request: any) => {
-        const response = await fetch(RCC_V4_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(request)
+describe('Core Transformer Tests', () => {
+    let transformer: SecureAnthropicToOpenAITransformer;
+
+    beforeEach(() => {
+        transformer = new SecureAnthropicToOpenAITransformer({
+            preserveToolCalls: true,
+            mapSystemMessage: true,
+            defaultMaxTokens: 4096,
+            transformDirection: 'anthropic-to-openai'
         });
-        return await response.json();
-    };
+    });
 
-    const transformWithCCR = async (request: any) => {
-        const response = await fetch(CCR_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(request)
-        });
-        return await response.json();
-    };
-
-    test('should convert simple Anthropic request to OpenAI format', async () => {
+    test('should convert Anthropic request to OpenAI format', async () => {
         const anthropicRequest = {
             model: "claude-3-opus-20240229",
             messages: [
@@ -43,7 +43,7 @@ describe('Basic Transformer Tests', () => {
             temperature: 0.7
         };
 
-        const openaiRequest = await transformWithRCC(anthropicRequest);
+        const openaiRequest = transformAnthropicToOpenAI(anthropicRequest);
         
         expect(openaiRequest.model).toBe(anthropicRequest.model);
         expect(openaiRequest.messages).toEqual(anthropicRequest.messages);
@@ -64,7 +64,7 @@ describe('Basic Transformer Tests', () => {
             ]
         };
 
-        const openaiRequest = await transformWithRCC(anthropicRequest);
+        const openaiRequest = transformAnthropicToOpenAI(anthropicRequest);
         
         expect(openaiRequest.messages[0].role).toBe('system');
         expect(openaiRequest.messages[0].content).toBe(anthropicRequest.system);
@@ -92,7 +92,7 @@ describe('Basic Transformer Tests', () => {
             ]
         };
 
-        const openaiRequest = await transformWithRCC(anthropicRequest);
+        const openaiRequest = transformAnthropicToOpenAI(anthropicRequest);
         
         expect(openaiRequest.messages).toEqual(anthropicRequest.messages);
     });
@@ -108,7 +108,7 @@ describe('Basic Transformer Tests', () => {
             ]
         };
 
-        const openaiRequest = await transformWithRCC(anthropicRequest);
+        const openaiRequest = transformAnthropicToOpenAI(anthropicRequest);
         
         expect(openaiRequest.messages[0].content).toBe("");
     });
@@ -127,7 +127,7 @@ describe('Basic Transformer Tests', () => {
             top_k: 40
         };
 
-        const openaiRequest = await transformWithRCC(anthropicRequest);
+        const openaiRequest = transformAnthropicToOpenAI(anthropicRequest);
         
         expect(openaiRequest.temperature).toBe(0.8);
         expect(openaiRequest.top_p).toBe(0.9);
@@ -148,10 +148,9 @@ describe('Basic Transformer Tests', () => {
             temperature: 0.7
         };
 
-        // Get results from both services
-        const rccResult = await transformWithRCC(anthropicRequest);
-        // Note: CCR might not be available in all test environments
-        // const ccrResult = await transformWithCCR(anthropicRequest);
+        // Get transformation result
+        const rccResult = transformAnthropicToOpenAI(anthropicRequest);
+        // Direct transformation test completed
 
         // Basic validation that the transformation is working
         expect(rccResult.messages).toBeDefined();

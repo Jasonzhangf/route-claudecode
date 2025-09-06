@@ -156,7 +156,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       timeout: preConfig.timeout,
       maxRetries: preConfig.maxRetries,
       retryDelay: preConfig.retryDelay,
-      models: [...preConfig.models], // 深拷贝避免外部修改
+      models: Array.isArray(preConfig.models) ? [...preConfig.models] : [], // 深拷贝避免外部修改
       maxTokens: preConfig.maxTokens ? { ...preConfig.maxTokens } : undefined,
       enableRequestProcessing: preConfig.enableRequestProcessing ?? true,
       enableResponseProcessing: preConfig.enableResponseProcessing ?? true,

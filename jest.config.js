@@ -1,27 +1,65 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
+  
+  // Test file patterns
   testMatch: [
-    '**/__tests__/**/*.+(ts|tsx|js)',
-    '**/*.(test|spec).+(ts|tsx|js)'
+    '**/src/**/__tests__/**/*.test.ts',
+    '**/src/**/__tests__/**/*.test.js',
+    '**/tests/**/*.test.ts',
+    '**/tests/**/*.test.js'
   ],
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+  
+  // Module path mapping
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@config/(.*)$': '<rootDir>/src/modules/config/$1',
+    '^@error/(.*)$': '<rootDir>/src/modules/error-handler/$1',
+    '^@types/(.*)$': '<rootDir>/src/modules/types/$1',
+    '^@interfaces/(.*)$': '<rootDir>/src/interfaces/$1'
   },
+  
+  // Setup files
+  setupFilesAfterEnv: [
+    '<rootDir>/src/__tests__/setup.ts'
+  ],
+  
+  // Coverage configuration
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  coverageReporters: ['json', 'lcov', 'text', 'html'],
+  
+  // File extensions to consider
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  
+  // Transform configuration (new format to avoid deprecation warning)
+  transform: {
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      useESM: false,
+      tsconfig: {
+        module: 'commonjs'
+      }
+    }],
+  },
+  
+  // Ignore patterns
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '/dist/',
+    '/coverage/'
+  ],
+  
+  // Test timeout
+  testTimeout: 10000,
+  
+  // Verbose output for debugging
+  verbose: true,
+  
+  // Collect coverage from these files
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
     '!src/**/*.d.ts',
     '!src/**/__tests__/**',
-  ],
-  coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
-  moduleResolution: 'node',
-  esModuleInterop: true,
-  allowSyntheticDefaultImports: true,
-  moduleNameMapping: {
-    '^@/(.*)$': '<rootDir>/src/$1'
-  },
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  testTimeout: 10000
+    '!src/**/node_modules/**'
+  ]
 };
