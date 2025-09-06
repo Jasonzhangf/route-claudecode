@@ -1,0 +1,32 @@
+{
+  "testName": "System Config Enhancement Verification",
+  "timestamp": "2025-09-05T11:03:12.272Z",
+  "enhancedProviders": [
+    {
+      "name": "qwen",
+      "originalOptions": [
+        "maxTokens",
+        "enhanceTool",
+        "authFileName"
+      ],
+      "systemEnhancedOptions": []
+    },
+    {
+      "name": "iflow",
+      "originalOptions": [
+        "maxTokens",
+        "enhanceTool",
+        "authMethod",
+        "supportsTopK",
+        "supportsFrequencyPenalty",
+        "hasReasoningContent"
+      ],
+      "systemEnhancedOptions": [
+        "timeout",
+        "maxRetries",
+        "protocol",
+        "transformer"
+      ]
+    }
+  ]
+}

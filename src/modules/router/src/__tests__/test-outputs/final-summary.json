@@ -1,0 +1,37 @@
+{
+  "testSuite": "Router and Pipeline Integration Tests",
+  "timestamp": "2025-09-05T09:20:59.416Z",
+  "configSource": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "overallResults": {
+    "configProcessingSuccess": true,
+    "routerProcessingSuccess": true,
+    "integrationComplete": true,
+    "totalProcessingSteps": 2
+  },
+  "dataTransformation": {
+    "inputProviders": 2,
+    "inputRoutes": 8,
+    "outputInternalRoutes": 8,
+    "outputPipelineConfigs": 11
+  },
+  "readyForNextStep": {
+    "hasInternalRoutingTable": true,
+    "hasPipelineConfigs": true,
+    "allPipelinesValid": true,
+    "canStartHTTPServer": true
+  },
+  "outputFiles": [
+    "step1-config-output.json",
+    "step2-router-output.json",
+    "integration-report.json",
+    "internal-routing-table.json",
+    "pipeline-configs.json",
+    "pipeline-validation.json",
+    "final-summary.json"
+  ],
+  "nextSteps": [
+    "1. 手动检查 pipeline-configs.json 确认流水线配置正确",
+    "2. 验证 internal-routing-table.json 路由表结构",
+    "3. 准备启动HTTP服务器，使用生成的配置"
+  ]
+}

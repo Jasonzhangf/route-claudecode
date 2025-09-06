@@ -10,10 +10,10 @@
  * @author RCC v4.0
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
-import { RCCError, ValidationError, TransformError, ERROR_CODES } from '../../../types/error';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
 import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
 
 export interface ModelScopeCompatibilityConfig {
@@ -51,9 +51,9 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
     } catch (error) {
       const rccError = new RCCError(
         'ModelScope兼容性模块初始化失败',
-        ERROR_CODES.PIPELINE_INIT_FAILED,
+        RCCErrorCode.PIPELINE_ASSEMBLY_FAILED,
         'modelscope-compatibility',
-        { originalError: error }
+        { details: { originalError: error } }
       );
       secureLogger.error('ModelScope兼容性模块初始化失败', { error: rccError });
       throw rccError;
@@ -211,9 +211,11 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
       } else if (this.isOpenAIToolsFormat(request.tools)) {
         secureLogger.debug('⚡ 已为OpenAI格式，无需转换');
       } else {
-        const unknownFormatError = new TransformError(
+        const unknownFormatError = new RCCError(
           '不支持的工具格式',
-          { toolsCount: request.tools.length, firstTool: request.tools[0] }
+          RCCErrorCode.PIPELINE_EXECUTION_FAILED,
+          'modelscope-compatibility',
+          { details: { toolsCount: request.tools.length, firstTool: request.tools[0] } }
         );
         secureLogger.error('不支持的工具格式', { error: unknownFormatError });
         throw unknownFormatError;
@@ -227,9 +229,11 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
       return processedRequest;
 
     } catch (error) {
-      const transformError = new TransformError(
+      const transformError = new RCCError(
         '工具格式转换失败',
-        { originalError: error, toolsCount: request.tools.length }
+        RCCErrorCode.PIPELINE_EXECUTION_FAILED,
+        'modelscope-compatibility',
+        { details: { originalError: error, toolsCount: request.tools.length } }
       );
       secureLogger.error('工具格式转换失败', { error: transformError });
       throw transformError;
@@ -275,9 +279,11 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
     for (const [index, tool] of tools.entries()) {
       try {
         if (!this.isValidAnthropicTool(tool)) {
-          const invalidToolError = new ValidationError(
+          const invalidToolError = new RCCError(
             `工具${index}不符合Anthropic格式`,
-            { toolIndex: index, tool }
+            RCCErrorCode.VALIDATION_ERROR,
+            'modelscope-compatibility',
+            { details: { toolIndex: index, tool } }
           );
           secureLogger.error('无效的Anthropic工具', { error: invalidToolError });
           throw invalidToolError;
@@ -306,9 +312,9 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
       } catch (error) {
         const rccError = new RCCError(
           '单个工具转换失败',
-          ERROR_CODES.TRANSFORM_FAILED,
+          RCCErrorCode.PIPELINE_EXECUTION_FAILED,
           'modelscope-compatibility',
-          { originalError: error, toolIndex: index, toolName: tool?.name }
+          { details: { originalError: error, toolIndex: index, toolName: tool?.name } }
         );
         secureLogger.error('单个工具转换失败', { error: rccError });
         throw rccError;
@@ -335,9 +341,11 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
    */
   private validateTools(tools: any[]): void {
     if (tools.length > this.config.maxToolsPerRequest) {
-      const tooManyToolsError = new ValidationError(
+      const tooManyToolsError = new RCCError(
         `工具数量${tools.length}超过最大限制${this.config.maxToolsPerRequest}`,
-        { toolsCount: tools.length, maxAllowed: this.config.maxToolsPerRequest }
+        RCCErrorCode.VALIDATION_ERROR,
+        'modelscope-compatibility',
+        { details: { toolsCount: tools.length, maxAllowed: this.config.maxToolsPerRequest } }
       );
       secureLogger.error('工具数量超限', { error: tooManyToolsError });
       throw tooManyToolsError;
@@ -345,9 +353,11 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
 
     for (const [index, tool] of tools.entries()) {
       if (!this.isValidOpenAITool(tool)) {
-        const validationError = new ValidationError(
+        const validationError = new RCCError(
           `工具${index}验证失败`,
-          { toolIndex: index, toolName: tool?.function?.name }
+          RCCErrorCode.VALIDATION_ERROR,
+          'modelscope-compatibility',
+          { details: { toolIndex: index, toolName: tool?.function?.name } }
         );
         secureLogger.error('工具验证失败', { error: validationError });
         throw validationError;
@@ -374,9 +384,11 @@ export class ModelScopeCompatibilityModule extends ServerCompatibilityModule {
    */
   private validateConfiguration(): void {
     if (typeof this.config.maxToolsPerRequest !== 'number' || this.config.maxToolsPerRequest <= 0) {
-      const validationError = new ValidationError(
+      const validationError = new RCCError(
         'Invalid maxToolsPerRequest configuration',
-        { config: this.config }
+        RCCErrorCode.VALIDATION_ERROR,
+        'modelscope-compatibility',
+        { details: { config: this.config } }
       );
       secureLogger.error('配置验证失败', { error: validationError });
       throw validationError;

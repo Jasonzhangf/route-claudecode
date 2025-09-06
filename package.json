@@ -3,6 +3,9 @@
   "version": "4.0.0",
   "description": "Claude Code Router v4.0 - A high-performance, scalable multi-AI provider routing and transformation system",
   "main": "dist/index.js",
+  "bin": {
+    "rcc4": "dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "start:test": "npx ts-node src/index.ts --port 5511",
@@ -16,7 +19,8 @@
     "test:verify": "./scripts/verify-fixes.sh",
     "fix:auto": "./scripts/auto-fix.sh",
     "fix:verify": "./scripts/auto-fix.sh --verify-only",
-    "fix:dry-run": "./scripts/auto-fix.sh --dry-run"
+    "fix:dry-run": "./scripts/auto-fix.sh --dry-run",
+    "test": "jest --json --outputFile=./test-results/unit-test-report.json --coverage --coverageDirectory=./coverage"
   },
   "keywords": [
     "claude",
@@ -31,6 +35,12 @@
   "author": "Jason Zhang",
   "license": "MIT",
   "dependencies": {
-    "axios": "^1.11.0"
+    "axios": "^1.11.0",
+    "commander": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.1.3",
+    "ts-jest": "^29.4.1"
   }
 }

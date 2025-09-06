@@ -1,8 +1,17 @@
 // src/services/auto-fix-service.ts
-import { Difference } from '../services/data-comparison-engine';
 import { FixStrategy } from '../types/fix-types';
 import { ConfigurationUpdater } from '../services/configuration-updater';
 import { CodeModifier } from '../services/code-modifier';
+
+// 临时的 Difference 接口定义，直到创建完整的 data-comparison-engine
+interface Difference {
+  type: 'missing' | 'extra' | 'modified' | 'type_mismatch';
+  path: string;
+  expected?: any;
+  actual?: any;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+}
 
 export class AutoFixService {
   private configUpdater: ConfigurationUpdater;
@@ -41,15 +50,15 @@ export class AutoFixService {
   
   private async determineFixStrategy(difference: Difference): Promise<FixStrategy | null> {
     // 根据差异类型和路径确定修复策略
-    if (difference.type === 'field_missing') {
+    if (difference.type === 'missing') {
       return this.handleMissingField(difference);
     }
     
-    if (difference.type === 'field_value_mismatch') {
+    if (difference.type === 'modified') {
       return this.handleFieldValueMismatch(difference);
     }
     
-    if (difference.type === 'structure_mismatch') {
+    if (difference.type === 'type_mismatch') {
       return this.handleStructureMismatch(difference);
     }
     
@@ -142,8 +151,10 @@ export class AutoFixService {
     } else if (strategy.target === 'protocol') {
       // 更新协议处理逻辑
       await this.codeModifier.updateProtocolCode({
-        fieldPath: strategy.path,
-        newValue: strategy.newValue
+        operation: 'modify_function',
+        filePath: './src/modules/pipeline-modules/protocol/openai-protocol.ts',
+        description: `Update field ${strategy.path} to ${strategy.newValue}`,
+        newCode: `// Updated value for ${strategy.path}`
       });
     }
   }
@@ -153,12 +164,14 @@ export class AutoFixService {
       // 修改转换逻辑结构
       await this.codeModifier.updateTransformerCode({
         operation: 'modify_structure',
+        filePath: './src/modules/pipeline-modules/transformers/anthropic-openai-converter.ts',
         description: strategy.description
       });
     } else if (strategy.target === 'compatibility') {
       // 修改兼容性处理结构
       await this.codeModifier.updateCompatibilityCode({
         operation: 'modify_structure',
+        filePath: './src/modules/pipeline-modules/server-compatibility/server-compatibility-base.ts',
         description: strategy.description
       });
     }

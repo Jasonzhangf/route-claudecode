@@ -1,0 +1,24 @@
+{
+  "selfCheckInitialized": true,
+  "healthStatus": "healthy",
+  "healthChecksCount": 2,
+  "selfCheckFeatures": [
+    "API密钥验证",
+    "Token刷新管理",
+    "流水线健康检查",
+    "认证状态监控"
+  ],
+  "healthCheckDetails": [
+    {
+      "name": "HTTP Server",
+      "status": "pass",
+      "responseTime": 0
+    },
+    {
+      "name": "Memory Usage",
+      "status": "pass",
+      "responseTime": 0
+    }
+  ],
+  "timestamp": "2025-09-06T08:32:08.397Z"
+}

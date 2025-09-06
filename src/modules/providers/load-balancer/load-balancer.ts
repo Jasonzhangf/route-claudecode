@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { ModuleInterface } from '../../../interfaces/module/base-module';
+import { ModuleInterface } from '../../interfaces/module/base-module';
 import {
   LoadBalancingStrategy,
   ProviderInstance,

@@ -1,0 +1,142 @@
+{
+  "testSuite": "HTTP服务器初始化完整流程测试",
+  "testDate": "2025-09-06T08:32:08.398Z",
+  "testResult": "PASSED",
+  "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "serverConfig": {
+    "port": 5511,
+    "host": "0.0.0.0",
+    "debug": true
+  },
+  "initializationFlow": [
+    {
+      "step": 1,
+      "name": "配置文件验证",
+      "status": "PASSED"
+    },
+    {
+      "step": 2,
+      "name": "HTTP服务器启动",
+      "status": "PASSED"
+    },
+    {
+      "step": 3,
+      "name": "配置预处理验证",
+      "status": "PASSED"
+    },
+    {
+      "step": 4,
+      "name": "路由预处理验证",
+      "status": "PASSED"
+    },
+    {
+      "step": 5,
+      "name": "流水线组装验证",
+      "status": "PASSED"
+    },
+    {
+      "step": 6,
+      "name": "自检系统初始化",
+      "status": "PASSED"
+    },
+    {
+      "step": 7,
+      "name": "动态调度系统准备",
+      "status": "PASSED"
+    }
+  ],
+  "finalServerStatus": {
+    "isRunning": true,
+    "port": 5511,
+    "host": "0.0.0.0",
+    "version": "4.0.0-alpha.1",
+    "activePipelines": 0,
+    "healthStatus": "healthy",
+    "totalRequests": 0,
+    "uptime": "0s"
+  },
+  "stepReports": {
+    "step1": {
+      "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+      "version": "4.0",
+      "providersCount": 2,
+      "routesCount": 8,
+      "serverPort": 5511,
+      "apiKey": "rcc4-proxy-key",
+      "providers": [
+        {
+          "name": "qwen",
+          "protocol": "openai",
+          "modelsCount": 1,
+          "hasApiKeys": 2
+        },
+        {
+          "name": "iflow",
+          "protocol": "openai",
+          "modelsCount": 4,
+          "hasApiKeys": 3
+        }
+      ],
+      "timestamp": "2025-09-06T08:32:08.385Z"
+    },
+    "step2": {
+      "initializationTime": 4,
+      "serverStatus": {
+        "isRunning": true,
+        "port": 5511,
+        "host": "0.0.0.0",
+        "version": "4.0.0-alpha.1",
+        "startTime": "2025-09-06T08:32:08.391Z",
+        "activePipelines": 0,
+        "healthStatus": "healthy"
+      },
+      "initializationSteps": [
+        "配置预处理 (ConfigPreprocessor)",
+        "路由预处理 (RouterPreprocessor)",
+        "流水线组装 (PipelineAssembler)",
+        "自检系统 (SelfCheckService)",
+        "动态调度系统 (Dynamic Scheduler)"
+      ],
+      "timestamp": "2025-09-06T08:32:08.392Z"
+    },
+    "step6": {
+      "selfCheckInitialized": true,
+      "healthStatus": "healthy",
+      "healthChecksCount": 2,
+      "selfCheckFeatures": [
+        "API密钥验证",
+        "Token刷新管理",
+        "流水线健康检查",
+        "认证状态监控"
+      ],
+      "healthCheckDetails": [
+        {
+          "name": "HTTP Server",
+          "status": "pass",
+          "responseTime": 0
+        },
+        {
+          "name": "Memory Usage",
+          "status": "pass",
+          "responseTime": 0
+        }
+      ],
+      "timestamp": "2025-09-06T08:32:08.397Z"
+    }
+  },
+  "summary": {
+    "totalSteps": 7,
+    "passedSteps": 7,
+    "failedSteps": 0,
+    "successRate": "100%",
+    "totalPipelines": 0,
+    "systemHealth": "healthy",
+    "readyForProduction": true
+  },
+  "nextSteps": [
+    "进行真实API调用测试",
+    "验证OpenAI兼容性",
+    "测试负载均衡功能",
+    "验证自检和恢复机制"
+  ]
+}

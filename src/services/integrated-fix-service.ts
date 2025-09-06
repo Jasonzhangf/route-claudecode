@@ -2,7 +2,28 @@
 import { AutoFixService } from '../services/auto-fix-service';
 import { FixVerifier } from '../services/fix-verifier';
 import { FixReportGenerator } from '../services/fix-report-generator';
-import { ComparisonResult } from '../services/data-comparison-engine';
+
+// 临时的 ComparisonResult 接口定义，直到创建完整的 data-comparison-engine
+interface ComparisonResult {
+  matches: boolean;
+  matchPercentage: number;
+  differences: Array<{
+    type: 'missing' | 'extra' | 'modified' | 'type_mismatch';
+    path: string;
+    expected?: any;
+    actual?: any;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    description: string;
+  }>;
+  totalFields: number;
+  matchedFields: number;
+  summary: {
+    missing: number;
+    extra: number;
+    modified: number;
+    typeMismatches: number;
+  };
+}
 
 export class IntegratedFixService {
   private autoFixService: AutoFixService;

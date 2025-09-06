@@ -7,13 +7,44 @@
  * @author Jason Zhang
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { BidirectionalServerProcessor, RequestContext, ResponseContext } from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
 import { OpenAI } from 'openai';
-import {
-  ThirdPartyServiceErrorHandler,
-  handleOpenAIError,
-} from '../../../middleware/third-party-service-error-handler';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
+import { getEnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
+
+/**
+ * 处理OpenAI错误并标准化
+ */
+function handleOpenAIError(
+  error: any,
+  model: string,
+  baseURL: string | undefined,
+  context: { requestId: string; moduleId: string; operation: string },
+  keepOriginalStatus: boolean = false
+): { standardizedError: Error } {
+  // 创建标准化的错误信息
+  const errorMessage = error.message || String(error);
+  
+  // 创建RCC错误
+  const rccError = new RCCError(
+    `OpenAI API Error: ${errorMessage}`,
+    RCCErrorCode.PROVIDER_UNAVAILABLE,
+    context.moduleId,
+    {
+      requestId: context.requestId,
+      operation: context.operation,
+      model: model,
+      details: {
+        originalError: errorMessage
+      }
+      // Note: stack is not part of ErrorContext, it's handled by RCCError constructor
+    }
+  );
+  
+  return { standardizedError: rccError };
+}
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 /**
@@ -104,14 +135,6 @@ export interface OpenAIServerPreConfig {
  * @deprecated 使用 OpenAIServerPreConfig
  */
 export interface OpenAIServerConfig extends OpenAIServerPreConfig {}
-
-/**
- * 四层双向处理接口
- */
-export interface BidirectionalServerProcessor {
-  processRequest(input: ServerRequest): Promise<ServerRequest>;
-  processResponse(input: ServerResponse): Promise<ServerResponse>;
-}
 
 /**
  * OpenAI服务器模块 - 四层双向处理架构实现
@@ -245,7 +268,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
   /**
    * 处理请求 - 四层双向处理架构主接口
    */
-  async processRequest(input: ServerRequest): Promise<ServerRequest> {
+  async processRequest(input: ServerRequest, context?: RequestContext): Promise<ServerRequest> {
     if (!this.isInitialized) {
       throw new Error('OpenAI服务器模块未初始化');
     }
@@ -302,7 +325,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
   /**
    * 处理响应 - 四层双向处理架构主接口
    */
-  async processResponse(input: ServerResponse): Promise<ServerResponse> {
+  async processResponse(input: ServerResponse, context?: ResponseContext): Promise<ServerResponse> {
     if (!this.isInitialized) {
       throw new Error('OpenAI服务器模块未初始化');
     }
@@ -422,7 +445,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
       console.log(`🔐 OpenAI认证成功 (${models.data.length} 个模型可用)`);
       return true;
     } catch (error) {
-      // 使用统一的第三方服务错误处理器 - 服务器错误原样回报
+      // 使用统一的错误处理器
       const { standardizedError } = handleOpenAIError(
         error,
         'authentication',
@@ -433,7 +456,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
           operation: 'authenticate',
         },
         false
-      ); // false = 服务器错误，保持原状态码
+      );
 
       throw standardizedError;
     }
@@ -465,7 +488,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
   /**
    * 发送请求到OpenAI服务器
    */
-  private async sendRequest(request: ServerRequest, retryCount: number = 0): Promise<ServerResponse> {
+  public async sendRequest(request: ServerRequest, context?: RequestContext, retryCount: number = 0): Promise<ServerResponse> {
     try {
       if (request.stream) {
         throw new Error('流式请求在Server模块不应该出现 - 应该在Protocol模块处理');
@@ -499,13 +522,13 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
 
         try {
           this.rotateApiKey();
-          return await this.sendRequest(request, retryCount + 1);
+          return await this.sendRequest(request, context, retryCount + 1);
         } catch (rotationError) {
           console.error('🔄 API Key轮换失败:', rotationError.message);
         }
       }
 
-      // 使用统一的第三方服务错误处理器 - 服务器错误原样回报
+      // 使用统一的错误处理器
       const { standardizedError } = handleOpenAIError(
         error,
         request.model,
@@ -516,7 +539,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
           operation: 'sendRequest',
         },
         false
-      ); // false = 服务器错误，保持原状态码
+      );
 
       throw standardizedError;
     }
@@ -845,6 +868,31 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
       memoryUsage: process.memoryUsage?.()?.heapUsed || 0,
       cpuUsage: 0, // TODO: Implement CPU usage calculation
     };
+  }
+
+  /**
+   * 获取连接状态
+   */
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error' {
+    const connection = this.connections.get(targetModuleId);
+    if (!connection) {
+      return 'disconnected';
+    }
+    const status = connection.getStatus();
+    return status.status === 'running' ? 'connected' : status.status as any;
+  }
+  
+  /**
+   * 验证连接
+   */
+  validateConnection(targetModule: ModuleInterface): boolean {
+    try {
+      const status = targetModule.getStatus();
+      const metrics = targetModule.getMetrics();
+      return status.status === 'running' && status.health === 'healthy';
+    } catch (error) {
+      return false;
+    }
   }
 
   async configure(config: any): Promise<void> {

@@ -9,7 +9,8 @@ import {
   ModelInfo
 } from './routing-table-types';
 import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
-import { RCCError, RCCErrorCode, EnhancedErrorHandler } from '../../error-handler';
+import { RCCError, RCCErrorCode } from '../../types/src';
+import { EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
 
 // Export the result type for external use

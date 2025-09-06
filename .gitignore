@@ -1,71 +1,40 @@
-# 编译产物
-dist/
-*.js
-*.js.map
-*.d.ts
-*.d.ts.map
+# Dependencies
+node_modules/
 
-# 日志文件
+# Build outputs  
+dist/
+compiled-modules/
+*.tgz
+
+# Logs
 *.log
 logs/
-*.jsonl
+debug-logs/
 
-# 临时文件和调试文件
+# Test outputs and reports
+test-results/
+coverage/
+
+# Temporary files
 *.tmp
 temp_*
 temp.*
-test-debug-logs/
-test-debug-storage/
-debug-logs/
 
-# 测试输出
-test-results/
-coverage/
-*.test.js
-*-test.js
-
-# Claude生成的报告和文件
-.claude/
-*.md
-ARCHITECTURE_*
-CONFIG_*
-FINAL-*
-FIXES-*
-MODULE_*
-PIPELINE_*
-TYPESCRIPT-*
-arch-scan-results/
-check-module-fixes.sh
-run-architecture-scan.ts
-temp_fix.json
-test-compile.sh
-test-compile.ts
-typescript-validation.md
-validate-architecture-fixes.ts
-
-# 配置文件和敏感数据
-config/*.json
-*-config.json
-*.config.json
-.env
-.env.*
-\!config/example.config.json
-
-# 系统文件
+# OS files
 .DS_Store
-node_modules/
 *.swp
 *.swo
 
-# 测试文件
-__tests__/
-*.test.ts
-*-test.ts
-test-output/
-test-outputs/
-src/*/__tests__/
+# IDE files
+.vscode/
+.idea/
 
-# 其他
-*.tgz
-package-lock.json
-EOF < /dev/null
+# Environment files
+.env
+.env.*
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# Local hooks
+hooks/

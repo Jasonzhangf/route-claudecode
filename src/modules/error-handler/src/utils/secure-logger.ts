@@ -16,7 +16,7 @@ export interface LogEntry {
   stack?: string;
 }
 
-import { JQJsonHandler } from './jq-json-handler';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 /**
  * 安全日志记录器类

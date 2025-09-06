@@ -364,7 +364,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
     const existingInfo = this.apiKeyCache.get(apiKeyId);
     if (!existingInfo) {
       const error = new RCCError(`未找到API密钥: ${apiKeyId}`, RCCErrorCode.CONFIG_INVALID, 'self-check');
-      await this.errorHandler.handleRCCError(error, { requestId: `apikey-${Date.now()}`, moduleId: 'self-check' });
+      await this.errorHandler.handleRCCError(error, { requestId: `apikey-${Date.now()}` });
       throw error;
     }
 
@@ -529,9 +529,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
           const checkResult: PipelineCheckResult = {
             pipelineId: pipelineId,
             status: this.mapPipelineHealthToCheckStatus(status),
-            checkedAt: new Date(),
-            provider: pipeline.provider,
-            model: pipeline.targetModel
+            checkedAt: new Date()
           };
 
           this.pipelineCheckResults.set(pipelineId, checkResult);
@@ -539,11 +537,9 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
         } catch (error) {
           const checkResult: PipelineCheckResult = {
             pipelineId: pipelineId,
-            status: 'error',
+            status: 'pending',
             checkedAt: new Date(),
-            provider: pipeline.provider,
-            model: pipeline.targetModel,
-            error: error.message || 'Unknown error'
+            errorMessage: error.message || 'Unknown error'
           };
           
           this.pipelineCheckResults.set(pipelineId, checkResult);
@@ -568,11 +564,11 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       case 'healthy':
         return 'active';
       case 'degraded':
-        return 'warning';
+        return 'pending';
       case 'unhealthy':
         return 'blacklisted';
       case 'error':
-        return 'error';
+        return 'blacklisted';
       default:
         return 'pending';
     }

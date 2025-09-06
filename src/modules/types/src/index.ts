@@ -88,6 +88,11 @@ export interface StandardRequest {
   stream?: boolean;
   tools?: Tool[];
   metadata?: RequestMetadata;
+  // 扩展属性以支持不同协议
+  topP?: number;
+  system?: string;
+  stopSequences?: string[];
+  toolChoice?: any;
 }
 
 export interface Message {
@@ -242,3 +247,28 @@ export class RCCError extends Error {
     return `[${this.code}] ${this.module}: ${this.message}`;
   }
 }
+
+// 额外的类型定义以支持编译
+export type FinishReason = 'stop' | 'length' | 'tool_calls' | 'content_filter';
+
+export interface AssistantMessage {
+  role: 'assistant';
+  content: string;
+  tool_calls?: any[];
+}
+
+export interface IValidationResult {
+  isValid: boolean;
+  errors?: string[];
+  warnings?: string[];
+}
+
+// Provider相关的超时设置类型
+export interface ProviderTimeouts {
+  request?: number;
+  response?: number;
+  connection?: number;
+}
+
+// 用于获取Provider请求超时的函数类型
+export type GetProviderRequestTimeout = (provider: string) => number;

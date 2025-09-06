@@ -15,7 +15,8 @@
 
 // Import from local types
 import { RoutingTable, ProviderInfo, RouteMapping } from './routing-table-types';
-import { RCCError, RCCErrorCode, EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
+import { RCCError, RCCErrorCode } from '../../types/src';
+import { EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
 
 /**
@@ -92,7 +93,7 @@ interface _PipelineRoute {
  */
 class _RouterPreprocessError extends RCCError {
   constructor(message: string, code: string) {
-    super(message, RCCErrorCode.INTERNAL_ERROR, 'router');
+    super(message, RCCErrorCode.INTERNAL_ERROR, 'router', {});
   }
 }
 

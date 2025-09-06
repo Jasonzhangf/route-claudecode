@@ -14,9 +14,10 @@
  */
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { BidirectionalCompatibilityProcessor, RequestContext, ResponseContext } from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
 import { OpenAI } from 'openai';
-import JQJsonHandler from '../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 /**
  * LM Studio预配置接口 - 在组装时固化的配置
  */
@@ -34,14 +35,6 @@ export interface LMStudioCompatibilityPreConfig {
   modelMappingRules?: Record<string, string>;
   parameterLimits?: Record<string, any>;
   concurrencyLimit?: number;
-}
-
-/**
- * 四层双向处理接口
- */
-export interface BidirectionalCompatibilityProcessor {
-  processRequest(input: any): Promise<any>;
-  processResponse(input: any): Promise<any>;
 }
 
 /**
@@ -916,18 +909,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       averageProcessingTime: this.metrics.averageProcessingTime,
       errorRate: this.metrics.errorsHandled / Math.max(totalOperations, 1),
       memoryUsage: 0,
-      cpuUsage: 0,
-      // 扩展指标
-      customMetrics: {
-        requestsProcessed: this.metrics.requestsProcessed,
-        responsesProcessed: this.metrics.responsesProcessed,
-        totalProcessingTime: this.metrics.totalProcessingTime,
-        isPreConfigured: this.isPreConfigured,
-        enableRequestProcessing: this.preConfig.enableRequestProcessing,
-        enableResponseProcessing: this.preConfig.enableResponseProcessing,
-        modelsCount: this.preConfig.models.length,
-        concurrencyLimit: this.preConfig.concurrencyLimit
-      }
+      cpuUsage: 0
     };
   }
 

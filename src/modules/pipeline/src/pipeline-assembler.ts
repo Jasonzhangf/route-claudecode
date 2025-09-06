@@ -18,7 +18,8 @@ import {
   ModuleSelectionStrategy,
   ModuleHealthCheck
 } from './assembly-types';
-import { RCCError, RCCErrorCode, EnhancedErrorHandler } from '../../error-handler';
+import { RCCError, RCCErrorCode } from '../../types/src';
+import { EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
 
 /**
@@ -112,7 +113,8 @@ export class PipelineAssembler {
       const destroyedError = new RCCError(
         'PipelineAssembler has been destroyed',
         RCCErrorCode.PIPELINE_ASSEMBLY_FAILED,
-        'pipeline'
+        'pipeline',
+        {}
       );
       
       // 记录错误

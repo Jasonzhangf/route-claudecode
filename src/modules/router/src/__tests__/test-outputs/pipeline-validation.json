@@ -1,0 +1,195 @@
+{
+  "validationTimestamp": "2025-09-05T09:20:59.415Z",
+  "totalPipelines": 11,
+  "validPipelines": 11,
+  "invalidPipelines": 0,
+  "pipelines": [
+    {
+      "pipelineId": "pipeline_iflow_glm-4.5_0",
+      "provider": "iflow",
+      "model": "glm-4.5",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_glm-4.5_1",
+      "provider": "iflow",
+      "model": "glm-4.5",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_glm-4.5_2",
+      "provider": "iflow",
+      "model": "glm-4.5",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_deepseek-r1_0",
+      "provider": "iflow",
+      "model": "deepseek-r1",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_deepseek-r1_1",
+      "provider": "iflow",
+      "model": "deepseek-r1",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_deepseek-r1_2",
+      "provider": "iflow",
+      "model": "deepseek-r1",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_qwen3-coder_0",
+      "provider": "iflow",
+      "model": "qwen3-coder",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_qwen3-coder_1",
+      "provider": "iflow",
+      "model": "qwen3-coder",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    },
+    {
+      "pipelineId": "pipeline_iflow_qwen3-coder_2",
+      "provider": "iflow",
+      "model": "qwen3-coder",
+      "layersCount": 4,
+      "hasTransformer": true,
+      "hasProtocol": true,
+      "hasServerCompatibility": true,
+      "hasServer": true,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ],
+      "isValid": true
+    }
+  ]
+}

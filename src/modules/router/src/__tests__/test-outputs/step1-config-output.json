@@ -1,0 +1,100 @@
+{
+  "success": true,
+  "routingTable": {
+    "providers": [
+      {
+        "name": "qwen",
+        "priority": 1,
+        "api_base_url": "https://portal.qwen.ai/v1",
+        "api_key": [
+          "qwen-auth-1",
+          "qwen-auth-2"
+        ],
+        "maxTokens": 262144,
+        "models": [
+          {
+            "name": "qwen3-coder-plus",
+            "maxTokens": 262144
+          }
+        ],
+        "serverCompatibility": {
+          "use": "qwen",
+          "options": {
+            "maxTokens": 262144,
+            "enhanceTool": true,
+            "authFileName": "qwen-auth-1"
+          }
+        }
+      },
+      {
+        "name": "iflow",
+        "priority": 1,
+        "api_base_url": "https://apis.iflow.cn/v1",
+        "api_key": [
+          "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+          "sk-1a3d168c80888a90c131fc6538515975",
+          "sk-faec4c4af5c9e791d012c238662ee708"
+        ],
+        "maxTokens": 262144,
+        "models": [
+          {
+            "name": "deepseek-r1",
+            "maxTokens": 131072
+          },
+          {
+            "name": "kimi-k2",
+            "maxTokens": 131072
+          },
+          {
+            "name": "qwen3-coder",
+            "maxTokens": 262144
+          },
+          {
+            "name": "glm-4.5",
+            "maxTokens": 131072
+          }
+        ],
+        "serverCompatibility": {
+          "use": "iflow",
+          "options": {
+            "maxTokens": 262144,
+            "enhanceTool": true,
+            "authMethod": "Bearer",
+            "supportsTopK": true,
+            "supportsFrequencyPenalty": true,
+            "hasReasoningContent": true,
+            "timeout": 60000,
+            "maxRetries": 3,
+            "protocol": "openai",
+            "transformer": "anthropic-to-openai-transformer"
+          }
+        }
+      }
+    ],
+    "routes": {
+      "default": "iflow,glm-4.5;iflow,deepseek-r1;qwen,qwen3-coder-plus",
+      "longContext": "qwen,qwen3-coder-plus",
+      "background": "qwen,qwen3-coder-plus",
+      "think": "iflow,qwen3-coder;iflow,deepseek-r1;qwen,qwen3-coder-plus",
+      "webSearch": "iflow,glm-4.5",
+      "code": "qwen,qwen3-coder-plus",
+      "codeReview": "iflow,qwen3-coder;iflow,deepseek-r1",
+      "reasoning": "iflow,qwen3-coder;iflow,deepseek-r1"
+    },
+    "server": {
+      "port": 5511,
+      "host": "0.0.0.0",
+      "debug": true
+    },
+    "apiKey": "rcc4-proxy-key",
+    "version": "4.0",
+    "description": "Qwen+iFlow混合Provider配置 - 多AI平台集成 (Port 5511)",
+    "lastUpdated": "2025-09-05T09:20:59.412Z"
+  },
+  "metadata": {
+    "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+    "processingTime": 0,
+    "timestamp": "2025-09-05T09:20:59.412Z",
+    "sourceFormat": "v4"
+  }
+}

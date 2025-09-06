@@ -50,7 +50,7 @@ interface ModuleProcessingContext {
   };
 }
 import { EventEmitter } from 'events';
-import JQJsonHandler from '../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 export interface PassthroughCompatibilityConfig {
   mode: 'passthrough';
   maxTokens?: number;

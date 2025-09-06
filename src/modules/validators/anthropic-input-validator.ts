@@ -12,6 +12,7 @@ import {
   ModuleStatus,
   ModuleMetrics,
 } from '../interfaces/module/base-module';
+import { IValidationResult } from '../types/src';
 import { EventEmitter } from 'events';
 
 /**
@@ -167,7 +168,7 @@ export class AnthropicInputValidator extends EventEmitter implements ModuleInter
   private async validateInput(input: any): Promise<IValidationResult> {
     // 原有的验证逻辑
     if (!input) {
-      return { valid: false, errors: ['Input is required'] };
+      return { isValid: false, errors: ['Input is required'] };
     }
 
     const errors: string[] = [];
@@ -186,10 +187,10 @@ export class AnthropicInputValidator extends EventEmitter implements ModuleInter
 
       this.validateParameterRanges(input);
 
-      return { valid: true, errors: [] };
+      return { isValid: true, errors: [] };
     } catch (error) {
       return {
-        valid: false,
+        isValid: false,
         errors: [error instanceof Error ? error.message : String(error)],
       };
     }

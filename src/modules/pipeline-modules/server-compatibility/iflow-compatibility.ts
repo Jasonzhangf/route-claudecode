@@ -6,11 +6,11 @@
 
 import { ModuleInterface, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-import { secureLogger } from '../../../error-handler/src/utils/secure-logger';
-import { API_DEFAULTS } from '../../../constants/src/bootstrap-constants';
-import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
+import { secureLogger } from '../../error-handler/src/utils/secure-logger';
+import { API_DEFAULTS } from '../../constants/src/bootstrap-constants';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { OpenAIStandardResponse, OpenAIErrorResponse } from './types/compatibility-types';
-import { ERROR_MESSAGES } from '../../../constants/src/bootstrap-constants';
+import { ERROR_MESSAGES } from '../../constants/src/bootstrap-constants';
 import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
 
 // ✅ Configuration-driven constants - no more hardcoding
@@ -61,8 +61,8 @@ export class IFlowCompatibilityModule extends ServerCompatibilityModule {
     
     secureLogger.info('Initialize iFlow compatibility module', {
       endpoint: config.baseUrl,
-      defaultModel: config.models.default,
-      supportedModels: config.models.available.length
+      defaultModel: config.models?.default || 'unknown',
+      supportedModels: config.models?.available?.length || 0
     });
   }
 

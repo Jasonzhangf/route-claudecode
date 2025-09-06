@@ -1,0 +1,59 @@
+{
+  "testName": "Config->Router->Pipeline Integration Test",
+  "timestamp": "2025-09-05T09:20:59.413Z",
+  "configSource": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "totalProcessingTime": 2,
+  "step1_config": {
+    "success": true,
+    "processingTime": 0,
+    "providersFound": 2,
+    "routesFound": 8,
+    "systemConfigMerged": true
+  },
+  "step2_router": {
+    "success": true,
+    "processingTime": 0,
+    "internalRoutesGenerated": 8,
+    "pipelineConfigsGenerated": 11,
+    "errors": [],
+    "warnings": []
+  },
+  "dataFlow": {
+    "configProviders": [
+      "qwen",
+      "iflow"
+    ],
+    "routerRoutes": [
+      "default",
+      "longContext",
+      "background",
+      "think",
+      "webSearch",
+      "code",
+      "codeReview",
+      "reasoning"
+    ],
+    "pipelineIds": [
+      "pipeline_iflow_glm-4.5_0",
+      "pipeline_iflow_glm-4.5_1",
+      "pipeline_iflow_glm-4.5_2",
+      "pipeline_iflow_deepseek-r1_0",
+      "pipeline_iflow_deepseek-r1_1",
+      "pipeline_iflow_deepseek-r1_2",
+      "pipeline_qwen_qwen3-coder-plus_0",
+      "pipeline_qwen_qwen3-coder-plus_1",
+      "pipeline_iflow_qwen3-coder_0",
+      "pipeline_iflow_qwen3-coder_1",
+      "pipeline_iflow_qwen3-coder_2"
+    ],
+    "endpointUrls": [
+      "https://apis.iflow.cn/v1",
+      "https://portal.qwen.ai/v1"
+    ]
+  },
+  "validation": {
+    "configToRouterDataIntegrity": true,
+    "allRoutesHavePipelines": false,
+    "pipelineLayersValid": true
+  }
+}

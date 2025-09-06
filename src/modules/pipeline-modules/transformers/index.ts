@@ -15,7 +15,7 @@
 
 export {
   SecureAnthropicToOpenAITransformer,
-  SecureTransformerConfig,
+  SecureTransformerPreConfig,
   TransformerSecurityError,
 } from './secure-anthropic-openai-transformer';
 
@@ -94,7 +94,7 @@ export function isSecureTransformer(transformer: unknown): boolean {
 /**
  * 验证transformer配置的安全性
  */
-export function validateSecurityConfig(config: unknown): config is SecureTransformerPreConfig {
+export function validateSecurityConfig(config: unknown): config is any {
   try {
     if (typeof config !== 'object' || config === null) {
       return false;
@@ -117,7 +117,7 @@ export function validateSecurityConfig(config: unknown): config is SecureTransfo
 /**
  * 创建默认的安全配置
  */
-export function createDefaultSecurityConfig(): SecureTransformerPreConfig {
+export function createDefaultSecurityConfig(): any {
   return {
     preserveToolCalls: true,
     mapSystemMessage: true,

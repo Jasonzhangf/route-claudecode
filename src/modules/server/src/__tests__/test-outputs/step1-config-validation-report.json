@@ -1,0 +1,23 @@
+{
+  "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "version": "4.0",
+  "providersCount": 2,
+  "routesCount": 8,
+  "serverPort": 5511,
+  "apiKey": "rcc4-proxy-key",
+  "providers": [
+    {
+      "name": "qwen",
+      "protocol": "openai",
+      "modelsCount": 1,
+      "hasApiKeys": 2
+    },
+    {
+      "name": "iflow",
+      "protocol": "openai",
+      "modelsCount": 4,
+      "hasApiKeys": 3
+    }
+  ],
+  "timestamp": "2025-09-06T08:32:08.385Z"
+}

@@ -9,10 +9,10 @@
  * @based-on CLIProxyAPI transformer implementation
  */
 
-import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
-import { secureLogger } from '../../../error-handler/src/utils/secure-logger';
-import { API_DEFAULTS } from '../../../constants/src/bootstrap-constants';
-import { ZeroFallbackErrorFactory } from '../../../interfaces/core/zero-fallback-errors';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
+import { secureLogger } from '../../error-handler/src/utils/secure-logger';
+import { API_DEFAULTS } from '../../constants/src/bootstrap-constants';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
 
 /**
  * 创建最小的有效OpenAI请求结构
@@ -109,13 +109,12 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
         isArray: Array.isArray(inputRequest)
       });
       
-      // 抛出ZeroFallback错误而不是返回最小请求
-      const zfError = ZeroFallbackErrorFactory.createProviderFailure(
-        'transformer',
-        'unknown',
-        'Invalid input provided for transformation'
+      // 抛出RCC错误而不是返回最小请求
+      throw new RCCError(
+        'Invalid input provided for transformation',
+        RCCErrorCode.VALIDATION_ERROR,
+        'transformer'
       );
-      throw zfError;
     }
     
     // Check if input has required fields for transformation
@@ -128,13 +127,12 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
         hasSystem: !!inputRequest.system
       });
       
-      // 抛出ZeroFallback错误而不是返回最小请求
-      const zfError = ZeroFallbackErrorFactory.createProviderFailure(
-        'transformer',
-        'unknown',
-        'Missing required Anthropic fields for transformation'
+      // 抛出RCC错误而不是返回最小请求
+      throw new RCCError(
+        'Missing required Anthropic fields for transformation',
+        RCCErrorCode.VALIDATION_ERROR,
+        'transformer'
       );
-      throw zfError;
     }
     
     secureLogger.debug('✅ [TRANSFORMER] Input validation passed', { 
@@ -364,13 +362,12 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
       secureLogger.error('❌ 转换结果为null或undefined', { 
         reason: 'null or undefined result'
       });
-      // 抛出ZeroFallback错误而不是返回最小请求
-      const zfError = ZeroFallbackErrorFactory.createProviderFailure(
-        'transformer',
-        'unknown',
-        'Transformation returned null'
+      // 抛出RCC错误而不是返回最小请求
+      throw new RCCError(
+        'Transformation returned null',
+        RCCErrorCode.INTERNAL_ERROR,
+        'transformer'
       );
-      throw zfError;
     }
     
     // Check basic structure but don't be overly strict about content
@@ -382,13 +379,12 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
         isArray: Array.isArray(openaiRequest),
         reason: 'invalid type'
       });
-      // 抛出ZeroFallback错误而不是返回最小请求
-      const zfError = ZeroFallbackErrorFactory.createProviderFailure(
-        'transformer',
-        'unknown',
-        'Invalid transformation result type'
+      // 抛出RCC错误而不是返回最小请求
+      throw new RCCError(
+        'Invalid transformation result type',
+        RCCErrorCode.INTERNAL_ERROR,
+        'transformer'
       );
-      throw zfError;
     }
     
     // 🔧 CRITICAL FIX: Proper empty object handling with ZeroFallback error
@@ -400,13 +396,12 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
         inputMaxTokens: inputRequest.max_tokens
       });
       
-      // 抛出ZeroFallback错误而不是返回紧急请求
-      const zfError = ZeroFallbackErrorFactory.createProviderFailure(
-        'transformer',
-        'unknown',
-        'Transformation resulted in empty object'
+      // 抛出RCC错误而不是返回紧急请求
+      throw new RCCError(
+        'Transformation resulted in empty object',
+        RCCErrorCode.INTERNAL_ERROR,
+        'transformer'
       );
-      throw zfError;
     }
     
     console.log('🔥 [STEP-9] ✅ 简化验证通过，准备返回结果');
@@ -452,13 +447,12 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
       stack: error instanceof Error ? error.stack : 'no stack'
     });
     
-    // 抛出ZeroFallback错误而不是普通错误
-    const zfError = ZeroFallbackErrorFactory.createProviderFailure(
-      'transformer',
-      'unknown',
-      errorMessage
+    // 抛出RCC错误而不是普通错误
+    throw new RCCError(
+      errorMessage,
+      RCCErrorCode.INTERNAL_ERROR,
+      'transformer'
     );
-    throw zfError;
   }
 }
 

@@ -10,8 +10,10 @@ import { AssembledPipeline } from './assembly-types';
 import { ModuleInterface } from './module-interface';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
-import { RCCError, RCCErrorCode, EnhancedErrorHandler } from '../../error-handler';
+import { RCCError, RCCErrorCode } from '../../types/src';
+import { EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
+import { EventEmitter } from 'events';
 
 /**
  * 流水线管理器配置
@@ -53,7 +55,7 @@ export interface PipelineManagerStats {
 /**
  * Pipeline管理器
  */
-export class PipelineManager {
+export class PipelineManager extends EventEmitter {
   private pipelines: Map<string, AssembledPipeline> = new Map();
   private pipelineStatus: Map<string, PipelineStatus> = new Map();
   private config: PipelineManagerConfig;
@@ -73,6 +75,7 @@ export class PipelineManager {
   });
 
   constructor(config?: PipelineManagerConfig) {
+    super();
     this.config = {
       healthCheckInterval: 60000, // 1分钟
       cleanupInterval: 300000, // 5分钟
@@ -289,7 +292,7 @@ export class PipelineManager {
     if (!pipeline) {
       const error = new RCCError(
         `Pipeline not found: ${pipelineId}`,
-        RCCErrorCode.PIPELINE_NOT_FOUND,
+        RCCErrorCode.PIPELINE_MODULE_MISSING,
         'pipeline',
         { pipelineId }
       );
@@ -307,7 +310,7 @@ export class PipelineManager {
         `Pipeline not assembled: ${pipelineId}`,
         RCCErrorCode.PIPELINE_EXECUTION_FAILED,
         'pipeline',
-        { pipelineId, status: pipeline.assemblyStatus }
+        { pipelineId, details: { status: pipeline.assemblyStatus } }
       );
       
       // 记录错误
@@ -375,9 +378,12 @@ export class PipelineManager {
             'pipeline',
             { 
               pipelineId, 
-              moduleName: module.name, 
-              moduleIndex: i,
-              originalError: moduleError.message || 'Unknown error'
+              moduleId: module.instance.getId(),
+              details: {
+                moduleName: module.name, 
+                moduleIndex: i,
+                originalError: moduleError.message || 'Unknown error'
+              }
             }
           );
         }

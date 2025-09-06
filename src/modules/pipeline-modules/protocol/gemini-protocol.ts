@@ -13,7 +13,7 @@
  * @version 1.0.0-security-fix
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../../modules/interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 
 // 导入OpenAI标准格式 - Protocol层必须使用

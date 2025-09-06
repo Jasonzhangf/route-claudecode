@@ -10,7 +10,7 @@
 import { ISelfCheckModule } from './self-check.interface';
 import { SelfCheckService } from './self-check.service';
 import { SelfCheckConfig } from './self-check-types';
-import { RCCError } from '../types/src';
+import { RCCError, RCCErrorCode } from '../types/src';
 
 /**
  * 自检模块工厂类
@@ -41,7 +41,7 @@ export class SelfCheckModuleFactory {
   public createSelfCheckModule(moduleId: string, config?: SelfCheckConfig): ISelfCheckModule {
     // 检查是否已存在相同ID的模块
     if (this.modules.has(moduleId)) {
-      throw new RCCError(`自检模块 ${moduleId} 已存在`, 'SELF_CHECK_FACTORY_001', 'SelfCheckModuleFactory');
+      throw new RCCError(`自检模块 ${moduleId} 已存在`, RCCErrorCode.MODULE_INIT_FAILED, 'SelfCheckModuleFactory');
     }
 
     // 创建新的自检模块实例

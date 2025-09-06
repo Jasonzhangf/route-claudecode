@@ -15,7 +15,7 @@
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
-import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
 
 export interface QwenCompatibilityConfig {

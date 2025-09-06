@@ -13,6 +13,7 @@
  */
 
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { BidirectionalProtocolProcessor, RequestContext, ResponseContext } from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
 
 /**
@@ -786,17 +787,7 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
       averageProcessingTime: this.metrics.averageProcessingTime,
       errorRate: this.metrics.errorsHandled / Math.max(totalOperations, 1),
       memoryUsage: 0,
-      cpuUsage: 0,
-      // 扩展指标
-      customMetrics: {
-        requestsProcessed: this.metrics.requestsProcessed,
-        responsesProcessed: this.metrics.responsesProcessed,
-        streamConversions: this.metrics.streamConversions,
-        nonStreamConversions: this.metrics.nonStreamConversions,
-        totalProcessingTime: this.metrics.totalProcessingTime,
-        isPreConfigured: this.isPreConfigured,
-        enableStreamConversion: this.preConfig.enableStreamConversion
-      }
+      cpuUsage: 0
     };
   }
 

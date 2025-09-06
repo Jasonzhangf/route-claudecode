@@ -11,6 +11,7 @@ echo "🔧 Starting RCC v4.0 build and install process..."
 echo "🧹 Cleaning previous builds..."
 rm -rf dist/
 rm -f *.tgz
+rm -f tsconfig.tsbuildinfo
 
 # Step 2: 安装依赖
 echo "📦 Installing dependencies..."

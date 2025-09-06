@@ -1,0 +1,69 @@
+{
+  "testName": "Enhanced Config Preprocessor Test",
+  "timestamp": "2025-09-05T11:03:12.260Z",
+  "configFile": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "processingTime": 16,
+  "success": true,
+  "sourceAnalysis": {
+    "format": "v4",
+    "processingTimeMs": 16
+  },
+  "providerAnalysis": {
+    "totalProviders": 2,
+    "providers": [
+      {
+        "name": "qwen",
+        "priority": 1,
+        "modelsCount": 1,
+        "hasServerCompatibility": true,
+        "systemEnhanced": false,
+        "enhancedOptions": []
+      },
+      {
+        "name": "iflow",
+        "priority": 1,
+        "modelsCount": 4,
+        "hasServerCompatibility": true,
+        "systemEnhanced": true,
+        "enhancedOptions": [
+          "timeout",
+          "maxRetries",
+          "protocol",
+          "transformer"
+        ]
+      }
+    ]
+  },
+  "routingAnalysis": {
+    "totalRoutes": 8,
+    "routeNames": [
+      "default",
+      "longContext",
+      "background",
+      "think",
+      "webSearch",
+      "code",
+      "codeReview",
+      "reasoning"
+    ],
+    "hasDefaultRoute": true,
+    "multiProviderRoutes": [
+      "default",
+      "think",
+      "codeReview",
+      "reasoning"
+    ]
+  },
+  "serverAnalysis": {
+    "port": 5511,
+    "host": "0.0.0.0",
+    "debugEnabled": true
+  },
+  "validationResults": {
+    "hasProviders": true,
+    "hasRoutes": true,
+    "hasApiKey": true,
+    "hasDescription": true,
+    "systemConfigLoaded": true
+  }
+}

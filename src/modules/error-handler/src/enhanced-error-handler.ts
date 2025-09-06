@@ -69,6 +69,7 @@ interface LocalErrorContext {
   layerTimings?: Record<string, number>;
   errorCount?: number;
   availablePipelines?: string[];
+  inputHash?: string;
 }
 export class EnhancedErrorHandler implements IErrorCoordinationCenter {
   private errorLogManager: ErrorLogManager;

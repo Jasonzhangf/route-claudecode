@@ -1,0 +1,20 @@
+{
+  "initializationTime": 4,
+  "serverStatus": {
+    "isRunning": true,
+    "port": 5511,
+    "host": "0.0.0.0",
+    "version": "4.0.0-alpha.1",
+    "startTime": "2025-09-06T08:32:08.391Z",
+    "activePipelines": 0,
+    "healthStatus": "healthy"
+  },
+  "initializationSteps": [
+    "配置预处理 (ConfigPreprocessor)",
+    "路由预处理 (RouterPreprocessor)",
+    "流水线组装 (PipelineAssembler)",
+    "自检系统 (SelfCheckService)",
+    "动态调度系统 (Dynamic Scheduler)"
+  ],
+  "timestamp": "2025-09-06T08:32:08.392Z"
+}

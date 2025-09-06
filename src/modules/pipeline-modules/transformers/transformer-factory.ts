@@ -16,8 +16,13 @@ import {
   TransformerSecurityError,
 } from './secure-anthropic-openai-transformer';
 import { SecureGeminiTransformer } from './secure-gemini-transformer';
-import { getSafeMaxTokens } from '../../constants/api-defaults';
+import { API_DEFAULTS } from '../../constants/src/bootstrap-constants';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
+
+// 创建getSafeMaxTokens函数的简单实现
+function getSafeMaxTokens(): number {
+  return API_DEFAULTS.TOKEN_LIMITS.DEFAULT_MAX_TOKENS;
+}
 /**
  * 支持的安全Transformer类型
  */
@@ -230,7 +235,7 @@ export class SecureTransformerFactory {
       // 基础配置
       preserveToolCalls: true,
       mapSystemMessage: true,
-      defaultMaxTokens: getSafeMaxTokens(userConfig.defaultMaxTokens),
+      defaultMaxTokens: getSafeMaxTokens(),
 
       // 覆盖默认配置
       ...defaultConfig,

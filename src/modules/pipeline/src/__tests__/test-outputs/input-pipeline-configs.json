@@ -1,0 +1,147 @@
+{
+  "totalConfigs": 11,
+  "configSample": [
+    {
+      "pipelineId": "pipeline_iflow_glm-4.5_0",
+      "routeId": "route_default_iflow_0_0",
+      "provider": "iflow",
+      "model": "glm-4.5",
+      "endpoint": "https://apis.iflow.cn/v1",
+      "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+      "timeout": 60000,
+      "maxRetries": 3,
+      "layers": [
+        {
+          "name": "transformer",
+          "type": "transformer",
+          "order": 1,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a"
+          }
+        },
+        {
+          "name": "protocol",
+          "type": "protocol",
+          "order": 2,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1"
+          }
+        },
+        {
+          "name": "server-compatibility",
+          "type": "server-compatibility",
+          "order": 3,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+            "timeout": 60000,
+            "use": "iflow",
+            "maxTokens": 131072,
+            "enhanceTool": true,
+            "authMethod": "Bearer",
+            "supportsTopK": true,
+            "supportsFrequencyPenalty": true,
+            "hasReasoningContent": true,
+            "maxRetries": 3,
+            "protocol": "openai",
+            "transformer": "anthropic-to-openai-transformer"
+          }
+        },
+        {
+          "name": "server",
+          "type": "server",
+          "order": 4,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
+            "timeout": 60000,
+            "maxTokens": 131072
+          }
+        }
+      ],
+      "maxTokens": 131072
+    },
+    {
+      "pipelineId": "pipeline_iflow_glm-4.5_1",
+      "routeId": "route_default_iflow_0_1",
+      "provider": "iflow",
+      "model": "glm-4.5",
+      "endpoint": "https://apis.iflow.cn/v1",
+      "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+      "timeout": 60000,
+      "maxRetries": 3,
+      "layers": [
+        {
+          "name": "transformer",
+          "type": "transformer",
+          "order": 1,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-1a3d168c80888a90c131fc6538515975"
+          }
+        },
+        {
+          "name": "protocol",
+          "type": "protocol",
+          "order": 2,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1"
+          }
+        },
+        {
+          "name": "server-compatibility",
+          "type": "server-compatibility",
+          "order": 3,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+            "timeout": 60000,
+            "use": "iflow",
+            "maxTokens": 131072,
+            "enhanceTool": true,
+            "authMethod": "Bearer",
+            "supportsTopK": true,
+            "supportsFrequencyPenalty": true,
+            "hasReasoningContent": true,
+            "maxRetries": 3,
+            "protocol": "openai",
+            "transformer": "anthropic-to-openai-transformer"
+          }
+        },
+        {
+          "name": "server",
+          "type": "server",
+          "order": 4,
+          "config": {
+            "provider": "iflow",
+            "model": "glm-4.5",
+            "endpoint": "https://apis.iflow.cn/v1",
+            "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+            "timeout": 60000,
+            "maxTokens": 131072
+          }
+        }
+      ],
+      "maxTokens": 131072
+    }
+  ],
+  "providerBreakdown": {
+    "iflow": 9,
+    "qwen": 2
+  }
+}

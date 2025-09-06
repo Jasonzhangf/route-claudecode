@@ -30,6 +30,12 @@ import {
   ModuleStatus,
   ModuleMetrics,
 } from '../../interfaces/module/base-module';
+import {
+  BidirectionalProcessor,
+  BidirectionalTransformer,
+  RequestContext,
+  ResponseContext,
+} from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 
@@ -58,14 +64,6 @@ export interface FieldMappingTemplate {
 }
 
 /**
- * 四层双向处理接口
- */
-export interface BidirectionalProcessor {
-  processRequest(input: any): Promise<any>;
-  processResponse(input: any): Promise<any>;
-}
-
-/**
  * 安全错误类型
  */
 export class TransformerSecurityError extends Error {
@@ -77,15 +75,6 @@ export class TransformerSecurityError extends Error {
     super(message);
     this.name = 'TransformerSecurityError';
   }
-}
-
-/**
- * 双向转换器接口 - 兼容性保持
- * @deprecated 使用 BidirectionalProcessor 接口
- */
-export interface BidirectionalTransformer {
-  transformRequest(input: any): Promise<any>;
-  transformResponse(input: any): Promise<any>;
 }
 
 /**

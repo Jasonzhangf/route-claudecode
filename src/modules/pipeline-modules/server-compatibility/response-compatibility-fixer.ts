@@ -7,7 +7,7 @@
  */
 
 import { OpenAIStandardResponse, DebugRecorder } from './types/compatibility-types';
-import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../utils/jq-json-handler';
 
 /**
  * LM Studio 响应修复器

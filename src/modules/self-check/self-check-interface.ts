@@ -7,7 +7,7 @@
  * @version 4.0.0
  */
 
-import { ModuleInterface, ModuleStatus, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
 
 /**
  * API密钥信息
@@ -71,10 +71,22 @@ export interface SelfCheckResult {
  */
 export interface SelfCheckModule extends ModuleInterface {
   /**
+   * 获取模块状态 - 重写基接口方法以确保类型兼容
+   * @returns ModuleStatus 标准模块状态
+   */
+  getStatus(): ModuleStatus;
+
+  /**
    * 验证所有API密钥的有效性
    * @returns Promise<SelfCheckResult> 自检结果
    */
   validateApiKeys(): Promise<SelfCheckResult>;
+
+  /**
+   * 获取详细的自检结果
+   * @returns Promise<SelfCheckResult> 详细的自检结果
+   */
+  getSelfCheckResult(): Promise<SelfCheckResult>;
 
   /**
    * 刷新过期的token
