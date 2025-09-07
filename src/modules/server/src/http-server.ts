@@ -13,7 +13,7 @@ import { ConfigPreprocessor } from '../../config/src/config-preprocessor';
 import { RouterPreprocessor } from '../../router/src/router-preprocessor';
 import { PipelineAssembler } from '../../pipeline/src/pipeline-assembler';
 import { SelfCheckService } from '../../self-check/self-check.service';
-import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
+// 移除JQJsonHandler依赖，使用标准JSON API
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
 
 // 临时定义AssembledPipeline接口
@@ -444,47 +444,58 @@ export class HTTPServer extends EventEmitter {
     // 设置内置路由
     this.setupBuiltinRoutes();
 
-    return new Promise((resolve, reject) => {
-      this.server = http.createServer((req, res) => {
-        this.handleRequest(req, res).catch(error => {
-          this.handleError(error, req, res);
+    return new Promise(async (resolve, reject) => {
+      try {
+        // 🚀 Step 0: 初始化流水线系统（配置->路由->流水线组装->自检->动态调度系统）
+        console.log('🔄 Initializing pipeline system before starting HTTP server...');
+        await this.initializePipelines();
+        console.log('✅ Pipeline system initialized successfully');
+
+        this.server = http.createServer((req, res) => {
+          this.handleRequest(req, res).catch(error => {
+            this.handleError(error, req, res);
+          });
         });
-      });
 
-      // 配置服务器选项
-      this.server.timeout = this.config.timeout!;
-      this.server.keepAliveTimeout = this.config.keepAliveTimeout!;
+        // 配置服务器选项
+        this.server.timeout = this.config.timeout!;
+        this.server.keepAliveTimeout = this.config.keepAliveTimeout!;
 
-      // 跟踪连接以便强制关闭
-      this.server.on('connection', socket => {
-        this.connections.add(socket);
-        socket.on('close', () => {
-          this.connections.delete(socket);
+        // 跟踪连接以便强制关闭
+        this.server.on('connection', socket => {
+          this.connections.add(socket);
+          socket.on('close', () => {
+            this.connections.delete(socket);
+          });
         });
-      });
 
-      this.server.on('error', error => {
-        this.emit('error', error);
+        this.server.on('error', error => {
+          this.emit('error', error);
+          reject(error);
+        });
+
+        // 添加详细的启动日志
+        console.log(`🚀 Attempting to start HTTP Server on ${this.config.host}:${this.config.port}`);
+        console.log(`🔧 Server config: port=${this.config.port}, host=${this.config.host}, debug=${this.config.debug}`);
+
+        this.server.listen(this.config.port, this.config.host, () => {
+          this.isRunning = true;
+          this.startTime = new Date();
+          this.emit('started', {
+            host: this.config.host,
+            port: this.config.port,
+          });
+
+          console.log(`✅ HTTP Server successfully started on http://${this.config.host}:${this.config.port}`);
+          console.log(`🌐 Server is listening and ready to accept connections`);
+          console.log(`🎉 RCC v4.0 server is ready to process requests!`);
+
+          resolve();
+        });
+      } catch (error) {
+        console.error('❌ Failed to initialize pipeline system:', error);
         reject(error);
-      });
-
-      // 添加详细的启动日志
-      console.log(`🚀 Attempting to start HTTP Server on ${this.config.host}:${this.config.port}`);
-      console.log(`🔧 Server config: port=${this.config.port}, host=${this.config.host}, debug=${this.config.debug}`);
-
-      this.server.listen(this.config.port, this.config.host, () => {
-        this.isRunning = true;
-        this.startTime = new Date();
-        this.emit('started', {
-          host: this.config.host,
-          port: this.config.port,
-        });
-
-        console.log(`✅ HTTP Server successfully started on http://${this.config.host}:${this.config.port}`);
-        console.log(`🌐 Server is listening and ready to accept connections`);
-
-        resolve();
-      });
+      }
     });
   }
 
@@ -666,23 +677,60 @@ export class HTTPServer extends EventEmitter {
         try {
           const body = Buffer.concat(chunks).toString('utf-8');
 
-          if (body) {
+          if (body.trim()) {
             const contentType = req.headers['content-type'] || '';
 
             if (contentType.includes('application/json')) {
-              context.body = JQJsonHandler.parseJsonString(body);
+              try {
+                // 使用标准JSON.parse替代JQJsonHandler.parseJsonString
+                context.body = JSON.parse(body);
+              } catch (parseError) {
+                // 提供详细的JSON解析错误信息
+                const errorMessage = parseError instanceof Error ? parseError.message : 'Unknown JSON parsing error';
+                const contextualError = new Error(`Invalid JSON format in request body: ${errorMessage}. Body preview: ${body.substring(0, 200)}${body.length > 200 ? '...' : ''}`);
+                
+                if (this.config.debug) {
+                  console.error('❌ JSON parsing failed:', {
+                    error: errorMessage,
+                    bodyLength: body.length,
+                    bodyPreview: body.substring(0, 100),
+                    contentType: contentType
+                  });
+                }
+                
+                reject(contextualError);
+                return;
+              }
             } else {
               context.body = body;
             }
+          } else {
+            // 空请求体，设置为undefined
+            context.body = undefined;
           }
 
           resolve();
         } catch (error) {
-          reject(new Error('Invalid request body format'));
+          // 捕获其他可能的错误（如编码问题）
+          const errorMessage = error instanceof Error ? error.message : 'Unknown parsing error';
+          const contextualError = new Error(`Failed to process request body: ${errorMessage}`);
+          
+          if (this.config.debug) {
+            console.error('❌ Request body processing failed:', {
+              error: errorMessage,
+              totalSize: totalSize,
+              chunksCount: chunks.length
+            });
+          }
+          
+          reject(contextualError);
         }
       });
 
-      req.on('error', reject);
+      req.on('error', (error) => {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown request error';
+        reject(new Error(`Request stream error: ${errorMessage}`));
+      });
     });
   }
 
@@ -875,19 +923,19 @@ export class HTTPServer extends EventEmitter {
 
           // 发送每个chunk
           for (const chunk of streamResponse.chunks) {
-            res.write(`data: ${JQJsonHandler.stringifyJson(chunk)}\n\n`);
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
 
-            // 简单延迟以模拟流式传输
+            // 添加延迟以实现流式传输效果
             await new Promise(resolve => setTimeout(resolve, 10));
           }
 
           res.end();
         } else {
           // 如果chunks不是数组，回退到普通JSON响应
-          res.end(JQJsonHandler.stringifyJson(context.body, true));
+          res.end(JSON.stringify(context.body, null, 2));
         }
       } else if (typeof context.body === 'object') {
-        res.end(JQJsonHandler.stringifyJson(context.body, true));
+        res.end(JSON.stringify(context.body, null, 2));
       } else {
         res.end(String(context.body));
       }
@@ -908,28 +956,87 @@ export class HTTPServer extends EventEmitter {
    */
   private handleError(error: unknown, req: http.IncomingMessage, res: http.ServerResponse): void {
     const message = error instanceof Error ? error.message : 'Internal Server Error';
-    const statusCode = 500;
+    let statusCode = 500;
+    let errorType = 'internal_server_error';
+    let errorCode = 'unknown_error';
 
-    console.error(`❌ Server Error: ${message}`);
+    // 根据错误类型确定HTTP状态码和错误信息
+    if (error instanceof Error) {
+      if (message.includes('Request body too large')) {
+        statusCode = 413;
+        errorType = 'payload_too_large';
+        errorCode = 'request_too_large';
+      } else if (message.includes('Invalid JSON format') || message.includes('JSON parsing')) {
+        statusCode = 400;
+        errorType = 'invalid_request_error';
+        errorCode = 'invalid_json';
+      } else if (message.includes('Failed to process request body')) {
+        statusCode = 400;
+        errorType = 'invalid_request_error';
+        errorCode = 'body_processing_failed';
+      } else if (message.includes('Request stream error')) {
+        statusCode = 400;
+        errorType = 'invalid_request_error';
+        errorCode = 'stream_error';
+      }
+    }
+
+    console.error(`❌ Server Error [${statusCode}]: ${message}`);
     if (error instanceof Error && this.config.debug) {
-      console.error(error.stack);
+      console.error('Stack trace:', error.stack);
     }
 
+    // 确保响应没有被发送
     if (!res.headersSent) {
-      res.statusCode = statusCode;
-      res.setHeader('Content-Type', 'application/json');
-      res.end(
-        JQJsonHandler.stringifyJson(
-          {
-            error: 'Internal Server Error',
-            message: this.config.debug ? message : 'An unexpected error occurred',
-          },
-          true
-        )
-      );
+      try {
+        res.statusCode = statusCode;
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('X-Error-Type', errorType);
+        
+        const errorResponse = {
+          error: {
+            message: this.config.debug ? message : this.getPublicErrorMessage(statusCode),
+            type: errorType,
+            code: errorCode
+          }
+        };
+
+        res.end(JSON.stringify(errorResponse, null, 2));
+      } catch (responseError) {
+        // 如果连错误响应都无法发送，则发送最基本的响应
+        console.error('❌ Failed to send error response:', responseError);
+        try {
+          res.statusCode = 500;
+          res.setHeader('Content-Type', 'text/plain');
+          res.end('Internal Server Error');
+        } catch (fallbackError) {
+          console.error('❌ Critical: Failed to send fallback error response:', fallbackError);
+        }
+      }
     }
 
-    this.emit('error', error);
+    // 发出错误事件但不让它导致进程崩溃
+    try {
+      this.emit('error', error);
+    } catch (eventError) {
+      console.error('❌ Error in error event handler:', eventError);
+    }
+  }
+
+  /**
+   * 获取公开的错误消息（不暴露内部细节）
+   */
+  private getPublicErrorMessage(statusCode: number): string {
+    switch (statusCode) {
+      case 400:
+        return 'Bad Request - The request could not be processed due to invalid syntax or content.';
+      case 413:
+        return 'Payload Too Large - The request body exceeds the maximum allowed size.';
+      case 500:
+        return 'Internal Server Error - An unexpected error occurred while processing the request.';
+      default:
+        return 'An error occurred while processing the request.';
+    }
   }
 
   /**

@@ -31,19 +31,47 @@ import { RCCError, RCCErrorCode, EnhancedErrorHandler } from '../error-handler';
 // 添加PipelineManager导入
 import { PipelineManager } from '../pipeline/src/pipeline-manager';
 
+// 添加secureLogger导入
+import { secureLogger } from '../error-handler/src/utils/secure-logger';
+
+// 新增鉴权相关接口
+interface OAuthErrorInfo {
+  type: 'token_expired' | 'token_invalid' | 'oauth_server_error' | 'permission_denied';
+  provider: string;
+  timestamp: Date;
+  affectedPipelines: string[];
+}
+
+interface OAuthHealthStatus {
+  overallStatus: 'healthy' | 'warning' | 'critical';
+  errorsFound: OAuthErrorInfo[];
+  affectedPipelineCount: number;
+}
+
+// 鉴权错误检测配置
+interface AuthDetectionConfig {
+  enableOAuthErrorDetection: boolean;
+  enableOAuthHealthCheck: boolean;
+  oauthHealthCheckInterval: number;
+  notificationThreshold: number;
+}
+
 
 /**
  * 自检服务实现类
  */
 export class SelfCheckService extends BaseModule implements ISelfCheckModule {
   protected config: SelfCheckConfig;
+  private authDetectionConfig: AuthDetectionConfig;
   private apiKeyCache: Map<string, ApiKeyInfo>;
   private pipelineCheckResults: Map<string, PipelineCheckResult>;
   private authCheckResults: Map<string, AuthCheckResult>;
+  private oAuthErrorCache: Map<string, OAuthErrorInfo[]>;
   private state: SelfCheckState;
   private isInitialized: boolean = false;
   private pipelineManager: PipelineManager | null = null;
   private errorHandler: EnhancedErrorHandler = new EnhancedErrorHandler();
+  private oAuthHealthCheckIntervalId: NodeJS.Timeout | null = null;
 
   constructor() {
     super(
@@ -64,9 +92,17 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       authTimeout: 300000 // 5分钟
     };
 
+    this.authDetectionConfig = {
+      enableOAuthErrorDetection: true,
+      enableOAuthHealthCheck: true,
+      oauthHealthCheckInterval: 180000, // 3分钟
+      notificationThreshold: 3 // 错误阈值
+    };
+
     this.apiKeyCache = new Map();
     this.pipelineCheckResults = new Map();
     this.authCheckResults = new Map();
+    this.oAuthErrorCache = new Map();
 
     this.state = {
       moduleId: this.getId(),
@@ -167,11 +203,22 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
     await super.start();
     this.state.isRunning = true;
     this.state.startedAt = new Date();
+    
+    // 启动 OAuth 健康检查
+    if (this.authDetectionConfig.enableOAuthHealthCheck) {
+      this.startOAuthHealthChecks();
+    }
   }
 
   async stop(): Promise<void> {
     await super.stop();
     this.state.isRunning = false;
+    
+    // 停止 OAuth 健康检查
+    if (this.oAuthHealthCheckIntervalId) {
+      clearInterval(this.oAuthHealthCheckIntervalId);
+      this.oAuthHealthCheckIntervalId = null;
+    }
   }
 
   async healthCheck(): Promise<{ healthy: boolean; details: any }> {
@@ -731,6 +778,15 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
    * 清理自检模块资源
    */
   async cleanupSelfCheck(): Promise<void> {
+    // 清理OAuth错误缓存
+    const cleanedOAuthErrors = this.cleanupExpiredOAuthErrors();
+    if (cleanedOAuthErrors > 0) {
+      secureLogger.info('Cleaned OAuth errors during module cleanup', {
+        cleanedCount: cleanedOAuthErrors
+      });
+    }
+    
+    // 重置自检状态
     await this.resetSelfCheck();
   }
 
@@ -746,5 +802,444 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
    */
   validateConnection(targetModule: ModuleInterface): boolean {
     return super.validateConnection(targetModule);
+  }
+
+  // ===== OAuth 错误检测和通知机制 =====
+
+  /**
+   * 设置错误处理器引用
+   * @param errorHandler 错误处理器实例
+   */
+  setErrorHandler(errorHandler: any): void {
+    this.errorHandler = errorHandler;
+    secureLogger.info('Error handler set in self check service');
+  }
+
+  /**
+   * 启动OAuth错误检测通知机制
+   * @param enable 是否启用
+   */
+  enableOAuthErrorNotification(enable: boolean): void {
+    this.authDetectionConfig.enableOAuthErrorDetection = enable;
+    secureLogger.info('OAuth error notification', { enabled: enable });
+  }
+
+  /**
+   * 处理来自错误处理器的OAuth错误通知
+   * @param oauthError OAuth错误信息
+   * @returns Promise<void>
+   */
+  async handleOAuthErrorNotification(oauthError: OAuthErrorInfo): Promise<void> {
+    try {
+      secureLogger.info('Received OAuth error notification', {
+        provider: oauthError.provider,
+        errorType: oauthError.type,
+        affectedPipelines: oauthError.affectedPipelines.length
+      });
+
+      // 缓存错误信息
+      this.cacheOAuthError(oauthError);
+
+      // 触发OAuth健康检查
+      const healthStatus = await this.checkOAuthTokenHealth();
+      
+      // 如果状态为critical，触发紧急维护流程
+      if (healthStatus.overallStatus === 'critical') {
+        await this.triggerEmergencyAuthMaintenance(oauthError);
+      }
+
+      // 发送事件通知其他模块
+      this.emit('oauth-error-detected', {
+        error: oauthError,
+        healthStatus: healthStatus,
+        timestamp: new Date()
+      });
+
+    } catch (error) {
+      secureLogger.error('Failed to handle OAuth error notification', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: oauthError.provider,
+        errorType: oauthError.type
+      });
+    }
+  }
+
+  /**
+   * 触发紧急鉴权维护流程
+   * @param oauthError OAuth错误信息
+   * @returns Promise<void>
+   */
+  private async triggerEmergencyAuthMaintenance(oauthError: OAuthErrorInfo): Promise<void> {
+    try {
+      secureLogger.warn('Triggering emergency auth maintenance', {
+        provider: oauthError.provider,
+        errorType: oauthError.type,
+        affectedPipelines: oauthError.affectedPipelines
+      });
+
+      // 立即检查受影响的流水线状态
+      if (this.pipelineManager) {
+        for (const pipelineId of oauthError.affectedPipelines) {
+          const pipeline = this.pipelineManager.getPipeline(pipelineId);
+          if (pipeline) {
+            // 强制进行健康检查
+            try {
+              const healthResult = await this.checkSinglePipelineHealth(pipelineId);
+              if (!healthResult.healthy) {
+                // 如果流水线不健康，建议进入维护模式
+                this.emit('pipeline-maintenance-recommended', {
+                  pipelineId,
+                  reason: `Emergency maintenance due to ${oauthError.type}`,
+                  oauthError: oauthError
+                });
+              }
+            } catch (healthError) {
+              secureLogger.error('Failed to check pipeline health during emergency maintenance', {
+                pipelineId,
+                error: healthError instanceof Error ? healthError.message : String(healthError)
+              });
+            }
+          }
+        }
+      }
+
+      // 发送紧急维护事件
+      this.emit('emergency-auth-maintenance', {
+        oauthError: oauthError,
+        timestamp: new Date(),
+        actionRequired: 'immediate'
+      });
+
+    } catch (error) {
+      secureLogger.error('Failed to trigger emergency auth maintenance', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: oauthError.provider,
+        errorType: oauthError.type
+      });
+    }
+  }
+
+  /**
+   * 检查单个流水线健康状态
+   * @param pipelineId 流水线ID
+   * @returns Promise<{healthy: boolean; details?: any}>
+   */
+  private async checkSinglePipelineHealth(pipelineId: string): Promise<{ healthy: boolean; details?: any }> {
+    if (!this.pipelineManager) {
+      return { healthy: false, details: 'Pipeline manager not available' };
+    }
+
+    const pipeline = this.pipelineManager.getPipeline(pipelineId);
+    if (!pipeline) {
+      return { healthy: false, details: 'Pipeline not found' };
+    }
+
+    try {
+      // 执行健康检查
+      const healthResult = await this.checkPipelineHealth();
+      const pipelineCheck = healthResult.find(check => check.pipelineId === pipelineId);
+      
+      return {
+        healthy: pipelineCheck ? pipelineCheck.status === 'active' : false,
+        details: pipelineCheck
+      };
+    } catch (error) {
+      return {
+        healthy: false,
+        details: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * 获取OAuth错误检测统计信息
+   * @returns Object
+   */
+  getOAuthDetectionStats(): {
+    totalErrors: number;
+    errorsByProvider: Record<string, number>;
+    errorsByType: Record<string, number>;
+    totalAffectedPipelines: number;
+    lastErrorTime?: Date;
+  } {
+    const allErrors = Array.from(this.oAuthErrorCache.values()).flat();
+    const errorsByProvider: Record<string, number> = {};
+    const errorsByType: Record<string, number> = {};
+    let totalAffectedPipelines = 0;
+    let lastErrorTime: Date | undefined;
+
+    for (const error of allErrors) {
+      // 按提供商统计
+      errorsByProvider[error.provider] = (errorsByProvider[error.provider] || 0) + 1;
+      
+      // 按错误类型统计
+      errorsByType[error.type] = (errorsByType[error.type] || 0) + 1;
+      
+      // 统计受影响的流水线总数
+      totalAffectedPipelines += error.affectedPipelines.length;
+      
+      // 记录最后错误时间
+      if (!lastErrorTime || error.timestamp > lastErrorTime) {
+        lastErrorTime = error.timestamp;
+      }
+    }
+
+    return {
+      totalErrors: allErrors.length,
+      errorsByProvider,
+      errorsByType,
+      totalAffectedPipelines,
+      lastErrorTime
+    };
+  }
+
+  /**
+   * 清理过期的OAuth错误缓存
+   * @param maxAge 最大缓存时间（毫秒）
+   * @returns number 清理的错误数量
+   */
+  cleanupExpiredOAuthErrors(maxAge: number = 3600000): number {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    for (const [provider, errors] of this.oAuthErrorCache.entries()) {
+      const validErrors = errors.filter(error => {
+        return (now - error.timestamp.getTime()) <= maxAge;
+      });
+
+      const removedCount = errors.length - validErrors.length;
+      cleanedCount += removedCount;
+
+      if (validErrors.length === 0) {
+        this.oAuthErrorCache.delete(provider);
+      } else {
+        this.oAuthErrorCache.set(provider, validErrors);
+      }
+    }
+
+    if (cleanedCount > 0) {
+      secureLogger.info('Cleaned up expired OAuth errors', { cleanedCount });
+    }
+
+    return cleanedCount;
+  }
+
+  // ===== OAuth 错误检测相关方法 =====
+
+  /**
+   * 检测 OAuth 错误
+   * @param error 错误对象
+   * @returns OAuthErrorInfo | null
+   */
+  detectOAuthError(error: RCCError): OAuthErrorInfo | null {
+    if (!this.authDetectionConfig.enableOAuthErrorDetection) {
+      return null;
+    }
+
+    const errorMessage = error.message.toLowerCase();
+    const errorType = error.code || RCCErrorCode.UNKNOWN_ERROR;
+
+    // 检测不同类型的 OAuth 错误
+    if (errorMessage.includes('token expired') || 
+        errorMessage.includes('invalid token') ||
+        errorMessage.includes('unauthorized') ||
+        errorType === RCCErrorCode.PROVIDER_AUTH_FAILED) {
+      
+      // 确定具体的 OAuth 错误类型
+      let oauthErrorType: OAuthErrorInfo['type'];
+      if (errorMessage.includes('expired')) {
+        oauthErrorType = 'token_expired';
+      } else if (errorMessage.includes('invalid')) {
+        oauthErrorType = 'token_invalid';
+      } else if (errorMessage.includes('permission denied') || errorMessage.includes('forbidden')) {
+        oauthErrorType = 'permission_denied';
+      } else {
+        oauthErrorType = 'oauth_server_error';
+      }
+
+      // 获取受影响的流水线
+      const affectedPipelines = this.getAffectedPipelines(error);
+
+      const oauthError: OAuthErrorInfo = {
+        type: oauthErrorType,
+        provider: this.extractProviderFromError(error),
+        timestamp: new Date(),
+        affectedPipelines: affectedPipelines
+      };
+
+      // 缓存错误信息
+      this.cacheOAuthError(oauthError);
+
+      // 检查是否达到通知阈值
+      if (this.shouldNotifyAboutOAuthError(oauthError)) {
+        this.notifyErrorHandlerAboutOAuthError(oauthError);
+      }
+
+      return oauthError;
+    }
+
+    return null;
+  }
+
+  /**
+   * 检查 OAuth token 健康状态
+   * @returns Promise<OAuthHealthStatus>
+   */
+  async checkOAuthTokenHealth(): Promise<OAuthHealthStatus> {
+    const affectedPipelineCount = Array.from(this.oAuthErrorCache.values())
+      .flat().reduce((acc, error) => acc + error.affectedPipelines.length, 0);
+
+    const errorsFound = Array.from(this.oAuthErrorCache.values()).flat();
+    
+    let overallStatus: OAuthHealthStatus['overallStatus'] = 'healthy';
+    if (errorsFound.length >= this.authDetectionConfig.notificationThreshold) {
+      overallStatus = 'critical';
+    } else if (errorsFound.length > 0) {
+      overallStatus = 'warning';
+    }
+
+    return {
+      overallStatus,
+      errorsFound,
+      affectedPipelineCount
+    };
+  }
+
+  /**
+   * 从错误中提取提供商信息
+   */
+  private extractProviderFromError(error: RCCError): string {
+    // 从错误上下文或错误消息中提取提供商信息
+    if (error.context?.details?.provider) {
+      return error.context.details.provider;
+    }
+    
+    if (error.message.includes('iflow')) {
+      return 'iflow';
+    } else if (error.message.includes('qwen')) {
+      return 'qwen';
+    } else if (error.message.includes('lmstudio')) {
+      return 'lmstudio';
+    }
+    
+    return 'unknown';
+  }
+
+  /**
+   * 获取受影响的流水线
+   */
+  private getAffectedPipelines(error: RCCError): string[] {
+    const pipelineIds: string[] = [];
+
+    // 从错误上下文中获取流水线信息
+    if (error.context?.details?.pipelineId) {
+      pipelineIds.push(error.context.details.pipelineId);
+    }
+
+    // 从流水线管理器获取相关流水线
+    if (this.pipelineManager && error.context?.details?.provider) {
+      const allPipelines = this.pipelineManager.getAllPipelines();
+      for (const [pipelineId, pipeline] of allPipelines) {
+        if (pipeline.provider === error.context.details.provider) {
+          pipelineIds.push(pipelineId);
+        }
+      }
+    }
+
+    return [...new Set(pipelineIds)]; // 去重
+  }
+
+  /**
+   * 缓存 OAuth 错误
+   */
+  private cacheOAuthError(oauthError: OAuthErrorInfo): void {
+    const provider = oauthError.provider;
+    
+    if (!this.oAuthErrorCache.has(provider)) {
+      this.oAuthErrorCache.set(provider, []);
+    }
+
+    const errors = this.oAuthErrorCache.get(provider)!;
+    
+    // 只保留最近10个错误
+    errors.push(oauthError);
+    if (errors.length > 10) {
+      errors.shift();
+    }
+  }
+
+  /**
+   * 检查是否应该通知错误处理器
+   */
+  private shouldNotifyAboutOAuthError(oauthError: OAuthErrorInfo): boolean {
+    const providerErrors = this.oAuthErrorCache.get(oauthError.provider) || [];
+    const recentErrors = providerErrors.filter(error => {
+      return Date.now() - error.timestamp.getTime() < 300000; // 5分钟内
+    });
+
+    return recentErrors.length >= this.authDetectionConfig.notificationThreshold;
+  }
+
+  /**
+   * 通知错误处理器关于 OAuth 错误
+   */
+  private async notifyErrorHandlerAboutOAuthError(oauthError: OAuthErrorInfo): Promise<void> {
+    try {
+      const authError = new RCCError(
+        `OAuth error detected: ${oauthError.type} for provider ${oauthError.provider}`,
+        RCCErrorCode.PROVIDER_AUTH_FAILED,
+        'oauth-error-detector',
+        {
+          details: {
+            errorType: oauthError.type,
+            provider: oauthError.provider,
+            affectedPipelines: oauthError.affectedPipelines,
+            timestamp: oauthError.timestamp
+          }
+        }
+      );
+
+      await this.errorHandler.handleRCCError(authError, {
+        requestId: `oauth-error-${Date.now()}`,
+        pipelineId: oauthError.affectedPipelines[0],
+        provider: oauthError.provider
+      });
+
+      // 清除已通知的错误缓存
+      this.oAuthErrorCache.delete(oauthError.provider);
+
+      secureLogger.info('OAuth error notification sent to error handler', {
+        errorType: oauthError.type,
+        provider: oauthError.provider,
+        affectedPipelines: oauthError.affectedPipelines.length
+      });
+    } catch (error) {
+      secureLogger.error('Failed to notify error handler about OAuth error', {
+        error: error instanceof Error ? error.message : String(error),
+        oauthErrorType: oauthError.type,
+        provider: oauthError.provider
+      });
+    }
+  }
+
+  /**
+   * 启动 OAuth 健康检查
+   */
+  private startOAuthHealthChecks(): void {
+    if (this.oAuthHealthCheckIntervalId) {
+      clearInterval(this.oAuthHealthCheckIntervalId);
+    }
+
+    this.oAuthHealthCheckIntervalId = setInterval(() => {
+      this.checkOAuthTokenHealth().catch(error => {
+        secureLogger.error('OAuth health check failed', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      });
+    }, this.authDetectionConfig.oauthHealthCheckInterval);
+
+    secureLogger.info('OAuth health checks started', {
+      interval: this.authDetectionConfig.oauthHealthCheckInterval
+    });
   }
 }

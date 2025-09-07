@@ -14,7 +14,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import axios from 'axios';
 import { secureLogger } from '../utils';
-import { RCCError, RCCErrorCode } from '../types/src';
+import { RCCError, RCCErrorCode } from '../types/src/index';
 
 // Define auth-specific error classes
 class ValidationError extends RCCError {
@@ -102,6 +102,29 @@ interface TokenCacheItem {
   refreshToken?: string;
 }
 
+// 强制刷新和重建相关接口
+interface RefreshResult {
+  success: boolean;
+  refreshedTokens: string[];
+  failedTokens: string[];
+  error?: string;
+}
+
+interface RebuildResult {
+  success: boolean;
+  rebuiltPipelines: string[];
+  failedPipelines: string[];
+  error?: string;
+}
+
+interface AuthMaintenanceStatus {
+  maintenanceMode: boolean;
+  activeRefresh: boolean;
+  activeRebuild: boolean;
+  lastRefreshAt?: Date;
+  lastRebuildAt?: Date;
+}
+
 /**
  * 认证模块实现
  */
@@ -109,6 +132,12 @@ export class AuthenticationModule extends BaseModule {
   protected config: AuthConfig;
   private tokenCache: Map<string, TokenCacheItem> = new Map();
   private cacheTTL: number;
+  
+  // 鉴权维护相关属性
+  private activeRefresh: boolean = false;
+  private activeRebuild: boolean = false;
+  private lastRefreshAt: Date | null = null;
+  private lastRebuildAt: Date | null = null;
 
   constructor(config: AuthConfig) {
     super(
@@ -180,6 +209,7 @@ export class AuthenticationModule extends BaseModule {
   protected async onStop(): Promise<void> {
     // 清理资源
     this.tokenCache.clear();
+    this.resetMaintenanceStatus();
   }
 
   /**
@@ -210,6 +240,7 @@ export class AuthenticationModule extends BaseModule {
    */
   protected async onReset(): Promise<void> {
     this.tokenCache.clear();
+    this.resetMaintenanceStatus();
   }
 
   /**
@@ -234,6 +265,8 @@ export class AuthenticationModule extends BaseModule {
       configType: this.config.type,
       cacheTTL: this.cacheTTL,
       hasPermissions: !!this.config.permissions,
+      // 鉴权维护状态信息
+      authMaintenance: this.getAuthMaintenanceStatus(),
     };
   }
 
@@ -818,5 +851,893 @@ export class AuthenticationModule extends BaseModule {
       configType: this.config.type,
       cacheSize: this.tokenCache.size
     });
+  }
+
+  // ===== 强制刷新和重建功能 =====
+
+  /**
+   * 强制刷新所有token（增强版本）
+   * @param provider 可选：指定的提供商名称
+   * @param options 可选参数
+   * @returns Promise<RefreshResult> 刷新结果
+   */
+  async forceRefreshTokens(
+    provider?: string, 
+    options?: {
+      force?: boolean;
+      skipValidation?: boolean;
+      refreshExpiredOnly?: boolean;
+      maxConcurrent?: number;
+    }
+  ): Promise<RefreshResult> {
+    if (this.activeRefresh && !options?.force) {
+      return {
+        success: false,
+        refreshedTokens: [],
+        failedTokens: [],
+        error: 'Refresh operation already in progress'
+      };
+    }
+
+    this.activeRefresh = true;
+    const refreshedTokens: string[] = [];
+    const failedTokens: string[] = [];
+    const maxConcurrent = options?.maxConcurrent || 5;
+
+    try {
+      secureLogger.info('Starting force token refresh', {
+        provider: provider || 'all',
+        totalTokens: this.tokenCache.size,
+        options
+      });
+
+      const now = new Date();
+      const tokensToRefresh: string[] = [];
+
+      // 收集需要刷新的token
+      for (const [token, cacheItem] of this.tokenCache.entries()) {
+        // 如果指定了提供商，只刷新该提供商的token
+        if (!provider || this.doesTokenBelongToProvider(token, provider)) {
+          
+          // 如果只刷新过期的token
+          if (options?.refreshExpiredOnly) {
+            if (cacheItem.expiresAt <= now) {
+              tokensToRefresh.push(token);
+            }
+          } else {
+            tokensToRefresh.push(token);
+          }
+        }
+      }
+
+      // 并发控制刷新操作
+      const refreshBatches: string[][] = [];
+      for (let i = 0; i < tokensToRefresh.length; i += maxConcurrent) {
+        refreshBatches.push(tokensToRefresh.slice(i, i + maxConcurrent));
+      }
+
+      for (const batch of refreshBatches) {
+        const refreshPromises = batch.map(async (token) => {
+          try {
+            const refreshSuccess = await this.forceRefreshSingleToken(token, options);
+            if (refreshSuccess) {
+              refreshedTokens.push(token);
+            } else {
+              failedTokens.push(token);
+            }
+          } catch (error) {
+            failedTokens.push(token);
+            secureLogger.error('Failed to refresh token', {
+              error: error instanceof Error ? error.message : String(error),
+              tokenSubstr: token.substring(0, 8) + '...'
+            });
+          }
+        });
+
+        await Promise.all(refreshPromises);
+      }
+
+      this.lastRefreshAt = now;
+
+      // 发送刷新完成事件
+      this.emit('token-refresh-completed', {
+        provider: provider || 'all',
+        refreshedTokens: refreshedTokens.length,
+        failedTokens: failedTokens.length,
+        timestamp: now
+      });
+
+      secureLogger.info('Force token refresh completed', {
+        provider: provider || 'all',
+        refreshedTokens: refreshedTokens.length,
+        failedTokens: failedTokens.length
+      });
+
+      return {
+        success: failedTokens.length === 0,
+        refreshedTokens,
+        failedTokens
+      };
+    } catch (error) {
+      secureLogger.error('Force token refresh failed', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: provider || 'all'
+      });
+
+      return {
+        success: false,
+        refreshedTokens,
+        failedTokens,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    } finally {
+      this.activeRefresh = false;
+    }
+  }
+
+  /**
+   * 预检查refresh操作
+   * @param provider 可选：指定的提供商名称
+   * @returns Promise<{canRefresh: boolean; reason?: string; tokensToRefresh: number}>
+   */
+  async canPerformRefresh(provider?: string): Promise<{
+    canRefresh: boolean;
+    reason?: string;
+    tokensToRefresh: number;
+    estimatedTime: number;
+  }> {
+    if (this.activeRefresh) {
+      return {
+        canRefresh: false,
+        reason: 'Refresh operation already in progress',
+        tokensToRefresh: 0,
+        estimatedTime: 0
+      };
+    }
+
+    if (this.activeRebuild) {
+      return {
+        canRefresh: false,
+        reason: 'Rebuild operation in progress',
+        tokensToRefresh: 0,
+        estimatedTime: 0
+      };
+    }
+
+    let tokensToRefresh = 0;
+    for (const [token, cacheItem] of this.tokenCache.entries()) {
+      if (!provider || this.doesTokenBelongToProvider(token, provider)) {
+        tokensToRefresh++;
+      }
+    }
+
+    if (tokensToRefresh === 0) {
+      return {
+        canRefresh: false,
+        reason: 'No tokens to refresh',
+        tokensToRefresh: 0,
+        estimatedTime: 0
+      };
+    }
+
+    // 估算时间：每个token大约需要500ms
+    const estimatedTime = tokensToRefresh * 500;
+
+    return {
+      canRefresh: true,
+      tokensToRefresh,
+      estimatedTime
+    };
+  }
+
+  /**
+   * 强制重建认证配置（增强版本）
+   * @param provider 可选：指定的提供商名称
+   * @param options 可选参数
+   * @returns Promise<RebuildResult> 重建结果
+   */
+  async forceRebuildAuth(
+    provider?: string, 
+    options?: {
+      force?: boolean;
+      preserveCache?: boolean;
+      rebuildConnections?: boolean;
+      validateAfterRebuild?: boolean;
+    }
+  ): Promise<RebuildResult> {
+    if (this.activeRebuild && !options?.force) {
+      return {
+        success: false,
+        rebuiltPipelines: [],
+        failedPipelines: [],
+        error: 'Rebuild operation already in progress'
+      };
+    }
+
+    this.activeRebuild = true;
+    const rebuiltPipelines: string[] = [];
+    const failedPipelines: string[] = [];
+
+    try {
+      secureLogger.info('Starting force auth rebuild', {
+        provider: provider || 'all',
+        authType: this.config.type,
+        options
+      });
+
+      const now = new Date();
+      const oldCacheSize = this.tokenCache.size;
+
+      // 1. 备份现有缓存（如果需要保留）
+      const cacheBackup = options?.preserveCache ? new Map(this.tokenCache) : null;
+
+      // 2. 清空现有token缓存
+      this.tokenCache.clear();
+
+      // 3. 重新初始化缓存
+      await this.initializeTokenCache();
+
+      // 4. 重新验证配置
+      try {
+        this.validateConfig(this.config);
+      } catch (configError) {
+        // 如果配置验证失败，恢复缓存
+        if (cacheBackup) {
+          this.tokenCache = cacheBackup;
+        }
+        throw configError;
+      }
+
+      // 5. 根据认证类型执行特定的重建逻辑
+      switch (this.config.type) {
+        case AuthType.OAUTH2:
+          await this.rebuildOAuth2Auth();
+          break;
+        case AuthType.FILE_BASED:
+          await this.rebuildFileBasedAuth();
+          break;
+        default:
+          // 对于其他类型，token缓存重建就足够了
+          break;
+      }
+
+      this.lastRebuildAt = now;
+
+      // 6. 获取受影响的流水线（实际实现中需要与PipelineManager集成）
+      const affectedPipelines = this.getAffectedPipelinesForProvider(provider);
+      affectedPipelines.forEach(pipelineId => {
+        rebuiltPipelines.push(pipelineId);
+      });
+
+      // 7. 如果有备份且需要合并，合并新旧缓存
+      if (cacheBackup && options?.preserveCache) {
+        await this.mergeCacheAfterRebuild(cacheBackup);
+      }
+
+      // 8. 重建后验证（如果需要）
+      if (options?.validateAfterRebuild) {
+        const validationResult = await this.validateAfterRebuild();
+        if (!validationResult.success) {
+          failedPipelines.push(...rebuiltPipelines);
+          rebuiltPipelines.length = 0;
+          
+          return {
+            success: false,
+            rebuiltPipelines,
+            failedPipelines,
+            error: validationResult.error || 'Validation failed after rebuild'
+          };
+        }
+      }
+
+      // 发送重建完成事件
+      this.emit('auth-rebuild-completed', {
+        provider: provider || 'all',
+        rebuiltPipelines: rebuiltPipelines.length,
+        oldCacheSize,
+        newCacheSize: this.tokenCache.size,
+        timestamp: now
+      });
+
+      secureLogger.info('Force auth rebuild completed', {
+        provider: provider || 'all',
+        rebuiltPipelines: rebuiltPipelines.length,
+        oldCacheSize,
+        newCacheSize: this.tokenCache.size
+      });
+
+      return {
+        success: failedPipelines.length === 0,
+        rebuiltPipelines,
+        failedPipelines
+      };
+    } catch (error) {
+      secureLogger.error('Force auth rebuild failed', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: provider || 'all'
+      });
+
+      return {
+        success: false,
+        rebuiltPipelines,
+        failedPipelines,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    } finally {
+      this.activeRebuild = false;
+    }
+  }
+
+  /**
+   * 预检查rebuild操作
+   * @param provider 可选：指定的提供商名称
+   * @returns Promise<{canRebuild: boolean; reason?: string; estimatedFailures: number}>
+   */
+  async canPerformRebuild(provider?: string): Promise<{
+    canRebuild: boolean;
+    reason?: string;
+    estimatedFailures: number;
+    estimatedTime: number;
+  }> {
+    if (this.activeRebuild) {
+      return {
+        canRebuild: false,
+        reason: 'Rebuild operation already in progress',
+        estimatedFailures: 0,
+        estimatedTime: 0
+      };
+    }
+
+    if (this.activeRefresh) {
+      return {
+        canRebuild: false,
+        reason: 'Refresh operation in progress',
+        estimatedFailures: 0,
+        estimatedTime: 0
+      };
+    }
+
+    // 估算潜在失败数量
+    let estimatedFailures = 0;
+    const totalTokens = this.tokenCache.size;
+    
+    // 根据认证类型估算失败率
+    switch (this.config.type) {
+      case AuthType.OAUTH2:
+        estimatedFailures = Math.floor(totalTokens * 0.1); // 10% 失败率
+        break;
+      case AuthType.FILE_BASED:
+        estimatedFailures = Math.floor(totalTokens * 0.05); // 5% 失败率
+        break;
+      default:
+        estimatedFailures = Math.floor(totalTokens * 0.02); // 2% 失败率
+    }
+
+    // 估算时间：重建操作需要更长时间
+    const estimatedTime = totalTokens * 1000 + 5000; // 每个token 1秒 + 5秒基础时间
+
+    return {
+      canRebuild: true,
+      estimatedFailures,
+      estimatedTime
+    };
+  }
+
+  /**
+   * 合并缓存用于恢复重建
+   * @param backupCache 备份的缓存
+   */
+  private async mergeCacheAfterRebuild(backupCache: Map<string, TokenCacheItem>): Promise<void> {
+    try {
+      for (const [token, cacheItem] of backupCache.entries()) {
+        // 如果新缓存中没有，且token仍然有效，则重新添加
+        if (!this.tokenCache.has(token) && cacheItem.expiresAt > new Date()) {
+          this.tokenCache.set(token, cacheItem);
+        }
+      }
+      
+      secureLogger.info('Cache merge completed', {
+        backupSize: backupCache.size,
+        mergedSize: backupCache.size - this.tokenCache.size
+      });
+    } catch (error) {
+      secureLogger.error('Failed to merge cache after rebuild', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * 重建后验证
+   * @returns Promise<{success: boolean; error?: string}>
+   */
+  private async validateAfterRebuild(): Promise<{success: boolean; error?: string}> {
+    try {
+      // 验证配置
+      this.validateConfig(this.config);
+      
+      // 验证缓存不为空
+      if (this.tokenCache.size === 0) {
+        return {
+          success: false,
+          error: 'Token cache is empty after rebuild'
+        };
+      }
+      
+      // 验证token格式（简单检查）
+      for (const [token, cacheItem] of this.tokenCache.entries()) {
+        if (!token || token.length < 10) {
+          return {
+            success: false,
+            error: `Invalid token format in cache: ${token.substring(0, 8)}...`
+          };
+        }
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  // ===== 强制刷新和重建相关方法 =====
+
+  
+  
+  /**
+   * 获取鉴权维护状态
+   * @returns Promise<AuthMaintenanceStatus>
+   */
+  async getAuthMaintenanceStatus(): Promise<AuthMaintenanceStatus> {
+    return {
+      maintenanceMode: this.activeRefresh || this.activeRebuild,
+      activeRefresh: this.activeRefresh,
+      activeRebuild: this.activeRebuild,
+      lastRefreshAt: this.lastRefreshAt || undefined,
+      lastRebuildAt: this.lastRebuildAt || undefined
+    };
+  }
+
+  /**
+   * 强制刷新单个token（增强版本）
+   */
+  private async forceRefreshSingleToken(
+    token: string, 
+    options?: {
+      skipValidation?: boolean;
+      force?: boolean;
+    }
+  ): Promise<boolean> {
+    try {
+      const cacheItem = this.tokenCache.get(token);
+      if (!cacheItem) {
+        secureLogger.warn('Token not found in cache for refresh', {
+          tokenSubstr: token.substring(0, 8) + '...'
+        });
+        return false;
+      }
+
+      // 检查token是否仍然有效（如果需要验证）
+      if (!options?.skipValidation && cacheItem.expiresAt > new Date()) {
+        secureLogger.debug('Token is still valid, skipping refresh', {
+          tokenSubstr: token.substring(0, 8) + '...',
+          expiresAt: cacheItem.expiresAt.toISOString()
+        });
+        return true;
+      }
+
+      // 根据认证类型执行刷新逻辑
+      switch (this.config.type) {
+        case AuthType.OAUTH2:
+          return await this.forceRefreshOAuth2Token(token, cacheItem, options);
+        case AuthType.BEARER:
+          return await this.forceRefreshBearerToken(token, cacheItem, options);
+        case AuthType.FILE_BASED:
+          return await this.forceRefreshFileBasedToken(token, cacheItem, options);
+        case AuthType.API_KEY:
+          return await this.forceRefreshApiKeyToken(token, cacheItem, options);
+        default:
+          // 其他类型不需要主动刷新
+          secureLogger.debug('No refresh needed for auth type', {
+            authType: this.config.type,
+            tokenSubstr: token.substring(0, 8) + '...'
+          });
+          return true;
+      }
+    } catch (error) {
+      secureLogger.error('Failed to refresh single token', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenSubstr: token.substring(0, 8) + '...',
+        authType: this.config.type
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 强制刷新OAuth2 token
+   */
+  private async forceRefreshOAuth2Token(
+    token: string, 
+    cacheItem: TokenCacheItem,
+    options?: {
+      skipValidation?: boolean;
+      force?: boolean;
+    }
+  ): Promise<boolean> {
+    try {
+      if (!cacheItem.refreshToken && !options?.force) {
+        // 没有refresh token，重新获取
+        secureLogger.debug('No refresh token available, getting new access token', {
+          tokenSubstr: token.substring(0, 8) + '...'
+        });
+        return await this.getNewOAuth2AccessToken(token, cacheItem);
+      }
+
+      // 使用refresh token获取新token
+      const response = await axios.post<OAuth2TokenResponse>(
+        this.config.oauthTokenUrl!,
+        new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: cacheItem.refreshToken || '',
+          client_id: this.config.oauthClientId!,
+          client_secret: this.config.oauthClientSecret!
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          timeout: 10000 // 10秒超时
+        }
+      );
+
+      // 更新缓存
+      this.tokenCache.delete(token);
+      const newToken = response.data.access_token;
+      this.tokenCache.set(newToken, {
+        token: newToken,
+        userId: cacheItem.userId,
+        expiresAt: new Date(Date.now() + response.data.expires_in * 1000),
+        refreshToken: response.data.refresh_token || cacheItem.refreshToken
+      });
+
+      secureLogger.info('OAuth2 token refreshed successfully', {
+        oldTokenSubstr: token.substring(0, 8) + '...',
+        newTokenSubstr: newToken.substring(0, 8) + '...',
+        userId: cacheItem.userId,
+        expiresIn: response.data.expires_in
+      });
+
+      return true;
+    } catch (error) {
+      // 如果refresh失败，尝试获取新的access token
+      if (axios.isAxiosError(error) && error.response?.status === 400) {
+        secureLogger.warn('Refresh token invalid, getting new access token', {
+          tokenSubstr: token.substring(0, 8) + '...',
+          error: error.response.data
+        });
+        return await this.getNewOAuth2AccessToken(token, cacheItem);
+      }
+      
+      secureLogger.error('Failed to refresh OAuth2 token', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenSubstr: token.substring(0, 8) + '...'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 获取新的OAuth2访问token
+   */
+  private async getNewOAuth2AccessToken(token: string, cacheItem: TokenCacheItem): Promise<boolean> {
+    try {
+      const newToken = await this.getOAuth2AccessToken();
+      if (newToken) {
+        this.tokenCache.delete(token);
+        this.tokenCache.set(newToken, {
+          token: newToken,
+          userId: cacheItem.userId,
+          expiresAt: new Date(Date.now() + this.cacheTTL),
+          refreshToken: cacheItem.refreshToken
+        });
+        
+        secureLogger.info('New OAuth2 access token obtained', {
+          oldTokenSubstr: token.substring(0, 8) + '...',
+          newTokenSubstr: newToken.substring(0, 8) + '...'
+        });
+        
+        return true;
+      }
+      return false;
+    } catch (error) {
+      secureLogger.error('Failed to get new OAuth2 access token', {
+        error: error instanceof Error ? error.message : String(error),
+        userId: cacheItem.userId
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 强制刷新Bearer token
+   */
+  private async forceRefreshBearerToken(
+    token: string, 
+    cacheItem: TokenCacheItem,
+    options?: {
+      skipValidation?: boolean;
+      force?: boolean;
+    }
+  ): Promise<boolean> {
+    try {
+      // Bearer token通常不会过期，所以只是更新过期时间
+      const newExpiresAt = new Date(Date.now() + this.cacheTTL);
+      cacheItem.expiresAt = newExpiresAt;
+      this.tokenCache.set(token, cacheItem);
+      
+      secureLogger.debug('Bearer token expiry extended', {
+        tokenSubstr: token.substring(0, 8) + '...',
+        newExpiresAt: newExpiresAt.toISOString(),
+        userId: cacheItem.userId
+      });
+      
+      return true;
+    } catch (error) {
+      secureLogger.error('Failed to refresh Bearer token', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenSubstr: token.substring(0, 8) + '...'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 强制刷新基于文件的token
+   */
+  private async forceRefreshFileBasedToken(
+    token: string, 
+    cacheItem: TokenCacheItem,
+    options?: {
+      skipValidation?: boolean;
+      force?: boolean;
+    }
+  ): Promise<boolean> {
+    try {
+      // 重新从文件读取有效token
+      const validTokens = await this.readValidTokensFromFile();
+      
+      // 检查token是否仍然在文件中
+      if (!validTokens.includes(token)) {
+        // token不在文件中，从缓存中移除
+        this.tokenCache.delete(token);
+        
+        secureLogger.info('Token removed from cache (no longer in file)', {
+          tokenSubstr: token.substring(0, 8) + '...',
+          userId: cacheItem.userId
+        });
+        
+        return false; // token已被移除
+      }
+      
+      // token仍然有效，更新过期时间
+      cacheItem.expiresAt = new Date(Date.now() + this.cacheTTL);
+      this.tokenCache.set(token, cacheItem);
+      
+      secureLogger.debug('File-based token expiry extended', {
+        tokenSubstr: token.substring(0, 8) + '...',
+        newExpiresAt: cacheItem.expiresAt.toISOString(),
+        userId: cacheItem.userId
+      });
+      
+      return true;
+    } catch (error) {
+      secureLogger.error('Failed to refresh file-based token', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenSubstr: token.substring(0, 8) + '...',
+        tokenFile: this.config.tokenFile
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 强制刷新API密钥token
+   */
+  private async forceRefreshApiKeyToken(
+    token: string, 
+    cacheItem: TokenCacheItem,
+    options?: {
+      skipValidation?: boolean;
+      force?: boolean;
+    }
+  ): Promise<boolean> {
+    try {
+      // API密钥通常不会过期，只需要重新验证
+      const isValid = await this.verifyApiKeyForRefresh(token, cacheItem);
+      
+      if (isValid) {
+        // 更新过期时间
+        cacheItem.expiresAt = new Date(Date.now() + this.cacheTTL);
+        this.tokenCache.set(token, cacheItem);
+        
+        secureLogger.debug('API key token validated and extended', {
+          tokenSubstr: token.substring(0, 8) + '...',
+          newExpiresAt: cacheItem.expiresAt.toISOString(),
+          userId: cacheItem.userId
+        });
+        
+        return true;
+      } else {
+        // API密钥无效，从缓存中移除
+        this.tokenCache.delete(token);
+        
+        secureLogger.warn('API key token removed (validation failed)', {
+          tokenSubstr: token.substring(0, 8) + '...',
+          userId: cacheItem.userId
+        });
+        
+        return false;
+      }
+    } catch (error) {
+      secureLogger.error('Failed to refresh API key token', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenSubstr: token.substring(0, 8) + '...'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 为刷新验证API密钥
+   */
+  private async verifyApiKeyForRefresh(token: string, cacheItem: TokenCacheItem): Promise<boolean> {
+    try {
+      // 根据提供商验证API密钥
+      switch (this.extractProviderFromToken(token)) {
+        case 'iflow':
+          return this.verifyIflowApiKeyInternal(token);
+        case 'qwen':
+          return this.verifyQwenApiKeyInternal(token);
+        default:
+          return this.verifyGenericApiKeyInternal(token);
+      }
+    } catch (error) {
+      secureLogger.error('Failed to verify API key for refresh', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenSubstr: token.substring(0, 8) + '...'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 验证Iflow API密钥（内部实现）
+   */
+  private verifyIflowApiKeyInternal(apiKey: string): boolean {
+    // iflow API密钥格式验证
+    return typeof apiKey === 'string' && 
+           apiKey.startsWith('sk-') && 
+           apiKey.length >= 32 &&
+           /^[a-zA-Z0-9\-_]+$/.test(apiKey);
+  }
+
+  /**
+   * 验证Qwen API密钥（内部实现）
+   */
+  private verifyQwenApiKeyInternal(apiKey: string): boolean {
+    // Qwen API密钥格式验证
+    return typeof apiKey === 'string' && 
+           (apiKey.startsWith('qwen-') || apiKey.length >= 20) &&
+           /^[a-zA-Z0-9\-_]+$/.test(apiKey);
+  }
+
+  /**
+   * 通用API密钥验证（内部实现）
+   */
+  private verifyGenericApiKeyInternal(apiKey: string): boolean {
+    // 通用API密钥验证
+    return typeof apiKey === 'string' && 
+           apiKey.length >= 10 &&
+           /^[a-zA-Z0-9\-_]+$/.test(apiKey);
+  }
+
+  /**
+   * 从token中提取提供商信息
+   */
+  private extractProviderFromToken(token: string): string {
+    // 这里根据token的格式来提取提供商信息
+    // 实际实现中需要根据业务逻辑调整
+    if (token.startsWith('sk-')) {
+      return 'iflow';
+    } else if (token.startsWith('qwen-')) {
+      return 'qwen';
+    } else if (token.includes('lmstudio')) {
+      return 'lmstudio';
+    }
+    return 'unknown';
+  }
+
+  
+  /**
+   * 重建OAuth2认证
+   */
+  private async rebuildOAuth2Auth(): Promise<void> {
+    try {
+      // 获取新的访问token
+      const newToken = await this.getOAuth2AccessToken();
+      if (newToken) {
+        this.tokenCache.set(newToken, {
+          token: newToken,
+          userId: 'oauth2-user',
+          expiresAt: new Date(Date.now() + this.cacheTTL)
+        });
+      }
+    } catch (error) {
+      secureLogger.error('Failed to rebuild OAuth2 auth', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 重建基于文件的认证
+   */
+  private async rebuildFileBasedAuth(): Promise<void> {
+    try {
+      // 重新从文件读取有效token
+      const validTokens = await this.readValidTokensFromFile();
+      
+      // 重新缓存token
+      this.tokenCache.clear();
+      for (const token of validTokens) {
+        this.tokenCache.set(token, {
+          token: token,
+          userId: 'file-user',
+          expiresAt: new Date(Date.now() + this.cacheTTL)
+        });
+      }
+    } catch (error) {
+      secureLogger.error('Failed to rebuild file-based auth', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenFile: this.config.tokenFile
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 判断token是否属于指定提供商
+   */
+  private doesTokenBelongToProvider(token: string, provider: string): boolean {
+    // 这里需要根据实际的token结构来判断
+    // 当前实现只返回true，实际使用时需要根据业务逻辑实现
+    return true;
+  }
+
+  /**
+   * 获取受影响的流水线列表
+   */
+  private getAffectedPipelinesForProvider(provider?: string): string[] {
+    // 这里需要与PipelineManager集成，获取受影响的流水线
+    // 当前实现返回流水线ID占位符，实际使用时需要连接真实的PipelineManager
+    return [
+      `pipeline-${provider || 'unknown'}-1`,
+      `pipeline-${provider || 'unknown'}-2`
+    ];
+  }
+
+  /**
+   * 重置维护状态
+   */
+  private resetMaintenanceStatus(): void {
+    this.activeRefresh = false;
+    this.activeRebuild = false;
+    this.lastRefreshAt = null;
+    this.lastRebuildAt = null;
   }
 }

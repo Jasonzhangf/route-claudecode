@@ -15,7 +15,7 @@ function getDefaultTimeframe(): string {
 import { ErrorLogManager, ErrorLogEntry, ErrorType, getErrorLogManager } from './error-log-manager';
 import { errorClassifier, ErrorClassification } from './error-classifier';
 import { secureLogger } from './utils/secure-logger';
-import { RCCError, RCCErrorCode, ErrorContext as TypesErrorContext } from '../../types/src';
+import { RCCError, RCCErrorCode, ErrorContext as TypesErrorContext } from '../../types/src/index';
 // Import interfaces with aliases to avoid conflicts
 import type { ErrorCoordinationCenter as IErrorCoordinationCenter } from '../../interfaces/core/error-coordination-center';
 import type { ErrorType as InterfaceErrorType } from '../../interfaces/core/error-coordination-center';
@@ -26,6 +26,46 @@ import type { UnifiedErrorResponse } from '../../interfaces/core/error-coordinat
 import { ErrorSeverity } from '../../interfaces/core/error-coordination-center';
 import type { ErrorStatistics } from '../../interfaces/core/error-coordination-center';
 import type { ErrorSummaryReport } from '../../interfaces/core/error-coordination-center';
+
+// 添加鉴权错误处理相关接口
+interface OAuthErrorInfo {
+  type: 'token_expired' | 'token_invalid' | 'oauth_server_error' | 'permission_denied';
+  provider: string;
+  timestamp: Date;
+  affectedPipelines: string[];
+}
+
+interface AuthMaintenanceEvent {
+  type: 'auth_refresh_required' | 'auth_rebuild_required' | 'pipeline_unavailable';
+  errorInfo: OAuthErrorInfo;
+  pipelineIds: string[];
+  timestamp: Date;
+}
+
+// 添加外部依赖引用
+interface AuthCenter {
+  forceRefreshTokens(provider?: string): Promise<RefreshResult>;
+  forceRebuildAuth(provider?: string): Promise<RebuildResult>;
+}
+
+interface PipelineManager {
+  setAuthMaintenanceMode(pipelineIds: string[], reason: string): Promise<void>;
+  clearAuthMaintenanceMode(pipelineIds: string[]): Promise<void>;
+}
+
+interface RefreshResult {
+  success: boolean;
+  refreshedTokens: string[];
+  failedTokens: string[];
+  error?: string;
+}
+
+interface RebuildResult {
+  success: boolean;
+  rebuiltPipelines: string[];
+  failedPipelines: string[];
+  error?: string;
+}
 
 export class ValidationError extends RCCError {
   constructor(message: string, context?: any) {
@@ -74,9 +114,15 @@ interface LocalErrorContext {
 export class EnhancedErrorHandler implements IErrorCoordinationCenter {
   private errorLogManager: ErrorLogManager;
   private initialized: boolean = false;
+  private authCenter: AuthCenter | null = null;
+  private pipelineManager: PipelineManager | null = null;
+  private authErrorQueue: Map<string, OAuthErrorInfo[]> = new Map();
+  private authMaintenanceInProgress: boolean = false;
 
   constructor(serverPort?: number) {
     this.errorLogManager = getErrorLogManager(serverPort);
+    // 初始化鉴权维护协调器
+    this.initializeAuthMaintenanceCoordinator();
   }
 
   /**
@@ -137,6 +183,11 @@ export class EnhancedErrorHandler implements IErrorCoordinationCenter {
       confidence: classification.confidence,
       pipelineId: context.pipelineId
     });
+
+    // 检查是否是鉴权错误并触发维护流程
+    if (this.isAuthenticationError(error, errorCode)) {
+      await this.handleAuthError(error, context);
+    }
   }
 
   /**
@@ -379,6 +430,423 @@ export class EnhancedErrorHandler implements IErrorCoordinationCenter {
     }
 
     return context;
+  }
+
+  // ===== 鉴权错误处理和维护流程协调 =====
+
+  /**
+   * 鉴权维护流程协调器
+   * 协调错误处理器、自检服务、鉴权模块和流水线管理器的协作
+   */
+  private authMaintenanceCoordinator: any = null;
+
+  /**
+   * 初始化鉴权维护协调器
+   */
+  private initializeAuthMaintenanceCoordinator(): void {
+    // 初始化鉴权维护相关状态和事件监听
+    secureLogger.info('Auth maintenance coordinator initialized');
+  }
+
+  /**
+   * 设置自检服务到维护协调器
+   * @param selfCheckService 自检服务实例
+   */
+  setSelfCheckService(selfCheckService: any): void {
+    if (!this.authMaintenanceCoordinator) {
+      this.initializeAuthMaintenanceCoordinator();
+    }
+    // 保存自检服务引用，用于后续协调
+    (this.authMaintenanceCoordinator as any).selfCheckService = selfCheckService;
+    secureLogger.info('Self check service set in auth maintenance coordinator');
+  }
+
+  /**
+   * 处理鉴权维护事件
+   * @param event 维护事件
+   * @returns Promise<void>
+   */
+  async handleAuthMaintenanceEvent(event: AuthMaintenanceEvent): Promise<void> {
+    if (!this.authMaintenanceCoordinator) {
+      this.initializeAuthMaintenanceCoordinator();
+    }
+    
+    // 处理维护事件队列
+    await this.processAuthMaintenanceEvent(event);
+  }
+
+  /**
+   * 获取维护队列状态
+   * @returns Object 队列状态信息
+   */
+  getAuthMaintenanceQueueStatus(): {
+    queueSize: number;
+    isProcessing: boolean;
+    eventsByType: Record<string, number>;
+  } {
+    if (!this.authMaintenanceCoordinator) {
+      return {
+        queueSize: 0,
+        isProcessing: false,
+        eventsByType: {}
+      };
+    }
+    
+    // 返回当前维护队列状态
+    const eventsByType: Record<string, number> = {};
+    let queueSize = 0;
+    
+    for (const [provider, errors] of this.authErrorQueue.entries()) {
+      queueSize += errors.length;
+      errors.forEach(error => {
+        eventsByType[error.type] = (eventsByType[error.type] || 0) + 1;
+      });
+    }
+    
+    return {
+      queueSize,
+      isProcessing: this.authMaintenanceInProgress,
+      eventsByType
+    };
+  }
+
+  /**
+   * 处理鉴权维护事件（私有实现）
+   * @param event 维护事件
+   */
+  private async processAuthMaintenanceEvent(event: AuthMaintenanceEvent): Promise<void> {
+    try {
+      secureLogger.info('Processing auth maintenance event', {
+        eventType: event.type,
+        provider: event.errorInfo.provider,
+        affectedPipelines: event.pipelineIds.length
+      });
+
+      // 将事件加入队列
+      this.addAuthErrorToQueue(event.errorInfo);
+      
+      // 立即触发维护流程
+      if (!this.authMaintenanceInProgress) {
+        await this.processAuthMaintenance(event.errorInfo);
+      }
+    } catch (error) {
+      secureLogger.error('Failed to process auth maintenance event', {
+        error: error instanceof Error ? error.message : String(error),
+        eventType: event.type
+      });
+    }
+  }
+
+  // ===== 鉴权错误处理流程 =====
+
+  /**
+   * 判断是否是鉴权错误
+   */
+  private isAuthenticationError(error: RCCError, errorCode: RCCErrorCode): boolean {
+    const errorModule = error.module || 'unknown';
+    const errorMessage = error.message.toLowerCase();
+    
+    return errorCode === RCCErrorCode.PROVIDER_AUTH_FAILED ||
+           errorModule === 'oauth-error-detector' ||
+           errorMessage.includes('authentication') ||
+           errorMessage.includes('authorization') ||
+           errorMessage.includes('unauthorized') ||
+           errorMessage.includes('token expired') ||
+           errorMessage.includes('invalid token');
+  }
+
+  /**
+   * 处理鉴权错误
+   */
+  private async handleAuthError(error: RCCError, context: LocalErrorContext): Promise<void> {
+    try {
+      // 提取OAuth错误信息
+      const oauthError = this.extractOAuthErrorFromRCCError(error, context);
+      
+      if (!oauthError) {
+        secureLogger.warn('Cannot extract OAuth error info from auth error', {
+          error: error.message,
+          module: error.module
+        });
+        return;
+      }
+
+      // 将错误加入队列
+      this.addAuthErrorToQueue(oauthError);
+      
+      // 创建维护事件
+      const maintenanceEvent: AuthMaintenanceEvent = {
+        type: this.determineMaintenanceEventType(oauthError.type),
+        errorInfo: oauthError,
+        pipelineIds: oauthError.affectedPipelines,
+        timestamp: new Date()
+      };
+
+      // 使用维护协调器处理事件
+      await this.handleAuthMaintenanceEvent(maintenanceEvent);
+      
+      // 如果维护已在进行中，跳过直接处理
+      if (this.authMaintenanceInProgress) {
+        secureLogger.debug('Auth maintenance already in progress, event queued', {
+          provider: oauthError.provider,
+          errorType: oauthError.type,
+          eventType: maintenanceEvent.type
+        });
+        return;
+      }
+
+      // 开始处理鉴权维护
+      await this.processAuthMaintenance(oauthError);
+    } catch (handleError) {
+      secureLogger.error('Failed to handle auth error', {
+        error: handleError instanceof Error ? handleError.message : String(handleError),
+        originalError: error.message
+      });
+    }
+  }
+
+  /**
+   * 确定维护事件类型
+   */
+  private determineMaintenanceEventType(oauthErrorType: OAuthErrorInfo['type']): AuthMaintenanceEvent['type'] {
+    switch (oauthErrorType) {
+      case 'token_expired':
+      case 'token_invalid':
+        return 'auth_refresh_required';
+      case 'permission_denied':
+      case 'oauth_server_error':
+        return 'auth_rebuild_required';
+      default:
+        return 'pipeline_unavailable';
+    }
+  }
+
+  /**
+   * 从RCCError中提取OAuth错误信息
+   */
+  private extractOAuthErrorFromRCCError(error: RCCError, context: LocalErrorContext): OAuthErrorInfo | null {
+    const errorDetails = error.context?.details;
+    
+    // 如果是oauth-error-detector生成的错误，直接提取信息
+    if (errorDetails?.errorType && errorDetails?.provider) {
+      return {
+        type: errorDetails.errorType,
+        provider: errorDetails.provider,
+        timestamp: errorDetails.timestamp ? new Date(errorDetails.timestamp) : new Date(),
+        affectedPipelines: errorDetails.affectedPipelines || []
+      };
+    }
+
+    // 生成基本的OAuth错误信息
+    return {
+      type: error.message.includes('expired') ? 'token_expired' : 'token_invalid',
+      provider: errorDetails?.provider || context?.provider || 'unknown',
+      timestamp: new Date(),
+      affectedPipelines: context.pipelineId ? [context.pipelineId] : []
+    };
+  }
+
+  /**
+   * 将鉴权错误加入队列
+   */
+  private addAuthErrorToQueue(oauthError: OAuthErrorInfo): void {
+    const provider = oauthError.provider;
+    
+    if (!this.authErrorQueue.has(provider)) {
+      this.authErrorQueue.set(provider, []);
+    }
+    
+    const queue = this.authErrorQueue.get(provider)!;
+    queue.push(oauthError);
+    
+    // 只保留最近的10个错误
+    if (queue.length > 10) {
+      queue.shift();
+    }
+    
+    secureLogger.debug('Added auth error to queue', {
+      provider,
+      errorType: oauthError.type,
+      queueLength: queue.length
+    });
+  }
+
+  /**
+   * 处理鉴权维护流程
+   */
+  private async processAuthMaintenance(oauthError: OAuthErrorInfo): Promise<void> {
+    this.authMaintenanceInProgress = true;
+    
+    try {
+      secureLogger.info('Starting auth maintenance', {
+        provider: oauthError.provider,
+        errorType: oauthError.type,
+        affectedPipelines: oauthError.affectedPipelines.length
+      });
+
+      // 1. 通知流水线管理器设置维护模式
+      if (this.pipelineManager) {
+        await this.notifyPipelineUnpipelined(oauthError);
+      }
+
+      // 2. 通知鉴权中心进行维护
+      if (this.authCenter) {
+        await this.notifyAuthMaintenance(oauthError);
+      }
+
+      secureLogger.info('Auth maintenance completed successfully', {
+        provider: oauthError.provider,
+        errorType: oauthError.type
+      });
+    } catch (maintenanceError) {
+      secureLogger.error('Auth maintenance failed', {
+        error: maintenanceError instanceof Error ? maintenanceError.message : String(maintenanceError),
+        provider: oauthError.provider,
+        errorType: oauthError.type
+      });
+    } finally {
+      this.authMaintenanceInProgress = false;
+      
+      // 清除已处理的错误队列
+      this.authErrorQueue.delete(oauthError.provider);
+    }
+  }
+
+  /**
+   * 通知流水线管理器设置维护模式
+   */
+  private async notifyPipelineUnpipelined(oauthError: OAuthErrorInfo): Promise<void> {
+    try {
+      if (!this.pipelineManager) {
+        secureLogger.warn('Pipeline manager not available for auth maintenance');
+        return;
+      }
+
+      const reason = `OAuth error: ${oauthError.type} - Setting maintenance mode for affected pipelines`;
+      
+      await this.pipelineManager.setAuthMaintenanceMode(oauthError.affectedPipelines, reason);
+      
+      secureLogger.info('Pipelines set to maintenance mode', {
+        provider: oauthError.provider,
+        pipelineCount: oauthError.affectedPipelines.length,
+        reason
+      });
+    } catch (error) {
+      secureLogger.error('Failed to set pipeline maintenance mode', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: oauthError.provider,
+        affectedPipelines: oauthError.affectedPipelines
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 通知鉴权维护
+   */
+  private async notifyAuthMaintenance(oauthError: OAuthErrorInfo): Promise<void> {
+    try {
+      if (!this.authCenter) {
+        secureLogger.warn('Auth center not available for auth maintenance');
+        return;
+      }
+
+      let result: RefreshResult | RebuildResult | null = null;
+      
+      // 根据错误类型决定维护策略
+      switch (oauthError.type) {
+        case 'token_expired':
+        case 'token_invalid':
+          // 执行token刷新
+          result = await this.authCenter.forceRefreshTokens(oauthError.provider);
+          break;
+        case 'permission_denied':
+        case 'oauth_server_error':
+          // 执行鉴权重建
+          result = await this.authCenter.forceRebuildAuth(oauthError.provider);
+          break;
+        default:
+          secureLogger.warn('Unknown OAuth error type for maintenance', {
+            provider: oauthError.provider,
+            errorType: oauthError.type
+          });
+          return;
+      }
+
+      // 如果维护成功，通知流水线管理器恢复流水线
+      if (result && result.success) {
+        await this.notifyPipelineRecovery(oauthError, result);
+      }
+
+      secureLogger.info('Auth maintenance completed', {
+        provider: oauthError.provider,
+        errorType: oauthError.type,
+        success: result?.success,
+        refreshedTokens: result && 'refreshedTokens' in result ? result.refreshedTokens.length : 0,
+        rebuiltPipelines: result && 'rebuiltPipelines' in result ? result.rebuiltPipelines.length : 0
+      });
+    } catch (error) {
+      secureLogger.error('Auth maintenance failed', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: oauthError.provider,
+        errorType: oauthError.type
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 通知流水线恢复
+   */
+  private async notifyPipelineRecovery(oauthError: OAuthErrorInfo, result: RefreshResult | RebuildResult): Promise<void> {
+    try {
+      if (!this.pipelineManager) {
+        return;
+      }
+
+      await this.pipelineManager.clearAuthMaintenanceMode(oauthError.affectedPipelines);
+      
+      secureLogger.info('Pipelines recovered from maintenance mode', {
+        provider: oauthError.provider,
+        pipelineCount: oauthError.affectedPipelines.length,
+        success: result.success
+      });
+    } catch (error) {
+      secureLogger.error('Failed to clear pipeline maintenance mode', {
+        error: error instanceof Error ? error.message : String(error),
+        provider: oauthError.provider,
+        affectedPipelines: oauthError.affectedPipelines
+      });
+    }
+  }
+
+  /**
+   * 设置鉴权中心
+   */
+  setAuthCenter(authCenter: AuthCenter): void {
+    this.authCenter = authCenter;
+    secureLogger.info('Auth center set in error handler');
+  }
+
+  /**
+   * 设置流水线管理器
+   */
+  setPipelineManager(pipelineManager: PipelineManager): void {
+    this.pipelineManager = pipelineManager;
+    secureLogger.info('Pipeline manager set in error handler');
+  }
+
+  /**
+   * 获取鉴权维护状态
+   */
+  getAuthMaintenanceStatus(): { inProgress: boolean; queuedErrors: number } {
+    const totalQueuedErrors = Array.from(this.authErrorQueue.values())
+      .reduce((sum, errors) => sum + errors.length, 0);
+    
+    return {
+      inProgress: this.authMaintenanceInProgress,
+      queuedErrors: totalQueuedErrors
+    };
   }
 }
 
