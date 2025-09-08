@@ -20,6 +20,7 @@ import {
 } from './self-check-types';
 import { PROVIDER_MODELS } from '../constants/src/model-mappings';
 import { FILE_PATHS, OAUTH_URLS } from '../constants/src/bootstrap-constants';
+import { ERROR_MESSAGES } from '../constants/src/error-messages';
 import {
   ModuleStatus,
   ModuleMetrics,
@@ -164,19 +165,64 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
   }
 
   addConnection(module: ModuleInterface): void {
-    super.addConnection(module);
+    try {
+      if (!module || !module.getId || !module.getType) {
+        secureLogger.error('Invalid module passed to addConnection', {
+          module: typeof module,
+          hasGetId: !!(module && module.getId),
+          hasGetType: !!(module && module.getType)
+        });
+        return;
+      }
+      super.addConnection(module);
+      secureLogger.info('Module connection added successfully', {
+        moduleId: module.getId(),
+        moduleType: module.getType(),
+        totalConnections: this.getConnections().length
+      });
+    } catch (error) {
+      secureLogger.error('Failed to add module connection', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   removeConnection(moduleId: string): void {
-    super.removeConnection(moduleId);
+    try {
+      super.removeConnection(moduleId);
+      secureLogger.info('Module connection removed', {
+        moduleId,
+        remainingConnections: this.getConnections().length
+      });
+    } catch (error) {
+      secureLogger.error('Failed to remove module connection', {
+        moduleId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 
   getConnection(moduleId: string): ModuleInterface | undefined {
-    return super.getConnection(moduleId);
+    try {
+      return super.getConnection(moduleId);
+    } catch (error) {
+      secureLogger.error('Failed to get module connection', {
+        moduleId,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return undefined;
+    }
   }
 
   getConnections(): ModuleInterface[] {
-    return super.getConnections();
+    try {
+      return super.getConnections();
+    } catch (error) {
+      secureLogger.error('Failed to get module connections', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return [];
+    }
   }
 
   async sendToModule(targetModuleId: string, message: any, type?: string): Promise<any> {
@@ -804,12 +850,8 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
    */
   async checkAuthFileExpiry(authFile: string): Promise<boolean> {
     try {
-      // 这里应该实现实际的过期检查逻辑
-      // 可能需要读取auth文件的时间戳或调用相关API
-      
       secureLogger.info('Checking auth file expiry', { authFile });
       
-      // 占位符实现 - 实际应该检查文件的创建时间或API返回的过期信息
       const fs = require('fs');
       const path = require('path');
       
@@ -817,17 +859,56 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       const authDirPath = this.config?.authDirectory || FILE_PATHS.AUTH_DIRECTORY;
       const authFilePath = path.resolve(authDirPath, `${authFile}.json`);
       
-      if (fs.existsSync(authFilePath)) {
-        const stats = fs.statSync(authFilePath);
-        const ageInHours = (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60);
-        
-        // 假设24小时后过期
-        return ageInHours > 24;
+      if (!fs.existsSync(authFilePath)) {
+        secureLogger.warn(ERROR_MESSAGES.AUTH.FILE_NOT_FOUND, { authFile, authFilePath });
+        return true; // 文件不存在，认为已过期
       }
       
-      return false;
+      try {
+        // 读取auth文件内容
+        const authContent = fs.readFileSync(authFilePath, 'utf8');
+        const authData = JSON.parse(authContent);
+        
+        // 检查expires_at字段
+        if (authData.expires_at) {
+          const expiresAt = authData.expires_at;
+          const currentTime = Date.now();
+          const isExpired = currentTime > expiresAt;
+          
+          const expiryTime = new Date(expiresAt).toISOString();
+          const hoursFromExpiry = (expiresAt - currentTime) / (1000 * 60 * 60);
+          
+          secureLogger.info('Auth file expiry check result', { 
+            authFile, 
+            expiresAt: expiryTime,
+            hoursFromExpiry: Math.round(hoursFromExpiry * 100) / 100,
+            isExpired 
+          });
+          
+          return isExpired;
+        } else {
+          // 如果没有expires_at字段，使用文件修改时间作为fallback
+          const stats = fs.statSync(authFilePath);
+          const ageInHours = (Date.now() - stats.mtime.getTime()) / (1000 * 60 * 60);
+          
+          secureLogger.warn(ERROR_MESSAGES.AUTH.NO_EXPIRES_FIELD, { 
+            authFile, 
+            ageInHours: Math.round(ageInHours * 100) / 100 
+          });
+          
+          // 假设24小时后过期
+          return ageInHours > 24;
+        }
+      } catch (parseError) {
+        secureLogger.error(ERROR_MESSAGES.AUTH.FILE_PARSE_FAILED, {
+          authFile,
+          authFilePath,
+          error: parseError instanceof Error ? parseError.message : String(parseError)
+        });
+        return true; // 解析失败，认为已过期
+      }
     } catch (error) {
-      secureLogger.error('Auth file expiry check failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.FILE_EXPIRY_CHECK_FAILED, {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -851,7 +932,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
         try {
           await this.performAsyncAuthRefresh(authFile, provider);
         } catch (error) {
-          secureLogger.error('Async auth refresh failed', {
+          secureLogger.error(ERROR_MESSAGES.AUTH.ASYNC_REFRESH_FAILED, {
             authFile,
             provider,
             error: error instanceof Error ? error.message : String(error)
@@ -871,7 +952,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       return isCurrentlyValid;
       
     } catch (error) {
-      secureLogger.error('Auth file refresh initiation failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.REFRESH_INITIATION_FAILED, {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -908,7 +989,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       
       return true;
     } catch (error) {
-      secureLogger.error('Qwen auth refresh failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.QWEN_REFRESH_FAILED, {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -954,45 +1035,59 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
     try {
       secureLogger.info('Starting async auth refresh workflow', { authFile, provider });
       
-      // Step 1: 调用auth模块进行refresh
+      // Step 1: 获取auth模块实例
       const authModule = await this.getAuthModule(provider);
       if (!authModule) {
-        secureLogger.error('Auth module not available', { provider });
-        await this.handleAuthRefreshFailure(authFile, provider, 'Auth module not available');
+        secureLogger.error(ERROR_MESSAGES.AUTH.MODULE_NOT_AVAILABLE, { provider });
+        await this.handleAuthRefreshFailure(authFile, provider, ERROR_MESSAGES.AUTH.MODULE_NOT_AVAILABLE);
         return;
       }
+
+      // Step 2: 尝试刷新auth文件
+      const refreshResult = await authModule.refreshAuthFile(authFile);
+      secureLogger.info('Refresh result for auth file', { authFile, refreshResult });
       
-      // Step 2: 执行非阻塞refresh
-      const refreshResult = await authModule.forceRefreshTokens(provider, {
-        refreshExpiredOnly: true,
-        maxConcurrent: 2
-      });
+      // Step 3: 验证刷新后的auth文件
+      const isValidAfterRefresh = await this.validateAuthFileWithAPI(authFile, provider);
+      secureLogger.info('Validation after refresh', { authFile, isValid: isValidAfterRefresh });
       
-      // Step 3: 验证refresh结果
-      if (refreshResult.success && refreshResult.refreshedTokens.length > 0) {
-        // Step 4: API验证确认
-        const isValid = await this.validateAuthFileWithAPI(authFile, provider);
+      if (!isValidAfterRefresh) {
+        secureLogger.info('Auth file still invalid after refresh, triggering recreate via Auth Center', { authFile, provider });
         
-        if (isValid) {
-          secureLogger.info('Async auth refresh completed successfully', { 
-            authFile, 
-            provider,
-            refreshedCount: refreshResult.refreshedTokens.length 
-          });
+        // Step 4: 如果仍然无效，调用Auth Center处理recreate workflow
+        if (provider.toLowerCase() === 'qwen') {
+          const deviceFlowResult = await authModule.startQwenDeviceFlow(authFile);
           
-          // 通知成功，恢复流水线
-          await this.notifyAuthRefreshSuccess(authFile, provider);
+          if (deviceFlowResult.success) {
+            secureLogger.info('Qwen Device Flow completed successfully', { 
+              authFile,
+              hasNewToken: !!deviceFlowResult.newToken 
+            });
+            
+            // 通知成功，恢复流水线
+            await this.notifyAuthRefreshSuccess(authFile, provider);
+          } else {
+            secureLogger.error('Qwen Device Flow failed', { 
+              authFile, 
+              error: deviceFlowResult.error 
+            });
+            
+            // Device Flow失败，通过error handler处理
+            await this.handleAuthRefreshFailure(authFile, provider, deviceFlowResult.error || ERROR_MESSAGES.AUTH.DEVICE_FLOW_AUTH_FAILED);
+          }
         } else {
-          // API验证失败，触发recreate流程
-          await this.handleAuthRefreshFailure(authFile, provider, 'API validation failed after refresh');
+          // 对于非Qwen provider，使用error handler workflow
+          await this.handleAuthRefreshFailure(authFile, provider, ERROR_MESSAGES.AUTH.API_VALIDATION_FAILED_AFTER_REFRESH);
         }
       } else {
-        // Refresh失败，触发recreate流程
-        await this.handleAuthRefreshFailure(authFile, provider, refreshResult.error || 'Refresh operation failed');
+        secureLogger.info('Auth file successfully refreshed and validated', { authFile, provider });
+        
+        // 通知成功，恢复流水线
+        await this.notifyAuthRefreshSuccess(authFile, provider);
       }
       
     } catch (error) {
-      secureLogger.error('Async auth refresh workflow failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.ASYNC_WORKFLOW_FAILED, {
         authFile,
         provider,
         error: error instanceof Error ? error.message : String(error)
@@ -1010,7 +1105,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
    */
   private async handleAuthRefreshFailure(authFile: string, provider: string, reason: string): Promise<void> {
     try {
-      secureLogger.warn('Auth refresh failed, initiating recreate workflow', { 
+      secureLogger.warn(ERROR_MESSAGES.AUTH.AUTH_REFRESH_FAILED, { 
         authFile, 
         provider, 
         reason 
@@ -1123,8 +1218,53 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
         !error.includes(authFile) || !error.includes('maintenance')
       );
       
-      // 这里需要与pipeline-manager集成，恢复相关流水线
-      // 实际应用中需要调用pipeline-manager的恢复API
+      // 恢复相关流水线
+      if (this.pipelineManager) {
+        const affectedPipelines = await this.findPipelinesByAuthFile(authFile);
+        if (affectedPipelines.length > 0) {
+          try {
+            const { success, failed } = await this.pipelineManager.clearAuthMaintenanceMode(affectedPipelines, { skipHealthCheck: false });
+            
+            secureLogger.info('Pipeline maintenance cleared after auth refresh', {
+              authFile,
+              provider,
+              successful: success.length,
+              failed: failed.length,
+              totalPipelines: affectedPipelines.length
+            });
+            
+            for (const pipelineId of success) {
+              secureLogger.info('Pipeline restored after auth refresh', {
+                pipelineId,
+                authFile,
+                provider
+              });
+            }
+            
+            for (const pipelineId of failed) {
+              secureLogger.error('Failed to restore pipeline', {
+                pipelineId,
+                authFile,
+                provider
+              });
+            }
+          } catch (restoreError) {
+            secureLogger.error('Failed to clear pipeline maintenance mode', {
+              authFile,
+              provider,
+              error: restoreError instanceof Error ? restoreError.message : String(restoreError)
+            });
+          }
+        }
+      }
+      
+      // 发送恢复成功事件
+      this.emit('auth-refresh-success', {
+        authFile,
+        provider,
+        timestamp: new Date(),
+        affectedPipelines: await this.findPipelinesByAuthFile(authFile)
+      });
       
     } catch (error) {
       secureLogger.error('Failed to notify auth refresh success', {
@@ -1152,16 +1292,28 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
   }
 
   /**
-   * 获取对应provider的auth模块
+   * 获取Auth模块实例
    * @param provider provider名称
    * @returns Promise<AuthenticationModule | null>
    */
   private async getAuthModule(provider: string): Promise<any | null> {
     try {
-      // 这里需要从模块注册表获取auth模块实例
-      // 当前返回null，实际应用中需要连接到真实的模块管理器
-      secureLogger.warn('Auth module integration not implemented', { provider });
-      return null;
+      // 尝试从模块连接中获取Auth模块
+      const authModule = this.getConnection('auth-module');
+      if (authModule) {
+        secureLogger.info('Auth module connection found', { provider });
+        return authModule;
+      }
+      
+      // 如果没有连接，尝试创建新的Auth模块实例
+      const { AuthenticationModule } = require('../auth/auth-module');
+      const authModuleInstance = new AuthenticationModule();
+      
+      // 添加连接
+      this.addConnection(authModuleInstance);
+      
+      secureLogger.info('Auth module instance created and connected', { provider });
+      return authModuleInstance;
       
     } catch (error) {
       secureLogger.error('Failed to get auth module', {
@@ -1211,7 +1363,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
           return false;
       }
     } catch (error) {
-      secureLogger.error('Auth file API validation failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.API_VALIDATION_FAILED, {
         authFile,
         provider,
         error: error instanceof Error ? error.message : String(error)
@@ -1242,7 +1394,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
           return false;
       }
     } catch (error) {
-      secureLogger.error('Auth file recreation failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.FILE_RECREATION_FAILED, {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -1279,7 +1431,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
   }
 
   /**
-   * 从配置中移除auth文件引用
+   * 从配置中移除auth文件引用（增强版本）
    * @param authFile auth文件名
    * @returns Promise<void>
    */
@@ -1287,14 +1439,99 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
     try {
       secureLogger.info('Auth file not found, should be removed from configuration', { authFile });
       
+      // 查找使用此auth文件的流水线
+      const affectedPipelines = await this.findPipelinesByAuthFile(authFile);
+      
+      if (affectedPipelines.length > 0) {
+        secureLogger.warn('Auth file removal affects active pipelines', {
+          authFile,
+          affectedPipelines: affectedPipelines.length,
+          pipelineIds: affectedPipelines
+        });
+        
+        // 暂停受影响的流水线
+        if (this.pipelineManager && affectedPipelines.length > 0) {
+          try {
+            const { success, failed } = await this.pipelineManager.setAuthMaintenanceMode(
+              affectedPipelines, 
+              ERROR_MESSAGES.AUTH.MISSING_AUTH_FILE, 
+              { force: true }
+            );
+            
+            secureLogger.info('Pipeline maintenance mode set for missing auth file', {
+              authFile,
+              successful: success.length,
+              failed: failed.length,
+              totalPipelines: affectedPipelines.length
+            });
+            
+            for (const pipelineId of success) {
+              secureLogger.info('Pipeline paused due to missing auth file', {
+                pipelineId,
+                authFile
+              });
+            }
+            
+            for (const pipelineId of failed) {
+              secureLogger.error('Failed to pause pipeline', {
+                pipelineId,
+                authFile
+              });
+            }
+          } catch (maintenanceError) {
+            secureLogger.error('Failed to set pipeline maintenance mode', {
+              authFile,
+              error: maintenanceError instanceof Error ? maintenanceError.message : String(maintenanceError)
+            });
+          }
+        }
+      }
+      
       // 记录需要手动从配置中移除的auth文件引用
-      this.state.errors.push(`Auth file not found: ${authFile} - should be removed from configuration`);
+      this.state.errors.push(`Auth file not found: ${authFile} - affects ${affectedPipelines.length} pipelines`);
       
     } catch (error) {
       secureLogger.error('Failed to process missing auth file reference', {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
+    }
+  }
+
+  /**
+   * 根据auth文件查找相关流水线
+   * @param authFile auth文件名
+   * @returns Promise<string[]> 流水线ID列表
+   */
+  private async findPipelinesByAuthFile(authFile: string): Promise<string[]> {
+    try {
+      if (!this.pipelineManager) {
+        return [];
+      }
+      
+      const affectedPipelines: string[] = [];
+      const allPipelines = this.pipelineManager.getAllPipelines();
+      
+      for (const [pipelineId, pipeline] of allPipelines) {
+        // 从pipeline的modules中查找使用此auth文件的模块
+        const hasAuthFile = pipeline.modules?.some((module: any) => {
+          return module.config?.authFileName === authFile ||
+                 module.config?.authFile === authFile ||
+                 (module.config?.auth && module.config.auth.authFile === authFile);
+        });
+        
+        if (hasAuthFile) {
+          affectedPipelines.push(pipelineId);
+        }
+      }
+      
+      return affectedPipelines;
+    } catch (error) {
+      secureLogger.error('Failed to find pipelines by auth file', {
+        authFile,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return [];
     }
   }
 
@@ -1330,7 +1567,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       
       return false; // 占位符 - 实际实现需要根据具体的认证机制
     } catch (error) {
-      secureLogger.error('Auth file rebuild failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.FILE_REBUILD_FAILED, {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -1359,7 +1596,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
           return false;
       }
     } catch (error) {
-      secureLogger.error('Auth file validity test failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.VALIDITY_TEST_FAILED, {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -1392,7 +1629,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       
       return false;
     } catch (error) {
-      secureLogger.error('Qwen auth file validation failed', {
+      secureLogger.error(ERROR_MESSAGES.AUTH.QWEN_VALIDATION_FAILED, {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -1928,6 +2165,11 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
   /**
    * 清理过期的OAuth错误缓存
    * @param maxAge 最大缓存时间（毫秒）
+   * @returns number 清理的错误数量
+   */
+  /**
+   * 清理过期的OAuth错误缓存（改进版本）
+   * @param maxAge 最大缓存时间（毫秒，默认1小时）
    * @returns number 清理的错误数量
    */
   cleanupExpiredOAuthErrors(maxAge: number = 3600000): number {

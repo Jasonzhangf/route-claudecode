@@ -1740,4 +1740,558 @@ export class AuthenticationModule extends BaseModule {
     this.lastRefreshAt = null;
     this.lastRebuildAt = null;
   }
+
+  // ===== Qwen Device Flow 实现 =====
+
+  /**
+   * 检查和获取Auth模块的refreshAuthFile方法
+   * @param authFile auth文件名
+   * @returns Promise<{success: boolean; newToken?: any; error?: string}>
+   */
+  async refreshAuthFile(authFile: string): Promise<{success: boolean; newToken?: any; error?: string}> {
+    try {
+      // 检查当前token状态
+      const currentStatus = await this.checkCurrentTokenStatus(authFile);
+      if (currentStatus.valid && !currentStatus.expiringSoon) {
+        return {
+          success: true,
+          newToken: currentStatus.tokenData
+        };
+      }
+
+      secureLogger.info('Token expired or expiring soon, starting refresh', {
+        authFile,
+        expired: !currentStatus.valid,
+        expiringSoon: currentStatus.expiringSoon
+      });
+
+      // 启动完整的Device Flow
+      return await this.startQwenDeviceFlow(authFile);
+    } catch (error) {
+      secureLogger.error('Auth file refresh failed', {
+        authFile,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
+  }
+
+  /**
+   * 检查当前token状态
+   * @param authFile auth文件名
+   * @returns Promise<{valid: boolean; expiringSoon: boolean; tokenData?: any}>
+   */
+  private async checkCurrentTokenStatus(authFile: string): Promise<{valid: boolean; expiringSoon: boolean; tokenData?: any}> {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      
+      const authDirectory = path.join(process.env.HOME || process.env.USERPROFILE || '', '.route-claudecode', 'auth');
+      const authFilePath = path.join(authDirectory, authFile + (authFile.endsWith('.json') ? '' : '.json'));
+      
+      if (!fs.existsSync(authFilePath)) {
+        return { valid: false, expiringSoon: false };
+      }
+      
+      const authData = JSON.parse(fs.readFileSync(authFilePath, 'utf8'));
+      const now = Date.now();
+      const expiresAt = authData.expires_at || 0;
+      const oneHourFromNow = now + (60 * 60 * 1000); // 1小时
+      
+      return {
+        valid: expiresAt > now,
+        expiringSoon: expiresAt <= oneHourFromNow && expiresAt > now,
+        tokenData: authData
+      };
+    } catch (error) {
+      secureLogger.error('Failed to check token status', {
+        authFile,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return { valid: false, expiringSoon: false };
+    }
+  }
+
+  /**
+   * 启动Qwen Device Flow完整流程
+   * @param authFile auth文件名
+   * @returns Promise<{success: boolean; newToken?: any; error?: string}>
+   */
+  async startQwenDeviceFlow(authFile: string): Promise<{success: boolean; newToken?: any; error?: string}> {
+    try {
+      secureLogger.info('Starting complete Qwen Device Flow', { authFile });
+
+      // Step 1: 发起Device Flow获取用户代码
+      const deviceFlowResponse = await this.initiateQwenDeviceFlow();
+      if (!deviceFlowResponse.success) {
+        return {
+          success: false,
+          error: `Device Flow initiation failed: ${deviceFlowResponse.error}`
+        };
+      }
+
+      const { device_code, user_code, verification_uri_complete, expires_in } = deviceFlowResponse.data;
+      
+      // Step 2: 打开浏览器让用户授权
+      await this.openBrowserForQwenAuth(verification_uri_complete, user_code);
+
+      // Step 3: 轮询获取token（增强版本，包含code_verifier）
+      const tokenResult = await this.pollForQwenToken(device_code, expires_in, deviceFlowResponse.data.code_verifier);
+      if (!tokenResult.success) {
+        return {
+          success: false,
+          error: `Token polling failed: ${tokenResult.error}`
+        };
+      }
+
+      // Step 4: 保存新token到auth文件
+      const saveResult = await this.saveQwenTokenToFile(authFile, tokenResult.data);
+      if (!saveResult.success) {
+        return {
+          success: false,
+          error: `Token save failed: ${saveResult.error}`
+        };
+      }
+
+      // Step 5: 验证新token有效性
+      const isValid = await this.verifyQwenTokenValidity(tokenResult.data.access_token);
+      if (!isValid) {
+        return {
+          success: false,
+          error: 'New token validation failed'
+        };
+      }
+
+      secureLogger.info('Qwen Device Flow completed successfully', { 
+        authFile,
+        tokenPreview: tokenResult.data.access_token.substring(0, 20) + '...'
+      });
+
+      return {
+        success: true,
+        newToken: tokenResult.data
+      };
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      secureLogger.error('Qwen Device Flow failed', {
+        error: errorMessage,
+        authFile
+      });
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  /**
+   * 发起Qwen Device Flow请求
+   */
+  private async initiateQwenDeviceFlow(): Promise<{success: boolean, data?: any, error?: string}> {
+    try {
+      const https = require('https');
+      const { URL } = require('url');
+      
+      const deviceCodeEndpoint = 'https://chat.qwen.ai/api/v1/oauth2/device/code';
+      const clientId = 'f0304373b74a44d2b584a3fb70ca9e56';
+      const scope = 'openid profile email model.completion';
+      
+      const codeVerifier = this.generateCodeVerifier();
+      const codeChallenge = this.generateCodeChallenge(codeVerifier);
+      
+      const postData = new URLSearchParams({
+        client_id: clientId,
+        scope: scope,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256'
+      }).toString();
+      
+      const url = new URL(deviceCodeEndpoint);
+      const options = {
+        hostname: url.hostname,
+        port: url.port || 443,
+        path: url.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+      
+      return new Promise((resolve) => {
+        const req = https.request(options, (res: any) => {
+          let data = '';
+          
+          res.on('data', (chunk: any) => {
+            data += chunk;
+          });
+          
+          res.on('end', () => {
+            try {
+              if (res.statusCode === 200) {
+                const response = JSON.parse(data);
+                // 保存code_verifier用于后续轮询
+                response.code_verifier = codeVerifier;
+                resolve({
+                  success: true,
+                  data: response
+                });
+              } else {
+                resolve({
+                  success: false,
+                  error: `HTTP ${res.statusCode}: ${data}`
+                });
+              }
+            } catch (error) {
+              resolve({
+                success: false,
+                error: `JSON parse error: ${error instanceof Error ? error.message : String(error)}`
+              });
+            }
+          });
+        });
+        
+        req.on('error', (error: any) => {
+          resolve({
+            success: false,
+            error: `Request error: ${error.message}`
+          });
+        });
+        
+        req.write(postData);
+        req.end();
+      });
+      
+    } catch (error) {
+      return {
+        success: false,
+        error: `Device flow initiation error: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
+   * 打开浏览器进行Qwen授权
+   */
+  private async openBrowserForQwenAuth(verificationUrl: string, userCode: string): Promise<void> {
+    try {
+      const { exec } = require('child_process');
+      
+      console.log('\n' + '='.repeat(80));
+      console.log('🔐 Qwen Device Flow授权');
+      console.log('='.repeat(80));
+      console.log(`📋 用户代码: ${userCode}`);
+      console.log(`🔗 授权地址: ${verificationUrl}`);
+      console.log('\n🚀 正在打开浏览器进行授权...');
+      
+      // 构建完整的授权URL
+      const fullAuthUrl = verificationUrl || `https://chat.qwen.ai/authorize?user_code=${userCode}&client=qwen-code`;
+      
+      // 打开浏览器
+      let command = '';
+      if (process.platform === 'darwin') {
+        command = `open "${fullAuthUrl}"`;
+      } else if (process.platform === 'win32') {
+        command = `start "${fullAuthUrl}"`;
+      } else {
+        command = `xdg-open "${fullAuthUrl}"`;
+      }
+      
+      exec(command, (error: any) => {
+        if (error) {
+          console.log('❌ 无法自动打开浏览器，请手动访问:');
+          console.log(`🔗 ${fullAuthUrl}`);
+          secureLogger.warn('Failed to open browser automatically', {
+            error: error.message,
+            url: fullAuthUrl
+          });
+        } else {
+          console.log('✅ 浏览器已打开授权页面');
+          secureLogger.info('Browser opened for Qwen authorization', {
+            url: fullAuthUrl,
+            userCode: userCode
+          });
+        }
+      });
+      
+      console.log('\n💡 授权步骤:');
+      console.log(`   1. 在打开的页面中确认用户代码: ${userCode}`);
+      console.log('   2. 点击授权按钮完成授权');
+      console.log('   3. 系统将自动获取访问令牌');
+      console.log('='.repeat(80) + '\n');
+      
+    } catch (error) {
+      secureLogger.error('Failed to open browser for Qwen auth', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * 轮询获取Qwen token（增强版本）
+   */
+  private async pollForQwenToken(deviceCode: string, expiresIn: number, codeVerifier?: string): Promise<{success: boolean, data?: any, error?: string}> {
+    try {
+      const pollInterval = 5000; // 5秒间隔
+      const maxAttempts = Math.floor(expiresIn / 5); // 根据过期时间计算最大尝试次数
+      const tokenEndpoint = 'https://chat.qwen.ai/api/v1/oauth2/token';
+      const clientId = 'f0304373b74a44d2b584a3fb70ca9e56';
+
+      secureLogger.info('Starting token polling', {
+        deviceCode: deviceCode.substring(0, 20) + '...',
+        maxAttempts,
+        pollInterval
+      });
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        console.log(`🔄 轮询Token (${attempt}/${maxAttempts})...`);
+
+        const tokenResult = await this.pollQwenTokenEndpoint(tokenEndpoint, clientId, deviceCode, codeVerifier);
+        
+        if (tokenResult.success) {
+          console.log('✅ Token获取成功!');
+          return tokenResult;
+        }
+
+        // 处理OAuth2标准错误
+        if (tokenResult.error === 'authorization_pending') {
+          console.log('⏳ 等待用户授权...');
+          await this.sleep(pollInterval);
+          continue;
+        } else if (tokenResult.error === 'slow_down') {
+          console.log('⚠️ 请求过于频繁，增加间隔...');
+          await this.sleep(pollInterval * 2);
+          continue;
+        } else if (tokenResult.error === 'expired_token') {
+          return {
+            success: false,
+            error: 'Device code expired, please restart authorization'
+          };
+        } else if (tokenResult.error === 'access_denied') {
+          return {
+            success: false,
+            error: 'User denied authorization'
+          };
+        } else {
+          // 其他错误继续尝试
+          console.log(`⚠️ 轮询错误: ${tokenResult.error}`);
+          await this.sleep(pollInterval);
+          continue;
+        }
+      }
+
+      return {
+        success: false,
+        error: 'Authorization timeout - please try again'
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: `Token polling error: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+
+  /**
+   * 轮询token端点（增强版本）
+   */
+  private async pollQwenTokenEndpoint(tokenEndpoint: string, clientId: string, deviceCode: string, codeVerifier?: string): Promise<{success: boolean, data?: any, error?: string}> {
+    return new Promise((resolve) => {
+      const https = require('https');
+      const { URL } = require('url');
+      
+      const postData = new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        client_id: clientId,
+        device_code: deviceCode,
+        ...(codeVerifier && { code_verifier: codeVerifier })
+      }).toString();
+      
+      const url = new URL(tokenEndpoint);
+      const options = {
+        hostname: url.hostname,
+        port: url.port || 443,
+        path: url.pathname,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Content-Length': Buffer.byteLength(postData)
+        }
+      };
+      
+      const req = https.request(options, (res: any) => {
+        let data = '';
+        
+        res.on('data', (chunk: any) => {
+          data += chunk;
+        });
+        
+        res.on('end', () => {
+          try {
+            const response = JSON.parse(data);
+            
+            if (res.statusCode === 200) {
+              resolve({
+                success: true,
+                data: response
+              });
+            } else {
+              // OAuth2标准错误处理
+              resolve({
+                success: false,
+                error: response.error || `HTTP ${res.statusCode}`
+              });
+            }
+          } catch (error) {
+            resolve({
+              success: false,
+              error: 'Response parse error'
+            });
+          }
+        });
+      });
+      
+      req.on('error', (error: any) => {
+        resolve({
+          success: false,
+          error: `Network error: ${error.message}`
+        });
+      });
+      
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  /**
+   * 保存Qwen token到文件
+   */
+  private async saveQwenTokenToFile(authFile: string, tokenData: any): Promise<{success: boolean, error?: string}> {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      
+      const authDirectory = path.join(process.env.HOME || process.env.USERPROFILE || '', '.route-claudecode', 'auth');
+      const authFilePath = path.join(authDirectory, authFile + (authFile.endsWith('.json') ? '' : '.json'));
+      
+      // 确保目录存在
+      if (!fs.existsSync(authDirectory)) {
+        fs.mkdirSync(authDirectory, { recursive: true });
+      }
+      
+      const newAuthData = {
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        resource_url: 'chat.qwen.ai',
+        expires_at: Date.now() + (tokenData.expires_in * 1000),
+        created_at: new Date().toISOString(),
+        account_index: 1,
+        token_type: tokenData.token_type || 'Bearer',
+        scope: tokenData.scope || 'openid profile email model.completion'
+      };
+      
+      fs.writeFileSync(authFilePath, JSON.stringify(newAuthData, null, '\t'));
+      
+      secureLogger.info('Qwen token saved successfully', {
+        authFile: authFilePath,
+        expiresAt: new Date(newAuthData.expires_at).toISOString()
+      });
+      
+      return { success: true };
+      
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      secureLogger.error('Failed to save Qwen token', {
+        error: errorMessage,
+        authFile
+      });
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+  }
+
+  /**
+   * 验证Qwen token有效性
+   */
+  private async verifyQwenTokenValidity(accessToken: string): Promise<boolean> {
+    try {
+      const https = require('https');
+      
+      const postData = JSON.stringify({
+        model: 'qwen-turbo',
+        input: {
+          messages: [{ role: 'user', content: 'Test' }]
+        },
+        parameters: {
+          max_tokens: 5,
+          temperature: 0.1
+        }
+      });
+      
+      return new Promise((resolve) => {
+        const options = {
+          hostname: 'dashscope.aliyuncs.com',
+          port: 443,
+          path: '/api/v1/services/aigc/text-generation/generation',
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+          }
+        };
+        
+        const req = https.request(options, (res: any) => {
+          let data = '';
+          res.on('data', (chunk: any) => data += chunk);
+          res.on('end', () => {
+            resolve(res.statusCode === 200);
+          });
+        });
+        
+        req.on('error', () => resolve(false));
+        req.write(postData);
+        req.end();
+      });
+      
+    } catch (error) {
+      secureLogger.error('Failed to verify Qwen token', {
+        error: error instanceof Error ? error.message : String(error),
+        tokenPreview: accessToken.substring(0, 20) + '...'
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 生成PKCE code verifier
+   */
+  private generateCodeVerifier(): string {
+    const crypto = require('crypto');
+    return crypto.randomBytes(32).toString('base64url');
+  }
+
+  /**
+   * 生成PKCE code challenge
+   */
+  private generateCodeChallenge(codeVerifier: string): string {
+    const crypto = require('crypto');
+    return crypto.createHash('sha256').update(codeVerifier).digest('base64url');
+  }
+
+  /**
+   * 延迟函数
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 }
