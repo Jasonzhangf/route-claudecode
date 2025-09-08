@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-09-05 21:36:36",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/utils/index.ts",
+  "violations_found": true,
+  "violation_count": 1,
+  "violations": [
+    "UNREAL-IMPL: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/utils/index.ts 中发现虚假实现: return.*test"
+  ],
+  "scan_status": "completed"
+}

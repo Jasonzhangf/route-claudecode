@@ -8,9 +8,8 @@
 import { ProviderManagerConfig } from './provider-manager';
 import { ProviderConfig } from './provider-factory';
 import { ConfigLoadOptions } from './config-loader';
-import { StandardRequest } from '../../interfaces/standard/request';
-import { StandardResponse } from '../../interfaces/standard/response';
-import { ModuleStatus } from '../../interfaces/module/base-module';
+import { StandardRequest, StandardResponse } from '../interfaces/standard/request';
+import { ModuleStatus } from '../interfaces/module/base-module';
 /**
  * Provider服务配置
  */

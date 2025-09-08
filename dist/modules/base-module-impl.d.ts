@@ -6,7 +6,7 @@
  * @author Jason Zhang
  */
 import { EventEmitter } from 'events';
-import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from './interfaces/module/base-module';
 /**
  * 基础模块抽象类
  */

@@ -9,6 +9,7 @@
 
 import { BasePipelineModule } from '../base-pipeline-module';
 import { OpenAI } from 'openai';
+import { PIPELINE_ERROR_MESSAGES } from '../../constants/src/pipeline-constants';
 
 /**
  * vLLM配置接口
@@ -179,16 +180,16 @@ export class VLLMCompatibilityModule extends BasePipelineModule {
    */
   private validateStandardRequest(request: StandardRequest): void {
     if (!request.model) {
-      throw new Error('缺少model参数');
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.MISSING_PARAMETER('model'));
     }
 
     if (!request.messages || !Array.isArray(request.messages) || request.messages.length === 0) {
-      throw new Error('缺少messages参数或格式无效');
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.INVALID_MESSAGES);
     }
 
     // 检查模型是否支持（如果配置了具体模型）
     if (this.config.models.length > 0 && !this.config.models.includes(request.model)) {
-      throw new Error(`模型 ${request.model} 不在支持列表中: ${this.config.models.join(', ')}`);
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.MODEL_NOT_SUPPORTED(request.model, this.config.models.join(', ')));
     }
   }
 
@@ -230,7 +231,7 @@ export class VLLMCompatibilityModule extends BasePipelineModule {
   private async callVLLM(request: VLLMRequest): Promise<any> {
     try {
       if (request.stream) {
-        throw new Error('流式处理暂未实现');
+        throw new Error(PIPELINE_ERROR_MESSAGES.PROCESSING.STREAMING_NOT_IMPLEMENTED);
       }
 
       // vLLM扩展参数

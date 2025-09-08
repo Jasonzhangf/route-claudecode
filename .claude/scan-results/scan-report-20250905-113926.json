@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-05 11:39:26",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/interfaces/common/api-response-types.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

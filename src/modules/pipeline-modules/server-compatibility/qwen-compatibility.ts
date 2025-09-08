@@ -17,6 +17,10 @@ import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
+import { 
+  PIPELINE_ERROR_MESSAGES, 
+  PathManager 
+} from '../../constants/src/pipeline-constants';
 
 export interface QwenCompatibilityConfig {
   baseUrl: string;
@@ -128,7 +132,7 @@ export class QwenCompatibilityModule extends ServerCompatibilityModule {
         const authFileName = 'qwen-auth-1';
         
         try {
-          const authFilePath = `/Users/fanzhang/.route-claudecode/auth/${authFileName}.json`;
+          const authFilePath = PathManager.getAuthPath(authFileName);
           const fs = require('fs');
           
           if (fs.existsSync(authFilePath)) {

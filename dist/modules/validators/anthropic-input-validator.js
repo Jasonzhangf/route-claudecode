@@ -8,7 +8,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicInputValidator = void 0;
-const base_module_1 = require("../../interfaces/module/base-module");
+const base_module_1 = require("../interfaces/module/base-module");
 const events_1 = require("events");
 /**
  * Anthropic输入验证模块
@@ -18,7 +18,7 @@ class AnthropicInputValidator extends events_1.EventEmitter {
         super();
         this.id = 'anthropic-input-validator';
         this.name = 'Anthropic Input Validator';
-        this.type = base_module_1.ModuleType.VALIDATOR;
+        this.type = base_module_1.ModuleType.VALIDATION;
         this.version = '1.0.0';
         this.status = 'stopped';
         this.connections = new Map();
@@ -137,7 +137,7 @@ class AnthropicInputValidator extends events_1.EventEmitter {
     async validateInput(input) {
         // 原有的验证逻辑
         if (!input) {
-            return { valid: false, errors: ['Input is required'] };
+            return { isValid: false, errors: ['Input is required'] };
         }
         const errors = [];
         try {
@@ -150,11 +150,11 @@ class AnthropicInputValidator extends events_1.EventEmitter {
                 this.validateTools(input.tools);
             }
             this.validateParameterRanges(input);
-            return { valid: true, errors: [] };
+            return { isValid: true, errors: [] };
         }
         catch (error) {
             return {
-                valid: false,
+                isValid: false,
                 errors: [error instanceof Error ? error.message : String(error)],
             };
         }
@@ -463,6 +463,30 @@ class AnthropicInputValidator extends events_1.EventEmitter {
         this.on('moduleMessage', (data) => {
             listener(data.fromModuleId, data.message, data.type);
         });
+    }
+    /**
+     * 获取连接状态
+     */
+    getConnectionStatus(targetModuleId) {
+        const connection = this.connections.get(targetModuleId);
+        if (!connection) {
+            return 'disconnected';
+        }
+        const status = connection.getStatus();
+        return status.status === 'running' ? 'connected' : status.status;
+    }
+    /**
+     * 验证连接
+     */
+    validateConnection(targetModule) {
+        try {
+            const status = targetModule.getStatus();
+            const metrics = targetModule.getMetrics();
+            return status.status === 'running' && status.health === 'healthy';
+        }
+        catch (error) {
+            return false;
+        }
     }
 }
 exports.AnthropicInputValidator = AnthropicInputValidator;

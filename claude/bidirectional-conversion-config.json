@@ -1,0 +1,40 @@
+{
+  "transformer": {
+    "request": {
+      "description": "Anthropic to OpenAI request transformation",
+      "input_format": "Anthropic",
+      "output_format": "OpenAI",
+      "method": "transformRequest"
+    },
+    "response": {
+      "description": "OpenAI to Anthropic response transformation",
+      "input_format": "OpenAI",
+      "output_format": "Anthropic",
+      "method": "transformResponse"
+    }
+  },
+  "server_compatibility": {
+    "request": {
+      "description": "Provider-specific request compatibility processing",
+      "method": "processRequest"
+    },
+    "response": {
+      "description": "Provider-specific response compatibility processing",
+      "method": "processResponse"
+    }
+  },
+  "protocol": {
+    "request": {
+      "description": "Protocol control for requests",
+      "streaming_control": "streaming to non-streaming conversion",
+      "validation": "protocol format validation",
+      "method": "processRequest"
+    },
+    "response": {
+      "description": "Protocol control for responses",
+      "streaming_control": "non-streaming to streaming conversion",
+      "validation": "protocol format validation",
+      "method": "processResponse"
+    }
+  }
+}

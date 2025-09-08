@@ -1,7 +1,7 @@
 {
   "name": "route-claudecode",
-  "version": "4.0.0",
-  "description": "Claude Code Router v4.0 - A high-performance, scalable multi-AI provider routing and transformation system",
+  "version": "4.5.0",
+  "description": "Claude Code Router v4.5 - A high-performance, scalable multi-AI provider routing and transformation system",
   "main": "dist/index.js",
   "bin": {
     "rcc4": "dist/cli.js"
@@ -10,10 +10,12 @@
     "build": "tsc",
     "start:test": "npx ts-node src/index.ts --port 5511",
     "start:ccr": "cd ../claude-code-router && npm start -- --port 5510",
-    "test:basic": "npx jest src/__tests__/basic-transformer.test.ts",
+    "test:basic": "npx jest src/__tests__/core-transformer.test.ts",
     "test:tools": "npx jest src/__tests__/tool-calling-transformer.test.ts",
     "test:streaming": "npx jest src/__tests__/streaming-protocol.test.ts",
     "test:complex": "npx jest src/__tests__/complex-scenarios.test.ts",
+    "test:pipeline-startup": "npx jest src/__tests__/pipeline-startup.test.ts",
+    "test:individual-pipeline": "npx jest src/__tests__/individual-pipeline.test.ts",
     "test:all": "./scripts/run-test-suite.sh",
     "test:compare": "./scripts/generate-comparison-report.sh",
     "test:verify": "./scripts/verify-fixes.sh",
@@ -21,6 +23,11 @@
     "fix:verify": "./scripts/auto-fix.sh --verify-only",
     "fix:dry-run": "./scripts/auto-fix.sh --dry-run",
     "test": "jest --json --outputFile=./test-results/unit-test-report.json --coverage --coverageDirectory=./coverage"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "testTimeout": 30000
   },
   "keywords": [
     "claude",
@@ -40,7 +47,9 @@
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
+    "@types/node": "^20.0.0",
     "jest": "^30.1.3",
-    "ts-jest": "^29.4.1"
+    "ts-jest": "^29.4.1",
+    "typescript": "^5.0.0"
   }
 }

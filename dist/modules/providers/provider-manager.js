@@ -9,11 +9,18 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ProviderManager = void 0;
 const provider_factory_1 = require("./provider-factory");
+const debug_integration_1 = require("../logging/src/debug-integration");
 /**
  * Provider管理器
  */
 class ProviderManager {
     constructor(config = {}) {
+        this.debugIntegration = new debug_integration_1.ModuleDebugIntegration({
+            moduleId: 'providers',
+            moduleName: 'ProviderManager',
+            enabled: true,
+            captureLevel: 'full'
+        });
         this.config = {
             routingStrategy: 'round-robin',
             healthCheckInterval: 30000, // 30秒

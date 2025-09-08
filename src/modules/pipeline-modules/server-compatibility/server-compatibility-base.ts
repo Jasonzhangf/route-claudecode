@@ -6,6 +6,7 @@
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
+import { PIPELINE_ERROR_MESSAGES } from '../../constants/src/pipeline-constants';
 
 /**
  * 双向兼容性处理接口
@@ -213,7 +214,7 @@ export abstract class ServerCompatibilityModule extends EventEmitter implements 
    */
   async process(input: any): Promise<any> {
     if (this.status.status !== 'running') {
-      throw new Error('Module is not running');
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.INVALID_INPUT);
     }
     
     const startTime = Date.now();
@@ -272,7 +273,7 @@ export abstract class ServerCompatibilityModule extends EventEmitter implements 
         
         return output;
       } else {
-        throw new Error('Unsupported input format');
+        throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.INVALID_INPUT);
       }
     } catch (error) {
       this.metrics.errorRate = 

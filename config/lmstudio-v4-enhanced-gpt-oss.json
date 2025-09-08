@@ -1,0 +1,107 @@
+{
+  "// === RCC v4.0 Gpt-OSS-20B-MLX 专业配置 ===": "",
+  
+  "// === PROVIDERS 区 ===": "",
+  "Providers": [
+    {
+      "name": "lmstudio", 
+      "protocol": "openai",
+      "api_base_url": "http://localhost:1234/v1",
+      "api_key": "lm-studio",
+      "timeout": 120000,
+      "maxTokens": 32768,
+      "models": [
+        "gpt-oss-20b-mlx",
+        "llama-3.1-8b-instruct",
+        "qwen3-coder-30b-a3b-instruct-mlx",
+        "nextcoder-32b-mlx",
+        "qwen3-4b-thinking-2507-mlx",
+        "gemma-3n-e2b-it-mlx",
+        "external/gemma-3-27b-it-ud-q4_k_xl/gemma-3-27b-it-ud-q4_k_xl.gguf"
+      ],
+      "model_blacklist": [
+        "模型判断的排除列表 - 无需列入models中的模型都会被自动排除"
+      ]
+    }
+  ],
+
+  "// === ROUTER 区 (高级智能路由) ===": "",
+  "Router": {
+    "// 核心路由策略 - 默认使用最佳模型": "",
+    "default": "lmstudio,gpt-oss-20b-mlx",
+    
+    "// 专业代码开发路由策略": "",
+    "coding": "lmstudio,nextcoder-32b-mlx",
+    "code_refactor": "lmstudio,nextcoder-32b-mlx", 
+    "code_optimization": "lmstudio,nextcoder-32b-mlx",
+    "github_pr_review": "lmstudio,nextcoder-32b-mlx",
+    
+    "// 复杂推理和问题解决路由策略": "",
+    "reasoning": "lmstudio,gpt-oss-20b-mlx",
+    "debate": "lmstudio,gpt-oss-20b-mlx",
+    "analysis": "lmstudio,gpt-oss-20b-mlx",
+    "creative_writing": "lmstudio,gpt-oss-20b-mlx",
+    
+    "// 快速响应和简单任务路由策略": "",
+    "quick": "lmstudio,llama-3.1-8b-instruct",
+    "summarization": "lmstudio,llama-3.1-8b-instruct",
+    "translation": "lmstudio,llama-3.1-8b-instruct",
+    
+    "// 长上下文和文档处理路由策略": "",
+    "longContext": "lmstudio,gpt-oss-20b-mlx",
+    "document_analysis": "lmstudio,gpt-oss-20b-mlx",
+    "book_parsing": "lmstudio,gpt-oss-20b-mlx",
+    
+    "// 特殊技术场景路由策略": "",
+    "webSearch": "lmstudio,gpt-oss-20b-mlx",
+    "database_design": "lmstudio,nextcoder-32b-mlx",
+    "testing": "lmstudio,nextcoder-32b-mlx",
+    "refactoring": "lmstudio,nextcoder-32b-mlx"
+  },
+
+  "// === 高级路由规则和模式 ===": "",
+  "AdvancedRouting": {
+    "confidenceThresholds": {
+      "programmingConfidence": 0.85,
+      "reasoningConfidence": 0.80,
+      "creativeConfidence": 0.75
+    },
+    "fallbackModels": {
+      "primary": "lmstudio,gpt-oss-20b-mlx",
+      "strategic_fallback": "lmstudio,qwen3-coder-30b-a3b-instruct-mlx",
+      "performance_fallback": "lmstudio,llama-3.1-8b-instruct"
+    }
+  },
+
+  "// === 系统级配置 ===": "",
+  "APIKEY": "rcc4-optimized-gpt-oss",
+  "HOST": "0.0.0.0",
+  "PORT": 5508,
+  "DEBUG": true,
+  
+  "// === 性能和可靠性配置 ===": "",
+  "Performance": {
+    "requestTimeout": 120,
+    "maxRetries": 3,
+    "retryBackoff": "exponential",
+    "circuitBreakerThreshold": 5,
+    "healthCheckInterval": 30,
+    "maxConcurrentRequests": 100
+  },
+  
+  "// === 安全和监控配置 ===": "",
+  "Security": {
+    "rateLimit": "moderate",
+    "contentFilter": "enabled",
+    "modelTierValidation": "strict"
+  },
+  
+  "// === 扩展功能配置 ===": "",
+  "Features": {
+    "streaming": "enabled",
+    "toolUse": "enabled",
+    "toolCalls": "enabled",
+    "responseValidation": "enabled",
+    "usageAnalytics": "enabled"
+  }
+}

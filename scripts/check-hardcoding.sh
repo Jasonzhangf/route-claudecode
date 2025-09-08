@@ -178,23 +178,21 @@ generate_report() {
     local total_files=$(git ls-files "src/**/*.ts" | grep -v "constants" | grep -v "__tests__" | wc -l)
     echo "📁 检查文件数量: $total_files"
     
-    local constants_files=$(git ls-files "src/constants/*.ts" 2>/dev/null | wc -l || echo 0)
+    local constants_files=$(git ls-files "src/modules/constants/src/*.ts" 2>/dev/null | wc -l || echo 0)
     echo "📋 Constants文件数量: $constants_files"
     
-    if [ "$constants_files" -eq 0 ]; then
-        echo "⚠️  警告：未发现 src/constants/ 目录，建议创建并迁移硬编码值"
-    fi
-    
     echo ""
-    echo "📝 建议的Constants文件结构："
-    echo "   src/constants/"
-    echo "   ├── index.ts                 # 统一导出"
-    echo "   ├── api-defaults.ts          # API默认值"
-    echo "   ├── server-defaults.ts       # 服务器默认值"
-    echo "   ├── timeout-defaults.ts      # 超时默认值"
-    echo "   ├── error-messages.ts        # 错误消息"
-    echo "   ├── file-paths.ts            # 文件路径"
-    echo "   └── model-mappings.ts        # 模型映射"
+    echo "📝 现有的Constants文件结构："
+    echo "   src/modules/constants/src/"
+    echo "   ├── index.ts                 # 统一导出 (已存在)"
+    echo "   ├── bootstrap-constants.ts   # Bootstrap配置常量 (已存在)"
+    echo "   ├── error-messages.ts        # 错误消息 (已存在)"
+    echo "   ├── model-mappings.ts        # 模型映射 (已存在)"
+    echo "   └── test-constants.ts        # 测试常量 (已存在)"
+    echo ""
+    echo "📖 查看现有常量："
+    echo "   cat src/modules/constants/src/bootstrap-constants.ts"
+    echo "   cat src/modules/constants/src/model-mappings.ts"
 }
 
 # 执行所有检查

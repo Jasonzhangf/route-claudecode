@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-05 13:47:16",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/tools/src/__tests__/tools-module.test.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

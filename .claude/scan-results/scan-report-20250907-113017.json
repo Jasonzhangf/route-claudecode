@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-09-07 11:30:17",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/constants/src/test-constants.ts",
+  "violations_found": true,
+  "violation_count": 2,
+  "violations": [
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/constants/src/test-constants.ts 中发现硬编码: 5506"
+,
+    "HARDCODING: 在 /Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/constants/src/test-constants.ts 中发现硬编码: 3000"
+  ],
+  "scan_status": "completed"
+}

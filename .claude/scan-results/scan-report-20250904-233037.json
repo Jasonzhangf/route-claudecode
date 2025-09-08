@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-04 23:30:37",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/pipeline/__tests__/pipeline-assembler.test.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

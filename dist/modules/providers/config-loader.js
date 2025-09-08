@@ -22,19 +22,32 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigLoader = void 0;
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const JSON5 = __importStar(require("json5"));
-const jq_json_handler_1 = require("../../utils/jq-json-handler");
+const jq_json_handler_1 = __importDefault(require("../error-handler/src/utils/jq-json-handler"));
 /**
  * Provider配置加载器
  */
@@ -100,7 +113,7 @@ class ConfigLoader {
     static parseConfig(content, format) {
         switch (format) {
             case 'json':
-                return jq_json_handler_1.JQJsonHandler.parseJsonString(content);
+                return jq_json_handler_1.default.parseJsonString(content);
             case 'json5':
                 return JSON5.parse(content);
             case 'yaml':
@@ -211,7 +224,7 @@ class ConfigLoader {
         let content;
         switch (configFormat) {
             case 'json':
-                content = jq_json_handler_1.JQJsonHandler.stringifyJson(config, false);
+                content = jq_json_handler_1.default.stringifyJson(config, false);
                 break;
             case 'json5':
                 content = JSON5.stringify(config, null, 2);

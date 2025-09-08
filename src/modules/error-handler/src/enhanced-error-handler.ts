@@ -202,21 +202,43 @@ export class EnhancedErrorHandler implements IErrorCoordinationCenter {
    * 处理通用错误（实现ErrorCoordinationCenter接口）
    */
   handleError(error: Error, context?: any): InterfaceErrorHandlingResult {
-    // Note: This implementation has design limitations due to the sync interface requirement
-    // In a real implementation, we would need to handle async operations differently
-    
     try {
       // Convert interface context to internal context
       const internalContext = context as LocalErrorContext;
       
-      // Log that we received an error to handle (simplified implementation)
+      // Check if this is an RCC error with user action required
+      if (error instanceof RCCError && error.context?.details) {
+        const details = error.context.details;
+        
+        // Handle OAuth authorization required
+        if (details.requiresUserAction && details.userActionType === 'oauth_authorization') {
+          secureLogger.info('OAuth authorization required - displaying user notification', {
+            provider: details.provider,
+            authFile: details.authFile,
+            oauthUrl: details.userActionUrl,
+            reason: details.reason
+          });
+          
+          // Display OAuth link to user
+          this.displayOAuthNotification(details);
+          
+          return {
+            handled: true,
+            action: 'OAuth authorization required',
+            actionTaken: 'OAuth link displayed to user',
+            success: true,
+            message: `Please authorize at: ${details.userActionUrl}`
+          };
+        }
+      }
+      
+      // Standard error logging
       secureLogger.debug('Error received for handling', {
         errorName: error.name,
         errorMessage: error.message,
         context: internalContext
       });
       
-      // Return a basic success response since we can't do async operations
       return {
         handled: true,
         action: 'Error received and logged',
@@ -231,6 +253,104 @@ export class EnhancedErrorHandler implements IErrorCoordinationCenter {
         success: false,
         message: handleError instanceof Error ? handleError.message : String(handleError)
       };
+    }
+  }
+
+  /**
+   * 显示OAuth授权通知给用户并启动授权流程
+   * @param details 错误详情包含OAuth信息
+   */
+  private displayOAuthNotification(details: any): void {
+    try {
+      const provider = details.provider?.toLowerCase();
+      const oauthUrl = details.userActionUrl;
+      
+      // 记录OAuth流程启动
+      secureLogger.info('Starting OAuth authorization flow', {
+        provider: details.provider,
+        authFile: details.authFile,
+        oauthUrl: oauthUrl
+      });
+      
+      // 在控制台显示通知
+      console.log('\n' + '='.repeat(80));
+      console.log('🔐 OAuth授权流程启动');
+      console.log('='.repeat(80));
+      console.log(`Provider: ${details.provider || 'Unknown'}`);
+      console.log(`Auth File: ${details.authFile || 'Unknown'}`);
+      console.log(`Reason: ${details.reason || 'Token refresh failed'}`);
+      console.log(`\n🚀 正在打开浏览器进行授权...`);
+      console.log(`🔗 OAuth URL: ${oauthUrl}`);
+      
+      // 打开浏览器到授权页面
+      this.openBrowser(oauthUrl, details);
+      
+      if (provider === 'qwen') {
+        console.log(`\n📝 Qwen授权说明:`);
+        console.log(`   • 请在打开的页面中登录您的Qwen账号`);
+        console.log(`   • 如果需要输入用户代码，请按页面提示操作`);
+        console.log(`   • 完成授权后，系统将自动获取新的访问令牌`);
+      }
+      
+      console.log('\n⏳ 请在浏览器中完成授权，系统将自动恢复流水线...');
+      console.log('='.repeat(80) + '\n');
+      
+    } catch (error) {
+      console.log('❌ OAuth授权流程启动失败，请手动打开链接:');
+      console.log(`🔗 ${details.userActionUrl || 'OAuth URL not available'}`);
+      
+      secureLogger.error('Failed to start OAuth authorization flow', {
+        error: error instanceof Error ? error.message : String(error),
+        details: details
+      });
+    }
+  }
+
+  /**
+   * 打开浏览器到指定URL
+   * @param url 要打开的URL
+   * @param details 错误详情用于日志
+   */
+  private openBrowser(url: string, details: any): void {
+    try {
+      const { exec } = require('child_process');
+      
+      // 使用系统命令打开浏览器
+      let command = '';
+      if (process.platform === 'darwin') {
+        command = `open "${url}"`;
+      } else if (process.platform === 'win32') {
+        command = `start "${url}"`;
+      } else {
+        command = `xdg-open "${url}"`;
+      }
+      
+      exec(command, (error: any) => {
+        if (error) {
+          console.log('❌ 无法自动打开浏览器，请手动复制链接:');
+          console.log(`🔗 ${url}`);
+          secureLogger.warn('Failed to open browser with system command', {
+            error: error.message,
+            command: command,
+            url: url
+          });
+        } else {
+          console.log('✅ 浏览器已打开授权页面');
+          secureLogger.info('Browser opened using system command', {
+            provider: details.provider,
+            command: command,
+            url: url
+          });
+        }
+      });
+      
+    } catch (error) {
+      console.log('❌ 浏览器启动失败，请手动访问:');
+      console.log(`🔗 ${url}`);
+      secureLogger.error('Browser launch failed', {
+        error: error instanceof Error ? error.message : String(error),
+        url: url
+      });
     }
   }
 

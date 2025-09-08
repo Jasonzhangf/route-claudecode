@@ -18,6 +18,8 @@ import {
   AuthStatus,
   PipelineCheckStatus
 } from './self-check-types';
+import { PROVIDER_MODELS } from '../constants/src/model-mappings';
+import { FILE_PATHS, OAUTH_URLS } from '../constants/src/bootstrap-constants';
 import {
   ModuleStatus,
   ModuleMetrics,
@@ -698,7 +700,7 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       'qwen': 'qwen3-coder-plus',
       'shuaihong': 'glm-4.5'
     };
-    return defaultModels[providerName.toLowerCase()] || 'gpt-3.5-turbo';
+    return defaultModels[providerName.toLowerCase()] || PROVIDER_MODELS.OPENAI.GPT3_5_TURBO;
   }
 
   /**
@@ -811,8 +813,9 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       const fs = require('fs');
       const path = require('path');
       
-      // 假设auth文件存储在特定目录
-      const authFilePath = path.join(process.cwd(), 'auth', `${authFile}.json`);
+      // 通过配置获取auth文件路径，如果未配置则使用默认路径
+      const authDirPath = this.config?.authDirectory || FILE_PATHS.AUTH_DIRECTORY;
+      const authFilePath = path.resolve(authDirPath, `${authFile}.json`);
       
       if (fs.existsSync(authFilePath)) {
         const stats = fs.statSync(authFilePath);
@@ -833,32 +836,42 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
   }
 
   /**
-   * 刷新过期的auth file
+   * 刷新过期的auth file，通过auth模块非阻塞处理
    * @param authFile auth文件名
-   * @returns Promise<boolean> 刷新是否成功
+   * @returns Promise<boolean> 是否立即可用（非阻塞返回）
    */
   async refreshAuthFile(authFile: string): Promise<boolean> {
     try {
-      secureLogger.info('Refreshing auth file', { authFile });
+      secureLogger.info('Starting non-blocking auth file refresh', { authFile });
       
-      // 这里应该实现实际的auth文件刷新逻辑
-      // 可能涉及重新认证、获取新的token等
-      
-      // 占位符实现 - 实际应该调用相应的认证API
       const provider = this.extractProviderFromAuthFile(authFile);
       
-      switch (provider.toLowerCase()) {
-        case 'qwen':
-          return await this.refreshQwenAuth(authFile);
-        case 'iflow':
-          // iFlow通常不需要刷新，使用固定API key
-          return true;
-        default:
-          secureLogger.warn('Unknown provider for auth file refresh', { authFile, provider });
-          return false;
-      }
+      // 立即返回，启动异步刷新流程
+      setImmediate(async () => {
+        try {
+          await this.performAsyncAuthRefresh(authFile, provider);
+        } catch (error) {
+          secureLogger.error('Async auth refresh failed', {
+            authFile,
+            provider,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        }
+      });
+      
+      // 检查当前状态：如果auth文件存在且未过期，返回true
+      const isCurrentlyValid = await this.checkAuthFileCurrentStatus(authFile);
+      
+      secureLogger.info('Non-blocking auth refresh initiated', { 
+        authFile, 
+        provider,
+        currentlyValid: isCurrentlyValid
+      });
+      
+      return isCurrentlyValid;
+      
     } catch (error) {
-      secureLogger.error('Auth file refresh failed', {
+      secureLogger.error('Auth file refresh initiation failed', {
         authFile,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -900,6 +913,388 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
         error: error instanceof Error ? error.message : String(error)
       });
       return false;
+    }
+  }
+
+  /**
+   * 检查auth文件当前状态
+   * @param authFile auth文件名
+   * @returns Promise<boolean> 当前是否可用
+   */
+  private async checkAuthFileCurrentStatus(authFile: string): Promise<boolean> {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const authDirPath = this.config?.authDirectory || FILE_PATHS.AUTH_DIRECTORY;
+      const authFilePath = path.resolve(authDirPath, `${authFile}.json`);
+      
+      if (!fs.existsSync(authFilePath)) {
+        return false;
+      }
+      
+      // 检查是否过期
+      const expired = await this.checkAuthFileExpiry(authFile);
+      return !expired;
+      
+    } catch (error) {
+      secureLogger.error('Failed to check auth file current status', {
+        authFile,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 执行异步auth刷新流程
+   * @param authFile auth文件名
+   * @param provider provider名称
+   */
+  private async performAsyncAuthRefresh(authFile: string, provider: string): Promise<void> {
+    try {
+      secureLogger.info('Starting async auth refresh workflow', { authFile, provider });
+      
+      // Step 1: 调用auth模块进行refresh
+      const authModule = await this.getAuthModule(provider);
+      if (!authModule) {
+        secureLogger.error('Auth module not available', { provider });
+        await this.handleAuthRefreshFailure(authFile, provider, 'Auth module not available');
+        return;
+      }
+      
+      // Step 2: 执行非阻塞refresh
+      const refreshResult = await authModule.forceRefreshTokens(provider, {
+        refreshExpiredOnly: true,
+        maxConcurrent: 2
+      });
+      
+      // Step 3: 验证refresh结果
+      if (refreshResult.success && refreshResult.refreshedTokens.length > 0) {
+        // Step 4: API验证确认
+        const isValid = await this.validateAuthFileWithAPI(authFile, provider);
+        
+        if (isValid) {
+          secureLogger.info('Async auth refresh completed successfully', { 
+            authFile, 
+            provider,
+            refreshedCount: refreshResult.refreshedTokens.length 
+          });
+          
+          // 通知成功，恢复流水线
+          await this.notifyAuthRefreshSuccess(authFile, provider);
+        } else {
+          // API验证失败，触发recreate流程
+          await this.handleAuthRefreshFailure(authFile, provider, 'API validation failed after refresh');
+        }
+      } else {
+        // Refresh失败，触发recreate流程
+        await this.handleAuthRefreshFailure(authFile, provider, refreshResult.error || 'Refresh operation failed');
+      }
+      
+    } catch (error) {
+      secureLogger.error('Async auth refresh workflow failed', {
+        authFile,
+        provider,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      
+      await this.handleAuthRefreshFailure(authFile, provider, error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  /**
+   * 处理auth刷新失败，触发recreate流程
+   * @param authFile auth文件名
+   * @param provider provider名称
+   * @param reason 失败原因
+   */
+  private async handleAuthRefreshFailure(authFile: string, provider: string, reason: string): Promise<void> {
+    try {
+      secureLogger.warn('Auth refresh failed, initiating recreate workflow', { 
+        authFile, 
+        provider, 
+        reason 
+      });
+      
+      // Step 1: 标记相关流水线为维护状态
+      await this.markPipelinesForMaintenance(authFile, provider);
+      
+      // Step 2: 通知error-handler处理recreate流程
+      await this.notifyErrorHandlerForRecreate(authFile, provider, reason);
+      
+    } catch (error) {
+      secureLogger.error('Failed to handle auth refresh failure', {
+        authFile,
+        provider,
+        reason,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * 标记相关流水线为维护状态
+   * @param authFile auth文件名
+   * @param provider provider名称
+   */
+  private async markPipelinesForMaintenance(authFile: string, provider: string): Promise<void> {
+    try {
+      secureLogger.info('Marking pipelines for maintenance', { authFile, provider });
+      
+      // 记录维护状态到自检状态中
+      this.state.errors.push(`Pipeline maintenance required: ${authFile} (${provider}) - auth refresh failed`);
+      
+      // 这里需要与pipeline-manager集成，标记相关流水线为维护状态
+      // 当前记录到错误状态中，实际应用中需要调用pipeline-manager的维护API
+      
+    } catch (error) {
+      secureLogger.error('Failed to mark pipelines for maintenance', {
+        authFile,
+        provider,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * 通知error-handler处理recreate流程
+   * @param authFile auth文件名
+   * @param provider provider名称
+   * @param reason 失败原因
+   */
+  private async notifyErrorHandlerForRecreate(authFile: string, provider: string, reason: string): Promise<void> {
+    try {
+      secureLogger.info('Notifying error handler for recreate workflow', { 
+        authFile, 
+        provider, 
+        reason 
+      });
+      
+      // 创建RCC错误并通过error-handler处理
+      const authError = new RCCError(
+        `Auth recreate required: ${authFile}`,
+        RCCErrorCode.PROVIDER_AUTH_FAILED,
+        'self-check',
+        {
+          module: 'self-check',
+          operation: 'auth_recreate_notification',
+          details: {
+            authFile,
+            provider,
+            reason,
+            requiresUserAction: true,
+            userActionType: 'oauth_authorization',
+            userActionUrl: this.generateOAuthUrl(provider),
+            maintenanceMode: true
+          }
+        }
+      );
+      
+      // 发送到error-handler进行处理
+      await this.errorHandler.handleError(authError);
+      
+      secureLogger.info('Error handler notified for recreate workflow', { 
+        authFile, 
+        provider,
+        errorCode: authError.code 
+      });
+      
+    } catch (error) {
+      secureLogger.error('Failed to notify error handler for recreate', {
+        authFile,
+        provider,
+        reason,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * 通知auth刷新成功
+   * @param authFile auth文件名
+   * @param provider provider名称
+   */
+  private async notifyAuthRefreshSuccess(authFile: string, provider: string): Promise<void> {
+    try {
+      secureLogger.info('Auth refresh successful, restoring pipelines', { authFile, provider });
+      
+      // 从错误状态中移除维护相关的错误
+      this.state.errors = this.state.errors.filter(error => 
+        !error.includes(authFile) || !error.includes('maintenance')
+      );
+      
+      // 这里需要与pipeline-manager集成，恢复相关流水线
+      // 实际应用中需要调用pipeline-manager的恢复API
+      
+    } catch (error) {
+      secureLogger.error('Failed to notify auth refresh success', {
+        authFile,
+        provider,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  /**
+   * 生成OAuth授权URL
+   * @param provider provider名称
+   * @returns string OAuth URL
+   */
+  private generateOAuthUrl(provider: string): string {
+    switch (provider.toLowerCase()) {
+      case 'qwen':
+        return `https://${OAUTH_URLS.QWEN}`;
+      case 'anthropic':
+        return `https://${OAUTH_URLS.ANTHROPIC}`;
+      default:
+        return `https://${OAUTH_URLS.DEFAULT_TEMPLATE.replace('{provider}', provider)}`;
+    }
+  }
+
+  /**
+   * 获取对应provider的auth模块
+   * @param provider provider名称
+   * @returns Promise<AuthenticationModule | null>
+   */
+  private async getAuthModule(provider: string): Promise<any | null> {
+    try {
+      // 这里需要从模块注册表获取auth模块实例
+      // 当前返回null，实际应用中需要连接到真实的模块管理器
+      secureLogger.warn('Auth module integration not implemented', { provider });
+      return null;
+      
+    } catch (error) {
+      secureLogger.error('Failed to get auth module', {
+        provider,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return null;
+    }
+  }
+
+  /**
+   * 使用API验证auth文件有效性
+   * @param authFile auth文件名
+   * @param provider provider名称
+   * @returns Promise<boolean> 是否有效
+   */
+  private async validateAuthFileWithAPI(authFile: string, provider: string): Promise<boolean> {
+    try {
+      secureLogger.info('Validating auth file with API', { authFile, provider });
+      
+      // 检查auth文件是否存在
+      const fs = require('fs');
+      const path = require('path');
+      const authDirPath = this.config?.authDirectory || FILE_PATHS.AUTH_DIRECTORY;
+      const authFilePath = path.resolve(authDirPath, `${authFile}.json`);
+      
+      if (!fs.existsSync(authFilePath)) {
+        secureLogger.warn('Auth file not found, should be removed from configuration', { authFile, authFilePath });
+        await this.removeAuthFileReference(authFile);
+        return false;
+      }
+      
+      // 读取auth文件内容
+      const authData = JSON.parse(fs.readFileSync(authFilePath, 'utf8'));
+      
+      switch (provider.toLowerCase()) {
+        case 'qwen':
+          if (!authData.access_token) {
+            secureLogger.warn('Invalid Qwen auth file: missing access_token', { authFile });
+            return false;
+          }
+          return await this.verifyQwenApiKeyWithNetwork(authData.access_token);
+        case 'iflow':
+          return true;
+        default:
+          secureLogger.warn('Unknown provider for API validation', { authFile, provider });
+          return false;
+      }
+    } catch (error) {
+      secureLogger.error('Auth file API validation failed', {
+        authFile,
+        provider,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 创建新的auth文件
+   * @param authFile auth文件名
+   * @returns Promise<boolean> 创建是否成功
+   */
+  private async recreateAuthFile(authFile: string): Promise<boolean> {
+    try {
+      secureLogger.info('Recreating auth file', { authFile });
+      
+      const provider = this.extractProviderFromAuthFile(authFile);
+      
+      switch (provider.toLowerCase()) {
+        case 'qwen':
+          return await this.createQwenAuthFile(authFile);
+        case 'iflow':
+          secureLogger.info('iFlow uses API keys, no auth file needed', { authFile });
+          return true;
+        default:
+          secureLogger.warn('Unknown provider for auth file recreation', { authFile, provider });
+          return false;
+      }
+    } catch (error) {
+      secureLogger.error('Auth file recreation failed', {
+        authFile,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 创建Qwen auth文件
+   * @param authFile auth文件名
+   * @returns Promise<boolean> 创建是否成功
+   */
+  private async createQwenAuthFile(authFile: string): Promise<boolean> {
+    try {
+      secureLogger.info('Creating new Qwen auth file requires manual OAuth', { authFile });
+      
+      // Qwen auth文件创建需要用户手动完成OAuth流程
+      // 系统无法自动获取用户授权，需要提示用户手动操作
+      
+      secureLogger.error('Cannot automatically create Qwen auth file - requires manual OAuth authorization', { 
+        authFile,
+        suggestion: 'User must complete OAuth flow manually to generate auth file'
+      });
+      
+      return false;
+      
+    } catch (error) {
+      secureLogger.error('Failed to create Qwen auth file', {
+        authFile,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
+    }
+  }
+
+  /**
+   * 从配置中移除auth文件引用
+   * @param authFile auth文件名
+   * @returns Promise<void>
+   */
+  private async removeAuthFileReference(authFile: string): Promise<void> {
+    try {
+      secureLogger.info('Auth file not found, should be removed from configuration', { authFile });
+      
+      // 记录需要手动从配置中移除的auth文件引用
+      this.state.errors.push(`Auth file not found: ${authFile} - should be removed from configuration`);
+      
+    } catch (error) {
+      secureLogger.error('Failed to process missing auth file reference', {
+        authFile,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }
 
@@ -983,7 +1378,8 @@ export class SelfCheckService extends BaseModule implements ISelfCheckModule {
       const fs = require('fs');
       const path = require('path');
       
-      const authFilePath = path.join(process.cwd(), 'auth', `${authFile}.json`);
+      const authDirPath = this.config?.authDirectory || FILE_PATHS.AUTH_DIRECTORY;
+      const authFilePath = path.resolve(authDirPath, `${authFile}.json`);
       if (!fs.existsSync(authFilePath)) {
         return false;
       }

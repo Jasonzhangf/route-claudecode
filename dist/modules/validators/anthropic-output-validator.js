@@ -8,7 +8,7 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnthropicOutputValidator = void 0;
-const base_module_1 = require("../../interfaces/module/base-module");
+const base_module_1 = require("../interfaces/module/base-module");
 const events_1 = require("events");
 /**
  * Anthropic输出验证模块
@@ -93,11 +93,35 @@ class AnthropicOutputValidator extends events_1.EventEmitter {
             listener(data.fromModuleId, data.message, data.type);
         });
     }
+    /**
+     * 获取连接状态
+     */
+    getConnectionStatus(targetModuleId) {
+        const connection = this.connections.get(targetModuleId);
+        if (!connection) {
+            return 'disconnected';
+        }
+        const status = connection.getStatus();
+        return status.status === 'running' ? 'connected' : status.status;
+    }
+    /**
+     * 验证连接
+     */
+    validateConnection(targetModule) {
+        try {
+            const status = targetModule.getStatus();
+            const metrics = targetModule.getMetrics();
+            return status.status === 'running' && status.health === 'healthy';
+        }
+        catch (error) {
+            return false;
+        }
+    }
     constructor(id = 'anthropic-output-validator', config = {}) {
         super();
         this.id = 'anthropic-output-validator';
         this.name = 'Anthropic Output Validator';
-        this.type = base_module_1.ModuleType.VALIDATOR;
+        this.type = base_module_1.ModuleType.VALIDATION;
         this.version = '1.0.0';
         this.status = 'stopped';
         this.metrics = {

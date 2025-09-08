@@ -12,6 +12,7 @@
 import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 // TODO: API化 - 通过Pipeline API获取处理上下文
 // import { ModuleProcessingContext } from '../../../config/unified-config-manager';
+import { PIPELINE_ERROR_MESSAGES } from '../../constants/src/pipeline-constants';
 
 /**
  * 模块处理上下文接口 - API化版本

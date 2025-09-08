@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-07 11:16:13",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/__tests__/qwen-only/qwen-only-config.json",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

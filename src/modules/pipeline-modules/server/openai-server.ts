@@ -17,6 +17,14 @@ import { UnifiedErrorHandlerInterface } from '../../error-handler/src/unified-er
 import { UnifiedErrorHandlerFactory } from '../../error-handler/src/unified-error-handler-impl';
 import { ErrorContext } from '../../interfaces/core/error-coordination-center';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
+import { 
+  API_PATHS, 
+  PROTOCOL_BASE_URLS, 
+  MODEL_LIMITS, 
+  getModelLimits,
+  PROTOCOL_DEFAULTS,
+  USER_AGENTS
+} from '../../constants/src/pipeline-constants';
 
 // 根据环境选择HTTP客户端
 const https = require('https');
@@ -275,7 +283,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
     // 根据认证方法创建客户端 - 只在有API密钥的情况下才初始化
     if (apiKey && this.preConfig.authMethod === 'bearer') {
       // Bearer Token认证模式 - 不创建OpenAI SDK实例
-      console.log(`🌐 初始化Bearer Token认证模式: ${this.preConfig.baseURL || 'https://api.openai.com'}`);
+      console.log(`🌐 初始化Bearer Token认证模式: ${this.preConfig.baseURL || PROTOCOL_BASE_URLS.OPENAI.DEFAULT}`);
       console.log(`🔑 认证方法: Bearer Token (非标准OpenAI)`);
     } else if (apiKey && this.preConfig.authMethod !== 'bearer') {
       // 标准OpenAI SDK模式
@@ -661,8 +669,8 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
       
       // iFlow特定头部（基于CLIProxyAPI实现）
       if (this.preConfig.baseURL?.includes('iflow') || currentApiKey?.startsWith('sk-')) {
-        headers['User-Agent'] = 'google-api-nodejs-client/9.15.1';
-        headers['X-Goog-Api-Client'] = 'gl-node/22.17.0';
+        headers['User-Agent'] = USER_AGENTS.GOOGLE_API_NODEJS;
+        headers['X-Goog-Api-Client'] = USER_AGENTS.GL_NODE;
         headers['Client-Metadata'] = 'ideType=IDE_UNSPECIFIED,platform=PLATFORM_UNSPECIFIED,pluginType=GEMINI';
       }
     }
@@ -922,7 +930,7 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
    */
   private async sendBearerTokenRequest(request: ServerRequest, requestId: string): Promise<ServerResponse> {
     return new Promise((resolve, reject) => {
-      const url = new URL('/v1/chat/completions', this.preConfig.baseURL || 'https://api.openai.com');
+      const url = new URL(API_PATHS.OPENAI.CHAT_COMPLETIONS, this.preConfig.baseURL || PROTOCOL_BASE_URLS.OPENAI.DEFAULT);
       const isHttps = url.protocol === 'https:';
       const httpClient = isHttps ? https : http;
 
@@ -1010,18 +1018,10 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
   }
 
   /**
-   * 获取模型限制信息
+   * 获取模型限制信息 - 使用常量管理的版本
    */
   getModelLimits(modelName: string): { maxTokens: number; maxRequestTokens: number } {
-    const limits: Record<string, { maxTokens: number; maxRequestTokens: number }> = {
-      'gpt-4': { maxTokens: 8192, maxRequestTokens: 6000 },
-      'gpt-4-turbo': { maxTokens: 128000, maxRequestTokens: 100000 },
-      'gpt-3.5-turbo': { maxTokens: 16384, maxRequestTokens: 12000 },
-      'gpt-4o': { maxTokens: 128000, maxRequestTokens: 100000 },
-      'gpt-4o-mini': { maxTokens: 128000, maxRequestTokens: 100000 },
-    };
-
-    return limits[modelName] || { maxTokens: 8192, maxRequestTokens: 6000 };
+    return getModelLimits(modelName, 'OPENAI');
   }
 
   /**

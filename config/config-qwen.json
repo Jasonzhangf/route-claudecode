@@ -1,0 +1,38 @@
+{
+  "version": "4.0",
+  "templateVersion": "1.0.0",
+  "description": "Qwen单供应商调试配置",
+  "Providers": [
+    {
+      "name": "qwen",
+      "priority": 1,
+      "protocol": "openai",
+      "api_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "apiKey": "qwen-auth-1",
+      "models": [
+        "qwen3-coder-flash",
+        "qwen-turbo",
+        "qwen-plus",
+        "qwen-max"
+      ],
+      "serverCompatibility": {
+        "use": "qwen",
+        "options": {
+          "maxTokens": 262144,
+          "enhanceTool": true
+        }
+      }
+    }
+  ],
+  "Router": {
+    "default": "qwen,qwen3-coder-flash"
+  },
+  "server": {
+    "port": 5512,
+    "host": "0.0.0.0",
+    "debug": true,
+    "requestTimeout": 120000
+  },
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0"
+}

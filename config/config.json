@@ -1,0 +1,856 @@
+{
+  "// === RCC v4.0 混合多Provider配置文件 ===": "",
+  "// 支持OpenAI兼容的多Provider负载均衡和故障转移": "",
+  "version": "4.0",
+  "templateVersion": "1.0.0",
+  "description": "混合多Provider配置 - 4层优先级路由",
+  "lastUpdated": "2025-08-25T00:55:00Z",
+  "// === PROVIDERS 区 - 按优先级排序 ===": "",
+  "// 1. Qwen (最高优先级) - OAuth2认证": "",
+  "// 2. Shuaihong - API密钥认证": "",
+  "// 3. ModelScope - API密钥认证": "",
+  "// 4. LM Studio (最低优先级) - 本地API": "",
+  "Providers": [
+    {
+      "name": "qwen",
+      "priority": 1,
+      "protocol": "openai",
+      "baseURL": "https://dashscope.aliyuncs.com/compatible-mode",
+      "apiKey": "qwen-auth-1",
+      "models": [
+        {
+          "name": "qwen3-coder-plus",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen3-coder-flash",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen-max",
+          "maxTokens": 2000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen-plus",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen-turbo",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen-long",
+          "maxTokens": 10000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen2.5-72b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen2.5-32b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen2.5-14b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen2.5-7b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen2.5-coder-32b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen2.5-coder-14b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen2.5-coder-7b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwq-32b-preview",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "reasoning",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        }
+      ],
+      "model_blacklist": [
+        "// === Qwen Provider 用户黑名单 ===",
+        "// 示例：不需要的模型可以添加到这里",
+        "// qwen2.5-7b-instruct,",
+        "// qwen-turbo,",
+        "",
+        "// 已黑名单的模型:",
+        "qwen2.5-72b-instruct",
+        "qwen2.5-32b-instruct",
+        "qwen2.5-14b-instruct",
+        "qwen2.5-7b-instruct",
+        "qwen2.5-coder-32b-instruct",
+        "qwen2.5-coder-14b-instruct",
+        "qwen2.5-coder-7b-instruct"
+      ],
+      "serverCompatibility": {
+        "use": "qwen",
+        "options": {
+          "maxTokens": 262144,
+          "enhanceTool": true
+        }
+      },
+      "lastUpdated": "2025-08-26T09:22:23.935Z"
+    },
+    {
+      "name": "shuaihong",
+      "priority": 2,
+      "protocol": "openai",
+      "baseURL": "http://ai.shuaihong.xyz:3939",
+      "apiKey": "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl",
+      "models": [
+        {
+          "name": "gpt-4o",
+          "maxTokens": 131072,
+          "capabilities": [
+            "multimodal",
+            "image-processing"
+          ]
+        },
+        {
+          "name": "gpt-4o-mini",
+          "maxTokens": 131072,
+          "capabilities": [
+            "multimodal",
+            "image-processing"
+          ]
+        },
+        {
+          "name": "claude-3-5-sonnet",
+          "maxTokens": 200000,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "claude-3-sonnet",
+          "maxTokens": 200000,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "gpt-5",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "gemini-2.5-pro",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.0-flash-exp",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "deepseek-r1",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "deepseek-v3.1",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "glm-4.5",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "deepseek-r1t2",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "gemini-2.0-flash",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-flash",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-flash-lite",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-flash-lite-联网",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-flash-thinking",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "reasoning",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-flash-联网",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-pro-preview-05-06",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-pro-preview-06-05",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-pro-thinking",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "reasoning",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "gemini-2.5-pro-联网",
+          "maxTokens": 2097152,
+          "capabilities": [
+            "programming",
+            "multimodal",
+            "image-processing",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "glm-4.5-air",
+          "maxTokens": 128000
+        },
+        {
+          "name": "glm-4.5-flash",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "glm-4.5v",
+          "maxTokens": 128000
+        },
+        {
+          "name": "gpt-4.1",
+          "maxTokens": 128000
+        },
+        {
+          "name": "gpt-4.1-mini",
+          "maxTokens": 128000
+        },
+        {
+          "name": "gpt-4.1-nano",
+          "maxTokens": 128000
+        },
+        {
+          "name": "gpt-5-mini",
+          "maxTokens": 128000
+        },
+        {
+          "name": "gpt-5-nano",
+          "maxTokens": 128000
+        },
+        {
+          "name": "gpt-oss-20b",
+          "maxTokens": 131072
+        },
+        {
+          "name": "grok-3",
+          "maxTokens": 128000
+        },
+        {
+          "name": "grok-3-search",
+          "maxTokens": 128000
+        },
+        {
+          "name": "horizon",
+          "maxTokens": 128000
+        },
+        {
+          "name": "kimi-k2",
+          "maxTokens": 128000
+        },
+        {
+          "name": "qwen2-7b",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen3-235b-a22b",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen3-235b-a22b-2507",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen3-235b-a22b-instruct-2507",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "qwen3-235b-a22b-thinking-2507",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "qwen3-coder",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen3-coder-480b-a35b-instruct",
+          "maxTokens": 1000000,
+          "capabilities": [
+            "programming",
+            "long-context",
+            "extended-long-context",
+            "ultra-long-context"
+          ]
+        },
+        {
+          "name": "qwen3-reranker-8b",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "step3",
+          "maxTokens": 128000
+        }
+      ],
+      "model_blacklist": [
+        "// === Shuaihong Provider 用户黑名单 ===",
+        "// 示例：屏蔽小模型或特定模型",
+        "",
+        "// 已黑名单的模型:",
+        "gemma-3-1b-it",
+        "gemma-3-4b-it",
+        "gemma-3-12b-it",
+        "gemma-3-27b-it",
+        "gemma-3n-e2b",
+        "gemma-3n-e2b-it",
+        "gemma-3n-e4b-it"
+      ],
+      "serverCompatibility": {
+        "use": "passthrough",
+        "options": {
+          "maxTokens": 262144,
+          "enhanceTool": true
+        }
+      },
+      "lastUpdated": "2025-08-26T09:23:21.646Z"
+    },
+    {
+      "name": "modelscope",
+      "priority": 3,
+      "protocol": "openai",
+      "baseURL": "https://api-inference.modelscope.cn",
+      "apiKey": "ms-cc2f461b-8228-427f-99aa-1d44fab73e67",
+      "apiKeys": [
+        "ms-cc2f461b-8228-427f-99aa-1d44fab73e67",
+        "ms-7d6c4fdb-4bf1-40b3-9ec6-ddea16f6702b",
+        "ms-7af85c83-5871-43bb-9e2f-fc099ef08baf",
+        "ms-9215edc2-dc63-4a33-9f53-e6a6080ec795"
+      ],
+      "models": [
+        {
+          "name": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+          "maxTokens": 65536,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "ZhipuAI/GLM-4.5",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+          "maxTokens": 65536,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+          "maxTokens": 65536,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "deepseek-ai/DeepSeek-V3",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming",
+            "reasoning",
+            "long-context"
+          ]
+        },
+        {
+          "name": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming",
+            "reasoning",
+            "long-context"
+          ]
+        },
+        {
+          "name": "Qwen/Qwen2.5-Coder-32B-Instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "Qwen/QwQ-32B-Preview",
+          "maxTokens": 128000,
+          "capabilities": [
+            "reasoning",
+            "long-context"
+          ]
+        },
+        {
+          "name": "mistralai/Mistral-Large-Instruct-2407",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        },
+        {
+          "name": "LLM-Research/c4ai-command-r-plus-08-2024",
+          "maxTokens": 128000,
+          "capabilities": [
+            "programming",
+            "long-context"
+          ]
+        }
+      ],
+      "model_blacklist": [
+        "// === ModelScope Provider 用户黑名单 ===",
+        "// 屏蔽小参数模型和不稳定模型",
+        "",
+        "// 小参数模型:",
+        "Qwen/Qwen3-0.6B",
+        "Qwen/Qwen3-1.7B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        "",
+        "// 可以添加更多需要屏蔽的模型",
+        "// XGenerationLab/XiYanSQL-QwenCoder-32B-2412,",
+        "",
+        "// 其他黑名单模型:",
+        "Qwen/Qwen3-30B-A3B-Thinking-2507",
+        "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+        "mistralai/Mistral-Large-Instruct-2407",
+        "Qwen/Qwen2.5-Coder-32B-Instruct",
+        "Qwen/Qwen2.5-Coder-14B-Instruct",
+        "Qwen/Qwen2.5-Coder-7B-Instruct",
+        "Qwen/Qwen2.5-72B-Instruct",
+        "Qwen/Qwen2.5-32B-Instruct",
+        "Qwen/Qwen2.5-14B-Instruct",
+        "Qwen/Qwen2.5-7B-Instruct",
+        "Qwen/QwQ-32B-Preview",
+        "opencompass/CompassJudger-1-32B-Instruct",
+        "Qwen/QVQ-72B-Preview",
+        "Qwen/Qwen2-VL-7B-Instruct",
+        "Qwen/Qwen2.5-14B-Instruct-1M",
+        "Qwen/Qwen2.5-7B-Instruct-1M",
+        "Qwen/Qwen2.5-VL-3B-Instruct",
+        "Qwen/Qwen2.5-VL-7B-Instruct",
+        "Qwen/Qwen2.5-VL-72B-Instruct",
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+        "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+        "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+        "deepseek-ai/DeepSeek-V3",
+        "Qwen/QwQ-32B",
+        "XGenerationLab/XiYanSQL-QwenCoder-32B-2412",
+        "Qwen/Qwen2.5-VL-32B-Instruct",
+        "LLM-Research/Llama-4-Scout-17B-16E-Instruct",
+        "Qwen/Qwen3-0.6B",
+        "Qwen/Qwen3-1.7B",
+        "Qwen/Qwen3-4B",
+        "Qwen/Qwen3-8B",
+        "Qwen/Qwen3-14B",
+        "Qwen/Qwen3-30B-A3B",
+        "Qwen/Qwen3-32B",
+        "Qwen/Qwen3-235B-A22B",
+        "XGenerationLab/XiYanSQL-QwenCoder-32B-2504"
+      ],
+      "serverCompatibility": {
+        "use": "passthrough",
+        "options": {
+          "maxTokens": 131072,
+          "enhanceTool": true
+        }
+      },
+      "lastUpdated": "2025-08-25T12:15:00.000Z"
+    },
+    {
+      "name": "lmstudio",
+      "priority": 4,
+      "protocol": "openai",
+      "baseURL": "http://localhost:1234",
+      "apiKey": "lm-studio",
+      "models": [
+        {
+          "name": "seed-oss-36b-instruct",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "glm-4.5v",
+          "maxTokens": 131072
+        },
+        {
+          "name": "unsloth/gpt-oss-120b-gguf/._gpt-oss-120b-q4_k_s-00001-of-00002.gguf",
+          "maxTokens": 131072
+        },
+        {
+          "name": "unsloth/gpt-oss-120b-gguf/gpt-oss-120b-q4_k_s-00001-of-00002.gguf",
+          "maxTokens": 131072
+        },
+        {
+          "name": "qwen3-4b-thinking-2507-mlx",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming",
+            "reasoning"
+          ]
+        },
+        {
+          "name": "gpt-oss-20b-mlx",
+          "maxTokens": 131072
+        },
+        {
+          "name": "qwen3-30b-a3b-instruct-2507-mlx",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "gemma-3n-e2b-it-mlx",
+          "maxTokens": 131072,
+          "capabilities": [
+            "multimodal",
+            "image-processing"
+          ]
+        },
+        {
+          "name": "nextcoder-32b-mlx",
+          "maxTokens": 131072,
+          "capabilities": [
+            "programming"
+          ]
+        },
+        {
+          "name": "external/gemma-3-27b-it-ud-q4_k_xl/gemma-3-27b-it-ud-q4_k_xl.gguf",
+          "maxTokens": 131072,
+          "capabilities": [
+            "multimodal",
+            "image-processing"
+          ]
+        }
+      ],
+      "model_blacklist": [
+        "// === LM Studio Provider 用户黑名单 ===",
+        "// 屏蔽有问题的模型文件路径",
+        "",
+        "// 有问题的文件路径:",
+        "external/gemma-3-27b-it-ud-q4_k_xl/._gemma-3-27b-it-ud-q4_k_xl.gguf",
+        "",
+        "// 非聊天模型 (embedding等):",
+        "bge-small-en-v1.5",
+        "bge-m3",
+        "bge-large-en-v1.5",
+        "text-embedding-ada-002",
+        "",
+        "// 可以屏蔽不需要的本地模型",
+        "// qwen3-4b-thinking-2507-mlx"
+      ],
+      "serverCompatibility": {
+        "use": "lmstudio",
+        "options": {
+          "maxTokens": 262144,
+          "enhanceTool": true
+        }
+      },
+      "lastUpdated": "2025-08-26T09:26:13.635Z"
+    }
+  ],
+  "// === ROUTER 区 - 优化的智能路由配置 ===": "",
+  "// 优化后的路由策略：平衡性能与功能": "",
+  "Router": {
+    "// 🎯 默认路由 - 高性能通用任务": "",
+    "default": "shuaihong,gemini-2.5-flash;modelscope,ZhipuAI/GLM-4.5;qwen,qwen3-coder-plus",
+    "// 📚 长文档处理 - 超长上下文专用": "",
+    "longContext": "shuaihong,gemini-2.5-pro;qwen,qwen-long",
+    "// 🖼️ 图片处理 - 多模态能力优先": "",
+    "imageProcessing": "shuaihong,gemini-2.5-pro;shuaihong,gpt-4o",
+    "// 🔍 网络搜索 - 网络增强模型": "",
+    "webSearch": "shuaihong,gemini-2.5-pro-联网;shuaihong,gemini-2.5-flash-联网;qwen,qwen3-coder-flash",
+    "// 🧠 推理任务 - 深度推理模型": "",
+    "reasoning": "shuaihong,gemini-2.5-pro-thinking;qwen,qwen3-coder-plus",
+    "// 💻 编程任务 - 代码专用模型": "",
+    "coding": "shuaihong,gemini-2.5-pro;modelscope,ZhipuAI/GLM-4.5,qwen,qwen3-coder-plus"
+  },
+  "// === SECURITY 区 - 可选的安全备用路由 ===": "",
+  "// LM Studio作为所有category的最后安全备用": "",
+  "// 提供完全离线的本地推理能力": "",
+  "security": {
+    "default": "lmstudio,gpt-oss-20b-mlx",
+    "coding": "shuaihong,gemini-2.5-pro;lmstudio,nextcoder-32b-mlx",
+    "longContext": "qwen,qwen-long;lmstudio,gpt-oss-20b-mlx",
+    "imageProcessing": "qwen,qwen3-coder-plus;lmstudio,gpt-oss-20b-mlx",
+    "webSearch": "lmstudio,gpt-oss-20b-mlx",
+    "reasoning": "lmstudio,gpt-oss-20b-mlx"
+  },
+  "// === OAuth2认证配置 ===": "",
+  "AuthConfig": {
+    "authType": "oauth2",
+    "authFileName": "qwen-auth-3",
+    "autoRefresh": true,
+    "refreshThresholdSeconds": 30
+  },
+  "// === 服务器配置 - 优化性能设置 ===": "",
+  "server": {
+    "port": 5510,
+    "host": "0.0.0.0",
+    "debug": false,
+    "requestTimeout": 120000,
+    "maxConcurrentRequests": 100,
+    "keepAliveTimeout": 65000
+  },
+  "// === 长上下文处理配置 ===": "",
+  "configuration": {
+    "requestTimeout": 300000,
+    "maxRetries": 3,
+    "healthCheckInterval": 60000
+  },
+  "// === 负载均衡配置 ===": "",
+  "LoadBalancer": {
+    "strategy": "priority_failover",
+    "healthCheck": {
+      "enabled": true,
+      "interval": 30,
+      "timeout": 5
+    },
+    "circuitBreaker": {
+      "enabled": true,
+      "failureThreshold": 3,
+      "recoveryTimeout": 60
+    }
+  },
+  "// === 监控和日志配置 ===": "",
+  "Monitoring": {
+    "enableMetrics": true,
+    "enableTracing": true,
+    "logLevel": "info"
+  },
+  "// === 兼容性设置 ===": "",
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0"
+}

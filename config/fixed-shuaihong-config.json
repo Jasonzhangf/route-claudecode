@@ -1,0 +1,44 @@
+{
+  "version": "4.0",
+  "templateVersion": "1.0.0",
+  "description": "Fixed Shuaihong Provider Configuration",
+  "Providers": [
+    {
+      "name": "shuaihong",
+      "priority": 1,
+      "protocol": "openai",
+      "baseURL": "http://ai.shuaihong.xyz:3939",
+      "apiKey": "sk-g4hBumofoYFvLjLivj9uxeIYUR5uE3he2twZERTextAgsXPl",
+      "models": [
+        {
+          "name": "glm-4.5",
+          "maxTokens": 131072,
+          "capabilities": ["programming"]
+        },
+        {
+          "name": "gemini-2.5-flash",
+          "maxTokens": 2097152,
+          "capabilities": ["programming", "multimodal", "long-context"]
+        }
+      ],
+      "serverCompatibility": {
+        "use": "passthrough",
+        "options": {
+          "maxTokens": 262144,
+          "enhanceTool": true
+        }
+      }
+    }
+  ],
+  "Router": {
+    "default": "shuaihong,glm-4.5"
+  },
+  "server": {
+    "port": 5507,
+    "host": "0.0.0.0",
+    "debug": true,
+    "requestTimeout": 120000
+  },
+  "APIKEY": "rcc4-proxy-key",
+  "HOST": "0.0.0.0"
+}

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-05 10:33:00",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/server/extensions/self-check-extension.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

@@ -1,0 +1,62 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '提醒: 即将写入或编辑文件，请确保实现是真实的而不是mock实现，并检查是否有硬编码值需要移到常量目录。'"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_write_module_structure_enforcer.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/hooks/pre_write_duplicate_checker.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/check-mock-implementation.sh"
+          },
+          {
+            "type": "command",
+            "command": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/check-hardcoded-values.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if command -v prettier >/dev/null 2>&1; then prettier --write . 2>/dev/null || true; else echo \"Prettier not found, skipping formatting\"; fi'"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/.claude/check-json-usage.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+

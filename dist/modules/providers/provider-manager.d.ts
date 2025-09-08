@@ -5,10 +5,9 @@
  *
  * @author Jason Zhang
  */
-import { ModuleInterface } from '../../interfaces/module/base-module';
+import { ModuleInterface } from '../interfaces/module/base-module';
 import { ProviderConfig, ProviderProtocolType } from './provider-factory';
-import { StandardRequest } from '../../interfaces/standard/request';
-import { StandardResponse } from '../../interfaces/standard/response';
+import { StandardRequest, StandardResponse } from '../interfaces/standard/request';
 /**
  * Provider路由策略
  */
@@ -66,6 +65,7 @@ export declare class ProviderManager {
     private routeInfos;
     private healthCheckTimer?;
     private roundRobinIndex;
+    private debugIntegration;
     constructor(config?: Partial<ProviderManagerConfig>);
     /**
      * 初始化管理器

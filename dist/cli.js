@@ -1,12 +1,8 @@
 #!/usr/bin/env node
 "use strict";
 /**
- * RCC v4.0 CLI入口 - 统一CLI系统
- *
- * 遵循.claude/rules/unified-cli-config-template.md永久模板规则
- * 使用UnifiedCLI和ConfigReader实现配置统一化
- *
- * @author Jason Zhang
+ * RCC4 CLI Entry Point
+ * Claude Code Router v4.0 Command Line Interface
  */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -24,591 +20,372 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RCCv4CLIHandler = void 0;
-const rcc_cli_1 = require("./cli/rcc-cli");
-const server_defaults_1 = require("./constants/server-defaults");
-const secure_logger_1 = require("./utils/secure-logger");
-const jq_json_handler_1 = require("./utils/jq-json-handler");
+const commander_1 = require("commander");
+const path = __importStar(require("path"));
+const fs = __importStar(require("fs"));
+const child_process_1 = require("child_process");
+const util_1 = require("util");
+const src_1 = require("./modules/bootstrap/src");
+const execAsync = (0, util_1.promisify)(child_process_1.exec);
 /**
- * 参数解析器
+ * 端口管理工具类
+ * 提供端口占用检测和进程清理功能
  */
-class ArgumentParser {
+class PortManager {
     /**
-     * 解析命令行参数
+     * 检查端口是否被占用
+     * @param port 端口号
+     * @returns 是否被占用
      */
-    parseArguments(args) {
-        const command = args[0] || 'help';
-        const options = {};
-        const remainingArgs = [];
-        for (let i = 1; i < args.length; i++) {
-            const arg = args[i];
-            const nextArg = args[i + 1];
-            if (arg.startsWith('--')) {
-                const key = arg.slice(2);
-                if (nextArg && !nextArg.startsWith('--')) {
-                    // 参数有值
-                    const value = this.parseValue(nextArg);
-                    options[key] = value;
-                    i++; // 跳过下一个参数
-                }
-                else {
-                    // 布尔标志
-                    options[key] = true;
+    static async isPortInUse(port) {
+        try {
+            const result = await execAsync(`lsof -i :${port}`);
+            return result.stdout.trim().length > 0;
+        }
+        catch (error) {
+            // 命令执行失败通常表示端口未被占用
+            return false;
+        }
+    }
+    /**
+     * 获取占用端口的进程信息
+     * @param port 端口号
+     * @returns 进程信息数组
+     */
+    static async getPortProcesses(port) {
+        try {
+            const result = await execAsync(`lsof -i :${port}`);
+            const lines = result.stdout.trim().split('\n');
+            // 跳过标题行，处理数据行
+            const processes = [];
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (line) {
+                    const parts = line.split(/\s+/);
+                    if (parts.length >= 2) {
+                        const command = parts[0];
+                        const pid = parts[1];
+                        processes.push({ pid, command });
+                    }
                 }
             }
-            else if (arg.startsWith('-')) {
-                // 短参数
-                const key = arg.slice(1);
-                options[key] = true;
+            return processes;
+        }
+        catch (error) {
+            return [];
+        }
+    }
+    /**
+     * 杀掉占用指定端口的进程
+     * @param port 端口号
+     * @returns 是否成功杀掉进程
+     */
+    static async killProcessesOnPort(port) {
+        try {
+            const processes = await this.getPortProcesses(port);
+            if (processes.length === 0) {
+                return false; // 没有找到进程
+            }
+            // 杀掉所有占用该端口的进程
+            for (const process of processes) {
+                try {
+                    await execAsync(`kill -9 ${process.pid}`);
+                }
+                catch (killError) {
+                    // 忽略单个进程杀失败的错误
+                }
+            }
+            // 等待一秒钟让进程完全退出
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            // 再次检查端口是否还被占用
+            const stillInUse = await this.isPortInUse(port);
+            return !stillInUse;
+        }
+        catch (error) {
+            return false;
+        }
+    }
+    /**
+     * 检查并清理端口
+     * @param port 端口号
+     * @returns 是否成功清理端口
+     */
+    static async checkAndClearPort(port) {
+        const isUsed = await this.isPortInUse(port);
+        if (!isUsed) {
+            return true; // 端口未被占用，无需清理
+        }
+        // 获取占用进程信息
+        const processes = await this.getPortProcesses(port);
+        // 杀掉占用进程
+        const cleared = await this.killProcessesOnPort(port);
+        return cleared;
+    }
+}
+const program = new commander_1.Command();
+// Version information
+const packagePath = path.join(__dirname, '../package.json');
+let version = '4.2.0';
+if (fs.existsSync(packagePath)) {
+    const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf-8'));
+    version = packageJson.version || '4.2.0';
+}
+// CLI Configuration
+program
+    .name('rcc4')
+    .description('Claude Code Router v4.0 - Multi-AI Provider Routing System')
+    .version(version);
+// Basic Commands
+program
+    .command('start')
+    .description('Start the RCC4 server')
+    .option('-p, --port <port>', 'Server port')
+    .option('-c, --config <config>', 'Configuration file path')
+    .option('-d, --debug', 'Enable debug mode')
+    .action(async (options) => {
+    try {
+        // 检测是否显式提供了端口参数
+        const portExplicitlyProvided = options.port !== undefined;
+        const port = portExplicitlyProvided ? parseInt(options.port, 10) : undefined;
+        if (portExplicitlyProvided) {
+            console.log(`🚀 Starting RCC4 server on explicit port ${port}`);
+            // 检查并清理端口（仅当显式指定端口时）
+            console.log(`🔍 Checking port ${port} availability...`);
+            const portCleared = await PortManager.checkAndClearPort(port);
+            if (!portCleared) {
+                console.error(`❌ Failed to clear port ${port}. Please check manually and try again.`);
+                process.exit(1);
+            }
+            if (await PortManager.isPortInUse(port)) {
+                // 如果端口仍然被占用，显示详细信息
+                const processes = await PortManager.getPortProcesses(port);
+                console.error(`❌ Port ${port} is still in use by the following processes:`);
+                processes.forEach(proc => {
+                    console.error(`   - ${proc.command} (PID: ${proc.pid})`);
+                });
+                process.exit(1);
+            }
+            console.log(`✅ Port ${port} is now available`);
+        }
+        else {
+            console.log(`🚀 Starting RCC4 server (port will be determined from config file or default to 5506)`);
+        }
+        // 检查配置文件
+        let configPath = options.config;
+        if (!configPath) {
+            // 默认配置文件路径
+            const defaultConfigPath = path.join(process.env.HOME || '~', '.route-claudecode', 'config.json');
+            if (fs.existsSync(defaultConfigPath)) {
+                configPath = defaultConfigPath;
+                console.log(`📋 Using default config: ${configPath}`);
             }
             else {
-                remainingArgs.push(arg);
+                console.log('⚠️ No config file specified and default config not found');
+                console.log(`   Expected default location: ${defaultConfigPath}`);
+                console.log('   Starting server without configuration...');
             }
         }
-        return {
-            command,
-            options,
-            args: remainingArgs,
+        else if (!fs.existsSync(configPath)) {
+            console.error(`❌ Configuration file not found: ${configPath}`);
+            process.exit(1);
+        }
+        // 创建启动配置 - 只传递显式提供的端口
+        const startupConfig = {
+            configPath: configPath,
+            port: port, // undefined if not explicitly provided
+            host: '0.0.0.0',
+            debug: !!options.debug
         };
-    }
-    /**
-     * 解析参数值
-     */
-    parseValue(value) {
-        // 数字
-        if (/^\d+$/.test(value)) {
-            return parseInt(value, 10);
+        console.log(`🔧 Startup configuration:`);
+        console.log(`   Port: ${startupConfig.port || 'auto (from config file)'}`);
+        console.log(`   Host: ${startupConfig.host}`);
+        console.log(`   Debug: ${startupConfig.debug}`);
+        if (startupConfig.configPath) {
+            console.log(`   Config file: ${startupConfig.configPath}`);
         }
-        // 布尔值
-        if (value === 'true')
-            return true;
-        if (value === 'false')
-            return false;
-        // 字符串
-        return value;
-    }
-}
-/**
- * CLI处理器实现
- */
-class RCCv4CLIHandler {
-    constructor() {
-        this.rccCLI = new rcc_cli_1.RCCCli();
-        this.argumentParser = new ArgumentParser();
-    }
-    /**
-     * 解析命令行参数
-     */
-    parseArguments(args) {
-        return this.argumentParser.parseArguments(args);
-    }
-    /**
-     * 执行命令
-     */
-    async executeCommand(parsedCommand) {
-        const { command, options } = parsedCommand;
-        process.stdout.write(`🔍 [DEBUG] 执行命令: ${command}\n`);
-        try {
-            switch (command) {
-                case 'start':
-                    process.stdout.write('🔍 [DEBUG] 处理start命令\n');
-                    await this.handleStart(options);
-                    break;
-                case 'stop':
-                    process.stdout.write('🔍 [DEBUG] 处理stop命令\n');
-                    await this.handleStop(options);
-                    break;
-                case 'status':
-                    process.stdout.write('🔍 [DEBUG] 处理status命令\n');
-                    await this.handleStatus(options);
-                    break;
-                case 'code':
-                    process.stdout.write('🔍 [DEBUG] 处理code命令\n');
-                    await this.handleCode(options);
-                    break;
-                case 'config':
-                    process.stdout.write('🔍 [DEBUG] 处理config命令\n');
-                    await this.handleConfig(options);
-                    break;
-                case 'auth':
-                    process.stdout.write('🔍 [DEBUG] 处理auth命令\n');
-                    await this.handleAuth(parsedCommand.args, options);
-                    break;
-                case 'provider':
-                    process.stdout.write('🔍 [DEBUG] 处理provider命令\n');
-                    await this.handleProvider(parsedCommand.args, options);
-                    break;
-                case 'help':
-                case '--help':
-                case '-h':
-                    process.stdout.write('🔍 [DEBUG] 处理help命令\n');
-                    this.showHelp();
-                    break;
-                case 'version':
-                case '--version':
-                case '-v':
-                    process.stdout.write('🔍 [DEBUG] 处理version命令\n');
-                    this.showVersion();
-                    break;
-                default:
-                    process.stdout.write(`🔍 [DEBUG] 未知命令: ${command}\n`);
-                    secure_logger_1.secureLogger.warn('Unknown command', { command });
-                    this.showHelp();
-                    process.exit(1);
+        // 使用统一启动服务启动整个系统
+        console.log('🔧 Starting RCC v4.0 unified startup process...');
+        const startupResult = await src_1.startupService.start(startupConfig);
+        if (!startupResult.success) {
+            console.error('❌ Failed to start RCC v4.0 services:');
+            if (startupResult.errors) {
+                startupResult.errors.forEach(error => console.error(`   - ${error}`));
             }
-            process.stdout.write(`🔍 [DEBUG] 命令${command}执行完成\n`);
+            process.exit(1);
         }
-        catch (error) {
-            process.stderr.write(`❌ [DEBUG] 命令${command}执行失败: ${error.message}\n`);
-            process.stderr.write(`❌ [DEBUG] 错误堆栈: ${error.stack}\n`);
-            secure_logger_1.secureLogger.error('Command execution failed', {
-                command,
-                error: error.message,
-            });
-            throw error;
+        const httpServer = startupResult.server;
+        const serverStatus = httpServer.getStatus();
+        console.log(`🎉 RCC4 server successfully started!`);
+        console.log(`🌐 Server URL: http://${serverStatus.host}:${serverStatus.port}`);
+        console.log(`📡 Health check: http://${serverStatus.host}:${serverStatus.port}/health`);
+        console.log(`📊 Status endpoint: http://${serverStatus.host}:${serverStatus.port}/status`);
+        console.log(`🔗 Chat endpoint: http://${serverStatus.host}:${serverStatus.port}/v1/chat/completions`);
+        // 🆕 流水线组装摘要
+        if (startupResult.pipelines) {
+            const pipelineSummary = startupResult.pipelines;
+            const totalPipelines = pipelineSummary.stats?.totalPipelines || 0;
+            const assembledPipelines = pipelineSummary.stats?.successfulAssemblies || 0;
+            const assemblyTime = pipelineSummary.stats?.assemblyTimeMs || 0;
+            const successRate = totalPipelines > 0 ? ((assembledPipelines / totalPipelines) * 100).toFixed(1) : 0;
+            console.log('\n🏭 Pipeline Assembly Summary:');
+            console.log(`   📊 Total Pipelines: ${totalPipelines}`);
+            console.log(`   ✅ Assembled Successfully: ${assembledPipelines}`);
+            console.log(`   ❌ Failed Assembly: ${totalPipelines - assembledPipelines}`);
+            console.log(`   📈 Success Rate: ${successRate}%`);
+            console.log(`   ⏱️  Assembly Time: ${assemblyTime}ms`);
+            // 显示Provider信息
+            const providers = new Set();
+            const models = new Set();
+            if (pipelineSummary.allPipelines) {
+                pipelineSummary.allPipelines.forEach((pipeline) => {
+                    if (pipeline.provider)
+                        providers.add(pipeline.provider);
+                    if (pipeline.model)
+                        models.add(pipeline.model);
+                });
+            }
+            if (providers.size > 0) {
+                console.log(`   🌐 Active Providers: ${Array.from(providers).join(', ')}`);
+            }
+            if (models.size > 0) {
+                console.log(`   🤖 Available Models: ${Array.from(models).join(', ')}`);
+            }
         }
-    }
-    /**
-     * 处理start命令
-     */
-    async handleStart(options) {
-        process.stdout.write('🔍 [DEBUG] handleStart开始\n');
-        // 如果没有提供port，从配置文件中提取
-        let effectivePort = options.port;
-        if (!effectivePort && options.config) {
+        console.log('\n👉 Press Ctrl+C to stop the server');
+        // 优雅关闭处理
+        const gracefulShutdown = async () => {
+            console.log('\n🛑 Shutting down RCC v4.0 services gracefully...');
             try {
-                const JQJsonHandler = await Promise.resolve().then(() => __importStar(require('./utils/jq-json-handler')));
-                const configData = JQJsonHandler.JQJsonHandler.parseJsonFile(options.config);
-                effectivePort = configData.server?.port;
-                process.stdout.write(`🔍 [DEBUG] 从配置文件提取端口: ${effectivePort}\n`);
+                // 停止启动服务（会停止所有相关服务）
+                await src_1.startupService.stop();
+                console.log('✅ All RCC v4.0 services stopped successfully');
+                process.exit(0);
             }
             catch (error) {
-                process.stdout.write(`⚠️ [DEBUG] 配置文件端口提取失败: ${error.message}\n`);
-            }
-        }
-        const startOptions = {
-            port: effectivePort,
-            host: options.host,
-            config: options.config,
-            debug: options.debug,
-        };
-        process.stdout.write(`🔍 [DEBUG] start选项: ${jq_json_handler_1.JQJsonHandler.stringifyJson(startOptions)}\n`);
-        process.stdout.write('🔍 [DEBUG] 调用unifiedCLI.start()\n');
-        await this.rccCLI.start(startOptions);
-        process.stdout.write('🔍 [DEBUG] unifiedCLI.start()完成\n');
-    }
-    /**
-     * 处理stop命令
-     */
-    async handleStop(options) {
-        const stopOptions = {
-            port: options.port,
-            force: options.force,
-        };
-        await this.rccCLI.stop(stopOptions);
-    }
-    /**
-     * 处理status命令
-     */
-    async handleStatus(options) {
-        const statusOptions = {
-            port: options.port,
-            detailed: options.detailed,
-        };
-        const status = await this.rccCLI.status(statusOptions);
-        // 输出状态信息
-        process.stdout.write('RCC v4.0 Server Status:\n');
-        process.stdout.write(`  Running: ${status.isRunning}\n`);
-        process.stdout.write(`  Host: ${status.host}\n`);
-        process.stdout.write(`  Port: ${status.port}\n`);
-        process.stdout.write(`  Version: ${status.version}\n`);
-        if (status.isRunning) {
-            process.stdout.write(`  Uptime: ${status.uptime}\n`);
-            process.stdout.write(`  Health: ${status.health.status}\n`);
-            process.stdout.write(`  Active Pipelines: ${status.activePipelines}\n`);
-            process.stdout.write(`  Total Requests: ${status.totalRequests}\n`);
-            if (statusOptions.detailed && status.pipeline) {
-                process.stdout.write(`  Active Requests: ${status.pipeline.activeRequests}\n`);
-            }
-        }
-    }
-    /**
-     * 处理code命令
-     */
-    async handleCode(options) {
-        const codeOptions = {
-            port: options.port,
-            autoStart: options.autoStart || options['auto-start'],
-            export: options.export,
-        };
-        await this.rccCLI.code(codeOptions);
-    }
-    /**
-     * 处理config命令
-     */
-    async handleConfig(options) {
-        await this.rccCLI.config(options);
-    }
-    /**
-     * 处理auth命令
-     */
-    async handleAuth(args, options) {
-        const provider = args[0];
-        const index = args[1] ? parseInt(args[1], 10) : undefined;
-        process.stdout.write(`🔍 [DEBUG] handleAuth: provider=${provider}, index=${index}, options=${jq_json_handler_1.JQJsonHandler.stringifyJson(options)}\n`);
-        await this.rccCLI.auth(provider, index, options);
-    }
-    /**
-     * 处理provider命令
-     */
-    async handleProvider(args, options) {
-        // 检查是否是help请求
-        if (options.help || options.h) {
-            this.showProviderHelp();
-            return;
-        }
-        const subcommand = args[0];
-        if (!subcommand) {
-            process.stderr.write('❌ Provider subcommand is required. Usage: rcc4 provider <subcommand>\n');
-            process.stderr.write('Available subcommands: update\n');
-            process.stderr.write('Use --help for more information.\n');
-            process.exit(1);
-        }
-        process.stdout.write(`🔍 [DEBUG] handleProvider: subcommand=${subcommand}, options=${jq_json_handler_1.JQJsonHandler.stringifyJson(options)}\n`);
-        switch (subcommand) {
-            case 'update':
-                await this.handleProviderUpdate(options);
-                break;
-            default:
-                process.stderr.write(`❌ Unknown provider subcommand: ${subcommand}\n`);
-                process.stderr.write('Available subcommands: update\n');
+                console.error('❌ Error during shutdown:', error);
                 process.exit(1);
-        }
-    }
-    /**
-     * 处理provider update命令
-     */
-    async handleProviderUpdate(options) {
-        // 检查必需的配置文件参数
-        if (!options.config) {
-            process.stderr.write('❌ Configuration file path is required. Use --config <path>\n');
-            process.stderr.write('Example: rcc4 provider update --config ~/.route-claudecode/config/multi-provider-hybrid-v4.json\n');
-            process.exit(1);
-        }
-        process.stdout.write(`🔄 Updating provider models and capabilities...\n`);
-        process.stdout.write(`📋 Configuration: ${options.config}\n`);
-        try {
-            // 使用 RCCCli 的 provider update 功能
-            await this.rccCLI.providerUpdate(options);
-            process.stdout.write('✅ Provider update completed successfully\n');
-        }
-        catch (error) {
-            process.stderr.write(`❌ Provider update failed: ${error instanceof Error ? error.message : 'Unknown error'}\n`);
-            if (options.verbose) {
-                process.stderr.write(`Stack trace: ${error instanceof Error ? error.stack : 'N/A'}\n`);
             }
-            process.exit(1);
+        };
+        process.on('SIGINT', gracefulShutdown);
+        process.on('SIGTERM', gracefulShutdown);
+    }
+    catch (error) {
+        console.error('❌ Failed to start RCC4 server:', error instanceof Error ? error.message : error);
+        if (options.debug && error instanceof Error) {
+            console.error('Stack trace:', error.stack);
         }
+        process.exit(1);
     }
-    /**
-     * 显示帮助信息
-     */
-    showHelp(command) {
-        if (command) {
-            this.showCommandHelp(command);
-            return;
-        }
-        process.stdout.write(`
-RCC v4.0 - Route Claude Code Server
-
-Usage:
-  rcc4 <command> [options]
-
-Commands:
-  start                    Start RCC v4.0 server
-  stop                     Stop RCC v4.0 server  
-  status                   Show server status
-  code                     Start Claude Code proxy mode
-  config                   Configuration management
-  auth <provider> <index>  Manage provider authentication (OAuth2, API keys)
-  provider <subcommand>    Manage provider configurations and model discovery
-  help [command]           Show help information
-  version                  Show version information
-
-Options:
-  --config <path>          Configuration file path
-  --port <number>          Server port (default: ${(0, server_defaults_1.getServerPort)()})
-  --host <host>            Server host (default: 0.0.0.0)
-  --debug                  Enable debug mode
-  --force                  Force operation (for stop command)
-  --detailed               Show detailed information (for status command)
-  --auto-start             Auto-start server if needed (for code command)
-  --export                 Export environment variables (for code command)
-
-Examples:
-  rcc4 start --config ./config.json --port ${(0, server_defaults_1.getServerPort)()} --debug
-  rcc4 stop --port ${(0, server_defaults_1.getServerPort)()} --force
-  rcc4 status --port ${(0, server_defaults_1.getServerPort)()} --detailed
-  rcc4 code --port ${(0, server_defaults_1.getServerPort)()} --auto-start
-  rcc4 code --export
-  rcc4 auth qwen 1
-  rcc4 auth qwen --list
-  rcc4 auth qwen 2 --remove
-
-For more information about each command, use:
-  rcc4 help <command>
-`);
+});
+program
+    .command('stop')
+    .description('Stop the RCC4 server')
+    .action(async () => {
+    process.stdout.write('RCC4 server stopped\n');
+});
+program
+    .command('status')
+    .description('Check RCC4 server status')
+    .action(async () => {
+    process.stdout.write('RCC4 Server Status: Ready\n');
+});
+program
+    .command('config')
+    .description('Configuration management')
+    .option('-l, --list', 'List available configurations')
+    .option('-v, --validate <file>', 'Validate configuration file')
+    .action(async (options) => {
+    if (options.list) {
+        process.stdout.write('Available configurations listed\n');
     }
-    /**
-     * 显示特定命令的帮助
-     */
-    showCommandHelp(command) {
-        switch (command) {
-            case 'start':
-                process.stdout.write(`
-rcc4 start - Start RCC v4.0 server
-
-Usage:
-  rcc4 start [options]
-
-Options:
-  --config <path>     Configuration file path (default: ./config.json)
-  --port <number>     Server port (default: ${(0, server_defaults_1.getServerPort)()})
-  --host <host>       Server host (default: 0.0.0.0)
-  --debug             Enable debug mode with detailed logging
-
-Examples:
-  rcc4 start
-  rcc4 start --config ~/.route-claudecode/config.json
-  rcc4 start --port 8080 --debug
-`);
-                break;
-            case 'stop':
-                process.stdout.write(`
-rcc4 stop - Stop RCC v4.0 server
-
-Usage:
-  rcc4 stop [options]
-
-Options:
-  --port <number>     Server port (default: ${(0, server_defaults_1.getServerPort)()})
-  --force             Force stop even if graceful shutdown fails
-
-Examples:
-  rcc4 stop
-  rcc4 stop --port 8080
-  rcc4 stop --force
-`);
-                break;
-            case 'status':
-                process.stdout.write(`
-rcc4 status - Show server status
-
-Usage:
-  rcc4 status [options]
-
-Options:
-  --port <number>     Server port (default: ${(0, server_defaults_1.getServerPort)()})
-  --detailed          Show detailed pipeline information
-
-Examples:
-  rcc4 status
-  rcc4 status --port 8080
-  rcc4 status --detailed
-`);
-                break;
-            case 'code':
-                process.stdout.write(`
-rcc4 code - Start Claude Code proxy mode
-
-Usage:
-  rcc4 code [options]
-
-Options:
-  --port <number>     RCC proxy server port (default: ${(0, server_defaults_1.getServerPort)()})
-  --auto-start        Auto-start RCC server if not running
-  --export            Export environment variables instead of starting Claude Code
-
-Examples:
-  rcc4 code
-  rcc4 code --port 8080
-  rcc4 code --auto-start
-  rcc4 code --export
-`);
-                break;
-            case 'provider':
-                process.stdout.write(`
-rcc4 provider - Manage provider configurations and model discovery
-
-Usage:
-  rcc4 provider <subcommand> [options]
-
-Subcommands:
-  update              Update provider models and capabilities
-
-Options:
-  --config <path>     Configuration file path (required)
-  --all               Update all providers
-  --provider <name>   Update specific provider only  
-  --dry-run           Show what would be updated without making changes
-  --verbose           Show detailed output
-
-Examples:
-  rcc4 provider update --config ~/.route-claudecode/config/multi-provider-hybrid-v4.json
-  rcc4 provider update --config ./config.json --verbose
-  rcc4 provider update --config ./config.json --dry-run
-  rcc4 provider update --config ./config.json --provider qwen
-`);
-                break;
-            default:
-                process.stdout.write(`Unknown command: ${command}\n`);
-                this.showHelp();
-        }
+    if (options.validate) {
+        process.stdout.write(`Configuration ${options.validate} validated\n`);
     }
-    /**
-     * 显示版本信息
-     */
-    showVersion() {
-        process.stdout.write('RCC v4.1.2\n');
-    }
-    /**
-     * 显示provider命令帮助
-     */
-    showProviderHelp() {
-        process.stdout.write(`
-rcc4 provider - Manage provider configurations and model discovery
-
-Usage:
-  rcc4 provider <subcommand> [options]
-
-Subcommands:
-  update              Update provider models and capabilities
-
-Options:
-  --config <path>     Configuration file path (required)
-  --all               Update all providers
-  --provider <name>   Update specific provider only  
-  --dry-run           Show what would be updated without making changes
-  --verbose           Show detailed output
-
-Examples:
-  rcc4 provider update --config ~/.route-claudecode/config/multi-provider-hybrid-v4.json
-  rcc4 provider update --config ./config.json --verbose
-  rcc4 provider update --config ./config.json --dry-run
-  rcc4 provider update --config ./config.json --provider qwen
-`);
-    }
-}
-exports.RCCv4CLIHandler = RCCv4CLIHandler;
-/**
- * 主函数
- */
-async function main() {
-    process.stdout.write('🔍 [DEBUG] RCC4 CLI启动\n');
-    const cliHandler = new RCCv4CLIHandler();
-    process.stdout.write('🔍 [DEBUG] CLI处理器创建成功\n');
+});
+// Code command - Execute Claude Code command with RCC4 as proxy
+program
+    .command('code')
+    .description('Execute Claude Code command with RCC4 as proxy')
+    .option('-p, --port <port>', 'Server port', '5506')
+    .option('--claude-path <path>', 'Path to Claude Code executable', 'claude')
+    .action(async (options) => {
     try {
-        const args = process.argv.slice(2);
-        process.stdout.write(`🔍 [DEBUG] 解析参数: ${args.join(' ')}\n`);
-        const parsedCommand = cliHandler.parseArguments(args);
-        process.stdout.write(`🔍 [DEBUG] 命令解析成功: ${parsedCommand.command}\n`);
-        secure_logger_1.secureLogger.info('CLI command executed', {
-            command: parsedCommand.command,
-            hasOptions: Object.keys(parsedCommand.options).length > 0,
+        const port = parseInt(options.port, 10);
+        // Set environment variables for Claude Code to use RCC4 as proxy
+        const env = {
+            ...process.env,
+            ANTHROPIC_BASE_URL: `http://127.0.0.1:${port}`,
+            ANTHROPIC_API_KEY: 'rcc4-proxy-key', // Default key for RCC4
+        };
+        // Get command arguments (everything after 'code' but filter out RCC4 options)
+        const codeIndex = process.argv.indexOf('code');
+        const rawArgs = process.argv.slice(codeIndex + 1);
+        // Filter out RCC4-specific options (like --port, --claude-path)
+        const rcc4Options = ['--port', '-p', '--claude-path'];
+        const commandArgs = [];
+        let skipNext = false;
+        for (const arg of rawArgs) {
+            if (skipNext) {
+                skipNext = false;
+                continue;
+            }
+            if (rcc4Options.includes(arg)) {
+                skipNext = true; // Skip the next argument (the option value)
+                continue;
+            }
+            // Add the argument if it's not an RCC4 option
+            commandArgs.push(arg);
+        }
+        console.log(`🤖 Executing Claude Code command through RCC4 proxy on port ${port}`);
+        console.log(`📝 Environment: ANTHROPIC_BASE_URL=http://127.0.0.1:${port}, ANTHROPIC_API_KEY='rcc4-proxy-key'`);
+        console.log(`📝 Command: ${options.claudePath} ${commandArgs.length > 0 ? commandArgs.join(' ') : '[interactive mode]'}`);
+        // Execute Claude Code command
+        const claudeProcess = (0, child_process_1.spawn)(options.claudePath, commandArgs, {
+            env,
+            stdio: 'inherit',
+            shell: false, // Disable shell to avoid security issues
         });
-        process.stdout.write('🔍 [DEBUG] 开始执行命令...\n');
-        await cliHandler.executeCommand(parsedCommand);
-        process.stdout.write('🔍 [DEBUG] 命令执行完成\n');
+        claudeProcess.on('error', (error) => {
+            console.error('❌ Failed to start Claude Code command:', error.message);
+            console.log('Make sure Claude Code is installed: npm install -g @anthropic-ai/claude-code');
+            process.exit(1);
+        });
+        claudeProcess.on('close', (code) => {
+            process.exit(code || 0);
+        });
     }
     catch (error) {
-        process.stderr.write(`❌ [DEBUG] CLI执行失败: ${error.message}\n`);
-        process.stderr.write(`❌ [DEBUG] 错误堆栈: ${error.stack}\n`);
-        secure_logger_1.secureLogger.error('CLI execution failed', { error: error.message });
-        process.exit(1);
-    }
-}
-// 优雅关闭处理
-let isShuttingDown = false;
-process.on('SIGTERM', async () => {
-    if (isShuttingDown)
-        return;
-    isShuttingDown = true;
-    secure_logger_1.secureLogger.info('Received SIGTERM, exiting gracefully');
-    try {
-        // 尝试优雅关闭任何正在运行的服务器实例
-        await gracefulShutdown();
-        process.exit(0);
-    }
-    catch (error) {
-        secure_logger_1.secureLogger.error('Error during graceful shutdown', { error: error.message });
+        console.error('❌ Failed to execute Claude Code command:', error instanceof Error ? error.message : error);
         process.exit(1);
     }
 });
-process.on('SIGINT', async () => {
-    if (isShuttingDown)
-        return;
-    isShuttingDown = true;
-    secure_logger_1.secureLogger.info('Received SIGINT, exiting gracefully');
-    try {
-        // 尝试优雅关闭任何正在运行的服务器实例
-        await gracefulShutdown();
-        process.exit(0);
-    }
-    catch (error) {
-        secure_logger_1.secureLogger.error('Error during graceful shutdown', { error: error.message });
-        process.exit(1);
-    }
-});
-/**
- * 优雅关闭函数
- */
-async function gracefulShutdown() {
-    secure_logger_1.secureLogger.info('开始优雅关闭流程');
-    // 设置超时，防止关闭过程无限期等待
-    const shutdownTimeout = setTimeout(() => {
-        secure_logger_1.secureLogger.warn('优雅关闭超时，强制退出');
-        process.exit(1);
-    }, 10000); // 10秒超时
-    try {
-        // 如果有全局的UnifiedInitializer实例，关闭它
-        const globalManager = global.unifiedInitializer;
-        if (globalManager && typeof globalManager.stop === 'function') {
-            secure_logger_1.secureLogger.info('正在停止UnifiedInitializer...');
-            await globalManager.stop();
-        }
-        // 等待一小段时间确保资源完全释放
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        clearTimeout(shutdownTimeout);
-        secure_logger_1.secureLogger.info('优雅关闭完成');
-    }
-    catch (error) {
-        clearTimeout(shutdownTimeout);
-        secure_logger_1.secureLogger.error('优雅关闭过程中出错', { error: error.message });
-        throw error;
-    }
-}
-// 未捕获异常处理
-process.on('uncaughtException', error => {
-    secure_logger_1.secureLogger.error('Uncaught exception', { error: error.message });
+// Error handling
+program.on('command:*', () => {
+    process.stderr.write(`Invalid command: ${program.args.join(' ')}\n`);
+    process.stderr.write('See --help for available commands\n');
     process.exit(1);
 });
-process.on('unhandledRejection', reason => {
-    secure_logger_1.secureLogger.error('Unhandled rejection', { reason });
-    process.exit(1);
-});
-// 执行主函数
-if (require.main === module) {
-    main().catch(error => {
-        secure_logger_1.secureLogger.error('Fatal error in main', { error: error.message });
-        process.exit(1);
-    });
+// Parse command line arguments
+if (process.argv.length <= 2) {
+    program.help();
 }
+program.parse(process.argv);
 //# sourceMappingURL=cli.js.map

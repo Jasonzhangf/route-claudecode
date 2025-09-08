@@ -5,7 +5,7 @@
  *
  * @author Jason Zhang
  */
-import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
 import { EventEmitter } from 'events';
 /**
  * Anthropic输入验证模块配置
@@ -95,5 +95,13 @@ export declare class AnthropicInputValidator extends EventEmitter implements Mod
     sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
     broadcastToModules(message: any, type?: string): Promise<void>;
     onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+    /**
+     * 获取连接状态
+     */
+    getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error';
+    /**
+     * 验证连接
+     */
+    validateConnection(targetModule: ModuleInterface): boolean;
 }
 //# sourceMappingURL=anthropic-input-validator.d.ts.map

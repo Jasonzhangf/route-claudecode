@@ -18,6 +18,7 @@ import { BidirectionalCompatibilityProcessor, RequestContext, ResponseContext } 
 import { EventEmitter } from 'events';
 import { OpenAI } from 'openai';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
+import { PIPELINE_ERROR_MESSAGES } from '../../constants/src/pipeline-constants';
 /**
  * LM Studio预配置接口 - 在组装时固化的配置
  */
@@ -274,7 +275,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       }
       
       if (!this.isInitialized) {
-        throw new Error('LM Studio兼容模块未初始化');
+        throw new Error(PIPELINE_ERROR_MESSAGES.INITIALIZATION.MODULE_NOT_INITIALIZED('LM Studio'));
       }
 
       console.log(`🔄 LM Studio兼容处理 (请求): ${input.model}`);
@@ -328,7 +329,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       }
       
       if (!this.isInitialized) {
-        throw new Error('LM Studio兼容模块未初始化');
+        throw new Error(PIPELINE_ERROR_MESSAGES.INITIALIZATION.MODULE_NOT_INITIALIZED('LM Studio'));
       }
 
       console.log(`🔄 LM Studio兼容处理 (响应)`);
@@ -414,11 +415,11 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       
       // 🔧 关键修复：如果过滤后messages为空，抛出错误而不是设置空数组
       if (adaptedRequest.messages.length === 0) {
-        throw new Error('所有消息都无效或为空，无法处理请求');
+        throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.EMPTY_MESSAGES);
       }
     } else {
       // 如果messages不是数组或不存在，抛出错误
-      throw new Error('缺少有效的messages参数');
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.MISSING_PARAMETER('有效的messages'));
     }
 
     // 🔧 关键修复：确保tools格式正确适配LM Studio
@@ -597,17 +598,17 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
    */
   private validateStandardRequest(request: StandardRequest): void {
     if (!request.model) {
-      throw new Error('缺少model参数');
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.MISSING_PARAMETER('model'));
     }
 
     if (!request.messages || !Array.isArray(request.messages) || request.messages.length === 0) {
-      throw new Error('缺少messages参数或格式无效');
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.INVALID_MESSAGES);
     }
 
     // 🔧 关键修复：检查映射后的实际模型是否支持
     const actualModel = this.mapVirtualModelToActual(request.model);
     if (!(this.preConfig.models || []).includes(actualModel)) {
-      throw new Error(`映射后的模型 ${actualModel} (来自虚拟模型 ${request.model}) 不在支持列表中: ${(this.preConfig.models || []).join(', ')}`);
+      throw new Error(PIPELINE_ERROR_MESSAGES.VALIDATION.MODEL_NOT_SUPPORTED(actualModel, (this.preConfig.models || []).join(', ')));
     }
   }
 
@@ -650,7 +651,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
     try {
       if (request.stream) {
         // 流式处理
-        throw new Error('流式处理暂未实现'); // TODO: 实现流式处理
+        throw new Error(PIPELINE_ERROR_MESSAGES.PROCESSING.STREAMING_NOT_IMPLEMENTED); // TODO: 实现流式处理
       } else {
         // 非流式处理
         // 🔧 FIXED: 移除token限制 - 直接传递用户请求的max_tokens
@@ -722,10 +723,10 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       console.log(`🔍 检测到 ${models.data.length} 个LM Studio模型`);
 
       if (models.data.length === 0) {
-        throw new Error('LM Studio没有加载任何模型');
+        throw new Error(PIPELINE_ERROR_MESSAGES.INITIALIZATION.NO_MODELS_AVAILABLE('LM Studio'));
       }
     } catch (error) {
-      throw new Error(`LM Studio连接测试失败: ${error.message}`);
+      throw new Error(PIPELINE_ERROR_MESSAGES.PROCESSING.CONNECTION_TEST_FAILED('LM Studio', error.message));
     }
   }
 

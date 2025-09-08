@@ -5,10 +5,10 @@
  *
  * @author Jason Zhang
  */
-import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleType, ModuleStatus, ModuleMetrics } from '../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-import { StandardRequest } from '../../interfaces/standard/request';
-import { StandardResponse } from '../../interfaces/standard/response';
+import { StandardRequest } from '../types/src/index';
+import { StandardResponse } from '../types/src/index';
 /**
  * OpenAI Protocol配置接口
  */
@@ -136,5 +136,13 @@ export declare class OpenAIProtocolHandler extends EventEmitter implements Modul
     sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
     broadcastToModules(message: any, type?: string): Promise<void>;
     onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+    /**
+     * 获取连接状态
+     */
+    getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error';
+    /**
+     * 验证连接
+     */
+    validateConnection(targetModule: ModuleInterface): boolean;
 }
 //# sourceMappingURL=openai-protocol-handler.d.ts.map

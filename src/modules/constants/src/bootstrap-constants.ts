@@ -11,6 +11,19 @@ export const BOOTSTRAP_CONFIG = {
   RETRY_DELAY: 1000 // 1秒
 };
 
+export const FILE_PATHS = {
+  AUTH_DIRECTORY: 'auth',
+  CONFIG_DIRECTORY: 'config',
+  LOG_DIRECTORY: 'logs',
+  TEMP_DIRECTORY: 'tmp'
+};
+
+export const OAUTH_URLS = {
+  QWEN: 'chat.qwen.ai/oauth/authorize', // Qwen uses device flow, but this is fallback URL
+  ANTHROPIC: 'console.anthropic.com/oauth/authorize',
+  DEFAULT_TEMPLATE: '{provider}.com/oauth/authorize'
+};
+
 // Provider model mappings defined as configuration
 export const PROVIDER_MODEL_MAPPINGS = {
   // Qwen models configured as generic identifiers

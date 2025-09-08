@@ -100,6 +100,8 @@ export interface SelfCheckConfig {
   autoDestroyInvalidPipelines: boolean;
   /** 认证超时时间（毫秒） */
   authTimeout: number;
+  /** Auth文件存储目录路径 */
+  authDirectory?: string;
 }
 
 /**

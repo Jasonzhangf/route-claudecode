@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-05 13:14:07",
+  "scanned_file": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/modules/pipeline/src/pipeline-manager-types.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}

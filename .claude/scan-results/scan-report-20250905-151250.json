@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-05 15:12:50",
+  "scanned_file": "src/interfaces/core/error-coordination-center.ts",
+  "violations_found": false,
+  "violation_count": 0,
+  "violations": [
+  ],
+  "scan_status": "completed"
+}
