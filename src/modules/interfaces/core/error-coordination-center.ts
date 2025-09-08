@@ -3,7 +3,7 @@
  * Re-exports error types and coordination interfaces
  */
 
-export * from '../../types/src';
+export * from '../../types/src/index';
 export * from '../../error-handler/src/error-coordination-center-factory';
 
 // Additional interfaces needed by error-handler modules

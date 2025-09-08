@@ -7,7 +7,7 @@
  */
 
 import { ModuleInterface, ModuleType } from './module-interface';
-import { ModuleRegistry } from './module-registry';
+import { StaticModuleRegistry } from './static-module-registry';
 import { PipelineConfig } from '../../router/src/router-preprocessor';
 import {
   AssembledPipeline,
@@ -18,7 +18,7 @@ import {
   ModuleSelectionStrategy,
   ModuleHealthCheck
 } from './assembly-types';
-import { RCCError, RCCErrorCode } from '../../types/src';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
 import { EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
 
@@ -26,29 +26,43 @@ import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
  * 默认模块选择策略
  */
 class DefaultModuleSelectionStrategy implements ModuleSelectionStrategy {
-  constructor(private registry: ModuleRegistry) {}
+  constructor(private registry: StaticModuleRegistry) {}
   
   async selectModule(type: ModuleType, config: Record<string, any>): Promise<ModuleInterface | null> {
-    const availableModules = this.getAvailableModules(type);
+    console.log(`🔍 [MODULE-SELECTION] 查找模块类型: ${type}`);
+    const availableRegistrations = this.registry.getModulesByType(type);
+    console.log(`🔍 [MODULE-SELECTION] 找到 ${availableRegistrations.length} 个 ${type} 模块`);
     
-    if (availableModules.length === 0) {
+    if (availableRegistrations.length === 0) {
+      // 获取registry统计信息进行调试
+      const registryStats = this.registry.getRegistryStats();
+      console.log(`❌ [MODULE-SELECTION] 没有找到 ${type} 模块`);
+      console.log(`📊 [MODULE-SELECTION] Registry统计:`, registryStats);
       return null;
     }
     
-    // 根据provider选择合适的模块
+    // 根据provider选择合适的模块注册信息
+    let selectedRegistration = availableRegistrations[0];
     const provider = config.provider;
     if (provider) {
       // 优先选择provider特定的模块
-      const specificModule = availableModules.find(module => 
-        module.getName().toLowerCase().includes(provider.toLowerCase())
+      const specificRegistration = availableRegistrations.find(reg => 
+        reg.name.toLowerCase().includes(provider.toLowerCase()) ||
+        reg.className.toLowerCase().includes(provider.toLowerCase())
       );
-      if (specificModule) {
-        return specificModule;
+      if (specificRegistration) {
+        selectedRegistration = specificRegistration;
       }
     }
     
-    // 默认返回第一个可用模块
-    return availableModules[0];
+    // 使用配置创建模块实例
+    try {
+      const moduleInstance = await this.registry.createModuleInstance(selectedRegistration, config);
+      return moduleInstance;
+    } catch (error) {
+      console.error(`Failed to create module instance: ${error.message}`);
+      return null;
+    }
   }
   
   getAvailableModules(type: ModuleType): ModuleInterface[] {
@@ -73,7 +87,7 @@ class DefaultModuleSelectionStrategy implements ModuleSelectionStrategy {
  * 一次性生命周期：启动 → 扫描 → 组装 → 输出 → 销毁
  */
 export class PipelineAssembler {
-  private registry: ModuleRegistry;
+  private registry: StaticModuleRegistry;
   private selectionStrategy: ModuleSelectionStrategy;
   private assembledPipelines: Map<string, AssembledPipeline> = new Map();
   private isDestroyed = false;
@@ -86,8 +100,16 @@ export class PipelineAssembler {
   });
   
   constructor() {
-    this.registry = new ModuleRegistry();
+    console.log('🚀 PipelineAssembler: 构造函数被调用，即将创建StaticModuleRegistry...');
+    this.registry = new StaticModuleRegistry();
+    console.log('✅ PipelineAssembler: StaticModuleRegistry创建完成');
+    
+    // 立即检查registry状态
+    const registryStats = this.registry.getRegistryStats();
+    console.log('📊 PipelineAssembler: Registry初始状态:', registryStats);
+    
     this.selectionStrategy = new DefaultModuleSelectionStrategy(this.registry);
+    console.log('✅ PipelineAssembler: 模块选择策略初始化完成');
   }
   
   /**
@@ -98,6 +120,9 @@ export class PipelineAssembler {
    */
   async assemble(pipelineConfigs: PipelineConfig[]): Promise<PipelineAssemblyResult> {
     const requestId = `pipeline-assembly-${Date.now()}`;
+    
+    console.log(`🚀 PipelineAssembler.assemble 开始 - 配置数量: ${pipelineConfigs.length}`);
+    console.log(`🔍 流水线配置:`, pipelineConfigs.map(c => ({ id: c.pipelineId, provider: c.provider, model: c.model })));
     
     // 初始化debug系统并开始会话
     await PipelineAssembler.debugIntegration.initialize();
@@ -142,21 +167,28 @@ export class PipelineAssembler {
     const assemblies: AssembledPipeline[] = [];
     
     for (const config of pipelineConfigs) {
+      console.log(`🔧 开始组装流水线: ${config.pipelineId}`);
       const assembledPipeline = await this._assembleSinglePipeline(config);
+      console.log(`🔍 流水线组装状态: ${assembledPipeline.assemblyStatus}`);
+      if (assembledPipeline.assemblyErrors?.length > 0) {
+        console.log(`❌ 流水线组装错误:`, assembledPipeline.assemblyErrors);
+      }
       if (assembledPipeline.assemblyStatus === 'assembled') {
         assemblies.push(assembledPipeline);
         this.assembledPipelines.set(config.pipelineId, assembledPipeline);
+        console.log(`✅ 流水线组装成功: ${config.pipelineId}`);
       } else {
         errors.push(...assembledPipeline.assemblyErrors);
+        console.log(`❌ 流水线组装失败: ${config.pipelineId}`);
       }
     }
     
     // 3. 按路由模型分组
     const pipelinesByRouteModel = this._groupPipelinesByRouteModel(assemblies);
     
-    // 4. 验证连接和健康检查
-    await this._validateAllConnections(assemblies);
-    const healthChecks = await this._performHealthChecks(assemblies);
+    // 4. 组装完成 - 验证和健康检查由独立模块负责
+    // REFACTORED: 移除组装阶段的验证逻辑，由SelfCheckModule和运行时验证负责
+    console.log(`🏭 流水线组装完成，跳过验证阶段 - 将由独立验证模块处理`);
     
     // 5. 计算统计信息
     const assemblyTime = Date.now() - startTime;
@@ -216,6 +248,20 @@ export class PipelineAssembler {
     this.assembledPipelines.clear();
     this.isDestroyed = true;
   }
+
+  /**
+   * 获取模块注册统计信息 - 用于调试
+   */
+  getModuleRegistryStats(): Record<string, any> {
+    return this.registry.getRegistryStats();
+  }
+
+  /**
+   * 获取特定类型的模块数量 - 用于调试
+   */
+  getModuleCountByType(type: ModuleType): number {
+    return this.registry.getModulesByType(type).length;
+  }
   
   /**
    * 组装单个流水线
@@ -247,7 +293,19 @@ export class PipelineAssembler {
     let previousModule: AssembledModule | undefined;
     
     for (const layerConfig of config.layers) {
-      const moduleType = layerConfig.type as ModuleType;
+      // 修复：当type为undefined时，根据name推断type
+      let moduleType = layerConfig.type as ModuleType;
+      if (!moduleType && layerConfig.name) {
+        const nameToTypeMap: Record<string, ModuleType> = {
+          'transformer': ModuleType.TRANSFORMER,
+          'protocol': ModuleType.PROTOCOL,
+          'server-compatibility': ModuleType.SERVER_COMPATIBILITY,
+          'server': ModuleType.SERVER
+        };
+        moduleType = nameToTypeMap[layerConfig.name];
+        console.log(`🔧 Fixed type for layer ${layerConfig.name}: ${moduleType}`);
+      }
+      
       const moduleInstance = await this.selectionStrategy.selectModule(moduleType, layerConfig.config);
       
       if (!moduleInstance) {
@@ -255,7 +313,10 @@ export class PipelineAssembler {
         continue;
       }
       
-      // 配置模块
+      // REFACTORED: 组装阶段仅进行基础配置，不进行鉴权验证
+      // 移除API Key相关的条件检查，所有模块都使用轻量级配置
+      console.log(`🔧 配置模块 ${layerConfig.name} - 组装阶段轻量级配置`);
+      console.log(`🔍 配置内容:`, JSON.stringify(layerConfig.config, null, 2));
       await moduleInstance.configure(layerConfig.config);
       
       // 创建组装后的模块
@@ -277,11 +338,10 @@ export class PipelineAssembler {
         previousModule.instance.addConnection(moduleInstance);
       }
       
-      // 初始化模块
-      const initStartTime = Date.now();
-      await moduleInstance.start();
-      assembledModule.isInitialized = true;
-      assembledModule.initializationTime = Date.now() - initStartTime;
+      // 组装阶段：只创建模块实例，不进行初始化和启动
+      // 初始化和启动应该在PipelineManager中的startPipeline()阶段进行
+      assembledModule.isInitialized = false; // 组装完成但未初始化
+      assembledModule.initializationTime = 0; // 将在启动时计算
       
       pipeline.modules.push(assembledModule);
       previousModule = assembledModule;
@@ -313,55 +373,33 @@ export class PipelineAssembler {
   }
   
   /**
-   * 验证所有连接
+   * 验证所有连接 - DEPRECATED: 移至运行时验证
+   * @deprecated 连接验证应由PipelineManager在运行时进行
    */
   private async _validateAllConnections(pipelines: AssembledPipeline[]): Promise<void> {
-    for (const pipeline of pipelines) {
-      for (let i = 0; i < pipeline.modules.length - 1; i++) {
-        const currentModule = pipeline.modules[i];
-        const nextModule = pipeline.modules[i + 1];
-        
-        // 验证连接是否正确建立
-        if (!currentModule.instance.hasConnection(nextModule.instance.getId())) {
-          pipeline.assemblyErrors.push(`Connection not established between ${currentModule.name} and ${nextModule.name}`);
-          pipeline.health = 'degraded';
-        }
-      }
-    }
+    console.log(`⚠️ [DEPRECATED] _validateAllConnections called - 连接验证应由运行时模块处理`);
+    console.log(`📋 跳过连接验证，组装阶段专注于配置组装`);
+    
+    // REFACTORED: 移除网络连接验证逻辑
+    // 连接验证应该在PipelineManager.startPipeline()阶段进行
+    return;
   }
   
   /**
-   * 执行健康检查
+   * 执行健康检查 - DEPRECATED: 移至独立健康检查模块
+   * @deprecated 健康检查应由SelfCheckModule或独立健康检查服务处理
    */
   private async _performHealthChecks(pipelines: AssembledPipeline[]): Promise<ModuleHealthCheck[]> {
-    const healthChecks: ModuleHealthCheck[] = [];
+    console.log(`⚠️ [DEPRECATED] _performHealthChecks called - 健康检查应由独立模块处理`);
+    console.log(`📋 跳过健康检查，组装阶段专注于配置组装，避免网络依赖`);
     
-    for (const pipeline of pipelines) {
-      for (const module of pipeline.modules) {
-        const startTime = Date.now();
-        const healthResult = await module.instance.healthCheck();
-        const responseTime = Date.now() - startTime;
-        
-        const healthCheck: ModuleHealthCheck = {
-          moduleId: module.instance.getId(),
-          moduleName: module.instance.getName(),
-          moduleType: module.instance.getType(),
-          isHealthy: healthResult.healthy,
-          responseTime,
-          details: healthResult.details,
-          lastChecked: new Date()
-        };
-        
-        healthChecks.push(healthCheck);
-        
-        // 更新流水线健康状态
-        if (!healthResult.healthy && pipeline.health === 'healthy') {
-          pipeline.health = 'degraded';
-        }
-      }
-    }
+    // REFACTORED: 移除组装阶段的健康检查逻辑
+    // 健康检查应该由以下模块负责：
+    // 1. SelfCheckModule - 系统启动后的自检
+    // 2. PipelineManager - 运行时健康监控  
+    // 3. 独立的HealthCheckService - 定期健康检查
     
-    return healthChecks;
+    return []; // 返回空数组，避免破坏现有接口
   }
   
   /**

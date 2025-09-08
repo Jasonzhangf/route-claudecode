@@ -4,7 +4,7 @@
 
 import { getUnifiedErrorProcessingFlow } from '../unified-error-processing-flow';
 import { ErrorContext } from '../../../../interfaces/core/error-coordination-center';
-import { RCCError, ERROR_CODES } from '../../types/error';
+import { RCCError, ERROR_CODES } from '../types/error';
 
 describe('UnifiedErrorProcessingFlow', () => {
   let errorFlow: any;
@@ -22,7 +22,9 @@ describe('UnifiedErrorProcessingFlow', () => {
       'test error message',
       ERROR_CODES.UNKNOWN_ERROR,
       'test-module',
-      'medium'
+      {
+        details: { severity: 'medium' }
+      }
     );
     const context: ErrorContext = {
       requestId: 'test-123',

@@ -9,7 +9,7 @@ export {
   RCCErrorCode as ERROR_CODES, 
   RCCErrorCode,
   ErrorContext 
-} from '../../types/src';
+} from '../../../../types/index';
 
 // Enhanced error classes for different error types
 export class ValidationError extends Error {
@@ -60,8 +60,8 @@ export class AuthError extends Error {
   }
 }
 
-// Error severity levels
-export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
+// Error severity levels - use enum from interfaces/core instead of type alias
+// export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
 
 // Constants for backward compatibility
 export const PIPELINE_INIT_FAILED = 'PIPELINE_INIT_FAILED';

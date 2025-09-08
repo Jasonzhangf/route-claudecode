@@ -10,7 +10,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { PipelineAssembler, PipelineAssemblyResult } from '../index';
 import { PipelineConfig } from '../../../router/src/router-preprocessor';
-import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
+import { ModuleType } from '../module-interface';
 
 /**
  * 输出路径配置
@@ -52,8 +53,21 @@ function loadRouterOutput(): PipelineConfig[] {
 describe('Pipeline Assembly Integration', () => {
   let assembler: PipelineAssembler;
   let pipelineConfigs: PipelineConfig[];
+  let originalEnv: Record<string, string | undefined>;
   
   beforeAll(() => {
+    // 保存原始环境变量
+    originalEnv = {
+      NODE_ENV: process.env.NODE_ENV,
+      RCC4_AUTH_MODE: process.env.RCC4_AUTH_MODE,
+      RCC4_SKIP_AUTH_VALIDATION: process.env.RCC4_SKIP_AUTH_VALIDATION
+    };
+    
+    // 设置测试环境变量 - 使用OAuth鉴权模式
+    process.env.NODE_ENV = 'test';
+    process.env.RCC4_AUTH_MODE = 'oauth';
+    process.env.RCC4_SKIP_AUTH_VALIDATION = 'true'; // 在测试环境中跳过鉴权验证
+    
     ensureTestOutputsDir();
     assembler = new PipelineAssembler();
     pipelineConfigs = loadRouterOutput();
@@ -98,6 +112,40 @@ describe('Pipeline Assembly Integration', () => {
     
     // 基本成功检查
     expect(result).toBeDefined();
+    
+    // 调试信息：显示组装结果
+    console.log('🔍 [DEBUG] 组装结果概览:', {
+      success: result.success,
+      totalErrors: result.errors.length,
+      totalWarnings: result.warnings.length,
+      totalPipelines: result.allPipelines.length,
+      totalConfigs: pipelineConfigs.length
+    });
+    
+    if (!result.success) {
+      console.log('🔍 [DEBUG] 组装失败，错误信息:', result.errors);
+      console.log('🔍 [DEBUG] 组装警告:', result.warnings);
+      console.log('🔍 [DEBUG] 组装统计:', result.stats);
+    }
+    
+    // 检查每个配置对应的流水线状态
+    console.log('🔍 [DEBUG] 单个流水线状态检查:');
+    for (let i = 0; i < pipelineConfigs.length; i++) {
+      const config = pipelineConfigs[i];
+      const pipeline = result.allPipelines.find(p => p.pipelineId === config.pipelineId);
+      
+      console.log(`  ${i + 1}. ${config.pipelineId}:`);
+      console.log(`     配置层: [${config.layers.map(l => l.type).join(', ')}]`);
+      
+      if (pipeline) {
+        console.log(`     状态: ${pipeline.assemblyStatus}`);
+        console.log(`     模块数: ${pipeline.modules.length}`);
+        console.log(`     错误: [${pipeline.assemblyErrors.join(', ')}]`);
+      } else {
+        console.log(`     ❌ 未找到对应的组装流水线`);
+      }
+    }
+    
     expect(result.success).toBe(true);
     expect(result.errors.length).toBe(0);
     

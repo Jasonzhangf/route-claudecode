@@ -1,0 +1,47 @@
+{
+  "testTimestamp": "2025-09-08T01:53:22.861Z",
+  "totalPipelines": 4,
+  "pipelineStructures": [
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "modulesCount": 4,
+      "assemblyStatus": "assembled",
+      "hasModules": true,
+      "modulesConnected": true
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "modulesCount": 4,
+      "assemblyStatus": "assembled",
+      "hasModules": true,
+      "modulesConnected": true
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen-max_0",
+      "provider": "qwen",
+      "model": "qwen-max",
+      "modulesCount": 4,
+      "assemblyStatus": "assembled",
+      "hasModules": true,
+      "modulesConnected": true
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen-max_1",
+      "provider": "qwen",
+      "model": "qwen-max",
+      "modulesCount": 4,
+      "assemblyStatus": "assembled",
+      "hasModules": true,
+      "modulesConnected": true
+    }
+  ],
+  "validation": {
+    "allHaveIds": true,
+    "allHaveProviders": true,
+    "allHaveModulesArray": true
+  }
+}

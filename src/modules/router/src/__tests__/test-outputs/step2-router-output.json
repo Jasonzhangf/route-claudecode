@@ -392,7 +392,7 @@
     "defaultRoute": "default",
     "metadata": {
       "configSource": "ConfigPreprocessor",
-      "generatedAt": "2025-09-05T09:20:59.412Z",
+      "generatedAt": "2025-09-08T01:53:22.853Z",
       "preprocessorVersion": "4.1.0"
     }
   },
@@ -460,6 +460,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }
@@ -529,6 +530,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }
@@ -598,6 +600,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-faec4c4af5c9e791d012c238662ee708",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }
@@ -667,6 +670,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }
@@ -736,6 +740,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }
@@ -805,6 +810,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-faec4c4af5c9e791d012c238662ee708",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }
@@ -868,6 +874,7 @@
             "endpoint": "https://portal.qwen.ai/v1",
             "apiKey": "qwen-auth-1",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 262144
           }
         }
@@ -931,6 +938,7 @@
             "endpoint": "https://portal.qwen.ai/v1",
             "apiKey": "qwen-auth-2",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 262144
           }
         }
@@ -1000,6 +1008,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 262144
           }
         }
@@ -1069,6 +1078,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 262144
           }
         }
@@ -1138,6 +1148,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-faec4c4af5c9e791d012c238662ee708",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 262144
           }
         }
@@ -1150,6 +1161,6 @@
   "stats": {
     "routesCount": 8,
     "pipelinesCount": 11,
-    "processingTimeMs": 0
+    "processingTimeMs": 7
   }
 }

@@ -11,10 +11,10 @@
 export {
   RCCError,
   RCCErrorCode
-} from '../types/src';
+} from '../types/src/index';
 
 // ERROR_CODES别名，兼容旧代码
-export { RCCErrorCode as ERROR_CODES } from '../types/src';
+export { RCCErrorCode as ERROR_CODES } from '../types/src/index';
 
 // 导出错误处理核心类
 export {

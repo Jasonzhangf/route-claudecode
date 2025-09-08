@@ -9,7 +9,7 @@ import {
   ModelInfo
 } from './routing-table-types';
 import { JQJsonHandler } from '../../error-handler/src/utils/jq-json-handler';
-import { RCCError, RCCErrorCode } from '../../types/src';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
 import { EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
 

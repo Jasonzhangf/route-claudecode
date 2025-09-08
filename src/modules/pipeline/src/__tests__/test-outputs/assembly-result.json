@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "stats": {
+    "totalPipelines": 11,
+    "successfulAssemblies": 11,
+    "failedAssemblies": 0,
+    "totalModulesRegistered": 9,
+    "modulesByType": {
+      "transformer": 2,
+      "protocol": 1,
+      "server-compatibility": 5,
+      "server": 1
+    },
+    "assemblyTimeMs": 19,
+    "averageAssemblyTime": 1.7272727272727273,
+    "memoryUsageMB": 267.9466018676758
+  },
+  "errors": [],
+  "warnings": [],
+  "pipelineCount": 11,
+  "routeModelCount": 2
+}

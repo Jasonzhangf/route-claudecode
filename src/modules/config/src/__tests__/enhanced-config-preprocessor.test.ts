@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { ConfigPreprocessor } from '../config-preprocessor';
-import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 describe('Enhanced Config Preprocessor', () => {
   const testOutputDir = path.join(__dirname, 'test-outputs');
@@ -23,8 +23,8 @@ describe('Enhanced Config Preprocessor', () => {
   test('应该成功读取和预处理配置文件', async () => {
     const startTime = Date.now();
     
-    // 执行配置预处理
-    const result = ConfigPreprocessor.preprocess(configPath);
+    // 执行配置预处理 - 添加await
+    const result = await ConfigPreprocessor.preprocess(configPath);
     
     const processingTime = Date.now() - startTime;
 
@@ -134,8 +134,8 @@ describe('Enhanced Config Preprocessor', () => {
     console.log(`🔍 Routes: ${Object.keys(result.routingTable?.routes || {}).length}`);
   });
 
-  test('应该正确处理系统配置合并', () => {
-    const result = ConfigPreprocessor.preprocess(configPath);
+  test('应该正确处理系统配置合并', async () => {
+    const result = await ConfigPreprocessor.preprocess(configPath);
     
     expect(result.success).toBe(true);
     
@@ -166,8 +166,8 @@ describe('Enhanced Config Preprocessor', () => {
     fs.writeFileSync(enhancementFile, JQJsonHandler.stringifyJson(enhancementVerification, true), 'utf8');
   });
 
-  test('应该生成完整的测试摘要', () => {
-    const result = ConfigPreprocessor.preprocess(configPath);
+  test('应该生成完整的测试摘要', async () => {
+    const result = await ConfigPreprocessor.preprocess(configPath);
     
     const summary = {
       testSuite: 'Enhanced Config Preprocessor Unit Tests',

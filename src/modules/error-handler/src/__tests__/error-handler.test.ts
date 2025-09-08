@@ -3,7 +3,7 @@
  */
 
 import { EnhancedErrorHandler } from '../enhanced-error-handler';
-import { RCCError, ValidationError, TransformError, AuthError, ERROR_CODES } from '../../types/error';
+import { RCCError, ValidationError, TransformError, AuthError, RCCErrorCode } from '../types/error';
 import { ErrorContext } from '../../../../interfaces/core/error-coordination-center';
 
 describe('EnhancedErrorHandler', () => {
@@ -37,10 +37,9 @@ describe('EnhancedErrorHandler', () => {
     
     const rccError = new RCCError(
       'Test RCC Error',
-      ERROR_CODES.PIPELINE_INIT_FAILED,
+      RCCErrorCode.PIPELINE_ASSEMBLY_FAILED,
       'test-module',
-      'high',
-      { test: 'context' }
+      { details: { severity: 'high', test: 'context' } }
     );
     
     const context: ErrorContext = {

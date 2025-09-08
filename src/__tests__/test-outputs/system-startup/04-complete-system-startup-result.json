@@ -1,0 +1,52 @@
+{
+  "testSuite": "Complete System Startup Integration Test",
+  "timestamp": "2025-09-08T01:53:23.011Z",
+  "configSource": "/Users/fanzhang/.route-claudecode/config.json",
+  "systemState": {
+    "startupTime": {
+      "step1_config": 34,
+      "step2_router": 2,
+      "step3_assembly": 62,
+      "total": 102
+    },
+    "systemHealth": {
+      "configParsed": true,
+      "routingReady": true,
+      "pipelinesReady": true,
+      "layerTypesValid": true,
+      "systemReady": true
+    },
+    "resourceCounts": {
+      "providersConfigured": 1,
+      "routesDefined": 8,
+      "pipelinesGenerated": 4,
+      "pipelinesAssembled": 4
+    },
+    "dataIntegrity": {
+      "configToRouter": true,
+      "routerToAssembly": true,
+      "endToEndFlow": true
+    }
+  },
+  "performanceMetrics": {
+    "step1_configMs": 34,
+    "step2_routerMs": 2,
+    "step3_assemblyMs": 62,
+    "step4_validationMs": 0,
+    "totalStartupMs": 102,
+    "avgStepTime": 32.666666666666664,
+    "performanceGrade": "B"
+  },
+  "systemReadiness": {
+    "readyForProduction": true,
+    "canProcessRequests": true,
+    "allComponentsHealthy": true,
+    "dataFlowIntact": true
+  },
+  "nextSteps": [
+    "System is ready for request processing",
+    "Can integrate with HTTP server",
+    "Ready for production deployment",
+    "All core components validated"
+  ]
+}

@@ -5,7 +5,7 @@
 
 // Re-export from modules for backward compatibility
 export * from '../../modules/interfaces/core/error-coordination-center';
-export * from '../../modules/types/src';
+export * from '../../modules/types/src/index';
 
 // Additional legacy compatibility exports
-export type { ErrorContext } from '../../modules/types/src';
+export type { ErrorContext } from '../../modules/types/src/index';

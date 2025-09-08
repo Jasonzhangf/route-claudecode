@@ -1,0 +1,63 @@
+{
+  "success": true,
+  "routingTable": {
+    "providers": [
+      {
+        "name": "qwen",
+        "priority": 1,
+        "api_base_url": "https://portal.qwen.ai/v1",
+        "api_key": [
+          "qwen-auth-1",
+          "qwen-auth-2"
+        ],
+        "maxTokens": 262144,
+        "models": [
+          {
+            "name": "qwen3-coder-plus",
+            "maxTokens": 262144
+          },
+          {
+            "name": "qwen-max",
+            "maxTokens": 262144
+          }
+        ],
+        "serverCompatibility": {
+          "use": "qwen",
+          "options": {
+            "maxTokens": 262144,
+            "enhanceTool": true,
+            "authFileName": "qwen-auth-1",
+            "supportsSystemMessages": true,
+            "supportsToolCalling": true,
+            "supportsStreaming": true
+          }
+        }
+      }
+    ],
+    "routes": {
+      "default": "qwen,qwen3-coder-plus",
+      "longContext": "qwen,qwen-max",
+      "background": "qwen,qwen3-coder-plus",
+      "think": "qwen,qwen-max",
+      "webSearch": "qwen,qwen3-coder-plus",
+      "code": "qwen,qwen3-coder-plus",
+      "codeReview": "qwen,qwen-max",
+      "reasoning": "qwen,qwen-max"
+    },
+    "server": {
+      "port": 5506,
+      "host": "0.0.0.0",
+      "debug": true
+    },
+    "apiKey": "rcc4-proxy-key",
+    "version": "4.0",
+    "description": "Qwen-only Provider配置 - 专用于Qwen API测试 (Port 5506)",
+    "lastUpdated": "2025-09-08T03:05:51.493Z"
+  },
+  "metadata": {
+    "configPath": "/Users/fanzhang/.route-claudecode/config.json",
+    "processingTime": 16,
+    "timestamp": "2025-09-08T03:05:51.493Z",
+    "sourceFormat": "v4"
+  }
+}

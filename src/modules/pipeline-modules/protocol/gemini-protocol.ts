@@ -13,7 +13,7 @@
  * @version 1.0.0-security-fix
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 
 // 导入OpenAI标准格式 - Protocol层必须使用
@@ -481,6 +481,18 @@ export class GeminiProtocolModule extends EventEmitter implements ModuleInterfac
 
   getConnections(): ModuleInterface[] {
     return Array.from(this.connections.values());
+  }
+
+  hasConnection(moduleId: string): boolean {
+    return this.connections.has(moduleId);
+  }
+
+  clearConnections(): void {
+    this.connections.clear();
+  }
+
+  getConnectionCount(): number {
+    return this.connections.size;
   }
   
   /**

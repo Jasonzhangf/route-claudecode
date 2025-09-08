@@ -1,0 +1,101 @@
+{
+  "pipelineConfig": {
+    "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+    "routeId": "route_default_qwen_2_1",
+    "provider": "qwen",
+    "model": "qwen3-coder-plus",
+    "endpoint": "https://portal.qwen.ai/v1",
+    "apiKey": "qwen-auth-2",
+    "timeout": 60000,
+    "maxRetries": 3,
+    "layers": [
+      {
+        "name": "transformer",
+        "type": "transformer",
+        "order": 1,
+        "config": {
+          "provider": "qwen",
+          "model": "qwen3-coder-plus",
+          "endpoint": "https://portal.qwen.ai/v1",
+          "apiKey": "qwen-auth-2"
+        }
+      },
+      {
+        "name": "protocol",
+        "type": "protocol",
+        "order": 2,
+        "config": {
+          "provider": "qwen",
+          "model": "qwen3-coder-plus",
+          "endpoint": "https://portal.qwen.ai/v1"
+        }
+      },
+      {
+        "name": "server-compatibility",
+        "type": "server-compatibility",
+        "order": 3,
+        "config": {
+          "provider": "qwen",
+          "model": "qwen3-coder-plus",
+          "endpoint": "https://portal.qwen.ai/v1",
+          "apiKey": "qwen-auth-2",
+          "timeout": 60000,
+          "use": "qwen",
+          "maxTokens": 262144,
+          "enhanceTool": true,
+          "authFileName": "qwen-auth-1"
+        }
+      },
+      {
+        "name": "server",
+        "type": "server",
+        "order": 4,
+        "config": {
+          "provider": "qwen",
+          "model": "qwen3-coder-plus",
+          "endpoint": "https://portal.qwen.ai/v1",
+          "apiKey": "qwen-auth-2",
+          "timeout": 60000,
+          "maxTokens": 262144
+        }
+      }
+    ],
+    "maxTokens": 262144
+  },
+  "testData": {
+    "model": "qwen3-coder-plus",
+    "max_tokens": 262144,
+    "temperature": 0.7,
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "tools": [
+      {
+        "name": "list_files",
+        "description": "List files and directories",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Directory path to list"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+      "provider": "qwen",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling"
+    }
+  }
+}

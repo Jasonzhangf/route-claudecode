@@ -1,0 +1,44 @@
+{
+  "timestamp": "2025-09-08T01:53:23.143Z",
+  "totalProviders": 4,
+  "totalSelections": 8,
+  "successfulSelections": 0,
+  "selectionResults": [
+    {
+      "error": "No available providers for load balancing"
+    },
+    {
+      "error": "No available providers for load balancing"
+    },
+    {
+      "error": "No available providers for load balancing"
+    },
+    {
+      "error": "No available providers for load balancing"
+    },
+    {
+      "error": "No available providers for load balancing"
+    },
+    {
+      "error": "No available providers for load balancing"
+    },
+    {
+      "error": "No available providers for load balancing"
+    },
+    {
+      "error": "No available providers for load balancing"
+    }
+  ],
+  "loadBalancerStatistics": {
+    "totalProviders": 4,
+    "healthyProviders": 0,
+    "degradedProviders": 0,
+    "unhealthyProviders": 0,
+    "totalConnections": 0,
+    "avgResponseTime": 109.00466684715967,
+    "avgSuccessRate": 1,
+    "activeSessions": 0,
+    "circuitBreakersOpen": 0
+  },
+  "providerDistribution": {}
+}

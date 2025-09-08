@@ -14,9 +14,9 @@ import {
   ModuleMetrics,
 } from '../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-import { StandardRequest } from '../types/src';
-import { StandardResponse, Choice, Usage, Message, FinishReason, AssistantMessage } from '../types/src';
-import { Tool } from '../types/src';
+import { StandardRequest } from '../types/src/index';
+import { StandardResponse, Choice, Usage, Message, FinishReason, AssistantMessage } from '../types/src/index';
+import { Tool } from '../types/src/index';
 import JQJsonHandler from '../error-handler/src/utils/jq-json-handler';
 /**
  * OpenAI Protocol配置接口

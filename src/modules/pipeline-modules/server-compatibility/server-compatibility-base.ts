@@ -3,7 +3,7 @@
  * 支持双向兼容性处理：请求和响应
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 
@@ -217,7 +217,7 @@ export abstract class ServerCompatibilityModule extends EventEmitter implements 
     }
     
     const startTime = Date.now();
-    this.status.status = 'busy';
+    this.status.status = 'running';
     this.status.lastActivity = new Date();
     
     try {

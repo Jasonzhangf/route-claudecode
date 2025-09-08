@@ -1,0 +1,40 @@
+{
+  "testName": "Qwen System Performance Test",
+  "timestamp": "2025-09-08T01:53:23.056Z",
+  "configFile": "qwen-v4-5507.json",
+  "iterations": 3,
+  "qwenResults": [
+    {
+      "iteration": 1,
+      "totalTimeMs": 15,
+      "success": true,
+      "qwenPipelinesAssembled": 1,
+      "qwenProvider": true
+    },
+    {
+      "iteration": 2,
+      "totalTimeMs": 6,
+      "success": true,
+      "qwenPipelinesAssembled": 1,
+      "qwenProvider": true
+    },
+    {
+      "iteration": 3,
+      "totalTimeMs": 6,
+      "success": true,
+      "qwenPipelinesAssembled": 1,
+      "qwenProvider": true
+    }
+  ],
+  "performance": {
+    "averageTimeMs": 9,
+    "minTimeMs": 6,
+    "maxTimeMs": 15,
+    "allUnder2000ms": true,
+    "consistency": false,
+    "qwenSpecific": {
+      "avgQwenPipelines": 1,
+      "allIterationsQwen": true
+    }
+  }
+}

@@ -10,7 +10,7 @@
  * @author RCC v4.0
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 import { RCCError, RCCErrorCode } from '../../types/src/index';

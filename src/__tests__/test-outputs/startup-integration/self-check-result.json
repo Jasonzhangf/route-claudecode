@@ -1,0 +1,64 @@
+{
+  "testTimestamp": "2025-09-08T01:53:23.089Z",
+  "success": true,
+  "selfCheckResult": true,
+  "selfCheckState": {
+    "moduleId": "self-check-service",
+    "moduleName": "Self Check Service",
+    "moduleType": "service",
+    "version": "4.0.0",
+    "isRunning": true,
+    "statistics": {
+      "totalChecks": 1,
+      "successfulChecks": 1,
+      "failedChecks": 0,
+      "lastCheckAt": "2025-09-08T01:53:23.089Z",
+      "averageCheckDuration": 26
+    },
+    "config": {
+      "enableApiKeyValidation": true,
+      "apiKeyValidationInterval": 300000,
+      "enableTokenRefresh": true,
+      "tokenRefreshAdvanceTime": 3600000,
+      "enablePipelineHealthCheck": true,
+      "pipelineHealthCheckInterval": 60000,
+      "autoDestroyInvalidPipelines": true,
+      "authTimeout": 300000
+    },
+    "errors": [
+      "流水线健康检查失败: 无法获取流水线管理器"
+    ],
+    "startedAt": "2025-09-08T01:53:23.063Z"
+  },
+  "rawResults": {
+    "selfCheckResult": true,
+    "selfCheckState": {
+      "moduleId": "self-check-service",
+      "moduleName": "Self Check Service",
+      "moduleType": "service",
+      "version": "4.0.0",
+      "isRunning": true,
+      "statistics": {
+        "totalChecks": 1,
+        "successfulChecks": 1,
+        "failedChecks": 0,
+        "lastCheckAt": "2025-09-08T01:53:23.089Z",
+        "averageCheckDuration": 26
+      },
+      "config": {
+        "enableApiKeyValidation": true,
+        "apiKeyValidationInterval": 300000,
+        "enableTokenRefresh": true,
+        "tokenRefreshAdvanceTime": 3600000,
+        "enablePipelineHealthCheck": true,
+        "pipelineHealthCheckInterval": 60000,
+        "autoDestroyInvalidPipelines": true,
+        "authTimeout": 300000
+      },
+      "errors": [
+        "流水线健康检查失败: 无法获取流水线管理器"
+      ],
+      "startedAt": "2025-09-08T01:53:23.063Z"
+    }
+  }
+}

@@ -4,7 +4,7 @@
  */
 
 // Re-export all types from modules
-export * from '../modules/types/src';
+export * from '../modules/types/src/index';
 
 // Re-export error types
 export * from './error';
@@ -13,5 +13,3 @@ export * from './error';
 export * from '../interfaces/core/error-coordination-center';
 export * from '../interfaces/module/base-module';
 
-// Re-export fix types
-export * from './fix-types';

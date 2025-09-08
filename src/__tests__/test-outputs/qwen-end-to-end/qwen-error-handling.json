@@ -1,0 +1,21 @@
+{
+  "testName": "Qwen Error Handling Test",
+  "timestamp": "2025-09-08T01:53:23.059Z",
+  "scenarios": [
+    {
+      "name": "Missing Qwen Config File",
+      "input": "/path/to/nonexistent/qwen-config.json",
+      "expectedResult": "failure",
+      "actualResult": "failure",
+      "error": {
+        "code": "CONFIG_PARSE_ERROR",
+        "message": "Config file not found: /path/to/nonexistent/qwen-config.json",
+        "details": {
+          "configPath": "/path/to/nonexistent/qwen-config.json"
+        }
+      },
+      "qwenSpecific": true
+    }
+  ],
+  "conclusion": "Qwen system properly handles error scenarios with appropriate error messages"
+}

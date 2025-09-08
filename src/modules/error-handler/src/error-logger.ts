@@ -7,7 +7,7 @@
  */
 
 import { secureLogger } from './utils/secure-logger';
-import { ErrorContext } from '../../types/src';
+import { ErrorContext } from '../../types/src/index';
 import { ErrorClassification } from '../../interfaces/core/error-coordination-center';
 import { ErrorType } from './error-log-manager';
 

@@ -1,6 +1,6 @@
 {
   "testSuite": "HTTP服务器初始化完整流程测试",
-  "testDate": "2025-09-06T08:32:08.398Z",
+  "testDate": "2025-09-08T01:53:23.505Z",
   "testResult": "PASSED",
   "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
   "serverConfig": {
@@ -47,10 +47,10 @@
   ],
   "finalServerStatus": {
     "isRunning": true,
-    "port": 5511,
+    "port": 5512,
     "host": "0.0.0.0",
-    "version": "4.0.0-alpha.1",
-    "activePipelines": 0,
+    "version": "4.0.0-alpha.1-clean",
+    "activePipelines": 11,
     "healthStatus": "healthy",
     "totalRequests": 0,
     "uptime": "0s"
@@ -77,17 +77,17 @@
           "hasApiKeys": 3
         }
       ],
-      "timestamp": "2025-09-06T08:32:08.385Z"
+      "timestamp": "2025-09-08T01:53:23.382Z"
     },
     "step2": {
-      "initializationTime": 4,
+      "initializationTime": 119,
       "serverStatus": {
         "isRunning": true,
-        "port": 5511,
+        "port": 5512,
         "host": "0.0.0.0",
-        "version": "4.0.0-alpha.1",
-        "startTime": "2025-09-06T08:32:08.391Z",
-        "activePipelines": 0,
+        "version": "4.0.0-alpha.1-clean",
+        "startTime": "2025-09-08T01:53:23.500Z",
+        "activePipelines": 11,
         "healthStatus": "healthy"
       },
       "initializationSteps": [
@@ -97,7 +97,51 @@
         "自检系统 (SelfCheckService)",
         "动态调度系统 (Dynamic Scheduler)"
       ],
-      "timestamp": "2025-09-06T08:32:08.392Z"
+      "timestamp": "2025-09-08T01:53:23.502Z"
+    },
+    "step3": {
+      "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+      "activePipelinesCount": 11,
+      "configProcessingSuccess": true,
+      "configProcessingStage": "配置预处理完成",
+      "expectedSteps": [
+        "读取配置文件",
+        "解析Provider配置",
+        "生成路由表",
+        "验证配置完整性"
+      ],
+      "timestamp": "2025-09-08T01:53:23.503Z"
+    },
+    "step4": {
+      "totalPipelines": 11,
+      "routingProcessingSuccess": true,
+      "routingStage": "路由预处理完成",
+      "expectedFeatures": [
+        "路由表解析",
+        "流水线配置生成",
+        "负载均衡配置",
+        "Provider模型映射"
+      ],
+      "pipelineDistribution": "Multiple pipelines generated from routing table",
+      "timestamp": "2025-09-08T01:53:23.503Z"
+    },
+    "step5": {
+      "assembledPipelinesCount": 11,
+      "assemblySuccess": true,
+      "assemblyStage": "流水线组装完成",
+      "pipelineArchitecture": [
+        "Transformer Layer",
+        "Protocol Layer",
+        "Server-Compatibility Layer",
+        "Server Layer"
+      ],
+      "expectedCapabilities": [
+        "Anthropic -> OpenAI转换",
+        "API调用处理",
+        "Provider特定优化",
+        "HTTP请求执行"
+      ],
+      "timestamp": "2025-09-08T01:53:23.504Z"
     },
     "step6": {
       "selfCheckInitialized": true,
@@ -111,17 +155,40 @@
       ],
       "healthCheckDetails": [
         {
-          "name": "HTTP Server",
+          "name": "Memory Usage",
           "status": "pass",
           "responseTime": 0
         },
         {
-          "name": "Memory Usage",
+          "name": "CPU Usage",
           "status": "pass",
           "responseTime": 0
         }
       ],
-      "timestamp": "2025-09-06T08:32:08.397Z"
+      "timestamp": "2025-09-08T01:53:23.504Z"
+    },
+    "step7": {
+      "schedulerReady": true,
+      "totalPipelines": 11,
+      "schedulerFeatures": [
+        "负载均衡策略",
+        "流水线路由索引",
+        "动态调度决策",
+        "Round-robin分发"
+      ],
+      "schedulingCapabilities": [
+        "Provider_Model路由映射",
+        "多流水线负载均衡",
+        "健康状态监控",
+        "自动故障转移"
+      ],
+      "serverReadiness": {
+        "httpServerRunning": true,
+        "pipelinesActive": 11,
+        "healthStatus": "healthy",
+        "uptime": "0s"
+      },
+      "timestamp": "2025-09-08T01:53:23.505Z"
     }
   },
   "summary": {
@@ -129,7 +196,7 @@
     "passedSteps": 7,
     "failedSteps": 0,
     "successRate": "100%",
-    "totalPipelines": 0,
+    "totalPipelines": 11,
     "systemHealth": "healthy",
     "readyForProduction": true
   },

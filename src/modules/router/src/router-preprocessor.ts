@@ -15,7 +15,7 @@
 
 // Import from local types
 import { RoutingTable, ProviderInfo, RouteMapping } from './routing-table-types';
-import { RCCError, RCCErrorCode } from '../../types/src';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
 import { EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
 
@@ -377,6 +377,9 @@ export class RouterPreprocessor {
     const selectedApiKey = apiKeys[apiKeyIndex] || apiKeys[0];
     
     return this._DEFAULT_LAYERS.map(layer => {
+      // 调试：检查原始layer
+      console.log(`🔧 Processing layer: ${layer.name}, type: ${layer.type}`);
+      
       // 根据不同层类型生成特定配置
       let layerConfig: Record<string, unknown> = {};
 
@@ -457,7 +460,8 @@ export class RouterPreprocessor {
             model: route.modelName,
             endpoint: provider.api_base_url,
             apiKey: selectedApiKey,
-            timeout: 60000
+            timeout: 60000,
+            authMethod: this._detectAuthMethod(provider.name, selectedApiKey, provider.api_base_url)
           };
           
           // 添加maxTokens配置（如果存在）
@@ -482,13 +486,51 @@ export class RouterPreprocessor {
           }
       }
 
-      return {
-        ...layer,
+      const resultLayer: PipelineLayer = {
+        name: layer.name,
+        type: layer.type,  // 明确传递type
+        order: layer.order,
         config: layerConfig
       };
+      
+      // 调试：验证返回的layer
+      console.log(`🔧 Generated layer: ${resultLayer.name}, type: ${resultLayer.type}`);
+      
+      return resultLayer;
     });
   }
   
+  /**
+   * 检测认证方法（内部方法）
+   */
+  private static _detectAuthMethod(provider: string, apiKey: string, endpoint?: string): string {
+    // 基于CLIProxyAPI的认证模式
+    const providerLower = provider.toLowerCase();
+    const endpointLower = endpoint?.toLowerCase() || '';
+    
+    // 1. 根据提供者名称判断
+    if (['iflow', 'qwen', 'portkey'].includes(providerLower)) {
+      return 'bearer';
+    }
+    
+    // 2. 根据API Key格式判断 (sk-开头的通常是Bearer Token)
+    if (apiKey.startsWith('sk-')) {
+      return 'bearer';
+    }
+    
+    // 3. 根据端点URL判断
+    if (endpointLower.includes('qwen') || endpointLower.includes('portal.qwen')) {
+      return 'bearer';
+    }
+    
+    if (endpointLower.includes('iflow') || endpointLower.includes('apis.iflow')) {
+      return 'bearer';
+    }
+    
+    // 4. 默认使用OpenAI认证模式
+    return 'openai';
+  }
+
   /**
    * 验证生成结果（内部方法）
    */

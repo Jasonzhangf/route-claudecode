@@ -8,7 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ConfigPreprocessor } from '../../../config/src/config-preprocessor';
 import { RouterPreprocessor } from '../router-preprocessor';
-import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 describe('Router and Pipeline Integration', () => {
   const testOutputDir = path.join(__dirname, 'test-outputs');
@@ -26,7 +26,7 @@ describe('Router and Pipeline Integration', () => {
 
     // 步骤1: Config预处理
     console.log('🔧 步骤1: 配置预处理...');
-    const configResult = ConfigPreprocessor.preprocess(configPath);
+    const configResult = await ConfigPreprocessor.preprocess(configPath);
     expect(configResult.success).toBe(true);
     expect(configResult.routingTable).toBeDefined();
 
@@ -132,7 +132,7 @@ describe('Router and Pipeline Integration', () => {
   });
 
   test('应该验证流水线配置的完整性', async () => {
-    const configResult = ConfigPreprocessor.preprocess(configPath);
+    const configResult = await ConfigPreprocessor.preprocess(configPath);
     const routerResult = await RouterPreprocessor.preprocess(configResult.routingTable!);
     
     expect(routerResult.success).toBe(true);
@@ -162,14 +162,14 @@ describe('Router and Pipeline Integration', () => {
       validPipelines: pipelineValidation.filter(p => p.isValid).length,
       invalidPipelines: pipelineValidation.filter(p => !p.isValid).length,
       pipelines: pipelineValidation
-    }, null, 2), 'utf8');
+    }, true));
 
     // 所有流水线都应该有效
     expect(pipelineValidation.every(p => p.isValid)).toBe(true);
   });
 
   test('应该生成最终测试摘要', async () => {
-    const configResult = ConfigPreprocessor.preprocess(configPath);
+    const configResult = await ConfigPreprocessor.preprocess(configPath);
     const routerResult = await RouterPreprocessor.preprocess(configResult.routingTable!);
 
     const finalSummary = {

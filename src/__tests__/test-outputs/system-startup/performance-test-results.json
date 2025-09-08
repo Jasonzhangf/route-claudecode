@@ -1,0 +1,32 @@
+{
+  "testName": "System Startup Performance Test",
+  "timestamp": "2025-09-08T01:53:23.056Z",
+  "iterations": 3,
+  "results": [
+    {
+      "iteration": 1,
+      "totalTimeMs": 20,
+      "success": true,
+      "pipelinesAssembled": 4
+    },
+    {
+      "iteration": 2,
+      "totalTimeMs": 11,
+      "success": true,
+      "pipelinesAssembled": 4
+    },
+    {
+      "iteration": 3,
+      "totalTimeMs": 11,
+      "success": true,
+      "pipelinesAssembled": 4
+    }
+  ],
+  "performance": {
+    "averageTimeMs": 14,
+    "minTimeMs": 11,
+    "maxTimeMs": 20,
+    "allUnder200ms": true,
+    "consistency": false
+  }
+}

@@ -1,12 +1,12 @@
 {
-  "initializationTime": 4,
+  "initializationTime": 119,
   "serverStatus": {
     "isRunning": true,
-    "port": 5511,
+    "port": 5512,
     "host": "0.0.0.0",
-    "version": "4.0.0-alpha.1",
-    "startTime": "2025-09-06T08:32:08.391Z",
-    "activePipelines": 0,
+    "version": "4.0.0-alpha.1-clean",
+    "startTime": "2025-09-08T01:53:23.500Z",
+    "activePipelines": 11,
     "healthStatus": "healthy"
   },
   "initializationSteps": [
@@ -16,5 +16,5 @@
     "自检系统 (SelfCheckService)",
     "动态调度系统 (Dynamic Scheduler)"
   ],
-  "timestamp": "2025-09-06T08:32:08.392Z"
+  "timestamp": "2025-09-08T01:53:23.502Z"
 }

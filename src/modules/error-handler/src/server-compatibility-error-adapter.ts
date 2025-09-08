@@ -25,9 +25,11 @@ export class ServerCompatibilityErrorAdapter {
     // 使用统一的错误响应标准化器处理错误
     // return UnifiedErrorResponseNormalizer.normalizeErrorResponse(error, serverType);
     return {
-      error: true,
-      message: error.message || 'Unknown error',
-      code: error.code || 'UNKNOWN_ERROR'
+      error: {
+        message: error.message || error?.response?.data?.error?.message || 'Unknown error',
+        type: serverType || 'unknown',
+        code: error.code || error?.response?.data?.error?.code || 'UNKNOWN_ERROR'
+      }
     };
   }
 

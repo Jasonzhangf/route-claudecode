@@ -3,6 +3,11 @@
  */
 export const CONSTANTS_MODULE_VERSION = '4.0.0-zero-interface';
 
+// Re-export all constant files
+export * from './bootstrap-constants';
+export * from './error-messages';
+export * from './test-constants';
+
 export interface ConstantsModuleInterface {
   version: string;
 }

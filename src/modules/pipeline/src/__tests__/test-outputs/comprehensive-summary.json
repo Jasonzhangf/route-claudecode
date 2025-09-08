@@ -1,0 +1,64 @@
+{
+  "executionTime": "2025-09-08T01:53:22.969Z",
+  "inputData": {
+    "configurationCount": 11,
+    "uniqueProviders": [
+      "iflow",
+      "qwen"
+    ],
+    "uniqueModels": [
+      "glm-4.5",
+      "deepseek-r1",
+      "qwen3-coder-plus",
+      "qwen3-coder"
+    ],
+    "layerTypes": [
+      "transformer",
+      "protocol",
+      "server-compatibility",
+      "server"
+    ]
+  },
+  "assemblyResults": {
+    "success": true,
+    "totalPipelines": 11,
+    "successfulAssemblies": 11,
+    "failedAssemblies": 0,
+    "assemblyTimeMs": 10,
+    "averageAssemblyTime": 0.9090909090909091,
+    "memoryUsageMB": 297.5779037475586
+  },
+  "routeModelGrouping": {
+    "totalRouteModels": 2,
+    "routeModels": [
+      "default",
+      "think"
+    ],
+    "pipelinesPerRouteModel": [
+      {
+        "routeModel": "default",
+        "count": 8
+      },
+      {
+        "routeModel": "think",
+        "count": 3
+      }
+    ]
+  },
+  "moduleRegistry": {
+    "totalModulesRegistered": 9,
+    "modulesByType": {
+      "transformer": 2,
+      "protocol": 1,
+      "server-compatibility": 5,
+      "server": 1
+    }
+  },
+  "healthStatus": {
+    "healthyPipelines": 11,
+    "degradedPipelines": 0,
+    "unhealthyPipelines": 0
+  },
+  "errors": [],
+  "warnings": []
+}

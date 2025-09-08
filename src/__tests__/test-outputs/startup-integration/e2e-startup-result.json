@@ -1,0 +1,178 @@
+{
+  "testTimestamp": "2025-09-07T10:47:32.131Z",
+  "success": true,
+  "totalTimeMs": 0,
+  "finalState": {
+    "totalProviders": 2,
+    "totalRoutes": 3,
+    "totalPipelines": 1,
+    "healthyPipelines": 1,
+    "systemHealth": "healthy",
+    "readyForRequests": true,
+    "moduleInitializationStatus": {
+      "pipelineManagerActive": true,
+      "loadBalancerActive": true,
+      "selfCheckServiceActive": true
+    },
+    "performanceMetrics": {
+      "configProcessingTime": 50,
+      "totalStartupTime": 0,
+      "averagePipelineAssemblyTime": 100
+    }
+  },
+  "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "completeStepResults": {
+    "configResult": {
+      "success": true,
+      "routingTable": {
+        "providers": [
+          {
+            "name": "qwen",
+            "models": [
+              "qwen-max"
+            ]
+          },
+          {
+            "name": "iflow",
+            "models": [
+              "deepseek-v3"
+            ]
+          }
+        ],
+        "routes": {
+          "default": "qwen,qwen-max",
+          "longContext": "qwen,qwen-max",
+          "think": "iflow,deepseek-v3"
+        }
+      },
+      "metadata": {
+        "processingTime": 50
+      }
+    },
+    "routerResult": {
+      "success": true,
+      "pipelineConfigs": [
+        {
+          "pipelineId": "qwen-pipeline",
+          "provider": "qwen",
+          "model": "qwen-max",
+          "endpoint": "https://portal.qwen.ai/v1",
+          "layers": [
+            {
+              "name": "transformer",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            },
+            {
+              "name": "protocol",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            },
+            {
+              "name": "server-compatibility",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            },
+            {
+              "name": "server",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "assemblyResult": {
+      "success": true,
+      "allPipelines": [
+        {
+          "pipelineId": "qwen-pipeline",
+          "provider": "qwen",
+          "model": "qwen-max",
+          "endpoint": "https://portal.qwen.ai/v1",
+          "layers": [
+            {
+              "name": "transformer",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            },
+            {
+              "name": "protocol",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            },
+            {
+              "name": "server-compatibility",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            },
+            {
+              "name": "server",
+              "config": {
+                "provider": "qwen",
+                "model": "qwen-max"
+              }
+            }
+          ],
+          "modules": [],
+          "assemblyStatus": "assembled",
+          "health": "healthy",
+          "isActive": true,
+          "routeName": "default",
+          "apiKey": "test-key",
+          "timeout": 30000
+        }
+      ],
+      "stats": {
+        "averageAssemblyTime": 100
+      }
+    },
+    "pipelineManagerResult": {
+      "pipelineCount": 1,
+      "activePipelines": 1
+    },
+    "loadBalancerResult": {
+      "initialized": true,
+      "stats": {
+        "totalProviders": 2,
+        "healthyProviders": 2
+      }
+    },
+    "selfCheckResult": {
+      "initialized": true,
+      "result": {
+        "status": "healthy",
+        "checks": 3
+      }
+    }
+  },
+  "stepResults": {
+    "configResult": {
+      "success": true,
+      "providersCount": 2,
+      "routesCount": 3
+    },
+    "routerResult": {
+      "success": true,
+      "pipelinesCount": 1
+    },
+    "assemblyResult": {
+      "success": true,
+      "assembledPipelinesCount": 1
+    }
+  }
+}

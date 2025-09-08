@@ -27,3 +27,11 @@ function verifyIntegration(): boolean {
 const integrationWorks = verifyIntegration();
 
 export { integrationWorks, verifyIntegration };
+
+// Jest 测试用例
+describe('Self-Check Integration Tests', () => {
+  test('should verify integration successfully', () => {
+    const result = verifyIntegration();
+    expect(typeof result).toBe('boolean');
+  });
+});

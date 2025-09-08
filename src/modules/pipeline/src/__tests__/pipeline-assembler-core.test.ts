@@ -9,7 +9,7 @@ import * as path from 'path';
 import { PipelineAssembler } from '../pipeline-assembler';
 import { ConfigPreprocessor } from '../../../config/src/config-preprocessor';
 import { RouterPreprocessor } from '../../../router/src/router-preprocessor';
-import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 describe('Pipeline Assembler Core Tests', () => {
   const testOutputDir = path.join(__dirname, 'test-outputs');

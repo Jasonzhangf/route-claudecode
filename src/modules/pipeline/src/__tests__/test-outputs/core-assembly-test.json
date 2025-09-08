@@ -1,0 +1,25 @@
+{
+  "testName": "Config→Router→Pipeline Assembly Core Test",
+  "timestamp": "2025-09-08T01:53:23.009Z",
+  "configSource": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "totalProcessingTime": 117,
+  "step1_config": {
+    "success": true,
+    "providersFound": 2,
+    "routesFound": 8
+  },
+  "step2_router": {
+    "success": true,
+    "pipelineConfigsGenerated": 11,
+    "processingTime": 6
+  },
+  "step3_assembly": {
+    "success": true,
+    "totalPipelines": 11,
+    "assemblyTime": 10,
+    "errors": [],
+    "warnings": []
+  },
+  "overallSuccess": true,
+  "readyForModuleIntegration": true
+}

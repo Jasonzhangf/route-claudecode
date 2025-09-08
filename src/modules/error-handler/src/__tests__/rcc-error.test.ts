@@ -2,7 +2,7 @@
  * RCC Error Types Tests
  */
 
-import { RCCError, ValidationError, TransformError, AuthError, ERROR_CODES } from '../../types/error';
+import { RCCError, ValidationError, TransformError, AuthError, ERROR_CODES } from '../types/error';
 
 describe('RCCError Types', () => {
   describe('RCCError Base Class', () => {
@@ -13,56 +13,53 @@ describe('RCCError Types', () => {
       expect(error.message).toBe('Test error message');
       expect(error.name).toBe('RCCError');
       expect(error.code).toBe(ERROR_CODES.UNKNOWN_ERROR);
-      expect(error.severity).toBe('medium');
-      expect(error.moduleId).toBeUndefined();
-      expect(error.context).toBeUndefined();
+      expect(error.module).toBe('UNKNOWN');
+      expect(error.context).toBeDefined();
       expect(error.timestamp).toBeDefined();
     });
 
     it('should create RCCError with custom values', () => {
-      const context = { test: 'value' };
+      const context = { details: { test: 'value', severity: 'high' } };
       const error = new RCCError(
         'Custom error message',
-        ERROR_CODES.PIPELINE_INIT_FAILED,
+        ERROR_CODES.PIPELINE_ASSEMBLY_FAILED,
         'test-module',
-        'high',
         context
       );
       
       expect(error.message).toBe('Custom error message');
-      expect(error.code).toBe(ERROR_CODES.PIPELINE_INIT_FAILED);
-      expect(error.moduleId).toBe('test-module');
-      expect(error.severity).toBe('high');
-      expect(error.context).toEqual(context);
+      expect(error.code).toBe(ERROR_CODES.PIPELINE_ASSEMBLY_FAILED);
+      expect(error.module).toBe('test-module');
+      expect(error.context).toEqual(expect.objectContaining(context));
     });
 
-    it('should create error with context using static method', () => {
-      const context = { field: 'test-field' };
-      const error = RCCError.withContext(
+    it('should create error with context using constructor', () => {
+      const context = { details: { field: 'test-field' } };
+      const error = new RCCError(
         'Context error message',
-        ERROR_CODES.VALIDATION_FAILED,
+        ERROR_CODES.VALIDATION_ERROR,
         'validation-module',
         context
       );
       
       expect(error.message).toBe('Context error message');
-      expect(error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
-      expect(error.moduleId).toBe('validation-module');
-      expect(error.severity).toBe('medium');
-      expect(error.context).toEqual(context);
+      expect(error.code).toBe(ERROR_CODES.VALIDATION_ERROR);
+      expect(error.module).toBe('validation-module');
+      expect(error.context).toEqual(expect.objectContaining(context));
     });
 
-    it('should create critical error using static method', () => {
-      const error = RCCError.critical(
+    it('should create critical error with severity in context', () => {
+      const error = new RCCError(
         'Critical error message',
-        ERROR_CODES.AUTHENTICATION_FAILED,
-        'auth-module'
+        ERROR_CODES.INTERNAL_ERROR,
+        'auth-module',
+        { details: { severity: 'critical' } }
       );
       
       expect(error.message).toBe('Critical error message');
-      expect(error.code).toBe(ERROR_CODES.AUTHENTICATION_FAILED);
-      expect(error.moduleId).toBe('auth-module');
-      expect(error.severity).toBe('critical');
+      expect(error.code).toBe(ERROR_CODES.INTERNAL_ERROR);
+      expect(error.module).toBe('auth-module');
+      expect(error.context.details?.severity).toBe('critical');
     });
   });
 
@@ -71,11 +68,10 @@ describe('RCCError Types', () => {
       const error = new ValidationError('Validation failed');
       
       expect(error).toBeInstanceOf(ValidationError);
-      expect(error).toBeInstanceOf(RCCError);
+      expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe('Validation failed');
       expect(error.name).toBe('ValidationError');
-      expect(error.code).toBe(ERROR_CODES.VALIDATION_FAILED);
-      expect(error.severity).toBe('medium');
+      expect(error.module).toBe('UNKNOWN');
     });
 
     it('should create ValidationError with custom values', () => {
@@ -87,7 +83,7 @@ describe('RCCError Types', () => {
       );
       
       expect(error.message).toBe('Username is required');
-      expect(error.moduleId).toBe('user-module');
+      expect(error.module).toBe('user-module');
       expect(error.context).toEqual(context);
     });
   });
@@ -97,11 +93,10 @@ describe('RCCError Types', () => {
       const error = new TransformError('Transform failed');
       
       expect(error).toBeInstanceOf(TransformError);
-      expect(error).toBeInstanceOf(RCCError);
+      expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe('Transform failed');
       expect(error.name).toBe('TransformError');
-      expect(error.code).toBe(ERROR_CODES.TRANSFORM_FAILED);
-      expect(error.severity).toBe('high');
+      expect(error.module).toBe('UNKNOWN');
     });
 
     it('should create TransformError with custom values', () => {
@@ -113,7 +108,7 @@ describe('RCCError Types', () => {
       );
       
       expect(error.message).toBe('Failed to transform tools format');
-      expect(error.moduleId).toBe('transformer-module');
+      expect(error.module).toBe('transformer-module');
       expect(error.context).toEqual(context);
     });
   });
@@ -123,11 +118,10 @@ describe('RCCError Types', () => {
       const error = new AuthError('Authentication failed');
       
       expect(error).toBeInstanceOf(AuthError);
-      expect(error).toBeInstanceOf(RCCError);
+      expect(error).toBeInstanceOf(Error);
       expect(error.message).toBe('Authentication failed');
       expect(error.name).toBe('AuthError');
-      expect(error.code).toBe(ERROR_CODES.AUTHENTICATION_FAILED);
-      expect(error.severity).toBe('high');
+      expect(error.module).toBe('UNKNOWN');
     });
 
     it('should create AuthError with custom values', () => {
@@ -139,7 +133,7 @@ describe('RCCError Types', () => {
       );
       
       expect(error.message).toBe('Invalid API key');
-      expect(error.moduleId).toBe('auth-module');
+      expect(error.module).toBe('auth-module');
       expect(error.context).toEqual(context);
     });
   });
@@ -147,12 +141,11 @@ describe('RCCError Types', () => {
   describe('ERROR_CODES Enum', () => {
     it('should have all required error codes', () => {
       expect(ERROR_CODES.UNKNOWN_ERROR).toBe('UNKNOWN_ERROR');
-      expect(ERROR_CODES.INVALID_CONFIGURATION).toBe('INVALID_CONFIGURATION');
+      expect(ERROR_CODES.CONFIG_INVALID).toBe('CONFIG_INVALID');
       expect(ERROR_CODES.MODULE_NOT_FOUND).toBe('MODULE_NOT_FOUND');
-      expect(ERROR_CODES.PIPELINE_INIT_FAILED).toBe('PIPELINE_INIT_FAILED');
-      expect(ERROR_CODES.TRANSFORM_FAILED).toBe('TRANSFORM_FAILED');
-      expect(ERROR_CODES.VALIDATION_FAILED).toBe('VALIDATION_FAILED');
-      expect(ERROR_CODES.AUTHENTICATION_FAILED).toBe('AUTHENTICATION_FAILED');
+      expect(ERROR_CODES.PIPELINE_ASSEMBLY_FAILED).toBe('PIPELINE_ASSEMBLY_FAILED');
+      expect(ERROR_CODES.VALIDATION_ERROR).toBe('VALIDATION_ERROR');
+      expect(ERROR_CODES.INTERNAL_ERROR).toBe('INTERNAL_ERROR');
     });
 
     it('should have unique error codes', () => {

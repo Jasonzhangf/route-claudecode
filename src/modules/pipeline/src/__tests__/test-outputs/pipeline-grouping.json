@@ -1,0 +1,32 @@
+{
+  "totalRouteModels": 2,
+  "routeModels": [
+    "default",
+    "think"
+  ],
+  "groupingDetails": [
+    {
+      "routeModel": "default",
+      "pipelineCount": 8,
+      "providers": [
+        "iflow",
+        "qwen"
+      ],
+      "models": [
+        "glm-4.5",
+        "deepseek-r1",
+        "qwen3-coder-plus"
+      ]
+    },
+    {
+      "routeModel": "think",
+      "pipelineCount": 3,
+      "providers": [
+        "iflow"
+      ],
+      "models": [
+        "qwen3-coder"
+      ]
+    }
+  ]
+}

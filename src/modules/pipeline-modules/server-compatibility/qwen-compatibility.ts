@@ -12,7 +12,7 @@
  * 参考：CLIProxyAPI qwen_client.go 架构
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 import { JQJsonHandler } from '../../utils/jq-json-handler';

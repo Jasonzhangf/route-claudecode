@@ -1,0 +1,135 @@
+{
+  "layer": {
+    "name": "server-compatibility",
+    "type": "server-compatibility",
+    "order": 3,
+    "config": {
+      "provider": "iflow",
+      "model": "deepseek-r1",
+      "endpoint": "https://apis.iflow.cn/v1",
+      "apiKey": "sk-faec4c4af5c9e791d012c238662ee708",
+      "timeout": 60000,
+      "use": "iflow",
+      "maxTokens": 131072,
+      "enhanceTool": true,
+      "authMethod": "Bearer",
+      "supportsTopK": true,
+      "supportsFrequencyPenalty": true,
+      "hasReasoningContent": true,
+      "maxRetries": 3,
+      "protocol": "openai",
+      "transformer": "anthropic-to-openai-transformer"
+    }
+  },
+  "input": {
+    "model": "deepseek-r1",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 131072,
+    "metadata": {
+      "pipelineId": "pipeline_iflow_deepseek-r1_2",
+      "provider": "iflow",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling",
+      "layer": "protocol",
+      "format": "openai",
+      "transformedFrom": "anthropic",
+      "processed": true,
+      "endpoint": "https://apis.iflow.cn/v1"
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "list_files",
+          "description": "List files and directories",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Directory path to list"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "endpoint": "https://apis.iflow.cn/v1",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-faec4c4af5c9e791d012c238662ee708",
+      "User-Agent": "RCC-v4.0-Pipeline"
+    }
+  },
+  "output": {
+    "model": "deepseek-r1",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 131072,
+    "metadata": {
+      "pipelineId": "pipeline_iflow_deepseek-r1_2",
+      "provider": "iflow",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling",
+      "layer": "server-compatibility",
+      "format": "openai",
+      "transformedFrom": "anthropic",
+      "processed": true,
+      "endpoint": "https://apis.iflow.cn/v1",
+      "compatibilityApplied": true
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "list_files",
+          "description": "List files and directories",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Directory path to list"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "endpoint": "https://apis.iflow.cn/v1",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-faec4c4af5c9e791d012c238662ee708",
+      "User-Agent": "RCC-v4.0-Pipeline"
+    }
+  },
+  "metadata": {
+    "processingTime": 0,
+    "timestamp": "2025-09-07T03:49:53.514Z"
+  }
+}

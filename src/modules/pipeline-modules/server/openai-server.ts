@@ -7,25 +7,116 @@
  * @author Jason Zhang
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { BidirectionalServerProcessor, RequestContext, ResponseContext } from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
 import { OpenAI } from 'openai';
 import { RCCError, RCCErrorCode } from '../../types/src/index';
 import { getEnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
+import { UnifiedErrorHandlerInterface } from '../../error-handler/src/unified-error-handler-interface';
+import { UnifiedErrorHandlerFactory } from '../../error-handler/src/unified-error-handler-impl';
+import { ErrorContext } from '../../interfaces/core/error-coordination-center';
+import { secureLogger } from '../../error-handler/src/utils/secure-logger';
+
+// 根据环境选择HTTP客户端
+const https = require('https');
+const http = require('http');
 
 /**
- * 处理OpenAI错误并标准化
+ * Server错误上下文构建器
  */
-function handleOpenAIError(
+class ServerErrorContextBuilder {
+  private context: Partial<ErrorContext> = {};
+
+  static create(): ServerErrorContextBuilder {
+    return new ServerErrorContextBuilder();
+  }
+
+  withRequestId(requestId: string): this {
+    this.context.requestId = requestId;
+    return this;
+  }
+
+  withPipelineId(pipelineId: string): this {
+    this.context.pipelineId = pipelineId;
+    return this;
+  }
+
+  withProvider(provider: string): this {
+    this.context.provider = provider;
+    return this;
+  }
+
+  withModel(model: string): this {
+    this.context.model = model;
+    return this;
+  }
+
+  withOperation(operation: string): this {
+    this.context.operation = operation;
+    return this;
+  }
+
+  withMetadata(metadata: Record<string, any>): this {
+    this.context.metadata = { ...this.context.metadata, ...metadata };
+    return this;
+  }
+
+  build(): ErrorContext {
+    return {
+      requestId: this.context.requestId || `server-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      pipelineId: this.context.pipelineId || 'unknown',
+      layerName: 'server',
+      provider: this.context.provider || 'unknown',
+      model: this.context.model || 'unknown',
+      operation: this.context.operation || 'server-process',
+      timestamp: new Date(),
+      metadata: this.context.metadata
+    };
+  }
+}
+
+/**
+ * 处理OpenAI错误并标准化 - 集成统一错误处理
+ */
+async function handleOpenAIError(
   error: any,
   model: string,
   baseURL: string | undefined,
   context: { requestId: string; moduleId: string; operation: string },
-  keepOriginalStatus: boolean = false
-): { standardizedError: Error } {
+  keepOriginalStatus: boolean = false,
+  errorHandler?: UnifiedErrorHandlerInterface
+): Promise<{ standardizedError: Error }> {
   // 创建标准化的错误信息
   const errorMessage = error.message || String(error);
+  
+  // 构建完整的错误上下文
+  const errorContext = ServerErrorContextBuilder.create()
+    .withRequestId(context.requestId)
+    .withModel(model)
+    .withProvider(baseURL || 'unknown')
+    .withOperation(context.operation)
+    .withMetadata({
+      moduleId: context.moduleId,
+      errorType: error.constructor?.name || 'unknown',
+      errorMessage: errorMessage,
+      keepOriginalStatus: keepOriginalStatus,
+      timestamp: Date.now()
+    })
+    .build();
+  
+  // 如果提供了错误处理器，使用统一错误处理
+  if (errorHandler) {
+    try {
+      await errorHandler.handleError(error, errorContext);
+    } catch (handlingError) {
+      secureLogger.warn('Server错误处理器处理异常', {
+        requestId: context.requestId,
+        originalError: errorMessage,
+        handlingError: handlingError.message
+      });
+    }
+  }
   
   // 创建RCC错误
   const rccError = new RCCError(
@@ -37,7 +128,8 @@ function handleOpenAIError(
       operation: context.operation,
       model: model,
       details: {
-        originalError: errorMessage
+        originalError: errorMessage,
+        baseURL: baseURL
       }
       // Note: stack is not part of ErrorContext, it's handled by RCCError constructor
     }
@@ -119,11 +211,9 @@ export interface OpenAIServerPreConfig {
   maxRetries: number;
   retryDelay: number;
   skipAuthentication?: boolean;
-  multiKeyAuth?: {
-    enabled: boolean;
-    strategy: 'round-robin' | 'random';
-    apiKeys: string[];
-  };
+  // Bearer Token认证支持（用于iFlow, Qwen等）
+  authMethod?: 'openai' | 'bearer';
+  customHeaders?: Record<string, string>;
   // 新增：双向处理配置
   enableResponseValidation?: boolean;
   requestTimeoutMs?: number;
@@ -148,9 +238,9 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
   private openaiClient: OpenAI;
   private status: any = 'healthy';
   private isInitialized = false;
-  private currentKeyIndex = 0; // 用于round-robin策略
   private connections: Map<string, ModuleInterface> = new Map();
   private readonly isPreConfigured: boolean = true;
+  private errorHandler: UnifiedErrorHandlerInterface;
   private requestMetrics = {
     totalRequests: 0,
     totalResponses: 0,
@@ -164,30 +254,48 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
     // 固化预配置 - 支持向后兼容
     this.preConfig = {
       ...config,
+      authMethod: config.authMethod || 'openai',
       enableResponseValidation: config.enableResponseValidation ?? true,
       requestTimeoutMs: config.requestTimeoutMs ?? 30000,
-      maxConcurrentRequests: config.maxConcurrentRequests ?? 10
+      maxConcurrentRequests: config.maxConcurrentRequests ?? 10,
+      skipAuthentication: config.skipAuthentication ?? false
     };
 
-    // 获取要使用的API Key
-    const apiKey = this.getApiKey();
+    // 初始化统一错误处理器
+    this.errorHandler = UnifiedErrorHandlerFactory.createErrorHandler();
 
-    // 使用官方OpenAI SDK
-    this.openaiClient = new OpenAI({
-      baseURL: this.preConfig.baseURL,
-      apiKey: apiKey,
-      organization: this.preConfig.organization,
-      project: this.preConfig.project,
-      timeout: this.preConfig.timeout,
-      maxRetries: this.preConfig.maxRetries,
-    });
+    // 获取要使用的API Key - 扫描和组装阶段不强制要求密钥
+    const apiKey = this.preConfig.apiKey;
+    
+    // 扫描和组装阶段不强制检查API密钥，只在运行时进行验证
+    if (!apiKey) {
+      console.log(`⚠️ 未配置API密钥 - 将在运行时在healthCheck/authenticate中检查`);
+    }
 
-    if (this.preConfig.multiKeyAuth?.enabled) {
-      console.log(
-        `🌐 初始化OpenAI服务器模块: ${this.preConfig.baseURL || 'https://api.openai.com'} (多Key认证: ${this.preConfig.multiKeyAuth.apiKeys.length}个Key)`
-      );
+    // 根据认证方法创建客户端 - 只在有API密钥的情况下才初始化
+    if (apiKey && this.preConfig.authMethod === 'bearer') {
+      // Bearer Token认证模式 - 不创建OpenAI SDK实例
+      console.log(`🌐 初始化Bearer Token认证模式: ${this.preConfig.baseURL || 'https://api.openai.com'}`);
+      console.log(`🔑 认证方法: Bearer Token (非标准OpenAI)`);
+    } else if (apiKey && this.preConfig.authMethod !== 'bearer') {
+      // 标准OpenAI SDK模式
+      this.openaiClient = new OpenAI({
+        baseURL: this.preConfig.baseURL,
+        apiKey: apiKey,
+        organization: this.preConfig.organization,
+        project: this.preConfig.project,
+        timeout: this.preConfig.timeout,
+        maxRetries: this.preConfig.maxRetries,
+      });
+      console.log(`🔑 使用标准API Key认证`);
     } else {
-      console.log(`🌐 初始化OpenAI服务器模块: ${this.preConfig.baseURL || 'https://api.openai.com'}`);
+      // 没有API钥匙的情况 - 扫描阶段正常通过
+      console.log(`📋 模块处于扫描阶段，不强制要求API密钥`);
+      if (this.preConfig.authMethod === 'bearer') {
+        console.log(`🌐 BC格式配置完成 (Bear Token模式)`);
+      } else {
+        console.log(`🔑 标准OpenAI格式配置完成`);
+      }
     }
   }
 
@@ -220,30 +328,23 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
   }
 
   /**
-   * 初始化模块
+   * 初始化模块 - REFACTORED: 移除强制认证检查
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
-    console.log(`🚀 初始化OpenAI服务器模块...`);
+    console.log(`🚀 [ASSEMBLY] 初始化OpenAI服务器模块...`);
 
-    try {
-      // 测试认证
-      await this.authenticate();
+    // 组装阶段：只进行基础配置，不进行认证
+    console.log(`🏭 [ASSEMBLY] 组装阶段 - 轻量级初始化（跳过认证）`);
+    
+    this.status = 'healthy';
+    this.isInitialized = true;
 
-      this.status = 'healthy';
-      this.isInitialized = true;
-
-      this.emit('statusChanged', { health: this.status });
-      console.log(`✅ OpenAI服务器模块初始化完成`);
-    } catch (error) {
-      this.status = 'unhealthy';
-      this.emit('statusChanged', { health: this.status });
-      console.error(`❌ OpenAI服务器模块初始化失败:`, error.message);
-      throw error;
-    }
+    this.emit('statusChanged', { health: this.status });
+    console.log(`✅ [ASSEMBLY] OpenAI服务器模块初始化完成`);
   }
 
   /**
@@ -254,6 +355,21 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
       await this.initialize();
     }
     console.log(`▶️ OpenAI服务器模块已启动`);
+  }
+
+  /**
+   * 运行时认证检查（由自检模块调用）
+   */
+  async performRuntimeAuthentication(): Promise<boolean> {
+    console.log(`🔐 [RUNTIME] 执行运行时认证检查...`);
+    try {
+      return await this.authenticate();
+    } catch (error) {
+      console.error(`❌ [RUNTIME] 运行时认证失败:`, error.message);
+      this.status = 'unhealthy';
+      this.emit('statusChanged', { health: this.status });
+      return false;
+    }
   }
 
   /**
@@ -440,13 +556,26 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
     }
 
     try {
-      // 获取模型列表来测试认证
-      const models = await this.openaiClient.models.list();
-      console.log(`🔐 OpenAI认证成功 (${models.data.length} 个模型可用)`);
-      return true;
+      if (this.preConfig.authMethod === 'bearer') {
+        // Bearer Token认证验证
+        const apiKey = this.getApiKey();
+        if (!apiKey || !apiKey.startsWith('sk-')) {
+          throw new Error('Bearer Token认证失败：API Key格式无效');
+        }
+        console.log(`🔐 Bearer Token认证成功 (API Key格式验证通过)`);
+        return true;
+      } else {
+        // 标准OpenAI认证验证
+        if (!this.openaiClient) {
+          throw new Error('OpenAI客户端未初始化 - 请正确配置API密钥');
+        }
+        const models = await this.openaiClient.models.list();
+        console.log(`🔐 OpenAI认证成功 (${models.data.length} 个模型可用)`);
+        return true;
+      }
     } catch (error) {
       // 使用统一的错误处理器
-      const { standardizedError } = handleOpenAIError(
+      const result = await handleOpenAIError(
         error,
         'authentication',
         this.preConfig.baseURL,
@@ -455,81 +584,127 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
           moduleId: this.id,
           operation: 'authenticate',
         },
-        false
+        false,
+        this.errorHandler
       );
 
-      throw standardizedError;
+      throw result.standardizedError;
     }
   }
 
   /**
-   * 健康检查
+   * 健康检查 - REFACTORED: 组装阶段轻量化检查
    */
   async checkHealth(): Promise<{ healthy: boolean; responseTime: number; error?: string }> {
     const startTime = Date.now();
 
     try {
-      await this.authenticate();
-      const responseTime = Date.now() - startTime;
+      // REFACTORED: 根据skipAuthentication决定检查深度
+      if (this.preConfig.skipAuthentication) {
+        console.log(`🏭 [ASSEMBLY] 轻量级健康检查 - 跳过网络验证`);
+        const responseTime = Date.now() - startTime;
+        
+        // 组装阶段只检查基本配置完整性
+        const isConfigValid = !!(this.preConfig.baseURL || this.openaiClient);
+        const health = isConfigValid ? 'healthy' : 'degraded';
+        
+        this.status = health;
+        this.emit('statusChanged', { health: this.status });
+        
+        return { healthy: isConfigValid, responseTime };
+      } else {
+        // 运行时健康检查 - 包含网络验证
+        console.log(`🔍 [RUNTIME] 完整健康检查 - 包含认证验证`);
+        await this.authenticate();
+        const responseTime = Date.now() - startTime;
 
-      this.status = 'healthy';
-      this.emit('statusChanged', { health: this.status });
+        this.status = 'healthy';
+        this.emit('statusChanged', { health: this.status });
 
-      return { healthy: true, responseTime };
+        return { healthy: true, responseTime };
+      }
     } catch (error) {
       const responseTime = Date.now() - startTime;
-      this.status = 'unhealthy';
+      
+      if (this.preConfig.skipAuthentication) {
+        // 组装阶段健康检查失败不致命
+        console.log(`⚠️ [ASSEMBLY] 健康检查警告: ${error.message}`);
+        this.status = 'degraded';
+      } else {
+        // 运行时健康检查失败是致命的
+        this.status = 'unhealthy';
+      }
+      
       this.emit('statusChanged', { health: this.status });
-
       return { healthy: false, responseTime, error: error.message };
     }
   }
 
   /**
-   * 发送请求到OpenAI服务器
+   * 获取请求头（支持Bearer Token认证）
+   */
+  private getHeadersForRequest(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    };
+
+    // 应用自定义请求头
+    if (this.preConfig.customHeaders) {
+      Object.assign(headers, this.preConfig.customHeaders);
+    }
+
+    // Bearer Token认证
+    if (this.preConfig.authMethod === 'bearer') {
+      const currentApiKey = this.getApiKey();
+      headers['Authorization'] = `Bearer ${currentApiKey}`;
+      
+      // iFlow特定头部（基于CLIProxyAPI实现）
+      if (this.preConfig.baseURL?.includes('iflow') || currentApiKey?.startsWith('sk-')) {
+        headers['User-Agent'] = 'google-api-nodejs-client/9.15.1';
+        headers['X-Goog-Api-Client'] = 'gl-node/22.17.0';
+        headers['Client-Metadata'] = 'ideType=IDE_UNSPECIFIED,platform=PLATFORM_UNSPECIFIED,pluginType=GEMINI';
+      }
+    }
+
+    return headers;
+  }
+
+  /**
+   * 发送请求到OpenAI服务器（支持Bearer Token模式）
    */
   public async sendRequest(request: ServerRequest, context?: RequestContext, retryCount: number = 0): Promise<ServerResponse> {
+    const requestId = context?.requestId || `openai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     try {
       if (request.stream) {
         throw new Error('流式请求在Server模块不应该出现 - 应该在Protocol模块处理');
       }
 
-      const response = await this.openaiClient.chat.completions.create({
-        model: request.model,
-        messages: request.messages as any,
-        max_tokens: request.max_tokens,
-        temperature: request.temperature,
-        top_p: request.top_p,
-        frequency_penalty: request.frequency_penalty,
-        presence_penalty: request.presence_penalty,
-        stop: request.stop,
-        tools: request.tools,
-        tool_choice: request.tool_choice,
-        stream: false,
-      });
+      if (this.preConfig.authMethod === 'bearer') {
+        // Bearer Token模式 - 使用HTTP客户端
+        return await this.sendBearerTokenRequest(request, requestId);
+      } else {
+        // 标准OpenAI SDK模式
+        const response = await this.openaiClient.chat.completions.create({
+          model: request.model,
+          messages: request.messages as any,
+          max_tokens: request.max_tokens,
+          temperature: request.temperature,
+          top_p: request.top_p,
+          frequency_penalty: request.frequency_penalty,
+          presence_penalty: request.presence_penalty,
+          stop: request.stop,
+          tools: request.tools,
+          tool_choice: request.tool_choice,
+          stream: false,
+        });
 
-      return response as ServerResponse;
-    } catch (error) {
-      // 检查是否为认证错误且启用了多Key认证
-      if (
-        error.name === 'APIError' &&
-        (error.message.includes('401') || error.message.includes('Unauthorized')) &&
-        this.preConfig.multiKeyAuth?.enabled &&
-        this.preConfig.multiKeyAuth.apiKeys?.length > 1 &&
-        retryCount < this.preConfig.multiKeyAuth.apiKeys.length - 1
-      ) {
-        console.warn(`⚠️  认证失败，尝试轮换API Key (第${retryCount + 1}次重试)`);
-
-        try {
-          this.rotateApiKey();
-          return await this.sendRequest(request, context, retryCount + 1);
-        } catch (rotationError) {
-          console.error('🔄 API Key轮换失败:', rotationError.message);
-        }
+        return response as ServerResponse;
       }
-
+    } catch (error) {
       // 使用统一的错误处理器
-      const { standardizedError } = handleOpenAIError(
+      const result = await handleOpenAIError(
         error,
         request.model,
         this.preConfig.baseURL,
@@ -538,10 +713,11 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
           moduleId: this.id,
           operation: 'sendRequest',
         },
-        false
+        false,
+        this.errorHandler
       );
 
-      throw standardizedError;
+      throw result.standardizedError;
     }
   }
 
@@ -733,57 +909,104 @@ export class OpenAIServerModule extends EventEmitter implements ModuleInterface,
    * 获取当前使用的API Key
    */
   private getApiKey(): string {
-    // 如果启用了多Key认证
-    if (this.preConfig.multiKeyAuth?.enabled && this.preConfig.multiKeyAuth.apiKeys?.length > 0) {
-      const apiKeys = this.preConfig.multiKeyAuth.apiKeys;
-
-      if (this.preConfig.multiKeyAuth.strategy === 'random') {
-        // 随机选择策略
-        const randomIndex = Math.floor(Math.random() * apiKeys.length);
-        const selectedKey = apiKeys[randomIndex];
-        console.log(`🔑 使用随机API Key (索引: ${randomIndex})`);
-        return selectedKey;
-      } else {
-        // 默认使用round-robin策略
-        const selectedKey = apiKeys[this.currentKeyIndex];
-        console.log(`🔑 使用轮询API Key (索引: ${this.currentKeyIndex}/${apiKeys.length})`);
-        return selectedKey;
-      }
-    }
-
-    // 使用单个API Key
     if (this.preConfig.apiKey) {
-      console.log('🔑 使用单个API Key');
       return this.preConfig.apiKey;
     }
 
-    throw new Error('未配置API Key：请设置apiKey或启用multiKeyAuth');
+    throw new Error('未配置API Key：请设置apiKey');
   }
 
+
   /**
-   * 轮换到下一个API Key（用于认证失败后的重试）
+   * 使用Bearer Token发送HTTP请求
    */
-  private rotateApiKey(): string {
-    if (!this.preConfig.multiKeyAuth?.enabled || !this.preConfig.multiKeyAuth.apiKeys?.length) {
-      throw new Error('多Key认证未启用，无法轮换');
-    }
+  private async sendBearerTokenRequest(request: ServerRequest, requestId: string): Promise<ServerResponse> {
+    return new Promise((resolve, reject) => {
+      const url = new URL('/v1/chat/completions', this.preConfig.baseURL || 'https://api.openai.com');
+      const isHttps = url.protocol === 'https:';
+      const httpClient = isHttps ? https : http;
 
-    const apiKeys = this.preConfig.multiKeyAuth.apiKeys;
-    this.currentKeyIndex = (this.currentKeyIndex + 1) % apiKeys.length;
+      const requestData = JSON.stringify({
+        model: request.model,
+        messages: request.messages,
+        max_tokens: request.max_tokens,
+        temperature: request.temperature,
+        top_p: request.top_p,
+        frequency_penalty: request.frequency_penalty,
+        presence_penalty: request.presence_penalty,
+        stop: request.stop,
+        tools: request.tools,
+        tool_choice: request.tool_choice,
+        stream: false,
+      });
 
-    console.log(`🔄 轮换到下一个API Key (索引: ${this.currentKeyIndex})`);
+      const headers = this.getHeadersForRequest();
+      headers['Content-Length'] = Buffer.byteLength(requestData).toString();
 
-    // 更新OpenAI客户端的API Key
-    this.openaiClient = new OpenAI({
-      baseURL: this.preConfig.baseURL,
-      apiKey: apiKeys[this.currentKeyIndex],
-      organization: this.preConfig.organization,
-      project: this.preConfig.project,
-      timeout: this.preConfig.timeout,
-      maxRetries: this.preConfig.maxRetries,
+      const options = {
+        hostname: url.hostname,
+        port: url.port || (isHttps ? 443 : 80),
+        path: url.pathname,
+        method: 'POST',
+        headers: headers,
+        timeout: this.preConfig.requestTimeoutMs || 30000,
+      };
+
+      console.log(`📡 发送Bearer Token请求到: ${url.toString()}`);
+      const currentApiKey = this.getApiKey();
+      console.log(`🔑 使用认证头: Authorization: Bearer ${currentApiKey?.substring(0, 10)}...`);
+
+      const req = httpClient.request(options, (res) => {
+        let data = '';
+
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        res.on('end', () => {
+          try {
+            const response = JSON.parse(data);
+
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(new Error(`HTTP ${res.statusCode}: ${response.error?.message || data}`));
+              return;
+            }
+
+            // 确保响应符合ServerResponse格式
+            const serverResponse: ServerResponse = {
+              id: response.id || `bearer_${requestId}`,
+              object: 'chat.completion',
+              created: response.created || Math.floor(Date.now() / 1000),
+              model: response.model || request.model,
+              choices: response.choices || [],
+              usage: response.usage || {
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                total_tokens: 0,
+              },
+            };
+
+            console.log(`✅ Bearer Token请求成功: ${serverResponse.usage.total_tokens} tokens`);
+            resolve(serverResponse);
+          } catch (parseError) {
+            reject(new Error(`响应解析失败: ${parseError.message}`));
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        console.error(`❌ Bearer Token请求失败:`, error.message);
+        reject(error);
+      });
+
+      req.on('timeout', () => {
+        req.destroy();
+        reject(new Error('Bearer Token请求超时'));
+      });
+
+      req.write(requestData);
+      req.end();
     });
-
-    return apiKeys[this.currentKeyIndex];
   }
 
   /**

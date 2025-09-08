@@ -1,0 +1,253 @@
+{
+  "testName": "Complete Pipeline Startup Process",
+  "startTime": "2025-09-08T03:05:51.493Z",
+  "steps": [
+    {
+      "step": 1,
+      "name": "Load Original Config",
+      "duration": 0,
+      "success": true,
+      "outputFile": "01-config-input.json",
+      "data": {
+        "providersCount": 1,
+        "routesCount": 8,
+        "serverPort": 5506
+      }
+    },
+    {
+      "step": 2,
+      "name": "ConfigPreprocessor Processing",
+      "duration": 30,
+      "success": true,
+      "outputFile": "02-config-preprocessor-output.json",
+      "data": {
+        "providersCount": 1,
+        "routesCount": 8,
+        "processingTime": 16,
+        "sourceFormat": "v4"
+      }
+    },
+    {
+      "step": 3,
+      "name": "Prepare RouterPreprocessor Input",
+      "duration": 0,
+      "success": true,
+      "outputFile": "04-router-preprocessor-input.json",
+      "data": {
+        "providers": [
+          {
+            "name": "qwen",
+            "modelsCount": 2
+          }
+        ],
+        "routes": [
+          "default",
+          "longContext",
+          "background",
+          "think",
+          "webSearch",
+          "code",
+          "codeReview",
+          "reasoning"
+        ]
+      }
+    },
+    {
+      "step": 4,
+      "name": "RouterPreprocessor Processing",
+      "duration": 5,
+      "success": true,
+      "outputFile": "05-router-preprocessor-output.json",
+      "data": {
+        "routesCount": 8,
+        "pipelinesCount": 4,
+        "processingTime": 5,
+        "errors": 0,
+        "warnings": 0
+      }
+    },
+    {
+      "step": 5,
+      "name": "Save Pipeline Configurations",
+      "duration": 0,
+      "success": true,
+      "outputFile": "06-pipeline-configs.json",
+      "data": {
+        "pipelinesCount": 4,
+        "providers": [
+          "qwen"
+        ],
+        "models": [
+          "qwen3-coder-plus",
+          "qwen-max"
+        ],
+        "avgLayersPerPipeline": 4
+      }
+    },
+    {
+      "step": 6,
+      "name": "Data Integrity Validation",
+      "duration": 0,
+      "success": true,
+      "data": {
+        "success": true,
+        "errors": [],
+        "warnings": [],
+        "checks": [
+          {
+            "name": "Provider Count Consistency",
+            "original": 1,
+            "processed": 1,
+            "success": true
+          },
+          {
+            "name": "Route Count Consistency",
+            "original": 8,
+            "processed": 8,
+            "success": true
+          },
+          {
+            "name": "Pipeline Configuration Integrity",
+            "totalPipelines": 4,
+            "validPipelines": 4,
+            "completePipelines": 4,
+            "details": [
+              {
+                "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+                "hasRequiredFields": true,
+                "layersCount": 4,
+                "hasAllLayers": true,
+                "layerTypes": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ]
+              },
+              {
+                "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+                "hasRequiredFields": true,
+                "layersCount": 4,
+                "hasAllLayers": true,
+                "layerTypes": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ]
+              },
+              {
+                "pipelineId": "pipeline_qwen_qwen-max_0",
+                "hasRequiredFields": true,
+                "layersCount": 4,
+                "hasAllLayers": true,
+                "layerTypes": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ]
+              },
+              {
+                "pipelineId": "pipeline_qwen_qwen-max_1",
+                "hasRequiredFields": true,
+                "layersCount": 4,
+                "hasAllLayers": true,
+                "layerTypes": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ]
+              }
+            ]
+          },
+          {
+            "name": "Model Mapping Consistency",
+            "details": [
+              {
+                "provider": "qwen",
+                "originalCount": 2,
+                "processedCount": 2,
+                "originalModels": [
+                  {
+                    "name": "qwen3-coder-plus",
+                    "maxTokens": 262144
+                  },
+                  {
+                    "name": "qwen-max",
+                    "maxTokens": 262144
+                  }
+                ],
+                "processedModels": [
+                  "qwen3-coder-plus",
+                  "qwen-max"
+                ],
+                "consistent": true
+              }
+            ]
+          },
+          {
+            "name": "Six-Layer Architecture Validation",
+            "expectedLayers": [
+              "transformer",
+              "protocol",
+              "server-compatibility",
+              "server"
+            ],
+            "pipelineLayerValidation": [
+              {
+                "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+                "layers": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ],
+                "hasAllExpected": true,
+                "missing": []
+              },
+              {
+                "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+                "layers": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ],
+                "hasAllExpected": true,
+                "missing": []
+              },
+              {
+                "pipelineId": "pipeline_qwen_qwen-max_0",
+                "layers": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ],
+                "hasAllExpected": true,
+                "missing": []
+              },
+              {
+                "pipelineId": "pipeline_qwen_qwen-max_1",
+                "layers": [
+                  "transformer",
+                  "protocol",
+                  "server-compatibility",
+                  "server"
+                ],
+                "hasAllExpected": true,
+                "missing": []
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "success": true,
+  "totalProcessingTime": 35,
+  "errors": [],
+  "warnings": []
+}

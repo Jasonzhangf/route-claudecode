@@ -1,0 +1,108 @@
+{
+  "success": true,
+  "routingTable": {
+    "routes": {
+      "claude-3-sonnet-20240229": [
+        {
+          "routeId": "route_claude-3-sonnet-20240229_lmstudio_0_0",
+          "routeName": "claude-3-sonnet-20240229",
+          "virtualModel": "claude-3-sonnet-20240229",
+          "provider": "lmstudio",
+          "apiKeyIndex": 0,
+          "pipelineId": "pipeline_lmstudio_llama-3.1-8b_0",
+          "isActive": true,
+          "health": "healthy"
+        }
+      ],
+      "default": [
+        {
+          "routeId": "route_default_lmstudio_0_0",
+          "routeName": "default",
+          "virtualModel": "default",
+          "provider": "lmstudio",
+          "apiKeyIndex": 0,
+          "pipelineId": "pipeline_lmstudio_llama-3.1-8b_0",
+          "isActive": true,
+          "health": "healthy"
+        }
+      ]
+    },
+    "defaultRoute": "default",
+    "metadata": {
+      "configSource": "ConfigPreprocessor",
+      "generatedAt": "2025-09-08T01:53:22.814Z",
+      "preprocessorVersion": "4.1.0"
+    }
+  },
+  "pipelineConfigs": [
+    {
+      "pipelineId": "pipeline_lmstudio_llama-3.1-8b_0",
+      "routeId": "route_claude-3-sonnet-20240229_lmstudio_0_0",
+      "provider": "lmstudio",
+      "model": "llama-3.1-8b",
+      "endpoint": "http://localhost:1234/v1",
+      "apiKey": "lm-studio",
+      "timeout": 60000,
+      "maxRetries": 3,
+      "layers": [
+        {
+          "name": "transformer",
+          "type": "transformer",
+          "order": 1,
+          "config": {
+            "provider": "lmstudio",
+            "model": "llama-3.1-8b",
+            "endpoint": "http://localhost:1234/v1",
+            "apiKey": "lm-studio"
+          }
+        },
+        {
+          "name": "protocol",
+          "type": "protocol",
+          "order": 2,
+          "config": {
+            "provider": "lmstudio",
+            "model": "llama-3.1-8b",
+            "endpoint": "http://localhost:1234/v1"
+          }
+        },
+        {
+          "name": "server-compatibility",
+          "type": "server-compatibility",
+          "order": 3,
+          "config": {
+            "provider": "lmstudio",
+            "model": "llama-3.1-8b",
+            "endpoint": "http://localhost:1234/v1",
+            "apiKey": "lm-studio",
+            "timeout": 30000,
+            "use": "lmstudio",
+            "maxRetries": 2,
+            "protocol": "openai",
+            "transformer": "anthropic-to-openai-transformer"
+          }
+        },
+        {
+          "name": "server",
+          "type": "server",
+          "order": 4,
+          "config": {
+            "provider": "lmstudio",
+            "model": "llama-3.1-8b",
+            "endpoint": "http://localhost:1234/v1",
+            "apiKey": "lm-studio",
+            "timeout": 60000,
+            "authMethod": "openai"
+          }
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "stats": {
+    "routesCount": 2,
+    "pipelinesCount": 1,
+    "processingTimeMs": 1
+  }
+}

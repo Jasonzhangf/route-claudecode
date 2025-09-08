@@ -1,0 +1,64 @@
+{
+  "testTimestamp": "2025-09-08T01:53:22.872Z",
+  "assemblyStats": {
+    "totalConfigsInput": 4,
+    "totalPipelinesOutput": 4,
+    "assemblySuccess": true,
+    "hasErrors": false,
+    "hasWarnings": false,
+    "moduleRegistryUsed": true
+  },
+  "moduleCreation": {
+    "expectedModulesPerPipeline": 4,
+    "actualModuleCreation": [
+      {
+        "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+        "expectedModules": 4,
+        "actualModules": 4,
+        "moduleTypes": [
+          "Object",
+          "Object",
+          "Object",
+          "Object"
+        ]
+      },
+      {
+        "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+        "expectedModules": 4,
+        "actualModules": 4,
+        "moduleTypes": [
+          "Object",
+          "Object",
+          "Object",
+          "Object"
+        ]
+      },
+      {
+        "pipelineId": "pipeline_qwen_qwen-max_0",
+        "expectedModules": 4,
+        "actualModules": 4,
+        "moduleTypes": [
+          "Object",
+          "Object",
+          "Object",
+          "Object"
+        ]
+      },
+      {
+        "pipelineId": "pipeline_qwen_qwen-max_1",
+        "expectedModules": 4,
+        "actualModules": 4,
+        "moduleTypes": [
+          "Object",
+          "Object",
+          "Object",
+          "Object"
+        ]
+      }
+    ]
+  },
+  "registryValidation": {
+    "canCreateModules": true,
+    "moduleRegistryAccessible": true
+  }
+}

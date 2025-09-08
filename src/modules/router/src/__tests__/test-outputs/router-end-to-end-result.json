@@ -1,0 +1,14 @@
+{
+  "testName": "Router Preprocessor End-to-End Validation",
+  "timestamp": "2025-09-08T01:53:22.817Z",
+  "inputRoutingTableProviders": 1,
+  "inputRoutes": 2,
+  "outputInternalRoutes": 2,
+  "outputPipelineConfigs": 1,
+  "readyForPipelineManager": true,
+  "dataIntegrityChecks": {
+    "allPipelinesHaveRoutes": true,
+    "allRoutesHavePipelines": true,
+    "layerStructureComplete": true
+  }
+}

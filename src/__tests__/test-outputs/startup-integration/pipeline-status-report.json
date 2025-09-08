@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-09-07T10:47:32.132Z",
+  "totalPipelines": 1,
+  "pipelinesByRoute": {
+    "default": [
+      {
+        "pipelineId": "qwen-pipeline",
+        "provider": "qwen",
+        "model": "qwen-max",
+        "health": "healthy",
+        "isActive": true
+      }
+    ]
+  }
+}

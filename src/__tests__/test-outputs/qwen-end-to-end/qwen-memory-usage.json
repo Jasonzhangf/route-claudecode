@@ -1,0 +1,15 @@
+{
+  "testName": "Qwen Memory Usage Test",
+  "timestamp": "2025-09-08T01:53:23.069Z",
+  "memoryUsage": {
+    "startMB": 284.34874725341797,
+    "peakMB": 290.25108337402344,
+    "increaseMB": 5.902336120605469,
+    "withinLimit": true
+  },
+  "systemInfo": {
+    "nodeVersion": "v24.2.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  }
+}

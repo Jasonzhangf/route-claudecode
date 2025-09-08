@@ -1,0 +1,164 @@
+{
+  "step": 2,
+  "name": "Qwen Router Preprocessing",
+  "timestamp": "2025-09-08T01:53:22.971Z",
+  "processingTimeMs": 1,
+  "success": true,
+  "qwenValidation": {
+    "allPipelinesQwen": true,
+    "pipelineCount": 1,
+    "layerTypeValidation": true,
+    "samplePipeline": {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "endpoint": "https://portal.qwen.ai/v1",
+      "layerCount": 4,
+      "layerTypes": [
+        "transformer",
+        "protocol",
+        "server-compatibility",
+        "server"
+      ]
+    }
+  },
+  "internalRoutingTable": {
+    "routes": {
+      "default": [
+        {
+          "routeId": "route_default_qwen_0_0",
+          "routeName": "default",
+          "virtualModel": "default",
+          "provider": "qwen",
+          "apiKeyIndex": 0,
+          "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+          "isActive": true,
+          "health": "healthy"
+        }
+      ],
+      "longContext": [
+        {
+          "routeId": "route_longContext_qwen_0_0",
+          "routeName": "longContext",
+          "virtualModel": "longContext",
+          "provider": "qwen",
+          "apiKeyIndex": 0,
+          "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+          "isActive": true,
+          "health": "healthy"
+        }
+      ],
+      "background": [
+        {
+          "routeId": "route_background_qwen_0_0",
+          "routeName": "background",
+          "virtualModel": "background",
+          "provider": "qwen",
+          "apiKeyIndex": 0,
+          "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+          "isActive": true,
+          "health": "healthy"
+        }
+      ],
+      "think": [
+        {
+          "routeId": "route_think_qwen_0_0",
+          "routeName": "think",
+          "virtualModel": "think",
+          "provider": "qwen",
+          "apiKeyIndex": 0,
+          "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+          "isActive": true,
+          "health": "healthy"
+        }
+      ],
+      "webSearch": [
+        {
+          "routeId": "route_webSearch_qwen_0_0",
+          "routeName": "webSearch",
+          "virtualModel": "webSearch",
+          "provider": "qwen",
+          "apiKeyIndex": 0,
+          "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+          "isActive": true,
+          "health": "healthy"
+        }
+      ]
+    },
+    "defaultRoute": "default",
+    "metadata": {
+      "configSource": "ConfigPreprocessor",
+      "generatedAt": "2025-09-08T01:53:22.970Z",
+      "preprocessorVersion": "4.1.0"
+    }
+  },
+  "pipelineConfigs": [
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+      "routeId": "route_default_qwen_0_0",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "endpoint": "https://portal.qwen.ai/v1",
+      "apiKey": "qwen-auth-1",
+      "timeout": 60000,
+      "maxRetries": 3,
+      "layers": [
+        {
+          "name": "transformer",
+          "type": "transformer",
+          "order": 1,
+          "config": {
+            "provider": "qwen",
+            "model": "qwen3-coder-plus",
+            "endpoint": "https://portal.qwen.ai/v1",
+            "apiKey": "qwen-auth-1"
+          }
+        },
+        {
+          "name": "protocol",
+          "type": "protocol",
+          "order": 2,
+          "config": {
+            "provider": "qwen",
+            "model": "qwen3-coder-plus",
+            "endpoint": "https://portal.qwen.ai/v1"
+          }
+        },
+        {
+          "name": "server-compatibility",
+          "type": "server-compatibility",
+          "order": 3,
+          "config": {
+            "provider": "qwen",
+            "model": "qwen3-coder-plus",
+            "endpoint": "https://portal.qwen.ai/v1",
+            "apiKey": "qwen-auth-1",
+            "timeout": 60000,
+            "use": "qwen",
+            "maxTokens": 32768,
+            "enhanceTool": true,
+            "authFileName": "qwen-auth-1"
+          }
+        },
+        {
+          "name": "server",
+          "type": "server",
+          "order": 4,
+          "config": {
+            "provider": "qwen",
+            "model": "qwen3-coder-plus",
+            "endpoint": "https://portal.qwen.ai/v1",
+            "apiKey": "qwen-auth-1",
+            "timeout": 60000,
+            "authMethod": "bearer"
+          }
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "routesCount": 5,
+    "pipelinesCount": 1,
+    "processingTimeMs": 1
+  }
+}

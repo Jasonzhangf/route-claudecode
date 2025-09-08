@@ -14,7 +14,7 @@ import {
   ModuleType,
   ModuleStatus,
   ModuleMetrics,
-} from '../../interfaces/module/base-module';
+} from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 import { SecureTransformerPreConfig, TransformerSecurityError } from './secure-anthropic-openai-transformer';
 
@@ -265,7 +265,7 @@ export class SecureGeminiTransformer extends EventEmitter implements ModuleInter
     }
     
     const startTime = Date.now();
-    this.status.status = 'busy';
+    this.status.status = 'running';
     this.status.lastActivity = new Date();
     
     try {

@@ -20,9 +20,9 @@ import {
   ModuleMetrics,
 } from '../interfaces/module/base-module';
 import { EventEmitter } from 'events';
-import { StandardRequest } from '../types/src';
-import { StandardResponse, Choice, Usage, Message, FinishReason } from '../types/src';
-import { Tool } from '../types/src';
+import { StandardRequest } from '../types/src/index';
+import { StandardResponse, Choice, Usage, Message, FinishReason } from '../types/src/index';
+import { Tool } from '../types/src/index';
 import JQJsonHandler from '../error-handler/src/utils/jq-json-handler';
 /**
  * Anthropic Protocol配置接口

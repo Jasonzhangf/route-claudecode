@@ -13,7 +13,7 @@
  * @version 2.0.0 - 四层双向处理架构
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { BidirectionalCompatibilityProcessor, RequestContext, ResponseContext } from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
 import { OpenAI } from 'openai';
@@ -175,7 +175,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
     console.log(`🔧 初始化LM Studio兼容模块 (预配置模式): ${this.preConfig.baseUrl}`, {
       enableRequestProcessing: this.preConfig.enableRequestProcessing,
       enableResponseProcessing: this.preConfig.enableResponseProcessing,
-      modelsCount: this.preConfig.models.length,
+      modelsCount: (this.preConfig.models || []).length,
       concurrencyLimit: this.preConfig.concurrencyLimit
     });
   }
@@ -218,7 +218,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
 
     console.log(`🚀 初始化LM Studio兼容模块 (预配置模式)...`);
     console.log(`   端点: ${this.preConfig.baseUrl}`);
-    console.log(`   支持模型: ${this.preConfig.models.join(', ')}`);
+    console.log(`   支持模型: ${(this.preConfig.models || []).join(', ')}`);
     console.log(`   启用请求处理: ${this.preConfig.enableRequestProcessing}`);
     console.log(`   启用响应处理: ${this.preConfig.enableResponseProcessing}`);
 
@@ -606,8 +606,8 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
 
     // 🔧 关键修复：检查映射后的实际模型是否支持
     const actualModel = this.mapVirtualModelToActual(request.model);
-    if (!this.preConfig.models.includes(actualModel)) {
-      throw new Error(`映射后的模型 ${actualModel} (来自虚拟模型 ${request.model}) 不在支持列表中: ${this.preConfig.models.join(', ')}`);
+    if (!(this.preConfig.models || []).includes(actualModel)) {
+      throw new Error(`映射后的模型 ${actualModel} (来自虚拟模型 ${request.model}) 不在支持列表中: ${(this.preConfig.models || []).join(', ')}`);
     }
   }
 
@@ -761,7 +761,7 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
       return models.data.map(model => model.id);
     } catch (error) {
       console.warn('获取LM Studio模型列表失败，使用配置中的模型列表');
-      return this.preConfig.models;
+      return this.preConfig.models || [];
     }
   }
 
@@ -878,11 +878,11 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
 
     // 默认虚拟模型到实际模型的映射
     const defaultModelMapping: Record<string, string> = {
-      'default': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
-      'reasoning': this.preConfig.models[0] || 'llama-3.1-8b-instruct', 
-      'longContext': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
-      'webSearch': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
-      'background': this.preConfig.models[0] || 'llama-3.1-8b-instruct',
+      'default': (this.preConfig.models || [])[0] || 'llama-3.1-8b-instruct',
+      'reasoning': (this.preConfig.models || [])[0] || 'llama-3.1-8b-instruct', 
+      'longContext': (this.preConfig.models || [])[0] || 'llama-3.1-8b-instruct',
+      'webSearch': (this.preConfig.models || [])[0] || 'llama-3.1-8b-instruct',
+      'background': (this.preConfig.models || [])[0] || 'llama-3.1-8b-instruct',
     };
 
     // 如果是虚拟模型，返回映射的实际模型
@@ -892,13 +892,13 @@ export class LMStudioCompatibilityModule extends EventEmitter implements ModuleI
     }
 
     // 如果已经是实际模型名称，直接返回
-    if (this.preConfig.models.includes(virtualModel)) {
+    if ((this.preConfig.models || []).includes(virtualModel)) {
       return virtualModel;
     }
 
     // 如果都不匹配，返回默认模型
-    console.warn(`⚠️ 未知模型 ${virtualModel}，使用默认模型 ${this.preConfig.models[0]}`);
-    return this.preConfig.models[0] || 'llama-3.1-8b-instruct';
+    console.warn(`⚠️ 未知模型 ${virtualModel}，使用默认模型 ${(this.preConfig.models || [])[0]}`);
+    return (this.preConfig.models || [])[0] || 'llama-3.1-8b-instruct';
   }
 
   // Missing ModuleInterface methods

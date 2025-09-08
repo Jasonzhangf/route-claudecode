@@ -9,7 +9,7 @@
  * @author Jason Zhang
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 export interface AdaptiveCompatibilityConfig {

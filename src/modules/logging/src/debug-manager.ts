@@ -72,6 +72,7 @@ export interface DebugManager {
   getStatistics(): DebugStatistics;
   cleanup(): Promise<void>;
   setRequestContext(requestId: string, port?: number): void;
+  recordPipelineResponse(requestId: string, pipelineId: string, processingTime: number, response: any, layerOutputs: any[]): void;
 }
 
 /**
@@ -93,6 +94,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
   private recorder: DebugRecorder;
   // private replaySystem: ReplaySystem; // Removed: class doesn't exist
   private config: DebugConfig;
+  private currentPort: number;
   private startTime: number;
   private consoleCapture: ConsoleLogCapture;
 
@@ -116,6 +118,10 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
       cpuUsage: 0
     };
 
+    // 使用正确的debug-logs路径
+    const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
+    const debugLogsPath = `${homeDir}/.route-claudecode/debug-logs`;
+    
     // 默认配置
     this.config = {
       enabled: true,
@@ -123,7 +129,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
       maxSessionDuration: 24 * 60 * 60 * 1000, // 24小时
       retentionDays: 7,
       compressionEnabled: true,
-      storageBasePath: '~/.route-claudecode/debug',
+      storageBasePath: debugLogsPath,
       modules: {
         client: { enabled: true, logLevel: 'info' },
         router: { enabled: true, logLevel: 'info' },
@@ -139,9 +145,6 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
     this.recorder = new DebugRecorderImpl(this.config);
     // this.replaySystem = new ReplaySystemImpl(this.recorder); // Removed: class doesn't exist
     
-    // 使用正确的debug-logs路径
-    const homeDir = process.env.HOME || process.env.USERPROFILE || '~';
-    const debugLogsPath = `${homeDir}/.route-claudecode/debug-logs`;
     this.consoleCapture = new ConsoleLogCapture(debugLogsPath);
 
     // 启动清理任务
@@ -157,12 +160,19 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
    * 初始化Debug管理器
    */
   async initialize(port?: number): Promise<void> {
+    // 设置当前端口
+    if (port !== undefined) {
+      this.currentPort = port;
+    }
+    
     // 启用console日志捕获
-    this.consoleCapture.enable(port);
+    if (this.currentPort !== undefined) {
+      this.consoleCapture.enable(this.currentPort);
+    }
     
     // 初始化逻辑
-    console.log(`Debug manager initialized for port ${port || 'default'}`);
-    this.emit('initialized', { port: port || 'default' });
+    console.log(`Debug manager initialized for port ${this.currentPort !== undefined ? this.currentPort : 'unspecified'}`);
+    this.emit('initialized', { port: this.currentPort !== undefined ? this.currentPort : undefined });
   }
 
   /**
@@ -356,8 +366,9 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
   /**
    * 创建Debug会话
    */
-  createSession(port: number, sessionId?: string): DebugSession {
+  createSession(port?: number, sessionId?: string): DebugSession {
     const now = Date.now();
+    const actualPort = port !== undefined ? port : (this.currentPort !== undefined ? this.currentPort : this.getDefaultPort());
     
     // 如果没有提供sessionId，则生成一个新的
     if (!sessionId) {
@@ -367,7 +378,7 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
 
     const session: DebugSession = {
       sessionId,
-      port,
+      port: actualPort,
       startTime: now,
       startTimeReadable: this.formatReadableTime(now),
       requestCount: 0,
@@ -381,15 +392,15 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
     };
 
     this.activeSessions.set(sessionId, session);
-    this.recorder.createSession(port, sessionId);
+    this.recorder.createSession(actualPort, sessionId);
 
     this.emit('session-created', {
       sessionId,
-      port,
+      port: actualPort,
       timestamp: now,
     });
 
-    console.log(`🎯 Debug会话已创建: ${sessionId} (端口: ${port})`);
+    console.log(`🎯 Debug会话已创建: ${sessionId} (端口: ${actualPort})`);
     return session;
   }
 
@@ -512,6 +523,13 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
   async cleanup(): Promise<void> {
     console.log('🧹 开始清理Debug系统...');
 
+    // 清理定时器
+    if (this.cleanupIntervalId) {
+      clearInterval(this.cleanupIntervalId);
+      this.cleanupIntervalId = null;
+      console.log('✅ Debug系统定时器已清理');
+    }
+
     // 结束所有活跃会话
     for (const sessionId of this.activeSessions.keys()) {
       try {
@@ -537,6 +555,27 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
     });
 
     console.log('✅ Debug系统清理完成');
+  }
+
+  /**
+   * 记录流水线响应
+   */
+  recordPipelineResponse(requestId: string, pipelineId: string, processingTime: number, response: any, layerOutputs: any[]): void {
+    try {
+      // 使用记录器保存流水线响应
+      this.recorder.recordPipelineResponse(requestId, pipelineId, processingTime, response, layerOutputs);
+
+      this.emit('pipeline-response-recorded', {
+        requestId,
+        pipelineId,
+        processingTime,
+        timestamp: Date.now(),
+      });
+
+      console.log(`📝 流水线响应已记录: ${pipelineId} (处理时间: ${processingTime}ms)`);
+    } catch (error) {
+      console.error(`记录流水线响应失败 [${requestId}]:`, error);
+    }
   }
 
   /**
@@ -566,11 +605,37 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
   }
 
   /**
+   * 获取默认端口
+   * 尝试从环境变量、配置或使用最后的默认值
+   */
+  private getDefaultPort(): number {
+    // 1. 尝试从环境变量获取
+    if (process.env.RCC_PORT) {
+      const envPort = parseInt(process.env.RCC_PORT);
+      if (!isNaN(envPort) && envPort > 0) {
+        return envPort;
+      }
+    }
+    
+    // 2. 尝试从配置获取
+    if (this.config.storageBasePath) {
+      // 这里可以从配置路径中读取配置文件获取端口
+      // 但为了避免循环依赖，暂时跳过
+    }
+    
+    // 3. 使用默认值并发出警告
+    console.warn('⚠️ Debug管理器无法获取动态端口，使用默认端口5506');
+    return 5506;
+  }
+
+  private cleanupIntervalId: NodeJS.Timeout | null = null;
+
+  /**
    * 启动清理调度器
    */
   private startCleanupScheduler(): void {
     // 每小时检查一次过期记录
-    const cleanupInterval = setInterval(
+    this.cleanupIntervalId = setInterval(
       async () => {
         try {
           await this.recorder.cleanupExpiredRecords();
@@ -583,7 +648,10 @@ export class DebugManagerImpl extends EventEmitter implements DebugManager, Modu
 
     // 清理器在进程退出时停止
     process.once('exit', () => {
-      clearInterval(cleanupInterval);
+      if (this.cleanupIntervalId) {
+        clearInterval(this.cleanupIntervalId);
+        this.cleanupIntervalId = null;
+      }
     });
   }
 

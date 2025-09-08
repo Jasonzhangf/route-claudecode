@@ -1,0 +1,39 @@
+{
+  "testTimestamp": "2025-09-07T10:47:32.131Z",
+  "success": true,
+  "totalTimeMs": 0,
+  "finalState": {
+    "totalProviders": 2,
+    "totalRoutes": 3,
+    "totalPipelines": 1,
+    "healthyPipelines": 1,
+    "systemHealth": "healthy",
+    "readyForRequests": true,
+    "moduleInitializationStatus": {
+      "pipelineManagerActive": true,
+      "loadBalancerActive": true,
+      "selfCheckServiceActive": true
+    },
+    "performanceMetrics": {
+      "configProcessingTime": 50,
+      "totalStartupTime": 0,
+      "averagePipelineAssemblyTime": 100
+    }
+  },
+  "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "stepResults": {
+    "configResult": {
+      "success": true,
+      "providersCount": 2,
+      "routesCount": 3
+    },
+    "routerResult": {
+      "success": true,
+      "pipelinesCount": 1
+    },
+    "assemblyResult": {
+      "success": true,
+      "assembledPipelinesCount": 1
+    }
+  }
+}

@@ -1,7 +1,7 @@
 /**
  * HTTP服务器核心类 - 集成RCC v4.0完整流水线
  *
- * 实现完整的Config→Router→Pipeline→Assembly→HTTP流程
+ * 重构版本：按功能模块拆分，提高代码可维护性
  *
  * @author Claude Code Router v4.0
  */
@@ -9,130 +9,57 @@
 import * as http from 'http';
 import * as url from 'url';
 import { EventEmitter } from 'events';
-import { ConfigPreprocessor } from '../../config/src/config-preprocessor';
-import { RouterPreprocessor } from '../../router/src/router-preprocessor';
-import { PipelineAssembler } from '../../pipeline/src/pipeline-assembler';
-import { SelfCheckService } from '../../self-check/self-check.service';
-// 移除JQJsonHandler依赖，使用标准JSON API
+import {
+  HTTPServerCore,
+  ServerConfig,
+  RequestContext,
+  ResponseContext,
+  AssembledPipeline,
+  HTTPMethod,
+  ServerStatus,
+  RouteHandler,
+  Route
+} from './http-types';
+import { HTTPContextManager } from './http-context-manager';
+import { HTTPRoutingSystemImpl } from './http-routing-system';
+import { HTTPRequestHandlersImpl } from './http-handlers';
+import { AnthropicMessageHandlerImpl } from './http-anthropic-handler';
+import { getEnhancedErrorHandler, EnhancedErrorHandler } from '../../error-handler/src/enhanced-error-handler';
+import { HTTPErrorCenter } from './http-error-center';
 import { ModuleDebugIntegration } from '../../logging/src/debug-integration';
-
-// 临时定义AssembledPipeline接口
-interface AssembledPipeline {
-  id: string;
-  provider: string;
-  model: string;
-  layers: any[];
-  execute(request: any): Promise<any>;
-}
-
-// 临时定义缺失的类型
-interface ServerStatus {
-  isRunning: boolean;
-  port: number;
-  host: string;
-  startTime?: Date;
-  version: string;
-  activePipelines: number;
-  totalRequests: number;
-  uptime: string;
-  health: {
-    status: string;
-    checks: Array<{ name: string; status: 'pass' | 'warn' | 'fail'; responseTime: number }>;
-  };
-}
-
-type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS' | 'HEAD';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
 
 /**
- * HTTP请求上下文
+ * HTTP服务器核心类 - 组合架构重构版本
+ * 
+ * 将大文件拆分为多个功能模块，每个模块专注于特定功能：
+ * - HTTPContextManager: 请求上下文管理
+ * - HTTPRoutingSystemImpl: 路由系统
+ * - HTTPRequestHandlersImpl: 基础请求处理
+ * - AnthropicMessageHandlerImpl: Anthropic消息处理
+ * - HTTPErrorCenter: 错误处理
  */
-export interface RequestContext {
-  id: string;
-  startTime: Date;
-  method: string;
-  url: string;
-  headers: Record<string, string | string[]>;
-  query: Record<string, string>;
-  params: Record<string, string>;
-  body?: any;
-  metadata: Record<string, any>;
-}
-
-/**
- * HTTP响应上下文
- */
-export interface ResponseContext {
-  req: RequestContext;
-  statusCode: number;
-  headers: Record<string, any>;
-  body?: any;
-  sent: boolean;
-}
-
-/**
- * 中间件函数类型
- */
-export type MiddlewareFunction = (
-  req: RequestContext,
-  res: ResponseContext,
-  next: (error?: Error) => void
-) => void | Promise<void>;
-
-/**
- * 路由处理函数类型
- */
-export type RouteHandler = (req: RequestContext, res: ResponseContext) => void | Promise<void>;
-
-/**
- * 路由定义
- */
-export interface Route {
-  method: string;
-  path: string;
-  handler: RouteHandler;
-  middleware?: MiddlewareFunction[];
-}
-
-/**
- * 服务器配置
- */
-export interface ServerConfig {
-  port: number;
-  host: string;
-  maxRequestSize?: number;
-  timeout?: number;
-  keepAliveTimeout?: number;
-  debug?: boolean;
-}
-
-/**
- * HTTP服务器核心类 - 集成完整流水线
- */
-export class HTTPServer extends EventEmitter {
+export class HTTPServer extends EventEmitter implements HTTPServerCore {
   private server: http.Server | null = null;
   private routes: Map<string, Route[]> = new Map();
-  private middleware: MiddlewareFunction[] = [];
   private config: ServerConfig;
   private isRunning: boolean = false;
   private startTime: Date | null = null;
   private requestCount: number = 0;
   private connections: Set<any> = new Set();
   
-  // 集成流水线组件
+  // 组件实例
+  private contextManager: HTTPContextManager;
+  private routingSystem: HTTPRoutingSystemImpl;
+  private requestHandlers: HTTPRequestHandlersImpl;
+  private anthropicHandler: AnthropicMessageHandlerImpl;
+  private errorHandler: EnhancedErrorHandler;
+  private httpErrorCenter: HTTPErrorCenter;
+  private debugIntegration: ModuleDebugIntegration;
+  
+  // 外部注入的流水线组件
   private assembledPipelines: AssembledPipeline[] = [];
-  private pipelinesByModel: Map<string, AssembledPipeline[]> = new Map();
   private initialized: boolean = false;
-  
-  // 集成自检服务
-  private selfCheckService: SelfCheckService;
-  
-  // Debug集成
-  private debugIntegration: ModuleDebugIntegration = new ModuleDebugIntegration({
-    moduleId: 'server',
-    moduleName: 'HTTPServer',
-    enabled: true,
-    captureLevel: 'full'
-  });
 
   constructor(config: ServerConfig, private configPath?: string) {
     super();
@@ -144,244 +71,46 @@ export class HTTPServer extends EventEmitter {
       ...config,
     };
 
-    // 初始化自检服务
-    this.selfCheckService = new SelfCheckService();
+    // 初始化组件
+    this.contextManager = new HTTPContextManager(this.config);
+    this.routingSystem = new HTTPRoutingSystemImpl();
+    this.requestHandlers = new HTTPRequestHandlersImpl();
+    this.anthropicHandler = new AnthropicMessageHandlerImpl([], false, this.config.debug);
+    
+    // 初始化错误处理器
+    this.errorHandler = getEnhancedErrorHandler(this.config.port);
+    this.httpErrorCenter = new HTTPErrorCenter(this.errorHandler, this.config.debug);
+    
+    // Debug集成将在外部通过setDebugIntegration方法设置
+    this.debugIntegration = null as any; // 初始化为null，等待外部设置
 
     this.initializeRoutes();
   }
 
   /**
-   * 初始化流水线系统: 配置->路由->流水线组装->自检->动态调度系统
+   * 设置流水线（供外部调用）
    */
-  private async initializePipelines(): Promise<void> {
-    if (this.initialized) {
-      console.log('🔄 Pipeline already initialized, skipping...');
-      return;
-    }
-
-    try {
-      if (!this.configPath) {
-        console.log('⚠️ No config path provided, creating pipeline system without Config→Router flow');
-        this.initialized = true;
-        return;
-      }
-
-      console.log('🚀 Starting 配置->路由->流水线组装->自检->动态调度系统 initialization...');
-      
-      // Step 1: 配置 - Config preprocessing
-      console.log('📋 Step 1: 配置预处理...');
-      const configResult = await ConfigPreprocessor.preprocess(this.configPath);
-      console.log(`✅ 配置处理完成: ${configResult.routingTable?.providers.length || 0} providers, ${Object.keys(configResult.routingTable?.routes || {}).length} routes`);
-
-      // Step 2: 路由 - Router preprocessing  
-      console.log('🗺️ Step 2: 路由预处理...');
-      const routerResult = await RouterPreprocessor.preprocess(configResult.routingTable);
-      console.log(`✅ 路由处理完成: ${routerResult.pipelineConfigs.length} pipeline configurations`);
-
-      // Step 3: 流水线组装 - Pipeline assembly
-      console.log('🔧 Step 3: 流水线组装...');
-      const pipelineAssembler = new PipelineAssembler();
-      
-      // Group by route models for assembly
-      const groupedConfigs = new Map<string, any[]>();
-      for (const config of routerResult.pipelineConfigs) {
-        const key = `${config.provider}_${config.model}`;
-        if (!groupedConfigs.has(key)) {
-          groupedConfigs.set(key, []);
-        }
-        groupedConfigs.get(key)!.push(config);
-      }
-
-      console.log(`📦 按路由模型分组配置: ${groupedConfigs.size} groups`);
-      
-      // Assemble pipelines for each group - 使用核心框架创建流水线结构
-      this.assembledPipelines = [];
-      this.pipelinesByModel.clear();
-      
-      for (const [routeModel, configs] of groupedConfigs) {
-        try {
-          console.log(`🔨 组装流水线: ${routeModel} (${configs.length} configs)`);
-          
-          // 创建流水线结构（基于pipeline assembler框架）
-          const assembled: AssembledPipeline[] = configs.map((config, index) => ({
-            id: config.pipelineId || `pipeline_${routeModel}_${index}`,
-            provider: config.provider,
-            model: config.model,
-            layers: config.layers || [],
-            execute: async (request: any) => {
-              // 真实的流水线执行逻辑将在pipeline-modules依赖修复后实现
-              return {
-                id: `chatcmpl-${Date.now()}`,
-                object: 'chat.completion',
-                created: Math.floor(Date.now() / 1000),
-                model: config.model,
-                choices: [
-                  {
-                    index: 0,
-                    message: {
-                      role: 'assistant',
-                      content: `Pipeline ${config.pipelineId} processed request successfully through ${config.layers?.length || 0} layers.`
-                    },
-                    finish_reason: 'stop'
-                  }
-                ],
-                usage: {
-                  prompt_tokens: 50,
-                  completion_tokens: 25,
-                  total_tokens: 75
-                }
-              };
-            }
-          }));
-          
-          this.assembledPipelines.push(...assembled);
-          this.pipelinesByModel.set(routeModel, assembled);
-          
-          console.log(`✅ 流水线组装完成: ${routeModel} -> ${assembled.length} pipelines`);
-        } catch (error) {
-          console.error(`❌ 流水线组装失败: ${routeModel}:`, error instanceof Error ? error.message : error);
-          // Continue with other groups even if one fails
-        }
-      }
-
-      // Step 4: 自检 - Self-checking system using SelfCheckService
-      console.log('🔍 Step 4: 自检系统...');
-      await this.selfCheckService.start();
-      
-      // 配置自检服务
-      await this.selfCheckService.configureSelfCheck({
-        enableApiKeyValidation: true,
-        apiKeyValidationInterval: 300000, // 5分钟
-        enableTokenRefresh: true,
-        tokenRefreshAdvanceTime: 3600000, // 1小时
-        enablePipelineHealthCheck: true,
-        pipelineHealthCheckInterval: 60000, // 1分钟
-        autoDestroyInvalidPipelines: true,
-        authTimeout: 300000 // 5分钟
-      });
-      
-      // 执行完整自检
-      const selfCheckSuccess = await this.selfCheckService.performSelfCheck();
-      const selfCheckState = await this.selfCheckService.getSelfCheckState();
-      
-      console.log(`✅ 自检完成: ${selfCheckSuccess ? '成功' : '失败'}`);
-      console.log(`📊 自检统计: 总检查${selfCheckState.statistics.totalChecks}次, 成功${selfCheckState.statistics.successfulChecks}次, 失败${selfCheckState.statistics.failedChecks}次`);
-
-      // Step 5: 动态调度系统 - Dynamic scheduling system
-      console.log('⚡ Step 5: 动态调度系统初始化...');
-      await this.initializeDynamicScheduler();
-      console.log('✅ 动态调度系统初始化完成');
-
-      this.initialized = true;
-      console.log(`🎉 完整初始化流程完成! 总流水线数: ${this.assembledPipelines.length}`);
-      
-      // Log summary
-      console.log('📊 系统总览:');
-      console.log(`  📋 配置文件: ${this.configPath}`);
-      console.log(`  🗺️ 路由组: ${Object.keys(configResult.routingTable?.routes || {}).length}`);
-      console.log(`  🔧 流水线组: ${groupedConfigs.size}`);
-      console.log(`  ⚡ 总流水线: ${this.assembledPipelines.length}`);
-      console.log(`  🔍 自检状态: ${selfCheckSuccess ? '健康' : '异常'}`);
-      console.log(`  📊 自检成功率: ${selfCheckState.statistics.totalChecks > 0 ? Math.round((selfCheckState.statistics.successfulChecks / selfCheckState.statistics.totalChecks) * 100) : 0}%`);
-      
-      this.pipelinesByModel.forEach((pipelines, routeModel) => {
-        console.log(`    - ${routeModel}: ${pipelines.length} pipelines`);
-      });
-      
-    } catch (error) {
-      console.error('❌ Pipeline initialization failed:', error instanceof Error ? error.message : error);
-      if (error instanceof Error) {
-        console.error('Stack trace:', error.stack);
-      }
-      this.initialized = false;
-      throw error;
-    }
+  setPipelines(pipelines: AssembledPipeline[], initialized: boolean): void {
+    this.assembledPipelines = pipelines;
+    this.initialized = initialized;
+    this.requestHandlers.setPipelines(pipelines, initialized);
+    this.anthropicHandler.setPipelines(pipelines, initialized);
   }
 
   /**
-   * 执行流水线健康检查
+   * 设置Debug集成（供外部调用）
    */
-  private async performPipelineHealthCheck(): Promise<Array<{id: string, status: 'healthy' | 'unhealthy', responseTime: number}>> {
-    const results = [];
+  setDebugIntegration(debugIntegration: ModuleDebugIntegration): void {
+    this.debugIntegration = debugIntegration;
     
-    for (const pipeline of this.assembledPipelines) {
-      const startTime = Date.now();
-      try {
-        // 检查流水线各层模块是否正常
-        if (pipeline.layers && pipeline.layers.length > 0) {
-          // 验证流水线结构完整性
-          const hasRequiredLayers = ['transformer', 'protocol', 'server-compatibility', 'server']
-            .every(layerType => pipeline.layers.some((layer: any) => layer.type === layerType));
-          
-          if (hasRequiredLayers) {
-            results.push({
-              id: pipeline.id,
-              status: 'healthy',
-              responseTime: Date.now() - startTime
-            });
-            
-            if (this.config.debug) {
-              console.log(`💚 Pipeline健康: ${pipeline.id} (${Date.now() - startTime}ms)`);
-            }
-          } else {
-            results.push({
-              id: pipeline.id,
-              status: 'unhealthy',
-              responseTime: Date.now() - startTime
-            });
-            console.warn(`⚠️ Pipeline不健康: ${pipeline.id} - 缺少必要层级`);
-          }
-        } else {
-          results.push({
-            id: pipeline.id,
-            status: 'unhealthy',
-            responseTime: Date.now() - startTime
-          });
-          console.warn(`⚠️ Pipeline不健康: ${pipeline.id} - 无层级结构`);
-        }
-      } catch (error) {
-        results.push({
-          id: pipeline.id,
-          status: 'unhealthy',
-          responseTime: Date.now() - startTime
-        });
-        console.error(`❌ Pipeline健康检查失败: ${pipeline.id}:`, error);
-      }
+    // 确保路由系统有访问Debug集成的能力
+    (this.routingSystem as any).debugIntegration = debugIntegration;
+    
+    // 为Anthropic处理器设置端口信息（用于日志记录）
+    if (this.anthropicHandler && typeof this.anthropicHandler.setPort === 'function') {
+      const serverPort = debugIntegration['config']?.serverPort || this.config.port;
+      this.anthropicHandler.setPort(serverPort);
     }
-    
-    return results;
-  }
-
-  /**
-   * 初始化动态调度系统
-   */
-  private async initializeDynamicScheduler(): Promise<void> {
-    // 创建路由模型到流水线的映射索引
-    const routingIndex = new Map<string, AssembledPipeline[]>();
-    
-    // 按provider和model建立索引
-    for (const pipeline of this.assembledPipelines) {
-      const routeKey = `${pipeline.provider}_${pipeline.model}`;
-      if (!routingIndex.has(routeKey)) {
-        routingIndex.set(routeKey, []);
-      }
-      routingIndex.get(routeKey)!.push(pipeline);
-    }
-    
-    // 为每个路由键设置负载均衡策略
-    for (const [routeKey, pipelines] of routingIndex) {
-      if (pipelines.length > 1) {
-        // 多流水线时使用轮询策略
-        console.log(`⚡ 设置负载均衡: ${routeKey} -> ${pipelines.length} pipelines (round-robin)`);
-      } else {
-        console.log(`⚡ 单一流水线: ${routeKey} -> 1 pipeline (direct)`);
-      }
-    }
-    
-    // 存储调度索引
-    this.pipelinesByModel = routingIndex;
-    
-    console.log(`⚡ 动态调度系统就绪: ${routingIndex.size} route keys, ${this.assembledPipelines.length} total pipelines`);
   }
 
   /**
@@ -390,47 +119,35 @@ export class HTTPServer extends EventEmitter {
   private initializeRoutes(): void {
     // 健康检查路由
     this.addRoute('GET', '/health', async (req, res) => {
-      await this.handleHealthCheck(req, res);
+      await this.requestHandlers.handleHealthCheck(req, res);
     });
 
     // 状态路由
     this.addRoute('GET', '/status', async (req, res) => {
-      await this.handleStatus(req, res);
+      await this.requestHandlers.handleStatus(req, res);
     });
 
     // 版本信息路由
     this.addRoute('GET', '/version', async (req, res) => {
-      await this.handleVersion(req, res);
+      await this.requestHandlers.handleVersion(req, res);
     });
 
-    // OpenAI兼容的聊天完成端点 - 接受Anthropic格式输入
+    // Anthropic标准messages端点
+    this.addRoute('POST', '/v1/messages', async (req, res) => {
+      await this.anthropicHandler.handleAnthropicMessages(req, res);
+    });
+
+    // OpenAI兼容的聊天完成端点
     this.addRoute('POST', '/v1/chat/completions', async (req, res) => {
       await this.handleChatCompletions(req, res);
     });
   }
 
   /**
-   * 添加全局中间件
-   */
-  use(middleware: MiddlewareFunction): void {
-    this.middleware.push(middleware);
-  }
-
-  /**
    * 添加路由
    */
-  addRoute(method: string, path: string, handler: RouteHandler, middleware?: MiddlewareFunction[]): void {
-    const route: Route = { method, path, handler, middleware };
-
-    if (!this.routes.has(method)) {
-      this.routes.set(method, []);
-    }
-
-    this.routes.get(method)!.push(route);
-
-    if (this.config.debug) {
-      console.log(`📍 Route added: ${method} ${path}`);
-    }
+  addRoute(method: string, path: string, handler: any): void {
+    this.routingSystem.addRoute(method, path, handler);
   }
 
   /**
@@ -441,16 +158,8 @@ export class HTTPServer extends EventEmitter {
       throw new Error('Server is already running');
     }
 
-    // 设置内置路由
-    this.setupBuiltinRoutes();
-
     return new Promise(async (resolve, reject) => {
       try {
-        // 🚀 Step 0: 初始化流水线系统（配置->路由->流水线组装->自检->动态调度系统）
-        console.log('🔄 Initializing pipeline system before starting HTTP server...');
-        await this.initializePipelines();
-        console.log('✅ Pipeline system initialized successfully');
-
         this.server = http.createServer((req, res) => {
           this.handleRequest(req, res).catch(error => {
             this.handleError(error, req, res);
@@ -474,10 +183,6 @@ export class HTTPServer extends EventEmitter {
           reject(error);
         });
 
-        // 添加详细的启动日志
-        console.log(`🚀 Attempting to start HTTP Server on ${this.config.host}:${this.config.port}`);
-        console.log(`🔧 Server config: port=${this.config.port}, host=${this.config.host}, debug=${this.config.debug}`);
-
         this.server.listen(this.config.port, this.config.host, () => {
           this.isRunning = true;
           this.startTime = new Date();
@@ -488,12 +193,12 @@ export class HTTPServer extends EventEmitter {
 
           console.log(`✅ HTTP Server successfully started on http://${this.config.host}:${this.config.port}`);
           console.log(`🌐 Server is listening and ready to accept connections`);
-          console.log(`🎉 RCC v4.0 server is ready to process requests!`);
+          console.log(`🎉 Clean HTTP server is ready to process requests!`);
 
           resolve();
         });
       } catch (error) {
-        console.error('❌ Failed to initialize pipeline system:', error);
+        console.error('❌ Failed to initialize HTTP server:', error);
         reject(error);
       }
     });
@@ -572,19 +277,19 @@ export class HTTPServer extends EventEmitter {
   /**
    * 获取服务器状态
    */
-  getStatus(): ServerStatus {
+  getStatus(): any {
     return {
       isRunning: this.isRunning,
       port: this.config.port,
       host: this.config.host,
-      startTime: this.startTime || undefined,
-      version: '4.0.0-alpha.1',
-      activePipelines: this.getActivePipelineCount(),
+      startTime: this.startTime,
+      version: '4.0.0-alpha.1-clean',
+      activePipelines: this.assembledPipelines.length,
       totalRequests: this.requestCount,
       uptime: this.calculateUptime(),
       health: {
         status: this.isRunning ? 'healthy' : 'unhealthy',
-        checks: this.performHealthChecks(),
+        checks: this.requestHandlers.getServerStatus().health.checks,
       },
     };
   }
@@ -596,23 +301,20 @@ export class HTTPServer extends EventEmitter {
     this.requestCount++;
 
     // 创建请求上下文
-    const requestContext = this.createRequestContext(req);
-    const responseContext = this.createResponseContext(requestContext);
+    const requestContext = this.contextManager.createRequestContext(req);
+    const responseContext = this.contextManager.createResponseContext(requestContext, res);
 
     try {
       // 解析请求体
-      await this.parseRequestBody(req, requestContext);
-
-      // 执行中间件
-      await this.executeMiddleware(requestContext, responseContext);
+      await this.contextManager.parseRequestBody(req, requestContext);
 
       // 执行路由处理器
-      await this.executeRoute(requestContext, responseContext);
+      await this.routingSystem.executeRoute(requestContext, responseContext);
 
       // 发送响应
-      await this.sendResponse(res, responseContext);
+      await this.contextManager.sendResponse(res, responseContext);
     } catch (error) {
-      this.handleError(error, req, res);
+      await this.handleError(error, req, res);
     }
   }
 
@@ -638,7 +340,7 @@ export class HTTPServer extends EventEmitter {
   /**
    * 创建响应上下文
    */
-  private createResponseContext(req: RequestContext): ResponseContext {
+  private createResponseContext(req: RequestContext, originalResponse?: http.ServerResponse): ResponseContext {
     return {
       req,
       statusCode: 200,
@@ -647,6 +349,7 @@ export class HTTPServer extends EventEmitter {
         'X-Request-ID': req.id,
       },
       sent: false,
+      _originalResponse: originalResponse,
     };
   }
 
@@ -734,51 +437,7 @@ export class HTTPServer extends EventEmitter {
     });
   }
 
-  /**
-   * 执行中间件链
-   */
-  private async executeMiddleware(req: RequestContext, res: ResponseContext): Promise<void> {
-    let index = 0;
-
-    const next = (error?: Error): void => {
-      if (error) {
-        throw error;
-      }
-
-      if (index >= this.middleware.length) {
-        return;
-      }
-
-      const middleware = this.middleware[index++];
-
-      if (middleware) {
-        try {
-          const result = middleware(req, res, next);
-          if (result instanceof Promise) {
-            result.catch(next);
-          }
-        } catch (err) {
-          next(err as Error);
-        }
-      }
-    };
-
-    return new Promise((resolve, reject) => {
-      const originalNext = next;
-      const wrappedNext = (error?: Error) => {
-        if (error) {
-          reject(error);
-        } else if (index >= this.middleware.length) {
-          resolve();
-        } else {
-          originalNext();
-        }
-      };
-
-      wrappedNext();
-    });
-  }
-
+  
   /**
    * 执行路由处理器
    */
@@ -794,11 +453,6 @@ export class HTTPServer extends EventEmitter {
 
     // 提取路径参数
     this.extractPathParams(route.path, req.url, req);
-
-    // 执行路由中间件
-    if (route.middleware) {
-      await this.executeRouteMiddleware(route.middleware, req, res);
-    }
 
     // 执行路由处理器
     await route.handler(req, res);
@@ -841,55 +495,7 @@ export class HTTPServer extends EventEmitter {
     // 目前只支持精确匹配，不需要参数提取
   }
 
-  /**
-   * 执行路由中间件
-   */
-  private async executeRouteMiddleware(
-    middleware: MiddlewareFunction[],
-    req: RequestContext,
-    res: ResponseContext
-  ): Promise<void> {
-    let index = 0;
-
-    const next = (error?: Error): void => {
-      if (error) {
-        throw error;
-      }
-
-      if (index >= middleware.length) {
-        return;
-      }
-
-      const mw = middleware[index++];
-
-      if (mw) {
-        try {
-          const result = mw(req, res, next);
-          if (result instanceof Promise) {
-            result.catch(next);
-          }
-        } catch (err) {
-          next(err as Error);
-        }
-      }
-    };
-
-    return new Promise((resolve, reject) => {
-      const originalNext = next;
-      const wrappedNext = (error?: Error) => {
-        if (error) {
-          reject(error);
-        } else if (index >= middleware.length) {
-          resolve();
-        } else {
-          originalNext();
-        }
-      };
-
-      wrappedNext();
-    });
-  }
-
+  
   /**
    * 发送响应
    */
@@ -952,75 +558,111 @@ export class HTTPServer extends EventEmitter {
   }
 
   /**
-   * 处理错误
+   * 处理错误 - 使用HTTP错误中心协同机制
+   * 
+   * 错误处理流程：
+   * 1. 错误处理中心分类和处理错误
+   * 2. 无法处理的错误交给HTTP错误中心
+   * 3. HTTP错误中心生成响应：500为本地错误，其余错误码原样返回
    */
-  private handleError(error: unknown, req: http.IncomingMessage, res: http.ServerResponse): void {
-    const message = error instanceof Error ? error.message : 'Internal Server Error';
-    let statusCode = 500;
-    let errorType = 'internal_server_error';
-    let errorCode = 'unknown_error';
+  private async handleError(error: unknown, req: http.IncomingMessage, res: http.ServerResponse): Promise<void> {
+    const requestId = `http-error-${Date.now()}`;
+    
+    // 创建RCC错误对象
+    let rccError: RCCError;
+    if (error instanceof RCCError) {
+      rccError = error;
+    } else {
+      const message = error instanceof Error ? error.message : 'Internal Server Error';
+      rccError = new RCCError(
+        message,
+        RCCErrorCode.INTERNAL_ERROR,
+        'http-server',
+        { details: { originalError: error } }
+      );
+    }
 
-    // 根据错误类型确定HTTP状态码和错误信息
-    if (error instanceof Error) {
-      if (message.includes('Request body too large')) {
-        statusCode = 413;
-        errorType = 'payload_too_large';
-        errorCode = 'request_too_large';
-      } else if (message.includes('Invalid JSON format') || message.includes('JSON parsing')) {
-        statusCode = 400;
-        errorType = 'invalid_request_error';
-        errorCode = 'invalid_json';
-      } else if (message.includes('Failed to process request body')) {
-        statusCode = 400;
-        errorType = 'invalid_request_error';
-        errorCode = 'body_processing_failed';
-      } else if (message.includes('Request stream error')) {
-        statusCode = 400;
-        errorType = 'invalid_request_error';
-        errorCode = 'stream_error';
+    // 使用HTTP错误中心处理错误
+    try {
+      const httpErrorResponse = await this.httpErrorCenter.handleUnprocessedError(rccError, {
+        requestId,
+        endpoint: req.url || 'unknown',
+        method: req.method || 'unknown',
+        originalError: error
+      });
+
+      // 发送HTTP错误响应
+      await this.sendErrorResponse(res, httpErrorResponse);
+
+      console.error(`❌ Server Error [${httpErrorResponse.statusCode}]: ${rccError.message}`);
+      if (this.config.debug) {
+        console.error('Stack trace:', rccError.stack);
       }
-    }
 
-    console.error(`❌ Server Error [${statusCode}]: ${message}`);
-    if (error instanceof Error && this.config.debug) {
-      console.error('Stack trace:', error.stack);
-    }
-
-    // 确保响应没有被发送
-    if (!res.headersSent) {
+    } catch (centerError) {
+      // HTTP错误中心本身失败，使用最基本的错误响应
+      console.error('❌ HTTP Error Center failed:', centerError);
+      
       try {
-        res.statusCode = statusCode;
+        res.statusCode = 500;
         res.setHeader('Content-Type', 'application/json');
-        res.setHeader('X-Error-Type', errorType);
+        res.setHeader('X-Request-ID', requestId);
+        res.setHeader('X-Error-Type', 'error_center_failed');
         
-        const errorResponse = {
+        const fallbackResponse = {
           error: {
-            message: this.config.debug ? message : this.getPublicErrorMessage(statusCode),
-            type: errorType,
-            code: errorCode
+            message: this.config.debug ? 
+              `HTTP Error Center failed: ${centerError instanceof Error ? centerError.message : String(centerError)}` :
+              'Internal Server Error',
+            type: 'internal_server_error',
+            code: 'error_center_failed',
+            requestId: requestId,
+            timestamp: new Date().toISOString()
           }
         };
 
-        res.end(JSON.stringify(errorResponse, null, 2));
+        res.end(JSON.stringify(fallbackResponse, null, 2));
       } catch (responseError) {
-        // 如果连错误响应都无法发送，则发送最基本的响应
-        console.error('❌ Failed to send error response:', responseError);
+        // 如果连 fallback 响应都无法发送，则发送最基本的文本响应
+        console.error('❌ Critical: Failed to send fallback error response:', responseError);
         try {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'text/plain');
-          res.end('Internal Server Error');
-        } catch (fallbackError) {
-          console.error('❌ Critical: Failed to send fallback error response:', fallbackError);
+          res.end('Critical Internal Server Error');
+        } catch (criticalError) {
+          console.error('❌ Catastrophic: Cannot send any error response:', criticalError);
         }
       }
     }
 
-    // 发出错误事件但不让它导致进程崩溃
+    // 发出错误事件但不让它在错误处理过程中导致进程崩溃
     try {
-      this.emit('error', error);
+      this.emit('error', rccError);
     } catch (eventError) {
       console.error('❌ Error in error event handler:', eventError);
     }
+  }
+
+  /**
+   * 发送HTTP错误响应
+   */
+  private async sendErrorResponse(res: http.ServerResponse, errorResponse: any): Promise<void> {
+    if (res.headersSent) {
+      return; // 如果响应已经发送，无法再发送错误响应
+    }
+
+    // 设置响应头
+    for (const [key, value] of Object.entries(errorResponse.headers)) {
+      if (typeof value === 'string' || typeof value === 'number' || Array.isArray(value)) {
+        res.setHeader(key, value);
+      }
+    }
+
+    // 设置状态码
+    res.statusCode = errorResponse.statusCode;
+
+    // 发送响应体
+    res.end(JSON.stringify(errorResponse.body, null, 2));
   }
 
   /**
@@ -1085,12 +727,6 @@ export class HTTPServer extends EventEmitter {
         },
         pipelines: {
           total: this.assembledPipelines.length,
-          byModel: Object.fromEntries(
-            Array.from(this.pipelinesByModel.entries()).map(([key, pipelines]) => [
-              key, 
-              pipelines.length
-            ])
-          ),
           initialized: this.initialized
         },
         performance: {
@@ -1194,133 +830,472 @@ export class HTTPServer extends EventEmitter {
     };
   }
 
+
   /**
-   * 处理OpenAI兼容的聊天完成请求 - 接受Anthropic格式输入
+   * 处理OpenAI兼容的聊天完成请求 - 带详细流水线日志
    */
   private async handleChatCompletions(req: RequestContext, res: ResponseContext): Promise<void> {
     const requestId = req.id;
+    const startTime = Date.now();
     
     // 初始化debug系统并开始会话
-    await this.debugIntegration.initialize();
-    const sessionId = this.debugIntegration.startSession();
+    if (this.debugIntegration) {
+      await this.debugIntegration.initialize();
+    }
+    let sessionId;
+    if (this.debugIntegration) {
+      sessionId = this.debugIntegration.startSession();
+    }
+    
+    console.log(`🎯 [${requestId}] 收到OpenAI聊天完成请求`);
+    console.log(`📡 [${requestId}] 请求详情: ${req.method} ${req.url}`);
+    console.log(`📋 [${requestId}] 请求体类型: ${typeof req.body}, 大小: ${JSON.stringify(req.body || {}).length} 字符`);
     
     // 记录输入
-    this.debugIntegration.recordInput(requestId, {
-      method: req.method,
-      url: req.url,
-      hasBody: !!req.body,
-      bodyType: typeof req.body
-    });
+    if (this.debugIntegration) {
+      this.debugIntegration.recordInput(requestId, {
+        method: req.method,
+        url: req.url,
+        hasBody: !!req.body,
+        bodyType: typeof req.body,
+        endpoint: 'chat-completions',
+        timestamp: new Date().toISOString()
+      });
+    }
     
     try {
+      // HTTP层基础验证
       if (!req.body) {
-        res.statusCode = 400;
-        res.body = {
-          error: {
-            message: 'Request body is required',
-            type: 'invalid_request_error',
-            code: 'missing_body'
-          }
-        };
+        console.error(`❌ [${requestId}] 请求体缺失`);
+        const error = new RCCError(
+          'Request body is required',
+          RCCErrorCode.VALIDATION_ERROR,
+          'http-server',
+          { endpoint: '/v1/chat/completions' }
+        );
         
-        // 记录错误事件
-        this.debugIntegration.recordEvent('request_error', requestId, { error: 'missing_body' });
+        if (this.debugIntegration) {
+          this.debugIntegration.recordError(requestId, error);
+        }
+        await this.errorHandler.handleRCCError(error, { requestId, endpoint: '/v1/chat/completions' });
+        if (this.debugIntegration) {
+          if (this.debugIntegration) {
         await this.debugIntegration.endSession();
-        return;
       }
-
-      // 验证是否为Anthropic格式输入
-      const anthropicRequest = req.body;
-      
-      if (!anthropicRequest.messages || !Array.isArray(anthropicRequest.messages)) {
+        }
+        
         res.statusCode = 400;
-        res.body = {
-          error: {
-            message: 'Messages array is required',
-            type: 'invalid_request_error',
-            code: 'missing_messages'
-          }
-        };
+        res.body = { error: { message: 'Request body is required', type: 'invalid_request_error' } };
         return;
       }
 
-      if (!this.initialized || this.assembledPipelines.length === 0) {
-        res.statusCode = 503;
-        res.body = {
-          error: {
-            message: 'Pipeline system not initialized or no pipelines available',
-            type: 'service_unavailable',
-            code: 'pipeline_not_ready'
-          }
-        };
-        return;
-      }
-
-      // 从请求中确定路由模型 (默认使用第一个可用的pipeline)
-      const selectedPipeline = this.assembledPipelines[0];
+      console.log(`🔍 [${requestId}] 开始流水线选择过程...`);
       
-      if (this.config.debug) {
-        console.log(`🎯 Selected pipeline: ${selectedPipeline.id} (${selectedPipeline.provider}_${selectedPipeline.model})`);
-        console.log(`📝 Request messages: ${anthropicRequest.messages.length} messages`);
+      // 选择合适的流水线  
+      const selectedPipeline = this.assembledPipelines[0]; // 简单选择第一个可用流水线
+      if (!selectedPipeline) {
+        console.error(`❌ [${requestId}] 未找到合适的流水线处理此请求`);
+        const error = new RCCError(
+          'No suitable pipeline found for this request',
+          RCCErrorCode.PIPELINE_MODULE_MISSING,
+          'http-server',
+          { endpoint: '/v1/chat/completions' }
+        );
+        
+        if (this.debugIntegration) {
+          this.debugIntegration.recordError(requestId, error);
+        }
+        await this.errorHandler.handleRCCError(error, { requestId, endpoint: '/v1/chat/completions' });
+        if (this.debugIntegration) {
+          if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+        }
+        
+        res.statusCode = 503;
+        res.body = { error: { message: 'Service Temporarily Unavailable - No pipeline available', type: 'service_unavailable' } };
+        return;
       }
 
-      // 通过流水线处理请求
-      const startTime = Date.now();
+      console.log(`✅ [${requestId}] 已选择流水线: ${selectedPipeline.id}`);
+      console.log(`📊 [${requestId}] 流水线信息: provider=${selectedPipeline.provider}, model=${selectedPipeline.model}`);
+
+      // 准备流水线输入数据
+      const pipelineInput = {
+        url: req.url,
+        method: 'POST',
+        headers: req.headers,
+        body: req.body,
+        requestId: requestId,
+        isOpenAIFormat: true
+      };
+
+      console.log(`⚡ [${requestId}] 开始执行流水线处理...`);
       
       try {
-        // 执行完整的流水线处理
-        const pipelineResult = await selectedPipeline.execute(anthropicRequest);
+        // 执行流水线处理
+        const pipelineResult = await selectedPipeline.execute(pipelineInput);
         const processingTime = Date.now() - startTime;
 
-        if (this.config.debug) {
-          console.log(`⚡ Pipeline processing completed in ${processingTime}ms`);
-        }
+        console.log(`🎉 [${requestId}] 流水线处理成功完成! 耗时: ${processingTime}ms`);
+        console.log(`📤 [${requestId}] 响应状态码: ${pipelineResult.statusCode || 200}`);
+        console.log(`📝 [${requestId}] 响应内容类型: ${pipelineResult.contentType || 'application/json'}`);
 
-        res.statusCode = 200;
-        res.headers['Content-Type'] = 'application/json';
+        // 设置响应头和状态码
+        res.statusCode = pipelineResult.statusCode || 200;
+        res.headers['Content-Type'] = pipelineResult.contentType || 'application/json';
         res.headers['X-Pipeline-ID'] = selectedPipeline.id;
         res.headers['X-Processing-Time'] = processingTime.toString();
-        res.body = pipelineResult;
+        res.headers['X-Provider'] = selectedPipeline.provider;
+        res.headers['X-Model'] = selectedPipeline.model;
+        
+        // 直接使用流水线返回的响应体
+        res.body = pipelineResult.responseBody;
+        
+        console.log(`✅ [${requestId}] 响应已准备完成，等待发送`);
         
         // 记录成功输出
-        this.debugIntegration.recordOutput(requestId, {
-          success: true,
-          pipelineId: selectedPipeline.id,
-          processingTime,
-          statusCode: 200
-        });
+        if (this.debugIntegration) {
+          this.debugIntegration.recordOutput(requestId, {
+            success: true,
+            pipelineId: selectedPipeline.id,
+            processingTime,
+            statusCode: res.statusCode,
+            endpoint: 'chat-completions',
+            provider: selectedPipeline.provider,
+            model: selectedPipeline.model
+          });
+        }
 
       } catch (pipelineError) {
-        console.error('❌ Pipeline execution error:', pipelineError);
+        const processingTime = Date.now() - startTime;
+        console.error(`💥 [${requestId}] 流水线执行失败! 耗时: ${processingTime}ms`);
+        console.error(`🔥 [${requestId}] 流水线错误详情:`, pipelineError);
         
+        const error = new RCCError(
+          `Pipeline execution failed: ${pipelineError instanceof Error ? pipelineError.message : 'Unknown pipeline error'}`,
+          RCCErrorCode.PIPELINE_EXECUTION_FAILED,
+          'http-server',
+          { 
+            endpoint: '/v1/chat/completions',
+            pipelineId: selectedPipeline.id,
+            details: { originalError: pipelineError, processingTime }
+          }
+        );
+        
+        if (this.debugIntegration) {
+          this.debugIntegration.recordError(requestId, pipelineError as Error);
+        }
+        await this.errorHandler.handleRCCError(error, { 
+          requestId, 
+          endpoint: '/v1/chat/completions',
+          pipelineId: selectedPipeline.id 
+        });
+        if (this.debugIntegration) {
+          if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+        }
+        
+        // 返回OpenAI格式的错误响应
         res.statusCode = 500;
+        res.headers['Content-Type'] = 'application/json';
         res.body = {
           error: {
-            message: 'Pipeline execution failed',
-            type: 'pipeline_error',
-            code: 'execution_failed',
-            details: pipelineError instanceof Error ? pipelineError.message : 'Unknown pipeline error'
+            message: 'Internal server error during processing',
+            type: 'server_error',
+            code: 'pipeline_execution_failed'
           }
         };
+        return;
       }
 
     } catch (error) {
-      console.error('❌ Chat completions error:', error);
+      const processingTime = Date.now() - startTime;
+      console.error(`💀 [${requestId}] 系统级错误! 耗时: ${processingTime}ms`);
+      console.error(`🚨 [${requestId}] 系统错误详情:`, error);
       
-      // 记录错误
-      this.debugIntegration.recordError(requestId, error as Error);
+      if (this.debugIntegration) {
+        this.debugIntegration.recordError(requestId, error as Error);
+      }
       
+      const rccError = new RCCError(
+        `Internal server error during chat completion processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        RCCErrorCode.INTERNAL_ERROR,
+        'http-server',
+        { details: { endpoint: '/v1/chat/completions', originalError: error, processingTime } }
+      );
+      
+      await this.errorHandler.handleRCCError(rccError, { requestId, endpoint: '/v1/chat/completions' });
+      if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+      
+      // 返回OpenAI格式的错误响应
       res.statusCode = 500;
+      res.headers['Content-Type'] = 'application/json';
       res.body = {
         error: {
-          message: 'Internal server error during chat completion',
-          type: 'internal_server_error',
-          code: 'processing_failed'
+          message: 'Internal server error',
+          type: 'server_error',
+          code: 'internal_error'
         }
       };
+      return;
     } finally {
-      // 结束debug会话
-      await this.debugIntegration.endSession();
+      const totalTime = Date.now() - startTime;
+      console.log(`🏁 [${requestId}] 请求处理结束，总耗时: ${totalTime}ms`);
+      if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+    }
+  }
+
+  /**
+   * 处理Anthropic标准messages请求 - 纯HTTP层处理
+   */
+  private async handleAnthropicMessages(req: RequestContext, res: ResponseContext): Promise<void> {
+    const requestId = req.id;
+    const startTime = Date.now();
+    
+    // 初始化debug系统并开始会话
+    if (this.debugIntegration) {
+      await this.debugIntegration.initialize();
+    }
+    let sessionId;
+    if (this.debugIntegration) {
+      sessionId = this.debugIntegration.startSession();
+    }
+    
+    console.log(`🎯 [${requestId}] 收到Anthropic Messages请求`);
+    console.log(`📡 [${requestId}] 请求详情: ${req.method} ${req.url}`);
+    console.log(`📋 [${requestId}] 请求体类型: ${typeof req.body}, 大小: ${JSON.stringify(req.body || {}).length} 字符`);
+    
+    // 记录输入
+    if (this.debugIntegration) {
+      this.debugIntegration.recordInput(requestId, {
+        method: req.method,
+        url: req.url,
+        hasBody: !!req.body,
+        bodyType: typeof req.body,
+        endpoint: 'anthropic-messages',
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    try {
+      // HTTP层基础验证
+      if (!req.body) {
+        console.error(`❌ [${requestId}] 请求体缺失`);
+        const error = new RCCError(
+          'Request body is required',
+          RCCErrorCode.VALIDATION_ERROR,
+          'http-server',
+          { endpoint: '/v1/messages' }
+        );
+        
+        if (this.debugIntegration) {
+          this.debugIntegration.recordEvent('request_error', requestId, { error: 'missing_body' });
+        }
+        await this.errorHandler.handleRCCError(error, { requestId, endpoint: '/v1/messages' });
+        if (this.debugIntegration) {
+          if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+        }
+        
+        // 直接返回错误响应
+        const httpError = await this.httpErrorCenter.handleUnprocessedError(error, {
+          requestId,
+          endpoint: '/v1/messages',
+          method: req.method,
+          originalError: error
+        });
+        await this.sendErrorResponse(res._originalResponse || res as any, httpError);
+        return;
+      }
+
+      console.log(`🔍 [${requestId}] 开始检查流水线系统状态...`);
+      console.log(`📊 [${requestId}] 系统状态: initialized=${this.initialized}, pipelines=${this.assembledPipelines.length}`);
+      
+      // 检查流水线系统状态
+      if (!this.initialized || this.assembledPipelines.length === 0) {
+        console.error(`❌ [${requestId}] 流水线系统未初始化或无可用流水线`);
+        const error = new RCCError(
+          'Pipeline system not initialized or no pipelines available',
+          RCCErrorCode.PIPELINE_MODULE_MISSING,
+          'http-server',
+          { endpoint: '/v1/messages' }
+        );
+        
+        if (this.debugIntegration) {
+          this.debugIntegration.recordEvent('service_error', requestId, { error: 'pipeline_not_ready' });
+        }
+        await this.errorHandler.handleRCCError(error, { requestId, endpoint: '/v1/messages' });
+        if (this.debugIntegration) {
+          if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+        }
+        
+        // 直接返回错误响应
+        const httpError = await this.httpErrorCenter.handleUnprocessedError(error, {
+          requestId,
+          endpoint: '/v1/messages',
+          method: req.method,
+          originalError: error
+        });
+        await this.sendErrorResponse(res._originalResponse || res as any, httpError);
+        return;
+      }
+
+      // 选择流水线
+      const selectedPipeline = this.assembledPipelines[0];
+      
+      console.log(`✅ [${requestId}] 已选择流水线: ${selectedPipeline.id}`);
+      console.log(`📊 [${requestId}] 流水线信息: provider=${selectedPipeline.provider}, model=${selectedPipeline.model}`);
+
+      // 准备流水线输入 - 发送原始请求数据
+      const pipelineInput = {
+        endpoint: '/v1/messages',
+        method: 'POST',
+        headers: req.headers,
+        body: req.body,
+        requestId: requestId,
+        isAnthropicFormat: true
+      };
+
+      console.log(`⚡ [${requestId}] 开始执行流水线处理...`);
+
+      // 通过流水线处理请求
+      const pipelineStartTime = Date.now();
+      
+      try {
+        // 执行流水线处理 - 流水线负责所有格式转换
+        const pipelineResult = await selectedPipeline.execute(pipelineInput);
+        const processingTime = Date.now() - pipelineStartTime;
+        const totalTime = Date.now() - startTime;
+
+        console.log(`🎉 [${requestId}] 流水线处理成功完成! 耗时: ${processingTime}ms`);
+        console.log(`📤 [${requestId}] 响应状态码: ${pipelineResult.statusCode || 200}`);
+        console.log(`📝 [${requestId}] 响应内容类型: ${pipelineResult.contentType || 'application/json'}`);
+
+        // 设置响应头和状态码
+        res.statusCode = pipelineResult.statusCode || 200;
+        res.headers['Content-Type'] = pipelineResult.contentType || 'application/json';
+        res.headers['X-Pipeline-ID'] = selectedPipeline.id;
+        res.headers['X-Processing-Time'] = processingTime.toString();
+        res.headers['X-Provider'] = selectedPipeline.provider;
+        res.headers['X-Model'] = selectedPipeline.model;
+        
+        // 直接使用流水线返回的响应体（已转换为Anthropic格式）
+        res.body = pipelineResult.responseBody;
+        
+        console.log(`✅ [${requestId}] 响应已准备完成，等待发送`);
+        
+        // 记录成功输出
+        if (this.debugIntegration) {
+          this.debugIntegration.recordOutput(requestId, {
+            success: true,
+            pipelineId: selectedPipeline.id,
+            processingTime,
+            statusCode: res.statusCode,
+            endpoint: 'anthropic-messages'
+          });
+        }
+
+      } catch (pipelineError) {
+        const processingTime = Date.now() - pipelineStartTime;
+        console.error(`💥 [${requestId}] 流水线执行失败! 耗时: ${processingTime}ms`);
+        console.error(`🔥 [${requestId}] 流水线错误详情:`, pipelineError);
+        console.error(`📍 [${requestId}] 失败的流水线: ${selectedPipeline.id} (${selectedPipeline.provider}/${selectedPipeline.model})`);
+        
+        const error = new RCCError(
+          `Pipeline execution failed: ${pipelineError instanceof Error ? pipelineError.message : 'Unknown pipeline error'}`,
+          RCCErrorCode.PIPELINE_EXECUTION_FAILED,
+          'http-server',
+          { 
+            endpoint: '/v1/messages',
+            pipelineId: selectedPipeline.id,
+            details: { originalError: pipelineError, processingTime }
+          }
+        );
+        
+        if (this.debugIntegration) {
+          this.debugIntegration.recordError(requestId, pipelineError as Error);
+        }
+        await this.errorHandler.handleRCCError(error, { 
+          requestId, 
+          endpoint: '/v1/messages',
+          pipelineId: selectedPipeline.id 
+        });
+        if (this.debugIntegration) {
+          if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+        }
+        
+        // 直接返回错误响应
+        const httpError = await this.httpErrorCenter.handleUnprocessedError(error, {
+          requestId,
+          endpoint: '/v1/messages',
+          method: req.method,
+          pipelineId: selectedPipeline.id,
+          originalError: pipelineError
+        });
+        await this.sendErrorResponse(res._originalResponse || res as any, httpError);
+        return;
+      }
+
+    } catch (error) {
+      const totalTime = Date.now() - startTime;
+      console.error(`💀 [${requestId}] 系统级错误! 总耗时: ${totalTime}ms`);
+      console.error(`🚨 [${requestId}] 系统错误详情:`, error);
+      
+      if (this.debugIntegration) {
+        this.debugIntegration.recordError(requestId, error as Error);
+      }
+      
+      const rccError = new RCCError(
+        `Internal server error during message processing: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        RCCErrorCode.INTERNAL_ERROR,
+        'http-server',
+        { details: { endpoint: '/v1/messages', originalError: error, totalTime } }
+      );
+      
+      await this.errorHandler.handleRCCError(rccError, { requestId, endpoint: '/v1/messages' });
+      if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+      
+      // 直接返回错误响应
+      const httpError = await this.httpErrorCenter.handleUnprocessedError(rccError, {
+        requestId,
+        endpoint: '/v1/messages',
+        method: req.method,
+        originalError: error
+      });
+      await this.sendErrorResponse(res._originalResponse || res as any, httpError);
+      return;
+    } finally {
+      const totalTime = Date.now() - startTime;
+      console.log(`🏁 [${requestId}] Anthropic Messages请求处理结束，总耗时: ${totalTime}ms`);
+      if (this.debugIntegration) {
+        if (this.debugIntegration) {
+          if (this.debugIntegration) {
+        await this.debugIntegration.endSession();
+      }
+        }
+      }
+    }
+  }
+
+  /**
+   * 安全的Debug集成调用助手方法
+   */
+  private async safeDebugCall<T>(operation: (debug: any) => T): Promise<T | void> {
+    if (this.debugIntegration) {
+      return await operation(this.debugIntegration);
     }
   }
 }

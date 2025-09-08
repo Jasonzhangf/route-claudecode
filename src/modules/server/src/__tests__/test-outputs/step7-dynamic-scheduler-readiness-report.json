@@ -1,0 +1,23 @@
+{
+  "schedulerReady": true,
+  "totalPipelines": 11,
+  "schedulerFeatures": [
+    "负载均衡策略",
+    "流水线路由索引",
+    "动态调度决策",
+    "Round-robin分发"
+  ],
+  "schedulingCapabilities": [
+    "Provider_Model路由映射",
+    "多流水线负载均衡",
+    "健康状态监控",
+    "自动故障转移"
+  ],
+  "serverReadiness": {
+    "httpServerRunning": true,
+    "pipelinesActive": 11,
+    "healthStatus": "healthy",
+    "uptime": "0s"
+  },
+  "timestamp": "2025-09-08T01:53:23.505Z"
+}

@@ -1,0 +1,67 @@
+{
+  "testName": "Qwen Configuration File Validation",
+  "timestamp": "2025-09-08T01:53:22.918Z",
+  "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-v4-5507.json",
+  "validation": {
+    "fileExists": true,
+    "readable": true,
+    "validJson": true,
+    "hasExpectedStructure": true,
+    "provider": "qwen",
+    "baseURL": "https://portal.qwen.ai/v1",
+    "model": "qwen3-coder-plus",
+    "port": 5507
+  },
+  "rawConfig": {
+    "version": "4.0",
+    "templateVersion": "1.0.0",
+    "description": "Qwen单一Provider配置 - 端到端工具调用测试 (Port 5507)",
+    "lastUpdated": "2025-09-02T13:25:00Z",
+    "Providers": [
+      {
+        "name": "qwen",
+        "protocol": "openai",
+        "api_base_url": "https://portal.qwen.ai/v1",
+        "api_key": "qwen-auth-1",
+        "models": [
+          "qwen3-coder-plus"
+        ],
+        "serverCompatibility": {
+          "use": "qwen",
+          "options": {
+            "maxTokens": 32768,
+            "enhanceTool": true,
+            "authFileName": "qwen-auth-1"
+          }
+        }
+      }
+    ],
+    "router": {
+      "default": "qwen,qwen3-coder-plus",
+      "longContext": "qwen,qwen3-coder-plus",
+      "background": "qwen,qwen3-coder-plus",
+      "think": "qwen,qwen3-coder-plus",
+      "webSearch": "qwen,qwen3-coder-plus"
+    },
+    "MultiKeyConfig": {
+      "rotationStrategy": "round-robin",
+      "keyFailureHandling": {
+        "maxRetries": 3,
+        "retryDelay": 1000,
+        "blacklistDuration": 300000
+      },
+      "loadBalancing": {
+        "enabled": true,
+        "trackUsage": true,
+        "resetInterval": 3600000
+      }
+    },
+    "server": {
+      "port": 5507,
+      "host": "0.0.0.0",
+      "debug": true
+    },
+    "APIKEY": "rcc4-proxy-key",
+    "HOST": "0.0.0.0"
+  }
+}

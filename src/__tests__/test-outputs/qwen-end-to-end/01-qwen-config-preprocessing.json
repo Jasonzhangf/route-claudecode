@@ -1,0 +1,65 @@
+{
+  "step": 1,
+  "name": "Qwen Configuration Preprocessing",
+  "timestamp": "2025-09-08T01:53:22.969Z",
+  "processingTimeMs": 39,
+  "success": true,
+  "qwenValidation": {
+    "providerName": "qwen",
+    "baseURL": "https://portal.qwen.ai/v1",
+    "apiKey": "qwen-auth-1",
+    "modelsCount": 1,
+    "routesCount": 5,
+    "serverCompatibility": {
+      "use": "qwen",
+      "options": {
+        "maxTokens": 32768,
+        "enhanceTool": true,
+        "authFileName": "qwen-auth-1"
+      }
+    }
+  },
+  "routingTable": {
+    "providers": [
+      {
+        "name": "qwen",
+        "priority": 1,
+        "api_base_url": "https://portal.qwen.ai/v1",
+        "api_key": "qwen-auth-1",
+        "models": [
+          "qwen3-coder-plus"
+        ],
+        "serverCompatibility": {
+          "use": "qwen",
+          "options": {
+            "maxTokens": 32768,
+            "enhanceTool": true,
+            "authFileName": "qwen-auth-1"
+          }
+        }
+      }
+    ],
+    "routes": {
+      "default": "qwen,qwen3-coder-plus",
+      "longContext": "qwen,qwen3-coder-plus",
+      "background": "qwen,qwen3-coder-plus",
+      "think": "qwen,qwen3-coder-plus",
+      "webSearch": "qwen,qwen3-coder-plus"
+    },
+    "server": {
+      "port": 5507,
+      "host": "0.0.0.0",
+      "debug": true
+    },
+    "apiKey": "rcc4-proxy-key",
+    "version": "4.0",
+    "description": "Qwen单一Provider配置 - 端到端工具调用测试 (Port 5507)",
+    "lastUpdated": "2025-09-08T01:53:22.929Z"
+  },
+  "metadata": {
+    "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-v4-5507.json",
+    "processingTime": 28,
+    "timestamp": "2025-09-08T01:53:22.929Z",
+    "sourceFormat": "v4"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
+  "activePipelinesCount": 11,
+  "configProcessingSuccess": true,
+  "configProcessingStage": "配置预处理完成",
+  "expectedSteps": [
+    "读取配置文件",
+    "解析Provider配置",
+    "生成路由表",
+    "验证配置完整性"
+  ],
+  "timestamp": "2025-09-08T01:53:23.503Z"
+}

@@ -10,15 +10,15 @@
   ],
   "healthCheckDetails": [
     {
-      "name": "HTTP Server",
+      "name": "Memory Usage",
       "status": "pass",
       "responseTime": 0
     },
     {
-      "name": "Memory Usage",
+      "name": "CPU Usage",
       "status": "pass",
       "responseTime": 0
     }
   ],
-  "timestamp": "2025-09-06T08:32:08.397Z"
+  "timestamp": "2025-09-08T01:53:23.504Z"
 }

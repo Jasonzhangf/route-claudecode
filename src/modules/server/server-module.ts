@@ -9,7 +9,7 @@
 import { BaseModule } from '../base-module-impl';
 import { ModuleType } from '../interfaces/module/base-module';
 import { secureLogger } from '../utils';
-import { RCCError, RCCErrorCode } from '../types/src';
+import { RCCError, RCCErrorCode } from '../types/src/index';
 
 /**
  * Server Configuration Interface

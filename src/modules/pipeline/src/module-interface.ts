@@ -83,6 +83,10 @@ export interface ModuleInterface {
   sendToModule(targetModuleId: string, message: any, type?: string): Promise<any>;
   broadcastToModules(message: any, type?: string): Promise<void>;
   onModuleMessage(listener: (sourceModuleId: string, message: any, type: string) => void): void;
+  
+  // 连接状态和验证
+  getConnectionStatus(targetModuleId: string): 'connected' | 'disconnected' | 'connecting' | 'error';
+  validateConnection(targetModule: ModuleInterface): boolean;
 }
 
 /**
@@ -98,6 +102,8 @@ export interface ModuleRegistration {
   module: ModuleInterface;
   isActive: boolean;
   registeredAt: Date;
+  // 可选的工厂信息（用于延迟实例化）
+  _factoryInfo?: any;
 }
 
 /**

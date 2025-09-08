@@ -1,0 +1,44 @@
+{
+  "testSuite": "Qwen End-to-End Integration Test Completeness",
+  "timestamp": "2025-09-08T01:53:23.069Z",
+  "configFile": "qwen-v4-5507.json",
+  "outputDirectory": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/__tests__/test-outputs/qwen-end-to-end",
+  "fileGeneration": {
+    "expectedFiles": 9,
+    "generatedFiles": 8,
+    "missingFiles": 1,
+    "completeness": 88.88888888888889
+  },
+  "generatedFiles": [
+    "00-qwen-test-summary.json",
+    "00-config-validation.json",
+    "01-qwen-config-preprocessing.json",
+    "02-qwen-router-preprocessing.json",
+    "04-qwen-complete-system-result.json",
+    "qwen-performance-results.json",
+    "qwen-error-handling.json",
+    "qwen-memory-usage.json"
+  ],
+  "missingFiles": [
+    "03-qwen-pipeline-assembly.json"
+  ],
+  "qwenTestCoverage": {
+    "configPreprocessorTested": true,
+    "routerPreprocessorTested": true,
+    "pipelineAssemblerTested": true,
+    "qwenSystemIntegrationTested": true,
+    "qwenPerformanceTested": true,
+    "qwenErrorHandlingTested": true,
+    "qwenMemoryManagementTested": true
+  },
+  "qwenValidationCoverage": {
+    "qwenProviderValidated": true,
+    "qwenEndpointValidated": true,
+    "qwenModelValidated": true,
+    "qwenPortValidated": true,
+    "qwenServerCompatibilityValidated": true,
+    "qwenRouteMappingValidated": true,
+    "layerTypeIssueResolved": true
+  },
+  "conclusion": "Qwen end-to-end integration test suite completed successfully with comprehensive Qwen-specific validation coverage"
+}

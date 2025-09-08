@@ -5,6 +5,7 @@
  * 
  * @author Claude Code Router v4.0
  */
+import * as fs from 'fs';
 
 /**
  * JQ JSON处理器类
@@ -38,7 +39,6 @@ export class JQJsonHandler {
    * @returns 解析后的对象
    */
   static parseJsonFile(filePath: string): any {
-    const fs = require('fs');
     const fileContent = fs.readFileSync(filePath, 'utf8');
     return this.parseJsonString(fileContent);
   }
@@ -51,7 +51,6 @@ export class JQJsonHandler {
    * @param pretty 是否格式化输出
    */
   static writeJsonFile(obj: any, filePath: string, pretty: boolean = true): void {
-    const fs = require('fs');
     const jsonString = this.stringifyJson(obj, pretty);
     fs.writeFileSync(filePath, jsonString, 'utf8');
   }

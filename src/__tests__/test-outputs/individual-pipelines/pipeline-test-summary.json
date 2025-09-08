@@ -1,0 +1,1860 @@
+{
+  "testName": "Individual Pipeline Tests",
+  "startTime": "2025-09-08T03:08:08.015Z",
+  "totalPipelines": 4,
+  "testedPipelines": 4,
+  "successfulPipelines": 4,
+  "failedPipelines": 0,
+  "pipelineResults": [
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+      "pipelineIndex": 1,
+      "success": true,
+      "errors": [],
+      "warnings": [],
+      "layerTests": [
+        {
+          "layerName": "transformer",
+          "layerType": "transformer",
+          "layerIndex": 1,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "max_tokens": 262144,
+            "temperature": 0.7,
+            "system": "You are a helpful assistant.",
+            "messages": [
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "tools": [
+              {
+                "name": "list_files",
+                "description": "List files and directories",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Directory path to list"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ],
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling"
+            }
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "protocol",
+          "layerType": "protocol",
+          "layerIndex": 2,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server-compatibility",
+          "layerType": "server-compatibility",
+          "layerIndex": 3,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server",
+          "layerType": "server",
+          "layerIndex": 4,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true,
+              "readyForHttp": true,
+              "finalUrl": "https://portal.qwen.ai/v1/chat/completions"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9,
+            "httpConfig": {
+              "method": "POST",
+              "url": "https://portal.qwen.ai/v1/chat/completions",
+              "timeout": 60000,
+              "maxRetries": 3,
+              "headers": {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer qwen-auth-1",
+                "User-Agent": "RCC-v4.0-Pipeline",
+                "X-DashScope-Async": "enable"
+              }
+            }
+          },
+          "processingTime": 0
+        }
+      ],
+      "outputDir": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/__tests__/test-outputs/individual-pipelines/pipeline-1-qwen-qwen3-coder-plus",
+      "processingTime": 2
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+      "pipelineIndex": 2,
+      "success": true,
+      "errors": [],
+      "warnings": [],
+      "layerTests": [
+        {
+          "layerName": "transformer",
+          "layerType": "transformer",
+          "layerIndex": 1,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "max_tokens": 262144,
+            "temperature": 0.7,
+            "system": "You are a helpful assistant.",
+            "messages": [
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "tools": [
+              {
+                "name": "list_files",
+                "description": "List files and directories",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Directory path to list"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ],
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling"
+            }
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "protocol",
+          "layerType": "protocol",
+          "layerIndex": 2,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server-compatibility",
+          "layerType": "server-compatibility",
+          "layerIndex": 3,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server",
+          "layerType": "server",
+          "layerIndex": 4,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "outputData": {
+            "model": "qwen3-coder-plus",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true,
+              "readyForHttp": true,
+              "finalUrl": "https://portal.qwen.ai/v1/chat/completions"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9,
+            "httpConfig": {
+              "method": "POST",
+              "url": "https://portal.qwen.ai/v1/chat/completions",
+              "timeout": 60000,
+              "maxRetries": 3,
+              "headers": {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer qwen-auth-2",
+                "User-Agent": "RCC-v4.0-Pipeline",
+                "X-DashScope-Async": "enable"
+              }
+            }
+          },
+          "processingTime": 0
+        }
+      ],
+      "outputDir": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/__tests__/test-outputs/individual-pipelines/pipeline-2-qwen-qwen3-coder-plus",
+      "processingTime": 0
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen-max_0",
+      "pipelineIndex": 3,
+      "success": true,
+      "errors": [],
+      "warnings": [],
+      "layerTests": [
+        {
+          "layerName": "transformer",
+          "layerType": "transformer",
+          "layerIndex": 1,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "max_tokens": 262144,
+            "temperature": 0.7,
+            "system": "You are a helpful assistant.",
+            "messages": [
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "tools": [
+              {
+                "name": "list_files",
+                "description": "List files and directories",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Directory path to list"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ],
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling"
+            }
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "processingTime": 1
+        },
+        {
+          "layerName": "protocol",
+          "layerType": "protocol",
+          "layerIndex": 2,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server-compatibility",
+          "layerType": "server-compatibility",
+          "layerIndex": 3,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server",
+          "layerType": "server",
+          "layerIndex": 4,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_0",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true,
+              "readyForHttp": true,
+              "finalUrl": "https://portal.qwen.ai/v1/chat/completions"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-1",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9,
+            "httpConfig": {
+              "method": "POST",
+              "url": "https://portal.qwen.ai/v1/chat/completions",
+              "timeout": 60000,
+              "maxRetries": 3,
+              "headers": {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer qwen-auth-1",
+                "User-Agent": "RCC-v4.0-Pipeline",
+                "X-DashScope-Async": "enable"
+              }
+            }
+          },
+          "processingTime": 0
+        }
+      ],
+      "outputDir": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/__tests__/test-outputs/individual-pipelines/pipeline-3-qwen-qwen-max",
+      "processingTime": 1
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen-max_1",
+      "pipelineIndex": 4,
+      "success": true,
+      "errors": [],
+      "warnings": [],
+      "layerTests": [
+        {
+          "layerName": "transformer",
+          "layerType": "transformer",
+          "layerIndex": 1,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "max_tokens": 262144,
+            "temperature": 0.7,
+            "system": "You are a helpful assistant.",
+            "messages": [
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "tools": [
+              {
+                "name": "list_files",
+                "description": "List files and directories",
+                "input_schema": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Directory path to list"
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ]
+                }
+              }
+            ],
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling"
+            }
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "protocol",
+          "layerType": "protocol",
+          "layerIndex": 2,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "transformer",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ]
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server-compatibility",
+          "layerType": "server-compatibility",
+          "layerIndex": 3,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "protocol",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline"
+            }
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "processingTime": 0
+        },
+        {
+          "layerName": "server",
+          "layerType": "server",
+          "layerIndex": 4,
+          "success": true,
+          "errors": [],
+          "warnings": [],
+          "inputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server-compatibility",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "endpoint": "https://portal.qwen.ai/v1",
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9
+          },
+          "outputData": {
+            "model": "qwen-max",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": "列出本目录中所有文件夹"
+              }
+            ],
+            "temperature": 0.7,
+            "max_tokens": 262144,
+            "metadata": {
+              "pipelineId": "pipeline_qwen_qwen-max_1",
+              "provider": "qwen",
+              "originalFormat": "anthropic",
+              "testScenario": "tool_calling",
+              "layer": "server",
+              "format": "openai",
+              "transformedFrom": "anthropic",
+              "processed": true,
+              "endpoint": "https://portal.qwen.ai/v1",
+              "compatibilityApplied": true,
+              "readyForHttp": true,
+              "finalUrl": "https://portal.qwen.ai/v1/chat/completions"
+            },
+            "tools": [
+              {
+                "type": "function",
+                "function": {
+                  "name": "list_files",
+                  "description": "List files and directories",
+                  "parameters": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "description": "Directory path to list"
+                      }
+                    },
+                    "required": [
+                      "path"
+                    ]
+                  }
+                }
+              }
+            ],
+            "headers": {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer qwen-auth-2",
+              "User-Agent": "RCC-v4.0-Pipeline",
+              "X-DashScope-Async": "enable"
+            },
+            "top_p": 0.9,
+            "httpConfig": {
+              "method": "POST",
+              "url": "https://portal.qwen.ai/v1/chat/completions",
+              "timeout": 60000,
+              "maxRetries": 3,
+              "headers": {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer qwen-auth-2",
+                "User-Agent": "RCC-v4.0-Pipeline",
+                "X-DashScope-Async": "enable"
+              }
+            }
+          },
+          "processingTime": 1
+        }
+      ],
+      "outputDir": "/Users/fanzhang/Documents/github/route-claudecode/workspace/main-development/src/__tests__/test-outputs/individual-pipelines/pipeline-4-qwen-qwen-max",
+      "processingTime": 1
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

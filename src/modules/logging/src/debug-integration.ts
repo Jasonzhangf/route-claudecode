@@ -26,7 +26,9 @@ export class ModuleDebugIntegration {
 
   constructor(config: DebugIntegrationConfig) {
     this.config = config;
-    this.debugManager = new DebugManager();
+    this.debugManager = new DebugManager({
+      storageBasePath: '~/.route-claudecode/debug-logs'
+    });
   }
 
   /**
@@ -37,10 +39,12 @@ export class ModuleDebugIntegration {
       return;
     }
 
-    await this.debugManager.initialize();
+    // 修复：确保端口信息正确传递，undefined表示未指定
+    const port = this.config.serverPort !== undefined ? this.config.serverPort : undefined;
+    await this.debugManager.initialize(port);
     
-    // 注册模块
-    this.debugManager.registerModule(this.config.moduleId, this.config.serverPort || 0);
+    // 注册模块：如果端口未指定，使用0作为占位符
+    this.debugManager.registerModule(this.config.moduleId, port !== undefined ? port : 0);
   }
 
   /**
@@ -51,7 +55,8 @@ export class ModuleDebugIntegration {
       return '';
     }
 
-    const port = this.config.serverPort || 3000;
+    // 修复：使用实际端口，如果未指定则让debugManager自己决定
+    const port = this.config.serverPort !== undefined ? this.config.serverPort : undefined;
     const session = this.debugManager.createSession(port, sessionId);
     this.currentSessionId = session.sessionId;
     return session.sessionId;
@@ -192,6 +197,17 @@ export class GlobalDebugIntegration {
     await Promise.all(promises);
 
     this.globalSessionId = undefined;
+  }
+
+  /**
+   * 更新所有模块的服务器端口
+   */
+  updateServerPort(newPort: number): void {
+    this.moduleIntegrations.forEach((integration, moduleId) => {
+      // 更新配置中的端口
+      (integration as any).config.serverPort = newPort;
+      console.log(`📝 Debug集成端口已更新: ${moduleId} -> 端口${newPort}`);
+    });
   }
 
   /**

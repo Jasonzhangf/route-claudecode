@@ -13,6 +13,9 @@ import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 import { API_DEFAULTS } from '../../constants/src/bootstrap-constants';
 import { RCCError, RCCErrorCode } from '../../types/src/index';
+import { UnifiedErrorHandlerInterface } from '../../error-handler/src/unified-error-handler-interface';
+import { UnifiedErrorHandlerFactory } from '../../error-handler/src/unified-error-handler-impl';
+import { ErrorContext } from '../../interfaces/core/error-coordination-center';
 
 /**
  * 创建最小的有效OpenAI请求结构
@@ -82,6 +85,157 @@ function isOpenAIFormat(request: any): boolean {
   // Default: assume input needs transformation (Anthropic → OpenAI)
   secureLogger.debug('🔍 默认需要转换');
   return false;
+}
+
+/**
+ * 统一错误处理上下文构建器
+ */
+class TransformErrorContextBuilder {
+  private context: Partial<ErrorContext> = {};
+
+  static create(): TransformErrorContextBuilder {
+    return new TransformErrorContextBuilder();
+  }
+
+  withRequestId(requestId: string): this {
+    this.context.requestId = requestId;
+    return this;
+  }
+
+  withPipelineId(pipelineId: string): this {
+    this.context.pipelineId = pipelineId;
+    return this;
+  }
+
+  withProvider(provider: string): this {
+    this.context.provider = provider;
+    return this;
+  }
+
+  withModel(model: string): this {
+    this.context.model = model;
+    return this;
+  }
+
+  withOperation(operation: string): this {
+    this.context.operation = operation;
+    return this;
+  }
+
+  withMetadata(metadata: Record<string, any>): this {
+    this.context.metadata = { ...this.context.metadata, ...metadata };
+    return this;
+  }
+
+  build(): ErrorContext {
+    return {
+      requestId: this.context.requestId || `transform-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      pipelineId: this.context.pipelineId || 'unknown',
+      layerName: 'transformer',
+      provider: this.context.provider || 'unknown',
+      model: this.context.model || 'unknown',
+      operation: this.context.operation || 'transform',
+      timestamp: new Date(),
+      metadata: this.context.metadata
+    };
+  }
+}
+
+/**
+ * 增强转换器 - 集成统一错误处理
+ */
+class EnhancedTransformer {
+  private errorHandler: UnifiedErrorHandlerInterface;
+  private layerName = 'transformer';
+  
+  constructor() {
+    this.errorHandler = UnifiedErrorHandlerFactory.createErrorHandler();
+  }
+
+  /**
+   * 带统一错误处理的转换主方法
+   */
+  async transformWithUnifiedErrorHandling(inputRequest: any, context?: {
+    requestId?: string;
+    pipelineId?: string;
+    provider?: string;
+    model?: string;
+  }): Promise<any> {
+    const errorContext = TransformErrorContextBuilder.create()
+      .withRequestId(context?.requestId)
+      .withPipelineId(context?.pipelineId)
+      .withProvider(inputRequest.provider || context?.provider)
+      .withModel(inputRequest.model || context?.model)
+      .withOperation('transformAnthropicToOpenAI')
+      .withMetadata({
+        inputKeys: Object.keys(inputRequest || {}),
+        inputType: typeof inputRequest,
+        hasModel: !!inputRequest?.model,
+        hasMessages: !!(inputRequest?.messages && Array.isArray(inputRequest.messages)),
+        hasTools: !!(inputRequest?.tools && Array.isArray(inputRequest.tools))
+      })
+      .build();
+
+    try {
+      const result = transformAnthropicToOpenAI(inputRequest);
+      
+      // 记录成功转换
+      secureLogger.debug('✅ [TRANSFORMER-ENHANCED] 转换成功', {
+        requestId: errorContext.requestId,
+        pipelineId: errorContext.pipelineId,
+        provider: errorContext.provider,
+        model: errorContext.model,
+        processingTime: Date.now() - errorContext.timestamp.getTime()
+      });
+      
+      return result;
+    } catch (error) {
+      // 使用统一错误处理器处理错误
+      await this.errorHandler.handleError(error, errorContext);
+      
+      // 重新抛出错误以保持错误传播链
+      throw error;
+    }
+  }
+
+  /**
+   * 创建标准化的RCC错误
+   */
+  createTransformError(message: string, code: RCCErrorCode, context: ErrorContext, details?: any): RCCError {
+    return new RCCError(
+      `[${this.layerName}] ${message}`,
+      code,
+      this.layerName,
+      {
+        ...details,
+        requestId: context.requestId,
+        pipelineId: context.pipelineId,
+        provider: context.provider,
+        model: context.model,
+        operation: context.operation,
+        timestamp: context.timestamp
+      }
+    );
+  }
+}
+
+// 全局增强转换器实例
+const enhancedTransformer = new EnhancedTransformer();
+
+/**
+ * 带统一错误处理的转换器导出函数
+ * 提供与原始函数相同的签名，但集成了统一错误处理
+ */
+export async function transformAnthropicToOpenAIWithErrorHandling(
+  inputRequest: any,
+  context?: {
+    requestId?: string;
+    pipelineId?: string;
+    provider?: string;
+    model?: string;
+  }
+): Promise<any> {
+  return enhancedTransformer.transformWithUnifiedErrorHandling(inputRequest, context);
 }
 
 /**
@@ -276,6 +430,42 @@ export function transformAnthropicToOpenAI(inputRequest: any): any {
       });
       for (const message of inputRequest.messages) {
         secureLogger.debug('📝 处理单个消息', { message });
+        
+        // 特殊处理：检测包含tool_result的用户消息
+        if (message.role === 'user' && Array.isArray(message.content)) {
+          const toolResults = message.content.filter((part: any) => part && part.type === 'tool_result');
+          const nonToolContent = message.content.filter((part: any) => !part || part.type !== 'tool_result');
+          
+          if (toolResults.length > 0) {
+            secureLogger.debug('📝 检测到tool_result，创建专门的tool消息', { toolResultsCount: toolResults.length });
+            
+            // 为每个tool_result创建单独的tool角色消息
+            for (const toolResult of toolResults) {
+              const toolMessage = {
+                role: 'tool',
+                tool_call_id: toolResult.tool_use_id,
+                content: typeof toolResult.content === 'string' ? toolResult.content : JSON.stringify(toolResult.content || '')
+              };
+              openaiRequest.messages.push(toolMessage);
+              secureLogger.debug('📝 添加tool消息', { tool_call_id: toolResult.tool_use_id });
+            }
+            
+            // 如果有非tool_result内容，创建用户消息
+            if (nonToolContent.length > 0) {
+              const userMessage = convertAnthropicMessage({
+                ...message,
+                content: nonToolContent
+              });
+              if (userMessage) {
+                openaiRequest.messages.push(userMessage);
+                secureLogger.debug('📝 添加用户消息（排除tool_result）');
+              }
+            }
+            continue;
+          }
+        }
+        
+        // 正常消息转换
         const openaiMessage = convertAnthropicMessage(message);
         secureLogger.debug('📝 转换后的消息', { openaiMessage });
         if (openaiMessage) {

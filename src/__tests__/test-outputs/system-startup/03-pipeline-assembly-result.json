@@ -1,0 +1,122 @@
+{
+  "step": 3,
+  "name": "Pipeline Assembly",
+  "timestamp": "2025-09-08T01:53:23.010Z",
+  "processingTimeMs": 62,
+  "assemblySuccess": true,
+  "stats": {
+    "totalPipelines": 4,
+    "successfulAssemblies": 4,
+    "failedAssemblies": 0,
+    "totalModulesRegistered": 9,
+    "modulesByType": {
+      "transformer": 2,
+      "protocol": 1,
+      "server-compatibility": 5,
+      "server": 1
+    },
+    "assemblyTimeMs": 5,
+    "averageAssemblyTime": 1.25,
+    "memoryUsageMB": 264.3772277832031
+  },
+  "errors": [],
+  "warnings": [],
+  "allPipelines": [
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_0",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "assemblyStatus": "assembled",
+      "modules": [
+        {
+          "type": "transformer",
+          "status": "initialized"
+        },
+        {
+          "type": "protocol",
+          "status": "initialized"
+        },
+        {
+          "type": "server-compatibility",
+          "status": "initialized"
+        },
+        {
+          "type": "server",
+          "status": "initialized"
+        }
+      ]
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen3-coder-plus_1",
+      "provider": "qwen",
+      "model": "qwen3-coder-plus",
+      "assemblyStatus": "assembled",
+      "modules": [
+        {
+          "type": "transformer",
+          "status": "initialized"
+        },
+        {
+          "type": "protocol",
+          "status": "initialized"
+        },
+        {
+          "type": "server-compatibility",
+          "status": "initialized"
+        },
+        {
+          "type": "server",
+          "status": "initialized"
+        }
+      ]
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen-max_0",
+      "provider": "qwen",
+      "model": "qwen-max",
+      "assemblyStatus": "assembled",
+      "modules": [
+        {
+          "type": "transformer",
+          "status": "initialized"
+        },
+        {
+          "type": "protocol",
+          "status": "initialized"
+        },
+        {
+          "type": "server-compatibility",
+          "status": "initialized"
+        },
+        {
+          "type": "server",
+          "status": "initialized"
+        }
+      ]
+    },
+    {
+      "pipelineId": "pipeline_qwen_qwen-max_1",
+      "provider": "qwen",
+      "model": "qwen-max",
+      "assemblyStatus": "assembled",
+      "modules": [
+        {
+          "type": "transformer",
+          "status": "initialized"
+        },
+        {
+          "type": "protocol",
+          "status": "initialized"
+        },
+        {
+          "type": "server-compatibility",
+          "status": "initialized"
+        },
+        {
+          "type": "server",
+          "status": "initialized"
+        }
+      ]
+    }
+  ]
+}

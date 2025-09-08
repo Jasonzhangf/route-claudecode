@@ -1,0 +1,39 @@
+{
+  "testTimestamp": "2025-09-08T01:53:22.925Z",
+  "configSource": "/Users/fanzhang/.route-claudecode/config.json",
+  "chainResult": {
+    "step1_config": {
+      "success": true,
+      "timeMs": 2,
+      "providersFound": 1,
+      "routesFound": 8
+    },
+    "step2_router": {
+      "success": true,
+      "timeMs": 2,
+      "pipelineConfigsGenerated": 4
+    },
+    "step3_assembly": {
+      "success": true,
+      "timeMs": 6,
+      "pipelinesAssembled": 4
+    },
+    "overall": {
+      "success": true,
+      "totalTimeMs": 12,
+      "readyForModuleManager": true
+    }
+  },
+  "performance": {
+    "configProcessingTime": 2,
+    "routerProcessingTime": 2,
+    "assemblyProcessingTime": 6,
+    "totalProcessingTime": 12,
+    "allUnder100ms": true
+  },
+  "validation": {
+    "configToRouter": false,
+    "routerToAssembly": true,
+    "endToEndSuccess": true
+  }
+}

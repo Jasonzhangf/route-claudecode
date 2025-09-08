@@ -1,0 +1,57 @@
+{
+  "testTimestamp": "2025-09-07T10:47:32.130Z",
+  "success": true,
+  "loadBalancerStats": {
+    "totalProviders": 2,
+    "healthyProviders": 2
+  },
+  "testProviders": [
+    {
+      "id": "qwen-test",
+      "name": "qwen-test-provider",
+      "type": "qwen",
+      "endpoint": "https://portal.qwen.ai/v1",
+      "weight": 1,
+      "maxConnections": 100,
+      "currentConnections": 0,
+      "healthStatus": "HEALTHY",
+      "metrics": {
+        "avgResponseTime": 100,
+        "successRate": 1,
+        "requestCount": 0,
+        "errorCount": 0,
+        "lastResponseTime": 1757242052130,
+        "throughput": 10
+      },
+      "config": {
+        "apiKey": "test-key-1",
+        "timeout": 60000
+      },
+      "lastUpdated": 1757242052130
+    },
+    {
+      "id": "iflow-test",
+      "name": "iflow-test-provider",
+      "type": "iflow",
+      "endpoint": "https://apis.iflow.cn/v1",
+      "weight": 1,
+      "maxConnections": 100,
+      "currentConnections": 0,
+      "healthStatus": "HEALTHY",
+      "metrics": {
+        "avgResponseTime": 150,
+        "successRate": 1,
+        "requestCount": 0,
+        "errorCount": 0,
+        "lastResponseTime": 1757242052130,
+        "throughput": 8
+      },
+      "config": {
+        "apiKey": "test-key-2",
+        "timeout": 60000
+      },
+      "lastUpdated": 1757242052130
+    }
+  ],
+  "providerCount": 2
+}

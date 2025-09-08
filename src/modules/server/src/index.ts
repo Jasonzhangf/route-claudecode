@@ -1,9 +1,25 @@
 /**
  * Server Module
+ * 
+ * HTTP服务器模块，包含所有相关的组件和接口
  */
 
 export const SERVER_MODULE_VERSION = '4.0.0-zero-interface';
 
+// 导出主要类型和接口
+export * from './http-types';
+
+// 导出主要组件类
+export { HTTPServer } from './http-server';
+export { HTTPContextManager } from './http-context-manager';
+export { HTTPRoutingSystemImpl } from './http-routing-system';
+export { HTTPRequestHandlersImpl } from './http-handlers';
+export { AnthropicMessageHandlerImpl } from './http-anthropic-handler';
+
+// 导出错误处理组件
+export { HTTPErrorCenter } from './http-error-center';
+
+// 兼容之前的接口
 export interface ServerConfig {
   port: number;
   host: string;
@@ -18,11 +34,9 @@ export interface HealthCheckResult {
 
 export class ServerFactory {
   static createServer(config: ServerConfig): any {
-    return {
-      start: async () => {},
-      stop: async () => {},
-      config
-    };
+    // 创建HTTP服务器实例
+    const { HTTPServer } = require('./http-server');
+    return new HTTPServer(config, config.configPath);
   }
 }
 

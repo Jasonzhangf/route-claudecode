@@ -49,8 +49,15 @@ interface AuthCenter {
 }
 
 interface PipelineManager {
-  setAuthMaintenanceMode(pipelineIds: string[], reason: string): Promise<void>;
-  clearAuthMaintenanceMode(pipelineIds: string[]): Promise<void>;
+  setAuthMaintenanceMode(pipelineIds: string[], reason: string, options?: {
+    estimatedDuration?: number;
+    force?: boolean;
+    skipHealthCheck?: boolean;
+  }): Promise<{success: string[], failed: string[]}>;
+  clearAuthMaintenanceMode(pipelineIds: string[], options?: {
+    skipHealthCheck?: boolean;
+    force?: boolean;
+  }): Promise<{success: string[], failed: string[]}>;
 }
 
 interface RefreshResult {
@@ -95,6 +102,7 @@ interface LocalErrorContext {
   layerName?: string;
   provider?: string;
   endpoint?: string;
+  method?: string;
   statusCode?: number;
   timeout?: number;
   responseTime?: number;
@@ -212,12 +220,14 @@ export class EnhancedErrorHandler implements IErrorCoordinationCenter {
       return {
         handled: true,
         action: 'Error received and logged',
+        actionTaken: 'Error processed and logged',
         success: true
       };
     } catch (handleError) {
       return {
         handled: false,
         action: 'Error handling failed',
+        actionTaken: 'Error handling failed',
         success: false,
         message: handleError instanceof Error ? handleError.message : String(handleError)
       };
@@ -444,7 +454,12 @@ export class EnhancedErrorHandler implements IErrorCoordinationCenter {
    * 初始化鉴权维护协调器
    */
   private initializeAuthMaintenanceCoordinator(): void {
-    // 初始化鉴权维护相关状态和事件监听
+    // 初始化鉴权维护协调器对象
+    this.authMaintenanceCoordinator = {
+      selfCheckService: null,
+      initialized: true,
+      lastMaintenanceTime: Date.now()
+    };
     secureLogger.info('Auth maintenance coordinator initialized');
   }
 

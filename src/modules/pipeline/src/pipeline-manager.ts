@@ -81,7 +81,8 @@ export class PipelineManager extends EventEmitter {
     moduleId: 'pipeline-manager',
     moduleName: 'PipelineManager',
     enabled: true,
-    captureLevel: 'full'
+    captureLevel: 'full',
+    serverPort: undefined // 将在启动时设置
   });
   
   // 鉴权维护模式相关属性
@@ -107,6 +108,16 @@ export class PipelineManager extends EventEmitter {
     // 启动健康检查和清理任务
     this.startHealthChecks();
     this.startCleanupTask();
+  }
+
+  /**
+   * 设置Debug系统端口
+   */
+  setDebugPort(port: number): void {
+    console.log(`🔧 [PIPELINE-MANAGER] 设置Debug端口: ${port}`);
+    // 更新Debug集成配置中的端口
+    (this.debugIntegration as any).config.serverPort = port;
+    secureLogger.info('Pipeline manager debug port updated', { port });
   }
 
   /**
@@ -137,6 +148,14 @@ export class PipelineManager extends EventEmitter {
       executionCount: 0,
       errorCount: 0,
       averageResponseTime: 0
+    });
+
+    // 🔧 启动流水线中的所有模块
+    this.startPipelineModules(pipeline).catch(error => {
+      secureLogger.error('Failed to start pipeline modules', { 
+        pipelineId: pipeline.pipelineId, 
+        error: error.message 
+      });
     });
 
     secureLogger.info('Pipeline added to manager', { pipelineId: pipeline.pipelineId });
@@ -292,6 +311,14 @@ export class PipelineManager extends EventEmitter {
    */
   async executePipeline(pipelineId: string, request: any): Promise<any> {
     const requestId = `pipeline-exec-${Date.now()}`;
+    const startTime = Date.now();
+    
+    console.log(`🚀 [${requestId}] 开始执行流水线: ${pipelineId}`);
+    console.log(`📋 [${requestId}] 请求数据:`, {
+      pipelineId,
+      requestType: typeof request,
+      requestKeys: Object.keys(request || {})
+    });
     
     // 初始化debug系统并开始会话
     await this.debugIntegration.initialize();
@@ -307,6 +334,7 @@ export class PipelineManager extends EventEmitter {
     const pipeline = this.pipelines.get(pipelineId);
     
     if (!pipeline) {
+      console.error(`❌ [${requestId}] 流水线未找到: ${pipelineId}`);
       const error = new RCCError(
         `Pipeline not found: ${pipelineId}`,
         RCCErrorCode.PIPELINE_MODULE_MISSING,
@@ -321,6 +349,8 @@ export class PipelineManager extends EventEmitter {
       await this.debugIntegration.endSession();
       return { error: error.message };
     }
+    
+    console.log(`✅ [${requestId}] 流水线已找到: ${pipelineId}`);
 
     if (pipeline.assemblyStatus !== 'assembled') {
       const error = new RCCError(
@@ -362,7 +392,6 @@ export class PipelineManager extends EventEmitter {
       return { error: error.message, maintenanceMode: true };
     }
 
-    const startTime = Date.now();
     let success = false;
     let currentData = request;
     
@@ -375,17 +404,21 @@ export class PipelineManager extends EventEmitter {
       }
 
       // 顺序执行所有模块
+      console.log(`🔧 [${requestId}] 开始执行流水线模块，总模块数: ${pipeline.modules.length}`);
+      
       for (let i = 0; i < pipeline.modules.length; i++) {
         const module = pipeline.modules[i];
         
         if (!module || !module.instance) {
           const errorMsg = `Module at index ${i} is not available`;
+          console.error(`❌ [${requestId}] 模块不可用: 索引${i}`);
           secureLogger.error(errorMsg, { pipelineId, moduleIndex: i });
           throw new Error(errorMsg);
         }
 
         // 执行模块处理
         try {
+          console.log(`⚡ [${requestId}] 执行模块 ${i+1}/${pipeline.modules.length}: ${module.name} (${module.type})`);
           secureLogger.debug('Executing module in pipeline', { 
             pipelineId, 
             moduleName: module.name, 
@@ -395,6 +428,8 @@ export class PipelineManager extends EventEmitter {
           
           currentData = await module.instance.process(currentData);
           
+          console.log(`✅ [${requestId}] 模块执行完成: ${module.name}`);
+          console.log(`📊 [${requestId}] 模块输出数据类型: ${typeof currentData}`);
           secureLogger.debug('Module execution completed', { 
             pipelineId, 
             moduleName: module.name, 
@@ -431,8 +466,28 @@ export class PipelineManager extends EventEmitter {
       }
 
       success = true;
+      const responseTime = Date.now() - startTime;
+      
+      console.log(`🎉 [${requestId}] 流水线执行成功完成!`);
+      console.log(`⏱️ [${requestId}] 总耗时: ${responseTime}ms`);
+      console.log(`📤 [${requestId}] 最终响应数据类型: ${typeof currentData}`);
+      console.log(`📋 [${requestId}] 流程统计:`, {
+        pipelineId,
+        success,
+        responseTime,
+        moduleCount: pipeline.modules.length
+      });
+      
       return currentData;
     } catch (error) {
+      const responseTime = Date.now() - startTime;
+      console.error(`💥 [${requestId}] 流水线执行失败! 耗时: ${responseTime}ms`);
+      console.error(`🔥 [${requestId}] 错误详情:`, {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        pipelineId,
+        responseTime
+      });
+      
       // 处理流水线执行错误
       await this.errorHandler.handleRCCError(error, { requestId, pipelineId });
       this.debugIntegration.recordError(requestId, error);
@@ -440,6 +495,8 @@ export class PipelineManager extends EventEmitter {
     } finally {
       const responseTime = Date.now() - startTime;
       this.recordPipelineExecution(pipelineId, success, responseTime);
+      
+      console.log(`🏁 [${requestId}] 流水线执行结束，状态: ${success ? '成功' : '失败'}, 耗时: ${responseTime}ms`);
       await this.debugIntegration.endSession();
     }
   }
@@ -550,6 +607,82 @@ export class PipelineManager extends EventEmitter {
       averageResponseTime,
       uptime
     };
+  }
+
+  /**
+   * 启动流水线中的所有模块
+   */
+  private async startPipelineModules(pipeline: AssembledPipeline): Promise<void> {
+    if (!pipeline.modules || pipeline.modules.length === 0) {
+      secureLogger.warn('No modules to start in pipeline', { pipelineId: pipeline.pipelineId });
+      return;
+    }
+
+    console.log(`🔧 [PIPELINE-MANAGER] 启动流水线模块: ${pipeline.pipelineId}, 模块数量: ${pipeline.modules.length}`);
+
+    const startPromises = pipeline.modules.map(async (module, index) => {
+      if (!module || !module.instance) {
+        secureLogger.error('Module instance not available for startup', { 
+          pipelineId: pipeline.pipelineId, 
+          moduleIndex: index,
+          moduleName: module?.name || 'unknown'
+        });
+        return false;
+      }
+
+      try {
+        console.log(`🚀 [PIPELINE-MANAGER] 启动模块 ${index + 1}/${pipeline.modules.length}: ${module.name} (${module.type})`);
+        
+        // 检查模块状态
+        const status = module.instance.getStatus();
+        if (status.status === 'running') {
+          console.log(`✅ [PIPELINE-MANAGER] 模块已在运行: ${module.name}`);
+          return true;
+        }
+
+        // 启动模块
+        await module.instance.start();
+        
+        // 验证启动结果
+        const newStatus = module.instance.getStatus();
+        if (newStatus.status === 'running') {
+          console.log(`✅ [PIPELINE-MANAGER] 模块启动成功: ${module.name}, 状态: ${newStatus.status}`);
+          return true;
+        } else {
+          console.error(`❌ [PIPELINE-MANAGER] 模块启动后状态异常: ${module.name}, 状态: ${newStatus.status}`);
+          return false;
+        }
+      } catch (error) {
+        secureLogger.error('Failed to start module', { 
+          pipelineId: pipeline.pipelineId,
+          moduleName: module.name,
+          moduleIndex: index,
+          error: error.message || 'Unknown error'
+        });
+        console.error(`❌ [PIPELINE-MANAGER] 模块启动失败: ${module.name}, 错误: ${error.message}`);
+        return false;
+      }
+    });
+
+    const results = await Promise.all(startPromises);
+    const successCount = results.filter(Boolean).length;
+    const totalCount = pipeline.modules.length;
+
+    if (successCount === totalCount) {
+      console.log(`🎉 [PIPELINE-MANAGER] 流水线所有模块启动成功: ${pipeline.pipelineId} (${successCount}/${totalCount})`);
+      secureLogger.info('All pipeline modules started successfully', {
+        pipelineId: pipeline.pipelineId,
+        moduleCount: totalCount
+      });
+    } else {
+      console.error(`💥 [PIPELINE-MANAGER] 流水线模块启动不完整: ${pipeline.pipelineId} (${successCount}/${totalCount})`);
+      secureLogger.error('Some pipeline modules failed to start', {
+        pipelineId: pipeline.pipelineId,
+        successCount,
+        totalCount,
+        failedCount: totalCount - successCount
+      });
+    }
   }
 
   /**

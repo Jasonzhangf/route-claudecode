@@ -1,0 +1,13 @@
+{
+  "success": true,
+  "errors": [],
+  "warnings": [],
+  "dataFlowValidation": {
+    "layersProcessed": 4,
+    "expectedLayers": 4,
+    "allLayersSuccessful": true,
+    "dataFlowContinuous": true,
+    "finalFormatValid": true,
+    "formatTransformationCorrect": true
+  }
+}

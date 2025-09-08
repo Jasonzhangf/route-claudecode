@@ -1,0 +1,99 @@
+{
+  "layer": {
+    "name": "transformer",
+    "type": "transformer",
+    "order": 1,
+    "config": {
+      "provider": "iflow",
+      "model": "deepseek-r1",
+      "endpoint": "https://apis.iflow.cn/v1",
+      "apiKey": "sk-faec4c4af5c9e791d012c238662ee708"
+    }
+  },
+  "input": {
+    "model": "deepseek-r1",
+    "max_tokens": 131072,
+    "temperature": 0.7,
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "tools": [
+      {
+        "name": "list_files",
+        "description": "List files and directories",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Directory path to list"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "pipelineId": "pipeline_iflow_deepseek-r1_2",
+      "provider": "iflow",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling"
+    }
+  },
+  "output": {
+    "model": "deepseek-r1",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 131072,
+    "metadata": {
+      "pipelineId": "pipeline_iflow_deepseek-r1_2",
+      "provider": "iflow",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling",
+      "layer": "transformer",
+      "format": "openai",
+      "transformedFrom": "anthropic",
+      "processed": true
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "list_files",
+          "description": "List files and directories",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Directory path to list"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "metadata": {
+    "processingTime": 0,
+    "timestamp": "2025-09-07T03:49:53.514Z"
+  }
+}

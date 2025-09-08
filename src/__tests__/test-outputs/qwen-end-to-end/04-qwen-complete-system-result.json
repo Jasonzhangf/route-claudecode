@@ -1,0 +1,81 @@
+{
+  "testSuite": "Qwen End-to-End System Integration Test",
+  "timestamp": "2025-09-08T01:53:23.027Z",
+  "configSource": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-v4-5507.json",
+  "qwenSystemState": {
+    "startupTime": {
+      "step1_config": 39,
+      "step2_router": 1,
+      "step3_assembly": 55,
+      "total": 99
+    },
+    "qwenHealth": {
+      "configParsed": true,
+      "routingReady": true,
+      "pipelinesReady": true,
+      "layerTypesValid": true,
+      "qwenSystemReady": true
+    },
+    "qwenResourceCounts": {
+      "qwenProvidersConfigured": 1,
+      "qwenRoutesDefined": 5,
+      "qwenPipelinesGenerated": 1,
+      "qwenPipelinesAssembled": 1
+    },
+    "qwenDataIntegrity": {
+      "configToRouter": true,
+      "routerToAssembly": true,
+      "qwenEndToEndFlow": true
+    },
+    "qwenConfiguration": {
+      "provider": "qwen",
+      "baseURL": "https://portal.qwen.ai/v1",
+      "model": "qwen3-coder-plus",
+      "port": 5507,
+      "serverCompatibility": "qwen"
+    }
+  },
+  "performanceMetrics": {
+    "step1_configMs": 39,
+    "step2_routerMs": 1,
+    "step3_assemblyMs": 55,
+    "step4_validationMs": 0,
+    "totalStartupMs": 99,
+    "avgStepTime": 31.666666666666668,
+    "performanceGrade": "A"
+  },
+  "qwenReadiness": {
+    "readyForProduction": true,
+    "canProcessRequests": true,
+    "allQwenComponentsHealthy": true,
+    "qwenDataFlowIntact": true
+  },
+  "qwenSpecificValidation": {
+    "providerConfiguration": {
+      "provider": "qwen",
+      "baseURL": "https://portal.qwen.ai/v1",
+      "model": "qwen3-coder-plus",
+      "port": 5507,
+      "serverCompatibility": "qwen"
+    },
+    "apiEndpoint": "https://portal.qwen.ai/v1",
+    "modelSupport": [
+      "qwen3-coder-plus"
+    ],
+    "serverCompatibilityMode": "qwen",
+    "routingMappings": [
+      "default",
+      "longContext",
+      "background",
+      "think",
+      "webSearch"
+    ],
+    "layerTypeIssueFix": true
+  },
+  "nextSteps": [
+    "Qwen system is ready for request processing",
+    "Can start HTTP server on port 5507",
+    "Ready for Qwen API integration testing",
+    "All Qwen-specific components validated"
+  ]
+}

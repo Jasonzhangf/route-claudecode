@@ -9,7 +9,7 @@
  * @security-reviewed 2025-08-19
  */
 
-import { ModuleInterface, ModuleType } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleType } from '../../pipeline/src/module-interface';
 import {
   SecureAnthropicToOpenAITransformer,
   SecureTransformerPreConfig,

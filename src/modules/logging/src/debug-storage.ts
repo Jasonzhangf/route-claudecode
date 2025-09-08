@@ -85,8 +85,8 @@ export interface DebugStorage {
   
   // 增强的日志保存功能
   saveStartupModuleOutput(moduleName: string, input: any, output: any, processingTime: number, errors?: string[]): Promise<void>;
-  savePipelineRequest(pipelineId: string, requestId: string, routeModel: string, input: any, layerInputs: any[]): Promise<void>;
-  savePipelineResponse(pipelineId: string, requestId: string, processingTime: number, response: any, layerOutputs: any[]): Promise<void>;
+  savePipelineRequest(port: number, sessionId: string, pipelineId: string, requestId: string, routeModel: string, input: any, layerInputs: any[]): Promise<void>;
+  savePipelineResponse(port: number, sessionId: string, pipelineId: string, requestId: string, processingTime: number, response: any, layerOutputs: any[]): Promise<void>;
 }
 
 /**
@@ -203,6 +203,9 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
 
       // 确保目录存在
       await this.ensureDirectoryExists(sessionPath);
+      await this.ensureDirectoryExists(path.join(sessionPath, 'requests'));
+      await this.ensureDirectoryExists(path.join(sessionPath, 'pipelines'));
+      await this.ensureDirectoryExists(path.join(sessionPath, 'startup'));
 
       // 序列化会话
       const serialized = await this.serializer.serializeSession(session);
@@ -522,11 +525,19 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
   }
 
   private getSessionPath(port: number, sessionId: string): string {
-    return path.join(this.basePath, `port-${port}`);
+    return path.join(this.basePath, `port-${port}`, sessionId);
   }
 
   private getRequestPath(port: number, requestId: string): string {
-    return path.join(this.basePath, `port-${port}`, `${requestId}.json`);
+    return path.join(this.basePath, `port-${port}`, 'requests', `req_${requestId}.json`);
+  }
+
+  private getPipelineRequestPath(port: number, sessionId: string, pipelineId: string, requestId: string): string {
+    return path.join(this.basePath, `port-${port}`, sessionId, 'pipelines', `pipeline-request-${pipelineId}-${requestId}.json`);
+  }
+
+  private getPipelineResponsePath(port: number, sessionId: string, pipelineId: string, requestId: string): string {
+    return path.join(this.basePath, `port-${port}`, sessionId, 'pipelines', `pipeline-response-${pipelineId}-${requestId}.json`);
   }
 
   private async createBackup(originalPath: string, data: string | Buffer): Promise<void> {
@@ -729,23 +740,24 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
   }
 
   /**
-   * 保存执行阶段流水线请求到独立文件
+   * 保存执行阶段流水线请求到会话目录
+   * @param port 监听端口
+   * @param sessionId 会话ID
    * @param pipelineId 流水线ID
    * @param requestId 请求ID
    * @param routeModel 路由模型
    * @param input 输入数据
    * @param layerInputs 各层输入数据
    */
-  async savePipelineRequest(pipelineId: string, requestId: string, routeModel: string, input: any, layerInputs: any[]): Promise<void> {
+  async savePipelineRequest(port: number, sessionId: string, pipelineId: string, requestId: string, routeModel: string, input: any, layerInputs: any[]): Promise<void> {
     try {
-      // 确保pipeline/requests目录存在
-      const requestsDir = path.join(this.basePath, 'pipeline', 'requests');
-      await this.ensureDirectoryExists(requestsDir);
+      // 确保会话目录和pipelines子目录存在
+      const sessionPath = this.getSessionPath(port, sessionId);
+      const pipelinesDir = path.join(sessionPath, 'pipelines');
+      await this.ensureDirectoryExists(pipelinesDir);
 
-      // 生成文件名
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `pipeline-request-${pipelineId}-${requestId}-${timestamp}.json`;
-      const filepath = path.join(requestsDir, filename);
+      // 生成文件路径
+      const filepath = this.getPipelineRequestPath(port, sessionId, pipelineId, requestId);
 
       // 创建日志数据
       const logData = {
@@ -784,23 +796,24 @@ export class DebugStorageImpl extends EventEmitter implements DebugStorage {
   }
 
   /**
-   * 保存执行阶段流水线响应到独立文件
+   * 保存执行阶段流水线响应到会话目录
+   * @param port 监听端口
+   * @param sessionId 会话ID
    * @param pipelineId 流水线ID
    * @param requestId 请求ID
    * @param processingTime 处理时间
    * @param response 响应数据
    * @param layerOutputs 各层输出数据
    */
-  async savePipelineResponse(pipelineId: string, requestId: string, processingTime: number, response: any, layerOutputs: any[]): Promise<void> {
+  async savePipelineResponse(port: number, sessionId: string, pipelineId: string, requestId: string, processingTime: number, response: any, layerOutputs: any[]): Promise<void> {
     try {
-      // 确保pipeline/responses目录存在
-      const responsesDir = path.join(this.basePath, 'pipeline', 'responses');
-      await this.ensureDirectoryExists(responsesDir);
+      // 确保会话目录和pipelines子目录存在
+      const sessionPath = this.getSessionPath(port, sessionId);
+      const pipelinesDir = path.join(sessionPath, 'pipelines');
+      await this.ensureDirectoryExists(pipelinesDir);
 
-      // 生成文件名
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `pipeline-response-${pipelineId}-${requestId}-${timestamp}.json`;
-      const filepath = path.join(responsesDir, filename);
+      // 生成文件路径
+      const filepath = this.getPipelineResponsePath(port, sessionId, pipelineId, requestId);
 
       // 创建日志数据
       const logData = {

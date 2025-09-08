@@ -8,7 +8,7 @@
 
 import { ErrorType } from './error-log-manager';
 import { secureLogger } from './utils/secure-logger';
-import { RCCErrorCode } from '../../types/src';
+import { RCCErrorCode } from '../../types/src/index';
 
 /**
  * 错误模式匹配规则
@@ -235,6 +235,17 @@ export class ErrorClassifier {
       priority: 40
     }
   ];
+
+  /**
+   * 对错误进行分类 (别名方法，用于测试兼容性)
+   */
+  public classifyError(
+    errorMessage: string,
+    stackTrace?: string,
+    context?: Record<string, any>
+  ): ErrorClassification {
+    return this.classify(errorMessage, stackTrace, context);
+  }
 
   /**
    * 对错误进行分类

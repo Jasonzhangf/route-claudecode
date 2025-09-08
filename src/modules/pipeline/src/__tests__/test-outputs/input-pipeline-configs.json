@@ -64,6 +64,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-ac2d7520aa515e19d1cbdc213d5c7a1a",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }
@@ -133,6 +134,7 @@
             "endpoint": "https://apis.iflow.cn/v1",
             "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
             "timeout": 60000,
+            "authMethod": "bearer",
             "maxTokens": 131072
           }
         }

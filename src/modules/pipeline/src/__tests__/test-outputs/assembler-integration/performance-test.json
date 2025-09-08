@@ -1,0 +1,14 @@
+{
+  "testTimestamp": "2025-09-08T01:53:22.956Z",
+  "iterations": 3,
+  "times": [
+    11,
+    6,
+    6
+  ],
+  "averageTimeMs": 7.666666666666667,
+  "maxTimeMs": 11,
+  "minTimeMs": 6,
+  "allUnder100ms": true,
+  "pipelineConfigsCount": 4
+}

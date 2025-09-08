@@ -1,0 +1,13 @@
+{
+  "totalPipelines": 11,
+  "routingProcessingSuccess": true,
+  "routingStage": "路由预处理完成",
+  "expectedFeatures": [
+    "路由表解析",
+    "流水线配置生成",
+    "负载均衡配置",
+    "Provider模型映射"
+  ],
+  "pipelineDistribution": "Multiple pipelines generated from routing table",
+  "timestamp": "2025-09-08T01:53:23.503Z"
+}

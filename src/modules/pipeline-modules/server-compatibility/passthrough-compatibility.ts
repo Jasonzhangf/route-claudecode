@@ -9,7 +9,7 @@
  * @author Jason Zhang
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 // TODO: API化 - 通过Pipeline API获取处理上下文
 // import { ModuleProcessingContext } from '../../../config/unified-config-manager';
 

@@ -1,12 +1,12 @@
 {
   "testName": "Enhanced Config Preprocessor Test",
-  "timestamp": "2025-09-05T11:03:12.260Z",
+  "timestamp": "2025-09-08T01:53:22.764Z",
   "configFile": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
-  "processingTime": 16,
+  "processingTime": 52,
   "success": true,
   "sourceAnalysis": {
     "format": "v4",
-    "processingTimeMs": 16
+    "processingTimeMs": 45
   },
   "providerAnalysis": {
     "totalProviders": 2,

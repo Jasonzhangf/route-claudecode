@@ -12,9 +12,14 @@
  * @version 2.0.0 - 四层双向处理架构
  */
 
-import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleType, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { BidirectionalProtocolProcessor, RequestContext, ResponseContext } from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
+import { UnifiedErrorHandlerInterface } from '../../error-handler/src/unified-error-handler-interface';
+import { UnifiedErrorHandlerFactory } from '../../error-handler/src/unified-error-handler-impl';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
+import { secureLogger } from '../../error-handler/src/utils/secure-logger';
+import { ErrorContext } from '../../interfaces/core/error-coordination-center';
 
 /**
  * 流式请求格式
@@ -186,6 +191,60 @@ export interface ProtocolController extends BidirectionalProtocolController {}
  * OpenAI协议模块 - 四层双向处理架构实现
  * 支持完整的协议内控制机制和预配置模块
  */
+/**
+ * 协议层错误上下文构建器
+ */
+class ProtocolErrorContextBuilder {
+  private context: Partial<ErrorContext> = {};
+
+  static create(): ProtocolErrorContextBuilder {
+    return new ProtocolErrorContextBuilder();
+  }
+
+  withRequestId(requestId: string): this {
+    this.context.requestId = requestId;
+    return this;
+  }
+
+  withPipelineId(pipelineId: string): this {
+    this.context.pipelineId = pipelineId;
+    return this;
+  }
+
+  withProvider(provider: string): this {
+    this.context.provider = provider;
+    return this;
+  }
+
+  withModel(model: string): this {
+    this.context.model = model;
+    return this;
+  }
+
+  withOperation(operation: string): this {
+    this.context.operation = operation;
+    return this;
+  }
+
+  withMetadata(metadata: Record<string, any>): this {
+    this.context.metadata = { ...this.context.metadata, ...metadata };
+    return this;
+  }
+
+  build(): ErrorContext {
+    return {
+      requestId: this.context.requestId || `protocol-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      pipelineId: this.context.pipelineId || 'unknown',
+      layerName: 'protocol',
+      provider: this.context.provider || 'unknown',
+      model: this.context.model || 'unknown',
+      operation: this.context.operation || 'protocol-process',
+      timestamp: new Date(),
+      metadata: this.context.metadata
+    };
+  }
+}
+
 export class OpenAIProtocolModule extends EventEmitter implements ModuleInterface, BidirectionalProtocolController, ProtocolController {
   private readonly id: string = 'openai-protocol-module';
   private readonly name: string = 'OpenAI Protocol Module';
@@ -195,6 +254,7 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
   private status: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
   private connections: Map<string, ModuleInterface> = new Map();
   private readonly isPreConfigured: boolean = true;
+  private errorHandler: UnifiedErrorHandlerInterface;
   private metrics = {
     requestsProcessed: 0,
     responsesProcessed: 0,
@@ -218,6 +278,9 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
       concurrencyLimit: preConfig?.concurrencyLimit ?? 20
     };
     
+    // 初始化统一错误处理器
+    this.errorHandler = UnifiedErrorHandlerFactory.createErrorHandler();
+    
     console.log(`🌐 初始化OpenAI协议模块 (预配置模式)`, {
       enableStreamConversion: this.preConfig.enableStreamConversion,
       enableProtocolValidation: this.preConfig.enableProtocolValidation,
@@ -230,6 +293,22 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
    */
   async processRequest(input: any): Promise<any> {
     const startTime = Date.now();
+    const requestId = `protocol-req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // 构建错误上下文
+    const errorContext = ProtocolErrorContextBuilder.create()
+      .withRequestId(requestId)
+      .withModel(input?.model)
+      .withOperation('processRequest')
+      .withMetadata({
+        enableStreamConversion: this.preConfig.enableStreamConversion,
+        enableProtocolValidation: this.preConfig.enableProtocolValidation,
+        inputType: typeof input,
+        inputKeys: Object.keys(input || {}),
+        isStreamRequest: this.isStreamRequest(input),
+        isNonStreamRequest: this.isNonStreamRequest(input)
+      })
+      .build();
     
     try {
       // 预配置验证
@@ -256,11 +335,17 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
         console.log(`✅ 协议请求处理完成 (${Date.now() - startTime}ms)`);
         return input;
       } else {
-        throw new ProtocolError('不支持的请求格式', 'UNSUPPORTED_REQUEST_FORMAT');
+        const protocolError = new ProtocolError('不支持的请求格式', 'UNSUPPORTED_REQUEST_FORMAT');
+        await this.errorHandler.handleError(protocolError, errorContext);
+        throw protocolError;
       }
     } catch (error) {
       this.updateRequestMetrics(Date.now() - startTime, false);
       const processingTime = Date.now() - startTime;
+      
+      // 使用统一错误处理器处理错误
+      await this.errorHandler.handleError(error, errorContext);
+      
       console.error(`❌ 协议请求处理失败 (${processingTime}ms):`, error.message);
       throw error;
     }
@@ -271,6 +356,22 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
    */
   async processResponse(input: any): Promise<any> {
     const startTime = Date.now();
+    const requestId = `protocol-res-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // 构建错误上下文
+    const errorContext = ProtocolErrorContextBuilder.create()
+      .withRequestId(requestId)
+      .withModel(input?.model)
+      .withOperation('processResponse')
+      .withMetadata({
+        enableStreamConversion: this.preConfig.enableStreamConversion,
+        enableProtocolValidation: this.preConfig.enableProtocolValidation,
+        inputType: typeof input,
+        inputKeys: Object.keys(input || {}),
+        isNonStreamResponse: this.isNonStreamResponse(input),
+        isStreamResponse: this.isStreamResponse(input)
+      })
+      .build();
     
     try {
       // 预配置验证
@@ -297,11 +398,17 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
         console.log(`✅ 协议响应处理完成 (${Date.now() - startTime}ms)`);
         return input;
       } else {
-        throw new ProtocolError('不支持的响应格式', 'UNSUPPORTED_RESPONSE_FORMAT');
+        const protocolError = new ProtocolError('不支持的响应格式', 'UNSUPPORTED_RESPONSE_FORMAT');
+        await this.errorHandler.handleError(protocolError, errorContext);
+        throw protocolError;
       }
     } catch (error) {
       this.updateResponseMetrics(Date.now() - startTime, false);
       const processingTime = Date.now() - startTime;
+      
+      // 使用统一错误处理器处理错误
+      await this.errorHandler.handleError(error, errorContext);
+      
       console.error(`❌ 协议响应处理失败 (${processingTime}ms):`, error.message);
       throw error;
     }
@@ -371,13 +478,31 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
   }
 
   /**
-   * 协议错误处理
+   * 协议错误处理 - 集成统一错误处理器
    */
-  handleProtocolError(error: any): any {
+  async handleProtocolError(error: any, context?: Partial<ErrorContext>): Promise<any> {
     this.metrics.errorsHandled++;
+    
+    // 构建错误上下文
+    const errorContext = ProtocolErrorContextBuilder.create()
+      .withRequestId(context?.requestId || `protocol-error-${Date.now()}`)
+      .withModel(context?.model)
+      .withProvider(context?.provider)
+      .withOperation('handleProtocolError')
+      .withMetadata({
+        errorCode: error instanceof ProtocolError ? error.code : 'UNKNOWN',
+        errorType: error instanceof ProtocolError ? 'protocol_error' : 'unknown_error',
+        originalError: error.message,
+        ...context?.metadata
+      })
+      .build();
     
     if (error instanceof ProtocolError) {
       console.error(`❌ 协议错误 [${error.code}]: ${error.message}`);
+      
+      // 使用统一错误处理器处理
+      await this.errorHandler.handleError(error, errorContext);
+      
       // 返回标准化错误格式
       return {
         error: {
@@ -389,6 +514,15 @@ export class OpenAIProtocolModule extends EventEmitter implements ModuleInterfac
       };
     } else {
       console.error(`❌ 未知协议错误: ${error.message}`);
+      
+      // 转换为ProtocolError进行统一处理
+      const protocolError = new ProtocolError(
+        error.message || 'Unknown protocol error', 
+        'UNKNOWN_PROTOCOL_ERROR'
+      );
+      
+      await this.errorHandler.handleError(protocolError, errorContext);
+      
       // 返回通用错误格式
       return {
         error: {

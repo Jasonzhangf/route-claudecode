@@ -29,13 +29,14 @@ import {
   ModuleType,
   ModuleStatus,
   ModuleMetrics,
-} from '../../interfaces/module/base-module';
-import {
-  BidirectionalProcessor,
-  BidirectionalTransformer,
-  RequestContext,
-  ResponseContext,
-} from '../../interfaces/module/four-layer-interfaces';
+} from '../../pipeline/src/module-interface';
+// 临时简化接口导入以修复模块注册问题
+// import {
+//   BidirectionalProcessor,
+//   BidirectionalTransformer,
+//   RequestContext,
+//   ResponseContext,
+// } from '../../interfaces/module/four-layer-interfaces';
 import { EventEmitter } from 'events';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 
@@ -78,12 +79,12 @@ export class TransformerSecurityError extends Error {
 }
 
 /**
- * 安全的Anthropic到OpenAI转换器 - 四层双向处理架构实现
+ * 安全的Anthropic到OpenAI转换器 - 临时简化版本修复模块注册问题
  * 
- * 实现ModuleInterface和BidirectionalProcessor接口
+ * 实现ModuleInterface接口
  * 支持预配置模块和并发安全的双向转换
  */
-export class SecureAnthropicToOpenAITransformer extends EventEmitter implements ModuleInterface, BidirectionalProcessor, BidirectionalTransformer {
+export class SecureAnthropicToOpenAITransformer extends EventEmitter implements ModuleInterface {
   private id: string;
   private name: string;
   private version: string;
@@ -300,7 +301,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
   }
 
   /**
-   * 处理请求 - 四层双向处理架构主接口
+   * 处理请求 - 简化版本主接口
    */
   async processRequest(input: any): Promise<any> {
     if (this.status.status !== 'running') {
@@ -308,7 +309,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     }
     
     const startTime = Date.now();
-    this.status.status = 'busy';
+    this.status.status = 'running';
     this.status.lastActivity = new Date();
     
     try {
@@ -364,7 +365,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     }
     
     const startTime = Date.now();
-    this.status.status = 'busy';
+    this.status.status = 'running';
     this.status.lastActivity = new Date();
     
     try {
@@ -423,7 +424,7 @@ export class SecureAnthropicToOpenAITransformer extends EventEmitter implements 
     }
     
     const startTime = Date.now();
-    this.status.status = 'busy';
+    this.status.status = 'running';
     this.status.lastActivity = new Date();
     
     try {

@@ -27,6 +27,7 @@ export interface DebugRecorder {
   recordModuleOutput(moduleName: string, requestId: string, output: unknown): void;
   recordModuleError(moduleName: string, requestId: string, error: RCCError): void;
   saveRecord(record: DebugRecord): Promise<void>;
+  recordPipelineResponse(requestId: string, pipelineId: string, processingTime: number, response: any, layerOutputs: any[]): void;
   loadRecord(requestId: string): Promise<DebugRecord>;
   findRecords(criteria: RecordSearchCriteria): Promise<DebugRecord[]>;
   generateAnalysisReport(): Promise<AnalysisReport>;
@@ -66,6 +67,7 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
   private activeSessions: Map<string, DebugSession> = new Map();
   private pendingRecords: Map<string, Partial<DebugRecord>> = new Map();
   private moduleRecords: Map<string, Map<string, ModuleRecord[]>> = new Map();
+  private currentPort: number | null = null; // 存储当前运行端口
 
   // 注入的依赖模块
   private filter: DebugFilter;
@@ -98,6 +100,9 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
   createSession(port: number, sessionId?: string): DebugSession {
     const now = Date.now();
     const actualSessionId = sessionId || `session-${this.formatReadableTime(now).replace(/[:\s]/g, '-')}`;
+
+    // 更新当前端口
+    this.currentPort = port;
 
     const session: DebugSession = {
       sessionId: actualSessionId,
@@ -203,7 +208,26 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
       };
 
       // 收集流水线事件
-      this.collector.collectPipelineEvent('pipeline-start', pipeline, requestId, record.sessionId!, filteredData);
+      const pipelineInfo: any = {
+        pipelineId: pipeline?.id || 'unknown',
+        provider: (filteredData as any).provider || 'unknown',
+        model: (filteredData as any).model || 'unknown'
+      };
+      this.collector.collectPipelineEvent('pipeline-start', pipelineInfo, requestId, record.sessionId!, filteredData);
+
+      // 保存流水线请求记录
+      const actualPort = record.port || this.getCurrentPort();
+      this.storage.savePipelineRequest(
+        actualPort,
+        record.sessionId || '',
+        pipeline?.id || 'unknown',
+        requestId,
+        (filteredData as any).model || 'unknown',
+        filteredData,
+        [] // layerInputs 将由流水线执行时提供
+      ).catch(error => {
+        console.error(`保存流水线请求失败 [${requestId}] (端口: ${actualPort}):`, error);
+      });
 
       this.emit('pipeline-recorded', {
         requestId,
@@ -332,6 +356,66 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
       });
     } catch (recordError) {
       console.error(`记录模块错误失败 [${moduleName}]:`, recordError);
+    }
+  }
+
+  /**
+   * 记录流水线响应
+   */
+  recordPipelineResponse(requestId: string, pipelineId: string, processingTime: number, response: any, layerOutputs: any[]): void {
+    if (!this.config.enabled) return;
+
+    try {
+      // 获取对应的记录
+      const record = this.pendingRecords.get(requestId);
+      if (!record) {
+        console.error(`找不到对应的记录 [${requestId}] 无法保存流水线响应`);
+        return;
+      }
+
+      // 更新记录的响应信息
+      record.response = {
+        status: response?.status || 200,
+        headers: response?.headers || {},
+        body: response?.body || response,
+        duration: processingTime,
+      };
+
+      // 保存流水线响应记录
+      const actualPort = record.port || this.getCurrentPort();
+      this.storage.savePipelineResponse(
+        actualPort,
+        record.sessionId || '',
+        pipelineId,
+        requestId,
+        processingTime,
+        response,
+        layerOutputs
+      ).catch(error => {
+        console.error(`保存流水线响应失败 [${requestId}] (端口: ${actualPort}):`, error);
+      });
+
+      // 收集流水线完成事件
+      const sessionId = this.findSessionIdByRequestId(requestId);
+      const pipelineInfo: any = {
+        pipelineId: pipelineId,
+        provider: 'unknown',
+        model: 'unknown'
+      };
+      this.collector.collectPipelineEvent('pipeline-end', pipelineInfo, requestId, sessionId, { 
+        response,
+        processingTime,
+        success: true 
+      });
+
+      this.emit('pipeline-response-recorded', {
+        requestId,
+        pipelineId,
+        processingTime,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error(`记录流水线响应失败 [${requestId}]:`, error);
     }
   }
 
@@ -509,6 +593,28 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
 
   // ===== Private Helper Methods =====
 
+  /**
+   * 获取当前运行端口
+   */
+  private getCurrentPort(): number {
+    // 优先返回存储的当前端口
+    if (this.currentPort !== null) {
+      return this.currentPort;
+    }
+    
+    // 从活跃会话中获取端口
+    for (const session of this.activeSessions.values()) {
+      if (session.port) {
+        this.currentPort = session.port; // 更新缓存
+        return session.port;
+      }
+    }
+    
+    // 如果都没有，返回一个警告并使用默认端口
+    console.warn('⚠️ Debug录制器无法获取当前端口，使用默认端口5506');
+    return 5506; // 这是最后的默认值
+  }
+
   private setupEventForwarding(): void {
     // 转发存储模块事件
     this.storage.on('record-saved', event => this.emit('record-saved', event));
@@ -525,7 +631,7 @@ export class DebugRecorderImpl extends EventEmitter implements DebugRecorder {
 
   private createBaseRecord(requestId: string, data: any): Partial<DebugRecord> {
     const now = Date.now();
-    const port = data?.port || 3000;
+    const port = data?.port || this.getCurrentPort();
     return {
       requestId,
       timestamp: now,

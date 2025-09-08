@@ -1,0 +1,107 @@
+{
+  "pipelineConfig": {
+    "pipelineId": "pipeline_iflow_glm-4.5_1",
+    "routeId": "route_default_iflow_0_1",
+    "provider": "iflow",
+    "model": "glm-4.5",
+    "endpoint": "https://apis.iflow.cn/v1",
+    "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+    "timeout": 60000,
+    "maxRetries": 3,
+    "layers": [
+      {
+        "name": "transformer",
+        "type": "transformer",
+        "order": 1,
+        "config": {
+          "provider": "iflow",
+          "model": "glm-4.5",
+          "endpoint": "https://apis.iflow.cn/v1",
+          "apiKey": "sk-1a3d168c80888a90c131fc6538515975"
+        }
+      },
+      {
+        "name": "protocol",
+        "type": "protocol",
+        "order": 2,
+        "config": {
+          "provider": "iflow",
+          "model": "glm-4.5",
+          "endpoint": "https://apis.iflow.cn/v1"
+        }
+      },
+      {
+        "name": "server-compatibility",
+        "type": "server-compatibility",
+        "order": 3,
+        "config": {
+          "provider": "iflow",
+          "model": "glm-4.5",
+          "endpoint": "https://apis.iflow.cn/v1",
+          "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+          "timeout": 60000,
+          "use": "iflow",
+          "maxTokens": 131072,
+          "enhanceTool": true,
+          "authMethod": "Bearer",
+          "supportsTopK": true,
+          "supportsFrequencyPenalty": true,
+          "hasReasoningContent": true,
+          "maxRetries": 3,
+          "protocol": "openai",
+          "transformer": "anthropic-to-openai-transformer"
+        }
+      },
+      {
+        "name": "server",
+        "type": "server",
+        "order": 4,
+        "config": {
+          "provider": "iflow",
+          "model": "glm-4.5",
+          "endpoint": "https://apis.iflow.cn/v1",
+          "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+          "timeout": 60000,
+          "maxTokens": 131072
+        }
+      }
+    ],
+    "maxTokens": 131072
+  },
+  "testData": {
+    "model": "glm-4.5",
+    "max_tokens": 131072,
+    "temperature": 0.7,
+    "system": "You are a helpful assistant.",
+    "messages": [
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "tools": [
+      {
+        "name": "list_files",
+        "description": "List files and directories",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Directory path to list"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    ],
+    "metadata": {
+      "pipelineId": "pipeline_iflow_glm-4.5_1",
+      "provider": "iflow",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling"
+    }
+  }
+}

@@ -12,7 +12,7 @@ import {
   ModuleStatus,
   ModuleMetrics,
 } from '../interfaces/module/base-module';
-import { IValidationResult } from '../types/src';
+import { IValidationResult } from '../types/src/index';
 import { EventEmitter } from 'events';
 
 /**

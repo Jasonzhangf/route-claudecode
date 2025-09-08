@@ -89,12 +89,12 @@
     "apiKey": "rcc4-proxy-key",
     "version": "4.0",
     "description": "Qwen+iFlow混合Provider配置 - 多AI平台集成 (Port 5511)",
-    "lastUpdated": "2025-09-05T11:03:12.243Z"
+    "lastUpdated": "2025-09-08T01:53:22.711Z"
   },
   "metadata": {
     "configPath": "/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json",
-    "processingTime": 16,
-    "timestamp": "2025-09-05T11:03:12.243Z",
+    "processingTime": 45,
+    "timestamp": "2025-09-08T01:53:22.711Z",
     "sourceFormat": "v4"
   }
 }

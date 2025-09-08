@@ -1,0 +1,139 @@
+{
+  "layer": {
+    "name": "server",
+    "type": "server",
+    "order": 4,
+    "config": {
+      "provider": "iflow",
+      "model": "glm-4.5",
+      "endpoint": "https://apis.iflow.cn/v1",
+      "apiKey": "sk-1a3d168c80888a90c131fc6538515975",
+      "timeout": 60000,
+      "maxTokens": 131072
+    }
+  },
+  "input": {
+    "model": "glm-4.5",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 131072,
+    "metadata": {
+      "pipelineId": "pipeline_iflow_glm-4.5_1",
+      "provider": "iflow",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling",
+      "layer": "server-compatibility",
+      "format": "openai",
+      "transformedFrom": "anthropic",
+      "processed": true,
+      "endpoint": "https://apis.iflow.cn/v1",
+      "compatibilityApplied": true
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "list_files",
+          "description": "List files and directories",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Directory path to list"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "endpoint": "https://apis.iflow.cn/v1",
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-1a3d168c80888a90c131fc6538515975",
+      "User-Agent": "RCC-v4.0-Pipeline"
+    }
+  },
+  "output": {
+    "model": "glm-4.5",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "列出本目录中所有文件夹"
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 131072,
+    "metadata": {
+      "pipelineId": "pipeline_iflow_glm-4.5_1",
+      "provider": "iflow",
+      "originalFormat": "anthropic",
+      "testScenario": "tool_calling",
+      "layer": "server",
+      "format": "openai",
+      "transformedFrom": "anthropic",
+      "processed": true,
+      "endpoint": "https://apis.iflow.cn/v1",
+      "compatibilityApplied": true,
+      "readyForHttp": true,
+      "finalUrl": "https://apis.iflow.cn/v1/chat/completions"
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "list_files",
+          "description": "List files and directories",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Directory path to list"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "headers": {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer sk-1a3d168c80888a90c131fc6538515975",
+      "User-Agent": "RCC-v4.0-Pipeline"
+    },
+    "httpConfig": {
+      "method": "POST",
+      "url": "https://apis.iflow.cn/v1/chat/completions",
+      "timeout": 60000,
+      "maxRetries": 3,
+      "headers": {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer sk-1a3d168c80888a90c131fc6538515975",
+        "User-Agent": "RCC-v4.0-Pipeline"
+      }
+    }
+  },
+  "metadata": {
+    "processingTime": 0,
+    "timestamp": "2025-09-07T03:49:53.512Z"
+  }
+}

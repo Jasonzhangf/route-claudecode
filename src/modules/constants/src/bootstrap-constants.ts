@@ -11,6 +11,34 @@ export const BOOTSTRAP_CONFIG = {
   RETRY_DELAY: 1000 // 1秒
 };
 
+// Provider model mappings defined as configuration
+export const PROVIDER_MODEL_MAPPINGS = {
+  // Qwen models configured as generic identifiers
+  QWEN_MODELS: {
+    CODER_SERIES: 'coder-plus-series',
+    MAX_SERIES: 'max-series',
+    TURBO_SERIES: 'turbo-series'
+  },
+  
+  // LM Studio models configured as generic identifiers
+  LMSTUDIO_MODELS: {
+    LLAMA_SERIES: 'llama-series',
+    MISTRAL_SERIES: 'mistral-series'
+  },
+  
+  // OpenAI models configured as generic identifiers
+  OPENAI_MODELS: {
+    GPT4_SERIES: 'gpt4-series',
+    GPT3_SERIES: 'gpt3-series'
+  },
+  
+  // Claude models configured as generic identifiers
+  CLAUDE_MODELS: {
+    CLAUDE3_SERIES: 'claude3-series',
+    SONNET_SERIES: 'sonnet-series'
+  }
+};
+
 export const SCHEDULER_DEFAULTS = {
   STRATEGY: 'round-robin',
   MAX_ERROR_COUNT: 5,
@@ -68,7 +96,57 @@ export const API_DEFAULTS = {
   }
 };
 
-export const ERROR_MESSAGES = {
+/**
+ * Server Configuration Defaults
+ * Constants for server module configuration to avoid hardcoding
+ */
+export const SERVER_CONFIG_DEFAULTS = {
+  // OpenAI Server Configuration
+  OPENAI: {
+    TIMEOUT: 60000,
+    MAX_RETRIES: 3,
+    RETRY_DELAY: 1000,
+    REQUEST_TIMEOUT_MS: 30000,
+    MAX_CONCURRENT_REQUESTS: 10,
+    SKIP_AUTHENTICATION: false,
+    ENABLE_RESPONSE_VALIDATION: true
+  },
+  
+  // General Server Defaults
+  GENERAL: {
+    DEFAULT_TIMEOUT: 30000,
+    DEFAULT_MAX_RETRIES: 3,
+    DEFAULT_RETRY_DELAY: 1000,
+    DEFAULT_MAX_CONCURRENT_REQUESTS: 10
+  },
+  
+  // Configuration Field Mappings
+  FIELD_MAPPINGS: {
+    // Pipeline config uses 'endpoint', OpenAI SDK needs 'baseURL'
+    ENDPOINT_FIELD: 'endpoint',
+    BASE_URL_FIELD: 'baseURL',
+    API_BASE_URL_FIELD: 'api_base_url',
+    
+    // API Key field variations
+    API_KEY_FIELD: 'apiKey',
+    API_KEY_ALT_FIELD: 'api_key'
+  }
+};
+
+export const MODULE_REGISTRY_DEFAULTS = {
+  // Server module instantiation defaults
+  SERVER_MODULE: {
+    TIMEOUT: SERVER_CONFIG_DEFAULTS.OPENAI.TIMEOUT,
+    MAX_RETRIES: SERVER_CONFIG_DEFAULTS.OPENAI.MAX_RETRIES,
+    RETRY_DELAY: SERVER_CONFIG_DEFAULTS.OPENAI.RETRY_DELAY,
+    SKIP_AUTHENTICATION: SERVER_CONFIG_DEFAULTS.OPENAI.SKIP_AUTHENTICATION,
+    ENABLE_RESPONSE_VALIDATION: SERVER_CONFIG_DEFAULTS.OPENAI.ENABLE_RESPONSE_VALIDATION,
+    REQUEST_TIMEOUT_MS: SERVER_CONFIG_DEFAULTS.OPENAI.REQUEST_TIMEOUT_MS,
+    MAX_CONCURRENT_REQUESTS: SERVER_CONFIG_DEFAULTS.OPENAI.MAX_CONCURRENT_REQUESTS
+  }
+};
+
+export const BOOTSTRAP_ERROR_MESSAGES = {
   COORDINATOR: {
     PROCESSING_FAILED: 'Failed to process error through unified flow',
     INITIALIZATION_FAILED: 'Failed to initialize error coordinator',

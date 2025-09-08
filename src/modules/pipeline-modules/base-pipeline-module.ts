@@ -7,7 +7,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { ModuleInterface, ModuleStatus, ModuleMetrics, ModuleType } from '../interfaces/module/base-module';
+import { ModuleInterface, ModuleStatus, ModuleMetrics, ModuleType } from '../pipeline/src/module-interface';
 
 /**
  * 基础流水线模块抽象类

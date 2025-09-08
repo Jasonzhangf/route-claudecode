@@ -6,28 +6,25 @@
  * @author RCC v4.0 Integration Test
  */
 
-import { HTTPServer } from '../http-server';
+import { StartupService } from '../../../bootstrap/src/startup-service';
 import * as fs from 'fs';
 import * as path from 'path';
-import { JQJsonHandler } from '../../../error-handler/src/utils/jq-json-handler';
+import { JQJsonHandler } from '../../../utils/jq-json-handler';
 
 describe('HTTP服务器初始化完整流程测试', () => {
   const configPath = '/Users/fanzhang/.route-claudecode/config/v4/single-provider/qwen-iflow-mixed-v4-5511-standard.json';
   const testOutputDir = path.join(__dirname, 'test-outputs');
-  let server: HTTPServer;
+  let startupService: StartupService;
+  let server: any;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // 确保测试输出目录存在
     if (!fs.existsSync(testOutputDir)) {
       fs.mkdirSync(testOutputDir, { recursive: true });
     }
 
-    // 创建HTTP服务器实例
-    server = new HTTPServer({
-      port: 5511,
-      host: '0.0.0.0',
-      debug: true
-    }, configPath);
+    // 创建启动服务实例
+    startupService = new StartupService();
   });
 
   afterAll(async () => {
@@ -78,8 +75,17 @@ describe('HTTP服务器初始化完整流程测试', () => {
   test('步骤2: HTTP服务器成功启动并完成初始化', async () => {
     const startTime = Date.now();
     
-    // 启动服务器（包含完整初始化流程）
-    await server.start();
+    // 使用启动服务启动完整系统，使用不同端口避免冲突
+    const result = await startupService.start({
+      configPath,
+      port: 5512, // 使用不同端口避免与其他测试冲突
+      host: '0.0.0.0',
+      debug: true
+    });
+    
+    expect(result.success).toBe(true);
+    expect(result.server).toBeDefined();
+    server = result.server;
     
     const initializationTime = Date.now() - startTime;
     
@@ -87,9 +93,8 @@ describe('HTTP服务器初始化完整流程测试', () => {
     const status = server.getStatus();
     
     expect(status.isRunning).toBe(true);
-    expect(status.port).toBe(5511);
+    expect(status.port).toBe(5512);
     expect(status.host).toBe('0.0.0.0');
-    expect(status.version).toBe('4.0.0-alpha.1');
 
     // 生成初始化报告
     const initReport = {

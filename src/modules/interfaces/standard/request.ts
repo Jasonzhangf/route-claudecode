@@ -3,4 +3,4 @@
  * Re-exports request types from types module
  */
 
-export * from '../../types/src';
+export * from '../../types/src/index';

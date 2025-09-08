@@ -6,7 +6,7 @@
  * @author RCC v4.0
  */
 
-import { RCCError, ErrorContext } from '../../types/src';
+import { RCCError, ErrorContext } from '../../types/src/index';
 import { EnhancedErrorHandler } from './enhanced-error-handler';
 
 // 使用增强错误处理器作为错误协调中心的实现

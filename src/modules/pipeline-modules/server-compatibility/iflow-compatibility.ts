@@ -4,14 +4,18 @@
  * Supports bidirectional compatibility processing: request and response
  */
 
-import { ModuleInterface, ModuleMetrics } from '../../interfaces/module/base-module';
+import { ModuleInterface, ModuleMetrics } from '../../pipeline/src/module-interface';
 import { EventEmitter } from 'events';
 import { secureLogger } from '../../error-handler/src/utils/secure-logger';
 import { API_DEFAULTS } from '../../constants/src/bootstrap-constants';
 import { JQJsonHandler } from '../../utils/jq-json-handler';
 import { OpenAIStandardResponse, OpenAIErrorResponse } from './types/compatibility-types';
-import { ERROR_MESSAGES } from '../../constants/src/bootstrap-constants';
+import { BOOTSTRAP_ERROR_MESSAGES } from '../../constants/src/bootstrap-constants';
 import { ServerCompatibilityModule, ModuleProcessingContext } from './server-compatibility-base';
+import { UnifiedErrorHandlerInterface } from '../../error-handler/src/unified-error-handler-interface';
+import { UnifiedErrorHandlerFactory } from '../../error-handler/src/unified-error-handler-impl';
+import { RCCError, RCCErrorCode } from '../../types/src/index';
+import { ErrorContext } from '../../interfaces/core/error-coordination-center';
 
 // ✅ Configuration-driven constants - no more hardcoding
 const IFLOW_CONSTANTS = {
@@ -51,13 +55,79 @@ export interface IFlowCompatibilityConfig {
   };
 }
 
+/**
+ * iFlow错误上下文构建器
+ */
+class IFlowErrorContextBuilder {
+  private context: Partial<ErrorContext> = {};
+
+  static create(): IFlowErrorContextBuilder {
+    return new IFlowErrorContextBuilder();
+  }
+
+  withRequestId(requestId: string): this {
+    this.context.requestId = requestId;
+    return this;
+  }
+
+  withPipelineId(pipelineId: string): this {
+    this.context.pipelineId = pipelineId;
+    return this;
+  }
+
+  withProvider(provider: string): this {
+    this.context.provider = provider;
+    return this;
+  }
+
+  withModel(model: string): this {
+    this.context.model = model;
+    return this;
+  }
+
+  withOperation(operation: string): this {
+    this.context.operation = operation;
+    return this;
+  }
+
+  withMetadata(metadata: Record<string, any>): this {
+    this.context.metadata = { ...this.context.metadata, ...metadata };
+    return this;
+  }
+
+  withProcessingContext(processingContext: ModuleProcessingContext): this {
+    if (processingContext.requestId) {
+      this.context.requestId = processingContext.requestId;
+    }
+    // pipelineId not available in ModuleProcessingContext
+    return this;
+  }
+
+  build(): ErrorContext {
+    return {
+      requestId: this.context.requestId || `iflow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      pipelineId: this.context.pipelineId || 'unknown',
+      layerName: 'server-compatibility',
+      provider: this.context.provider || 'iflow',
+      model: this.context.model || 'unknown',
+      operation: this.context.operation || 'iflow-compatibility',
+      timestamp: new Date(),
+      metadata: this.context.metadata
+    };
+  }
+}
+
 export class IFlowCompatibilityModule extends ServerCompatibilityModule {
   private readonly config: IFlowCompatibilityConfig;
   private isInitialized = false;
+  private errorHandler: UnifiedErrorHandlerInterface;
 
   constructor(config: IFlowCompatibilityConfig) {
     super('iflow-compatibility', 'iFlow Compatibility Module', IFLOW_CONSTANTS.MODULE_VERSION);
     this.config = config;
+    
+    // 初始化统一错误处理器
+    this.errorHandler = UnifiedErrorHandlerFactory.createErrorHandler();
     
     secureLogger.info('Initialize iFlow compatibility module', {
       endpoint: config.baseUrl,
@@ -84,6 +154,21 @@ export class IFlowCompatibilityModule extends ServerCompatibilityModule {
   }
 
   async processRequest(request: any, routingDecision: any, context: ModuleProcessingContext): Promise<any> {
+    // 构建错误上下文
+    const errorContext = IFlowErrorContextBuilder.create()
+      .withProcessingContext(context)
+      .withModel(request?.model)
+      .withOperation('processRequest')
+      .withMetadata({
+        routingDecision,
+        configModel: context?.config?.actualModel,
+        defaultModel: this.config.models.default,
+        hasTools: !!(request?.tools && Array.isArray(request.tools)),
+        inputKeys: Object.keys(request || {}),
+        endpoint: this.config.baseUrl
+      })
+      .build();
+
     try {
       const processedRequest = { ...request };
 
@@ -175,12 +260,30 @@ export class IFlowCompatibilityModule extends ServerCompatibilityModule {
       return processedRequest;
 
     } catch (error) {
+      // 使用统一错误处理器处理错误
+      await this.errorHandler.handleError(error, errorContext);
+      
       secureLogger.error('iFlow compatibility processing failed', {
         requestId: context.requestId,
         error: error.message,
         stack: error.stack
       });
-      return request;
+      
+      // 创建RCC错误并重新抛出
+      const rccError = new RCCError(
+        `iFlow compatibility processing failed: ${error.message}`,
+        RCCErrorCode.INTERNAL_ERROR,
+        'server-compatibility',
+        {
+          requestId: context.requestId,
+          operation: 'processRequest',
+          details: {
+            originalError: error.message
+          }
+        }
+      );
+      
+      throw rccError;
     }
   }
 
@@ -696,17 +799,114 @@ export class IFlowCompatibilityModule extends ServerCompatibilityModule {
   }
 
   /**
-   * 统一错误处理方法占位符
+   * 统一错误处理实现 - 集成统一错误处理器
    */
   async handleError(error: any, context: ModuleProcessingContext): Promise<OpenAIErrorResponse> {
-    // 占位符实现
-    return {
-      error: {
-        message: 'Not implemented',
-        type: 'api_error',
-        code: 'not_implemented',
-        param: null,
-      },
-    };
+    // 构建完整的错误上下文
+    const errorContext = IFlowErrorContextBuilder.create()
+      .withProcessingContext(context)
+      .withOperation('handleError')
+      .withMetadata({
+        errorType: error.constructor?.name || 'unknown',
+        errorMessage: error.message,
+        errorStack: error.stack,
+        timestamp: Date.now()
+      })
+      .build();
+
+    try {
+      // 使用统一错误处理器处理错误
+      await this.errorHandler.handleError(error, errorContext);
+
+      // 分类错误类型
+      const errorType = this.classifyErrorType(error);
+      const errorCode = this.generateErrorCode(error);
+      
+      // 生成标准化的OpenAI错误响应
+      const errorResponse: OpenAIErrorResponse = {
+        error: {
+          message: this.generateErrorMessage(error),
+          type: errorType,
+          code: errorCode,
+          param: null,
+        }
+      };
+
+      secureLogger.error('🚨 iFlow错误处理完成', {
+        requestId: context.requestId,
+        errorType,
+        errorCode,
+        errorMessage: error.message,
+        processedBy: 'unified-error-handler'
+      });
+
+      return errorResponse;
+
+    } catch (handlingError) {
+      // 错误处理本身出错时的降级处理
+      secureLogger.error('❌ iFlow错误处理器异常', {
+        requestId: context.requestId,
+        originalError: error.message,
+        handlingError: handlingError.message
+      });
+
+      // 返回基本的错误响应
+      return {
+        error: {
+          message: 'iFlow compatibility error',
+          type: 'internal_error',
+          code: 'ERROR_HANDLER_FAILED',
+          param: null,
+        }
+      };
+    }
+  }
+
+  /**
+   * 分类错误类型
+   */
+  private classifyErrorType(error: any): string {
+    const errorMessage = error.message?.toLowerCase() || '';
+    
+    if (errorMessage.includes('timeout')) return 'timeout_error';
+    if (errorMessage.includes('connection')) return 'connection_error';
+    if (errorMessage.includes('unauthorized') || errorMessage.includes('auth')) return 'authentication_error';
+    if (errorMessage.includes('not found') || errorMessage.includes('404')) return 'not_found_error';
+    if (errorMessage.includes('rate limit') || errorMessage.includes('429')) return 'rate_limit_error';
+    if (errorMessage.includes('invalid') || errorMessage.includes('validation')) return 'validation_error';
+    if (errorMessage.includes('quota') || errorMessage.includes('limit')) return 'quota_exceeded_error';
+    if (errorMessage.includes('network')) return 'network_error';
+    
+    return 'api_error';
+  }
+
+  /**
+   * 生成错误代码
+   */
+  private generateErrorCode(error: any): string {
+    const errorType = this.classifyErrorType(error);
+    
+    // 将错误类型转换为大写下划线格式
+    return errorType.toUpperCase();
+  }
+
+  /**
+   * 生成用户友好的错误消息
+   */
+  private generateErrorMessage(error: any): string {
+    const errorMessage = error.message || 'Unknown error occurred';
+    
+    // 根据错误类型生成用户友好的消息
+    if (errorMessage.toLowerCase().includes('timeout')) {
+      return 'Request to iFlow API timed out. Please try again later.';
+    }
+    if (errorMessage.toLowerCase().includes('connection')) {
+      return 'Connection to iFlow API failed. Please check your network connection.';
+    }
+    if (errorMessage.toLowerCase().includes('unauthorized')) {
+      return 'Authentication with iFlow API failed. Please check your API credentials.';
+    }
+    
+    return errorMessage;
   }
 }
